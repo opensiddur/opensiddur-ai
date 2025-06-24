@@ -1,0 +1,1 @@
+Open Siddur Project (AI aided version)

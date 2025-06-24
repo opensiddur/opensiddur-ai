@@ -1,0 +1,83 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Jewish Liturgy TEI 2</title>
+        <author>Efraim Feinstein</author>
+      </titleStmt>
+      <publicationStmt>
+        <publisher>TEI Consortium</publisher>
+        <availability status="free">
+          <licence target="http://creativecommons.org/licenses/by-sa/3.0/"> Distributed under a Creative Commons
+            Attribution-ShareAlike 3.0 Unported License </licence>
+          <licence target="http://www.opensource.org/licenses/BSD-2-Clause">
+            <p>Copyright 2013 TEI Consortium.</p>
+            <p>All rights reserved.</p>
+            <p>Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+              the following conditions are met:</p>
+            <list>
+              <item>Redistributions of source code must retain the above copyright notice, this list of conditions and the
+                following disclaimer.</item>
+              <item>Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
+                the following disclaimer in the documentation and/or other materials provided with the
+                distribution.</item>
+            </list>
+            <p>This software is provided by the copyright holders and contributors "as is" and any express or implied
+              warranties, including, but not limited to, the implied warranties of merchantability and fitness for a
+              particular purpose are disclaimed. In no event shall the copyright holder or contributors be liable for any
+              direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to,
+              procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however
+              caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence
+              or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such
+              damage.</p>
+          </licence>
+          <p>TEI material can be licensed differently depending on the use you intend to make of it. Hence it is made
+            available under both the CC+BY and BSD-2 licences. The CC+BY licence is generally appropriate for usages which
+            treat TEI content as data or documentation. The BSD-2 licence is generally appropriate for usage of TEI content
+            in a software environment. For further information or clarification, please contact the <ref target="mailto:info@tei-c.org">TEI Consortium</ref>. </p>
+        </availability>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Created with TEI Roma by Efraim Feinstein.</p>
+      </sourceDesc>
+    </fileDesc><encodingDesc><appInfo><application ident="RomaJS" version="1.1.2" when="2025-06-08T06:26:38.320Z"><desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc></application></appInfo><appInfo><application ident="RomaJS" version="1.1.2" when="2025-06-22T06:00:07.280Z"><desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc></application></appInfo></encodingDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <head>Jewish Liturgy XML Schema</head>
+      <!-- Project Structure -->
+      <p id="project-structure">
+        <head>Project Structure</head>
+        <p>Each project in the Jewish Liturgy TEI schema must contain a TEI document called <code>index.xml</code> that serves as the main entry point for the project. This file must include:</p>
+        <list>
+          <item><gi>teiHeader</gi> containing:</item>
+          <list>
+            <item>Project metadata in <gi>fileDesc</gi></item>
+            <item>Bibliographic information in <gi>sourceDesc</gi></item>
+          </list>
+          <item><gi>front</gi> for front matter</item>
+          <item><gi>body</gi> for the main content</item>
+          <item><gi>back</gi> for back matter</item>
+        </list>
+        <p>The <gi>index.xml</gi> file serves as the central organizing document for the project, linking to other TEI documents through <gi>ptr</gi> or <gi>ref</gi> elements as needed.</p>
+      </p>
+      
+      <schemaSpec ident="jlptei" start="TEI" prefix="tei_" targetLang="en" docLang="en">
+        
+        <!-- required minimal header elements -->
+        <moduleRef key="header" include="teiHeader fileDesc titleStmt publicationStmt sourceDesc licence availability distributor edition idno"/>
+        
+        <!-- required core elements (p and title for use in titleStmt) -->
+        <moduleRef key="core" include="p title cb choice corr divGen gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi l label lg name publisher pubPlace resp respStmt series"/>
+        
+        <!-- required textstructure elements (TEI, text, and body) -->
+        <moduleRef key="textstructure" include="TEI text body div front back"/>
+        
+        <!-- required module tei instantiates lots of classes used for further expansion of this odd -->
+        <moduleRef key="tei"/>
+        
+        
+      <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/></schemaSpec>
+    </body>
+  </text>
+</TEI>

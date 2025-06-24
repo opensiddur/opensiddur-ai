@@ -1,0 +1,29 @@
+[project]
+name = "opensiddur-ai"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Efraim Feinstein",email = "efraim.feinstein@gmail.com"}
+]
+license = {text = "LGPL 3+"}
+readme = "README.md"
+requires-python = ">=3.13"
+package-mode = false
+
+[tool.poetry]
+name = "opensiddur-ai"
+version = "0.1.0"
+description = ""
+authors = ["Efraim Feinstein <efraim.feinstein@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.13"
+requests = "^2.32.4"
+
+[tool.poetry.group.dev.dependencies]
+poetry = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
