@@ -18,9 +18,10 @@ class TestTransformer(XMLTransformer):
     def __init__(self):
         super().__init__()
         # Register transform functions for test elements
+        # Format: (namespace_uri, tag_name): transform_method
         self._transforms = {
-            'test': self._transform_test,
-            'uppercase': self._transform_uppercase
+            (None, 'test'): self._transform_test,
+            (None, 'uppercase'): self._transform_uppercase
         }
     
     def _transform_test(self, node: etree._Element, parameters: Dict[str, Any]) -> etree._Element:
@@ -35,6 +36,10 @@ class TestTransformer(XMLTransformer):
         if new_node.text:
             new_node.text = new_node.text.upper()
         return new_node
+        
+    def add_namespaced_transform(self, namespace_uri: str, tag: str, transform_func):
+        """Helper to add a namespaced transform."""
+        self._transforms[(namespace_uri, tag)] = transform_func
 
 
 class TextTransformTestTransformer(TestTransformer):
@@ -118,17 +123,23 @@ class TestXMLTransformer(unittest.TestCase):
     
     def test_skip_transform(self):
         """Test that nodes can be skipped by returning None from a transform."""
-        class SkipTransformer(TestTransformer):
+        class SkipTransformer(XMLTransformer):
             def __init__(self):
                 super().__init__()
-                # Override the test transform to sometimes skip
-                self._transforms['test'] = self._conditional_skip
+                # Register transform with explicit None namespace
+                self._transforms = {
+                    (None, 'test'): self._conditional_skip,
+                    (None, 'plain'): self._identity_transform
+                }
             
             def _conditional_skip(self, node: etree._Element, params: Dict[str, Any]) -> Optional[etree._Element]:
                 # Skip if the node has skip="true"
                 if node.get('skip') == 'true':
                     return self._skip_transform(node, params)
-                return self._transform_test(node, params)
+                # Otherwise, transform it with a test transform
+                new_node = self._identity_transform(node, params)
+                new_node.set('transformed', 'true')
+                return new_node
         
         transformer = SkipTransformer()
         
@@ -151,7 +162,7 @@ class TestXMLTransformer(unittest.TestCase):
         self.assertEqual(result[0].text, "keep me")
         self.assertEqual(result[0].get("transformed"), "true")
         
-        # Second child should be the plain node
+        # Second child should be the plain node (identity transform)
         self.assertEqual(result[1].tag, "plain")
         self.assertEqual(result[1].text, "plain text")
     
@@ -160,15 +171,15 @@ class TestXMLTransformer(unittest.TestCase):
         class ParamTransformer(XMLTransformer):
             def __init__(self):
                 super().__init__()
+                # Register transform with explicit None namespace
                 self._transforms = {
-                    'param': self._transform_with_param
+                    (None, 'param'): self._transform_with_param
                 }
             
             def _transform_with_param(self, node: etree._Element, params: Dict[str, Any]) -> etree._Element:
                 new_node = self._identity_transform(node, params)
-                if 'prefix' in params:
-                    if new_node.text:
-                        new_node.text = f"{params['prefix']}{new_node.text}"
+                if 'prefix' in params and new_node.text is not None:
+                    new_node.text = f"{params['prefix']}{new_node.text}"
                 return new_node
         
         transformer = ParamTransformer()
@@ -282,6 +293,51 @@ class TestXMLTransformer(unittest.TestCase):
         
         self.assertIsNone(result.text)
         self.assertIsNone(result.tail)
+        
+    def test_namespace_aware_transforms(self):
+        """Test that transforms work with namespaced elements."""
+        class NamespaceTestTransformer(TestTransformer):
+            NAMESPACE = "http://example.com/ns"
+            
+            def __init__(self):
+                super().__init__()
+                # Clear default transforms that expect None namespace
+                self._transforms = {}
+                # Register transforms with explicit namespaces
+                self._transforms[(None, 'test')] = self._transform_test
+                self._transforms[(self.NAMESPACE, 'special')] = self._transform_special
+            
+            def _transform_special(self, node: etree._Element, parameters: Dict[str, Any]) -> etree._Element:
+                new_node = self._identity_transform(node, parameters)
+                new_node.set('special', 'true')
+                return new_node
+        
+        # Register a namespace prefix for testing
+        NSMAP = {'ex': NamespaceTestTransformer.NAMESPACE}
+        
+        # Create test XML with namespaced and non-namespaced elements
+        root = etree.Element("root", nsmap=NSMAP)
+        etree.SubElement(root, "test").text = "regular test"
+        etree.SubElement(root, f"{{{NSMAP['ex']}}}special").text = "namespaced special"
+        
+        transformer = NamespaceTestTransformer()
+        result = transformer.transform_node(root, {})
+        
+        # Check the non-namespaced transform was applied
+        self.assertEqual(result[0].tag, "test")
+        self.assertEqual(result[0].get("transformed"), "true")
+        
+        # Check the namespaced transform was applied
+        self.assertTrue(result[1].tag.endswith("special"))  # Full tag includes namespace
+        self.assertEqual(result[1].get("special"), "true")
+        self.assertNotIn("transformed", result[1].attrib)  # Shouldn't have the test transform
+        
+        # Verify that a non-registered namespaced element gets the identity transform
+        etree.SubElement(root, f"{{{NSMAP['ex']}}}other").text = "other element"
+        result = transformer.transform_node(root, {})
+        self.assertEqual(len(result), 3)
+        self.assertTrue(result[2].tag.endswith("other"))
+        self.assertNotIn("transformed", result[2].attrib)  # No transform applied
 
 
 if __name__ == '__main__':

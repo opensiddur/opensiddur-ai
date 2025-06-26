@@ -16,8 +16,9 @@ class XMLTransformer:
     def __init__(self):
         """Initialize the XML transformer with a default parser configuration."""
         self.parser = etree.XMLParser(remove_blank_text=True)
-        # Dictionary mapping element names to transform functions
-        # Format: {'element_name': transform_function}
+        # Dictionary mapping (namespace, tag) tuples to transform functions
+        # Format: {(namespace_uri, tag_name): transform_function}
+        # Use (None, tag_name) for elements without a namespace
         self._transforms = {}
     
     def transform_node(self, node: etree._Element, parameters: Dict[str, Any] = None) -> Optional[etree._Element]:
@@ -33,9 +34,18 @@ class XMLTransformer:
         """
         parameters = parameters or {}
             
-        # Look for a transform function for this element
-        transform_func = self._transforms.get(node.tag, self._identity_transform)
+        # Get the namespace URI for the node's tag
+        if '}' in node.tag:
+            # Tag has a namespace (format: {namespace}tag)
+            namespace_uri, tag_name = node.tag[1:].split('}', 1)
+        else:
+            # No namespace
+            namespace_uri = None
+            tag_name = node.tag
         
+        # Find a transform with the exact namespace and tag name
+        transform_func = self._transforms.get((namespace_uri, tag_name), self._identity_transform)
+            
         # Call the transform function with the node and parameters
         result = transform_func(node, parameters)
             
