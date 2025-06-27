@@ -65,10 +65,10 @@
       <schemaSpec ident="jlptei" start="TEI" prefix="tei_" targetLang="en" docLang="en">
         
         <!-- required minimal header elements -->
-        <moduleRef key="header" include="teiHeader fileDesc titleStmt publicationStmt sourceDesc licence availability distributor edition idno"/>
+        <moduleRef key="header" include="teiHeader fileDesc titleStmt publicationStmt sourceDesc licence availability distributor edition editionStmt idno"/>
         
         <!-- required core elements (p and title for use in titleStmt) -->
-        <moduleRef key="core" include="p title cb choice corr divGen gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi l label lg name publisher pubPlace resp respStmt series"/>
+        <moduleRef key="core" include="p title cb choice corr date divGen gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi l label lg name publisher pubPlace resp respStmt series"/>
         
         <!-- required textstructure elements (TEI, text, and body) -->
         <moduleRef key="textstructure" include="TEI text body div front back"/>
@@ -77,7 +77,35 @@
         <moduleRef key="tei"/>
         
         
-      <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/></schemaSpec>
+      <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/>
+      
+      <!-- Custom element specifications -->
+      <elementSpec ident="standOff" module="linking" mode="change">
+        <attList>
+          <attDef ident="type" mode="replace">
+            <valList type="closed">
+              <valItem ident="notes"/>
+              <valItem ident="settings"/>
+              <valItem ident="conditions"/>
+            </valList>
+          </attDef>
+        </attList>
+      </elementSpec>
+      
+      <elementSpec ident="title" module="core" mode="change">
+        <attList>
+          <attDef ident="type" mode="replace">
+            <valList type="closed">
+              <valItem ident="main"/>
+              <valItem ident="sub"/>
+              <valItem ident="alt"/>
+              <valItem ident="alt-sub"/>
+            </valList>
+          </attDef>
+        </attList>
+      </elementSpec>
+      
+    </schemaSpec>
     </body>
   </text>
 </TEI>

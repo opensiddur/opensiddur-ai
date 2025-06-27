@@ -15,12 +15,16 @@ name = "opensiddur-ai"
 version = "0.1.0"
 description = ""
 authors = ["Efraim Feinstein <efraim.feinstein@gmail.com>"]
+packages = [
+    { include = "opensiddur" }
+]
 package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.13"
 requests = "^2.32.4"
 lxml = "^5.4.0"
+saxonche = "^12.7.0"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.0.0"

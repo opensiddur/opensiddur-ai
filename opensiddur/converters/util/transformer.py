@@ -34,17 +34,11 @@ class XMLTransformer:
         """
         parameters = parameters or {}
             
-        # Get the namespace URI for the node's tag
-        if '}' in node.tag:
-            # Tag has a namespace (format: {namespace}tag)
-            namespace_uri, tag_name = node.tag[1:].split('}', 1)
-        else:
-            # No namespace
-            namespace_uri = None
-            tag_name = node.tag
+        # Get the namespace and tag name for the node
+        namespace_uri = node.nsmap.get(node.prefix) if node.prefix else None
         
-        # Find a transform with the exact namespace and tag name
-        transform_func = self._transforms.get((namespace_uri, tag_name), self._identity_transform)
+        # First try to find a transform with the full namespace
+        transform_func = self._transforms.get((namespace_uri, etree.QName(node).localname), self._identity_transform)
             
         # Call the transform function with the node and parameters
         result = transform_func(node, parameters)
@@ -52,17 +46,62 @@ class XMLTransformer:
         return result
     
     def _skip_transform(self, node: etree._Element, parameters: Dict[str, Any]) -> None:
-        """
-        Skip this node by returning None. This will cause the node to be excluded from the output.
+        """Skip this node and all its children from the output.
         
         Args:
-            node: The node to skip (unused)
+            node: The node to skip
             parameters: Dictionary of parameters (unused)
             
         Returns:
-            None to indicate the node should be skipped
+            None to indicate this node should be skipped
         """
         return None
+        
+    def _bypass_transform(self, node: etree._Element, parameters: Dict[str, Any]) -> Optional[etree._Element]:
+        """Process children without creating a parent node.
+        
+        This transform processes all children, text, and tails of the node but doesn't create
+        a new parent element. It's useful for "unwrapping" an element while still processing its contents.
+        
+        Note: When used on a root element, this will only return the first child. For handling
+        multiple root-level elements, consider using a parent element.
+        
+        Args:
+            node: The node whose children should be processed
+            parameters: Dictionary of parameters to pass to child transforms
+            
+        Returns:
+            The first transformed child element, or None if there are no children
+        """
+        # Process text content
+        transformed_text = self._transform_text(node.text, parameters) if node.text else None
+        
+        # Process all children
+        children = []
+        for child in node:
+            transformed_child = self.transform_node(child, parameters)
+            if transformed_child is not None:
+                # Process the child's tail text
+                if child.tail is not None:
+                    transformed_tail = self._transform_text(child.tail, parameters)
+                    if transformed_tail is not None:
+                        transformed_child.tail = transformed_tail
+                children.append(transformed_child)
+        
+        # If there's only text, return None (can't represent just text without a parent)
+        if not children:
+            return None
+            
+        # If there's text before the first child, add it to the first child's text
+        if transformed_text is not None and children:
+            if children[0].text:
+                children[0].text = transformed_text.strip() + ' ' + children[0].text
+            else:
+                children[0].text = transformed_text.strip()
+        
+        # Just return the first child - let the parent handle multiple children
+        # This avoids issues with root elements not being able to have siblings
+        return children[0]
     
     def _transform_text(self, text: Optional[str], parameters: Dict[str, Any]) -> Optional[str]:
         """
