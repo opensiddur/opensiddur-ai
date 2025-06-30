@@ -76,10 +76,47 @@
         <!-- required module tei instantiates lots of classes used for further expansion of this odd -->
         <moduleRef key="tei"/>
         
+        <!-- Custom jlptei module -->
+        <moduleSpec ident="jlptei">
+          <desc>Custom elements for the Open Siddur Jewish Liturgy Project TEI schema</desc>
+        </moduleSpec>
         
-      <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/>
+        <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/>
       
       <!-- Custom element specifications -->
+      <elementSpec ident="transclude" ns="http://jewishliturgy.org/ns/jlptei/2" module="jlptei" mode="add">
+        <desc>An element that includes content from another part of the document.</desc>
+        <classes>
+          <memberOf key="model.phrase"/>
+          <memberOf key="model.global"/>
+        </classes>
+        <attList>
+          <attDef ident="target" usage="req" mode="add">
+            <datatype>
+              <dataRef key="teidata.pointer"/>
+            </datatype>
+            <desc>Specifies the path of the target to be included.</desc>
+          </attDef>
+          <attDef ident="targetEnd" usage="rec" mode="add">
+            <datatype>
+              <dataRef key="teidata.pointer"/>
+            </datatype>
+            <desc>Specifies where the transclusion should end (inclusive). If not provided, anything enclosed by target will be transcluded.</desc>
+          </attDef>
+          <attDef ident="type" usage="req" mode="add">
+            <desc>Specifies the type of transclusion to perform.</desc>
+            <valList type="closed">
+              <valItem ident="external">
+                <desc>Include both XML hierarchy and text content.</desc>
+              </valItem>
+              <valItem ident="inline">
+                <desc>Include only text content, without XML hierarchy.</desc>
+              </valItem>
+            </valList>
+          </attDef>
+        </attList>
+      </elementSpec>
+      
       <elementSpec ident="standOff" module="linking" mode="change">
         <attList>
           <attDef ident="type" mode="replace">

@@ -4,6 +4,7 @@
     version="3.0"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
     xmlns=""
     exclude-result-prefixes="xs">
     
@@ -27,7 +28,15 @@
     <!-- root transform -->
     <xsl:template match="Tanach">
         <tei:TEI>
-            <xsl:apply-templates/>
+            <xsl:apply-templates select="teiHeader"/>
+            <tei:text>
+                <tei:body>
+                    <tei:div xml:base="urn:cts:opensiddur:bible.tanakh.wlc">
+                        <xsl:apply-templates select="doc('sources/wlc/Books/TanachIndex.xml')//book"/>
+                    </tei:div>
+                </tei:body>
+            </tei:text>
+            <xsl:apply-templates select="notes"/>
         </tei:TEI>
     </xsl:template>
 
@@ -96,6 +105,7 @@
             <tei:distributor>
                 <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
             </tei:distributor>
+            <tei:idno type="CTS">urn:cts:opensiddur:bible.tanakh.wlc</tei:idno>
             <tei:availability status="free">
                 <tei:licence target="http://www.creativecommons.org/publicdomain/zero/1.0/">Creative Commons Zero Public Domain Declaration (CC0)</tei:licence>
             </tei:availability>
@@ -137,9 +147,18 @@
         <xsl:variable name="note-id" select="code/text()"/>
         <tei:note>
             <xsl:attribute name="xml:id" select="concat('note_', $note-id)"/>
-            <xsl:attribute name="n" select="concat('urn:cts:bible:wlc.notes.', $note-id)"/>
+            <xsl:attribute name="xml:base" select="concat('urn:cite:opensiddur:bible.tanakh.notes.wlc.', $note-id)"/>
             <!-- note has a child called note. Don't ask... -->
             <xsl:apply-templates select="note/node()"/>
         </tei:note>
+    </xsl:template>
+
+    <!-- inclusions of book files -->
+    <xsl:template match="book">
+        <xsl:variable name="book-name" select="lower-case(replace(names/name/text(), ' ', '_'))"/>
+        <j:transclude type="external">
+            <xsl:attribute name="target" select="concat('urn:cts:opensiddur:bible.tanakh.', $book-name, '.wlc')"/>
+        </j:transclude>
+
     </xsl:template>
 </xsl:stylesheet>
