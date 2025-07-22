@@ -8,6 +8,8 @@
     xmlns=""
     exclude-result-prefixes="xs">
     
+    <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
+    
     <xsl:mode on-no-match="shallow-copy"/>
     
     <!-- Identity transform: copies all nodes and attributes by default -->
@@ -31,7 +33,7 @@
             <xsl:apply-templates select="teiHeader"/>
             <tei:text>
                 <tei:body>
-                    <tei:div xml:base="urn:cts:opensiddur:bible.tanakh.wlc">
+                    <tei:div corresp="urn:cts:opensiddur:bible.tanakh.wlc">
                         <xsl:apply-templates select="doc('sources/wlc/Books/TanachIndex.xml')//book"/>
                     </tei:div>
                 </tei:body>
@@ -41,7 +43,7 @@
     </xsl:template>
 
     <!-- add TEI namespace to blank-namespace TEI elements -->
-    <xsl:template match="titleStmt|title|editor|edition|sourceDesc|publisher|pubPlace|date|idno">
+    <xsl:template match="titleStmt|title|editor|edition|publisher|pubPlace|date|idno">
         <xsl:element name="tei:{local-name()}">
             <xsl:apply-templates select="@*|node()"/>
         </xsl:element>
@@ -147,7 +149,7 @@
         <xsl:variable name="note-id" select="code/text()"/>
         <tei:note>
             <xsl:attribute name="xml:id" select="concat('note_', $note-id)"/>
-            <xsl:attribute name="xml:base" select="concat('urn:cite:opensiddur:bible.tanakh.notes.wlc.', $note-id)"/>
+            <xsl:attribute name="corresp" select="concat('urn:cite:opensiddur:bible.tanakh.notes.wlc.', $note-id)"/>
             <!-- note has a child called note. Don't ask... -->
             <xsl:apply-templates select="note/node()"/>
         </tei:note>

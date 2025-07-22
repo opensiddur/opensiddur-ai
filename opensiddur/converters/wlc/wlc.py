@@ -93,7 +93,8 @@ def make_project_directory():
 def get_source_directory() -> Path:
     return Path(__file__).parent.parent.parent.parent / "sources/wlc"
 
-def index(project_directory: Path, source_directory: Path):
+def xslt_transform(project_directory: Path, source_directory: Path, 
+source_file: str, output_file: str, xslt_file: str):
     """ 
     Create the index.xml file with TEI header from TanachHeader.xml
     
@@ -102,15 +103,12 @@ def index(project_directory: Path, source_directory: Path):
         source_directory: Path to the source directory containing Books/TanachHeader.xml
     """
     try:
-        # Initialize the transformer
-        transformer = WLCIndexTransformer()
-        
         # Define input and output paths
-        input_file = source_directory / "Books" / "TanachHeader.xml"
-        output_file = project_directory / "index.xml"
+        input_file = source_directory / "Books" / source_file
+        output_file = project_directory / output_file
         
         # Get the directory containing the XSLT file
-        xslt_file = Path(__file__).parent / 'transform_index.xslt'
+        xslt_file = Path(__file__).parent / xslt_file
         
         # Read the input XML
         with open(input_file, 'r', encoding='utf-8') as f:
@@ -148,7 +146,12 @@ def index(project_directory: Path, source_directory: Path):
 def main():
     project_directory = make_project_directory()
     source_directory = get_source_directory()
-    index(project_directory, source_directory)
+    xslt_transform(project_directory, source_directory, "TanachHeader.xml", "index.xml", "transform_index.xslt")
+    for book in os.listdir(source_directory / "Books"):
+        if book not in ["TanachHeader.xml", "TanachIndex.xml"] and not book.endswith(".DH.xml"):
+            print(f"Transforming {book}")
+            xslt_transform(project_directory, source_directory, book, 
+                book.lower(), "transform_book.xslt")
     return 0
 
 if __name__ == "__main__":
