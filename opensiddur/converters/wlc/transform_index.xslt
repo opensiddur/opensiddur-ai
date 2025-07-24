@@ -34,7 +34,7 @@
             <tei:text>
                 <tei:body>
                     <tei:div corresp="urn:cts:opensiddur:bible.tanakh.wlc">
-                        <xsl:apply-templates select="doc('sources/wlc/Books/TanachIndex.xml')//book"/>
+                        <xsl:apply-templates select="doc('../../../sources/wlc/Books/TanachIndex.xml')//book"/>
                     </tei:div>
                 </tei:body>
             </tei:text>

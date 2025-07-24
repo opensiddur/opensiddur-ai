@@ -103,8 +103,8 @@
 
     <xsl:template match="book">
         <tei:div type="book">
-            <xsl:attribute name="xml:base" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc')"/>
-            <xsl:attribute name="n" select="names/name/text()"/>
+            <xsl:attribute name="corresp" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc')"/>
+            <xsl:attribute name="n" select="lower-case(names/name/text())"/>
             <xsl:apply-templates select="names"/>
             <xsl:variable name="processed" as="node()*">
                 <xsl:apply-templates select="c"/>
@@ -130,7 +130,7 @@
 
     <xsl:template match="c">
         <tei:milestone unit="chapter">
-            <xsl:attribute name="xml:base" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc:', @n)"/>
+            <xsl:attribute name="corresp" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc:', @n)"/>
             <xsl:copy-of select="@n"/>
         </tei:milestone>
         <xsl:apply-templates/>
@@ -139,7 +139,7 @@
     <xsl:template match="v">
         <xsl:variable name="chapter" select="parent::c/@n"/>
         <tei:milestone unit="verse">
-            <xsl:attribute name="xml:base" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc:', $chapter, '.', @n)"/>
+            <xsl:attribute name="corresp" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc:', $chapter, '.', @n)"/>
             <xsl:copy-of select="@n"/>
         </tei:milestone>
         <xsl:apply-templates select="node() except (pe, samekh)[last()]"/>
@@ -170,12 +170,24 @@
     </xsl:template>
     <xsl:template match="samekh[preceding-sibling::*[1]/self::samekh]"/>
 
-    <xsl:template match="k">
+    <xsl:template match="k[following-sibling::*[1]/self::q]">
+        <tei:choice>
+            <j:written>
+                <xsl:apply-templates/>
+            </j:written>
+            <j:read>
+                <xsl:apply-templates select="following-sibling::*[1]/node()"/>
+            </j:read>
+        </tei:choice>
+    </xsl:template>
+    <xsl:template match="q[preceding-sibling::*[1]/self::k]"/>
+
+    <xsl:template match="k[not(following-sibling::*[1]/self::q)]">
         <j:written>
             <xsl:apply-templates/>
         </j:written>
     </xsl:template>
-    <xsl:template match="q">
+    <xsl:template match="q[not(preceding-sibling::*[1]/self::k)]">
         <j:read>
             <xsl:apply-templates/>
         </j:read>
@@ -187,7 +199,7 @@
         <xsl:variable name="verse" select="ancestor::v/@n"/>
         <xsl:variable name="note-num" select="count(preceding::x[ancestor::v[1] = current()/ancestor::v[1]]) + 1"/>
         <tei:anchor>
-            <xsl:attribute name="xml:id" select="concat('note-ref-', $book, '-', $chapter, '-', $verse, '-', $note-num)"/>
+            <xsl:attribute name="xml:id" select="concat('note-ref-', replace($book, ' ', '_'), '-', $chapter, '-', $verse, '-', $note-num)"/>
         </tei:anchor>
     </xsl:template>
 
@@ -197,7 +209,7 @@
         <xsl:variable name="verse" select="ancestor::v/@n"/>
         <xsl:variable name="note-id" select="text()"/>
         <xsl:variable name="note-num" select="count(preceding::x[ancestor::v[1] = current()/ancestor::v[1]]) + 1"/>
-        <tei:link type="note" target="note-ref-{$book}-{$chapter}-{$verse}-{$note-num} urn:cite:opensiddur:bible.tanakh.notes.wlc.{$note-id}" />
+        <tei:link type="note" target="note-ref-{replace($book, ' ', '_')}-{$chapter}-{$verse}-{$note-num} urn:cite:opensiddur:bible.tanakh.notes.wlc.{$note-id}" />
     </xsl:template>
 
     <xsl:template match="s">

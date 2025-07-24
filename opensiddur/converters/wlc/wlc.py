@@ -6,6 +6,7 @@ from lxml import etree
 
 # Import the XMLTransformer from its new location
 from opensiddur.converters.util.transformer import XMLTransformer
+from opensiddur.converters.util.validation import validate
 
 # Define TEI namespace with 'tei' prefix
 TEI_NS = "http://www.tei-c.org/ns/1.0"
@@ -146,12 +147,20 @@ source_file: str, output_file: str, xslt_file: str):
 def main():
     project_directory = make_project_directory()
     source_directory = get_source_directory()
+    
     xslt_transform(project_directory, source_directory, "TanachHeader.xml", "index.xml", "transform_index.xslt")
     for book in os.listdir(source_directory / "Books"):
         if book not in ["TanachHeader.xml", "TanachIndex.xml"] and not book.endswith(".DH.xml"):
             print(f"Transforming {book}")
             xslt_transform(project_directory, source_directory, book, 
                 book.lower(), "transform_book.xslt")
+
+    for book in os.listdir(project_directory):
+        if book.endswith(".xml"):
+            print(f"Validating {book}")
+            is_valid, errors = validate(project_directory / book)
+            if not is_valid:
+                print(f"Errors in {book}: {errors}")
     return 0
 
 if __name__ == "__main__":

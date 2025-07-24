@@ -129,6 +129,17 @@
         </attList>
       </elementSpec>
       
+      <elementSpec ident="p" module="core" mode="change">
+        <attList>
+          <attDef ident="type" mode="add">
+            <desc>Characterizes the element in some sense, using any convenient classification scheme or typology.</desc>
+            <datatype>
+              <dataRef key="teidata.enumerated"/>
+            </datatype>
+          </attDef>
+        </attList>
+      </elementSpec>
+      
       <elementSpec ident="title" module="core" mode="change">
         <attList>
           <attDef ident="type" mode="replace">
@@ -140,6 +151,35 @@
             </valList>
           </attDef>
         </attList>
+      </elementSpec>
+      
+      <!-- Elements for representing kri/ktiv (read/written) pairs in Hebrew text -->
+      <elementSpec ident="read" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+        <desc>Contains the text as it is read (kri) when it differs from the written form (ktiv).
+          Used in Hebrew text to represent the traditional pronunciation of words that are written differently in the text.
+          Typically appears within a &lt;choice&gt; element alongside a &lt;written&gt; element.</desc>
+        <classes>
+          <memberOf key="model.choicePart"/>
+          <memberOf key="model.phrase"/>
+          <memberOf key="model.global"/>
+        </classes>
+        <content>
+ <macroRef key="macro.paraContent"/>
+</content>
+      </elementSpec>
+      
+      <elementSpec ident="written" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+        <desc>Contains the text as it is written (ktiv) when it differs from the read form (kri).
+          Used in Hebrew text to represent the written form of words that are pronounced differently.
+          Typically appears within a &lt;choice&gt; element alongside a &lt;read&gt; element.</desc>
+        <classes>
+          <memberOf key="model.choicePart"/>
+          <memberOf key="model.phrase"/>
+          <memberOf key="model.global"/>
+        </classes>
+        <content>
+          <macroRef key="macro.paraContent"/>
+        </content>  
       </elementSpec>
       
     </schemaSpec>

@@ -1,3 +1,5 @@
 __pycache__/
 sources/
-projects/
+project/
+schema/*.relaxng
+schema/*.rnc
