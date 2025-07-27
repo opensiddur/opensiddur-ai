@@ -61,7 +61,50 @@
         </list>
         <p>The <gi>index.xml</gi> file serves as the central organizing document for the project, linking to other TEI documents through <gi>ptr</gi> or <gi>ref</gi> elements as needed.</p>
       </p>
+
+      <!-- Biblical Texts -->
+      <p id="biblical-texts">
+        <head>Biblical Texts</head>
+        <p>Biblical texts in this schema follow these structural and markup conventions:</p>
+        
+        <p><hi>Paragraph Structure:</hi>
+          <list>
+            <item>The primary structural unit is the paragraph (<gi>tei:p</gi>)</item>
+            <item>Paragraphs are typed using the <att>type</att> attribute with values:
+              <list>
+                <item><val>open-N</val>: Paragraph starts with N open parashah markers (פתוחות)</item>
+                <item><val>closed-N</val>: Paragraph starts with N closed parashah markers (סתומות)</item>
+                <item>Where N is a number indicating the quantity of markers</item>
+              </list>
+            </item>
+          </list>
+        </p>
+
+        <p><hi>Division Markers:</hi>
+          <list>
+            <item>Chapters are marked with <gi>milestone</gi> element with <att>unit</att>="chapter" and <att>n</att> indicating the chapter number</item>
+            <item>Verses are marked with <gi>milestone</gi> element with <att>unit</att>="verse" and <att>n</att> indicating the verse number</item>
+          </list>
+        </p>
+
+        <p><hi>Kri/Ktiv Handling:</hi>
+          <list>
+            <item>When both Kri (read) and Ktiv (written) forms exist, they are marked up as:
+              <code>&lt;choice&gt;
+  &lt;j:read&gt;...&lt;/j:read&gt;
+  &lt;j:written&gt;...&lt;/j:written&gt;
+&lt;/choice&gt;</code>
+            </item>
+            <item>When only Kri or only Ktiv form exists, the <gi>choice</gi> element is optional</li>
+            <item>Kri text is always wrapped in <gi>j:read</gi></item>
+            <li>Ktiv text is always wrapped in <gi>j:written</gi></li>
+          </list>
+        </p>
+      </p>
       
+      <div id="biblical-texts">
+        <head>Biblical Texts</head>
+      </div>
       <schemaSpec ident="jlptei" start="TEI" prefix="tei_" targetLang="en" docLang="en">
         
         <!-- required minimal header elements -->

@@ -209,7 +209,7 @@
         <xsl:variable name="verse" select="ancestor::v/@n"/>
         <xsl:variable name="note-id" select="text()"/>
         <xsl:variable name="note-num" select="count(preceding::x[ancestor::v[1] = current()/ancestor::v[1]]) + 1"/>
-        <tei:link type="note" target="note-ref-{replace($book, ' ', '_')}-{$chapter}-{$verse}-{$note-num} urn:cite:opensiddur:bible.tanakh.notes.wlc.{$note-id}" />
+        <tei:link type="note" target="#note-ref-{replace($book, ' ', '_')}-{$chapter}-{$verse}-{$note-num} urn:cite:opensiddur:bible.tanakh.notes.wlc.{$note-id}" />
     </xsl:template>
 
     <xsl:template match="s">
