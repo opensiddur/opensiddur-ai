@@ -25,6 +25,7 @@ python = "^3.13"
 requests = "^2.32.4"
 lxml = "^5.4.0"
 saxonche = "^12.7.0"
+mwparserfromhell = "^0.7.2"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.0.0"
