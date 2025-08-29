@@ -12,5 +12,8 @@
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestArgs": [
         "tests"
+    ],
+    "cursorpyright.analysis.extraPaths": [
+        "${workspaceFolder}"
     ]
 }

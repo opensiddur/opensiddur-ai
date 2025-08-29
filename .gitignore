@@ -3,3 +3,4 @@ sources/
 project/
 schema/*.relaxng
 schema/*.rnc
+private/

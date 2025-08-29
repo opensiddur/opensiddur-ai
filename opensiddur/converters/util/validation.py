@@ -3,12 +3,12 @@ from lxml import etree
 from typing import Tuple, List, Optional
 import argparse
 
-def validate(xml_file: Path, schema_file: Optional[Path] = None) -> Tuple[bool, List[str]]:
+def validate(xml: Path | str, schema_file: Optional[Path] = None) -> Tuple[bool, List[str]]:
     """
     Validate an XML file against a RelaxNG schema.
     
     Args:
-        xml_file: Path to the XML file to validate
+        xml_file: Path to the XML file to validate or XML content as a string
         schema_file: Optional path to the RelaxNG schema file. If not provided,
             will use the default schema at schema/jlptei.odd.xml.relaxng
                    
@@ -19,7 +19,10 @@ def validate(xml_file: Path, schema_file: Optional[Path] = None) -> Tuple[bool, 
     """
     try:
         # Load and parse the XML file
-        xml_doc = etree.parse(str(xml_file))
+        if isinstance(xml, str):
+            xml_doc = etree.fromstring(xml)
+        else:
+            xml_doc = etree.parse(str(xml))
         
         # Determine the schema file to use
         if schema_file is None:

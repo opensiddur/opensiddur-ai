@@ -95,9 +95,9 @@
   &lt;j:written&gt;...&lt;/j:written&gt;
 &lt;/choice&gt;</code>
             </item>
-            <item>When only Kri or only Ktiv form exists, the <gi>choice</gi> element is optional</li>
+            <item>When only Kri or only Ktiv form exists, the <gi>choice</gi> element is optional</item>
             <item>Kri text is always wrapped in <gi>j:read</gi></item>
-            <li>Ktiv text is always wrapped in <gi>j:written</gi></li>
+            <item>Ktiv text is always wrapped in <gi>j:written</gi></item>
           </list>
         </p>
       </p>
@@ -119,6 +119,10 @@
         <!-- required module tei instantiates lots of classes used for further expansion of this odd -->
         <moduleRef key="tei"/>
         
+        <!-- feature structures for settings -->
+        <moduleRef key="iso-fs" include="fs f binary default numeric string symbol"/>
+        
+
         <!-- Custom jlptei module -->
         <moduleSpec ident="jlptei">
           <desc>Custom elements for the Open Siddur Jewish Liturgy Project TEI schema</desc>
@@ -225,6 +229,16 @@
         </content>  
       </elementSpec>
       
+      <elementSpec ident="undefined" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+        <desc>Feature value for features whose values have not been explicitly set.</desc>
+        <classes>
+          <memberOf key="model.featureVal.single"/>
+        </classes>
+        <content>
+          <empty/>
+        </content>  
+      </elementSpec>
+
     </schemaSpec>
     </body>
   </text>
