@@ -33,7 +33,7 @@
             <xsl:apply-templates select="teiHeader"/>
             <tei:text>
                 <tei:body>
-                    <tei:div corresp="urn:cts:opensiddur:bible.tanakh.wlc">
+                    <tei:div corresp="urn:x-opensiddur:text:bible:tanakh">
                         <xsl:apply-templates select="doc('../../../sources/wlc/Books/TanachIndex.xml')//book"/>
                     </tei:div>
                 </tei:body>
@@ -107,7 +107,7 @@
             <tei:distributor>
                 <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
             </tei:distributor>
-            <tei:idno type="CTS">urn:cts:opensiddur:bible.tanakh.wlc</tei:idno>
+            <tei:idno type="urn">urn:x-opensiddur:text:bible:tanakh@wlc</tei:idno>
             <tei:availability status="free">
                 <tei:licence target="http://www.creativecommons.org/publicdomain/zero/1.0/">Creative Commons Zero Public Domain Declaration (CC0)</tei:licence>
             </tei:availability>
@@ -159,7 +159,7 @@
     <xsl:template match="book">
         <xsl:variable name="book-name" select="lower-case(replace(names/name/text(), ' ', '_'))"/>
         <j:transclude type="external">
-            <xsl:attribute name="target" select="concat('urn:cts:opensiddur:bible.tanakh.', $book-name, '.wlc')"/>
+            <xsl:attribute name="target" select="concat('urn:x-opensiddur:bible:', $book-name)"/>
         </j:transclude>
 
     </xsl:template>

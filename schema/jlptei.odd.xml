@@ -120,7 +120,7 @@
         <moduleRef key="tei"/>
         
         <!-- feature structures for settings -->
-        <moduleRef key="iso-fs" include="fs f binary default numeric string symbol"/>
+        <moduleRef key="iso-fs" include="fs f binary default numeric string symbol vAlt vNot"/>
         
 
         <!-- Custom jlptei module -->
@@ -229,15 +229,193 @@
         </content>  
       </elementSpec>
       
-      <elementSpec ident="undefined" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
-        <desc>Feature value for features whose values have not been explicitly set.</desc>
-        <classes>
-          <memberOf key="model.featureVal.single"/>
-        </classes>
-        <content>
-          <empty/>
-        </content>  
-      </elementSpec>
+    <elementSpec ident="declare" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Associates a set of conditional attribute declarations with a range of text. 
+        Used to specify that the following content is to be processed with the given declarations in effect, until the corresponding 
+        <gi>endDeclare</gi> element or the end of the text. Contains one or more feature structures representing the declarations.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <oneOrMore>
+          <elementRef key="model.featureVal.complex"/>
+        </oneOrMore>
+      </content>
+    </elementSpec>
+
+    <elementSpec ident="endDeclare" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Marks the end of the scope of a set of conditional attribute declarations previously established by a <gi>set</gi> element.
+        The <gi>endDeclare</gi> element must have a required <att>target</att> attribute, which points to the <att>xml:id</att> of the corresponding <gi>set</gi> element in the same file.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+        <memberOf key="att.pointing"/>
+      </classes>
+      <attList>
+        <attDef ident="target" usage="req">
+          <desc>
+            Points to the xml:id of the <gi>declare</gi> element whose settings declarations are being ended. The value must be a URI reference (typically a fragment identifier, e.g., "#setting1") that refers to a <gi>declare</gi> element in the same file.
+          </desc>
+          <datatype>
+            <dataRef key="data.pointer"/>
+          </datatype>
+        </attDef>
+      </attList>
+      <content>
+        <empty/>
+      </content>
+      <constraintSpec ident="endDeclare-target-constraints" scheme="schematron">
+        <desc>
+          Schematron rules to ensure that the target attribute of <gi>undeclare</gi> points to a <gi>declare</gi> element in the same file.
+        </desc>
+        <rule context="j:declare">
+          <assert test="@xml:id">
+            Every <gi>declare</gi> element must have an xml:id attribute.
+          </assert>
+        </rule>
+        <rule context="j:endDeclare">
+          <assert test="@target">
+            The <gi>endDeclare</gi> element must have a target attribute.
+          </assert>
+          <assert test="starts-with(@target, '#')">
+            The target attribute must be a fragment identifier (start with '#').
+          </assert>
+          <assert test="key('id', substring(@target, 2))[local-name()='declare' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
+            The target attribute must point to a <gi>declare</gi> element in the same file.
+          </assert>
+          <assert test="preceding::*[@xml:id = substring(@target, 2) and local-name()='declare' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
+            The targeted <gi>declare</gi> element must precede the <gi>endDeclare</gi> element in document order.
+          </assert>
+        </rule>
+        <let name="id" value="substring(@target, 2)"/>
+        <key name="id" match="*[@xml:id]" use="@xml:id"/>
+      </constraintSpec>
+    </elementSpec>
+
+    <elementSpec ident="conditional" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Declares a conditional scope for settings or features. The <gi>conditional</gi> element may contain a single <gi>tei:note</gi> (for documentation or explanation), followed by one or more feature value structures (members of <classRef key="model.featureVal.complex"/>).
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <sequence>
+          <optional>
+            <elementRef key="note" ns="http://www.tei-c.org/ns/1.0"/>
+          </optional>
+          <oneOrMore>
+            <classRef key="model.featureVal.complex"/>
+          </oneOrMore>
+        </sequence>
+      </content>
+    </elementSpec>
+
+    <elementSpec ident="endConditional" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Marks the end of the scope of a <gi>conditional</gi> element. The <gi>endConditional</gi> element must have a required <att>target</att> attribute, which points to the <att>xml:id</att> of the corresponding <gi>conditional</gi> element in the same file.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+        <memberOf key="att.pointing"/>
+      </classes>
+      <attList>
+        <attDef ident="target" usage="req">
+          <desc>
+            Points to the xml:id of the <gi>conditional</gi> element whose scope is being ended. The value must be a URI reference (typically a fragment identifier, e.g., "#cond1") that refers to a <gi>conditional</gi> element in the same file.
+          </desc>
+          <datatype>
+            <dataRef key="data.pointer"/>
+          </datatype>
+        </attDef>
+      </attList>
+      <content>
+        <empty/>
+      </content>
+      <constraintSpec ident="endConditional-target-constraints" scheme="schematron">
+        <desc>
+          Schematron rules to ensure that the target attribute of <gi>endConditional</gi> points to a <gi>conditional</gi> element in the same file and that the referenced element precedes the <gi>endConditional</gi> element.
+        </desc>
+        <rule context="j:endConditional">
+          <assert test="@target">
+            The <gi>endConditional</gi> element must have a target attribute.
+          </assert>
+          <assert test="starts-with(@target, '#')">
+            The target attribute must be a fragment identifier (start with '#').
+          </assert>
+          <assert test="key('id', substring(@target, 2))[local-name()='conditional' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
+            The target attribute must point to a <gi>conditional</gi> element in the same file.
+          </assert>
+          <assert test="preceding::*[@xml:id = substring(@target, 2) and local-name()='conditional' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
+            The referenced <gi>conditional</gi> element must precede the <gi>endConditional</gi> element.
+          </assert>
+        </rule>
+        <let name="id" value="substring(@target, 2)"/>
+        <key name="id" match="*[@xml:id]" use="@xml:id"/>
+      </constraintSpec>
+    </elementSpec>
+
+
+    <!-- Logical combinators for conditional feature evaluation -->
+    <elementSpec ident="all" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Evaluates to true only if all contained feature value structures evaluate to true with respect to the currently in scope declared settings.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <oneOrMore>
+          <classRef key="model.featureVal.complex"/>
+        </oneOrMore>
+      </content>
+    </elementSpec>
+
+    <elementSpec ident="any" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Evaluates to true if any one of the contained feature value structures evaluates to true with respect to the currently in scope declared settings.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <oneOrMore>
+          <classRef key="model.featureVal.complex"/>
+        </oneOrMore>
+      </content>
+    </elementSpec>
+
+    <elementSpec ident="none" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Evaluates to true only if none of the contained feature value structures evaluates to true with respect to the currently in scope declared settings.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <oneOrMore>
+          <classRef key="model.featureVal.complex"/>
+        </oneOrMore>
+      </content>
+    </elementSpec>
+
+    <elementSpec ident="one" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        Evaluates to true only if exactly one of the contained feature value structures evaluates to true with respect to the currently in scope declared settings.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <oneOrMore>
+          <classRef key="model.featureVal.complex"/>
+        </oneOrMore>
+      </content>
+    </elementSpec>
+
 
     </schemaSpec>
     </body>

@@ -33,17 +33,22 @@ A project is a directory under the `projects/` directory in github.
 
 Every project contains a document named `index.xml`. This is the default entry point of the project.
 
-## CTS URNs
+Projects must have globally unique names. If a source has a particular common name, that can be used as the name. Otherwise, `authorYEAR` or `publisherYEAR` is a good naming convention (eg, `wlc`, `birnbaum1949` or `jps1917`).
 
-The Canonical Text Services (CTS) URN is a standardized identifier used to uniquely reference passages or elements within the textual corpus, enabling precise citation and interoperability across digital texts. In the context of JLPTEI, CTS URNs allow reference to specific sections, paragraphs, verses, or (sometimes) words within liturgical or scriptural XML documents. A typical CTS URN follows the format `urn:cts:{namespace}:{workId}.{version}:{passage}`. Our namespace is `opensiddur`. Work IDs are hierarchical and dot-delimited, and the final `version` delimited portion is the identifier of the project. For example, in the WLC (Westminster Leningrad Codex) XML text, a CTS URN referencing Genesis 1:1 would look like: `urn:cts:opensiddur:bible.genesis.wlc:1.1`.
+## URNs and linkages
 
-An element targetting `urn:cts:opensiddur:bible.genesis:1.1` may refer to
-any representation of the verse Genesis 1:1 in any project.
+URNs (Universal Resource Names) are a form of URI (universal resource identifier) that allow reference to specific sections, paragraphs, verses, or (sometimes) words within our liturgical or scriptural XML documents. We use our own custom URN namespace that begins `urn:x-opensiddur:` The remainder of the URN is hierarchical, with the type of what is being identified (eg, `text`, `note`, `instruction`, `setting`, `condition`) The remainder is hierarchical. The final part of the URN is the project identifier, which will be after the `@` sign.
 
-An element's CTS urn is stored in the TEI-global `@corresp` attribute.
-When used in a milestone element that inducates text rather than a point in the text, the milestone marks the start of the text identified by the CTS URN. The identified section generally ends at the next milestone of the same `unit` or at the end of the `unit`'s containing section.
+An element's  urn is stored in the TEI-global `@corresp` attribute.
 
-While Biblical texts have a natural CTS scheme, liturgical texts do not. Siddur texts also have a canonical naming scheme, using the `prayer` namespace. Names will normally be in 
+An example complete Biblical URN is:
+```urn
+urn:x-opensiddur:text:bible:genesis/1/1@wlc
+```
+which identifies the verse Genesis 1:1 in the WLC source.
+The URN `urn:x-opensiddur:text:bible:genesis/1` identifies the chapter Genesis 1 in *every possible* source.
+
+While Biblical texts have a natural hierarchical scheme, liturgical texts do not. Siddur texts also have a canonical naming scheme, using the `prayer` namespace. Names will normally be in 
 transliterated Hebrew. Spaces are replaced by `_` characters. Unless the text has a common name (with a common
 spelling), the transliteration scheme is as follows:
 
@@ -88,18 +93,26 @@ spelling), the transliteration scheme is as follows:
 For poems that aren't part of a prayer service (including _piyyutim_ and _z'mirot_), 
 use the `poem` namespace. It uses the same transliteration rules as the `prayer` namespace above.
 
+To add URNs to reference parts of poems and prayers that don't have natural line divisions or have alternative numbers of lines, use the transliterated first word (or phrase, if the word is ambiguous) as the name of the division. For example `urn:x-opensiddur:text:poem:yonah_matzah/hayom` for the stanza in the song `יונה מצאה` that begins `היום אשר נא כצאן`.
+
+## URN scope
+
+All URIs reference the following scopes:
+1. If the URI is on an element with non-empty content, it references that content.
+2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the next milestone of the same unit *or* the end of the file if no subsequent milestone of the same unit exists.
+3. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
 
 #### The user's contributor profile
 Every contributor to the project has their contribution identified via a 
 URN.
 
-The contributor URN is referenced as `urn:contributor:{space}.{identifier}`.
+The contributor URN is referenced as `urn:x-opensiddur:contributor:{contributor_space}/{identifier}`.
 
-The `space` indicates where the contributor made the contribution or where
-their identifier is meaningful. For example, contributors to Hebrew Wikisource will be in the `he-wikisource` space, and the `identifier` will
+The `contribuor_space` indicates where the contributor made the contribution or where
+their identifier is meaningful. For example, contributors to Hebrew Wikisource will be in the `he.wikisource.org` space, and the `identifier` will
 reference their Wikisource username.
 
-Contributors to Open Siddur will be in the `opensiddur` space and the identifier will identify a file in the `contributors` directory.
+Contributors to Open Siddur will be in the `opensiddur.org` space and the identifier will identify a file in the `contributors` directory.
 
 Contributor profiles have the following XML form:
 ```xml
@@ -115,13 +128,15 @@ Contributor profiles have the following XML form:
 Only the `tei:name` and `tei:email` are required.
 
 ### Project index
-Every project has an entry point file called `index.xml`. This file contains the project metadata, including the 
-project header.
+Every project has an entry point file called `index.xml`. This file contains the project metadata, including the project header.
 
 #### Project header
+
+The project header is the TEI header section of the project's `index.xml` file. It contains all the information in the TEI header relevant to the project. It can be much more detailed than the headers in the individual files.
+
 ##### Sources
 
-## Document types
+Each independent source will be represented by a project. The project header contains the full bibliographic reference to the source. If the source that is used has multiple sources of its own, the digital source may be listed or its sources may be copied in addition to the reference to the digital source if the TEI source is a faithful reproduction of the digital source. 
 
 ## Document structure
 
@@ -372,8 +387,10 @@ Two types of inclusions are supported. The intended type is indicated by the `ty
   within the included text are excluded.
 * `external`: The text and its XML hierarchy are to be included in place.
 
-`target` attributes may reference ranges, such as `urn:cts:opensiddur:bible.genesis:1.1-1:3`, as long as the reference
+`target` attributes may reference ranges, such as `urn:x-opensiddur:text:bible:genesis/1/1-1/3`, as long as the reference
 does not cross hierarchical boundaries or files. The refererence may entirely contain XML hierarchy or other files.
+
+Note for range references that the start of the range is interpreted at the same hierarchical level as the end of the range. In the example above `1/1` refers to chapter 1, verse 1 and `1/3` therefore refers to chapter 1, verse 3. The following is illegal: `urn:x-opensiddur:text:bible:genesis/1-2/3`. If you want to express "from chapter 1 to chapter 2, verse 3", the correct reference would be: `urn:x-opensiddur:text:bible:genesis/1/1-2/3`.
 
 ### Annotations
 
@@ -387,7 +404,7 @@ Instructions are annotated as `tei:note` with a `type` attribute of `instruction
 affects the reader's usage of the text. If the instruction covers a range of text, a `targetEnd` attribute should
 be used to indicate the end of its effect.
 
-Instructions may also have canonical labels (`n` attributes). If present, instruction sets may be swapped dynamically.
+Instructions may also have canonical labels (`corresp` attributes) with `urn:x-opensiddur:instruction:` URNs. If present, instruction sets may be swapped dynamically. For example, if the same "On shabbat" instruction exists in the source `A` and `B`, and they are both declared with the same `corresp` attribute, a setting can be used to choose which source's instruction should be used.
 
 If an instruction indicates that a reader should read a text conditionally, the instruction must be included inside
 the text controlled by the conditional (see the section on [Declaring text conditions](#Declaring_text_conditions) 
@@ -410,9 +427,8 @@ reference what they comment on. A `target` attribute references the point in the
 If it applies to a longer section of text, a `targetEnd` attribute pointing to a later `tei:anchor` may also be used.
 A short section of quoted text may be used to label the note, enclosed in `tei:label`.
 
-```TODO
-TODO: Decide if note linkages should be targeted (1) by xml:id or CTS URN and (2) by target/targetEnd or standoff markup. The latter would allow notes to be shared between different sources of the same text. The former would not.
-```
+Editorial and commentary notes may also have a `corresp` attribute in the `urn:x-opensiddur:notes:` namespace.
+
 
 ### Conditional text
 
@@ -421,6 +437,9 @@ JLPTEI represents liturgical texts for two purposes:
 2. Making the text usable for Jewish prayer.
 
 In Jewish prayer, what should be said can be governed by time, and particualar customs. Substantially similar texts (eg, ברכת המזון) can have variant inclusions (eg, יעלה ויבא or על הנסים). Conditional text allows us to specify what texts should be included *if* the text is being used actively as liturgy. JLPTEI also standardizes a processing model so any processor will know exactly how to interpret the conditions.
+
+
+#### Setting attribute values
 
 Attributes used for conditions are represented in TEI as
 feature structures (under the `tei:fs` element). These 
@@ -674,10 +693,16 @@ Further derived values are also available and calculated from the above
    <tei:f name="minor-fast">
       <tei:binary value=""/>
    </tei:f>
+   <tei:f name="day-before-holiday">
+      <tei:binary value=""/>
+   </tei:f>
+   <tei:f name="day-after-holiday">
+      <tei:binary value=""/>
+   </tei:f>
 </tei:fs>
 ```
 
-The weekly parsha can also be calculated:
+The weekly parsha and special additions can also be calculated:
 ```xml
 <tei:fs name="opensiddur:torah-reading">
    <tei:f name="diaspora-parsha">
@@ -738,133 +763,157 @@ are never set automatically (they default to the `false` value)
 </tei:fs>
 ```
 
-Any of the date, time or holiday features may also contain a special value
-`<j:undefined/>`. Having this value means that the attribute may have any
+The zman tefillah is also able to be calculated (though there may also be other settings required to determine how to calculate it):
+```xml
+<tei:fs name="opensiddur:service-time">
+   <tei:f name="shaharit">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="minha">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="maariv">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="musaf">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="neila">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="slihot">
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+
+Similarly, a text may be associated with which service it represents. This value is inherent in the text and will not be automatically calculated:
+```xml
+<tei:fs name="opensiddur:service">
+   <tei:f name="shaharit">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="minha">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="maariv">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="musaf">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="neila">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="slihot">
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+
+Any of the date, time or holiday features may also contain a special value, the equivalent of
+`<tei:symbol value="undefined"/>`. Having this value means that the attribute may have any
 of its values. While processing, it is therefore necessary to include all
 possibilities (as if the value were true or false) and any instructions that indicate to the reader what they are supposed to do in each case. 
 
-Overrides may not have an undefined value.
-----
-Texts may be associated with attributes indicating times or selected textual variants. Attributes to be used in 
-conditions may have trinary values like `YES`, `NO`, or `MAYBE` (the default value of all trinary attributes).
-Conditional attributes may also have string or numeric values. 
+When associating texts, the undefined value is accessible also through the `<tei:default/>` value, which should be used preferentially to the `tei:symbol` variant.
 
-Conditional text is way to specify which sections of a text should be included if read at different times. For example,
-a `RoshChodesh` trinary attribute may be used to control the inclusion of texts that are only said during New Moons.
-The text `יעלה ויבא` appears in `רצה` during the weekday Amidah. At the point it is included, 
-a programmatic conditional will enclose both the instruction and the full text inclusion of `יעלה ויבא`. The conditional
-will specify all the times the text is included as a set of trinary conditions combined by operators. Conditions
-may evaluate to one of three values: `YES`, `NO`, or `MAYBE`. 
+Overrides that are undefined are equivalent to having a false value.
 
-Evaluation to `YES` indicates that the conditional text should always be included at that point. That means that any
-instructions present that indicate that it would not be included should be omitted, since the conditions for inclusion
-are always true.
+#### Declaring attribute settings in a text
 
-Evaluation to `NO` indicates that the conditional text should never be included at that point. That means that the
 
-If a text is put under conditional control and the entirety of the text is conditional (such as  `יעלה ויבא` above),
-the condition should be placed in the text that is including `יעלה ויבא` (that is, the file containing `רצה` or the
-file containing `ברכת המזון`). If `יעלה ויבא` is referenced for inclusion, the assumption is that it will be included.
+Declaring settings with text is used to force texts that will always have certain conditions met to process that way. For example, if the text is a Rosh Hashana mahzor and it includes ברכת המזון, it will never need to include על הנסים. By setting the holiday settings, the conditions will be processed correctly and the correct inclusions will be made without unnecessary text or instructions.
 
-Every text is also associated with certain programmatic attribute settings that make declarations about the text.
-For example, at the entrypoint for Shacharit, the time of day would be set to morning, the prayer service to Shacharit,
-and so on. That way, if Shacharit includes additional texts that have conditionals, anything included from that
-point forward would properly include only the parts that are valid at Shacharit.
 
-#### Setting text attributes
-#### Associating texts with conditional attributes
+There are two ways to declare settings attributes:
+1. By initializing the processor with attribute values already set.
+2. By declaring attribute values with a range of text with XML
 
-Conditions are declared as `tei:fs` (feature structures) and are declaratively associated
-with a section of text via standoff markup.
+In the first way, the processor is initialized with settings attributes without adding any XML markup. That way, a processor could produce a text that is valid (for example) for a given date/time combination. The processing model does not define how to initialize the processor, as that is defined by the processor itself (configuration files, command line parameters, looking up a calendar, etc).
 
-Each condition asserts that the condition is true (and therefore the text will be included) 
-if the feature attribute it declares has been set. For example:
+Settings are declared in XML using the `j:declare` element. The part of the text where the setting's scope ends is at the matching `j:endDeclare` element, as shown here: 
 ```xml
-<tei:TEI>
-   <tei:standOff type="settings">
-      <!-- declare the calendar month and day -->
-      <tei:fs xml:id="setting_today_is" type="calendar">
-         <tei:f name="month">
-            <tei:numeric value="1"/>
-         </tei:f>
-         <tei:f name="day">
-            <tei:numeric value="10"/>
-         </tei:f>
-      </tei:fs>
-      <!-- specify that for the points between set_point_1 and set_point_2, 
-      the month is 1 and day is 10 -->
-      <tei:link type="set" target="#range(set_point_1,set_point_2) #calendar"/>
-
-   </tei:standOff>
-   <tei:standOff type="conditionals">
-      <!-- write a conditional that will evaluate true if the month=1 and the 1<=day<=10 -->
-      <tei:fs xml:id="month_day_range" type="calendar">
-         <tei:f name="month">
-            <tei:numeric value="1"/>
-         </tei:f>
-         <tei:f name="day">
-            <tei:numeric value="1" max="10"/>
-         </tei:f>
-      </tei:fs>
-      <!-- set that between cnd_point_3 and cnd_point_4, month_day_range must be true. -->
-      <tei:link type="condition" target="#range(cnd_point_3,cnd_point_4) #month_day_range"/>
-      <!-- set that between cnd_point_5 and cnd_point_6, month_day_range must be true. -->
-      <tei:link type="condition" target="#range(cnd_point_5,cnd_point_6) #month_day_range"/>
-
-   </tei:standOff>
+<tei:text>
    ...
-   <tei:text>
-      ...
-      <tei:anchor xml:id="set_point_1"/>
-      ...
-      <tei:anchor xml:id="cnd_point_3"/>
-      <!-- this text will be included, because the condition is true between set_point_1 and set_point_2 -->
-      ...
-      <tei:anchor xml:id="cnd_point_4"/>
-      ...
-      <tei:anchor xml:id="set_point_2"/>
-      ...
-      <tei:anchor xml:id="cnd_point_5"/>
-      <!-- this text will be excluded, because the condition is false here
-       no value of month and day are set
-       -->
-      ...
-      <tei:anchor xml:id="cnd_point_6"/>
-   </tei:text>
-</tei:TEI>
+   <j:declare xml:id="setting_start">
+      <tei:fs name="some_setting" xml:id="setting_one">
+         ...
+      </tei:fs>
+   </j:declare>
+   <!-- This is the scope of the declaration -->
+   <j:endDeclare target="#setting_start"/>
+   ....
+</tei:text>
 ```
+The `j:declare` element declares a set of `tei:fs` settings as in-scope.
+It must have an `xml:id` attribute that is referenced by 
+the `j:endDeclare` element. Every `j:declare` element must be matched with a `j:endDeclare` element within the same text block.
+
+Declaration blocks may be nested and declaration blocks may also cross each other's boundaries.
+
+Within the JLPTEI processing model, if any attribute setting is changed and it has a downstream effect (for example, the current date is changed has a downstream effect on what holidays it might be), the downstream effects are recalculated at the point of the setting. If a set attribute goes out of scope, and that change had downstream effects, the downstream effects must also be recalculated using the previous scope.
+
+#### Declaring conditions
+
+The scope of a condition is started by the `j:conditional` element and closed by the `j:endConditional` element. The condition itself is specified within the `j:conditional` element.
+
+`j:conditional` elements must have an `xml:id` attribute, that `j:endConditional` elements reference in their `target` attribute to end the conditional scope.
+
+Conditions are specified inside the `j:conditional` element as feature structures, as shown here:
+
+```xml
+<tei:text>
+   ...
+   <j:conditional xml:id="if_start">
+      <tei:fs name="x">
+         <tei:f name="y">
+            <tei:binary value="true"/>
+         </tei:f>
+      </tei:fs>
+   </j:conditional>
+   ...
+   <j:endConditional target="#if_start"/>
+   ...
+</tei:text>
+```
+
+Conditions may also be combined with conditional operator elements: `j:all` (exactly all underlying conditions are true), `j:any` (any of the underlying conditions are true), `j:none` (none of the underlying conditions are true), `j:one` (exactly one of the conditions are true). To facilitate comparison of numeric values, you may use the `tei:numeric/@max` attribute to indicate that the given `@value` is a lower bound, indicating that any value in the range (inclusive) will match. You may also use the `tei:vAlt` and `tei:vNot` feature values to specify alternation or negation of values.
+
+When a condition is evaluated, the current in-scope setting of the feature is compared to the value as defined in the condition. If they are equivelent, the condition evaluates to `true` and the text is included. If they are not equivalent, the condition evaluates to `false` and the text is not included.
+
+If any of the values in the condition are `undefined`, the condition may evaluate to `undefined` (see the truth table below). `j:conditional` allows a `tei:note` element of type `instruction` as a child element, as a sibling to the condition. If the condition evaluates to `undefined`, the note will be included. It will be excluded if the condition evaluates to either `true` (in which case, the text must always be included) or `false` (in which case the text is excluded). The conditional note itself may also have inline conditionals. 
+
+##### Truth tables
+
+The truth tables are here:
+
+| all    | True | False | Undefined |
+| --- | --- | --- | --- |
+| True | True | False | Undefined |
+| False | False | False | Undefined |
+| Undefined | Undefined | Undefined | Undefined |
+
+| any    | True | False | Undefined |
+| --- | --- | --- | --- |
+| True | True | True | True |
+| False | True | False | Undefined |
+| Undefined | True | Undefined | Undefined |
+
+| one    | True | False | Undefined |
+| --- | --- | --- | --- |
+| True | False | True | Undefined |
+| False | True | False | Undefined |
+| Undefined | Undefined | Undefined | Undefined |
+
+| none    | True | False | Undefined |
+| --- | --- | --- | --- |
+| True | False | False | False |
+| False | False | True | Undefined |
+| Undefined | False | Undefined | Undefined |
+
 
 ### Alignment
-Use the global project's documents.
-For translations, differences in customs, etc
-```xml
-<tei:linkGrp xml:id="name_of_link_point">
-   <tei:ptr target="/project1/document1#anchor1"/>
-   <tei:ptr target="/project2/document2#anchor1"/>
-</tei:linkGrp>
-```
 
+Translation (or other alternate text) alignment can be performed if both texts declare their correspondence to common URNs using the `corresp` attribute. For example, if two Bibles declare that a verse corresponds to `urn:x-opensiddur:text:bible:song_of_songs/1/5`, then that segment of text can be aligned with each other. The alignment will starting from the declared milestone until the next verse-level unit.
 
-
-Ways to do linkage:
-1. Each document itself declares the document as an instance of a canonically named document *and* each anchor to be a canonical linkage point.
-   1. Pro:
-      1. No central linkage document necessary
-      2. You only need a list of canonical document names. You do not need to update a global project for each file in a local project
-   2. Con:
-      1. Where do the canonical linkage points come from?
-      2. How do we make sure that all projects adhere to the same canonical linkages?
-2. There is a global project that defines the canonical names of the documents and the locations of the canonical linkage points.
-   1. Pro:
-      1. Always easy to figure out where to define the anchors in every document
-   2. Con:
-      1. Who decides which text goes in the global document?
-      2. Maintaining the global project
-3. There is a global project that defines the canonical names of the documents, but not any canonical anchor points. Each document defines its own potential linkage points as anchors. We use AI to perform the linkage.
-   1. Pro:
-      1. Every project can operate completely independently
-   2. Con:
-      1. No guarantee it will work or that the textual integrity will even be maintained
-      2. Not deterministic. Different runs may get different results.
-
-### Transliteration tables

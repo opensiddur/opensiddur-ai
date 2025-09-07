@@ -1,4 +1,4 @@
-<!-- Transform a single book from WLC to jlptei -->
+<!-- Transform a sinurn book from WLC to jlptei -->
 <xsl:stylesheet 
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     version="3.0"
@@ -13,9 +13,9 @@
     <!-- Identity transform as default -->
     <xsl:mode on-no-match="fail"/>
 
-    <xsl:variable name="cts-book-name" 
-        select="lower-case(/Tanach/teiHeader/fileDesc/titleStmt/
-            title[@level='a'][@type='main']/text())"/>
+    <xsl:variable name="urn-book-name" 
+        select="replace(lower-case(/Tanach/teiHeader/fileDesc/titleStmt/
+            title[@level='a'][@type='main']/text()), ' ', '_')"/>
     
     <!-- Entry point -->
     <xsl:template match="/">
@@ -71,7 +71,7 @@
 
     <xsl:template match="editionStmt">
         <tei:editionStmt>
-            <tei:p>See <tei:ref target="urn:cts:opensiddur:bible.tanakh.wlc">WLC Tanakh header for version information</tei:ref></tei:p>
+            <tei:p>See <tei:ref target="urn:x-opensiddur:bible:tanakh@wlc">WLC Tanakh header for version information</tei:ref></tei:p>
         </tei:editionStmt>
     </xsl:template>
 
@@ -80,7 +80,7 @@
             <tei:distributor>
                 <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
             </tei:distributor>
-            <tei:idno type="CTS"><xsl:value-of select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc')"/></tei:idno>
+            <tei:idno type="urn"><xsl:value-of select="concat('urn:x-opensiddur:text:bible:', $urn-book-name, '@wlc')"/></tei:idno>
             <tei:availability status="free">
                 <tei:licence target="http://www.creativecommons.org/publicdomain/zero/1.0/">Creative Commons Zero Public Domain Declaration (CC0)</tei:licence>
             </tei:availability>
@@ -89,7 +89,7 @@
 
     <xsl:template match="sourceDesc">
         <tei:sourceDesc>
-            <tei:p>See <tei:ref target="urn:cts:opensiddur:bible.tanakh.wlc">WLC Tanakh header for source information</tei:ref></tei:p>
+            <tei:p>See <tei:ref target="urn:x-opensiddur:text:bible:tanakh@wlc">WLC Tanakh header for source information</tei:ref></tei:p>
         </tei:sourceDesc>
     </xsl:template>
 
@@ -103,7 +103,7 @@
 
     <xsl:template match="book">
         <tei:div type="book">
-            <xsl:attribute name="corresp" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc')"/>
+            <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $urn-book-name)"/>
             <xsl:attribute name="n" select="lower-case(names/name/text())"/>
             <xsl:apply-templates select="names"/>
             <xsl:variable name="processed" as="node()*">
@@ -130,7 +130,7 @@
 
     <xsl:template match="c">
         <tei:milestone unit="chapter">
-            <xsl:attribute name="corresp" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc:', @n)"/>
+        <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $urn-book-name, '/', @n)"/>
             <xsl:copy-of select="@n"/>
         </tei:milestone>
         <xsl:apply-templates/>
@@ -139,7 +139,7 @@
     <xsl:template match="v">
         <xsl:variable name="chapter" select="parent::c/@n"/>
         <tei:milestone unit="verse">
-            <xsl:attribute name="corresp" select="concat('urn:cts:opensiddur:bible.', $cts-book-name, '.wlc:', $chapter, '.', @n)"/>
+        <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $urn-book-name, '/', $chapter, '/', @n)"/>
             <xsl:copy-of select="@n"/>
         </tei:milestone>
         <xsl:apply-templates select="node() except (pe, samekh)[last()]"/>
