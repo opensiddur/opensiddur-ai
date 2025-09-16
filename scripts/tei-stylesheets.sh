@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#command can be teitorelaxng, teitornc, teitomarkdown, teitohtml5, teitopdf
+#command can be teitorelaxng, teitornc, teitomarkdown, teitohtml5, teitopdf, teitoschematron
 COMMAND="/usr/local/share/xml/tei/stylesheet/bin/$1"
 INPUT="$2"
 OUTPUT="$3"
