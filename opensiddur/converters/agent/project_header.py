@@ -13,6 +13,7 @@ class ProjectHeaderInput(BaseModel):
     front_matter: str = Field(description = "The front matter of the project, such as text, HTML, or MediaWiki title or copyright page")
     project_id: str = Field(description = "The ID of the project")
     about_transcription: str = Field(description = "A description of the transcription source")
+    messages: list[tuple[str, str]] = Field(description = "A list of roles and messages in the prior conversation")
 
 class ProjectHeaderOutput(BaseModel):
     explanation: str = Field(description = "A textual explanation of the header you produced. If you made any choices, explain them.")
@@ -33,6 +34,11 @@ The front matter you are given may include another project's metadata or TEI hea
 Your result must be well-formed XML and valid according to a subset of the TEI specification.
 If you make an errors, your answer will be returned to you with an error message and
 you will correct the error.
+- IMPORTANT: Your response must be valid JSON with the following structure:
+  {{
+    "explanation": "Your explanation here",
+    "header": "Your TEI header XML here"
+  }}
 
 # Template
 <tei:teiHeader>
@@ -89,12 +95,13 @@ you will correct the error.
 # About the transcription:
 {about_transcription}
 """),
+("placeholder", "{messages}")
     ])
     llm = ChatOpenAI(
         base_url=LLM_BASE_URL,
         api_key=API_KEY,
         model=PROJECT_HEADER_MODEL)
-    llm = llm.with_structured_output(ProjectHeaderOutput)
+    llm = llm.with_structured_output(ProjectHeaderOutput, method="json_mode")
     llm = prompt | llm
     response = llm.invoke(input.model_dump())
     return response

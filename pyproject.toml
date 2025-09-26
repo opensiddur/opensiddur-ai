@@ -36,7 +36,7 @@ unstructured = "^0.18.14"
 markdown = "^3.9"
 langgraph-supervisor = "^0.0.29"
 pyppeteer = "^2.0.0"
-pyschematron = "^1.1.8"
+diff-match-patch = "^20241021"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.0.0"

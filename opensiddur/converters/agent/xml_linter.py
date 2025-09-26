@@ -5,8 +5,12 @@ import re
 from pydantic import BaseModel, Field
 from saxonche import PySaxonProcessor
 
-from opensiddur.converters.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
-from opensiddur.converters.util.validation import validate
+try:
+    from opensiddur.converters.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
+    from opensiddur.converters.util.validation import validate
+except ImportError:
+    from common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
+    from util import validate
 
 
 class XMLLinterInput(BaseModel):
@@ -28,7 +32,7 @@ def rng_with_start(start_element: str) -> str:
         # This assumes the schema uses <start>...</start> as the entry point
         # and replaces its contents with <ref name="start_element"/>
 
-    xslt = f'''<?xml version="1.0" encoding="UTF-8"?>
+    xslt = f'''
 <xsl:stylesheet version="2.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:rng="http://relaxng.org/ns/structure/1.0"
