@@ -5,7 +5,7 @@ from pydantic import Field
 
 from common import API_KEY, LLM_BASE_URL
 
-PROJECT_HEADER_MODEL = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+PROJECT_HEADER_MODEL = "Qwen/Qwen3-Next-80B-A3B-Instruct"
 
 class ProjectHeaderInput(BaseModel):
     namespace: str = Field(description = "The namespace of the project (eg, bible, siddur)")
@@ -34,11 +34,6 @@ The front matter you are given may include another project's metadata or TEI hea
 Your result must be well-formed XML and valid according to a subset of the TEI specification.
 If you make an errors, your answer will be returned to you with an error message and
 you will correct the error.
-- IMPORTANT: Your response must be valid JSON with the following structure:
-  {{
-    "explanation": "Your explanation here",
-    "header": "Your TEI header XML here"
-  }}
 
 # Template
 <tei:teiHeader>
@@ -101,7 +96,7 @@ you will correct the error.
         base_url=LLM_BASE_URL,
         api_key=API_KEY,
         model=PROJECT_HEADER_MODEL)
-    llm = llm.with_structured_output(ProjectHeaderOutput, method="json_mode")
+    llm = llm.with_structured_output(ProjectHeaderOutput)
     llm = prompt | llm
     response = llm.invoke(input.model_dump())
     return response

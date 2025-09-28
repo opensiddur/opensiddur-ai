@@ -112,7 +112,7 @@ def encode_page(state: TextEncodingAgentState) -> TextEncodingAgentState:
         name_of_the_source_text=state['name_of_source_text'],
         namespace=state['namespace'],
         project_id=state['project_id'],
-        previous_encoding=state['current_encoding'],
+        previous_encoding=state['final_xml'],
         previous_page=state['previous_page_content'],
         next_page=state['next_page_content'],
         page_content=state['current_page_content'],

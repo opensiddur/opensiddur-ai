@@ -5,7 +5,7 @@ from pydantic import Field
 
 from common import API_KEY, LLM_BASE_URL
 
-SOURCE_FILE_MODEL = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+SOURCE_FILE_MODEL = "Qwen/Qwen3-Next-80B-A3B-Instruct"
 
 class SourceFileInput(BaseModel):
     name_of_section: str = Field(description = "The name of the section you are encoding")
@@ -41,7 +41,7 @@ you will correct the error.
 # Examples
 <tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
     <tei:front>
-        <tei:p>This is the front matter of the source text. If there is no front matter, omit the front element.</tei:p>
+        <tei:p>This is the front matter of the source text. If there is no front matter (prefaces, title or copyright pages, for example), omit the front element.</tei:p>
     </tei:front>
     <tei:body>
         <tei:div type="book" n="Name" corresp="urn:x-opensiddur:text:bible:book_name">
@@ -74,20 +74,17 @@ you will correct the error.
 - Write the XML code according to the example.
 - If you have any textual explanation, include it in the explanation section
 - Do not write XML comments.
+- Only include text that is in the current page. Do not make up any text or add commentary or explanation to the source_tei. Do add explanations in the explanation field.
 - The namespaces and prefixes you ahould use are:
   - tei: http://www.tei-c.org/ns/1.0
   - j: http://jewishliturgy.org/ns/jlptei/2
 - You will be encoding from the named section {name_of_section} from {name_of_the_source_text}. 
 - Stop encoding when you have finished the section, then close all open XML tags.
-- Do not stop encoding the text from the page until the named section is finished or you have finished the page.
+- Do not stop encoding the text from the current page until the named section is finished or you have finished the currentpage.
 - Do not close open XML tags until you are sure that the paragraph (tei:p), line/line group (tei:l, tei:lg) is finished.
-- Refer to the previous page to see if you are continuing a section or starting a new one.
-- Refer to the next page to see if you need to end the section. Do not encode from the next page.
-- IMPORTANT: Your response must be valid JSON with the following structure:
-  {{
-    "explanation": "Your textual explanation here",
-    "source_tei": "Your TEI XML fragment here"
-  }}
+- You may REFERENCE, but NOT ENCODE FROM, the previous page and the next page.
+- Reference the previous page to see if you are continuing a section or starting a new one.
+- Reference the next page to see if you need to end the section at the end of the current page. DO NOT encode text from the next page.
 """),
         ("user", """
 # Previous page:
@@ -96,10 +93,10 @@ you will correct the error.
 # Next page:
 {next_page}
 
-# Page you are encoding:
+# Current page you are encoding:
 {page_content}
 
-# The last part you encoded:
+# The last part you encoded (do not repeat it in your output):
 {previous_encoding}
 """),
 ("placeholder", "{messages}")
@@ -108,7 +105,7 @@ you will correct the error.
         base_url=LLM_BASE_URL,
         api_key=API_KEY,
         model=SOURCE_FILE_MODEL)
-    llm = llm.with_structured_output(SourceFileOutput, method="json_mode")
+    llm = llm.with_structured_output(SourceFileOutput)
     llm = prompt | llm
     response = llm.invoke({ "messages":[{"role": "user", "content": "Go."}]})
     return response
@@ -133,11 +130,6 @@ If they represent the same textual content and that content is complete, return 
 Only judge based on the exact content of the source text as given. Do not use external knowledge.
 Only judge text and the elements of the source and XML encoding that are semantically relevant to the text. Do not judge metadata.
 Only judge textual content from the source text that is part of the named section. If the section ends in the middle of the source text and is fully represented in the encoded text, it is complete.
-- IMPORTANT: Your response must be valid JSON with the following structure:
-  {{
-    "explanation": "Your explanation here",
-    "is_complete": true/false
-  }}
 """),
         ("user", """
 # Section name:
@@ -160,7 +152,7 @@ Only judge textual content from the source text that is part of the named sectio
         base_url=LLM_BASE_URL,
         api_key=API_KEY,
         model=SOURCE_FILE_MODEL)
-    llm = llm.with_structured_output(CompletionCheckOutput, method="json_mode")
+    llm = llm.with_structured_output(CompletionCheckOutput)
     llm = prompt | llm
     response = llm.invoke({})
     return response
@@ -185,11 +177,6 @@ Your goal is to tell whether the given XML fragment contains the end of a
 named section. You will look at the content of the fragment and the next page
 of the source text. If the next page continues the same section, return is_complete=False.
 If the next page starts or continues a new section, return is_complete=True. 
-- IMPORTANT: Your response must be valid JSON with the following structure:
-  {{
-    "explanation": "Your explanation here",
-    "is_complete": true/false
-  }}
 """),
         ("user", """
 # Section name:
@@ -212,7 +199,7 @@ If the next page starts or continues a new section, return is_complete=True.
         base_url=LLM_BASE_URL,
         api_key=API_KEY,
         model=SOURCE_FILE_MODEL)
-    llm = llm.with_structured_output(SectionCompletionCheckOutput, method="json_mode")
+    llm = llm.with_structured_output(SectionCompletionCheckOutput)
     llm = prompt | llm
     response = llm.invoke({})
     return response

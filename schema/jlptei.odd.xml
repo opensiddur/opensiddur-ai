@@ -111,7 +111,7 @@
         <moduleRef key="header" include="teiHeader fileDesc titleStmt publicationStmt sourceDesc licence availability distributor edition editionStmt idno"/>
         
         <!-- required core elements (p and title for use in titleStmt) -->
-        <moduleRef key="core" include="p title cb choice corr date divGen gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi l label lg name publisher pubPlace resp respStmt series"/>
+        <moduleRef key="core" include="p title cb choice corr date divGen foreign gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi l label lg name publisher pubPlace resp respStmt series"/>
         
         <!-- required textstructure elements (TEI, text, and body) -->
         <moduleRef key="textstructure" include="TEI text body div front back"/>

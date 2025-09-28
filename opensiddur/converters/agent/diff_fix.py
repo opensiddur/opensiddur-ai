@@ -10,7 +10,7 @@ except ImportError:
     from source_file import SourceFileInput, SourceFileOutput
 import diff_match_patch as dmp_module
 
-DIFF_FIX_MODEL = "Qwen/Qwen3-235B-A22B-Instruct-2507"
+DIFF_FIX_MODEL = "Qwen/Qwen3-Next-80B-A3B-Instruct"
 
 class DiffFixInput(BaseModel):
     source_xml: str = Field(description = "The source XML that has an error")
@@ -34,11 +34,6 @@ You are an expert in XML encoding, TEI, in correcting errors, and in the diff fo
 # Goal
 You will be given a source XML file or fragment and an error message that indicates what is wrong with it.
 Your goal is to produce a patch that can be run on the source file to fix the error.
-- IMPORTANT: Your response must be valid JSON with the following structure:
-  {{
-    "explanation": "Your explanation here",
-    "patch": "Your patch in unified diff format here"
-  }}
 
 """),
         ("user", """
@@ -54,7 +49,7 @@ Your goal is to produce a patch that can be run on the source file to fix the er
         base_url=LLM_BASE_URL,
         api_key=API_KEY,
         model=DIFF_FIX_MODEL)
-    llm = llm.with_structured_output(DiffFixOutput, method="json_mode")
+    llm = llm.with_structured_output(DiffFixOutput)
     llm = prompt | llm
     response = llm.invoke(input.model_dump())
     return response

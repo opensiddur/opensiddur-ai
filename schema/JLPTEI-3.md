@@ -380,7 +380,7 @@ The following rules apply to anchors:
 4. External anchors may not move relative to each other.
 
 ### Inclusions
-To include one text inside another, use the `j:transclude` tag inline in the text. Preferentially, use the CTS reference of the text to be included, using the `target` attribute for the pointer target.
+To include one text inside another, use the `j:transclude` tag inline in the text. Preferentially, use the URN reference of the text to be included, using the `target` attribute for the pointer target.
 
 Two types of inclusions are supported. The intended type is indicated by the `type` attribute on the `ptr` element:
 * `inline`: The text is to be included in place. Any XML hierarchy (including paragraphs, line groups, etc) 
