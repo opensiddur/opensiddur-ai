@@ -1,7 +1,4 @@
-# TODO: mediawiki to tei for rest of books
 # TODO: credits
-# TODO: finish outline
-# TODO: indent/prettify XML
 # TODO: validate XML
 
 from pathlib import Path
@@ -11,6 +8,7 @@ from pydantic import BaseModel
 
 from opensiddur.converters.agent.tools import get_page
 from opensiddur.converters.jps1917.mediawiki_processor import create_processor
+from opensiddur.converters.util.prettify import prettify_xml
 from opensiddur.converters.util.xslt import xslt_transform_string
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parent.parent.parent.parent / "project" / "jps1917" 
@@ -404,7 +402,7 @@ def header(
          <tei:sourceDesc>
             <tei:bibl>
                 <tei:title>Bible (Jewish Publication Society 1917)</tei:title>
-                <tei:distribtor><tei:ref target="https://en.wikisource.org">Wikisource</tei:ref></tei:distributor>
+                <tei:distributor><tei:ref target="https://en.wikisource.org">Wikisource</tei:ref></tei:distributor>
                 <tei:idno type="url">https://en.wikisource.org/wiki/Bible_(Jewish_Publication_Society_1917)</tei:idno>
                 <tei:date>2025-07-27</tei:date>
             </tei:bibl>
@@ -489,9 +487,11 @@ def book_file(book: Book) -> str:
         header = header_content,
         **xml_dict,
     )
+    with open("temp.tei.xml", "w") as f:
+        f.write(tei_content)
     with open(PROJECT_DIRECTORY / f"{book.file_name}.xml", "w") as f:
         print(f"Writing {PROJECT_DIRECTORY / f'{book.file_name}.xml'}")
-        f.write(tei_content)
+        f.write(prettify_xml(tei_content))
 
     return tei_content
 
@@ -528,9 +528,11 @@ def index_file(idx: Index) -> str:
         header = header_content,
         **xml_dict,
     )
+    with open("temp.tei.xml", "w") as f:
+        f.write(tei_content)
     with open(PROJECT_DIRECTORY / f"{idx.file_name}.xml", "w") as f:
         print(f"Writing {PROJECT_DIRECTORY / f'{idx.file_name}.xml'}")
-        f.write(tei_content)
+        f.write(prettify_xml(tei_content))
 
     for transclusion in idx.transclusions:
         if isinstance(transclusion, Index):
