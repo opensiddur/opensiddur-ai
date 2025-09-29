@@ -1,13 +1,25 @@
 from argparse import ArgumentParser
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from saxonche import PySaxonProcessor
+
+def _to_xdm_value(proc: PySaxonProcessor, value: Any) -> Any:
+    if isinstance(value, str):
+        return proc.make_string_value(value)
+    elif isinstance(value, bool):
+        return proc.make_boolean_value(value)
+    elif isinstance(value, int):
+        return proc.make_integer_value(value)
+    elif isinstance(value, float):
+        return proc.make_double_value(value)
+    return proc.to_xdm_value(value)
 
 def xslt_transform_string(
     xslt_file: Path,
     input_xml: str,
     multiple_results: bool = False,
+    xslt_params: Optional[dict[str, Any]] = None,
     ) -> str | dict[str, str]:
     
     try:
@@ -22,6 +34,9 @@ def xslt_transform_string(
             if multiple_results:
                 executable.set_base_output_uri("file:///output/")
                 executable.set_capture_result_documents(True, False)
+            if xslt_params:
+                for param, value in xslt_params.items():
+                    executable.set_parameter(param, _to_xdm_value(proc, value))
             # Parse the input XML
             document = proc.parse_xml(xml_text=input_xml)
             
