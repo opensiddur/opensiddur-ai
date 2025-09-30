@@ -1,5 +1,3 @@
-# TODO: validate XML
-
 from pathlib import Path
 from typing import Any, Optional
 import urllib
@@ -9,6 +7,7 @@ from pydantic import BaseModel
 from opensiddur.converters.agent.tools import get_credits, get_page
 from opensiddur.converters.jps1917.mediawiki_processor import create_processor
 from opensiddur.converters.util.prettify import prettify_xml
+from opensiddur.converters.util.validation import validate
 from opensiddur.converters.util.xslt import xslt_transform_string
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parent.parent.parent.parent / "project" / "jps1917" 
@@ -493,6 +492,15 @@ def process_mediawiki(
         f.write(pre_xml)
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
+def validate_and_write_tei_file(tei_content: str, file_name: str):
+    with open(PROJECT_DIRECTORY / f"{file_name}.xml", "w") as f:
+        print(f"Writing {PROJECT_DIRECTORY / f'{file_name}.xml'}")
+        pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
+        is_valid, errors = validate(pretty_xml)
+        if not is_valid:
+            raise Exception(f"Errors in {file_name}: {errors}")
+        f.write(pretty_xml)
+
 def book_file(book: Book) -> str:
     transcription_credits = get_credits_pages(book.start_page, book.end_page)
     header_content = header(
@@ -511,9 +519,7 @@ def book_file(book: Book) -> str:
     )
     with open("temp.tei.xml", "w") as f:
         f.write(tei_content)
-    with open(PROJECT_DIRECTORY / f"{book.file_name}.xml", "w") as f:
-        print(f"Writing {PROJECT_DIRECTORY / f'{book.file_name}.xml'}")
-        f.write(prettify_xml(tei_content))
+    validate_and_write_tei_file(tei_content, book.file_name)
 
     return tei_content
 
@@ -556,9 +562,7 @@ def index_file(idx: Index) -> str:
     )
     with open("temp.tei.xml", "w") as f:
         f.write(tei_content)
-    with open(PROJECT_DIRECTORY / f"{idx.file_name}.xml", "w") as f:
-        print(f"Writing {PROJECT_DIRECTORY / f'{idx.file_name}.xml'}")
-        f.write(prettify_xml(tei_content))
+    validate_and_write_tei_file(tei_content, idx.file_name)
 
     for transclusion in idx.transclusions:
         if isinstance(transclusion, Index):
