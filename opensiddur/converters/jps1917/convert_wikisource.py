@@ -1,12 +1,12 @@
-# TODO: credits
 # TODO: validate XML
 
 from pathlib import Path
 from typing import Any, Optional
+import urllib
 
 from pydantic import BaseModel
 
-from opensiddur.converters.agent.tools import get_page
+from opensiddur.converters.agent.tools import get_credits, get_page
 from opensiddur.converters.jps1917.mediawiki_processor import create_processor
 from opensiddur.converters.util.prettify import prettify_xml
 from opensiddur.converters.util.xslt import xslt_transform_string
@@ -362,6 +362,14 @@ JPS_1917 = [
     ),
 ]
 
+def get_credits_pages(start_page: int, end_page: int) -> list[str]:
+    credits = set()
+    for page in range(start_page, end_page + 1):
+        page_credits = get_credits(page)
+        if page_credits is not None:
+            credits.update(page_credits)
+    return sorted(credits)
+
 def header(
     book_name_he: str,
     book_name_en: str,
@@ -373,7 +381,9 @@ def header(
     project_id: str = "jps1917",
     license_url: str = "http://www.creativecommons.org/publicdomain/zero/1.0/",
     license_name: str = "Creative Commons Public Domain Dedication 1.0",
+    transcription_credits: Optional[list[str]] = None,
 ):
+    transcription_credits = transcription_credits or []
     book_sub_he = (
         f"""<tei:title type="alt-sub" xml:lang="he">{book_sub_he}</tei:title>"""
         if book_sub_he else ""
@@ -382,6 +392,15 @@ def header(
         f"""<tei:title type="alt-sub" xml:lang="en">{book_sub_en}</tei:title>"""
         if book_sub_en else ""
     )
+
+    resp_stmt_str = "\n".join([
+        f"""<tei:respStmt>
+            <tei:resp key="trc">Transcribed by</tei:resp>
+            <tei:name ref="urn:x-opensiddur:contributor:en.wikisource.org/{urllib.parse.quote(contributor_name)}">{contributor_name} (English Wikisource contributor)</tei:name>
+        </tei:respStmt>"""
+        for contributor_name in transcription_credits if contributor_name != "Wikisource-bot"
+    ])
+
     return f"""<tei:teiHeader>
     <tei:fileDesc>
         <tei:titleStmt>
@@ -389,6 +408,7 @@ def header(
             {book_sub_en}
             <tei:title type="alt" xml:lang="he">{book_name_he}</tei:title>
             {book_sub_he}
+            {resp_stmt_str}
          </tei:titleStmt>
          <tei:publicationStmt>
             <tei:distributor>
@@ -474,9 +494,11 @@ def process_mediawiki(
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
 def book_file(book: Book) -> str:
+    transcription_credits = get_credits_pages(book.start_page, book.end_page)
     header_content = header(
         book_name_he = book.book_name_he,
         book_name_en = book.book_name_en,
+        transcription_credits = transcription_credits,
     )
     xml_dict = process_mediawiki(book.start_page, book.end_page, "body", 
         wrapper_div_type="book",
@@ -497,12 +519,16 @@ def book_file(book: Book) -> str:
 
 
 def index_file(idx: Index) -> str:
-    
+    if idx.start_page is not None and idx.end_page is not None:
+        transcription_credits = get_credits_pages(idx.start_page, idx.end_page)
+    else:
+        transcription_credits = None
     header_content = header(
         book_name_he = idx.index_title_he,
         book_name_en = idx.index_title_en,
         book_sub_he = idx.index_sub_he,
         book_sub_en = idx.index_sub_en,
+        transcription_credits = transcription_credits,
     )
     if idx.start_page is not None and idx.end_page is not None:
         xml_dict = process_mediawiki(idx.start_page, idx.end_page, "front",
