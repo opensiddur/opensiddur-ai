@@ -39,7 +39,12 @@
         <xsl:variable name="wrapped-content" as="node()*">
             <xsl:for-each-group select="$processed" group-starting-with="p">
                 <xsl:choose>
-                    <xsl:when test="current-group()/self::tei:head">
+                    <!-- leading group -->
+                    <xsl:when test="not(current-group()[1][self::p])">
+                        <xsl:apply-templates select="current-group()" mode="copy"/>
+                    </xsl:when>
+                    <xsl:when test="current-group()/self::tei:ab">
+                        <!-- ab can't appear in p and is already a block -->
                         <xsl:apply-templates select="current-group()" mode="copy"/>
                     </xsl:when>
                     <xsl:otherwise>
@@ -122,9 +127,9 @@
             corresp="urn:x-opensiddur:text:bible:{$book_name}/{$parsha}"/>
     </xsl:template>
 
-    <!-- double height row = double-line break - it has a value also... -->
+    <!-- double height row = double-line break - it's a paragraph... -->
     <xsl:template match="dhr">
-        <tei:lb type="double"/>
+        <p/>
     </xsl:template>
 
     <xsl:template match="float_right">
@@ -223,10 +228,10 @@
     A second processor will move the note to standoff markup.
     -->
     <xsl:template match="ref">
-        <xsl:variable name="n" select="count(preceding::ref) + 1"/>
+        <xsl:variable name="n" select="concat('ref-', generate-id())"/>
         <tei:anchor xml:id="ref-{$n}"/>
         <tei:note target="#ref-{$n}">
-            <xsl:apply-templates select="node()"/>
+            <xsl:apply-templates />
         </tei:note>
     </xsl:template>
 
@@ -248,16 +253,22 @@
     <!-- dropinitial is used as a chapter division-->
     <xsl:template match="dropinitial">
         <xsl:variable name="chapter" select="text()"/>
+        <xsl:if test="$chapter = '1' and not(following-sibling::p[1]/preceding-sibling::text()[normalize-space(.)])">
+            <!-- add an initial paragraph break -->
+            <p/>
+        </xsl:if>
         <tei:milestone unit="chapter" n="{$chapter}"
             corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}"/>
-        <xsl:apply-templates select="node()"/>
     </xsl:template>
 
     <!-- anchor is used as a verse marker for verse 1 of every chapter -->
     <xsl:template match="anchor">
-        <xsl:variable name="chapter" select="substring-before(., ':')"/>
-        <tei:milestone unit="verse" n="1"
-            corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}/1"/>
+        <xsl:variable name="chapter" select="substring-before(@name, ':')"/>
+        <!-- add a verse marker for v1 if it does not exist -->
+        <xsl:if test="not(following-sibling::verse[@chapter=$chapter][@verse='1'])">
+            <tei:milestone unit="verse" n="1"
+                corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}/1"/>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="verse">

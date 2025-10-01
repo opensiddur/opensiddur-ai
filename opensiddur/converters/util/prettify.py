@@ -1,11 +1,11 @@
 """
 XML prettification utilities for formatting XML strings with proper indentation.
 """
-
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
 import sys
 import argparse
+
+from lxml import etree as lxml_etree
+
 
 
 def prettify_xml(xml_string: str, 
@@ -14,6 +14,7 @@ def prettify_xml(xml_string: str,
                 encoding: str="utf-8") -> str:
     """
     Prettify an XML string with proper indentation and formatting.
+    Uses lxml if available (preserves namespace prefixes), falls back to minidom.
     
     Args:
         xml_string (str): The XML string to prettify
@@ -28,32 +29,24 @@ def prettify_xml(xml_string: str,
         ET.ParseError: If the XML string is not valid XML
     """
     try:
-        # Parse the XML string
-        root = ET.fromstring(xml_string)
+        # lxml preserves namespace prefixes
+        parser = lxml_etree.XMLParser(remove_blank_text=True)
+        root = lxml_etree.fromstring(xml_string.encode(encoding), parser)
         
-        # Convert to string with proper formatting
-        rough_string = ET.tostring(root, encoding=encoding)
+        pretty_xml = lxml_etree.tostring(
+            root,
+            pretty_print=True,
+            encoding=encoding,
+            xml_declaration=not remove_xml_declaration
+        )
         
-        # Parse with minidom for pretty printing
-        reparsed = minidom.parseString(rough_string)
-        
-        # Get pretty printed XML
-        pretty_xml = reparsed.toprettyxml(indent=" " * indent, encoding=encoding)
-        
-        # Decode if we got bytes
         if isinstance(pretty_xml, bytes):
             pretty_xml = pretty_xml.decode(encoding)
-        
-        lines = pretty_xml.split('\n')
-        
-        if remove_xml_declaration:
-            lines = [line for line in lines if not line.strip().startswith('<?xml')]
-        else:
-            lines = [line for line in lines if line.strip()]
-
-        return '\n'.join(lines)
-        
-    except ET.ParseError as e:
+     
+        return pretty_xml.rstrip()
+    except lxml_etree.ParseError as e:
+        raise ET.ParseError(f"Invalid XML: {e}")
+    except lxml_etree.XMLSyntaxError as e:
         raise ET.ParseError(f"Invalid XML: {e}")
 
 
@@ -113,7 +106,7 @@ def main():
     except FileNotFoundError:
         print(f"Error: Input file '{args.input_file}' not found", file=sys.stderr)
         sys.exit(1)
-    except ET.ParseError as e:
+    except lxml_etree.ParseError as e:
         print(f"Error: Invalid XML in '{args.input_file}': {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:

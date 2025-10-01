@@ -111,7 +111,7 @@
         <moduleRef key="header" include="teiHeader fileDesc titleStmt publicationStmt sourceDesc licence availability distributor edition editionStmt idno"/>
         
         <!-- required core elements (p and title for use in titleStmt) -->
-        <moduleRef key="core" include="p title cb choice corr date divGen foreign gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi l label lg name publisher pubPlace resp respStmt series"/>
+        <moduleRef key="core" include="p title cb choice corr date divGen foreign gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi item l label lg list name publisher pubPlace resp respStmt series"/>
         
         <!-- required textstructure elements (TEI, text, and body) -->
         <moduleRef key="textstructure" include="TEI text body div front back"/>
@@ -150,8 +150,9 @@
             </datatype>
             <desc>Specifies where the transclusion should end (inclusive). If not provided, anything enclosed by target will be transcluded.</desc>
           </attDef>
-          <attDef ident="type" usage="req" mode="add">
-            <desc>Specifies the type of transclusion to perform.</desc>
+          <attDef ident="type" usage="opt" mode="add">
+            <desc>Specifies the type of transclusion to perform. If no type is specified, the default is external.</desc>
+            <defaultVal>external</defaultVal>
             <valList type="closed">
               <valItem ident="external">
                 <desc>Include both XML hierarchy and text content.</desc>
