@@ -226,7 +226,7 @@ JPS_1917 = [
                                 book_name_he = "צפניה",
                                 file_name = "zephaniah",
                                 start_page = 753+PAGE_OFFSET,
-                                end_page = 757+PAGE_OFFSET,
+                                end_page = 756+PAGE_OFFSET,
                                 is_section = True,
                             ),
                             Book(
@@ -234,7 +234,7 @@ JPS_1917 = [
                                 book_name_he = "חגי",
                                 file_name = "haggai",
                                 start_page = 757+PAGE_OFFSET,
-                                end_page = 759+PAGE_OFFSET,
+                                end_page = 758+PAGE_OFFSET,
                                 is_section = True,
                             ),
                             Book(

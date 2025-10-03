@@ -5,6 +5,8 @@ from lxml.etree import _ElementTree
 from typing import Tuple, List, Optional
 import argparse
 from saxonche import PySaxonProcessor
+import subprocess
+import tempfile
 
 
 from opensiddur.converters.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
@@ -100,35 +102,77 @@ def schematron_validate(
     
 
 def relaxng_validate(
-    xml_doc: _ElementTree, 
-    schema_file: Optional[str |Path] = None) -> Tuple[bool, List[str]]:
+    xml_doc: _ElementTree | str, 
+    schema_file: Optional[str | Path] = None) -> Tuple[bool, List[str]]:
+    """
+    Validate XML against RelaxNG schema using Jing validator.
+    
+    Args:
+        xml_doc: Either an lxml ElementTree or a string containing XML
+        schema_file: Path to RelaxNG schema file or schema content as string
+        
+    Returns:
+        Tuple of (is_valid, errors)
+    """
     schema_file = schema_file or SCHEMA_RNG_PATH
+
     try:
-        # Load and parse the RelaxNG schema
-        if isinstance(schema_file, str):
-            # Remove any XML declaration if it exists
-            schema_file = re.sub(r'^<\?xml[^>]*\?>\s*', '', schema_file)
-            relaxng_doc = etree.fromstring(schema_file)
+        # Handle XML input
+        if isinstance(xml_doc, str):
+            xml_content = xml_doc
         else:
-            relaxng_doc = etree.parse(str(schema_file))
-        relaxng = etree.RelaxNG(relaxng_doc)
-        
-        # Validate the XML against the schema
-        is_valid = relaxng.validate(xml_doc)
-        
-        if is_valid:
-            return True, []
-        else:
-            # Get validation errors
-            error_log = relaxng.error_log
-            errors = [
-                f"Line {error.line}, Column {error.column}: {error.message}"
-                for error in error_log
-            ]
-            return False, errors
-            
+            xml_content = etree.tostring(xml_doc, encoding='unicode', pretty_print=True)
+        # Create temporary XML file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', encoding='utf-8') as xml_temp:
+            xml_temp.write(xml_content)
+            xml_temp.flush()
+            xml_temp.seek(0)
+            xml_temp_path = xml_temp.name
+            # Handle schema input
+            if isinstance(schema_file, str) and schema_file.strip().startswith('<'):
+                # Schema is provided as a string
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.rng', encoding='utf-8') as schema_temp:
+                    schema_content = re.sub(r'^<\?xml[^>]*\?>\s*', '', schema_file)
+                    schema_temp.write(schema_content)
+                    schema_temp.flush()
+                    schema_temp.seek(0)
+                    schema_path = schema_temp.name
+                    # Call Jing validator
+                    result = subprocess.run(
+                        ['jing', schema_path, xml_temp_path],
+                        capture_output=True,
+                        text=True
+                    )                
+            else:
+                # Schema is a file path
+                schema_path = str(schema_file)
+                
+                # Call Jing validator
+                result = subprocess.run(
+                    ['jing', schema_path, xml_temp_path],
+                    capture_output=True,
+                    text=True
+                )
+            # Parse Jing output
+            if result.returncode == 0:
+                return True, []
+            else:
+                # Parse error messages from stderr
+                errors = []
+                error_lines = result.stdout.strip().split('\n') if result.stdout else []
+                
+                for line in error_lines:
+                    if line.strip():
+                        # Jing outputs errors in format: file:line:column: message
+                        # Clean up the temporary file path from error messages
+                        cleaned_line = line.replace(xml_temp_path, 'XML')
+                        errors.append(cleaned_line)
+                
+                return False, errors
+                
+    except FileNotFoundError:
+        return False, ["Error: Jing validator not found. Please install Jing (https://relaxng.org/jclark/jing.html)"]
     except Exception as e:
-        # Catch any other exceptions
         return False, [f"Error during validation: {str(e)}"]
 
 

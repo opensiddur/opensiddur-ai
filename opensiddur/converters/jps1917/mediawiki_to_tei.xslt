@@ -43,6 +43,27 @@
                     <xsl:when test="not(current-group()[1][self::p])">
                         <xsl:apply-templates select="current-group()" mode="copy"/>
                     </xsl:when>
+                    <xsl:when test="current-group()/self::tei:head">
+                        <!-- group contains a head element - process maintaining order -->
+                        <xsl:for-each-group select="current-group()" group-adjacent="boolean(self::tei:head)">
+                            <xsl:choose>
+                                <xsl:when test="current-grouping-key()">
+                                    <!-- This group contains head elements - don't wrap -->
+                                    <xsl:apply-templates select="current-group()" mode="copy"/>
+                                </xsl:when>
+                                <xsl:when test="not(current-group()/self::text()[normalize-space(.)])">
+                                    <!-- This group contains no text - do not wrap -->
+                                    <xsl:apply-templates select="current-group()" mode="copy"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <!-- This group contains non-head elements - wrap in p -->
+                                    <tei:p>
+                                        <xsl:apply-templates select="current-group()" mode="copy"/>
+                                    </tei:p>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:for-each-group>
+                    </xsl:when>
                     <xsl:when test="current-group()/self::tei:ab">
                         <!-- ab can't appear in p and is already a block -->
                         <xsl:apply-templates select="current-group()" mode="copy"/>
@@ -57,15 +78,47 @@
         </xsl:variable>
         <xsl:choose>
             <xsl:when test="$wrapper_div_type">
-                <tei:div 
-                    type="{$wrapper_div_type}" 
-                    >
-                    <xsl:if test="$book_name">
-                        <xsl:attribute name="n" select="$book_name"/>
-                        <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $book_name)"/>
-                    </xsl:if>
-                    <xsl:copy-of select="$wrapped-content"/>
-                </tei:div>
+                <xsl:choose>
+                    <xsl:when test="count($wrapped-content/self::tei:head) &gt; 1">
+                        <!-- handle the case of Psalms, which has multiple sub-books -->
+                        <tei:div 
+                            type="{$wrapper_div_type}" 
+                            >
+                            <xsl:if test="$book_name">
+                                <xsl:attribute name="n" select="$book_name"/>
+                                <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $book_name)"/>
+                            </xsl:if>
+                            <xsl:for-each-group select="$wrapped-content" group-starting-with="tei:head">
+                                <xsl:choose>
+                                    <xsl:when test="position() = 1 and not(current-group()[1][self::tei:head])">
+                                        <!-- First group doesn't start with head - do not createa div for it -->
+                                        <xsl:copy-of select="current-group()"/>
+                                    </xsl:when>
+                                    <xsl:when test="current-group()[1][self::tei:head]">
+                                        <!-- Group starts with head -->
+                                        <tei:div type="{$wrapper_div_type}">
+                                            <xsl:attribute name="n" select="concat($book_name, '_', position() - 1)"/>
+                                            <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $book_name, '_', position() - 1)"/>
+                                            <xsl:copy-of select="current-group()"/>
+                                        </tei:div>
+                                    </xsl:when>
+                                </xsl:choose>
+                            </xsl:for-each-group>
+                        </tei:div>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <tei:div 
+                            type="{$wrapper_div_type}" 
+                            >
+                            <xsl:if test="$book_name">
+                                <xsl:attribute name="n" select="$book_name"/>
+                                <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $book_name)"/>
+                            </xsl:if>
+                            <xsl:copy-of select="$wrapped-content"/>
+                        </tei:div>
+                    </xsl:otherwise>
+                </xsl:choose>
+                
             </xsl:when>
             <xsl:otherwise>
                 <xsl:copy-of select="$wrapped-content"/>
@@ -272,6 +325,15 @@
     </xsl:template>
 
     <xsl:template match="verse">
+        <xsl:if test="@verse='1'">
+            <!-- if the verse marker is here, there is no dropinitial or anchor-->
+            <tei:milestone unit="chapter" n="{@chapter}"
+            corresp="urn:x-opensiddur:text:bible:{$book_name}/{@chapter}"/>
+            <xsl:if test="@chapter = '1' and not(following-sibling::p[1]/preceding-sibling::text()[normalize-space(.)])">
+                <!-- add an initial paragraph break -->
+                <p/>
+            </xsl:if>
+        </xsl:if>
         <tei:milestone unit="verse" n="{@verse}"
             corresp="urn:x-opensiddur:text:bible:{$book_name}/{@chapter}/{@verse}"/>
     </xsl:template>
