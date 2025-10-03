@@ -417,6 +417,17 @@
       </content>
     </elementSpec>
 
+    <!-- Global Schematron rules -->
+    <constraintSpec ident="global-attribute-validation" scheme="schematron">
+      <desc>
+        Global validation rules that apply to all attributes in the document.
+      </desc>
+      <rule context="@*">
+        <assert test="normalize-space(.) != ''">
+          Attribute '<xsl:value-of select="local-name()"/>' must not be empty or contain only whitespace.
+        </assert>
+      </rule>
+    </constraintSpec>
 
     </schemaSpec>
     </body>
