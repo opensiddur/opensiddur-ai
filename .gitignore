@@ -3,4 +3,7 @@ sources/
 project/
 schema/*.relaxng
 schema/*.rnc
+schema/*.schematron
+schema/*.xslt
 private/
+temp*
