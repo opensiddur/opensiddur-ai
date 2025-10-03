@@ -1,4 +1,4 @@
-<TEI xmlns="http://www.tei-c.org/ns/1.0">
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
   <teiHeader>
     <fileDesc>
       <titleStmt>
@@ -40,7 +40,26 @@
       <sourceDesc>
         <p>Created with TEI Roma by Efraim Feinstein.</p>
       </sourceDesc>
-    </fileDesc><encodingDesc><appInfo><application ident="RomaJS" version="1.1.2" when="2025-06-08T06:26:38.320Z"><desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc></application></appInfo><appInfo><application ident="RomaJS" version="1.1.2" when="2025-06-22T06:00:07.280Z"><desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc></application></appInfo></encodingDesc>
+    </fileDesc>
+    <encodingDesc>
+      <appInfo>
+        <application ident="RomaJS" version="1.1.2" when="2025-06-08T06:26:38.320Z">
+          <desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc>
+        </application>
+        <application ident="RomaJS" version="1.1.2" when="2025-06-22T06:00:07.280Z">
+          <desc>File edited with <ref target="https://github.com/TEIC/romajs">RomaJS</ref></desc>
+        </application>
+      </appInfo>
+      <constraintDecl scheme="schematron" xml:lang="en">
+        <sch:ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
+        <sch:ns prefix="j" uri="http://jewishliturgy.org/ns/jlptei/2"/>
+        <sch:ns prefix="xs" uri="http://www.w3.org/2001/XMLSchema"/>
+        <sch:ns prefix="rng" uri="http://relaxng.org/ns/structure/1.0"/>
+        <sch:ns prefix="rna" uri="http://relaxng.org/ns/compatibility/annotations/1.0"/>
+        <sch:ns prefix="sch" uri="http://purl.oclc.org/dsdl/schematron"/>
+        <sch:ns prefix="sch1x" uri="http://www.ascc.net/xml/schematron"/>
+      </constraintDecl>
+    </encodingDesc>
   </teiHeader>
   <text>
     <body>
@@ -272,27 +291,27 @@
         <desc>
           Schematron rules to ensure that the target attribute of <gi>undeclare</gi> points to a <gi>declare</gi> element in the same file.
         </desc>
-        <rule context="j:declare">
-          <assert test="@xml:id">
-            Every <gi>declare</gi> element must have an xml:id attribute.
-          </assert>
-        </rule>
-        <rule context="j:endDeclare">
-          <assert test="@target">
-            The <gi>endDeclare</gi> element must have a target attribute.
-          </assert>
-          <assert test="starts-with(@target, '#')">
-            The target attribute must be a fragment identifier (start with '#').
-          </assert>
-          <assert test="key('id', substring(@target, 2))[local-name()='declare' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
-            The target attribute must point to a <gi>declare</gi> element in the same file.
-          </assert>
-          <assert test="preceding::*[@xml:id = substring(@target, 2) and local-name()='declare' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
-            The targeted <gi>declare</gi> element must precede the <gi>endDeclare</gi> element in document order.
-          </assert>
-        </rule>
-        <let name="id" value="substring(@target, 2)"/>
-        <key name="id" match="*[@xml:id]" use="@xml:id"/>
+        <constraint>
+          <sch:rule context="j:declare" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+            <sch:assert test="@xml:id">
+              Every <gi>declare</gi> element must have an xml:id attribute.
+            </sch:assert>
+          </sch:rule>
+          <sch:rule context="j:endDeclare" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+            <sch:assert test="@target">
+              The <gi>endDeclare</gi> element must have a target attribute.
+            </sch:assert>
+            <sch:assert test="starts-with(@target, '#')">
+              The target attribute must be a fragment identifier (start with '#').
+            </sch:assert>
+            <sch:assert test="//j:declare[@xml:id=substring(@target, 2)]">
+              The target attribute must point to a <gi>declare</gi> element in the same file.
+            </sch:assert>
+            <sch:assert test="preceding::j:declare[@xml:id = substring(@target, 2)]">
+              The targeted <gi>declare</gi> element must precede the <gi>endDeclare</gi> element in document order.
+            </sch:assert>
+          </sch:rule>
+        </constraint>
       </constraintSpec>
     </elementSpec>
 
@@ -340,22 +359,22 @@
         <desc>
           Schematron rules to ensure that the target attribute of <gi>endConditional</gi> points to a <gi>conditional</gi> element in the same file and that the referenced element precedes the <gi>endConditional</gi> element.
         </desc>
-        <rule context="j:endConditional">
-          <assert test="@target">
-            The <gi>endConditional</gi> element must have a target attribute.
-          </assert>
-          <assert test="starts-with(@target, '#')">
-            The target attribute must be a fragment identifier (start with '#').
-          </assert>
-          <assert test="key('id', substring(@target, 2))[local-name()='conditional' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
-            The target attribute must point to a <gi>conditional</gi> element in the same file.
-          </assert>
-          <assert test="preceding::*[@xml:id = substring(@target, 2) and local-name()='conditional' and namespace-uri()='http://jewishliturgy.org/ns/jlptei/2']">
-            The referenced <gi>conditional</gi> element must precede the <gi>endConditional</gi> element.
-          </assert>
-        </rule>
-        <let name="id" value="substring(@target, 2)"/>
-        <key name="id" match="*[@xml:id]" use="@xml:id"/>
+        <constraint>
+          <sch:rule context="j:endConditional" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+            <sch:assert test="@target">
+              The <gi>endConditional</gi> element must have a target attribute.
+            </sch:assert>
+            <sch:assert test="starts-with(@target, '#')">
+              The target attribute must be a fragment identifier (start with '#').
+            </sch:assert>
+            <sch:assert test="//j:conditional[@xml:id=substring(@target, 2)]">
+              The target attribute must point to a <gi>conditional</gi> element in the same file.
+            </sch:assert>
+            <sch:assert test="preceding::j:conditional[@xml:id = substring(@target, 2)]">
+              The referenced <gi>conditional</gi> element must precede the <gi>endConditional</gi> element.
+            </sch:assert>
+          </sch:rule>
+        </constraint>
       </constraintSpec>
     </elementSpec>
 
@@ -417,17 +436,21 @@
       </content>
     </elementSpec>
 
-    <!-- Global Schematron rules -->
-    <constraintSpec ident="global-attribute-validation" scheme="schematron">
-      <desc>
-        Global validation rules that apply to all attributes in the document.
-      </desc>
-      <rule context="@*">
-        <assert test="normalize-space(.) != ''">
-          Attribute '<xsl:value-of select="local-name()"/>' must not be empty or contain only whitespace.
-        </assert>
-      </rule>
-    </constraintSpec>
+    <!-- Add global attribute validation to TEI element -->
+    <elementSpec ident="TEI" module="textstructure" mode="change">
+        <constraintSpec ident="global-attribute-validation" scheme="schematron">
+          <desc>
+            Global validation rules that apply to all attributes in the document.
+          </desc>
+          <constraint>
+            <sch:rule context="//@*" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:assert test="normalize-space(.) != ''">
+                Attribute must not be empty or contain only whitespace.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+    </elementSpec>
 
     </schemaSpec>
     </body>
