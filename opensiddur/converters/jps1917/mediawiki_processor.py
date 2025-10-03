@@ -10,9 +10,9 @@ Analysis Results Summary:
 - Tags: 11 types, 25,000+ instances (noinclude, dd, ref, table, etc.)
 """
 
-import time
+import re
 import mwparserfromhell
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -566,7 +566,6 @@ class MediaWikiProcessor:
     
     def _normalize_whitespace(self, content: str) -> str:
         """Normalize whitespace in content"""
-        import re
         # Normalize multiple spaces to single space
         content = re.sub(r' +', ' ', content)
         # Normalize line breaks, but preserve paragraph markers
@@ -574,22 +573,23 @@ class MediaWikiProcessor:
         return content.strip()
     
     def _convert_paragraph_breaks(self, content: str) -> str:
-        """Convert double newlines to paragraph indicators, but skip if {{nop}} is present"""
-        import re
+        """Convert double newlines to paragraph indicators, but skip if {{nop}} is directly adjacent"""
         
-        # Check if {{nop}} is present in the content
-        if '{{nop}}' in content:
-            # If {{nop}} is present, don't convert any paragraph breaks
-            return content
+        # First, protect {{nop}} markers and their immediate context
+        # Replace {{nop}} with a temporary marker
+        content = content.replace('{{nop}}', '___NOP_MARKER___')
         
-        # Convert \n\n to <p/> paragraph indicators
-        content = re.sub(r'\n\n', '<p/>', content)
+        # Convert \n\n to <p/> paragraph indicators, but not if they're adjacent to ___NOP_MARKER___
+        # This regex matches \n\n that are NOT preceded or followed by ___NOP_MARKER___
+        content = re.sub(r'(?<!___NOP_MARKER___)\n\n(?!___NOP_MARKER___)', '<p/>', content)
+        
+        # Restore {{nop}} markers
+        content = content.replace('___NOP_MARKER___', '{{nop}}')
+        
         return content
     
     def _handle_special_characters(self, content: str) -> str:
         """Handle special characters and entities - escape ampersands not in XML/HTML entities"""
-        import re
-        
         # More comprehensive regex to match XML/HTML entities
         # This includes named entities like &amp;, &lt;, &gt;, &quot;, &apos;
         # and numeric entities like &#123; and &#x1F;
@@ -632,7 +632,6 @@ class MediaWikiProcessor:
     
     def _cleanup_empty_elements(self, content: str) -> str:
         """Remove or fix empty elements"""
-        import re
         # Remove empty elements
         content = re.sub(r'<(\w+)[^>]*></\1>', '', content)
         return content
