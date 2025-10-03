@@ -117,7 +117,7 @@ XML validation is performed against the JLPTEI schema located at:
 ### Source Data
 
 Source pages are expected to be located in:
-- `sources/1917jps-wikisource/text/` (for 1917 JPS Bible)
+- `sources/jps1917/text/` (for 1917 JPS Bible)
 - Pages should be named as `0001.txt`, `0002.txt`, etc.
 
 The `get_page` tool is used internally to retrieve pages and expects:

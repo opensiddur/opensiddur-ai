@@ -7,7 +7,7 @@ from pathlib import Path
 
 # constants
 server="en.wikisource.org"
-output_directory = Path(__file__).parent.parent.parent.parent / "sources" / "1917jps-wikisource"
+output_directory = Path(__file__).parent.parent.parent.parent / "sources" / "jps1917"
 wiki_namespace = "Page"
 book_name = "JPS-1917-Universal.djvu"
 start_page = 443 #7
