@@ -250,7 +250,7 @@ JPS_1917 = [
                                 book_name_he = "מלאכי",
                                 file_name = "malachi",
                                 start_page = 770+PAGE_OFFSET,
-                                end_page = 776+PAGE_OFFSET,
+                                end_page = 774+PAGE_OFFSET,
                                 is_section = True,
                             ),
                         ],

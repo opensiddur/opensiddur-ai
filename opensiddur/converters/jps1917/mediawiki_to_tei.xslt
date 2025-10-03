@@ -22,16 +22,22 @@
         <xsl:copy/>
     </xsl:template>
 
+    <xsl:template match="mediawikis.wrapper">
+        <xsl:apply-templates/>
+    </xsl:template>
+
     <xsl:template match="mediawikis">
         <xsl:variable name="sectioned" as="node()*">
-            <xsl:choose>
-                <xsl:when test="$is_section">
-                    <xsl:apply-templates mode="sectioned"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:copy-of select="node()"/>
-                </xsl:otherwise>
-            </xsl:choose>
+            <mediawikis.wrapper>
+                <xsl:choose>
+                    <xsl:when test="$is_section">
+                        <xsl:apply-templates mode="sectioned"/>                    
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:copy-of select="node()"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </mediawikis.wrapper>
         </xsl:variable>
         <xsl:variable name="processed" as="node()*">
             <xsl:apply-templates select="$sectioned" />
@@ -132,11 +138,14 @@
     </xsl:template>
 
     <xsl:template match="mediawiki">
-        <tei:pb n="{noinclude[last()]/c}"/>
-        <xsl:apply-templates select="node()"/>  
+        <xsl:variable name="page-number" select="(
+            noinclude[last()]/c, 
+            following-sibling::mediawiki[1]/noinclude[last()]/c/number() - 1,
+            preceding-sibling::mediawiki[1]/noinclude[last()]/c/number() + 1)[1]"/>
+        <tei:pb n="{$page-number}"/>
+        <xsl:apply-templates />  
     </xsl:template>
 
-    <!-- TODO: figure out how to handle the credits/responsibilities -->
     <xsl:template match="noinclude"/>
 
     <xsl:template match="nop"/>
@@ -310,8 +319,10 @@
             <!-- add an initial paragraph break -->
             <p/>
         </xsl:if>
-        <tei:milestone unit="chapter" n="{$chapter}"
-            corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}"/>
+        <xsl:if test="$chapter">
+            <tei:milestone unit="chapter" n="{$chapter}"
+                corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}"/>
+        </xsl:if>
     </xsl:template>
 
     <!-- anchor is used as a verse marker for verse 1 of every chapter -->
@@ -391,9 +402,11 @@
     <xsl:template match="tei:note" mode="copy"/>
 
     <!-- on the pages with section boundaries, the section marker appears twice;
-    we always want to capture the *second* begin marker and the second to last end marker -->
-    <xsl:variable name="section-start" select="(//section[@begin])[2]" as="element()?"/>
-    <xsl:variable name="section-end" select="(//section[@end])[last()-1]" as="element()?"/>
+    we always want to capture the *second* begin marker and the second to last end marker 
+    If the book begins on a page with only itself, it may not have a start marker or vice versa
+    -->
+    <xsl:variable name="section-start" select="(//mediawikis/mediawiki[1]/section[@begin][2], //mediawikis/mediawiki[1]/node()[1])[1]" as="node()?"/>
+    <xsl:variable name="section-end" select="(//mediawikis/mediawiki[last()]/section[@end][last()-1], //mediawikis/mediawiki[last()]/node()[last()])[1]" as="node()?"/>
 
     <xsl:template match="node()" mode="sectioned">
         <xsl:choose>
@@ -405,7 +418,7 @@
                 </xsl:copy>
             </xsl:when>
             <!-- Keep elements that contain section markers -->
-            <xsl:when test="descendant::section[. is $section-start or . is $section-end]">
+            <xsl:when test="descendant::node()[. is $section-start or . is $section-end]">
                 <xsl:copy>
                     <xsl:copy-of select="@*"/>
                     <xsl:apply-templates mode="sectioned"/>
