@@ -579,9 +579,9 @@ class MediaWikiProcessor:
         # Replace {{nop}} with a temporary marker
         content = content.replace('{{nop}}', '___NOP_MARKER___')
         
-        # Convert \n\n to <p/> paragraph indicators, but not if they're adjacent to ___NOP_MARKER___
+        # Convert \n\n to <p/>\n paragraph indicators, but not if they're adjacent to ___NOP_MARKER___
         # This regex matches \n\n that are NOT preceded or followed by ___NOP_MARKER___
-        content = re.sub(r'(?<!___NOP_MARKER___)\n\n(?!___NOP_MARKER___)', '<p/>', content)
+        content = re.sub(r'(?<!___NOP_MARKER___)\n\n(?!___NOP_MARKER___)', '<p/>\n', content)
         
         # Restore {{nop}} markers
         content = content.replace('___NOP_MARKER___', '{{nop}}')
