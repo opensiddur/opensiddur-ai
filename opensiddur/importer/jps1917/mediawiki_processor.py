@@ -132,6 +132,7 @@ class MediaWikiProcessor:
     def _initialize_preprocessors(self):
         """Initialize preprocessing functions"""
         self.preprocessors = [
+            self._fix_noinclude_line_breaks,
             self._convert_paragraph_breaks,
             self._normalize_whitespace,
             self._handle_special_characters,  # Enable special character processing
@@ -563,6 +564,23 @@ class MediaWikiProcessor:
     # ============================================================================
     # PREPROCESSORS
     # ============================================================================
+    
+    def _fix_noinclude_line_breaks(self, content: str) -> str:
+        """Insert a blank line after </noinclude> tags when followed by non-whitespace content"""
+        # Pattern to match </noinclude> followed by optional whitespace and any non-whitespace character
+        # This handles cases like: </noinclude>:text, </noinclude>text, </noinclude> {{template}}, etc.
+        pattern = r'(</noinclude>)\s*(\S)'
+        
+        def replace_noinclude_content(match):
+            noinclude_tag = match.group(1)
+            following_content = match.group(2)
+            # Insert a newline after </noinclude> and before the following content
+            return f'{noinclude_tag}\n{following_content}'
+        
+        # Apply the replacement
+        content = re.sub(pattern, replace_noinclude_content, content)
+        
+        return content
     
     def _normalize_whitespace(self, content: str) -> str:
         """Normalize whitespace in content"""
