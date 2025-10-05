@@ -16,8 +16,10 @@ sys.path.insert(0, str(project_root))
 
 from opensiddur.common.xslt import xslt_transform
 
+XSLT_FILE = Path(__file__).parent / "jlptei-to-xelatex.xsl"
 
-def transform_xml_to_tex(input_file, xslt_file, output_file=None):
+
+def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
     """
     Transform a JLPTEI XML file to XeLaTeX using XSLT.
     
