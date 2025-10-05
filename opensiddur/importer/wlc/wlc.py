@@ -5,8 +5,8 @@ from typing import Optional, Dict, Any
 from lxml import etree
 
 # Import the XMLTransformer from its new location
-from opensiddur.converters.util.transformer import XMLTransformer
-from opensiddur.converters.util.validation import validate
+from opensiddur.importer.util.transformer import XMLTransformer
+from opensiddur.importer.util.validation import validate
 
 # Define TEI namespace with 'tei' prefix
 TEI_NS = "http://www.tei-c.org/ns/1.0"

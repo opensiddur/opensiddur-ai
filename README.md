@@ -13,7 +13,7 @@ You need a working version of podman (open source implementation of docker).
 
 The main schema is in `schema/jlptei.odd.xml`. To compile it, run:
 ```bash
-$ scripts/tei-stylesheets.sh teitorelaxng jlptei.odd.xml
+$ scripts/build-schema.sh
 ```
 
 The output will be in the `schema` directory as RelaxNG XML (and, eventually, ISO Schematron).

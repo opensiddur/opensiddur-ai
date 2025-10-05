@@ -71,7 +71,7 @@ Handles all identified HTML/XML tags:
 
 ### Basic Usage
 ```python
-from opensiddur.converters.jps1917.mediawiki_processor import create_processor
+from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 
 processor = create_processor()
 result = processor.process_wikitext(wikitext_content)

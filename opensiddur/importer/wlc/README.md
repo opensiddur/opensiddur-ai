@@ -15,7 +15,7 @@ The data will be downloaded to the `sources/wlc` directory.
 
 To convert the data to JLPTEI 2:
 ```bash
-poetry run python -m opensiddur.converters.wlc.wlc
+poetry run python -m opensiddur.importer.wlc.wlc
 ```
 
 The output will be in the `project/wlc` directory.

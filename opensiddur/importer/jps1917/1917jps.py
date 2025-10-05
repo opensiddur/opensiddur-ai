@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 # Import the XMLTransformer from its new location
-from opensiddur.converters.util.validation import validate
+from opensiddur.importer.util.validation import validate
 
 def make_project_directory():
     """ Make the project/1917jps directory if it doesn't exist """

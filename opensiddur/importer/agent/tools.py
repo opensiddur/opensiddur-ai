@@ -4,10 +4,8 @@ from typing import Optional
 
 from langchain.tools import tool
 
-try:
-    from opensiddur.converters.agent.common import CREDITS_PATH, TEXT_PATH, Page
-except ImportError:
-    from common import CREDITS_PATH, TEXT_PATH, Page
+
+from common import CREDITS_PATH, TEXT_PATH, Page
 
 @tool("get_page", return_direct=False)
 def get_page(page_number: str | int) -> Optional[Page]:

@@ -71,14 +71,14 @@ The conversion process follows a three-stage pipeline:
 
 ```bash
 # Run the complete conversion workflow from command line
-poetry run python -m opensiddur.converters.jps1917.convert_wikisource
+poetry run python -m opensiddur.importer.jps1917.convert_wikisource
 ```
 
 ### Complete Workflow (Programmatic)
 
 ```python
 # Run the complete conversion workflow
-from opensiddur.converters.jps1917.convert_wikisource import main
+from opensiddur.importer.jps1917.convert_wikisource import main
 
 # Convert all books to TEI XML
 main()
@@ -87,7 +87,7 @@ main()
 ### Individual Book Conversion
 
 ```python
-from opensiddur.converters.jps1917.convert_wikisource import book_file, Book
+from opensiddur.importer.jps1917.convert_wikisource import book_file, Book
 
 # Convert a specific book
 book = Book(
@@ -121,7 +121,7 @@ book = Book(
 ### Direct MediaWiki Processing
 
 ```python
-from opensiddur.converters.jps1917.mediawiki_processor import create_processor
+from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 
 # Create processor
 processor = create_processor()

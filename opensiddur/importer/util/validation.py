@@ -9,8 +9,8 @@ import subprocess
 import tempfile
 
 
-from opensiddur.converters.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
-from opensiddur.converters.util.xslt import xslt_transform
+from opensiddur.importer.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
+from opensiddur.importer.util.xslt import xslt_transform
 
 def validate(xml: Path | str, 
     schema_file: Optional[Path] = None,

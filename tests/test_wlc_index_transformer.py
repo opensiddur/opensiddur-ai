@@ -3,7 +3,7 @@ from lxml import etree
 from typing import Dict, Any, Optional
 
 # Import the transformer to test
-from opensiddur.converters.wlc.wlc import WLCIndexTransformer
+from opensiddur.importer.wlc.wlc import WLCIndexTransformer
 
 class TestWLCIndexTransformer(unittest.TestCase):
     """Test cases for WLCIndexTransformer."""

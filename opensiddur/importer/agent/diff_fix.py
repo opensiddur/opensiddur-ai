@@ -4,10 +4,7 @@ from pydantic import BaseModel
 from pydantic import Field
 
 from common import API_KEY, LLM_BASE_URL
-try:
-    from opensiddur.converters.agent.source_file import SourceFileInput, SourceFileOutput
-except ImportError:
-    from source_file import SourceFileInput, SourceFileOutput
+from source_file import SourceFileInput, SourceFileOutput
 import diff_match_patch as dmp_module
 
 DIFF_FIX_MODEL = "Qwen/Qwen3-Next-80B-A3B-Instruct"

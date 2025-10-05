@@ -9,7 +9,7 @@ import sys
 # Add the parent directory to the path so we can import the module under test
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from opensiddur.converters.util.transformer import XMLTransformer
+from opensiddur.importer.util.transformer import XMLTransformer
 
 
 class TestTransformer(XMLTransformer):

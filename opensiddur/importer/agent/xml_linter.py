@@ -5,12 +5,9 @@ import re
 from pydantic import BaseModel, Field
 from saxonche import PySaxonProcessor
 
-try:
-    from opensiddur.converters.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
-    from opensiddur.converters.util.validation import validate
-except ImportError:
-    from common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
-    from util import validate
+
+from common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
+from util import validate
 
 
 class XMLLinterInput(BaseModel):

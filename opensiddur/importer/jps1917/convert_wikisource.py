@@ -4,11 +4,11 @@ import urllib
 
 from pydantic import BaseModel
 
-from opensiddur.converters.agent.tools import get_credits, get_page
-from opensiddur.converters.jps1917.mediawiki_processor import create_processor
-from opensiddur.converters.util.prettify import prettify_xml
-from opensiddur.converters.util.validation import validate
-from opensiddur.converters.util.xslt import xslt_transform_string
+from opensiddur.importer.agent.tools import get_credits, get_page
+from opensiddur.importer.jps1917.mediawiki_processor import create_processor
+from opensiddur.importer.util.prettify import prettify_xml
+from opensiddur.importer.util.validation import validate
+from opensiddur.importer.util.xslt import xslt_transform_string
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parent.parent.parent.parent / "project" / "jps1917" 
 

@@ -12,7 +12,7 @@ from pathlib import Path
 # Add the project root to the path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from opensiddur.converters.jps1917.mediawiki_processor import create_processor
+from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 
 
 def test_basic_conversion():
