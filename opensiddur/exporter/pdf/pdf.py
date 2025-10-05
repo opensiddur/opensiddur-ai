@@ -32,7 +32,7 @@ def generate_tex(input_file, temp_tex_file):
     """
     try:
         print(f"Generating TeX from {input_file}...", file=sys.stderr)
-        transform_xml_to_tex(str(input_file), str(temp_tex_file))
+        transform_xml_to_tex(str(input_file), output_file=str(temp_tex_file))
         print(f"TeX file generated: {temp_tex_file}", file=sys.stderr)
         return True
     except Exception as e:
@@ -81,10 +81,11 @@ def compile_tex_to_pdf(tex_file, output_pdf):
             print(f"PDF file not found: {generated_pdf}", file=sys.stderr)
             return False
         
-        # Move the generated PDF to the desired output location
+        # Copy the generated PDF to the desired output location
         if generated_pdf != output_pdf:
-            generated_pdf.rename(output_pdf)
-            print(f"PDF moved to: {output_pdf}", file=sys.stderr)
+            import shutil
+            shutil.copy2(generated_pdf, output_pdf)
+            print(f"PDF copied to: {output_pdf}", file=sys.stderr)
         else:
             print(f"PDF generated: {output_pdf}", file=sys.stderr)
         
@@ -116,7 +117,7 @@ def export_to_pdf(input_file, output_pdf):
     
     # Create temporary directory for intermediate files
     with tempfile.TemporaryDirectory() as temp_dir:
-        temp_tex_file = Path(temp_dir) / f"{input_file.stem}.tex"
+        temp_tex_file = Path(temp_dir) / f"output.tex"
         
         # Step 1: Generate TeX file
         if not generate_tex(input_file, temp_tex_file):

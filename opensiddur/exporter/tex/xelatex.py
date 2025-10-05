@@ -14,7 +14,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from opensiddur.common.xslt import xslt_transform
+from opensiddur.common.xslt import xslt_transform, xslt_transform_string
 
 XSLT_FILE = Path(__file__).parent / "jlptei-to-xelatex.xsl"
 
@@ -32,11 +32,19 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         str: The transformed XeLaTeX content
     """
     try:
-        # Use the common XSLT transformation function
-        xslt_transform(Path(xslt_file), Path(input_file), Path(output_file) if output_file else None)
+        # Read the input XML
+        with open(input_file, 'r', encoding='utf-8') as input_fd:
+            input_xml = input_fd.read()
+        
+        # Use the string-based XSLT transformation function
+        result = xslt_transform_string(Path(xslt_file), input_xml)
         
         if output_file:
+            with open(output_file, 'w', encoding='utf-8') as output_fd:
+                output_fd.write(result)
             print(f"XeLaTeX output written to: {output_file}", file=sys.stderr)
+        else:
+            sys.stdout.write(result)
         
     except Exception as e:
         print(f"Transformation error: {e}", file=sys.stderr)
