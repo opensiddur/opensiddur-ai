@@ -488,9 +488,9 @@ def process_mediawiki(
     <mediawikis>{content}</mediawikis>
     </tei:{wrapper_element}>
     """
-#    Path("temp").mkdir(parents=True, exist_ok=True)
-#    with open(f"temp/{kwargs.get("book_name", "temp")}.temp.xml", "w") as f:
-#        f.write(pre_xml)
+    # Path("temp").mkdir(parents=True, exist_ok=True)
+    # with open(f"temp/{kwargs.get("book_name", "temp")}.temp.xml", "w") as f:
+    #     f.write(pre_xml)
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
 def validate_and_write_tei_file(tei_content: str, file_name: str):

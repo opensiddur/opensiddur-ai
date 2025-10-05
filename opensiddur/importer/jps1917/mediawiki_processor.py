@@ -740,7 +740,7 @@ class MediaWikiProcessor:
                 xml_content = postprocessor(xml_content)
             
             # Wrap in mediawiki tag
-            xml_content = f'<mediawiki>\n{xml_content}\n</mediawiki>'
+            xml_content = f'<mediawiki>{xml_content}</mediawiki>'
             
             return ConversionResult(
                 xml_content=xml_content,
