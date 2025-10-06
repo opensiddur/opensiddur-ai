@@ -7,6 +7,10 @@
 
     <xsl:output method="text" encoding="UTF-8" omit-xml-declaration="yes" indent="no"/>
 
+    <xsl:param name="additional-preamble" as="xs:string?"/>
+    <xsl:param name="additional-postamble" as="xs:string?"/>
+
+
     <!-- Root template -->
     <xsl:template match="/">
         <xsl:text>\documentclass{article}&#10;</xsl:text>
@@ -17,9 +21,17 @@
         <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Noto Sans Hebrew}&#10;</xsl:text>
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
         <xsl:text>\setlength{\parskip}{1em}&#10;</xsl:text>
-        <xsl:text>\begin{document}&#10;</xsl:text>
         
+        <xsl:value-of select="$additional-preamble"/>
+        <xsl:text>&#10;</xsl:text>
+        
+        <xsl:text>\begin{document}&#10;</xsl:text>
+
         <xsl:apply-templates select="tei:TEI/tei:text"/>
+        
+        <xsl:text>&#10;</xsl:text>
+        <xsl:value-of select="$additional-postamble"/>
+        <xsl:text>&#10;</xsl:text>
         
         <xsl:text>\end{document}&#10;</xsl:text>
     </xsl:template>

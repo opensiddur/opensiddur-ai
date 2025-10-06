@@ -8,6 +8,7 @@ This script converts JLPTEI XML files to XeLaTeX format using XSLT transformatio
 import sys
 import argparse
 import os
+from lxml import etree
 from pathlib import Path
 
 # Add the project root to the Python path
@@ -17,6 +18,45 @@ sys.path.insert(0, str(project_root))
 from opensiddur.common.xslt import xslt_transform, xslt_transform_string
 
 XSLT_FILE = Path(__file__).parent / "xelatex.xslt"
+
+def extract_licenses_from_jlptei(xml_file_paths):
+    """
+    Extract license URLs and names from a list of JLPTEI XML files.
+
+    Args:
+        xml_file_paths (list of str): List of paths to JLPTEI XML files.
+
+    Returns:
+        dict: Mapping from file path to a list of (license_url, license_name) tuples.
+    """
+
+    ns = {
+        "tei": "http://www.tei-c.org/ns/1.0",
+    }
+
+    results = {}
+
+    for file_path in xml_file_paths:
+        licenses = []
+        try:
+            tree = etree.parse(file_path)
+            root = tree.getroot()
+            # Find all <tei:licence> elements anywhere in the document
+            for licence in root.findall(".//tei:licence", ns):
+                # Try to get the target attribute (URL)
+                url = licence.attrib.get("target")
+                # The text content is the license name
+                name = (licence.text or "").strip()
+                if url or name:
+                    licenses.append((url, name))
+        except Exception as e:
+            # If there's a parse error or file error, skip and continue
+            print(f"Error: {e}", file=sys.stderr)
+            pass
+        results[file_path] = licenses
+
+    return results
+
 
 
 def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
