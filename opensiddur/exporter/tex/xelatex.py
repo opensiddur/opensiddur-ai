@@ -16,7 +16,7 @@ sys.path.insert(0, str(project_root))
 
 from opensiddur.common.xslt import xslt_transform, xslt_transform_string
 
-XSLT_FILE = Path(__file__).parent / "jlptei-to-xelatex.xsl"
+XSLT_FILE = Path(__file__).parent / "xelatex.xslt"
 
 
 def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
@@ -78,8 +78,8 @@ Examples:
     parser.add_argument(
         '--xslt',
         dest='xslt_file',
-        default=os.path.join(os.path.dirname(__file__), 'jlptei-to-xelatex.xsl'),
-        help='Path to the XSLT transformation file (default: jlptei-to-xelatex.xsl in the same directory)'
+        default=os.path.join(os.path.dirname(__file__), 'xelatex.xslt'),
+        help='Path to the XSLT transformation file (default: xelatex.xslt in the same directory)'
     )
     
     args = parser.parse_args()
