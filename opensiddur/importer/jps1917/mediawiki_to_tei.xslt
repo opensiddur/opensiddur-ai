@@ -154,10 +154,14 @@
         <xsl:value-of select="string-join(for $i in 1 to @length return '—', '')"/>
     </xsl:template>
 
-    <xsl:template match="c[larger|x-larger]">
+    <xsl:template match="c[larger|x-larger|xx-larger]">
         <tei:head>
-            <xsl:apply-templates select="*/node()"/>
+            <xsl:apply-templates />
         </tei:head>
+    </xsl:template>
+
+    <xsl:template match="larger|x-larger|xx-larger">
+        <xsl:apply-templates />
     </xsl:template>
 
     <xsl:template match="c" priority="-1">
@@ -211,6 +215,11 @@
     <!-- p will be used as a grouping element -->
     <xsl:template match="p">
         <p/>
+    </xsl:template>
+
+    <!-- p inside "c" is a line break in a heading, not a paragraph -->
+    <xsl:template match="p[ancestor::c]">
+        <tei:lb/>
     </xsl:template>
 
     <!-- reconstructed text with an error and editorial note -->
@@ -322,18 +331,16 @@
         <xsl:if test="$chapter">
             <tei:milestone unit="chapter" n="{$chapter}"
                 corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}"/>
+            <xsl:if test="not(following-sibling::verse[@chapter=$chapter][@verse='1'])">
+                <tei:milestone unit="verse" n="1"
+                    corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}/1"/>
+            </xsl:if>
         </xsl:if>
+
     </xsl:template>
 
-    <!-- anchor is used as a verse marker for verse 1 of every chapter -->
-    <xsl:template match="anchor">
-        <xsl:variable name="chapter" select="substring-before(@name, ':')"/>
-        <!-- add a verse marker for v1 if it does not exist -->
-        <xsl:if test="not(following-sibling::verse[@chapter=$chapter][@verse='1'])">
-            <tei:milestone unit="verse" n="1"
-                corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}/1"/>
-        </xsl:if>
-    </xsl:template>
+    <!-- anchor is used inside dropinitial -->
+    <xsl:template match="anchor"/>
 
     <xsl:template match="verse">
         <xsl:if test="@verse='1'">
