@@ -32,11 +32,16 @@
         <xsl:apply-templates/>
     </xsl:template>
 
+    <!-- Template for head elements -->
+    <xsl:template match="tei:head">
+        <xsl:apply-templates/>
+    </xsl:template>
+
     <!-- Template for div elements -->
     <xsl:template match="tei:div">
         <xsl:text>\section{</xsl:text>
         <xsl:if test="tei:head">
-            <xsl:value-of select="tei:head"/>
+            <xsl:apply-templates select="tei:head"/>
         </xsl:if>
         <xsl:text>}&#10;</xsl:text>
         <xsl:apply-templates select="*[not(self::tei:head)]"/>
@@ -112,6 +117,13 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
+    <!-- Template for any element with Hebrew language -->
+    <xsl:template match="*[@xml:lang='he']" priority="0">
+        <xsl:text>\texthebrew{</xsl:text>
+        <xsl:apply-templates/>
+        <xsl:text>}</xsl:text>
+    </xsl:template>
+
     <!-- Template for foreign text -->
     <xsl:template match="tei:foreign">
         <xsl:choose>
@@ -141,6 +153,13 @@
         <xsl:if test="preceding-sibling::*[1]">
             <xsl:text>\\&#10;</xsl:text>
         </xsl:if>
+    </xsl:template>
+
+    <!-- If there is a line break preceding this text node, remove leading newlines
+    so TeX doesn't insert a paragraph break
+     -->
+    <xsl:template match="text()[preceding-sibling::*[1][self::tei:lb]]">
+        <xsl:value-of select="replace(., '^\n+', ' ')"/>
     </xsl:template>
 
     <!-- Template for page breaks -->
