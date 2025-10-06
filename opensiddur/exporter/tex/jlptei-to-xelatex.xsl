@@ -15,6 +15,8 @@
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
         <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Noto Sans Hebrew}&#10;</xsl:text>
+        <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
+        <xsl:text>\setlength{\parskip}{1em}&#10;</xsl:text>
         <xsl:text>\begin{document}&#10;</xsl:text>
         
         <xsl:apply-templates select="tei:TEI/tei:text"/>
