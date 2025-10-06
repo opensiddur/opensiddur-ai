@@ -3,7 +3,8 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:tei="http://www.tei-c.org/ns/1.0"
     xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
-    exclude-result-prefixes="tei j">
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    exclude-result-prefixes="tei j xs">
 
     <xsl:output method="text" encoding="UTF-8" omit-xml-declaration="yes" indent="no"/>
 
@@ -16,6 +17,7 @@
         <xsl:text>\documentclass{article}&#10;</xsl:text>
         <xsl:text>\usepackage{fontspec}&#10;</xsl:text>
         <xsl:text>\usepackage{polyglossia}&#10;</xsl:text>
+        <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
         <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Noto Sans Hebrew}&#10;</xsl:text>
