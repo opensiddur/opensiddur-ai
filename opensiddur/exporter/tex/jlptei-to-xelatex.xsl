@@ -150,7 +150,7 @@
     <!-- Template for line breaks -->
     <xsl:template match="tei:lb">
         <!-- do not add a line break if this is the first lb in a block of text-->
-        <xsl:if test="preceding-sibling::*[1]">
+        <xsl:if test="preceding-sibling::text()[normalize-space(.)][1]">
             <xsl:text>\\&#10;</xsl:text>
         </xsl:if>
     </xsl:template>
