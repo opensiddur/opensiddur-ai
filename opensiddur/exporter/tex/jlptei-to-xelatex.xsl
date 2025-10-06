@@ -75,7 +75,7 @@
                 <xsl:text>}&#10;</xsl:text>
             </xsl:when>
             <xsl:when test="@unit='verse'">
-                <xsl:text>\textbf{</xsl:text>
+                <xsl:text>\textsuperscript{</xsl:text>
                 <xsl:value-of select="@n"/>
                 <xsl:text>} </xsl:text>
             </xsl:when>
