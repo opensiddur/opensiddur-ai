@@ -49,6 +49,11 @@
         <xsl:apply-templates select="*[not(self::tei:head)]"/>
     </xsl:template>
 
+    <!-- Template for ab elements without rend attribute -->
+    <xsl:template match="tei:ab">
+        <xsl:apply-templates/>
+    </xsl:template>
+
     <!-- Template for paragraph elements -->
     <xsl:template match="tei:p">
         <xsl:apply-templates/>
@@ -112,11 +117,74 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
-    <!-- Template for highlighted text -->
+    <!-- High priority template to capture rend attribute and apply formatting -->
+    <xsl:template match="*[@rend]" priority="10">
+        <xsl:variable name="rend-value" select="@rend"/>
+        <xsl:choose>
+            <xsl:when test="$rend-value='small-caps'">
+                <xsl:text>\textsc{</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='italic'">
+                <xsl:text>\textit{</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='large'">
+                <xsl:text>\Large{</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='small'">
+                <xsl:text>\small{</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='superscript'">
+                <xsl:text>\textsuperscript{</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='suspended'">
+                <xsl:text>\textsuperscript{</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='align-right'">
+                <xsl:text>\begin{flushright}</xsl:text>
+                <xsl:next-match/>
+                <xsl:text>\end{flushright}</xsl:text>
+            </xsl:when>
+            <xsl:when test="$rend-value='****'">
+                <!-- this only occurs on milestone to make a horizontal line with *s -->
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:message>Unknown rend value: <xsl:value-of select="$rend-value"/></xsl:message>
+                <xsl:next-match/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
+    <xsl:template match="tei:milestone[@rend='****']">
+        <xsl:text>\begin{center}* * * *\end{center}&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- Template for highlighted text without rend attribute -->
     <xsl:template match="tei:hi">
-        <xsl:text>\textbf{</xsl:text>
-        <xsl:apply-templates/>
-        <xsl:text>}</xsl:text>
+        <xsl:choose>
+            <xsl:when test="@rend">
+                <!-- If rend attribute exists, just process content (called via xsl:next-match) -->
+                <xsl:apply-templates/>
+            </xsl:when>
+            <xsl:otherwise>
+                <!-- No rend attribute, apply default formatting -->
+                <xsl:text>\textbf{</xsl:text>
+                <xsl:apply-templates/>
+                <xsl:text>}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <!-- Template for any element with Hebrew language -->
