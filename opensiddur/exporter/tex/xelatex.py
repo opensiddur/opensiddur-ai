@@ -8,6 +8,7 @@ This script converts JLPTEI XML files to XeLaTeX format using XSLT transformatio
 import sys
 import argparse
 import os
+from typing import Optional
 from lxml import etree
 from pathlib import Path
 
@@ -33,6 +34,8 @@ class CreditRecord(BaseModel):
     resp_text: str
     ref: str
     name_text: str
+    namespace: str  # where the contributor did their work
+    contributor: str  # contirbutor name at the source
 
 def extract_licenses(xml_file_paths: list[Path]) -> dict[Path, LicenseRecord]:
     """
@@ -139,16 +142,75 @@ def extract_credits(xml_file_paths: list[Path]) -> dict[Path, list[dict]]:
                 if name is not None:
                     credit["ref"] = name.attrib.get("ref")
                     credit["name_text"] = (name.text or "").strip()
+                    namespace, contributor = credit["ref"].split(":")[-1].split("/")
+                    credit["namespace"] = namespace
+                    credit["contributor"] = contributor
                 else:
                     credit["ref"] = None
                     credit["name_text"] = ""
-                credits.append(credit)
+                    credit["namespace"] = ""
+                    credit["contributor"] = ""
+                credits.append(CreditRecord.model_validate(credit))
         except Exception as e:
             print(f"Error: {e}", file=sys.stderr)
             pass
         results[file_path] = credits
 
     return results
+
+
+def group_credits(credits: dict[Path, list[dict]]) -> dict[str, dict[str, list[CreditRecord]]]:
+    """
+    Group credits by role -> namespace -> contributor.
+    Each credit record will appear once per role.
+    """
+    credit_refs = set() # avoid duplicates of (role, ref)
+    grouped_credits = {}
+    for _, credit_list in credits.items():
+        for credit in credit_list:
+            if (credit.role, credit.ref) not in credit_refs:
+                role = credit.role
+                ref = credit.ref
+                namespace = credit.namespace
+                credit_refs.add((role, ref))
+                if role not in grouped_credits:
+                    grouped_credits[role] = {}
+                if namespace not in grouped_credits[role]:
+                    grouped_credits[role][namespace] = []
+                grouped_credits[role][namespace].append(credit)
+            
+    return grouped_credits
+
+contributor_keys_to_roles = {
+    "ann": "Annotator",
+    "aut": "Author",
+    "edt": "Editor",
+    "fac": "Facsimilist",
+    "fnd": "Funder",
+    "mrk": "Markup editor",
+    "pfr": "Proofreader",
+    "spn": "Sponsor",
+    "trl": "Translator",
+    "trc": "Transcriptionist",
+}
+
+def credits_to_tex(credits: dict[str, dict[str, list[CreditRecord]]]) -> str:
+    """
+    Convert role -> namespace -> list of CreditRecord objects to a string of LaTeX code.
+    """
+    tex = f"""\\section{{Contributor credits}}\n"""
+    for role, namespace_dict in credits.items():
+        total_credits = sum(len(credits) for credits in namespace_dict.values())
+        role_name = contributor_keys_to_roles[role] + ("s" if total_credits > 1 else "")
+        tex += f"""\\subsection{{{role_name}}}\n"""
+        for namespace, credits in namespace_dict.items():
+            sorted_credits = sorted(credits, key=lambda x: x.contributor)
+            tex += f"""\\subsubsection{{From {namespace}}}\n"""
+            tex += f"""\\begin{{itemize}}\n"""
+            for credit in sorted_credits:
+                tex += f"""\\item {credit.name_text}\n"""
+            tex += f"""\\end{{itemize}}\n"""
+    return tex
 
 
 def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
@@ -170,11 +232,12 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         
         licenses = extract_licenses([Path(input_file)])
         licenses_tex = licenses_to_tex(group_licenses(licenses))
-        
+        credits = extract_credits([Path(input_file)])
+        credits_tex = credits_to_tex(group_credits(credits))
         # Use the string-based XSLT transformation function
         result = xslt_transform_string(Path(xslt_file), input_xml, 
             xslt_params={
-                "additional-postamble": licenses_tex,
+                "additional-postamble": licenses_tex + "\n" + credits_tex,
             })
         
         if output_file:
