@@ -212,6 +212,53 @@ def credits_to_tex(credits: dict[str, dict[str, list[CreditRecord]]]) -> str:
             tex += f"""\\end{{itemize}}\n"""
     return tex
 
+def get_project_index(file_path: Path) -> Path:
+    """
+    Get the project index file for a given file path.
+    """
+    return file_path.parent / "index.xml"
+
+def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
+    """
+    Extract sources from a list of JLPTEI XML files.
+    Returns:
+        tuple: (preamble_tex, postamble_tex) for the bibliography
+    """
+    index_files = set(get_project_index(fp) for fp in xml_file_paths)
+    for index_xml in index_files:
+        bibtex_records_all = []
+        unique_bibtex_records = set()
+        
+        try:
+            # Convert the index xml to .bib using bibtex.xslt
+            index_xml_text = index_xml.read_text(encoding="utf-8")
+            bib_xslt_path = Path(__file__).parent / "bibtex.xslt"
+            bibtex_str = xslt_transform_string(bib_xslt_path, index_xml_text)
+            bibtex_str = bibtex_str.strip()
+            if bibtex_str and bibtex_str not in unique_bibtex_records:
+                unique_bibtex_records.add(bibtex_str)
+                bibtex_records_all.append(bibtex_str)
+        except Exception as e:
+            print(f"Could not extract bibtex from {index_xml}: {e}", file=sys.stderr)
+            continue
+        bibtex_blob = "\n\n".join(bibtex_records_all)
+        preamble_tex = ""
+        postamble_tex = ""
+        if bibtex_blob:
+            preamble_tex = f"""\\begin{{filecontents*}}{{job.bib}}
+{bibtex_blob}
+\\end{{filecontents*}}
+\\addbibresource{{job.bib}}
+"""
+            postamble_tex = f"""
+\\begingroup
+\\renewcommand{{\\refname}}{{Sources}}
+\\nocite{{*}}
+\\printbibliography
+\\endgroup
+"""
+        return preamble_tex, postamble_tex
+    return "", ""
 
 def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
     """
@@ -234,10 +281,12 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         licenses_tex = licenses_to_tex(group_licenses(licenses))
         credits = extract_credits([Path(input_file)])
         credits_tex = credits_to_tex(group_credits(credits))
+        sources_preamble_tex, sources_postamble_tex = extract_sources([Path(input_file)])
         # Use the string-based XSLT transformation function
         result = xslt_transform_string(Path(xslt_file), input_xml, 
             xslt_params={
-                "additional-postamble": licenses_tex + "\n" + credits_tex,
+                "additional-preamble": sources_preamble_tex,
+                "additional-postamble": licenses_tex + "\n" + credits_tex + "\n" + sources_postamble_tex,
             })
         
         if output_file:

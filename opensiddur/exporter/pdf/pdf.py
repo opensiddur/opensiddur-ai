@@ -40,13 +40,15 @@ def generate_tex(input_file, temp_tex_file):
         return False
 
 
-def compile_tex_to_pdf(tex_file, output_pdf):
+def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
     """
-    Compile TeX file to PDF using XeLaTeX.
+    Compile TeX file to PDF using XeLaTeX with bibliography support.
+    Runs xelatex -> bibtex -> xelatex until no more reruns are needed.
     
     Args:
         tex_file (Path): Path to the TeX file
         output_pdf (Path): Path to the output PDF file
+        max_runs (int): Maximum number of xelatex runs to prevent infinite loops
     
     Returns:
         bool: True if successful, False otherwise
@@ -58,21 +60,81 @@ def compile_tex_to_pdf(tex_file, output_pdf):
         tex_dir = tex_file.parent
         tex_name = tex_file.stem
         
-        # Run XeLaTeX
-        cmd = [
-            'xelatex',
-            '-interaction=nonstopmode',
-            '-output-directory', str(tex_dir),
-            str(tex_file)
-        ]
+        def run_xelatex():
+            """Run XeLaTeX and return (success, output, needs_rerun)"""
+            cmd = [
+                'xelatex',
+                '-interaction=nonstopmode',
+                '-output-directory', str(tex_dir),
+                str(tex_file)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=tex_dir)
+            
+            if result.returncode != 0:
+                return False, result.stdout + result.stderr, False
+            
+            # Check if we need to rerun
+            output = result.stdout + result.stderr
+            # Look for common LaTeX rerun indicators
+            # Avoid false positives from biblatex's "Please rerun LaTeX" which appears even on final run
+            needs_rerun = any(pattern in output for pattern in [
+                'Rerun to get cross-references right',
+                'Rerun to get outlines right',
+                'There were undefined references',
+                'Label(s) may have changed',
+                'Rerun to get citations correct'
+            ])
+            
+            return True, output, needs_rerun
         
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=tex_dir)
+        def run_bibtex():
+            """Run BibTeX and return success status"""
+            cmd = ['bibtex', str(tex_name)]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=tex_dir)
+            
+            # BibTeX may return non-zero even on success with warnings
+            # Check for actual errors in output
+            if 'error message' in result.stdout.lower():
+                print(f"BibTeX errors: {result.stdout}", file=sys.stderr)
+                return False
+            
+            return True
         
-        if result.returncode != 0:
+        # First XeLaTeX run
+        print("Running XeLaTeX (pass 1)...", file=sys.stderr)
+        success, output, needs_rerun = run_xelatex()
+        
+        if not success:
             print(f"XeLaTeX compilation failed:", file=sys.stderr)
-            print(f"STDOUT: {result.stdout}", file=sys.stderr)
-            print(f"STDERR: {result.stderr}", file=sys.stderr)
+            print(output, file=sys.stderr)
             return False
+        
+        # Check if bibliography exists and run BibTeX
+        aux_file = tex_dir / f"{tex_name}.aux"
+        if aux_file.exists():
+            aux_content = aux_file.read_text()
+            if '\\bibdata' in aux_content or '\\citation' in aux_content:
+                print("Running BibTeX...", file=sys.stderr)
+                if not run_bibtex():
+                    print("Warning: BibTeX encountered errors", file=sys.stderr)
+                # After BibTeX, we definitely need to rerun XeLaTeX
+                needs_rerun = True
+        
+        # Continue running XeLaTeX until no more reruns are needed
+        run_count = 1
+        while needs_rerun and run_count < max_runs:
+            run_count += 1
+            print(f"Running XeLaTeX (pass {run_count})...", file=sys.stderr)
+            success, output, needs_rerun = run_xelatex()
+            
+            if not success:
+                print(f"XeLaTeX compilation failed:", file=sys.stderr)
+                print(output, file=sys.stderr)
+                return False
+        
+        if run_count >= max_runs:
+            print(f"Warning: Reached maximum number of runs ({max_runs})", file=sys.stderr)
         
         # The PDF should be in the same directory as the TeX file
         generated_pdf = tex_dir / f"{tex_name}.pdf"
@@ -89,10 +151,16 @@ def compile_tex_to_pdf(tex_file, output_pdf):
         else:
             print(f"PDF generated: {output_pdf}", file=sys.stderr)
         
+        print(f"Compilation completed in {run_count} XeLaTeX pass(es)", file=sys.stderr)
         return True
         
-    except FileNotFoundError:
-        print("Error: XeLaTeX not found. Please install XeLaTeX.", file=sys.stderr)
+    except FileNotFoundError as e:
+        if 'xelatex' in str(e):
+            print("Error: XeLaTeX not found. Please install XeLaTeX.", file=sys.stderr)
+        elif 'bibtex' in str(e):
+            print("Error: BibTeX not found. Please install BibTeX.", file=sys.stderr)
+        else:
+            print(f"Error: Command not found: {e}", file=sys.stderr)
         return False
     except Exception as e:
         print(f"Error compiling TeX to PDF: {e}", file=sys.stderr)

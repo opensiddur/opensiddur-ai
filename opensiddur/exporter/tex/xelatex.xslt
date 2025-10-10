@@ -18,6 +18,7 @@
         <xsl:text>\usepackage{fontspec}&#10;</xsl:text>
         <xsl:text>\usepackage{polyglossia}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
+        <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
         <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Noto Sans Hebrew}&#10;</xsl:text>
