@@ -44,7 +44,7 @@ jobs:
       run: poetry install --no-interaction
     
     - name: Build schema
-      run: scripts/build-schema.sh
+      run: bash scripts/build-schema.sh
     
     - name: Run tests with coverage
       run: |
