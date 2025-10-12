@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from pydantic import BaseModel, Field
+
 BASE_PATH = Path(__file__).absolute().parent.parent.parent.parent
 DATA_PATH = BASE_PATH / "sources" / "jps1917"
 TEXT_PATH = DATA_PATH / "text"
@@ -10,3 +12,8 @@ SCHEMA_ODD_PATH = SCHEMA_PATH / "jlptei.odd.xml"
 SCHEMA_RNG_PATH = SCHEMA_PATH / "jlptei.odd.xml.relaxng"
 SCHEMA_SCH_PATH = SCHEMA_PATH / "jlptei.odd.xml.schematron"
 SCHEMA_SCH_XSLT_PATH = SCHEMA_PATH / "jlptei.odd.xml.schematron.xslt"
+
+
+class Page(BaseModel):
+    number: int = Field(description = "Page sequence number")
+    content: str = Field(description = "Page content")
