@@ -9,8 +9,8 @@ class TestPrettifyXML(unittest.TestCase):
     
     def test_prettify_unformatted_xml(self):
         """Test that unformatted XML gets properly formatted with indentation"""
-        # Create ugly, unformatted XML on one line
-        ugly_xml = '<root><child1><grandchild>text</grandchild></child1><child2 attr="value"><item>data</item></child2></root>'
+        # Create ugly, unformatted XML on one line with tail text
+        ugly_xml = '<root><child1><grandchild>text</grandchild>tail after grandchild</child1>tail after child1<child2 attr="value"><item>data</item>item tail</child2></root>'
         
         result = prettify_xml(ugly_xml)
         
@@ -24,6 +24,11 @@ class TestPrettifyXML(unittest.TestCase):
         self.assertIn('<grandchild>text</grandchild>', result)
         self.assertIn('<child2 attr="value">', result)
         self.assertIn('</root>', result)
+        
+        # Verify tail text is preserved
+        self.assertIn('tail after grandchild', result)
+        self.assertIn('tail after child1', result)
+        self.assertIn('item tail', result)
         
         # Should have multiple lines (indented)
         lines = result.split('\n')
