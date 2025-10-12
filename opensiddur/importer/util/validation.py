@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 
 
-from constants import SCHEMA_RNG_PATH, SCHEMA_SCH_XSLT_PATH
+from .constants import SCHEMA_RNG_PATH, SCHEMA_SCH_XSLT_PATH
 
 def validate(xml: Path | str, 
     schema_file: Optional[Path] = None,
