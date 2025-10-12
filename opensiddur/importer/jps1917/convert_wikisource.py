@@ -4,13 +4,14 @@ import urllib
 
 from pydantic import BaseModel
 
-from opensiddur.importer.agent.tools import get_credits, get_page
+from opensiddur.importer.util.pages import get_credits, get_page
 from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 from opensiddur.common.xslt import xslt_transform_string
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parent.parent.parent.parent / "project" / "jps1917" 
+MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
 
 class Book(BaseModel):
     book_name_he: str
@@ -459,9 +460,11 @@ def tei_file(
     </tei:TEI>
     """
 
-def mediawiki_xml_to_tei(xml_content: str, xslt_params: Optional[dict[str, Any]] = None):
-    xslt_file = Path(__file__).parent / "mediawiki_to_tei.xslt"
-    outputs = xslt_transform_string(xslt_file, xml_content, multiple_results=True, xslt_params=xslt_params)
+def mediawiki_xml_to_tei(xml_content: str, 
+    xslt_params: Optional[dict[str, Any]] = None,
+    mediawiki_to_tei_xslt: Path = MEDIAWIKI_TO_TEI_XSLT,
+):
+    outputs = xslt_transform_string(mediawiki_to_tei_xslt, xml_content, multiple_results=True, xslt_params=xslt_params)
     return {
         "front": outputs[""] if "tei:front" in outputs[""] else "",
         "body": outputs[""] if "tei:body" in outputs[""] else "",

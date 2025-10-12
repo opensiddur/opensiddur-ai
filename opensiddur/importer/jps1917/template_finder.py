@@ -11,7 +11,7 @@ from typing import Dict, Optional
 from pathlib import Path
 
 # Import the get_page function from the agent tools
-from opensiddur.importer.agent.tools import get_page
+from opensiddur.importer.util.pages import get_page
 
 
 def find_all_tags(start_page: int = 1, end_page: Optional[int] = None) -> Dict[str, Dict]:
@@ -290,7 +290,7 @@ def find_page_range() -> tuple[int, int]:
     return first_page, last_page
 
 
-def print_tag_summary(tag_data: Dict) -> None:
+def print_tag_summary(tag_data: Dict) -> None: # pragma: no cover
     """
     Print a summary of found tags.
     
@@ -324,7 +324,7 @@ def print_tag_summary(tag_data: Dict) -> None:
         print(f"{tag_name}: {count} uses")
 
 
-def print_template_summary(template_data: Dict) -> None:
+def print_template_summary(template_data: Dict) -> None: # pragma: no cover
     """
     Print a summary of found templates.
     
@@ -358,7 +358,7 @@ def print_template_summary(template_data: Dict) -> None:
         print(f"{template_name}: {count} uses")
 
 
-def save_tag_analysis(tag_data: Dict, output_file: str = "tag_analysis.json") -> None:
+def save_tag_analysis(tag_data: Dict, output_file: str = "tag_analysis.json") -> None: # pragma: no cover
     """
     Save tag analysis to a JSON file.
     
@@ -382,7 +382,7 @@ def save_tag_analysis(tag_data: Dict, output_file: str = "tag_analysis.json") ->
     print(f"Tag analysis saved to {output_file}")
 
 
-def save_template_analysis(template_data: Dict, output_file: str = "template_analysis.json") -> None:
+def save_template_analysis(template_data: Dict, output_file: str = "template_analysis.json") -> None: # pragma: no cover
     """
     Save template analysis to a JSON file.
     
