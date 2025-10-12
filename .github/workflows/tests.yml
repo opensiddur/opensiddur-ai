@@ -41,7 +41,7 @@ jobs:
       run: poetry install --no-interaction
     
     - name: Install Jing (RelaxNG validator)
-      run: sudo apt-get update && sudo apt-get install -y jing
+      run: sudo apt-get update && sudo apt-get install --no-install-recommends --no-install-suggests -y jing
     
     - name: Run tests with coverage
       run: |
