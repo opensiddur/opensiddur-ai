@@ -8,8 +8,7 @@ from lxml import etree as lxml_etree
 
 
 
-def prettify_xml(xml_string: str, 
-                indent: int=2, 
+def prettify_xml(xml_string: str,
                 remove_xml_declaration: bool=False,
                 encoding: str="utf-8") -> str:
     """
@@ -18,7 +17,6 @@ def prettify_xml(xml_string: str,
     
     Args:
         xml_string (str): The XML string to prettify
-        indent (int): The indentation string to use (default: 2 spaces)
         remove_xml_declaration (bool): Whether to remove the XML declaration (default: False)
         encoding (str): The encoding to use (default: utf-8)
     
@@ -26,7 +24,7 @@ def prettify_xml(xml_string: str,
         str: The prettified XML string
         
     Raises:
-        ET.ParseError: If the XML string is not valid XML
+        lxml.etree.ParseError: If the XML string is not valid XML
     """
     try:
         # lxml preserves namespace prefixes
@@ -44,10 +42,12 @@ def prettify_xml(xml_string: str,
             pretty_xml = pretty_xml.decode(encoding)
      
         return pretty_xml.rstrip()
-    except lxml_etree.ParseError as e:
-        raise ET.ParseError(f"Invalid XML: {e}")
     except lxml_etree.XMLSyntaxError as e:
-        raise ET.ParseError(f"Invalid XML: {e}")
+        # Re-raise XMLSyntaxError (which is a subclass of ParseError) with original error
+        raise
+    except lxml_etree.ParseError as e:
+        # Re-raise ParseError with original error
+        raise
 
 
 def main():
@@ -88,9 +88,9 @@ def main():
             xml_content = f.read()
         
         # Prettify the XML
+        # Note: indent parameter is not used by prettify_xml (lxml handles indentation)
         prettified = prettify_xml(
             xml_content,
-            indent=args.indent,
             remove_xml_declaration=args.remove_declaration,
             encoding=args.encoding
         )
