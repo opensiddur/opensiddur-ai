@@ -484,7 +484,7 @@ def process_mediawiki(
     content = ""
     for page in range(start_page, end_page + 1):
         print(f"Processing page {page}")
-        page_content = get_page.invoke({"page_number": page}).content
+        page_content = get_page(page).content
         content += " " + mw_processor.process_wikitext(page_content).xml_content
 
     pre_xml = f"""<tei:{wrapper_element} xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">

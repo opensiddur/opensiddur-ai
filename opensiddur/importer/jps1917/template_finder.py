@@ -48,7 +48,7 @@ def find_all_tags(start_page: int = 1, end_page: Optional[int] = None) -> Dict[s
     
     for page_num in range(start_page, end_page + 1):
         try:
-            page_obj = get_page.invoke({"page_number": page_num})
+            page_obj = get_page(page_num)
             if page_obj is None:
                 print(f"Page {page_num} not found, stopping scan")
                 break
@@ -123,7 +123,7 @@ def find_all_templates(start_page: int = 1, end_page: Optional[int] = None) -> D
     
     for page_num in range(start_page, end_page + 1):
         try:
-            page_obj = get_page.invoke({"page_number": page_num})
+            page_obj = get_page(page_num)
             if page_obj is None:
                 print(f"Page {page_num} not found, stopping scan")
                 break
@@ -276,13 +276,13 @@ def find_page_range() -> tuple[int, int]:
     
     # Start from a reasonable point and work backwards
     for page_num in range(1200, 0, -1):
-        page_obj = get_page.invoke({"page_number": page_num})
+        page_obj = get_page(page_num)
         if page_obj is not None:
             last_page = page_num
             break
     
     for page_num in range(last_page, 0, -1):
-        page_obj = get_page.invoke({"page_number": page_num})
+        page_obj = get_page(page_num)
         if page_obj is None:
             first_page = page_num + 1
             break
