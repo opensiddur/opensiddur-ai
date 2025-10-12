@@ -175,7 +175,7 @@ def relaxng_validate(
         return False, [f"Error during validation: {str(e)}"]
 
 
-def main():
+def main(): # pragma: no cover
     parser = argparse.ArgumentParser(description='Validate an XML file against a RelaxNG schema.')
     parser.add_argument('xml_file', type=str, help='Path to the XML file to validate')
     parser.add_argument('--relaxng_file', type=str, help='Path to the RelaxNG schema file', default=None)
@@ -195,6 +195,6 @@ def main():
     
     return is_valid
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     main()
         
