@@ -10,7 +10,7 @@
     
     <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
     
-    <xsl:mode on-no-match="shallow-copy"/>
+    <xsl:mode on-no-match="fail"/>
     
     <!-- Identity transform: copies all nodes and attributes by default -->
     <xsl:template match="@*|node()">
