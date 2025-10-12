@@ -7,3 +7,8 @@ schema/*.schematron
 schema/*.xslt
 private/
 temp*
+
+# Coverage files
+.coverage
+coverage.xml
+htmlcov/

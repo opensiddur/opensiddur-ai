@@ -1,5 +1,8 @@
 Open Siddur Project (AI aided version)
 
+[![Tests](https://github.com/efeins/opensiddur-ai/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/efeins/opensiddur-ai/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/efeins/opensiddur-ai/branch/main/graph/badge.svg)](https://codecov.io/gh/efeins/opensiddur-ai)
+
 This is a work in progress to convert the Open Siddur Project to use AI to aid in the conversion of the liturgical texts.
 
 Features:
