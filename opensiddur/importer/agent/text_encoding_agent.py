@@ -9,14 +9,17 @@ try:
     from .source_file import SourceFileInput, SourceFileOutput, source_file, completion_check, section_completion_check
     from .xml_linter import XMLLinterInput, XMLLinterOutput, xml_linter
     from .diff_fix import DiffFixInput, DiffFixOutput, diff_fix, apply_patch
-    from .tools import get_page
+    from opensiddur.importer.util.pages import get_page
 except ImportError:
     # Handle direct execution
     from common import Page
     from source_file import SourceFileInput, SourceFileOutput, source_file, completion_check, section_completion_check
     from xml_linter import XMLLinterInput, XMLLinterOutput, xml_linter
     from diff_fix import DiffFixInput, DiffFixOutput, diff_fix, apply_patch
-    from tools import get_page
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent))
+    from util.pages import get_page
 
 
 class TextEncodingAgentState(TypedDict):
@@ -272,7 +275,7 @@ def advance_page(state: TextEncodingAgentState) -> TextEncodingAgentState:
         print(f"Setting page to {state['current_page']}...")
         new_page = state['current_page']
         previous_page_content = ""
-        current_page_obj = get_page.invoke({"page_number": new_page})
+        current_page_obj = get_page(new_page)
         current_page_content = current_page_obj.content if current_page_obj else ""
 
     else:
@@ -284,7 +287,7 @@ def advance_page(state: TextEncodingAgentState) -> TextEncodingAgentState:
         current_page_content = state["next_page_content"]
     
     # Update next page content
-    next_page_obj = get_page.invoke({"page_number": new_page + 1})
+    next_page_obj = get_page(new_page + 1)
     next_page_content = next_page_obj.content if next_page_obj else ""
     
     return {

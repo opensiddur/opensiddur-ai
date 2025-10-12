@@ -9,8 +9,7 @@ import subprocess
 import tempfile
 
 
-from opensiddur.importer.agent.common import SCHEMA_RNG_PATH, SCHEMA_SCH_PATH, SCHEMA_SCH_XSLT_PATH
-from opensiddur.common.xslt import xslt_transform
+from .constants import SCHEMA_RNG_PATH, SCHEMA_SCH_XSLT_PATH
 
 def validate(xml: Path | str, 
     schema_file: Optional[Path] = None,
@@ -176,7 +175,135 @@ def relaxng_validate(
         return False, [f"Error during validation: {str(e)}"]
 
 
-def main():
+
+def _rng_with_start(start_element: str) -> str:
+    # make sure the new start exists. It may be named s/:/_/
+
+    start_element_ref = start_element.replace(":", "_")
+    with open(SCHEMA_RNG_PATH, "r") as f:
+        schema = f.read()
+        # Replace the start element in the RelaxNG schema with the given start_element
+        # This assumes the schema uses <start>...</start> as the entry point
+        # and replaces its contents with <ref name="start_element"/>
+
+    xslt = f'''
+<xsl:stylesheet version="2.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:rng="http://relaxng.org/ns/structure/1.0"
+    exclude-result-prefixes="rng">
+
+  <!-- Identity transform -->
+  <xsl:template match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates select="@*|node()"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <!-- Patch the <rng:choice> inside <rng:start> -->
+  <xsl:template match="rng:start/rng:choice">
+    <xsl:copy>
+      <xsl:apply-templates select="@*|node()"/>
+      <rng:ref name="{start_element_ref}"/>
+    </xsl:copy>
+  </xsl:template>
+
+</xsl:stylesheet>
+'''
+
+    with PySaxonProcessor(license=False) as proc:
+        # Use Saxon/C XPath processor to check for rng:define[@name='{start_element_ref}']
+        xpath_expr = f"//rng:define[@name='{start_element_ref}']"
+        xpath_proc = proc.new_xpath_processor()
+        xpath_proc.declare_namespace("rng", "http://relaxng.org/ns/structure/1.0")
+        doc = proc.parse_xml(xml_text=schema)
+        xpath_proc.set_context(xdm_item=doc)
+        result_nodes = xpath_proc.evaluate(xpath_expr)
+        if not result_nodes or (hasattr(result_nodes, 'count') and result_nodes.count == 0):
+            raise ValueError(f"RelaxNG schema does not define an element with name {start_element}='{start_element_ref}'")
+        xslt_proc = proc.new_xslt30_processor()
+        
+        # Compile the XSLT from string
+        executable = xslt_proc.compile_stylesheet(stylesheet_text=xslt)
+        if executable is None:
+            raise RuntimeError("Failed to compile XSLT for patching RelaxNG start element.")
+        # Transform the schema string
+        document = proc.parse_xml(xml_text=schema)
+        result = executable.transform_to_string(xdm_node=document)
+        return result
+
+def _add_missing_namespaces(xml: str) -> str:
+    """
+    Add TEI and JLPTEI namespace declarations to XML if they're missing.
+    This is useful for validating XML fragments that don't have namespace declarations.
+    
+    Args:
+        xml: XML string that may be missing namespace declarations
+        
+    Returns:
+        XML string with namespace declarations added to the root element if needed
+    """
+    # Check if TEI namespace is missing
+    needs_tei_ns = 'xmlns:tei=' not in xml
+    needs_j_ns = 'xmlns:j=' not in xml
+    
+    if not needs_tei_ns and not needs_j_ns:
+        # Both namespaces are already present
+        return xml
+    
+    # Find the first element opening tag (including attributes)
+    import re
+    # Match opening tag like <tei:something...> or <j:something...>
+    match = re.search(r'<([a-zA-Z][a-zA-Z0-9_:-]*)((?:\s+[^>]*)?)(>|/>)', xml)
+    if not match:
+        # Can't find an opening tag, return as-is
+        return xml
+    
+    tag_name = match.group(1)
+    existing_attrs = match.group(2)
+    tag_close = match.group(3)
+    
+    # Build the namespace declarations to add
+    ns_declarations = []
+    if needs_tei_ns:
+        ns_declarations.append('xmlns:tei="http://www.tei-c.org/ns/1.0"')
+    if needs_j_ns:
+        ns_declarations.append('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"')
+    
+    # Construct the new opening tag
+    if existing_attrs.strip():
+        # Has existing attributes, add namespaces after them
+        new_opening = f'<{tag_name}{existing_attrs} {" ".join(ns_declarations)}{tag_close}'
+    else:
+        # No existing attributes, just add namespaces
+        new_opening = f'<{tag_name} {" ".join(ns_declarations)}{tag_close}'
+    
+    # Replace the original opening tag with the new one
+    return xml[:match.start()] + new_opening + xml[match.end():]
+
+def validate_with_start(
+    xml: str,
+    start_element: str,
+) -> Tuple[bool, List[str]]:
+    """
+    Validate an XML fragment against the schema starting from a specific element.
+    Automatically adds TEI and JLPTEI namespace declarations if they're missing.
+    
+    Args:
+        xml: XML fragment to validate
+        start_element: The element name to use as the start element (e.g., "tei:div")
+        
+    Returns:
+        Tuple of (is_valid, errors)
+    """
+    # Add missing namespace declarations if needed
+    xml_with_ns = _add_missing_namespaces(xml)
+    
+    relaxng_schema = _rng_with_start(start_element)
+    is_valid, errors = validate(xml_with_ns, schema=relaxng_schema, schematron=SCHEMA_SCH_XSLT_PATH)
+    return is_valid, errors
+
+
+def main(): # pragma: no cover
     parser = argparse.ArgumentParser(description='Validate an XML file against a RelaxNG schema.')
     parser.add_argument('xml_file', type=str, help='Path to the XML file to validate')
     parser.add_argument('--relaxng_file', type=str, help='Path to the RelaxNG schema file', default=None)
@@ -196,6 +323,6 @@ def main():
     
     return is_valid
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     main()
         

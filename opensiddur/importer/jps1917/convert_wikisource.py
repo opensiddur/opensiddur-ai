@@ -4,13 +4,14 @@ import urllib
 
 from pydantic import BaseModel
 
-from opensiddur.importer.agent.tools import get_credits, get_page
+from opensiddur.importer.util.pages import get_credits, get_page
 from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 from opensiddur.common.xslt import xslt_transform_string
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parent.parent.parent.parent / "project" / "jps1917" 
+MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
 
 class Book(BaseModel):
     book_name_he: str
@@ -443,10 +444,10 @@ def header(
 def tei_file(
     header: str,
     default_lang: str = "en",
-    front: Optional[str] = "",
+    front: str = "",
     body: str = "",
-    back: Optional[str] = "",
-    standOff: Optional[str] = "",
+    back: str = "",
+    standOff: str = "",
 ):
     return f"""<tei:TEI xml:lang="{default_lang}" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
     {header}
@@ -459,9 +460,11 @@ def tei_file(
     </tei:TEI>
     """
 
-def mediawiki_xml_to_tei(xml_content: str, xslt_params: Optional[dict[str, Any]] = None):
-    xslt_file = Path(__file__).parent / "mediawiki_to_tei.xslt"
-    outputs = xslt_transform_string(xslt_file, xml_content, multiple_results=True, xslt_params=xslt_params)
+def mediawiki_xml_to_tei(xml_content: str, 
+    xslt_params: Optional[dict[str, Any]] = None,
+    mediawiki_to_tei_xslt: Path = MEDIAWIKI_TO_TEI_XSLT,
+):
+    outputs = xslt_transform_string(mediawiki_to_tei_xslt, xml_content, multiple_results=True, xslt_params=xslt_params)
     return {
         "front": outputs[""] if "tei:front" in outputs[""] else "",
         "body": outputs[""] if "tei:body" in outputs[""] else "",
@@ -481,7 +484,7 @@ def process_mediawiki(
     content = ""
     for page in range(start_page, end_page + 1):
         print(f"Processing page {page}")
-        page_content = get_page.invoke({"page_number": page}).content
+        page_content = get_page(page).content
         content += " " + mw_processor.process_wikitext(page_content).xml_content
 
     pre_xml = f"""<tei:{wrapper_element} xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
@@ -494,12 +497,12 @@ def process_mediawiki(
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
 def validate_and_write_tei_file(tei_content: str, file_name: str):
+    print(f"Writing {PROJECT_DIRECTORY / f'{file_name}.xml'}")
+    pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
+    is_valid, errors = validate(pretty_xml)
+    if not is_valid:
+        raise Exception(f"Errors in {file_name}: {errors}")
     with open(PROJECT_DIRECTORY / f"{file_name}.xml", "w") as f:
-        print(f"Writing {PROJECT_DIRECTORY / f'{file_name}.xml'}")
-        pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
-        is_valid, errors = validate(pretty_xml)
-        if not is_valid:
-            raise Exception(f"Errors in {file_name}: {errors}")
         f.write(pretty_xml)
 
 def book_file(book: Book) -> str:
@@ -573,10 +576,10 @@ def index_file(idx: Index) -> str:
     
     return tei_content
 
-def main():
+def main(): # pragma: no cover
     PROJECT_DIRECTORY.mkdir(parents=True, exist_ok=True)
     for part in JPS_1917:
         index_file(part)
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

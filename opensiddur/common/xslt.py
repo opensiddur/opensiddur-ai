@@ -58,7 +58,7 @@ def xslt_transform_string(
             else:
                 return result
     except Exception as e:
-        print(f"Error in index function: {e}", file=sys.stderr)
+        print(f"Error in XSLT transform function: {e}", file=sys.stderr)
         raise
 
 
