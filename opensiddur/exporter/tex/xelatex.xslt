@@ -14,7 +14,7 @@
 
     <!-- Root template -->
     <xsl:template match="/">
-        <xsl:text>\documentclass{article}&#10;</xsl:text>
+        <xsl:text>\documentclass{book}&#10;</xsl:text>
         <xsl:text>\usepackage{fontspec}&#10;</xsl:text>
         <xsl:text>\usepackage{polyglossia}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
@@ -56,7 +56,7 @@
 
     <!-- Template for div elements -->
     <xsl:template match="tei:div">
-        <xsl:text>\section{</xsl:text>
+        <xsl:text>\part{</xsl:text>
         <xsl:if test="tei:head">
             <xsl:apply-templates select="tei:head"/>
         </xsl:if>
@@ -92,7 +92,7 @@
     <xsl:template match="tei:milestone">
         <xsl:choose>
             <xsl:when test="@unit='chapter'">
-                <xsl:text>\subsection{</xsl:text>
+                <xsl:text>\chapter{</xsl:text>
                 <xsl:value-of select="@n"/>
                 <xsl:text>}&#10;</xsl:text>
             </xsl:when>

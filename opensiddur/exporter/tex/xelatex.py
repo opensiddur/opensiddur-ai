@@ -92,7 +92,7 @@ def licenses_to_tex(licenses: list[LicenseRecord]) -> str:
     """
     Convert a list of LicenseRecord objects to a string of LaTeX code.
     """
-    tex = f"""\\section{{Legal}}
+    tex = f"""\\chapter{{Legal}}
 This document includes copyrighted texts licensed under the following licenses.
 The full text of the licenses can be found at the given URLs:
 
@@ -198,14 +198,14 @@ def credits_to_tex(credits: dict[str, dict[str, list[CreditRecord]]]) -> str:
     """
     Convert role -> namespace -> list of CreditRecord objects to a string of LaTeX code.
     """
-    tex = f"""\\section{{Contributor credits}}\n"""
+    tex = f"""\\chapter{{Contributor credits}}\n"""
     for role, namespace_dict in credits.items():
         total_credits = sum(len(credits) for credits in namespace_dict.values())
         role_name = contributor_keys_to_roles[role] + ("s" if total_credits > 1 else "")
-        tex += f"""\\subsection{{{role_name}}}\n"""
+        tex += f"""\\section{{{role_name}}}\n"""
         for namespace, credits in namespace_dict.items():
             sorted_credits = sorted(credits, key=lambda x: x.contributor)
-            tex += f"""\\subsubsection{{From {namespace}}}\n"""
+            tex += f"""\\subsection{{From {namespace}}}\n"""
             tex += f"""\\begin{{itemize}}\n"""
             for credit in sorted_credits:
                 tex += f"""\\item {credit.name_text}\n"""
@@ -286,7 +286,12 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         result = xslt_transform_string(Path(xslt_file), input_xml, 
             xslt_params={
                 "additional-preamble": sources_preamble_tex,
-                "additional-postamble": licenses_tex + "\n" + credits_tex + "\n" + sources_postamble_tex,
+                "additional-postamble": (
+                    "\\part{Metadata}\n" + 
+                    licenses_tex + "\n" + 
+                    credits_tex + "\n" + 
+                    sources_postamble_tex
+                ),
             })
         
         if output_file:

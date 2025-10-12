@@ -13,7 +13,9 @@ def _to_xdm_value(proc: PySaxonProcessor, value: Any) -> Any:
         return proc.make_integer_value(value)
     elif isinstance(value, float):
         return proc.make_double_value(value)
-    return proc.to_xdm_value(value)
+    else:
+        # For other types, try to convert to string as a fallback
+        return proc.make_string_value(str(value))
 
 def xslt_transform_string(
     xslt_file: Path,
