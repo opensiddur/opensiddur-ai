@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from lxml import etree
 
-from opensiddur.importer.util.validation import schematron_validate, relaxng_validate, validate
+from opensiddur.importer.util.validation import schematron_validate, relaxng_validate, validate, validate_with_start
 
 
 class TestSchematronValidate(unittest.TestCase):
@@ -559,6 +559,135 @@ class TestValidateFunction(unittest.TestCase):
             # Should be valid
             self.assertTrue(is_valid)
             self.assertEqual(errors, [])
+
+
+class TestValidateWithStart(unittest.TestCase):
+    """Test the validate_with_start function for validating XML fragments."""
+    
+    def test_valid_tei_div_fragment(self):
+        """Test validation of a valid tei:div fragment."""
+        # Simple valid tei:div fragment
+        valid_div = '''<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+            <tei:head>Test Heading</tei:head>
+            <tei:p>Test paragraph content.</tei:p>
+        </tei:div>'''
+        
+        is_valid, errors = validate_with_start(valid_div, "tei:div")
+        
+        # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
+    
+    def test_valid_tei_p_fragment(self):
+        """Test validation of a valid tei:p fragment."""
+        # Simple valid tei:p fragment
+        valid_p = '''<tei:p xmlns:tei="http://www.tei-c.org/ns/1.0">Test paragraph content.</tei:p>'''
+        
+        is_valid, errors = validate_with_start(valid_p, "tei:p")
+        
+        # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
+    
+    def test_valid_tei_body_fragment(self):
+        """Test validation of a valid tei:body fragment."""
+        # Simple valid tei:body fragment
+        valid_body = '''<tei:body xmlns:tei="http://www.tei-c.org/ns/1.0">
+            <tei:div>
+                <tei:p>Test content.</tei:p>
+            </tei:div>
+        </tei:body>'''
+        
+        is_valid, errors = validate_with_start(valid_body, "tei:body")
+        
+        # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
+    
+    def test_invalid_tei_div_fragment_bad_structure(self):
+        """Test validation of an invalid tei:div fragment with incorrect structure."""
+        # Invalid: tei:div with invalid child element
+        invalid_div = '''<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0">
+            <invalid_element>This should not be here</invalid_element>
+        </tei:div>'''
+        
+        is_valid, errors = validate_with_start(invalid_div, "tei:div")
+        
+        # Should be invalid
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
+        # Check that error mentions the invalid element
+        error_text = " ".join(errors)
+        self.assertIn("invalid_element", error_text.lower())
+    
+    def test_invalid_tei_p_fragment_nested_p(self):
+        """Test validation of an invalid tei:p fragment with nested paragraph."""
+        # Invalid: tei:p cannot contain another tei:p
+        invalid_p = '''<tei:p xmlns:tei="http://www.tei-c.org/ns/1.0">
+            Outer paragraph
+            <tei:p>Nested paragraph (invalid)</tei:p>
+        </tei:p>'''
+        
+        is_valid, errors = validate_with_start(invalid_p, "tei:p")
+        
+        # Should be invalid
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
+    
+    def test_invalid_start_element_not_in_schema(self):
+        """Test validation with a start element that doesn't exist in the schema."""
+        # Valid XML but with a start element not defined in schema
+        xml_fragment = '''<nonexistent:element xmlns:nonexistent="http://example.com">
+            <child>Content</child>
+        </nonexistent:element>'''
+        
+        # Should raise an error because the start element doesn't exist
+        with self.assertRaises(ValueError) as context:
+            validate_with_start(xml_fragment, "nonexistent:element")
+        
+        # Check error message
+        self.assertIn("does not define an element", str(context.exception))
+    
+    def test_valid_tei_bibl_fragment(self):
+        """Test validation of a valid tei:bibl fragment."""
+        # Simple valid tei:bibl fragment
+        valid_bibl = '''<tei:bibl xmlns:tei="http://www.tei-c.org/ns/1.0">
+            <tei:title>Test Title</tei:title>
+            <tei:author>Test Author</tei:author>
+        </tei:bibl>'''
+        
+        is_valid, errors = validate_with_start(valid_bibl, "tei:bibl")
+        
+        # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
+    
+    def test_invalid_tei_bibl_fragment_bad_child(self):
+        """Test validation of an invalid tei:bibl fragment with invalid child element."""
+        # Invalid: tei:bibl with an invalid child element
+        invalid_bibl = '''<tei:bibl xmlns:tei="http://www.tei-c.org/ns/1.0">
+            <invalid_element>This should not be here</invalid_element>
+        </tei:bibl>'''
+        
+        is_valid, errors = validate_with_start(invalid_bibl, "tei:bibl")
+        
+        # Should be invalid
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
+        # Check that error mentions the invalid element
+        error_text = " ".join(errors).lower()
+        self.assertIn("invalid_element", error_text)
+    
+    def test_valid_tei_head_fragment(self):
+        """Test validation of a valid tei:head fragment."""
+        # Simple valid tei:head fragment
+        valid_head = '''<tei:head xmlns:tei="http://www.tei-c.org/ns/1.0">Test Heading</tei:head>'''
+        
+        is_valid, errors = validate_with_start(valid_head, "tei:head")
+        
+        # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
 
 
 if __name__ == '__main__':
