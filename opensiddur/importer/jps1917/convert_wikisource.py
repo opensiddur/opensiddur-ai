@@ -444,10 +444,10 @@ def header(
 def tei_file(
     header: str,
     default_lang: str = "en",
-    front: Optional[str] = "",
+    front: str = "",
     body: str = "",
-    back: Optional[str] = "",
-    standOff: Optional[str] = "",
+    back: str = "",
+    standOff: str = "",
 ):
     return f"""<tei:TEI xml:lang="{default_lang}" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
     {header}
@@ -497,12 +497,12 @@ def process_mediawiki(
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
 def validate_and_write_tei_file(tei_content: str, file_name: str):
+    print(f"Writing {PROJECT_DIRECTORY / f'{file_name}.xml'}")
+    pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
+    is_valid, errors = validate(pretty_xml)
+    if not is_valid:
+        raise Exception(f"Errors in {file_name}: {errors}")
     with open(PROJECT_DIRECTORY / f"{file_name}.xml", "w") as f:
-        print(f"Writing {PROJECT_DIRECTORY / f'{file_name}.xml'}")
-        pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
-        is_valid, errors = validate(pretty_xml)
-        if not is_valid:
-            raise Exception(f"Errors in {file_name}: {errors}")
         f.write(pretty_xml)
 
 def book_file(book: Book) -> str:
@@ -576,10 +576,10 @@ def index_file(idx: Index) -> str:
     
     return tei_content
 
-def main():
+def main(): # pragma: no cover
     PROJECT_DIRECTORY.mkdir(parents=True, exist_ok=True)
     for part in JPS_1917:
         index_file(part)
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

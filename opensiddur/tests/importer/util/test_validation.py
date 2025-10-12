@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from lxml import etree
 
-from opensiddur.importer.util.validation import schematron_validate, relaxng_validate, validate, validate_with_start
+from opensiddur.importer.util.validation import schematron_validate, relaxng_validate, validate, validate_with_start, _add_missing_namespaces
 
 
 class TestSchematronValidate(unittest.TestCase):
@@ -561,6 +561,68 @@ class TestValidateFunction(unittest.TestCase):
             self.assertEqual(errors, [])
 
 
+class TestAddMissingNamespaces(unittest.TestCase):
+    """Test the _add_missing_namespaces helper function."""
+    
+    def test_adds_tei_namespace_when_missing(self):
+        """Test that TEI namespace is added when missing."""
+        xml_without_ns = '<tei:div><tei:p>Content</tei:p></tei:div>'
+        result = _add_missing_namespaces(xml_without_ns)
+        
+        # Should have TEI namespace
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result)
+        self.assertIn('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"', result)
+    
+    def test_adds_j_namespace_when_missing(self):
+        """Test that j namespace is added when missing."""
+        xml_without_j = '<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:p>Content</tei:p></tei:div>'
+        result = _add_missing_namespaces(xml_without_j)
+        
+        # Should have j namespace added
+        self.assertIn('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"', result)
+        # Should still have TEI namespace
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result)
+    
+    def test_adds_tei_namespace_when_only_j_present(self):
+        """Test that TEI namespace is added when only j is present."""
+        xml_with_j = '<tei:div xmlns:j="http://jewishliturgy.org/ns/jlptei/2"><tei:p>Content</tei:p></tei:div>'
+        result = _add_missing_namespaces(xml_with_j)
+        
+        # Should have TEI namespace added
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result)
+        # Should still have j namespace
+        self.assertIn('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"', result)
+    
+    def test_preserves_existing_namespaces(self):
+        """Test that existing namespaces are preserved."""
+        xml_with_both = '<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2"><tei:p>Content</tei:p></tei:div>'
+        result = _add_missing_namespaces(xml_with_both)
+        
+        # Should be unchanged (both namespaces already present)
+        self.assertEqual(xml_with_both, result)
+    
+    def test_preserves_existing_attributes(self):
+        """Test that existing attributes are preserved."""
+        xml_with_attrs = '<tei:div xml:id="test" type="section"><tei:p>Content</tei:p></tei:div>'
+        result = _add_missing_namespaces(xml_with_attrs)
+        
+        # Should preserve attributes
+        self.assertIn('xml:id="test"', result)
+        self.assertIn('type="section"', result)
+        # Should add namespaces
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result)
+        self.assertIn('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"', result)
+    
+    def test_handles_self_closing_tag(self):
+        """Test handling of self-closing tags."""
+        xml_self_closing = '<tei:lb/>'
+        result = _add_missing_namespaces(xml_self_closing)
+        
+        # Should add namespaces
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result)
+        self.assertIn('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"', result)
+
+
 class TestValidateWithStart(unittest.TestCase):
     """Test the validate_with_start function for validating XML fragments."""
     
@@ -575,6 +637,20 @@ class TestValidateWithStart(unittest.TestCase):
         is_valid, errors = validate_with_start(valid_div, "tei:div")
         
         # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
+    
+    def test_valid_tei_div_fragment_without_namespaces(self):
+        """Test validation of a valid tei:div fragment without namespace declarations."""
+        # Fragment without namespace declarations - should be added automatically
+        valid_div = '''<tei:div>
+            <tei:head>Test Heading</tei:head>
+            <tei:p>Test paragraph content.</tei:p>
+        </tei:div>'''
+        
+        is_valid, errors = validate_with_start(valid_div, "tei:div")
+        
+        # Should be valid (namespaces added automatically)
         self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
         self.assertEqual(errors, [])
     

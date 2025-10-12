@@ -231,12 +231,75 @@ def _rng_with_start(start_element: str) -> str:
         result = executable.transform_to_string(xdm_node=document)
         return result
 
+def _add_missing_namespaces(xml: str) -> str:
+    """
+    Add TEI and JLPTEI namespace declarations to XML if they're missing.
+    This is useful for validating XML fragments that don't have namespace declarations.
+    
+    Args:
+        xml: XML string that may be missing namespace declarations
+        
+    Returns:
+        XML string with namespace declarations added to the root element if needed
+    """
+    # Check if TEI namespace is missing
+    needs_tei_ns = 'xmlns:tei=' not in xml
+    needs_j_ns = 'xmlns:j=' not in xml
+    
+    if not needs_tei_ns and not needs_j_ns:
+        # Both namespaces are already present
+        return xml
+    
+    # Find the first element opening tag (including attributes)
+    import re
+    # Match opening tag like <tei:something...> or <j:something...>
+    match = re.search(r'<([a-zA-Z][a-zA-Z0-9_:-]*)((?:\s+[^>]*)?)(>|/>)', xml)
+    if not match:
+        # Can't find an opening tag, return as-is
+        return xml
+    
+    tag_name = match.group(1)
+    existing_attrs = match.group(2)
+    tag_close = match.group(3)
+    
+    # Build the namespace declarations to add
+    ns_declarations = []
+    if needs_tei_ns:
+        ns_declarations.append('xmlns:tei="http://www.tei-c.org/ns/1.0"')
+    if needs_j_ns:
+        ns_declarations.append('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"')
+    
+    # Construct the new opening tag
+    if existing_attrs.strip():
+        # Has existing attributes, add namespaces after them
+        new_opening = f'<{tag_name}{existing_attrs} {" ".join(ns_declarations)}{tag_close}'
+    else:
+        # No existing attributes, just add namespaces
+        new_opening = f'<{tag_name} {" ".join(ns_declarations)}{tag_close}'
+    
+    # Replace the original opening tag with the new one
+    return xml[:match.start()] + new_opening + xml[match.end():]
+
 def validate_with_start(
     xml: str,
     start_element: str,
 ) -> Tuple[bool, List[str]]:
+    """
+    Validate an XML fragment against the schema starting from a specific element.
+    Automatically adds TEI and JLPTEI namespace declarations if they're missing.
+    
+    Args:
+        xml: XML fragment to validate
+        start_element: The element name to use as the start element (e.g., "tei:div")
+        
+    Returns:
+        Tuple of (is_valid, errors)
+    """
+    # Add missing namespace declarations if needed
+    xml_with_ns = _add_missing_namespaces(xml)
+    
     relaxng_schema = _rng_with_start(start_element)
-    is_valid, errors = validate(xml, schema=relaxng_schema, schematron=SCHEMA_SCH_XSLT_PATH)
+    is_valid, errors = validate(xml_with_ns, schema=relaxng_schema, schematron=SCHEMA_SCH_XSLT_PATH)
     return is_valid, errors
 
 
