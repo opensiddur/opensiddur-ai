@@ -41,14 +41,7 @@ jobs:
       run: poetry install --no-interaction
     
     - name: Install Jing (RelaxNG validator)
-      run: |
-        wget -q https://github.com/relaxng/jing-trang/releases/download/V20220510/jing-20220510.zip
-        unzip -q jing-20220510.zip
-        sudo mv jing-20220510/bin/jing.jar /usr/local/bin/
-        echo '#!/bin/bash' | sudo tee /usr/local/bin/jing > /dev/null
-        echo 'java -jar /usr/local/bin/jing.jar "$@"' | sudo tee -a /usr/local/bin/jing > /dev/null
-        sudo chmod +x /usr/local/bin/jing
-        jing -version || echo "Jing installed"
+      run: sudo apt-get update && sudo apt-get install -y jing
     
     - name: Run tests with coverage
       run: |
