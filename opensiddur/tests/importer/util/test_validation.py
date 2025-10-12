@@ -34,6 +34,7 @@ class TestSchematronValidate(unittest.TestCase):
         # XML that should pass (has required element)
         valid_xml = '<root><required>present</required></root>'
         
+        # Test with string input (no temp file needed)
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as f:
             f.write(schematron_xslt)
             f.flush()
@@ -159,8 +160,8 @@ class TestSchematronValidate(unittest.TestCase):
 class TestRelaxNGValidate(unittest.TestCase):
     """Test the relaxng_validate function"""
     
-    def test_relaxng_validation_success(self):
-        """Test successful RelaxNG validation"""
+    def test_relaxng_validation_success_with_string_schema(self):
+        """Test successful RelaxNG validation with schema as string"""
         # Create a simple RelaxNG schema
         relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0">
@@ -176,19 +177,14 @@ class TestRelaxNGValidate(unittest.TestCase):
         # Valid XML according to schema
         valid_xml = '<root><child>content</child></root>'
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as schema_f:
-            schema_f.write(relaxng_schema)
-            schema_f.flush()
-            
-            xml_doc = etree.fromstring(valid_xml)
-            is_valid, errors = relaxng_validate(xml_doc, Path(schema_f.name))
-            
-            # Should be valid
-            self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
-            self.assertEqual(errors, [])
+        is_valid, errors = relaxng_validate(valid_xml, relaxng_schema)
+        
+        # Should be valid
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+        self.assertEqual(errors, [])
     
-    def test_relaxng_validation_failure(self):
-        """Test failed RelaxNG validation"""
+    def test_relaxng_validation_failure_with_string_schema(self):
+        """Test failed RelaxNG validation with schema as string"""
         # Create a RelaxNG schema requiring specific structure
         relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0">
@@ -204,16 +200,34 @@ class TestRelaxNGValidate(unittest.TestCase):
         # Invalid XML (missing required element)
         invalid_xml = '<root><optional>content</optional></root>'
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as schema_f:
-            schema_f.write(relaxng_schema)
-            schema_f.flush()
-            
-            xml_doc = etree.fromstring(invalid_xml)
-            is_valid, errors = relaxng_validate(xml_doc, Path(schema_f.name))
-            
-            # Should be invalid with errors
-            self.assertFalse(is_valid)
-            self.assertGreater(len(errors), 0)
+        is_valid, errors = relaxng_validate(invalid_xml, relaxng_schema)
+        
+        # Should be invalid with errors
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
+    
+    def test_relaxng_validation_success_with_etree(self):
+        """Test RelaxNG validation with lxml ElementTree input"""
+        relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+    <start>
+        <element name="root">
+            <element name="child">
+                <text/>
+            </element>
+        </element>
+    </start>
+</grammar>'''
+        
+        # Valid XML as ElementTree
+        valid_xml = '<root><child>content</child></root>'
+        xml_doc = etree.fromstring(valid_xml)
+        
+        is_valid, errors = relaxng_validate(xml_doc, relaxng_schema)
+        
+        # Should be valid
+        self.assertTrue(is_valid)
+        self.assertEqual(errors, [])
     
     def test_relaxng_with_attributes(self):
         """Test RelaxNG validation with required attributes"""
@@ -230,60 +244,21 @@ class TestRelaxNGValidate(unittest.TestCase):
         
         # Valid XML with attribute
         valid_xml = '<root id="123">content</root>'
+        is_valid, errors = relaxng_validate(valid_xml, relaxng_schema)
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as schema_f:
-            schema_f.write(relaxng_schema)
-            schema_f.flush()
-            
-            xml_doc = etree.fromstring(valid_xml)
-            is_valid, errors = relaxng_validate(xml_doc, Path(schema_f.name))
-            
-            # Should be valid
-            self.assertTrue(is_valid)
-            self.assertEqual(errors, [])
+        self.assertTrue(is_valid)
+        self.assertEqual(errors, [])
         
         # Invalid XML without attribute
         invalid_xml = '<root>content</root>'
+        is_valid, errors = relaxng_validate(invalid_xml, relaxng_schema)
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as schema_f:
-            schema_f.write(relaxng_schema)
-            schema_f.flush()
-            
-            xml_doc = etree.fromstring(invalid_xml)
-            is_valid, errors = relaxng_validate(xml_doc, Path(schema_f.name))
-            
-            # Should be invalid
-            self.assertFalse(is_valid)
-            self.assertGreater(len(errors), 0)
+        # Should be invalid
+        self.assertFalse(is_valid)
+        self.assertGreater(len(errors), 0)
     
-    def test_relaxng_with_string_input(self):
-        """Test RelaxNG validation with XML string input"""
-        relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
-<grammar xmlns="http://relaxng.org/ns/structure/1.0">
-    <start>
-        <element name="root">
-            <element name="child">
-                <text/>
-            </element>
-        </element>
-    </start>
-</grammar>'''
-        
-        # Valid XML as string
-        valid_xml_str = '<root><child>content</child></root>'
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as schema_f:
-            schema_f.write(relaxng_schema)
-            schema_f.flush()
-            
-            is_valid, errors = relaxng_validate(valid_xml_str, Path(schema_f.name))
-            
-            # Should be valid
-            self.assertTrue(is_valid)
-            self.assertEqual(errors, [])
-    
-    def test_relaxng_with_schema_string(self):
-        """Test RelaxNG validation with schema provided as string"""
+    def test_relaxng_with_file_path(self):
+        """Test RelaxNG validation with schema file path"""
         relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0">
     <start>
@@ -294,19 +269,22 @@ class TestRelaxNGValidate(unittest.TestCase):
 </grammar>'''
         
         valid_xml = '<root>content</root>'
-        xml_doc = etree.fromstring(valid_xml)
         
-        is_valid, errors = relaxng_validate(xml_doc, relaxng_schema)
-        
-        # Should be valid
-        self.assertTrue(is_valid)
-        self.assertEqual(errors, [])
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as schema_f:
+            schema_f.write(relaxng_schema)
+            schema_f.flush()
+            
+            is_valid, errors = relaxng_validate(valid_xml, Path(schema_f.name))
+            
+            # Should be valid
+            self.assertTrue(is_valid)
+            self.assertEqual(errors, [])
 
 
 class TestValidateFunction(unittest.TestCase):
     """Test the main validate function that combines both validators"""
     
-    def test_validate_success_both_schemas(self):
+    def test_validate_success_both_schemas_as_strings(self):
         """Test that validate passes when both RelaxNG and Schematron pass"""
         # Simple RelaxNG schema
         relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -340,18 +318,13 @@ class TestValidateFunction(unittest.TestCase):
         # Valid XML
         valid_xml = '<root><item>content</item></root>'
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as rng_f, \
-             tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
-            
-            rng_f.write(relaxng_schema)
-            rng_f.flush()
-            
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
             sch_f.write(schematron_xslt)
             sch_f.flush()
             
             is_valid, errors = validate(
                 valid_xml,
-                schema_file=Path(rng_f.name),
+                schema=relaxng_schema,
                 schematron_xslt_file=Path(sch_f.name)
             )
             
@@ -386,18 +359,13 @@ class TestValidateFunction(unittest.TestCase):
         # Invalid for RelaxNG (missing required element)
         invalid_xml = '<root><optional>content</optional></root>'
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as rng_f, \
-             tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
-            
-            rng_f.write(relaxng_schema)
-            rng_f.flush()
-            
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
             sch_f.write(schematron_xslt)
             sch_f.flush()
             
             is_valid, errors = validate(
                 invalid_xml,
-                schema_file=Path(rng_f.name),
+                schema=relaxng_schema,
                 schematron_xslt_file=Path(sch_f.name)
             )
             
@@ -441,18 +409,13 @@ class TestValidateFunction(unittest.TestCase):
         # Invalid for Schematron (missing mandatory)
         invalid_xml = '<root><optional>content</optional></root>'
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as rng_f, \
-             tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
-            
-            rng_f.write(relaxng_schema)
-            rng_f.flush()
-            
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
             sch_f.write(schematron_xslt)
             sch_f.flush()
             
             is_valid, errors = validate(
                 invalid_xml,
-                schema_file=Path(rng_f.name),
+                schema=relaxng_schema,
                 schematron_xslt_file=Path(sch_f.name)
             )
             
@@ -495,18 +458,13 @@ class TestValidateFunction(unittest.TestCase):
         # Invalid for both validators
         invalid_xml = '<root><other>content</other></root>'
         
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as rng_f, \
-             tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
-            
-            rng_f.write(relaxng_schema)
-            rng_f.flush()
-            
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
             sch_f.write(schematron_xslt)
             sch_f.flush()
             
             is_valid, errors = validate(
                 invalid_xml,
-                schema_file=Path(rng_f.name),
+                schema=relaxng_schema,
                 schematron_xslt_file=Path(sch_f.name)
             )
             
@@ -540,11 +498,51 @@ class TestValidateFunction(unittest.TestCase):
         valid_xml = '<?xml version="1.0"?><root>content</root>'
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml') as xml_f, \
-             tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as rng_f, \
              tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
             
             xml_f.write(valid_xml)
             xml_f.flush()
+            
+            sch_f.write(schematron_xslt)
+            sch_f.flush()
+            
+            is_valid, errors = validate(
+                Path(xml_f.name),
+                schema=relaxng_schema,
+                schematron_xslt_file=Path(sch_f.name)
+            )
+            
+            # Should be valid
+            self.assertTrue(is_valid)
+            self.assertEqual(errors, [])
+    
+    def test_validate_with_schema_files(self):
+        """Test validate with both schemas as file paths"""
+        relaxng_schema = '''<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+    <start>
+        <element name="root">
+            <element name="item">
+                <text/>
+            </element>
+        </element>
+    </start>
+</grammar>'''
+        
+        schematron_xslt = '''<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="3.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:svrl="http://purl.oclc.org/dsdl/svrl">
+    
+    <xsl:template match="/">
+        <svrl:schematron-output/>
+    </xsl:template>
+</xsl:stylesheet>'''
+        
+        valid_xml = '<root><item>content</item></root>'
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.rng') as rng_f, \
+             tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as sch_f:
             
             rng_f.write(relaxng_schema)
             rng_f.flush()
@@ -553,7 +551,7 @@ class TestValidateFunction(unittest.TestCase):
             sch_f.flush()
             
             is_valid, errors = validate(
-                Path(xml_f.name),
+                valid_xml,
                 schema_file=Path(rng_f.name),
                 schematron_xslt_file=Path(sch_f.name)
             )
@@ -565,4 +563,3 @@ class TestValidateFunction(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
