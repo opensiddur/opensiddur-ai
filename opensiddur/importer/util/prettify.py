@@ -50,7 +50,7 @@ def prettify_xml(xml_string: str,
         raise
 
 
-def main():
+def main(): # pragma: no cover
     """Main function to handle command-line arguments and prettify XML files."""
     parser = argparse.ArgumentParser(
         description="Prettify XML files with proper indentation and formatting"
@@ -114,5 +114,5 @@ def main():
         sys.exit(1)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     main()
