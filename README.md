@@ -1,5 +1,8 @@
 Open Siddur Project (AI aided version)
 
+[![Tests](https://github.com/efeins/opensiddur-ai/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/efeins/opensiddur-ai/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/efeins/opensiddur-ai/branch/main/graph/badge.svg)](https://codecov.io/gh/efeins/opensiddur-ai)
+
 This is a work in progress to convert the Open Siddur Project to use AI to aid in the conversion of the liturgical texts.
 
 Features:
@@ -13,7 +16,7 @@ You need a working version of podman (open source implementation of docker).
 
 The main schema is in `schema/jlptei.odd.xml`. To compile it, run:
 ```bash
-$ scripts/tei-stylesheets.sh teitorelaxng jlptei.odd.xml
+$ scripts/build-schema.sh
 ```
 
 The output will be in the `schema` directory as RelaxNG XML (and, eventually, ISO Schematron).

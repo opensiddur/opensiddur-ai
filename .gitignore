@@ -6,4 +6,10 @@ schema/*.rnc
 schema/*.schematron
 schema/*.xslt
 private/
-temp*
+temp/
+temp.*
+
+# Coverage files
+.coverage
+coverage.xml
+htmlcov/
