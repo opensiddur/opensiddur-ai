@@ -9,8 +9,8 @@ from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 from opensiddur.common.xslt import xslt_transform_string
+from opensiddur.common.constants import PROJECT_DIRECTORY
 
-PROJECT_DIRECTORY = Path(__file__).resolve().parent.parent.parent.parent / "project" / "jps1917" 
 MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
 
 class Book(BaseModel):
