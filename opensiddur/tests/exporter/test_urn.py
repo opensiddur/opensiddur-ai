@@ -884,6 +884,177 @@ class TestUrnResolverContextManager(unittest.TestCase):
             # Note: We can't easily test this without accessing internals
 
 
+class TestUrnResolverPrioritizeRange(unittest.TestCase):
+    """Test the prioritize_range method."""
+
+    def test_prioritize_range_with_resolved_urns(self):
+        """Test prioritizing a list of ResolvedUrn objects."""
+        urns = [
+            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        # wlc should have priority
+        priority = ["wlc", "jps1917"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, ResolvedUrn)
+        self.assertEqual(result.project, "wlc")
+        
+    def test_prioritize_range_with_resolved_urn_ranges(self):
+        """Test prioritizing a list of ResolvedUrnRange objects."""
+        ranges = [
+            ResolvedUrnRange(
+                start=ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
+            ),
+            ResolvedUrnRange(
+                start=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
+            ),
+            ResolvedUrnRange(
+                start=ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
+            ),
+        ]
+        
+        # jps1917 should have priority
+        priority = ["jps1917", "wlc"]
+        result = UrnResolver.prioritize_range(ranges, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, ResolvedUrnRange)
+        self.assertEqual(result.start.project, "jps1917")
+        
+    def test_prioritize_range_mixed_types(self):
+        """Test prioritizing a mixed list of ResolvedUrn and ResolvedUrnRange objects."""
+        mixed = [
+            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrnRange(
+                start=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
+            ),
+            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        # wlc should have priority even though it's a ResolvedUrnRange
+        priority = ["wlc", "jps1917", "other"]
+        result = UrnResolver.prioritize_range(mixed, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, ResolvedUrnRange)
+        self.assertEqual(result.start.project, "wlc")
+        
+    def test_prioritize_range_empty_list(self):
+        """Test prioritizing an empty list returns None."""
+        result = UrnResolver.prioritize_range([], ["wlc", "jps1917"])
+        
+        self.assertIsNone(result)
+        
+    def test_prioritize_range_empty_priority_list(self):
+        """Test prioritizing with empty priority list returns None."""
+        urns = [
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        result = UrnResolver.prioritize_range(urns, [])
+        
+        self.assertIsNone(result)
+        
+    def test_prioritize_range_no_matching_projects(self):
+        """Test prioritizing when no URNs match the priority list returns None."""
+        urns = [
+            ResolvedUrn(project="other1", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="other2", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        # Priority list doesn't include other1 or other2
+        priority = ["wlc", "jps1917"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        self.assertIsNone(result)
+        
+    def test_prioritize_range_partial_matching_projects(self):
+        """Test prioritizing when only some URNs match the priority list."""
+        urns = [
+            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        # Only wlc and jps1917 are in priority list
+        priority = ["wlc", "jps1917"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result.project, "wlc")
+        
+    def test_prioritize_range_single_urn(self):
+        """Test prioritizing a single URN."""
+        urns = [
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        priority = ["wlc", "jps1917"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result.project, "wlc")
+        
+    def test_prioritize_range_respects_priority_order(self):
+        """Test that priority order is respected (first in list is highest priority)."""
+        urns = [
+            ResolvedUrn(project="project1", file_name="test.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="project2", file_name="test.xml", urn="urn:x-opensiddur:test:doc"),
+            ResolvedUrn(project="project3", file_name="test.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        # project2 should win
+        priority = ["project2", "project1", "project3"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result.project, "project2")
+        
+        # project3 should win
+        priority = ["project3", "project2", "project1"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result.project, "project3")
+        
+    def test_prioritize_range_with_duplicate_projects(self):
+        """Test prioritizing when multiple URNs have the same project."""
+        urns = [
+            ResolvedUrn(project="wlc", file_name="file1.xml", urn="urn:x-opensiddur:test:doc1"),
+            ResolvedUrn(project="wlc", file_name="file2.xml", urn="urn:x-opensiddur:test:doc2"),
+            ResolvedUrn(project="jps1917", file_name="file3.xml", urn="urn:x-opensiddur:test:doc3"),
+        ]
+        
+        priority = ["wlc", "jps1917"]
+        result = UrnResolver.prioritize_range(urns, priority)
+        
+        # Should return the first wlc entry
+        self.assertIsNotNone(result)
+        self.assertEqual(result.project, "wlc")
+        self.assertEqual(result.file_name, "file1.xml")
+        
+    def test_prioritize_range_is_classmethod(self):
+        """Test that prioritize_range can be called without an instance."""
+        urns = [
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+        ]
+        
+        # Should be callable as a class method
+        result = UrnResolver.prioritize_range(urns, ["wlc"])
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result.project, "wlc")
+
+
 if __name__ == '__main__':
     unittest.main()
 

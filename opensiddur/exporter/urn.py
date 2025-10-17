@@ -571,6 +571,33 @@ class UrnResolver:
         if self.conn:
             self.conn.close()
     
+    @classmethod
+    def prioritize_range(cls, 
+        resolved_urns: list[ResolvedUrn | ResolvedUrnRange],
+        project_priority: list[str]) -> Optional[ResolvedUrn | ResolvedUrnRange]:
+        """Prioritize a list of resolved URNs or URN ranges based on a project priority list.
+        
+        Args:
+            resolved_urns: List of ResolvedUrn or ResolvedUrnRange objects
+            project_priority: List of project names in priority order
+            
+        Returns:
+            The most prioritized ResolvedUrn or ResolvedUrnRange object.
+            If none of the URNs are prioritized, return None.
+        """
+        # map a numeric priority to a project name
+        priorities = dict(zip(project_priority, range(len(project_priority))))
+        def _project_name(urn: ResolvedUrn | ResolvedUrnRange) -> str:
+            return urn.project if isinstance(urn, ResolvedUrn) else urn.start.project
+        sorted_urns = sorted([
+            r for r in resolved_urns 
+            if priorities.get(_project_name(r)) is not None
+            ], 
+            key=lambda x: priorities.get(_project_name(x)))
+        if len(sorted_urns) > 0:
+            return sorted_urns[0]
+        return None
+
     def __enter__(self):
         """Context manager entry."""
         return self
