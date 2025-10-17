@@ -3,9 +3,11 @@
 Linear processing treats the entire hierarchy as a single pass,
 so the data are the same independent of depth.
 """
-from typing import Any, TypedDict
+from typing import Annotated, Any, Optional, TypedDict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from opensiddur.exporter.cache import XMLCache
 
 
 class Setting(BaseModel):
@@ -14,9 +16,13 @@ class Setting(BaseModel):
     value: Any
 
 
-class LinearData(TypedDict):
+class LinearData(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+    
+    # parsed XML cache
+    xml_cache: Optional[XMLCache] = Annotated[..., Field(default_factory=XMLCache)]
     # dictionary linking the starting point of the settings to changes at that point.
-    settings: list[tuple[str, Setting]]
+    settings: list[tuple[str, Setting]] = Annotated[..., Field(default_factory=list)]
 
 _linear_data = LinearData()
 
