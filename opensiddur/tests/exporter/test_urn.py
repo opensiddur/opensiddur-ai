@@ -3,6 +3,7 @@
 import unittest
 import tempfile
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange
 
@@ -336,21 +337,149 @@ class TestUrnResolverRange(unittest.TestCase):
         self.assertEqual(results, [])
 
     def test_resolve_range_not_a_range(self):
-        """Test resolving URN without dash returns empty list."""
+        """Test resolving URN without dash calls resolve() and returns results."""
         results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1")
         
-        self.assertEqual(results, [])
+        # Should call resolve() and return ResolvedUrn objects (not ResolvedUrnRange)
+        self.assertEqual(len(results), 2)  # wlc and jps1917
+        for result in results:
+            self.assertIsInstance(result, ResolvedUrn)
+            self.assertEqual(result.urn, "urn:x-opensiddur:test:bible:genesis/1/1")
 
     def test_resolve_range_returns_list(self):
         """Test that resolve_range always returns a list."""
         # Valid range
         result = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1-2")
         self.assertIsInstance(result, list)
+        self.assertTrue(len(result) > 0)
         
-        # Invalid range
+        # Non-ranged URN (calls resolve())
         result = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1")
         self.assertIsInstance(result, list)
-        self.assertEqual(result, [])
+        self.assertTrue(len(result) > 0)  # Should return resolved URNs, not empty list
+
+    def test_resolve_range_dash_not_in_last_part(self):
+        """Test that a dash not in the last part is not treated as a range.
+        
+        For example:
+        - "urn:x-opensiddur:text:bible:genesis/1" is NOT a range (dash is in "x-opensiddur")
+        - "urn:x-opensiddur:text:bible:genesis/1-2" IS a range (dash is in last part)
+        """
+        # Add test data with URN containing dash in non-range position
+        self.resolver.add_mapping("urn:x-opensiddur:text:bible:genesis/1", "test", "genesis.xml")
+        
+        # This should NOT be treated as a range, but should call resolve()
+        results = self.resolver.resolve_range("urn:x-opensiddur:text:bible:genesis/1")
+        self.assertEqual(len(results), 1, 
+                        "URN with dash in 'x-opensiddur' should call resolve() and return results")
+        self.assertIsInstance(results[0], ResolvedUrn)
+        self.assertEqual(results[0].urn, "urn:x-opensiddur:text:bible:genesis/1")
+        
+        # Add range test data
+        self.resolver.add_mapping("urn:x-opensiddur:text:bible:genesis/1", "test", "genesis.xml")
+        self.resolver.add_mapping("urn:x-opensiddur:text:bible:genesis/2", "test", "genesis.xml")
+        
+        # This SHOULD be treated as a range because the dash is in the last part
+        results = self.resolver.resolve_range("urn:x-opensiddur:text:bible:genesis/1-2")
+        self.assertEqual(len(results), 1, 
+                        "URN with dash in last part should be treated as a range")
+        self.assertIsInstance(results[0], ResolvedUrnRange)
+        self.assertEqual(results[0].start.urn, "urn:x-opensiddur:text:bible:genesis/1")
+        self.assertEqual(results[0].end.urn, "urn:x-opensiddur:text:bible:genesis/2")
+
+    def test_resolve_range_dash_in_path_components(self):
+        """Test that dashes in non-final path components are not treated as ranges.
+        
+        For example:
+        - "urn:x-opensiddur:text:some-book/1" should NOT be a range (dash in book name)
+        - "urn:x-opensiddur:text:some-book/1-2" should be a range (dash in last component)
+        """
+        # Add test data for book with dash in name
+        self.resolver.add_mapping("urn:x-opensiddur:text:some-book/1", "test", "some-book.xml")
+        self.resolver.add_mapping("urn:x-opensiddur:text:some-book/2", "test", "some-book.xml")
+        self.resolver.add_mapping("urn:x-opensiddur:text:some-book/3", "test", "some-book.xml")
+        
+        # URN with dash in book name (not last component) should call resolve()
+        results = self.resolver.resolve_range("urn:x-opensiddur:text:some-book/1")
+        self.assertEqual(len(results), 1, 
+                        "URN with dash in book name should call resolve() and return results")
+        self.assertIsInstance(results[0], ResolvedUrn)
+        self.assertEqual(results[0].urn, "urn:x-opensiddur:text:some-book/1")
+        
+        # URN with dash in LAST component should be treated as range
+        results = self.resolver.resolve_range("urn:x-opensiddur:text:some-book/1-2")
+        self.assertEqual(len(results), 1, 
+                        "URN with dash in last component should be treated as a range")
+        self.assertIsInstance(results[0], ResolvedUrnRange)
+        self.assertEqual(results[0].start.urn, "urn:x-opensiddur:text:some-book/1")
+        self.assertEqual(results[0].end.urn, "urn:x-opensiddur:text:some-book/2")
+        
+        # Test with deeper nesting: dash in middle component
+        # Note: When there's a dash in a middle component like "chapter-1",
+        # it WILL be treated as a potential range, but will fail to resolve
+        # because "chapter" and "chapter-1" URNs don't exist
+        self.resolver.add_mapping("urn:x-opensiddur:text:some-book/chapter-1/1", "test", "some-book.xml")
+        self.resolver.add_mapping("urn:x-opensiddur:text:some-book/chapter-1/2", "test", "some-book.xml")
+        
+        # URN ending without dash in last component
+        # The dash in "chapter-1" will be found and treated as a range, but will fail to resolve
+        results = self.resolver.resolve_range("urn:x-opensiddur:text:some-book/chapter-1/1")
+        self.assertEqual(len(results), 0, 
+                        "URN with dash in middle component is treated as range but fails to resolve")
+        
+        # URN with dash in last component should be range
+        results = self.resolver.resolve_range("urn:x-opensiddur:text:some-book/chapter-1/1-2")
+        self.assertEqual(len(results), 1, 
+                        "URN with dash in last component should be treated as a range")
+        self.assertIsInstance(results[0], ResolvedUrnRange)
+        self.assertEqual(results[0].start.urn, "urn:x-opensiddur:text:some-book/chapter-1/1")
+        self.assertEqual(results[0].end.urn, "urn:x-opensiddur:text:some-book/chapter-1/2")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve')
+    def test_resolve_range_calls_resolve_for_non_ranged_urn(self, mock_resolve):
+        """Test that resolve_range calls resolve() when given a non-ranged URN."""
+        # Setup mock to return a known result
+        expected_result = [ResolvedUrn(project="test", file_name="test.xml", urn="urn:x-opensiddur:test:doc")]
+        mock_resolve.return_value = expected_result
+        
+        # Call resolve_range with a non-ranged URN
+        result = self.resolver.resolve_range("urn:x-opensiddur:test:doc")
+        
+        # Verify resolve() was called with the correct URN
+        mock_resolve.assert_called_once_with("urn:x-opensiddur:test:doc")
+        
+        # Verify the result is what resolve() returned
+        self.assertEqual(result, expected_result)
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve')
+    def test_resolve_range_calls_resolve_for_non_ranged_urn_with_project(self, mock_resolve):
+        """Test that resolve_range calls resolve() with @project for non-ranged URN."""
+        # Setup mock to return a known result
+        expected_result = [ResolvedUrn(project="wlc", file_name="test.xml", urn="urn:x-opensiddur:test:doc")]
+        mock_resolve.return_value = expected_result
+        
+        # Call resolve_range with a non-ranged URN with @project
+        result = self.resolver.resolve_range("urn:x-opensiddur:test:doc@wlc")
+        
+        # Verify resolve() was called with the correct URN including @project
+        mock_resolve.assert_called_once_with("urn:x-opensiddur:test:doc@wlc")
+        
+        # Verify the result is what resolve() returned
+        self.assertEqual(result, expected_result)
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve')
+    def test_resolve_range_calls_resolve_for_urn_with_dash_not_in_last_part(self, mock_resolve):
+        """Test that resolve_range calls resolve() for URNs with dash in non-final component."""
+        # Setup mock
+        expected_result = [ResolvedUrn(project="test", file_name="some-book.xml", urn="urn:x-opensiddur:text:some-book/1")]
+        mock_resolve.return_value = expected_result
+        
+        # URN with dash in book name (not in last component)
+        result = self.resolver.resolve_range("urn:x-opensiddur:text:some-book/1")
+        
+        # Verify resolve() was called
+        mock_resolve.assert_called_once_with("urn:x-opensiddur:text:some-book/1")
+        self.assertEqual(result, expected_result)
 
 
 class TestUrnResolverIndexing(unittest.TestCase):

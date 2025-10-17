@@ -94,8 +94,8 @@ class UrnResolver:
         return [ResolvedUrn(project=row['project'], file_name=row['file_name'], urn=actual_urn) 
                 for row in rows]
     
-    def resolve_range(self, ranged_urn: str) -> list[ResolvedUrnRange]:
-        """Resolve a ranged URN to start and end URNs.
+    def resolve_range(self, ranged_urn: str) -> list[ResolvedUrnRange | ResolvedUrn]:
+        """Resolve a ranged URN to start and end URNs, or a non-ranged URN.
         
         A range URN uses '-' to indicate a range in the final components:
         - 'urn:.../genesis/1/1-2' resolves to start='...genesis/1/1', end='...genesis/1/2'
@@ -104,13 +104,17 @@ class UrnResolver:
         The end specification replaces the last N components of the start URN, where N is
         the number of components (slash-delimited) in the end specification.
         
+        If the URN does not contain a dash in the last path component, it is treated as a
+        non-ranged URN and resolve() is called instead.
+        
         Args:
             ranged_urn: A URN with range notation (e.g., 'urn:.../1/1-2' or 'urn:.../1/1-2/3@project')
+                       or a non-ranged URN (e.g., 'urn:.../genesis/1/1')
         
         Returns:
-            List of ResolvedUrnRange objects for all matching project/file combinations
-            where both start and end exist. May contain multiple ranges if the URN exists
-            in multiple projects (when no project specifier is provided).
+            List of ResolvedUrnRange objects for ranged URNs, or list of ResolvedUrn objects
+            for non-ranged URNs. May contain multiple entries if the URN exists in multiple
+            projects (when no project specifier is provided).
             Returns empty list if the URN cannot be parsed as a range, or if start and end 
             don't resolve to any matching project/file combinations.
         """
@@ -118,10 +122,6 @@ class UrnResolver:
         project_specifier = None
         if '@' in ranged_urn:
             ranged_urn, project_specifier = ranged_urn.rsplit('@', 1)
-        
-        # Check if this is a range (contains '-' in the path portion)
-        if '-' not in ranged_urn:
-            return []
         
         # Find the '-' that indicates the range
         # It should be in the path portion (after the scheme and initial parts)
@@ -131,15 +131,40 @@ class UrnResolver:
         # Find the first '-' that appears after a '/' or at the start of a path component
         parts = ranged_urn.split('/')
         
-        # Find which part contains '-'
+        # Only check path components (not the scheme part) for a dash
+        # For example, "urn:x-opensiddur:test:doc" splits to ["urn:x-opensiddur:test:doc"]
+        # and we should NOT treat the dash in "x-opensiddur" as a range indicator
+        # But "urn:x-opensiddur:test:doc/1-2" splits to ["urn:x-opensiddur:test:doc", "1-2"]
+        # and we SHOULD treat the dash in "1-2" as a range indicator
+        
+        # For a URN to be ranged, we need at least 2 parts when split by '/' 
+        # (meaning there's at least one '/' in the URN, so we have actual path components)
+        
+        if len(parts) < 2:
+            # No '/' in the URN, so no range possible (dash would be in scheme part)
+            # Call resolve() instead and return the results
+            urn_to_resolve = ranged_urn
+            if project_specifier:
+                urn_to_resolve = f"{ranged_urn}@{project_specifier}"
+            return self.resolve(urn_to_resolve)
+        
+        # Search from the end backwards through path components (not the first component which is the scheme)
+        # to find the first component containing a dash
+        # Start from parts[1:] to skip the scheme component
         range_start_idx = None
-        for i in range(len(parts) - 1, -1, -1):  # Search from the end
+        for i in range(len(parts) - 1, 0, -1):  # Search from the end, but skip index 0 (scheme)
             if '-' in parts[i]:
                 range_start_idx = i
                 break
         
+        # If no dash found in any path component, this is not a ranged URN
+        # Call resolve() instead and return the results
         if range_start_idx is None:
-            return []
+            # Add back the project specifier if present
+            urn_to_resolve = ranged_urn
+            if project_specifier:
+                urn_to_resolve = f"{ranged_urn}@{project_specifier}"
+            return self.resolve(urn_to_resolve)
         
         # Split at the '-' within that component
         range_part = parts[range_start_idx]
