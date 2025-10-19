@@ -308,8 +308,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
         result = processor.process()
         
-        # Result should be a __TEXT__ element with the extracted text
-        self.assertEqual(result.tag, "__TEXT__")
+        # Result should be a p:transcludeInline element with the extracted text
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         result_text = result.text
         
         # Should include ONLY text from start, middle, and end paragraphs with whitespace between them
@@ -342,7 +342,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
         result = processor.process()
         
-        self.assertEqual(result.tag, "__TEXT__")
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         result_text = result.text
         
         # Should include ONLY text from start element and up to end
@@ -376,7 +376,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
         result = processor.process()
         
-        self.assertEqual(result.tag, "__TEXT__")
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         result_text = result.text
         
         # Should include ONLY text from start through end
@@ -412,7 +412,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
         result = processor.process()
         
-        self.assertEqual(result.tag, "__TEXT__")
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         result_text = result.text
         
         # Should include ONLY text from start through end across different sibling divs
@@ -426,7 +426,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertNotIn("Content in third div", result_text)
 
     def test_result_is_text_element(self):
-        """Test that InlineCompilerProcessor returns a __TEXT__ element."""
+        """Test that InlineCompilerProcessor returns a p:transcludeInline element."""
         xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
     <tei:p corresp="urn:start">Start</tei:p>
     <tei:p corresp="urn:end">End</tei:p>
@@ -437,8 +437,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
         result = processor.process()
         
-        # Should be a __TEXT__ element
-        self.assertEqual(result.tag, "__TEXT__")
+        # Should be a p:transcludeInline element
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         self.assertIsInstance(result, etree._Element)
         
         # Should have text content
@@ -551,7 +551,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
         result = processor.process()
         
-        self.assertEqual(result.tag, "__TEXT__")
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         result_text = result.text
         
         # Should include ONLY text from start through end at level 2

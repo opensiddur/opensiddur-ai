@@ -16,7 +16,7 @@ their instructions.
 
 from enum import Enum
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
 
@@ -69,48 +69,51 @@ class CompilerProcessor:
             self.ns_map = {}
         self.ns_map["p"] = PROCESSING_NAMESPACE
 
-    def _transclude(self, transclusion_element: ElementBase):
+    def _transclude(self, 
+        element: ElementBase, 
+        type_override: Optional[Literal['external', 'inline']] = None
+    ) -> Optional[ElementBase]:
         """
         Transclude a new root tree from the given transclusion element
         """
-        assert (
-            transclusion_element.tag == 'transclude' and 
-            transclusion_element.namespace == JLPTEI_NAMESPACE
-        )
-        target = transclusion_element.get('target')
-        target_end = transclusion_element.get('targetEnd')
-        transclusion_type = transclusion_element.get('type')
 
-        processing_element = etree.Element('p:transclude', nsmap=self.ns_map)
-        
-        processing_element.set('target', target)
-        if target_end:
-            processing_element.set('targetEnd', target_end)
-        processing_element.set('type', transclusion_type)
+        if element.tag == 'transclude' and element.namespace == JLPTEI_NAMESPACE:
+            target = element.get('target')
+            target_end = element.get('targetEnd')
+            transclusion_type = type_override or element.get('type')
 
-        transclude_range = self._get_start_and_end_from_ranges(target, target_end)
-        
-        if transclusion_type == 'external':
-            processor = ExternalCompilerProcessor(
-                transclude_range.start.project, 
-                transclude_range.start.file_name, 
-                from_start=transclude_range.start.urn, 
-                to_end=transclude_range.end.urn, 
-                linear_data=self.linear_data)
-            processed_list = processor.process()
-            for processed in processed_list:
-                processing_element.append(processed)
-        else:
-            processor = InlineCompilerProcessor(
-                transclude_range.start.project, 
-                transclude_range.start.file_name, 
-                from_start=transclude_range.start.urn, 
-                to_end=transclude_range.end.urn, 
-                linear_data=self.linear_data)
-            processed = processor.process()
-            processing_element.text = processed.text
-        
-        return processing_element
+            processing_element = etree.Element('p:transclude', nsmap=self.ns_map)
+            
+            processing_element.set('target', target)
+            if target_end:
+                processing_element.set('targetEnd', target_end)
+            processing_element.set('type', transclusion_type)
+
+            transclude_range = self._get_start_and_end_from_ranges(target, target_end)
+            
+            if transclusion_type == 'external':
+                processor = ExternalCompilerProcessor(
+                    transclude_range.start.project, 
+                    transclude_range.start.file_name, 
+                    from_start=transclude_range.start.urn, 
+                    to_end=transclude_range.end.urn, 
+                    linear_data=self.linear_data)
+                processed_list = processor.process()
+                for processed in processed_list:
+                    processing_element.append(processed)
+            else:
+                processor = InlineCompilerProcessor(
+                    transclude_range.start.project, 
+                    transclude_range.start.file_name, 
+                    from_start=transclude_range.start.urn, 
+                    to_end=transclude_range.end.urn, 
+                    linear_data=self.linear_data)
+                processed = processor.process()
+                processing_element.text = processed.text
+                for child in processed:
+                    processing_element.append(child)
+            
+            return processing_element
 
     def _get_start_and_end_from_ranges(
         self, 
@@ -169,8 +172,8 @@ class CompilerProcessor:
     def _process_element(self, element: ElementBase) -> ElementBase:
         command = self._update_processing_context_before(element)
         
-        if element.tag == 'transclude' and element.namespace == JLPTEI_NAMESPACE:
-            transcluded = self._transclude(element)
+
+        if (transcluded := self._transclude(element)):
             return transcluded
 
         copied = etree.Element(element.tag, nsmap=self.ns_map)
@@ -440,30 +443,47 @@ class InlineCompilerProcessor(CompilerProcessor):
             if is_end:
                 context['after_end'] = True
     
-    def _process_element(self, element: ElementBase) -> str:
+    # TODO: figure out how to do transclusions in internal transclusions
+    def _process_element(self, element: ElementBase) -> ElementBase:
         """
         Process the given element and return the text content.
         """
         context = self.linear_data.processing_context[-1]
-        context["command"] = self._update_processing_context_before(element)    
-        text = []
+        context["command"] = self._update_processing_context_before(element) 
+
+
+        text_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transcludeInline", nsmap=self.ns_map)
+        text_element.text = ""
 
         if context["command"] == _ProcessingCommand.SKIP:
-            return ""
+            return text_element
+
+        if (transcluded := self._transclude(element, type_override='inline')):
+            return transcluded
+
         if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
             if element.text:
-                text.append(element.text)
+                text_element.text += element.text
+
+        # the command is some kind of recursion now, COPY_TEXT_AND_RECURSE or RECURSE
         
+        previous_child = None
         for child in element:
             processed = self._process_element(child)
-            if processed:
-                text.append(processed)
+            if processed.tag == f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
+                text_element.text += processed.text
+            else:   # not a text element, transclusion probably happened
+                text_element.append(processed)
+                previous_child = processed
             if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
                 if child.tail:
-                    text.append(child.tail)
+                    if previous_child:
+                        previous_child.tail += " " + child.tail
+                    else:
+                        text_element.text += " " + child.tail
         
         self._update_processing_context_after(element)
-        return " ".join(text)
+        return text_element
         
     def process(self, root: Optional[ElementBase] = None) -> ElementBase:
         if root is None:
@@ -477,9 +497,8 @@ class InlineCompilerProcessor(CompilerProcessor):
             command=_ProcessingCommand.RECURSE,
             inside_deepest_common_ancestor=False,
         ))
-        element = etree.Element("__TEXT__", nsmap=self.ns_map)
 
-        element.text = self._process_element(root)
+        element = self._process_element(root)
 
         # pop the processing context
         self.linear_data.processing_context.pop()
