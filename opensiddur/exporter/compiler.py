@@ -28,40 +28,34 @@ PROCESSING_NAMESPACE = 'http://jewishliturgy.org/ns/processing'
 
 class _ProcessingCommand(Enum):
     """ Possible ways the compiler can process an element """
-    # copy the element and recurse into its children
+    # copy the element and recurse into its children, copying its text content
     COPY_AND_RECURSE = "copy_and_recurse"
+    # copy the element and recurse into its children, without copying its text content
+    COPY_ELEMENT_AND_RECURSE = "copy_element_and_recurse"
     # recurse into the children without copying the element
     RECURSE = "recurse"
     # skip the element and its children
     SKIP = "skip"
     # copy the element's text content but not the element and recurse into its children
-    TEXT_AND_RECURSE = "text_and_recurse"
+    COPY_TEXT_AND_RECURSE = "text_and_recurse"
 
 class _ProcessingContext(TypedDict):
     from_start: Optional[str]
     to_end: Optional[str]
     before_start: bool
     after_end: bool
+    inside_deepest_common_ancestor: bool
+    command: _ProcessingCommand
 
 class CompilerProcessor:
     def __init__(
         self, 
         project: str,
         file_name: str,
-        from_start: Optional[str] = None,
-        to_end: Optional[str] = None,
-        inline: bool = False,
         linear_data: Optional[LinearData] = None):
-        """ Process root_file. Only start from the given start and end, inclusive.
-        If start and end are not provided, process the entire file.
-        Start and end must be in the file. 
-        They must be URNs that are not qualified by the project 
-        or be hashed xml:ids (#id_name) that exist in the file.
+        """ Process the given file/project.
         """
         self.linear_data = linear_data or get_linear_data()
-        self.from_start = from_start
-        self.to_end = to_end
-        self.inline = inline
 
         self.root_tree = self.linear_data.xml_cache.parse_xml(project, file_name)
         
@@ -95,16 +89,27 @@ class CompilerProcessor:
         processing_element.set('type', transclusion_type)
 
         transclude_range = self._get_start_and_end_from_ranges(target, target_end)
-        processor = CompilerProcessor(
-            transclude_range.start.project, 
-            transclude_range.start.file_name, 
-            from_start=transclude_range.start.urn, 
-            to_end=transclude_range.end.urn, 
-            inline=self.inline or transclusion_type == 'inline', 
-            linear_data=self.linear_data)
-        processed = processor.process()
-
-        processing_element.append(processed)
+        
+        if transclusion_type == 'external':
+            processor = ExternalCompilerProcessor(
+                transclude_range.start.project, 
+                transclude_range.start.file_name, 
+                from_start=transclude_range.start.urn, 
+                to_end=transclude_range.end.urn, 
+                linear_data=self.linear_data)
+            processed_list = processor.process()
+            for processed in processed_list:
+                processing_element.append(processed)
+        else:
+            processor = InlineCompilerProcessor(
+                transclude_range.start.project, 
+                transclude_range.start.file_name, 
+                from_start=transclude_range.start.urn, 
+                to_end=transclude_range.end.urn, 
+                linear_data=self.linear_data)
+            processed = processor.process()
+            processing_element.text = processed.text
+        
         return processing_element
 
     def _get_start_and_end_from_ranges(
@@ -152,80 +157,23 @@ class CompilerProcessor:
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingCommand:
         """
         Update the processing context for the given element, before the element has been processed.
-
-        (NOTE: for now, this will only work for inline transclusions)
-
         """
-        context = self.linear_data.processing_context[-1]
-
-        # Possible contexts: 
-        # There is no start or end, always copy and recurse
-        # There is a start/end and
-        #    start has not yet been reached, 
-        #      check if this element is the start 
-        #       if yes, set before_start to False and return COPY_AND_RECURSE, 
-        #       else 
-        #         if in inline mode:
-        #           check if start is contained in element; 
-        #             if yes, RECURSE, 
-        #             else SKIP.
-        #         if not in inline mode:
-        #           check if start is contained in the element:
-        #             check if end is contained in the element:
-        #               if yes, COPY_AND_RECURSE,
-        #               else RECURSE
-        #             else SKIP.
-        #    after end, SKIP
-        if self.from_start is None and self.to_end is None:
-            return _ProcessingCommand.COPY_AND_RECURSE
-
-        if context['after_end']:
-            return _ProcessingCommand.SKIP
-        
-        corresp = element.attrib.get("corresp", "")
-        
-        if context['before_start']:
-            if corresp == self.from_start:
-                context['before_start'] = False
-                return _ProcessingCommand.COPY_AND_RECURSE
-            else:
-                start_in_element = element.xpath(f"./descendant::*[@corresp='{self.from_start}']")
-                if start_in_element:
-                    if self.inline:
-                        return _ProcessingCommand.RECURSE
-                    else:
-                        end_in_element = element.xpath(f"./descendant::*[@corresp='{self.to_end}']")
-                        if end_in_element:
-                            return _ProcessingCommand.COPY_AND_RECURSE
-                        else:
-                            return _ProcessingCommand.RECURSE
-                return _ProcessingCommand.SKIP
-        # must be between start and end here
         return _ProcessingCommand.COPY_AND_RECURSE
-    
+        
     def _update_processing_context_after(self, element: ElementBase) -> None:
         """
         Update the processing context for the given element, after the element has been processed.
         """
-        if self.from_start is None and self.to_end is None:
-            return
-
-        context = self.linear_data.processing_context[-1]
-        if not context['before_start'] and not context['after_end']:
-            corresp = element.attrib.get("corresp", "")
-            # between start and end
-            if self.to_end == corresp:
-                context['after_end'] = True
-            
+        pass    
 
     def _process_element(self, element: ElementBase) -> ElementBase:
-        self._update_processing_context_before(element)
-
-        copied = etree.Element(element.tag, nsmap=self.ns_map)
-
+        command = self._update_processing_context_before(element)
+        
         if element.tag == 'transclude' and element.namespace == JLPTEI_NAMESPACE:
             transcluded = self._transclude(element)
             return transcluded
+
+        copied = etree.Element(element.tag, nsmap=self.ns_map)
 
         # Copy attributes
         for key, value in element.attrib.items():
@@ -252,10 +200,12 @@ class CompilerProcessor:
 
         # set up the processing context
         self.linear_data.processing_context.append(_ProcessingContext(
-            from_start=self.from_start,
-            to_end=self.to_end,
-            before_start=self.from_start is not None,
-            after_end=self.to_end is not None,
+            from_start=None,
+            to_end=None,
+            before_start=False,
+            after_end=False,
+            command=_ProcessingCommand.COPY_AND_RECURSE,
+            inside_deepest_common_ancestor=False,
         ))
 
         copied = self._process_element(root)
@@ -263,3 +213,275 @@ class CompilerProcessor:
         self.linear_data.processing_context.pop()
 
         return copied
+
+class ExternalCompilerProcessor(CompilerProcessor):
+    def _get_deepest_common_ancestor(self, from_start: str, to_end: str) -> ElementBase:
+        """
+        Get the deepest common ancestor of the given start and end.
+        """
+        start_xpath = (
+            f"./descendant::*[@corresp='{from_start}']" if from_start.startswith('urn:') 
+            else f"./descendant::*[@xml:id='{from_start.split('#')[1]}']"
+        )
+        end_xpath = (
+            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
+            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
+        )
+        start_element = self.root_tree.xpath(start_xpath)
+        if not start_element:
+            raise ValueError(f"Start URN {from_start=} not found")
+        start_element = start_element[0]
+        end_element = self.root_tree.xpath(end_xpath)
+        if not end_element:
+            raise ValueError(f"End URN {to_end=} not found")
+        end_element = end_element[0]
+        if start_element is end_element:
+            return start_element
+        if start_element.parent is end_element.parent:
+            # siblings... no need to go deeper
+            return start_element
+        for element in start_element.iterancestors():
+            if element.xpath(end_xpath):
+                return element
+        raise ValueError(f"No common ancestor found for {from_start=} and {to_end=}")
+
+    def __init__(
+        self,
+        project: str,
+        file_name: str,
+        from_start: str,
+        to_end: str,
+        linear_data: Optional[LinearData] = None):
+        """ Process the given file/project. 
+        Only start from the given start and end, inclusive.
+        Start and end must be in the same file
+        """
+        super().__init__(project, file_name, linear_data=linear_data)
+        self.from_start = from_start
+        self.to_end = to_end
+
+        self.deepest_common_ancestor = self._get_deepest_common_ancestor(from_start, to_end)
+
+
+    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingCommand:
+        """
+        Update the processing context for the given element, before the element has been processed.
+        """
+        context = self.linear_data.processing_context[-1]
+
+        # Possible contexts: 
+        #    before the deepest common ancestor has been reached, RECURSE
+        #    deepest common ancestor has been reached, 
+        #      check if this element is the start 
+        #       if yes, set before_start to False and return COPY_AND_RECURSE, 
+        #       else 
+        #           before start? COPY_ELEMENT_AND_RECURSE
+        #           after start? COPY_AND_RECURSE
+        #    after end, SKIP
+
+        if context['after_end']:
+            return _ProcessingCommand.SKIP
+        
+        corresp = element.attrib.get("corresp", "")
+        xml_id = element.attrib.get("xml:id", "")
+
+        # is start
+        if corresp or xml_id:
+            if corresp == self.from_start or xml_id == self.from_start.split('#')[1]:
+                context['before_start'] = False
+                return _ProcessingCommand.COPY_AND_RECURSE
+
+        # is after start?
+        if context['before_start']:
+            if element is self.deepest_common_ancestor:
+                context['inside_deepest_common_ancestor'] = True
+                return _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+            elif context['inside_deepest_common_ancestor']:
+                return _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+            else:
+                return _ProcessingCommand.RECURSE
+            
+        # must be after start and before end
+        return _ProcessingCommand.COPY_AND_RECURSE
+    
+    def _update_processing_context_after(self, element: ElementBase) -> None:
+        """
+        Update the processing context for the given element, after the element has been processed.
+        """
+        context = self.linear_data.processing_context[-1]
+        if element is self.deepest_common_ancestor:
+            context['inside_deepest_common_ancestor'] = False
+            return
+
+        if not context['before_start'] and not context['after_end']:
+            corresp = element.attrib.get("corresp", "")
+            xml_id = element.attrib.get("xml:id", "")
+            # between start and end
+            if self.to_end == corresp or xml_id == self.to_end.split('#')[1]:
+                context['after_end'] = True
+    
+
+    def _process_element(self, element: ElementBase) -> list[ElementBase]:
+        """
+        Process the given element and return the list of processed elements.
+        """
+        context = self.linear_data.processing_context[-1]
+        context["command"] = self._update_processing_context_before(element)
+        processed = []
+
+        if context["command"] == _ProcessingCommand.SKIP:
+            return []
+        if context["command"] == _ProcessingCommand.RECURSE:
+            append_to = processed
+        elif context["command"] == _ProcessingCommand.COPY_ELEMENT_AND_RECURSE:
+            copied = etree.Element(element.tag, nsmap=self.ns_map)
+            for key, value in element.attrib.items():
+                copied.set(key, value)
+            processed.append(copied)
+            append_to = copied
+        if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+            copied = etree.Element(element.tag, nsmap=self.ns_map)
+            for key, value in element.attrib.items():
+                copied.set(key, value)
+            copied.text = element.text
+            processed.append(copied)
+            append_to = copied
+        
+        for child in element:
+            append_to.extend(self._process_element(child))
+            if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+                if child.tail:
+                    append_to[-1].tail += child.tail
+                
+        self._update_processing_context_after(element)
+        return processed
+
+    # TODO: figure out return type and logic for external transclusions
+    def process(self, root: Optional[ElementBase] = None) -> ElementBase:
+        if root is None:
+            root = self.root_tree
+
+        self.linear_data.processing_context.append(_ProcessingContext(
+            from_start=self.from_start,
+            to_end=self.to_end,
+            before_start=self.from_start is not None,
+            after_end=self.to_end is not None,
+            command=_ProcessingCommand.RECURSE,
+        ))
+        element = etree.Element("__TRANSCLUSION__", nsmap=self.ns_map)
+
+        for processed in self._process_element(root):
+            element.append(processed)
+
+        # pop the processing context
+        self.linear_data.processing_context.pop()
+
+        return element
+
+class InlineCompilerProcessor(CompilerProcessor):
+    def __init__(
+        self,
+        project: str,
+        file_name: str,
+        from_start: str,
+        to_end: str,
+        linear_data: Optional[LinearData] = None):
+        """ Process the given file/project.
+        Only start from the given start and end, inclusive.
+        Start and end must be in the same file
+        """
+        super().__init__(project, file_name, linear_data=linear_data)
+        self.from_start = from_start
+        self.to_end = to_end
+
+    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingCommand:
+        """
+        Update the processing context for the given element, before the element has been processed.
+        """
+        context = self.linear_data.processing_context[-1]
+
+        # Possible contexts:
+        #    after end? SKIP 
+        #    before start?
+        #       check if this element is start? if yes, set before_start to False and return COPY_TEXT_AND_RECURSE
+        #       else RECURSE
+        #    between start and end? COPY_TEXT_AND_RECURSE
+        
+        if context['after_end']:
+            return _ProcessingCommand.SKIP
+        
+        corresp = element.attrib.get("corresp", "")
+        xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
+
+        # is start
+        if corresp or xml_id:
+            is_start = (corresp == self.from_start) or (self.from_start.startswith('#') and xml_id == self.from_start[1:])
+            if is_start:
+                context['before_start'] = False
+                return _ProcessingCommand.COPY_TEXT_AND_RECURSE
+
+        # is after start?
+        if context['before_start']:
+            return _ProcessingCommand.RECURSE
+            
+        # must be after start and before end
+        return _ProcessingCommand.COPY_TEXT_AND_RECURSE
+    
+    def _update_processing_context_after(self, element: ElementBase) -> None:
+        """
+        Update the processing context for the given element, after the element has been processed.
+        """
+        context = self.linear_data.processing_context[-1]
+        if not context['before_start'] and not context['after_end']:
+            corresp = element.attrib.get("corresp", "")
+            xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
+            # between start and end - check if this is the end element
+            is_end = (self.to_end == corresp) or (self.to_end.startswith('#') and xml_id == self.to_end[1:])
+            if is_end:
+                context['after_end'] = True
+    
+    def _process_element(self, element: ElementBase) -> str:
+        """
+        Process the given element and return the text content.
+        """
+        context = self.linear_data.processing_context[-1]
+        context["command"] = self._update_processing_context_before(element)    
+        text = []
+
+        if context["command"] == _ProcessingCommand.SKIP:
+            return ""
+        if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
+            if element.text:
+                text.append(element.text)
+        
+        for child in element:
+            processed = self._process_element(child)
+            if processed:
+                text.append(processed)
+            if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
+                if child.tail:
+                    text.append(child.tail)
+        
+        self._update_processing_context_after(element)
+        return " ".join(text)
+        
+    def process(self, root: Optional[ElementBase] = None) -> ElementBase:
+        if root is None:
+            root = self.root_tree
+
+        self.linear_data.processing_context.append(_ProcessingContext(
+            from_start=self.from_start,
+            to_end=self.to_end,
+            before_start=self.from_start is not None,
+            after_end=False,  # We haven't processed anything yet, so we're not after end
+            command=_ProcessingCommand.RECURSE,
+            inside_deepest_common_ancestor=False,
+        ))
+        element = etree.Element("__TEXT__", nsmap=self.ns_map)
+
+        element.text = self._process_element(root)
+
+        # pop the processing context
+        self.linear_data.processing_context.pop()
+
+        return element

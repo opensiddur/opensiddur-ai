@@ -1,11 +1,12 @@
 """Tests for the CompilerProcessor class."""
 
+import re
 import unittest
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from lxml import etree
-from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.compiler import CompilerProcessor, InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
 
 
@@ -266,6 +267,297 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         # Should add processing namespace
         self.assertIn('xmlns:p="http://jewishliturgy.org/ns/processing"', result_str)
+
+
+class TestInlineCompilerProcessor(unittest.TestCase):
+    """Test InlineCompilerProcessor for extracting text content between start and end markers."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        reset_linear_data()
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_start_and_end_are_siblings(self):
+        """Test when start and end are sibling elements at the same level."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p corresp="urn:start">First paragraph</tei:p>
+        <tei:p>Middle paragraph</tei:p>
+        <tei:p corresp="urn:end">Last paragraph</tei:p>
+        <tei:p>After end paragraph</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("siblings.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Result should be a __TEXT__ element with the extracted text
+        self.assertEqual(result.tag, "__TEXT__")
+        result_text = result.text
+        
+        # Should include ONLY text from start, middle, and end paragraphs with whitespace between them
+        pattern = r'^\s*First paragraph\s+Middle paragraph\s+Last paragraph\s*$'
+        self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL), 
+                             f"Result text should match pattern. Got: {result_text!r}")
+        
+        # Should NOT include text after end
+        self.assertNotIn("After end paragraph", result_text)
+
+    def test_start_is_ancestor_of_end(self):
+        """Test when start element is an ancestor of the end element."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:start">
+        <tei:p>Outer start text</tei:p>
+        <tei:div>
+            <tei:p>Nested middle text</tei:p>
+            <tei:p corresp="urn:end">Nested end text</tei:p>
+            <tei:p>After end text</tei:p>
+        </tei:div>
+        <tei:p>After nested div</tei:p>
+    </tei:div>
+    <tei:div>
+        <tei:p>After start div</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("ancestor.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        self.assertEqual(result.tag, "__TEXT__")
+        result_text = result.text
+        
+        # Should include ONLY text from start element and up to end
+        pattern = r'^\s*Outer start text\s+Nested middle text\s+Nested end text\s*$'
+        self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL),
+                             f"Result text should match pattern. Got: {result_text!r}")
+        
+        # Should NOT include text after end
+        self.assertNotIn("After end text", result_text)
+        self.assertNotIn("After nested div", result_text)
+        self.assertNotIn("After start div", result_text)
+
+    def test_start_deeper_than_end(self):
+        """Test when start is 3 levels deep and end is 2 levels deep."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:div>
+            <tei:div>
+                <tei:p corresp="urn:start">Start at level 3</tei:p>
+                <tei:p>Also level 3</tei:p>
+            </tei:div>
+            <tei:p>Back to level 2</tei:p>
+        </tei:div>
+        <tei:p corresp="urn:end">End at level 2</tei:p>
+        <tei:p>After end at level 2</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("depth_diff.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        self.assertEqual(result.tag, "__TEXT__")
+        result_text = result.text
+        
+        # Should include ONLY text from start through end
+        pattern = r'^\s*Start at level 3\s+Also level 3\s+Back to level 2\s+End at level 2\s*$'
+        self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL),
+                             f"Result text should match pattern. Got: {result_text!r}")
+        
+        # Should NOT include text after end
+        self.assertNotIn("After end at level 2", result_text)
+
+    def test_start_and_end_descendants_of_different_siblings(self):
+        """Test when start and end are descendants of different sibling elements."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:div type="first">
+            <tei:p>Before start in first div</tei:p>
+            <tei:p corresp="urn:start">Start in first div</tei:p>
+            <tei:p>After start in first div</tei:p>
+        </tei:div>
+        <tei:div type="second">
+            <tei:p>Content in second div</tei:p>
+            <tei:p corresp="urn:end">End in second div</tei:p>
+            <tei:p>After end in second div</tei:p>
+        </tei:div>
+        <tei:div type="third">
+            <tei:p>Content in third div (after end)</tei:p>
+        </tei:div>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("diff_siblings.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        self.assertEqual(result.tag, "__TEXT__")
+        result_text = result.text
+        
+        # Should include ONLY text from start through end across different sibling divs
+        pattern = r'^\s*Start in first div\s+After start in first div\s+Content in second div\s+End in second div\s*$'
+        self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL),
+                             f"Result text should match pattern. Got: {result_text!r}")
+        
+        # Should NOT include text before start or after end
+        self.assertNotIn("Before start in first div", result_text)
+        self.assertNotIn("After end in second div", result_text)
+        self.assertNotIn("Content in third div", result_text)
+
+    def test_result_is_text_element(self):
+        """Test that InlineCompilerProcessor returns a __TEXT__ element."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:p corresp="urn:start">Start</tei:p>
+    <tei:p corresp="urn:end">End</tei:p>
+</root>'''
+        
+        project, file_name = self._create_test_file("text_elem.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Should be a __TEXT__ element
+        self.assertEqual(result.tag, "__TEXT__")
+        self.assertIsInstance(result, etree._Element)
+        
+        # Should have text content
+        self.assertIsNotNone(result.text)
+        self.assertIn("Start", result.text)
+        self.assertIn("End", result.text)
+
+    def test_text_extraction_preserves_whitespace(self):
+        """Test that whitespace in text is preserved."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:p corresp="urn:start">  Start with spaces  </tei:p>
+    <tei:p>  Middle  with  spaces  </tei:p>
+    <tei:p corresp="urn:end">  End with spaces  </tei:p>
+</root>'''
+        
+        project, file_name = self._create_test_file("whitespace.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        result_text = result.text
+        
+        # Whitespace should be preserved in the extracted text
+        self.assertIn("Start with spaces", result_text)
+        self.assertIn("Middle", result_text)
+        self.assertIn("spaces", result_text)
+        self.assertIn("End with spaces", result_text)
+
+    def test_using_xml_id_instead_of_corresp(self):
+        """Test that xml:id can be used with #id notation for start/end."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:p xml:id="start_id">Start with xml:id</tei:p>
+    <tei:p>Middle content</tei:p>
+    <tei:p xml:id="end_id">End with xml:id</tei:p>
+    <tei:p>After end</tei:p>
+</root>'''
+        
+        project, file_name = self._create_test_file("xmlid.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "#start_id", "#end_id")
+        result = processor.process()
+        
+        result_text = result.text
+        
+        # Should extract text using xml:id
+        self.assertIn("Start with xml:id", result_text)
+        self.assertIn("Middle content", result_text)
+        self.assertIn("End with xml:id", result_text)
+        
+        # Should NOT include text after end
+        self.assertNotIn("After end", result_text)
+
+    def test_mixed_corresp_and_xml_id(self):
+        """Test using corresp for start and xml:id for end."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:p corresp="urn:start">Start with corresp</tei:p>
+    <tei:p>Middle content</tei:p>
+    <tei:p xml:id="end_id">End with xml:id</tei:p>
+</root>'''
+        
+        project, file_name = self._create_test_file("mixed.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "#end_id")
+        result = processor.process()
+        
+        result_text = result.text
+        
+        # Should work with mixed identifier types
+        self.assertIn("Start with corresp", result_text)
+        self.assertIn("Middle content", result_text)
+        self.assertIn("End with xml:id", result_text)
+
+    def test_single_element_start_equals_end(self):
+        """Test when start and end are the same element."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:p>Before</tei:p>
+    <tei:p corresp="urn:target">Target content</tei:p>
+    <tei:p>After</tei:p>
+</root>'''
+        
+        project, file_name = self._create_test_file("single.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:target", "urn:target")
+        result = processor.process()
+        
+        result_text = result.text
+        
+        # Should extract ONLY the target element's text
+        pattern = r'^\s*Target content\s*$'
+        self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL),
+                             f"Result text should match pattern. Got: {result_text!r}")
+
+    def test_start_and_end_both_2_levels_deep(self):
+        """Test when start and end are both at the same depth (2 levels) as siblings."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:div>
+            <tei:p>Content before start</tei:p>
+            <tei:p corresp="urn:start">Start at level 2</tei:p>
+            <tei:p>Middle content at level 2</tei:p>
+            <tei:p corresp="urn:end">End at level 2</tei:p>
+            <tei:p>Content after end</tei:p>
+        </tei:div>
+        <tei:p>Content outside nested div</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("both_level2.xml", xml_content)
+        
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        self.assertEqual(result.tag, "__TEXT__")
+        result_text = result.text
+        
+        # Should include ONLY text from start through end at level 2
+        pattern = r'^\s*Start at level 2\s+Middle content at level 2\s+End at level 2\s*$'
+        self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL),
+                             f"Result text should match pattern. Got: {result_text!r}")
 
 
 if __name__ == '__main__':

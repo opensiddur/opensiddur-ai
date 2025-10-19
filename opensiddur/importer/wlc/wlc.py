@@ -1,8 +1,6 @@
 import sys
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
-from lxml import etree
 
 # Import the XMLTransformer from its new location
 from opensiddur.common.xslt import xslt_transform
