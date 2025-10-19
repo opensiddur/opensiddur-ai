@@ -20,9 +20,13 @@ class LinearData(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
     
     # parsed XML cache
-    xml_cache: Optional[XMLCache] = Annotated[..., Field(default_factory=XMLCache)]
+    xml_cache: XMLCache = Field(default_factory=XMLCache)
     # dictionary linking the starting point of the settings to changes at that point.
-    settings: list[tuple[str, Setting]] = Annotated[..., Field(default_factory=list)]
+    settings: list[tuple[str, Setting]] = Field(default_factory=list)
+    # project priority for URN resolution
+    project_priority: list[str] = Field(default_factory=list)
+    # processing context includes processor-specific data. Because there is recursion, it acts as a stack.
+    processing_context: list[dict[str, Any]] = Field(default_factory=list)
 
 _linear_data = LinearData()
 

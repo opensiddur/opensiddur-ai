@@ -884,6 +884,85 @@ class TestUrnResolverContextManager(unittest.TestCase):
             # Note: We can't easily test this without accessing internals
 
 
+class TestUrnResolverGetPathFromUrn(unittest.TestCase):
+    """Test the get_path_from_urn method."""
+
+    def test_get_path_from_urn_basic(self):
+        """Test basic path construction from ResolvedUrn."""
+        resolved = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc")
+        
+        result = UrnResolver.get_path_from_urn(resolved)
+        
+        # Should construct path as: PROJECT_DIRECTORY / project / file_name
+        from opensiddur.common.constants import PROJECT_DIRECTORY
+        expected = PROJECT_DIRECTORY / "wlc" / "genesis.xml"
+        self.assertEqual(result, expected)
+
+    def test_get_path_from_urn_with_custom_project_directory(self):
+        """Test path construction with custom project directory."""
+        resolved = ResolvedUrn(project="jps1917", file_name="exodus.xml", urn="urn:x-opensiddur:test:doc")
+        custom_dir = Path("/custom/project/dir")
+        
+        result = UrnResolver.get_path_from_urn(resolved, project_directory=custom_dir)
+        
+        expected = custom_dir / "jps1917" / "exodus.xml"
+        self.assertEqual(result, expected)
+
+    def test_get_path_from_urn_different_projects(self):
+        """Test path construction for different projects."""
+        resolved1 = ResolvedUrn(project="wlc", file_name="test.xml", urn="urn:x-opensiddur:test:doc")
+        resolved2 = ResolvedUrn(project="jps1917", file_name="test.xml", urn="urn:x-opensiddur:test:doc")
+        
+        result1 = UrnResolver.get_path_from_urn(resolved1)
+        result2 = UrnResolver.get_path_from_urn(resolved2)
+        
+        # Should be different paths even though file_name is the same
+        self.assertNotEqual(result1, result2)
+        self.assertIn("wlc", str(result1))
+        self.assertIn("jps1917", str(result2))
+
+    def test_get_path_from_urn_different_files(self):
+        """Test path construction for different files in same project."""
+        resolved1 = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc1")
+        resolved2 = ResolvedUrn(project="wlc", file_name="exodus.xml", urn="urn:x-opensiddur:test:doc2")
+        
+        result1 = UrnResolver.get_path_from_urn(resolved1)
+        result2 = UrnResolver.get_path_from_urn(resolved2)
+        
+        # Should be different paths
+        self.assertNotEqual(result1, result2)
+        self.assertTrue(str(result1).endswith("genesis.xml"))
+        self.assertTrue(str(result2).endswith("exodus.xml"))
+
+    def test_get_path_from_urn_is_classmethod(self):
+        """Test that get_path_from_urn can be called without an instance."""
+        resolved = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc")
+        
+        # Should be callable as a class method
+        result = UrnResolver.get_path_from_urn(resolved)
+        
+        self.assertIsInstance(result, Path)
+
+    def test_get_path_from_urn_returns_path_object(self):
+        """Test that get_path_from_urn returns a Path object."""
+        resolved = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc")
+        
+        result = UrnResolver.get_path_from_urn(resolved)
+        
+        self.assertIsInstance(result, Path)
+
+    def test_get_path_from_urn_with_nested_project(self):
+        """Test path construction with project that looks like a path."""
+        # Some projects might have dashes or special characters
+        resolved = ResolvedUrn(project="some-project", file_name="test.xml", urn="urn:x-opensiddur:test:doc")
+        custom_dir = Path("/base")
+        
+        result = UrnResolver.get_path_from_urn(resolved, project_directory=custom_dir)
+        
+        expected = Path("/base/some-project/test.xml")
+        self.assertEqual(result, expected)
+
+
 class TestUrnResolverPrioritizeRange(unittest.TestCase):
     """Test the prioritize_range method."""
 

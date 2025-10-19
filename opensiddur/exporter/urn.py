@@ -598,6 +598,18 @@ class UrnResolver:
             return sorted_urns[0]
         return None
 
+    @classmethod
+    def get_path_from_urn(cls, resolved_urn: ResolvedUrn, project_directory: Path = PROJECT_DIRECTORY) -> Path:
+        """Get the path from a URN.
+    
+        Args:
+            resolved_urn: The ResolvedUrn
+            
+        Returns:
+            The path
+        """
+        return project_directory / resolved_urn.project / resolved_urn.file_name
+
     def __enter__(self):
         """Context manager entry."""
         return self
