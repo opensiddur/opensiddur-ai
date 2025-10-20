@@ -170,9 +170,9 @@ class CompilerProcessor:
         pass    
 
     def _process_element(self, element: ElementBase) -> ElementBase:
-        command = self._update_processing_context_before(element)
+        context = self.linear_data.processing_context[-1]
+        context["command"] = self._update_processing_context_before(element)
         
-
         transcluded = self._transclude(element)
         if transcluded is not None:
             return transcluded
