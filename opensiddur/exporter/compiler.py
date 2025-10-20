@@ -77,12 +77,12 @@ class CompilerProcessor:
         Transclude a new root tree from the given transclusion element
         """
 
-        if element.tag == 'transclude' and element.namespace == JLPTEI_NAMESPACE:
+        if element.tag == f"{{{JLPTEI_NAMESPACE}}}transclude":
             target = element.get('target')
             target_end = element.get('targetEnd')
             transclusion_type = type_override or element.get('type')
 
-            processing_element = etree.Element('p:transclude', nsmap=self.ns_map)
+            processing_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transclude", nsmap=self.ns_map)
             
             processing_element.set('target', target)
             if target_end:
@@ -173,7 +173,8 @@ class CompilerProcessor:
         command = self._update_processing_context_before(element)
         
 
-        if (transcluded := self._transclude(element)):
+        transcluded = self._transclude(element)
+        if transcluded is not None:
             return transcluded
 
         copied = etree.Element(element.tag, nsmap=self.ns_map)
@@ -458,7 +459,11 @@ class InlineCompilerProcessor(CompilerProcessor):
         if context["command"] == _ProcessingCommand.SKIP:
             return text_element
 
-        if (transcluded := self._transclude(element, type_override='inline')):
+        # Check if this element itself is a transclusion
+        transcluded = self._transclude(element, type_override='inline')
+        if transcluded is not None:
+            # Don't process children of j:transclude elements - just return the p:transclude
+            # The tail will be handled by the parent's processing
             return transcluded
 
         if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
@@ -471,14 +476,25 @@ class InlineCompilerProcessor(CompilerProcessor):
         for child in element:
             processed = self._process_element(child)
             if processed.tag == f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
+                # Extract text from nested p:transcludeInline elements
                 text_element.text += processed.text
-            else:   # not a text element, transclusion probably happened
+                # Also extract any p:transclude children (nested transclusions)
+                for nested_child in processed:
+                    text_element.append(nested_child)
+                    previous_child = nested_child
+            elif processed.tag == f"{{{PROCESSING_NAMESPACE}}}transclude":
+                # p:transclude elements are kept as children (for inline transclusions)
+                # Add the p:transclude element as a child
+                text_element.append(processed)
+                previous_child = processed
+            else:
+                # Other element types (shouldn't normally happen in InlineCompilerProcessor)
                 text_element.append(processed)
                 previous_child = processed
             if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
                 if child.tail:
-                    if previous_child:
-                        previous_child.tail += " " + child.tail
+                    if previous_child is not None:
+                        previous_child.tail = (previous_child.tail or "") + " " + child.tail
                     else:
                         text_element.text += " " + child.tail
         

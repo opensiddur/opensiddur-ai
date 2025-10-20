@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.compiler import CompilerProcessor, InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
+from opensiddur.exporter.urn import ResolvedUrn
 
 
 class TestCompilerProcessorWithFiles(unittest.TestCase):
@@ -558,6 +559,189 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         pattern = r'^\s*Start at level 2\s+Middle content at level 2\s+End at level 2\s*$'
         self.assertIsNotNone(re.match(pattern, result_text, re.DOTALL),
                              f"Result text should match pattern. Got: {result_text!r}")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    @patch('opensiddur.exporter.urn.UrnResolver.prioritize_range')
+    def test_inline_transclusion(self, mock_prioritize, mock_resolve_range):
+        """Test InlineCompilerProcessor with a transclusion element."""
+        # Create main file with transclusion element
+        # Include text before start, after end, and tail text on elements
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:p>Text before start (excluded)</tei:p> Also before start.
+    <tei:p corresp="urn:main-start">Text before transclusion</tei:p> tail after start element
+    <j:transclude target="urn:other:start" targetEnd="urn:other:end" type="inline"/> tail after transclude
+    <tei:p corresp="urn:main-end">Text after transclusion</tei:p> tail after end element
+    <tei:p>Text after end (excluded)</tei:p>
+</root>'''
+        
+        # Create transcluded file with tail text before start, between elements, and after end
+        transcluded_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p>Before transcluded start (excluded)</tei:p> Tail before start (excluded)
+        <tei:p corresp="urn:other:start">Transcluded start</tei:p> Tail after transcluded start
+        <tei:p>Transcluded middle</tei:p> Tail after transcluded middle
+        <tei:p corresp="urn:other:end">Transcluded end</tei:p> Tail of end element (included)
+        <tei:p>After transcluded end (excluded)</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content)
+        
+        # Mock URN resolution to return the transcluded file location
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end")]
+        ]
+        mock_prioritize.side_effect = [
+            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start"),
+            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end")
+        ]
+        
+        # Process the main file
+        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end")
+        result = processor.process()
+        
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
+        
+        # The result should include main text directly
+        self.assertIn("Text before transclusion", result.text)
+        self.assertIn("Text after transclusion", result.text)
+        
+        # Should include tail text from start element
+        self.assertIn("tail after start element", result.text)
+        
+        # Should NOT include text before start or after end
+        self.assertNotIn("Text before start (excluded)", result.text)
+        self.assertNotIn("Also before start", result.text)
+        self.assertNotIn("Text after end (excluded)", result.text)
+        self.assertNotIn("tail after end element", result.text)
+        
+        # Verify that resolve_range was called with correct URNs
+        mock_resolve_range.assert_any_call("urn:other:start")
+        mock_resolve_range.assert_any_call("urn:other:end")
+        
+        # Verify the result contains a p:transclude element as a child
+        # p:transclude elements are retained as children in InlineCompilerProcessor
+        transclude_children = result.findall(".//{http://jewishliturgy.org/ns/processing}transclude")
+        self.assertEqual(len(transclude_children), 1)
+        
+        transclude_elem = transclude_children[0]
+        self.assertEqual(transclude_elem.get('target'), 'urn:other:start')
+        self.assertEqual(transclude_elem.get('targetEnd'), 'urn:other:end')
+        self.assertEqual(transclude_elem.get('type'), 'inline')
+        
+        # The transcluded text should be in the p:transclude element
+        self.assertIn("Transcluded start", transclude_elem.text)
+        self.assertIn("Transcluded middle", transclude_elem.text)
+        self.assertIn("Transcluded end", transclude_elem.text)
+        
+        # Should include tail text from within the transcluded content
+        self.assertIn("Tail after transcluded start", transclude_elem.text)
+        self.assertIn("Tail after transcluded middle", transclude_elem.text)
+        # The tail of the end element is also included (it's part of the range)
+        self.assertIn("Tail of end element (included)", transclude_elem.text)
+        
+        # Should NOT include text/tails before start or after the end element's tail
+        self.assertNotIn("Before transcluded start (excluded)", transclude_elem.text)
+        self.assertNotIn("Tail before start (excluded)", transclude_elem.text)
+        self.assertNotIn("After transcluded end (excluded)", transclude_elem.text)
+        
+        # The p:transclude element should have the tail text from the main file
+        self.assertIsNotNone(transclude_elem.tail)
+        self.assertIn("tail after transclude", transclude_elem.tail)
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    @patch('opensiddur.exporter.urn.UrnResolver.prioritize_range')
+    def test_nested_transclusion(self, mock_prioritize, mock_resolve_range):
+        """Test InlineCompilerProcessor with nested transclusions (transcluded file has its own transclusion)."""
+        # Create main file with transclusion element
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:p corresp="urn:main-start">Text before transclusion</tei:p>
+    <j:transclude target="urn:level1:start" targetEnd="urn:level1:end" type="inline"/>
+    <tei:p corresp="urn:main-end">Text after transclusion</tei:p>
+</root>'''
+        
+        # Create first level transcluded file that itself has a transclusion (type=external)
+        level1_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <tei:p corresp="urn:level1:start">Level 1 start</tei:p>
+        <j:transclude target="urn:level2:start" targetEnd="urn:level2:end" type="external"/>
+        <tei:p corresp="urn:level1:end">Level 1 end</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Create second level transcluded file
+        level2_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p corresp="urn:level2:start">Level 2 start</tei:p>
+        <tei:p>Level 2 middle</tei:p>
+        <tei:p corresp="urn:level2:end">Level 2 end</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        level1_project, level1_file = self._create_test_file("level1.xml", level1_xml_content)
+        level2_project, level2_file = self._create_test_file("level2.xml", level2_xml_content)
+        
+        # Mock URN resolution for multiple levels
+        # First two calls are for the main file's transclusion
+        # Next two calls are for the level1 file's transclusion
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start")],
+            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end")],
+            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start")],
+            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end")]
+        ]
+        mock_prioritize.side_effect = [
+            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start"),
+            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end"),
+            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start"),
+            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end")
+        ]
+        
+        # Process the main file
+        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end")
+        result = processor.process()
+        
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
+        
+        # The result should include main text directly
+        self.assertIn("Text before transclusion", result.text)
+        self.assertIn("Text after transclusion", result.text)
+        
+        # Find the top-level p:transclude element (from main file's transclusion)
+        top_transclude = result.findall(".//{http://jewishliturgy.org/ns/processing}transclude")
+        self.assertEqual(len(top_transclude), 2)  # One from level1, one nested from level2
+        
+        # The first p:transclude should be from the main file's transclusion to level1
+        level1_transclude = top_transclude[0]
+        self.assertEqual(level1_transclude.get('target'), 'urn:level1:start')
+        self.assertEqual(level1_transclude.get('targetEnd'), 'urn:level1:end')
+        self.assertEqual(level1_transclude.get('type'), 'inline')
+        
+        # Level 1 text should be in the first p:transclude element
+        self.assertIn("Level 1 start", level1_transclude.text)
+        self.assertIn("Level 1 end", level1_transclude.text)
+        
+        # The nested p:transclude (from level1's transclusion to level2) should also be present
+        # Find it as a child of the first transclude
+        nested_transclude = level1_transclude.findall(".//{http://jewishliturgy.org/ns/processing}transclude")
+        self.assertEqual(len(nested_transclude), 1)
+        
+        level2_transclude = nested_transclude[0]
+        self.assertEqual(level2_transclude.get('target'), 'urn:level2:start')
+        self.assertEqual(level2_transclude.get('targetEnd'), 'urn:level2:end')
+        # Even though the original j:transclude was type="external", InlineCompilerProcessor
+        # should convert it to type="inline" because of the type_override
+        self.assertEqual(level2_transclude.get('type'), 'inline')
+        
+        # Level 2 text should be in the nested p:transclude element
+        self.assertIn("Level 2 start", level2_transclude.text)
+        self.assertIn("Level 2 middle", level2_transclude.text)
+        self.assertIn("Level 2 end", level2_transclude.text)
 
 
 if __name__ == '__main__':
