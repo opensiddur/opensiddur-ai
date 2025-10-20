@@ -222,6 +222,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
     def _get_deepest_common_ancestor(self, from_start: str, to_end: str) -> ElementBase:
         """
         Get the deepest common ancestor of the given start and end.
+
+        There is one exception: if start and end are siblings, return the start element.
+        We do this because then we don't need the surrounding elements to be copied.
         """
         start_xpath = (
             f"./descendant::*[@corresp='{from_start}']" if from_start.startswith('urn:') 
@@ -241,7 +244,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         end_element = end_element[0]
         if start_element is end_element:
             return start_element
-        if start_element.parent is end_element.parent:
+        if start_element.getparent() is end_element.getparent():
             # siblings... no need to go deeper
             return start_element
         for element in start_element.iterancestors():
@@ -287,11 +290,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return _ProcessingCommand.SKIP
         
         corresp = element.attrib.get("corresp", "")
-        xml_id = element.attrib.get("xml:id", "")
+        xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
 
         # is start
         if corresp or xml_id:
-            if corresp == self.from_start or xml_id == self.from_start.split('#')[1]:
+            is_start = (corresp == self.from_start or 
+                       (self.from_start.startswith('#') and xml_id == self.from_start.split('#')[1]))
+            if is_start:
                 context['before_start'] = False
                 return _ProcessingCommand.COPY_AND_RECURSE
 
@@ -319,9 +324,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         if not context['before_start'] and not context['after_end']:
             corresp = element.attrib.get("corresp", "")
-            xml_id = element.attrib.get("xml:id", "")
+            xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
             # between start and end
-            if self.to_end == corresp or xml_id == self.to_end.split('#')[1]:
+            is_end = (self.to_end == corresp or 
+                     (self.to_end.startswith('#') and xml_id == self.to_end.split('#')[1]))
+            if is_end:
                 context['after_end'] = True
     
 
@@ -331,10 +338,16 @@ class ExternalCompilerProcessor(CompilerProcessor):
         """
         context = self.linear_data.processing_context[-1]
         context["command"] = self._update_processing_context_before(element)
+        
         processed = []
 
         if context["command"] == _ProcessingCommand.SKIP:
             return []
+
+        transcluded = self._transclude(element)
+        if transcluded is not None:
+            return [transcluded]
+        
         if context["command"] == _ProcessingCommand.RECURSE:
             append_to = processed
         elif context["command"] == _ProcessingCommand.COPY_ELEMENT_AND_RECURSE:
@@ -352,16 +365,21 @@ class ExternalCompilerProcessor(CompilerProcessor):
             append_to = copied
         
         for child in element:
-            append_to.extend(self._process_element(child))
+            child_result = self._process_element(child)
+            append_to.extend(child_result)
             if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
-                if child.tail:
-                    append_to[-1].tail += child.tail
+                if child.tail and child_result:
+                    # Only copy tail if we're not after the end marker
+                    if not context['after_end']:
+                        if child_result[-1].tail is None:
+                            child_result[-1].tail = child.tail
+                        else:
+                            child_result[-1].tail += child.tail
                 
         self._update_processing_context_after(element)
         return processed
 
-    # TODO: figure out return type and logic for external transclusions
-    def process(self, root: Optional[ElementBase] = None) -> ElementBase:
+    def process(self, root: Optional[ElementBase] = None) -> list[ElementBase]:
         if root is None:
             root = self.root_tree
 
@@ -369,18 +387,17 @@ class ExternalCompilerProcessor(CompilerProcessor):
             from_start=self.from_start,
             to_end=self.to_end,
             before_start=self.from_start is not None,
-            after_end=self.to_end is not None,
+            after_end=False,  # We haven't processed anything yet, so we're not after end
             command=_ProcessingCommand.RECURSE,
+            inside_deepest_common_ancestor=False,
         ))
-        element = etree.Element("__TRANSCLUSION__", nsmap=self.ns_map)
 
-        for processed in self._process_element(root):
-            element.append(processed)
+        processed = self._process_element(root)
 
         # pop the processing context
         self.linear_data.processing_context.pop()
 
-        return element
+        return processed
 
 class InlineCompilerProcessor(CompilerProcessor):
     def __init__(

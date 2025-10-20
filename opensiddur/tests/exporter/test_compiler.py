@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from lxml import etree
-from opensiddur.exporter.compiler import CompilerProcessor, InlineCompilerProcessor
+from opensiddur.exporter.compiler import CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.urn import ResolvedUrn
 
@@ -268,6 +268,377 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         # Should add processing namespace
         self.assertIn('xmlns:p="http://jewishliturgy.org/ns/processing"', result_str)
+
+
+class TestExternalCompilerProcessor(unittest.TestCase):
+    """Test ExternalCompilerProcessor for extracting XML hierarchy between start and end markers."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        reset_linear_data()
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_siblings_identity_transform(self):
+        """Test that ExternalCompilerProcessor acts as identity transform for siblings."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>Text before first p
+        <tei:p>Before start (excluded)</tei:p> Tail before start (excluded)
+        <tei:p corresp="urn:start">First paragraph</tei:p> Tail after start
+        <tei:p>Middle paragraph</tei:p> Tail after middle
+        <tei:p corresp="urn:end">Last paragraph</tei:p> Tail after end (excluded)
+        <tei:p>After end (excluded)</tei:p> Tail after end p (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("siblings.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        self.assertGreater(len(result), 0)
+        
+        # Should preserve the XML structure (not just extract text)
+        # The first element should be tei:p with corresp="urn:start"
+        self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[0].get('corresp'), 'urn:start')
+        self.assertEqual(result[0].text, 'First paragraph')
+        
+        # Check tail text is preserved for start element
+        self.assertIsNotNone(result[0].tail)
+        self.assertIn("Tail after start", result[0].tail)
+        
+        # Should include middle paragraph
+        self.assertEqual(result[1].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[1].text, 'Middle paragraph')
+        
+        # Check tail text is preserved for middle element
+        self.assertIsNotNone(result[1].tail)
+        self.assertIn("Tail after middle", result[1].tail)
+        
+        # Should include end paragraph
+        self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[2].get('corresp'), 'urn:end')
+        self.assertEqual(result[2].text, 'Last paragraph')
+        
+        # Tail after end element should NOT be included
+        self.assertIsNone(result[2].tail)
+        
+        # Should have exactly 3 elements (start, middle, end)
+        self.assertEqual(len(result), 3)
+        
+        # Verify excluded content is not present
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        self.assertNotIn("Before start (excluded)", full_result)
+        self.assertNotIn("After end (excluded)", full_result)
+        self.assertNotIn("Tail before start (excluded)", full_result)
+        self.assertNotIn("Tail after end (excluded)", full_result)
+
+    def test_preserves_hierarchy(self):
+        """Test that ExternalCompilerProcessor preserves element hierarchy."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>Container text
+        <tei:p>Before start (excluded)</tei:p> Before tail (excluded)
+        <tei:div corresp="urn:start">Text in start div
+            <tei:p>Nested paragraph 1</tei:p> Tail after nested 1
+            <tei:p>Nested paragraph 2</tei:p> Tail after nested 2
+        </tei:div> Tail after start div
+        <tei:p corresp="urn:end">End paragraph</tei:p> Tail after end (excluded)
+        <tei:p>After end (excluded)</tei:p> After tail (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("hierarchy.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Should return a list
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)  # start div and end p
+        
+        # First element should be the tei:div with nested structure
+        self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
+        self.assertEqual(result[0].get('corresp'), 'urn:start')
+        self.assertIn("Text in start div", result[0].text)
+        
+        # Check tail text after the start div is preserved
+        self.assertIsNotNone(result[0].tail)
+        self.assertIn("Tail after start div", result[0].tail)
+        
+        # Should have 2 children (the nested paragraphs)
+        children = list(result[0])
+        self.assertEqual(len(children), 2)
+        self.assertEqual(children[0].text, 'Nested paragraph 1')
+        self.assertIsNotNone(children[0].tail)
+        self.assertIn("Tail after nested 1", children[0].tail)
+        
+        self.assertEqual(children[1].text, 'Nested paragraph 2')
+        self.assertIsNotNone(children[1].tail)
+        self.assertIn("Tail after nested 2", children[1].tail)
+        
+        # Second element should be the end paragraph
+        self.assertEqual(result[1].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[1].get('corresp'), 'urn:end')
+        self.assertEqual(result[1].text, 'End paragraph')
+        
+        # Tail after end should NOT be included
+        self.assertIsNone(result[1].tail)
+        
+        # Verify excluded content is not present
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        self.assertNotIn("Before start (excluded)", full_result)
+        self.assertNotIn("After end (excluded)", full_result)
+        self.assertNotIn("Before tail (excluded)", full_result)
+        self.assertNotIn("After tail (excluded)", full_result)
+
+    def test_preserves_attributes(self):
+        """Test that ExternalCompilerProcessor preserves element attributes."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>Container text
+        <tei:p type="paragraph" n="1" corresp="urn:start">Start text</tei:p> Tail between
+        <tei:p type="paragraph" n="2" corresp="urn:end">End text</tei:p> Tail after end (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("attributes.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Check that attributes are preserved
+        self.assertEqual(result[0].get('type'), 'paragraph')
+        self.assertEqual(result[0].get('n'), '1')
+        self.assertEqual(result[0].get('corresp'), 'urn:start')
+        
+        # Check tail text is preserved
+        self.assertIsNotNone(result[0].tail)
+        self.assertIn("Tail between", result[0].tail)
+        
+        self.assertEqual(result[1].get('type'), 'paragraph')
+        self.assertEqual(result[1].get('n'), '2')
+        self.assertEqual(result[1].get('corresp'), 'urn:end')
+        
+        # Tail after end should NOT be included
+        self.assertIsNone(result[1].tail)
+
+    def test_preserves_tail_text(self):
+        """Test that ExternalCompilerProcessor preserves tail text on elements."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>Text before elements
+        <tei:p>Before (excluded)</tei:p> Tail before start (excluded)
+        <tei:p corresp="urn:start">Start</tei:p> Tail after start
+        <tei:p>Middle</tei:p> Tail after middle
+        <tei:p corresp="urn:end">End</tei:p> Tail after end (excluded)
+        <tei:p>After (excluded)</tei:p> Tail after excluded (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("tails.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Should have 3 elements
+        self.assertEqual(len(result), 3)
+        
+        # Check tail text is preserved for elements inside the range
+        self.assertIsNotNone(result[0].tail)
+        self.assertIn("Tail after start", result[0].tail)
+        
+        self.assertIsNotNone(result[1].tail)
+        self.assertIn("Tail after middle", result[1].tail)
+        
+        # Tail after end element should NOT be included
+        # (the end element marks the boundary, its tail is excluded)
+        self.assertIsNone(result[2].tail)
+        
+        # Verify excluded tail text is not present
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        self.assertNotIn("Tail before start (excluded)", full_result)
+        self.assertNotIn("Tail after end (excluded)", full_result)
+        self.assertNotIn("Tail after excluded (excluded)", full_result)
+
+    def test_excludes_content_before_start_and_after_end(self):
+        """Test that content before start and after end is excluded."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>Text before all (excluded)
+        <tei:p>First (excluded)</tei:p> Tail 1 (excluded)
+        <tei:p>Second (excluded)</tei:p> Tail 2 (excluded)
+        <tei:p corresp="urn:start">Start</tei:p> Tail after start
+        <tei:p>Middle</tei:p> Tail after middle
+        <tei:p corresp="urn:end">End</tei:p> Tail after end (excluded)
+        <tei:p>After 1 (excluded)</tei:p> Tail after 1 (excluded)
+        <tei:p>After 2 (excluded)</tei:p> Tail after 2 (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("exclusions.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        result = processor.process()
+        
+        # Should only have 3 elements (start, middle, end)
+        self.assertEqual(len(result), 3)
+        
+        # Verify tail text is preserved for included elements
+        self.assertIsNotNone(result[0].tail)
+        self.assertIn("Tail after start", result[0].tail)
+        
+        self.assertIsNotNone(result[1].tail)
+        self.assertIn("Tail after middle", result[1].tail)
+        
+        # Tail after end should NOT be included
+        self.assertIsNone(result[2].tail)
+        
+        # Convert to strings to check content
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        
+        # Should include start, middle, end
+        self.assertIn("Start", full_result)
+        self.assertIn("Middle", full_result)
+        self.assertIn("End", full_result)
+        
+        # Should include tail text within range
+        self.assertIn("Tail after start", full_result)
+        self.assertIn("Tail after middle", full_result)
+        
+        # Should NOT include excluded content or tail text
+        self.assertNotIn("Text before all (excluded)", full_result)
+        self.assertNotIn("First (excluded)", full_result)
+        self.assertNotIn("Second (excluded)", full_result)
+        self.assertNotIn("Tail 1 (excluded)", full_result)
+        self.assertNotIn("Tail 2 (excluded)", full_result)
+        self.assertNotIn("Tail after end (excluded)", full_result)
+        self.assertNotIn("After 1 (excluded)", full_result)
+        self.assertNotIn("After 2 (excluded)", full_result)
+        self.assertNotIn("Tail after 1 (excluded)", full_result)
+        self.assertNotIn("Tail after 2 (excluded)", full_result)
+
+    def test_using_xml_id_instead_of_corresp(self):
+        """Test that ExternalCompilerProcessor works with xml:id references (#id) instead of URNs."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>Container text
+        <tei:p xml:id="before">Before start (excluded)</tei:p> Tail before (excluded)
+        <tei:p xml:id="start">Start element</tei:p> Tail after start
+        <tei:p xml:id="middle">Middle element</tei:p> Tail after middle
+        <tei:p xml:id="end">End element</tei:p> Tail after end (excluded)
+        <tei:p xml:id="after">After end (excluded)</tei:p> Tail after (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("xmlid.xml", xml_content)
+        
+        # Use #id notation for xml:id references
+        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+        result = processor.process()
+        
+        # Should return a list of 3 elements
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 3)
+        
+        # First element should have xml:id="start"
+        self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "start")
+        self.assertEqual(result[0].text, "Start element")
+        
+        # Check tail text is preserved
+        self.assertIsNotNone(result[0].tail)
+        self.assertIn("Tail after start", result[0].tail)
+        
+        # Middle element
+        self.assertEqual(result[1].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[1].get("{http://www.w3.org/XML/1998/namespace}id"), "middle")
+        self.assertEqual(result[1].text, "Middle element")
+        
+        # Check tail text is preserved
+        self.assertIsNotNone(result[1].tail)
+        self.assertIn("Tail after middle", result[1].tail)
+        
+        # End element
+        self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        self.assertEqual(result[2].text, "End element")
+        
+        # Tail after end should NOT be included
+        self.assertIsNone(result[2].tail)
+        
+        # Verify excluded content is not present
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        self.assertNotIn("Before start (excluded)", full_result)
+        self.assertNotIn("After end (excluded)", full_result)
+        self.assertNotIn("Tail before (excluded)", full_result)
+        self.assertNotIn("Tail after end (excluded)", full_result)
+        self.assertNotIn("Tail after (excluded)", full_result)
+
+    def test_mixed_corresp_and_xml_id(self):
+        """Test that ExternalCompilerProcessor works with mixed corresp URN and xml:id."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>Container text
+        <tei:p>Before start (excluded)</tei:p> Tail before (excluded)
+        <tei:p corresp="urn:start">Start with URN</tei:p> Tail after start
+        <tei:p>Middle element</tei:p> Tail after middle
+        <tei:p xml:id="end">End with xml:id</tei:p> Tail after end (excluded)
+        <tei:p>After end (excluded)</tei:p> Tail after (excluded)
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("mixed.xml", xml_content)
+        
+        # Use URN for start and xml:id for end
+        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "#end")
+        result = processor.process()
+        
+        # Should return a list of 3 elements
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 3)
+        
+        # First element should have corresp="urn:start"
+        self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[0].get("corresp"), "urn:start")
+        self.assertEqual(result[0].text, "Start with URN")
+        self.assertIn("Tail after start", result[0].tail)
+        
+        # Middle element
+        self.assertEqual(result[1].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[1].text, "Middle element")
+        self.assertIn("Tail after middle", result[1].tail)
+        
+        # End element should have xml:id="end"
+        self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        self.assertEqual(result[2].text, "End with xml:id")
+        
+        # Tail after end should NOT be included
+        self.assertIsNone(result[2].tail)
+        
+        # Verify excluded content is not present
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        self.assertNotIn("Before start (excluded)", full_result)
+        self.assertNotIn("After end (excluded)", full_result)
+        self.assertNotIn("Tail after end (excluded)", full_result)
 
 
 class TestInlineCompilerProcessor(unittest.TestCase):
