@@ -429,6 +429,368 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[1]['from_start'], "#fragment1")
             self.assertEqual(call_args[1]['to_end'], "#fragment2")
 
+    def test_inline_transclusion_with_metadata(self):
+        """Test CompilerProcessor with inline transclusion that includes teiHeader metadata."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt><tei:title>Main File</tei:title></tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:div>Main text
+            <tei:p xml:id="before">Before (excluded)</tei:p> Tail before
+            <tei:p xml:id="start">Start</tei:p> Tail after start
+            <jlp:transclude target="#transclude-start" targetEnd="#transclude-end" type="inline"/>
+            <tei:p xml:id="end">End</tei:p> Tail after end
+            <tei:p xml:id="after">After (excluded)</tei:p> Tail after
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        # File to be transcluded (inline)
+        transcluded_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt><tei:title>Transcluded File</tei:title></tei:titleStmt>
+            <tei:publicationStmt><tei:p>Publication info</tei:p></tei:publicationStmt>
+            <tei:sourceDesc><tei:p>Source description</tei:p></tei:sourceDesc>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:div>Transcluded div text
+            <tei:p xml:id="transclude-start">Transcluded start</tei:p> Transcluded tail 1
+            <tei:p xml:id="transclude-middle">Transcluded middle</tei:p> Transcluded tail 2
+            <tei:p xml:id="transclude-end">Transcluded end</tei:p> Transcluded tail 3
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("main_inline.xml", main_xml_content)
+        
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            else:
+                # Transcluded file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            # Return a different project/file to avoid infinite recursion
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml")]
+        
+        def mock_prioritize_range(urns, priority_list):
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Verify the transclusion element is created
+        self.assertIn('p:transclude', result_str)
+        
+        # Verify metadata from transcluded file is present
+        # The metadata should be extracted and added to the transclusion element
+        self.assertIn('Transcluded File', result_str)
+        self.assertIn('Publication info', result_str)
+        self.assertIn('Source description', result_str)
+        
+        # Find the p:transclude element
+        ns = {'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'}
+        transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
+        self.assertEqual(len(transclude_elem), 1)
+        
+        # Check that metadata is the first child of the transclude element
+        transclude_children = list(transclude_elem[0])
+        self.assertGreater(len(transclude_children), 0)
+        
+        # First child should be fileDesc (the metadata)
+        # Note: namespace may be processing namespace depending on implementation
+        self.assertIn("fileDesc", transclude_children[0].tag)
+        
+        # Verify the transcluded text content is also present
+        self.assertIn('Transcluded start', result_str)
+        self.assertIn('Transcluded middle', result_str)
+        self.assertIn('Transcluded end', result_str)
+
+    def test_external_transclusion_with_metadata(self):
+        """Test CompilerProcessor with external transclusion that includes teiHeader metadata."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt><tei:title>Main File</tei:title></tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:div>Main text
+            <tei:p xml:id="before">Before (excluded)</tei:p> Tail before
+            <tei:p xml:id="start">Start</tei:p> Tail after start
+            <jlp:transclude target="#transclude-start" targetEnd="#transclude-end" type="external"/>
+            <tei:p xml:id="end">End</tei:p> Tail after end
+            <tei:p xml:id="after">After (excluded)</tei:p> Tail after
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        # External file to be transcluded
+        external_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt><tei:title>External File</tei:title></tei:titleStmt>
+            <tei:publicationStmt><tei:p>External publication</tei:p></tei:publicationStmt>
+            <tei:sourceDesc><tei:p>External source</tei:p></tei:sourceDesc>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:div>External div text
+            <tei:p xml:id="transclude-start">External start</tei:p> External tail 1
+            <tei:p xml:id="transclude-middle">External middle</tei:p> External tail 2
+            <tei:p xml:id="transclude-end">External end</tei:p> External tail 3
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("main_external.xml", main_xml_content)
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == "external_project":
+                # External file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            elif len(args) == 1 and hasattr(args[0], '__fspath__'):
+                # Path-based call for external file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if urn.startswith("#transclude"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list):
+            return urns[0] if urns else None
+        
+        def mock_get_path_from_urn(resolved_urn):
+            from pathlib import Path
+            return Path(self.temp_dir.name) / "external_project" / "external.xml"
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
+                        processor = CompilerProcessor(project, file_name)
+                        result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Verify the transclusion element is created
+        self.assertIn('p:transclude', result_str)
+        
+        # Verify metadata from external file is present
+        self.assertIn('External File', result_str)
+        self.assertIn('External publication', result_str)
+        self.assertIn('External source', result_str)
+        
+        # Find the p:transclude element
+        ns = {'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'}
+        transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
+        self.assertEqual(len(transclude_elem), 1)
+        
+        # Check that metadata is the first child of the transclude element
+        transclude_children = list(transclude_elem[0])
+        self.assertGreater(len(transclude_children), 0)
+        
+        # First child should be fileDesc (the metadata)
+        # Note: namespace may be processing namespace depending on implementation
+        self.assertIn("fileDesc", transclude_children[0].tag)
+        
+        # Verify the fileDesc has the expected structure
+        fileDesc = transclude_children[0]
+        # Use wildcard namespace for titleStmt since namespace may vary
+        titleStmt = fileDesc.xpath('.//*[local-name()="titleStmt"]')
+        self.assertEqual(len(titleStmt), 1)
+        
+        # Verify the transcluded content elements come after metadata
+        # Find the transcluded paragraphs
+        transcluded_paragraphs = transclude_elem[0].xpath('.//tei:p[@xml:id]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0', 'xml': 'http://www.w3.org/XML/1998/namespace'})
+        self.assertGreaterEqual(len(transcluded_paragraphs), 3)
+        
+        # Verify the transcluded text content is present
+        self.assertIn('External start', result_str)
+        self.assertIn('External middle', result_str)
+        self.assertIn('External end', result_str)
+        
+        # Verify tail text is preserved
+        self.assertIn('External tail 1', result_str)
+        self.assertIn('External tail 2', result_str)
+
+    def test_metadata_extraction_preserves_structure(self):
+        """Test that metadata extraction preserves the full fileDesc structure including nested elements."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:text>
+        <tei:div>
+            <jlp:transclude target="#fragment" type="inline"/>
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        # Complex metadata structure
+        transcluded_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title type="main">Main Title</tei:title>
+                <tei:title type="sub">Subtitle</tei:title>
+                <tei:author>Author Name</tei:author>
+            </tei:titleStmt>
+            <tei:publicationStmt>
+                <tei:publisher>Publisher Name</tei:publisher>
+                <tei:pubPlace>City</tei:pubPlace>
+                <tei:date>2025</tei:date>
+            </tei:publicationStmt>
+            <tei:sourceDesc>
+                <tei:bibl>
+                    <tei:title>Source Title</tei:title>
+                    <tei:author>Source Author</tei:author>
+                </tei:bibl>
+            </tei:sourceDesc>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:div>
+            <tei:p xml:id="fragment">Fragment text</tei:p>
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("metadata_test.xml", main_xml_content)
+        
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                return original_parse_xml(*args, **kwargs)
+            else:
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            # Return a different project/file to avoid infinite recursion
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml")]
+        
+        def mock_prioritize_range(urns, priority_list):
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Find the p:transclude element
+        ns = {'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'}
+        transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
+        self.assertEqual(len(transclude_elem), 1)
+        
+        # First child should be fileDesc
+        transclude_children = list(transclude_elem[0])
+        self.assertGreater(len(transclude_children), 0)
+        self.assertIn("fileDesc", transclude_children[0].tag)
+        
+        fileDesc = transclude_children[0]
+        
+        # Verify all sections of fileDesc are present (using local-name for namespace flexibility)
+        titleStmt = fileDesc.xpath('.//*[local-name()="titleStmt"]')
+        self.assertEqual(len(titleStmt), 1)
+        
+        publicationStmt = fileDesc.xpath('.//*[local-name()="publicationStmt"]')
+        self.assertEqual(len(publicationStmt), 1)
+        
+        sourceDesc = fileDesc.xpath('.//*[local-name()="sourceDesc"]')
+        self.assertEqual(len(sourceDesc), 1)
+        
+        # Verify nested elements in titleStmt
+        titles = titleStmt[0].xpath('.//*[local-name()="title"]')
+        self.assertGreaterEqual(len(titles), 2)  # main and sub
+        
+        authors = titleStmt[0].xpath('.//*[local-name()="author"]')
+        self.assertEqual(len(authors), 1)
+        
+        # Verify text content
+        self.assertIn('Main Title', result_str)
+        self.assertIn('Subtitle', result_str)
+        self.assertIn('Author Name', result_str)
+        self.assertIn('Publisher Name', result_str)
+        self.assertIn('City', result_str)
+        self.assertIn('2025', result_str)
+        self.assertIn('Source Title', result_str)
+        self.assertIn('Source Author', result_str)
+        
+        # Verify the fragment text is also present
+        self.assertIn('Fragment text', result_str)
+
 
 class TestExternalCompilerProcessor(unittest.TestCase):
     """Test ExternalCompilerProcessor for extracting XML hierarchy between start and end markers."""

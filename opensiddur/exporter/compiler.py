@@ -112,8 +112,37 @@ class CompilerProcessor:
                 processing_element.text = processed.text
                 for child in processed:
                     processing_element.append(child)
-            
+            metadata = self._extract_metadata(processor.root_tree)
+            if metadata is not None:
+                processing_element = self._insert_first_element(processing_element, metadata)
             return processing_element
+
+    @staticmethod
+    def _insert_first_element(element: ElementBase, new_child: ElementBase) -> ElementBase:
+        """
+        Insert the new child as the first child of the element.
+        Return the base element as modified.
+        """
+        element.insert(0, new_child)
+        if element.text:
+            if new_child.tail:
+                new_child.tail = element.text + " " + new_child.tail
+            else:
+                new_child.tail = element.text
+            element.text = None
+        
+        return element
+
+    def _extract_metadata(self, root: ElementBase) -> Optional[ElementBase]:
+        """
+        Extract a TEI metadata subset from the root element's TEI header.
+        """
+        metadata = etree.Element(f"{{{PROCESSING_NAMESPACE}}}fileDesc", nsmap=self.ns_map)
+        file_desc = root.find(".//tei:fileDesc", namespaces=self.ns_map)
+        if file_desc:
+            metadata.extend(file_desc.iterchildren())
+            return metadata
+        return None
 
     def _get_start_and_end_from_ranges(
         self, 
