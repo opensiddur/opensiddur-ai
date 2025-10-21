@@ -21,7 +21,7 @@
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
-        <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Noto Sans Hebrew}&#10;</xsl:text>
+        <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Frank Ruehl CLM}&#10;</xsl:text>
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
         <xsl:text>\setlength{\parskip}{1em}&#10;</xsl:text>
         
@@ -204,9 +204,16 @@
 
     <!-- Template for any element with Hebrew language -->
     <xsl:template match="*[@xml:lang='he']" priority="0">
-        <xsl:text>\texthebrew{</xsl:text>
-        <xsl:apply-templates/>
-        <xsl:text>}</xsl:text>
+        <!-- heuristic to determine if this is a block of text -->
+        <xsl:variable name="is-block" as="xs:boolean" 
+            select="exists(.//descendant-or-self::*[self::tei:p or self::tei:lg or self::tei:div or self::tei:ab])"/>
+        <xsl:variable name="start-text" as="xs:string"
+            select="if ($is-block) then '\begin{hebrew}' else '\texthebrew{'"/>
+        <xsl:variable name="end-text" as="xs:string"
+            select="if ($is-block) then '\end{hebrew}' else '}'"/>
+        <xsl:value-of select="$start-text"/>
+        <xsl:next-match/>
+        <xsl:value-of select="$end-text"/>
     </xsl:template>
 
     <!-- Template for foreign text -->
