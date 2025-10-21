@@ -59,13 +59,12 @@ def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
         # Change to the directory containing the TeX file
         tex_dir = tex_file.parent
         tex_name = tex_file.stem
-        
-        def run_xelatex():
+        def run_xelatex(temp_dir):
             """Run XeLaTeX and return (success, output, needs_rerun)"""
             cmd = [
                 'xelatex',
                 '-interaction=nonstopmode',
-                '-output-directory', str(tex_dir),
+                '-output-directory', str(temp_dir),
                 str(tex_file)
             ]
             
@@ -101,55 +100,56 @@ def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
             
             return True
         
-        # First XeLaTeX run
-        print("Running XeLaTeX (pass 1)...", file=sys.stderr)
-        success, output, needs_rerun = run_xelatex()
-        
-        if not success:
-            print(f"XeLaTeX compilation failed:", file=sys.stderr)
-            print(output, file=sys.stderr)
-            return False
-        
-        # Check if bibliography exists and run BibTeX
-        aux_file = tex_dir / f"{tex_name}.aux"
-        if aux_file.exists():
-            aux_content = aux_file.read_text()
-            if '\\bibdata' in aux_content or '\\citation' in aux_content:
-                print("Running BibTeX...", file=sys.stderr)
-                if not run_bibtex():
-                    print("Warning: BibTeX encountered errors", file=sys.stderr)
-                # After BibTeX, we definitely need to rerun XeLaTeX
-                needs_rerun = True
-        
-        # Continue running XeLaTeX until no more reruns are needed
-        run_count = 1
-        while needs_rerun and run_count < max_runs:
-            run_count += 1
-            print(f"Running XeLaTeX (pass {run_count})...", file=sys.stderr)
-            success, output, needs_rerun = run_xelatex()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # First XeLaTeX run
+            print("Running XeLaTeX (pass 1)...", file=sys.stderr)
+            success, output, needs_rerun = run_xelatex(temp_dir)
             
             if not success:
                 print(f"XeLaTeX compilation failed:", file=sys.stderr)
                 print(output, file=sys.stderr)
                 return False
-        
-        if run_count >= max_runs:
-            print(f"Warning: Reached maximum number of runs ({max_runs})", file=sys.stderr)
-        
-        # The PDF should be in the same directory as the TeX file
-        generated_pdf = tex_dir / f"{tex_name}.pdf"
-        
-        if not generated_pdf.exists():
-            print(f"PDF file not found: {generated_pdf}", file=sys.stderr)
-            return False
-        
-        # Copy the generated PDF to the desired output location
-        if generated_pdf != output_pdf:
-            import shutil
-            shutil.copy2(generated_pdf, output_pdf)
-            print(f"PDF copied to: {output_pdf}", file=sys.stderr)
-        else:
-            print(f"PDF generated: {output_pdf}", file=sys.stderr)
+            
+            # Check if bibliography exists and run BibTeX
+            aux_file = Path(temp_dir) / f"{tex_name}.aux"
+            if aux_file.exists():
+                aux_content = aux_file.read_text()
+                if '\\bibdata' in aux_content or '\\citation' in aux_content:
+                    print("Running BibTeX...", file=sys.stderr)
+                    if not run_bibtex():
+                        print("Warning: BibTeX encountered errors", file=sys.stderr)
+                    # After BibTeX, we definitely need to rerun XeLaTeX
+                    needs_rerun = True
+            
+            # Continue running XeLaTeX until no more reruns are needed
+            run_count = 1
+            while needs_rerun and run_count < max_runs:
+                run_count += 1
+                print(f"Running XeLaTeX (pass {run_count})...", file=sys.stderr)
+                success, output, needs_rerun = run_xelatex(temp_dir)
+                
+                if not success:
+                    print(f"XeLaTeX compilation failed:", file=sys.stderr)
+                    print(output, file=sys.stderr)
+                    return False
+            
+            if run_count >= max_runs:
+                print(f"Warning: Reached maximum number of runs ({max_runs})", file=sys.stderr)
+            
+            # The PDF should be in the same directory as the TeX file
+            generated_pdf = Path(temp_dir) / f"{tex_name}.pdf"
+            
+            if not generated_pdf.exists():
+                print(f"PDF file not found: {generated_pdf}", file=sys.stderr)
+                return False
+            
+            # Copy the generated PDF to the desired output location
+            if generated_pdf != output_pdf:
+                import shutil
+                shutil.copy2(generated_pdf, output_pdf)
+                print(f"PDF copied to: {output_pdf}", file=sys.stderr)
+            else:
+                print(f"PDF generated: {output_pdf}", file=sys.stderr)
         
         print(f"Compilation completed in {run_count} XeLaTeX pass(es)", file=sys.stderr)
         return True

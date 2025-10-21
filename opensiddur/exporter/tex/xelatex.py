@@ -56,7 +56,11 @@ def extract_licenses(xml_file_paths: list[Path]) -> dict[Path, LicenseRecord]:
 
     for file_path in xml_file_paths:
         try:
-            relative_path = file_path.absolute().relative_to(projects_source_root)
+            try:
+                relative_path = file_path.absolute().relative_to(projects_source_root)
+            except ValueError:
+                print(f"Warning: {file_path} is not a subdirectory of {projects_source_root}", file=sys.stderr)
+                continue
             tree = etree.parse(file_path)
             root = tree.getroot()
             # Find all <tei:licence> elements anywhere in the document
