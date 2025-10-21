@@ -25,14 +25,14 @@ XSLT_FILE = Path(__file__).parent / "xelatex.xslt"
 
 class LicenseRecord(BaseModel):
     """ Record of the license for a given file. """
-    url: str
+    url: str  # License URL is required
     name: str
 
 class CreditRecord(BaseModel):
     """ Record of the credit for a given file. """
-    role: str
+    role: str  # Role is required (e.g., "aut", "edt")
     resp_text: str
-    ref: str
+    ref: str  # Reference URI is required
     name_text: str
     namespace: str  # where the contributor did their work
     contributor: str  # contirbutor name at the source
@@ -65,10 +65,10 @@ def extract_licenses(xml_file_paths: list[Path]) -> dict[Path, LicenseRecord]:
                 url = licence.attrib.get("target")
                 # The text content is the license name
                 name = (licence.text or "").strip()
-                if url or name:
+                if url:  # License must have a URL
                     results[relative_path] = LicenseRecord(url=url, name=name)
                 else:
-                    print(f"Error: No license found for {relative_path}", file=sys.stderr)
+                    print(f"Error: No license URL found for {relative_path}", file=sys.stderr)
         except Exception as e:
             # If there's a parse error or file error, skip and continue
             print(f"Error: {file_path}: {e}", file=sys.stderr)
@@ -132,24 +132,30 @@ def extract_credits(xml_file_paths: list[Path]) -> dict[Path, list[dict]]:
             for resp_stmt in root.findall(".//tei:respStmt", ns):
                 resp = resp_stmt.find("tei:resp", ns)
                 name = resp_stmt.find("tei:name", ns)
-                credit = {}
-                if resp is not None:
-                    credit["role"] = resp.attrib.get("key")
-                    credit["resp_text"] = (resp.text or "").strip()
-                else:
-                    credit["role"] = None
-                    credit["resp_text"] = ""
-                if name is not None:
-                    credit["ref"] = name.attrib.get("ref")
-                    credit["name_text"] = (name.text or "").strip()
-                    namespace, contributor = credit["ref"].split(":")[-1].split("/")
-                    credit["namespace"] = namespace
-                    credit["contributor"] = contributor
-                else:
-                    credit["ref"] = None
-                    credit["name_text"] = ""
-                    credit["namespace"] = ""
-                    credit["contributor"] = ""
+                
+                # Skip if required elements are missing
+                if resp is None or name is None:
+                    continue
+                
+                role = resp.attrib.get("key")
+                ref = name.attrib.get("ref")
+                
+                # Skip if required attributes are missing
+                if not role or not ref:
+                    continue
+                
+                credit = {
+                    "role": role,
+                    "resp_text": (resp.text or "").strip(),
+                    "ref": ref,
+                    "name_text": (name.text or "").strip(),
+                }
+                
+                # Parse namespace and contributor from ref
+                namespace, contributor = ref.split(":")[-1].split("/")
+                credit["namespace"] = namespace
+                credit["contributor"] = contributor
+                
                 credits.append(CreditRecord.model_validate(credit))
         except Exception as e:
             print(f"Error: {e}", file=sys.stderr)
@@ -260,6 +266,39 @@ def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
         return preamble_tex, postamble_tex
     return "", ""
 
+def get_file_references(input_file: Path, project_directory: Path = projects_source_root) -> list[Path]:
+    """
+    Get the file references from a compiled JLPTEI XML file.
+    The file references include 
+    the file itself, all files that are transcluded by the file, and the index file for all projects.
+    Args:
+        input_file (Path): Path to the input compiled JLPTEI XML file.
+        project_directory (Path): Path to the project directory.
+    Returns:
+        list[Path]: List of paths to the file references.
+    """
+    ns = {
+        "tei": "http://www.tei-c.org/ns/1.0",
+        "p": "http://jewishliturgy.org/ns/processing",
+    }
+    tree = etree.parse(input_file)
+    root = tree.getroot()
+    # Use xpath() instead of findall() for complex predicates
+    # Include root element (self) and all descendants
+    elements_with_references = root.xpath("(self::*|.//*) [@p:project and @p:file_name]", namespaces=ns)
+    
+    # Use Clark notation for attribute access
+    p_project = "{http://jewishliturgy.org/ns/processing}project"
+    p_file_name = "{http://jewishliturgy.org/ns/processing}file_name"
+    
+    return list(set([
+        project_directory / element.attrib[p_project] / element.attrib[p_file_name]
+        for element in elements_with_references
+    ] + [
+        project_directory / element.attrib[p_project] / "index.xml"
+        for element in elements_with_references
+    ]))
+
 def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
     """
     Transform a JLPTEI XML file to XeLaTeX using XSLT.
@@ -277,11 +316,13 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         with open(input_file, 'r', encoding='utf-8') as input_fd:
             input_xml = input_fd.read()
         
-        licenses = extract_licenses([Path(input_file)])
+        file_references = [Path(input_file)] + get_file_references(input_file)
+
+        licenses = extract_licenses(file_references)
         licenses_tex = licenses_to_tex(group_licenses(licenses))
-        credits = extract_credits([Path(input_file)])
+        credits = extract_credits(file_references)
         credits_tex = credits_to_tex(group_credits(credits))
-        sources_preamble_tex, sources_postamble_tex = extract_sources([Path(input_file)])
+        sources_preamble_tex, sources_postamble_tex = extract_sources(file_references)
         # Use the string-based XSLT transformation function
         result = xslt_transform_string(Path(xslt_file), input_xml, 
             xslt_params={
