@@ -14,8 +14,10 @@ their instructions.
 (4) include relevant header information like licenses, sources, and contributor credits
 """
 
+import argparse
 from enum import Enum
 from pathlib import Path
+import sys
 from typing import Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
@@ -60,6 +62,9 @@ class CompilerProcessor:
         self.root_tree = self.linear_data.xml_cache.parse_xml(project, file_name)
         
         self.root_tree = self.root_tree.getroot()
+
+        self.project = project
+        self.file_name = file_name
 
         # Extract namespaces from root_tree and save to self.ns_map
         # lxml stores nsmap at the Element level, not the whole tree for parsed objects
@@ -112,9 +117,9 @@ class CompilerProcessor:
                 processing_element.text = processed.text
                 for child in processed:
                     processing_element.append(child)
-            metadata = self._extract_metadata(processor.root_tree)
-            if metadata is not None:
-                processing_element = self._insert_first_element(processing_element, metadata)
+            
+            # Mark the file source using the transcluded file's project and file_name
+            processing_element = processor._mark_file_source(processing_element)
             return processing_element
 
     @staticmethod
@@ -143,6 +148,14 @@ class CompilerProcessor:
             metadata.extend(file_desc.iterchildren())
             return metadata
         return None
+
+    def _mark_file_source(self, element: ElementBase) -> ElementBase:
+        """
+        Mark the file source of the given element.
+        """
+        element.set(f"{{{PROCESSING_NAMESPACE}}}file_name", self.file_name)
+        element.set(f"{{{PROCESSING_NAMESPACE}}}project", self.project)
+        return element
 
     def _get_start_and_end_from_ranges(
         self, 
@@ -242,6 +255,7 @@ class CompilerProcessor:
         ))
 
         copied = self._process_element(root)
+        copied = self._mark_file_source(copied)
         # pop the processing context
         self.linear_data.processing_context.pop()
 
@@ -566,3 +580,22 @@ class InlineCompilerProcessor(CompilerProcessor):
         self.linear_data.processing_context.pop()
 
         return element
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")
+    parser.add_argument("--project", "-p", type=str, help="The project name.", required=True)
+    parser.add_argument("--file_name", "-f", type=str, help="The file name (relative to the project).", required=True)
+    parser.add_argument("--output_file", "-o", type=str, help="The output XML file.")
+    args = parser.parse_args()
+    
+    compiler = CompilerProcessor(args.project, args.file_name)
+    result = compiler.process()
+    etree.ElementTree(result).write(
+        args.output_file if args.output_file else sys.stdout, 
+        pretty_print=True,
+        encoding='utf-8')
+    
+
+if __name__ == "__main__":
+    main()

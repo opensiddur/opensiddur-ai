@@ -291,6 +291,10 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_result = etree.Element("{http://jewishliturgy.org/ns/processing}transcludeInline")
             mock_result.text = "transcluded content"
             mock_instance.process.return_value = mock_result
+            # Mock _mark_file_source to return the element unchanged
+            mock_instance._mark_file_source.return_value = mock_result
+            mock_instance.project = "transcluded_project"
+            mock_instance.file_name = "transcluded.xml"
             MockInlineProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
@@ -345,6 +349,12 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
             mock_elem.text = "transcluded content"
             mock_instance.process.return_value = [mock_elem]
+            # Mock _mark_file_source to act like a passthrough
+            def mock_mark_file_source(elem):
+                return elem
+            mock_instance._mark_file_source.side_effect = mock_mark_file_source
+            mock_instance.project = "transcluded_project"
+            mock_instance.file_name = "transcluded.xml"
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
@@ -397,6 +407,12 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance = MagicMock()
             mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
             mock_instance.process.return_value = [mock_elem]
+            # Mock _mark_file_source to act like a passthrough
+            def mock_mark_file_source(elem):
+                return elem
+            mock_instance._mark_file_source.side_effect = mock_mark_file_source
+            mock_instance.project = "external_project"
+            mock_instance.file_name = "external.xml"
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs pointing to external file
@@ -512,26 +528,26 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Verify the transclusion element is created
         self.assertIn('p:transclude', result_str)
         
-        # Verify metadata from transcluded file is present
-        # The metadata should be extracted and added to the transclusion element
-        self.assertIn('Transcluded File', result_str)
-        self.assertIn('Publication info', result_str)
-        self.assertIn('Source description', result_str)
-        
         # Find the p:transclude element
         ns = {'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'}
         transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
         self.assertEqual(len(transclude_elem), 1)
         
-        # Check that metadata is the first child of the transclude element
+        # Verify that p:transclude has project and file_name attributes (in processing namespace)
+        self.assertEqual(transclude_elem[0].get('{http://jewishliturgy.org/ns/processing}project'), 'transcluded_project')
+        self.assertEqual(transclude_elem[0].get('{http://jewishliturgy.org/ns/processing}file_name'), 'transcluded.xml')
+        
+        # Verify the root element has project and file_name attributes (in processing namespace)
+        self.assertEqual(result.get('{http://jewishliturgy.org/ns/processing}project'), project)
+        self.assertEqual(result.get('{http://jewishliturgy.org/ns/processing}file_name'), file_name)
+        
+        # Verify that metadata is NOT inserted as a child element
         transclude_children = list(transclude_elem[0])
-        self.assertGreater(len(transclude_children), 0)
+        # Children should be the transcluded text content, not metadata
+        has_file_desc = any('fileDesc' in child.tag for child in transclude_children)
+        self.assertFalse(has_file_desc, "fileDesc should not be inserted as a child element")
         
-        # First child should be fileDesc (the metadata)
-        # Note: namespace may be processing namespace depending on implementation
-        self.assertIn("fileDesc", transclude_children[0].tag)
-        
-        # Verify the transcluded text content is also present
+        # Verify the transcluded text content is present
         self.assertIn('Transcluded start', result_str)
         self.assertIn('Transcluded middle', result_str)
         self.assertIn('Transcluded end', result_str)
@@ -632,34 +648,24 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Verify the transclusion element is created
         self.assertIn('p:transclude', result_str)
         
-        # Verify metadata from external file is present
-        self.assertIn('External File', result_str)
-        self.assertIn('External publication', result_str)
-        self.assertIn('External source', result_str)
-        
         # Find the p:transclude element
         ns = {'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'}
         transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
         self.assertEqual(len(transclude_elem), 1)
         
-        # Check that metadata is the first child of the transclude element
+        # Verify that p:transclude has project and file_name attributes (in processing namespace)
+        self.assertEqual(transclude_elem[0].get('{http://jewishliturgy.org/ns/processing}project'), 'external_project')
+        self.assertEqual(transclude_elem[0].get('{http://jewishliturgy.org/ns/processing}file_name'), 'external.xml')
+        
+        # Verify the root element has project and file_name attributes (in processing namespace)
+        self.assertEqual(result.get('{http://jewishliturgy.org/ns/processing}project'), project)
+        self.assertEqual(result.get('{http://jewishliturgy.org/ns/processing}file_name'), file_name)
+        
+        # Verify that metadata is NOT inserted as a child element
         transclude_children = list(transclude_elem[0])
-        self.assertGreater(len(transclude_children), 0)
-        
-        # First child should be fileDesc (the metadata)
-        # Note: namespace may be processing namespace depending on implementation
-        self.assertIn("fileDesc", transclude_children[0].tag)
-        
-        # Verify the fileDesc has the expected structure
-        fileDesc = transclude_children[0]
-        # Use wildcard namespace for titleStmt since namespace may vary
-        titleStmt = fileDesc.xpath('.//*[local-name()="titleStmt"]')
-        self.assertEqual(len(titleStmt), 1)
-        
-        # Verify the transcluded content elements come after metadata
-        # Find the transcluded paragraphs
-        transcluded_paragraphs = transclude_elem[0].xpath('.//tei:p[@xml:id]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0', 'xml': 'http://www.w3.org/XML/1998/namespace'})
-        self.assertGreaterEqual(len(transcluded_paragraphs), 3)
+        # Children should be the transcluded text content, not metadata
+        has_file_desc = any('fileDesc' in child.tag for child in transclude_children)
+        self.assertFalse(has_file_desc, "fileDesc should not be inserted as a child element")
         
         # Verify the transcluded text content is present
         self.assertIn('External start', result_str)
@@ -669,6 +675,13 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Verify tail text is preserved
         self.assertIn('External tail 1', result_str)
         self.assertIn('External tail 2', result_str)
+        
+        # Verify that project and file_name are ONLY on root and p:transclude elements
+        # Count occurrences of p:project attribute in the output (with namespace prefix)
+        import re
+        project_attr_count = len(re.findall(r'p:project="', result_str))
+        # Should be exactly 2: one on root, one on p:transclude
+        self.assertEqual(project_attr_count, 2, "p:project attribute should only appear on root and p:transclude")
 
     def test_metadata_extraction_preserves_structure(self):
         """Test that metadata extraction preserves the full fileDesc structure including nested elements."""
@@ -754,42 +767,34 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
         self.assertEqual(len(transclude_elem), 1)
         
-        # First child should be fileDesc
+        # Verify that p:transclude has project and file_name attributes (in processing namespace)
+        self.assertEqual(transclude_elem[0].get('{http://jewishliturgy.org/ns/processing}project'), 'transcluded_project')
+        self.assertEqual(transclude_elem[0].get('{http://jewishliturgy.org/ns/processing}file_name'), 'transcluded.xml')
+        
+        # Verify the root element has project and file_name attributes (in processing namespace)
+        self.assertEqual(result.get('{http://jewishliturgy.org/ns/processing}project'), project)
+        self.assertEqual(result.get('{http://jewishliturgy.org/ns/processing}file_name'), file_name)
+        
+        # Verify that metadata is NOT inserted as a child element
         transclude_children = list(transclude_elem[0])
-        self.assertGreater(len(transclude_children), 0)
-        self.assertIn("fileDesc", transclude_children[0].tag)
+        has_file_desc = any('fileDesc' in child.tag for child in transclude_children)
+        self.assertFalse(has_file_desc, "fileDesc should not be inserted as a child element")
         
-        fileDesc = transclude_children[0]
+        # Verify that metadata is NOT present in the output
+        # (it should be referenced via attributes, not included inline)
+        self.assertNotIn('Main Title', result_str)
+        self.assertNotIn('Subtitle', result_str)
+        self.assertNotIn('Author Name', result_str)
+        self.assertNotIn('Publisher Name', result_str)
         
-        # Verify all sections of fileDesc are present (using local-name for namespace flexibility)
-        titleStmt = fileDesc.xpath('.//*[local-name()="titleStmt"]')
-        self.assertEqual(len(titleStmt), 1)
-        
-        publicationStmt = fileDesc.xpath('.//*[local-name()="publicationStmt"]')
-        self.assertEqual(len(publicationStmt), 1)
-        
-        sourceDesc = fileDesc.xpath('.//*[local-name()="sourceDesc"]')
-        self.assertEqual(len(sourceDesc), 1)
-        
-        # Verify nested elements in titleStmt
-        titles = titleStmt[0].xpath('.//*[local-name()="title"]')
-        self.assertGreaterEqual(len(titles), 2)  # main and sub
-        
-        authors = titleStmt[0].xpath('.//*[local-name()="author"]')
-        self.assertEqual(len(authors), 1)
-        
-        # Verify text content
-        self.assertIn('Main Title', result_str)
-        self.assertIn('Subtitle', result_str)
-        self.assertIn('Author Name', result_str)
-        self.assertIn('Publisher Name', result_str)
-        self.assertIn('City', result_str)
-        self.assertIn('2025', result_str)
-        self.assertIn('Source Title', result_str)
-        self.assertIn('Source Author', result_str)
-        
-        # Verify the fragment text is also present
+        # Verify the fragment text IS present
         self.assertIn('Fragment text', result_str)
+        
+        # Verify that project and file_name are ONLY on root and p:transclude elements
+        import re
+        project_attr_count = len(re.findall(r'p:project="', result_str))
+        # Should be exactly 2: one on root, one on p:transclude
+        self.assertEqual(project_attr_count, 2, "p:project attribute should only appear on root and p:transclude")
 
 
 class TestExternalCompilerProcessor(unittest.TestCase):
