@@ -605,6 +605,84 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
         
         self.assertIsNotNone(result)
         self.assertEqual(result.project, "wlc")
+        
+    def test_prioritize_range_return_all_with_matching_results(self):
+        """Test prioritize_range with return_all=True when there are matching results."""
+        urns = [
+            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+        ]
+        
+        # Only wlc and jps1917 are in priority list
+        priority = ["wlc", "jps1917"]
+        results = UrnResolver.prioritize_range(urns, priority, return_all=True)
+        
+        self.assertIsNotNone(results)
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 2)  # Only wlc and jps1917 should be returned
+        
+        # Results should be sorted by priority (wlc first, then jps1917)
+        self.assertEqual(results[0].project, "wlc")
+        self.assertEqual(results[1].project, "jps1917")
+        
+    def test_prioritize_range_return_all_with_no_matching_results(self):
+        """Test prioritize_range with return_all=True when there are no matching results."""
+        urns = [
+            ResolvedUrn(project="other1", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            ResolvedUrn(project="other2", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+        ]
+        
+        # Priority list doesn't include other1 or other2
+        priority = ["wlc", "jps1917"]
+        results = UrnResolver.prioritize_range(urns, priority, return_all=True)
+        
+        self.assertIsNone(results)  # Should return None when no matches
+        
+    def test_prioritize_range_return_all_with_mixed_types(self):
+        """Test prioritize_range with return_all=True with mixed ResolvedUrn and ResolvedUrnRange objects."""
+        mixed = [
+            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            ResolvedUrnRange(
+                start=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1", element_path="/TEI/div[1]"),
+                end=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2", element_path="/TEI/div[1]")
+            ),
+            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+        ]
+        
+        # Only wlc and jps1917 are in priority list
+        priority = ["wlc", "jps1917"]
+        results = UrnResolver.prioritize_range(mixed, priority, return_all=True)
+        
+        self.assertIsNotNone(results)
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 2)  # Only wlc and jps1917 should be returned
+        
+        # Results should be sorted by priority (wlc first, then jps1917)
+        self.assertEqual(results[0].start.project, "wlc")  # First result is ResolvedUrnRange
+        self.assertEqual(results[1].project, "jps1917")    # Second result is ResolvedUrn
+        
+    def test_prioritize_range_return_all_empty_list(self):
+        """Test prioritize_range with return_all=True with empty input list."""
+        results = UrnResolver.prioritize_range([], ["wlc", "jps1917"], return_all=True)
+        
+        self.assertIsNone(results)
+        
+    def test_prioritize_range_return_all_single_match(self):
+        """Test prioritize_range with return_all=True with single matching result."""
+        urns = [
+            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+        ]
+        
+        # Only wlc is in priority list
+        priority = ["wlc"]
+        results = UrnResolver.prioritize_range(urns, priority, return_all=True)
+        
+        self.assertIsNotNone(results)
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].project, "wlc")
 
 
 if __name__ == '__main__':

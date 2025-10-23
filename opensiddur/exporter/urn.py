@@ -195,13 +195,14 @@ class UrnResolver:
     @classmethod
     def prioritize_range(cls, 
         resolved_urns: list[ResolvedUrn | ResolvedUrnRange | Reference],
-        project_priority: list[str]) -> Optional[ResolvedUrn | ResolvedUrnRange | Reference]:
+        project_priority: list[str],
+        return_all: bool = False) -> Optional[ResolvedUrn | ResolvedUrnRange | Reference | list[ResolvedUrn | ResolvedUrnRange | Reference]]:
         """Prioritize a list of resolved URNs or URN ranges based on a project priority list.
         
         Args:
             resolved_urns: List of ResolvedUrn or ResolvedUrnRange objects
             project_priority: List of project names in priority order
-            
+            return_all: If True, return all resolved URNs or URN ranges, otherwise return the most prioritized one
         Returns:
             The most prioritized ResolvedUrn or ResolvedUrnRange object.
             If none of the URNs are prioritized, return None.
@@ -216,7 +217,7 @@ class UrnResolver:
             ], 
             key=lambda x: priorities.get(_project_name(x)))
         if len(sorted_urns) > 0:
-            return sorted_urns[0]
+            return sorted_urns[0] if not return_all else sorted_urns
         return None
 
     @classmethod
