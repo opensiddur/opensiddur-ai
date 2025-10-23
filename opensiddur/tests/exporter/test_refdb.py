@@ -781,7 +781,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         self.db.add_reference("proj1", "file1.xml", elem)
         
         # Get references to the ID
-        results = self.db.get_references_to(id="verse1")
+        results = self.db.get_references_to(id="verse1", project="proj1", file_name="file1.xml")
         
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].target_start, "#verse1")
@@ -870,6 +870,86 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         # Verify references are gone
         refs = self.db.get_references_by_project("proj1")
         self.assertEqual(len(refs), 0)
+
+    def test_integration_get_references_to_id(self):
+        """Integration test: Verify get_references_to finds references to elements with xml:id."""
+        # Create XML structure with:
+        # 1. An element with xml:id="verse1"
+        # 2. Another element with target="#verse1" that references it
+        
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        
+        # Create the target element with xml:id
+        target_div = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        target_div.set("{http://www.w3.org/XML/1998/namespace}id", "verse1")
+        target_div.text = "This is verse 1"
+        
+        # Create a referencing element
+        ref_ptr = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}ptr")
+        ref_ptr.set("target", "#verse1")
+        ref_ptr.set("type", "link")
+        
+        # Create another referencing element to the same ID
+        ref_note = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}note")
+        ref_note.set("target", "#verse1")
+        ref_note.set("type", "comment")
+        ref_note.text = "This references verse 1"
+        
+        # Create a reference to a different ID that doesn't exist
+        ref_missing = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}ptr")
+        ref_missing.set("target", "#nonexistent")
+        ref_missing.set("type", "link")
+        
+        # Write to file and index it using the real workflow
+        xml_path = Path(self.temp_dir.name) / "test.xml"
+        tree = etree.ElementTree(root)
+        tree.write(str(xml_path), encoding='utf-8', xml_declaration=True)
+        
+        # Use index_file() to process the XML file
+        count = self.db.index_file(xml_path, "test_project", "test.xml")
+        self.assertEqual(count, 3, "Should have indexed 3 references")
+        
+        # Test 1: Get references to "verse1" by ID (without # prefix)
+        results = self.db.get_references_to(id="verse1", project="test_project", file_name="test.xml")
+        self.assertEqual(len(results), 2, "Should find 2 references to verse1")
+        
+        # Verify the results contain the expected references
+        element_types = {r.element_type for r in results}
+        self.assertEqual(element_types, {"link", "comment"})
+        
+        # Verify all references point to the correct target
+        for result in results:
+            self.assertEqual(result.target_start, "#verse1")
+            self.assertTrue(result.target_is_id)
+            self.assertEqual(result.project, "test_project")
+            self.assertEqual(result.file_name, "test.xml")
+        
+        # Test 2: Get references to "verse1" by ID (with # prefix)
+        results_with_hash = self.db.get_references_to(id="#verse1", project="test_project", file_name="test.xml")
+        self.assertEqual(len(results_with_hash), 2, "Should find 2 references with # prefix too")
+        
+        # Test 3: Get references to nonexistent ID
+        results_nonexistent = self.db.get_references_to(id="nonexistent", project="test_project", file_name="test.xml")
+        self.assertEqual(len(results_nonexistent), 1, "Should find 1 reference to nonexistent ID")
+        
+        # Verify it's the reference to #nonexistent
+        self.assertEqual(results_nonexistent[0].target_start, "#nonexistent")
+        
+        # Test 4: Get references to a completely different ID
+        results_different = self.db.get_references_to(id="different", project="test_project", file_name="test.xml")
+        self.assertEqual(len(results_different), 0, "Should find no references to different ID")
+        
+        # Test 5: Verify element paths are stored and are unique
+        paths = {r.element_path for r in results}
+        self.assertEqual(len(paths), 2, "Should have 2 unique element paths")
+        
+        # Test 6: Verify we can get all references for the project
+        all_project_refs = self.db.get_references_by_project("test_project")
+        self.assertEqual(len(all_project_refs), 3, "Should have 3 total references in project")
+        
+        # Test 7: Verify the references contain the expected element tags
+        element_tags = {r.element_tag for r in all_project_refs}
+        self.assertEqual(element_tags, {"{http://www.tei-c.org/ns/1.0}ptr", "{http://www.tei-c.org/ns/1.0}note"})
 
 
 class TestReferenceDatabaseContextManager(unittest.TestCase):

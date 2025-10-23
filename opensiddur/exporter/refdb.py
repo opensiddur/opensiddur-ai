@@ -134,13 +134,14 @@ class ReferenceDatabase:
             UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn']) 
             for row in cursor.fetchall()]
     
-    def get_references_to(self, urn: Optional[str] = None, id: Optional[str] = None) -> list[Reference]:
-        """Get a list of all references to a specific URN or ID.
+    def get_references_to(self, urn: Optional[str] = None, id: Optional[str] = None, project: Optional[str] = None, file_name: Optional[str] = None) -> list[Reference]:
+        """Get a list of all references to a specific URN or ID/file combination.
         
         Args:
             urn: The URN identifier
             id: The ID identifier (with or without # prefix)
-            
+            project: The project name (for id)
+            file_name: The file name (for id)
         Returns:
             List of Reference objects
         """
@@ -151,11 +152,11 @@ class ReferenceDatabase:
             by_urn = cursor.fetchall()
         else:
             by_urn = []
-        if id:
+        if id and project and file_name:
             # Ensure ID has # prefix for query
             id_with_hash = id if id.startswith('#') else f"#{id}"
             cursor.execute('''
-                SELECT * FROM element_references WHERE target_start = ? AND target_is_id = true''', (id_with_hash,))
+                SELECT * FROM element_references WHERE target_start = ? AND target_is_id = true AND project = ? AND file_name = ?''', (id_with_hash, project, file_name))
             by_id = cursor.fetchall()
         else:
             by_id = []
