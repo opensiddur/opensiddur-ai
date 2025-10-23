@@ -301,7 +301,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
             
             def mock_resolve_range(urn):
-                return [ResolvedUrn(urn=urn, project=project, file_name=file_name)]
+                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
             
             def mock_prioritize_range(urns, priority_list):
                 return urns[0] if urns else None
@@ -361,7 +361,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             from opensiddur.exporter.urn import ResolvedUrn
             
             def mock_resolve_range(urn):
-                return [ResolvedUrn(urn=urn, project=project, file_name=file_name)]
+                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
             
             def mock_prioritize_range(urns, priority_list):
                 return urns[0] if urns else None
@@ -420,9 +420,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             
             def mock_resolve_range(urn):
                 if "fragment1" in urn:
-                    return [ResolvedUrn(urn="#fragment1", project="external_project", file_name="external.xml")]
+                    return [ResolvedUrn(urn="#fragment1", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
                 elif "fragment2" in urn:
-                    return [ResolvedUrn(urn="#fragment2", project="external_project", file_name="external.xml")]
+                    return [ResolvedUrn(urn="#fragment2", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
                 return []
             
             def mock_prioritize_range(urns, priority_list):
@@ -512,7 +512,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml")]
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
         
         def mock_prioritize_range(urns, priority_list):
             return urns[0] if urns else None
@@ -626,7 +626,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             if urn.startswith("#transclude"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml")]
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
             return []
         
         def mock_prioritize_range(urns, priority_list):
@@ -749,7 +749,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml")]
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
         
         def mock_prioritize_range(urns, priority_list):
             return urns[0] if urns else None
@@ -1238,7 +1238,8 @@ class TestExternalCompilerProcessor(unittest.TestCase):
                     ResolvedUrn(
                         urn=urn_range,  # Return the same xml:id reference
                         project="external_project",
-                        file_name="external.xml"
+                        file_name="external.xml",
+                        element_path="/TEI/div[1]"
                     )
                 ]
             return []
@@ -1922,12 +1923,12 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution to return the transcluded file location
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start")],
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end")]
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
         ]
         mock_prioritize.side_effect = [
-            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start"),
-            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end")
+            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]"),
+            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")
         ]
         
         # Process the main file
@@ -2021,16 +2022,16 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # First two calls are for the main file's transclusion
         # Next two calls are for the level1 file's transclusion
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start")],
-            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end")],
-            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start")],
-            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end")]
+            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
         ]
         mock_prioritize.side_effect = [
-            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start"),
-            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end"),
-            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start"),
-            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end")
+            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]"),
+            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]"),
+            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]"),
+            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")
         ]
         
         # Process the main file

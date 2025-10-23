@@ -12,6 +12,7 @@ class ResolvedUrn(BaseModel):
     project: str
     file_name: str
     urn: str
+    element_path: str
 
 
 class ResolvedUrnRange(BaseModel):
@@ -50,7 +51,7 @@ class UrnResolver:
             actual_urn = urn
             mappings = self.database.get_urn_mappings(urn)
         
-        return [ResolvedUrn(project=row.project, file_name=row.file_name, urn=actual_urn) 
+        return [ResolvedUrn(project=row.project, file_name=row.file_name, urn=actual_urn, element_path=row.element_path) 
                 for row in mappings]
     
     def resolve_range(self, ranged_urn: str) -> list[ResolvedUrnRange | ResolvedUrn]:
@@ -187,7 +188,7 @@ class UrnResolver:
         """
         mappings = self.database.get_urn_mappings(project=project)
         return [
-            ResolvedUrn(project=mapping.project, file_name=mapping.file_name, urn=mapping.urn) 
+            ResolvedUrn(project=mapping.project, file_name=mapping.file_name, urn=mapping.urn, element_path=mapping.element_path) 
             for mapping in mappings]
     
     
