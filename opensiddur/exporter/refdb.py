@@ -16,6 +16,9 @@ class UrnMapping(BaseModel):
     project: str
     file_name: str
     urn: str
+    element_path: str
+    element_tag: str
+    element_type: Optional[str]
 
 class Reference(BaseModel):
     element_path: str
@@ -51,6 +54,9 @@ class ReferenceDatabase:
                 urn TEXT NOT NULL,
                 project TEXT NOT NULL,
                 file_name TEXT NOT NULL,
+                element_path TEXT NOT NULL,
+                element_tag TEXT NOT NULL,
+                element_type TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (urn, project)
@@ -120,18 +126,18 @@ class ReferenceDatabase:
         cursor = self.conn.cursor()
         if urn and project:
             cursor.execute('''
-                SELECT project, file_name, urn FROM urn_mappings WHERE urn = ? AND project = ?''', (urn, project))
+                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings WHERE urn = ? AND project = ?''', (urn, project))
         elif urn:
             cursor.execute('''
-                SELECT project, file_name, urn FROM urn_mappings WHERE urn = ?''', (urn,))
+                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings WHERE urn = ?''', (urn,))
         elif project:
             cursor.execute('''
-                SELECT project, file_name, urn FROM urn_mappings WHERE project = ?''', (project,))
+                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings WHERE project = ?''', (project,))
         else:
             cursor.execute('''
-                SELECT project, file_name, urn FROM urn_mappings''')
+                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings''')
         return [
-            UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn']) 
+            UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn'], element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type']) 
             for row in cursor.fetchall()]
     
     def get_references_to(self, urn: Optional[str] = None, id: Optional[str] = None, project: Optional[str] = None, file_name: Optional[str] = None) -> list[Reference]:
@@ -171,22 +177,28 @@ class ReferenceDatabase:
 
         return [Reference(element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type'], target_start=row['target_start'], target_end=row['target_end'], target_is_id=row['target_is_id'], corresponding_urn=row['corresponding_urn'], project=row['project'], file_name=row['file_name']) for row in by_both]
 
-    def add_urn_mapping(self, urn: str, project: str, file_name: str):
+    def add_urn_mapping(self, project: str, file_name: str, element: ElementBase):
         """Add or update a URN mapping.
         
         Args:
-            urn: The URN identifier
             project: The project/directory name
             file_name: The file name containing the element
+            element: The element that has the URN mapping
         """
         cursor = self.conn.cursor()
+        urn = element.get('corresp')
+        if not urn:
+            return
+        element_path = element.getroottree().getpath(element)
+        element_tag = element.tag
+        element_type = element.get('type')
         cursor.execute('''
-            INSERT INTO urn_mappings (urn, project, file_name)
-            VALUES (?, ?, ?)
+            INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag, element_type)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(urn, project) DO UPDATE SET
                 file_name = excluded.file_name,
                 updated_at = CURRENT_TIMESTAMP
-        ''', (urn, project, file_name))
+        ''', (urn, project, file_name, element_path, element_tag, element_type))
         self.conn.commit()
 
     def add_reference(self, project: str, file_name: str, element: ElementBase):
@@ -225,10 +237,10 @@ class ReferenceDatabase:
         """
         cursor = self.conn.cursor()
         cursor.execute(
-            'SELECT urn, project, file_name FROM urn_mappings WHERE project = ?',
+            'SELECT urn, project, file_name, element_path, element_tag, element_type FROM urn_mappings WHERE project = ?',
             (project,)
         )
-        return [UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn']) for row in cursor.fetchall()]
+        return [UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn'], element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type']) for row in cursor.fetchall()]
     
     def get_files_by_project(self, project: str) -> list[str]:
         """Get a list of all distinct file names in a project.
@@ -302,7 +314,7 @@ class ReferenceDatabase:
             for element in elements_with_corresp:
                 corresp = element.get('corresp')
                 if corresp and corresp.startswith('urn:x-opensiddur:'):
-                    self.add_urn_mapping(corresp, project, file_name)
+                    self.add_urn_mapping(project, file_name, element)
                     count += 1
             
             elements_with_reference = root.xpath('//*[@target]', namespaces=namespaces)

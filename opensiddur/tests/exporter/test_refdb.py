@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 import os
 from lxml import etree
+from lxml.etree import ElementBase
 from opensiddur.exporter.refdb import ReferenceDatabase, UrnMapping, Reference
 
 
@@ -19,6 +20,15 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         self.db_path = Path(self.temp_dir.name) / 'test_urn.db'
         self.db = ReferenceDatabase(self.db_path)
         self.addCleanup(self.db.close)
+    
+    def _create_element_with_corresp(self, corresp: str, element_type: str = None) -> ElementBase:
+        """Helper method to create an element with a corresp attribute."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        elem.set("corresp", corresp)
+        if element_type:
+            elem.set("type", element_type)
+        return elem
 
     def test_database_initialization(self):
         """Test that database and tables are created properly."""
@@ -40,51 +50,53 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
 
     def test_add_urn_mapping(self):
         """Test adding a URN mapping."""
-        urn = "urn:x-opensiddur:test:doc1"
         project = "test_project"
         file_name = "doc1.xml"
+        elem = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
         
-        self.db.add_urn_mapping(urn, project, file_name)
+        self.db.add_urn_mapping(project, file_name, elem)
         
         # Verify it was added
         cursor = self.db.conn.cursor()
-        cursor.execute('SELECT * FROM urn_mappings WHERE urn = ?', (urn,))
+        cursor.execute('SELECT * FROM urn_mappings WHERE urn = ?', ("urn:x-opensiddur:test:doc1",))
         row = cursor.fetchone()
         
         self.assertIsNotNone(row)
-        self.assertEqual(row['urn'], urn)
+        self.assertEqual(row['urn'], "urn:x-opensiddur:test:doc1")
         self.assertEqual(row['project'], project)
         self.assertEqual(row['file_name'], file_name)
 
     def test_add_urn_mapping_update(self):
         """Test updating an existing URN mapping."""
-        urn = "urn:x-opensiddur:test:doc1"
         project = "test_project"
         
         # Add initial mapping
-        self.db.add_urn_mapping(urn, project, "file1.xml")
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        self.db.add_urn_mapping(project, "file1.xml", elem1)
         
         # Update with new file name
-        self.db.add_urn_mapping(urn, project, "file2.xml")
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        self.db.add_urn_mapping(project, "file2.xml", elem2)
         
         # Verify it was updated
         cursor = self.db.conn.cursor()
         cursor.execute('SELECT file_name FROM urn_mappings WHERE urn = ? AND project = ?', 
-                      (urn, project))
+                      ("urn:x-opensiddur:test:doc1", project))
         row = cursor.fetchone()
         self.assertEqual(row['file_name'], "file2.xml")
 
     def test_add_urn_mapping_multiple_projects(self):
         """Test that same URN can exist in multiple projects."""
-        urn = "urn:x-opensiddur:test:doc1"
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
         
-        self.db.add_urn_mapping(urn, "project1", "file1.xml")
-        self.db.add_urn_mapping(urn, "project2", "file2.xml")
+        self.db.add_urn_mapping("project1", "file1.xml", elem1)
+        self.db.add_urn_mapping("project2", "file2.xml", elem2)
         
         # Verify both exist
         cursor = self.db.conn.cursor()
         cursor.execute('SELECT project, file_name FROM urn_mappings WHERE urn = ? ORDER BY project', 
-                      (urn,))
+                      ("urn:x-opensiddur:test:doc1",))
         rows = cursor.fetchall()
         
         self.assertEqual(len(rows), 2)
@@ -102,11 +114,26 @@ class TestReferenceDatabaseGetUrnMappings(unittest.TestCase):
         self.db_path = Path(self.temp_dir.name) / 'test_urn.db'
         self.db = ReferenceDatabase(self.db_path)
         self.addCleanup(self.db.close)
-        
+        self._setup_test_data()
+    
+    def _create_element_with_corresp(self, corresp: str, element_type: str = None) -> ElementBase:
+        """Helper method to create an element with a corresp attribute."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        elem.set("corresp", corresp)
+        if element_type:
+            elem.set("type", element_type)
+        return elem
+    
+    def _setup_test_data(self):
+        """Set up test data after helper method is defined."""
         # Add test data
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1", "wlc", "doc1.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1", "jps1917", "doc1.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc2", "wlc", "doc2.xml")
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem3 = self._create_element_with_corresp("urn:x-opensiddur:test:doc2", "chapter")
+        self.db.add_urn_mapping("wlc", "doc1.xml", elem1)
+        self.db.add_urn_mapping("jps1917", "doc1.xml", elem2)
+        self.db.add_urn_mapping("wlc", "doc2.xml", elem3)
 
     def test_get_urn_mappings_without_filters(self):
         """Test getting all URN mappings."""
@@ -149,11 +176,26 @@ class TestReferenceDatabaseGetByProject(unittest.TestCase):
         self.db_path = Path(self.temp_dir.name) / 'test_urn.db'
         self.db = ReferenceDatabase(self.db_path)
         self.addCleanup(self.db.close)
-        
+        self._setup_test_data()
+    
+    def _create_element_with_corresp(self, corresp: str, element_type: str = None) -> ElementBase:
+        """Helper method to create an element with a corresp attribute."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        elem.set("corresp", corresp)
+        if element_type:
+            elem.set("type", element_type)
+        return elem
+    
+    def _setup_test_data(self):
+        """Set up test data after helper method is defined."""
         # Add test data
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1", "wlc", "doc1.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc2", "wlc", "doc2.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc3", "jps1917", "doc3.xml")
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc2", "chapter")
+        elem3 = self._create_element_with_corresp("urn:x-opensiddur:test:doc3", "chapter")
+        self.db.add_urn_mapping("wlc", "doc1.xml", elem1)
+        self.db.add_urn_mapping("wlc", "doc2.xml", elem2)
+        self.db.add_urn_mapping("jps1917", "doc3.xml", elem3)
 
     def test_get_urns_by_project(self):
         """Test getting all URNs for a project."""
@@ -203,8 +245,8 @@ class TestReferenceDatabaseGetByProject(unittest.TestCase):
     def test_get_files_by_project_no_duplicates(self):
         """Test that files list contains no duplicates."""
         # Add multiple URNs to same file
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1/new", "wlc", "doc1.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1/another", "wlc", "doc1.xml")
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/new", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/another", "chapter"))
         
         files = self.db.get_files_by_project("wlc")
         
@@ -358,13 +400,25 @@ class TestReferenceDatabaseRemoval(unittest.TestCase):
         self.db_path = Path(self.temp_dir.name) / 'test_urn.db'
         self.db = ReferenceDatabase(self.db_path)
         self.addCleanup(self.db.close)
-        
+        self._setup_test_data()
+    
+    def _create_element_with_corresp(self, corresp: str, element_type: str = None) -> ElementBase:
+        """Helper method to create an element with a corresp attribute."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        elem.set("corresp", corresp)
+        if element_type:
+            elem.set("type", element_type)
+        return elem
+    
+    def _setup_test_data(self):
+        """Set up test data after helper method is defined."""
         # Add test data
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1/1", "wlc", "doc1.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1/2", "wlc", "doc1.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc2/1", "wlc", "doc2.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc3/1", "jps1917", "doc3.xml")
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc4/1", "jps1917", "doc4.xml")
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/1", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/2", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc2.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc2/1", "chapter"))
+        self.db.add_urn_mapping("jps1917", "doc3.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc3/1", "chapter"))
+        self.db.add_urn_mapping("jps1917", "doc4.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc4/1", "chapter"))
 
     def test_remove_file(self):
         """Test removing all URNs for a specific file."""
@@ -391,7 +445,7 @@ class TestReferenceDatabaseRemoval(unittest.TestCase):
     def test_remove_file_only_affects_specified_project(self):
         """Test that removing a file only affects the specified project."""
         # Add same file name in different project
-        self.db.add_urn_mapping("urn:x-opensiddur:test:doc1/1", "jps1917", "doc1.xml")
+        self.db.add_urn_mapping("jps1917", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/1", "chapter"))
         
         # Remove from wlc only
         removed_count = self.db.remove_file("doc1.xml", "wlc")
@@ -450,6 +504,15 @@ class TestReferenceDatabaseSync(unittest.TestCase):
         
         self.db = ReferenceDatabase(self.db_path)
         self.addCleanup(self.db.close)
+    
+    def _create_element_with_corresp(self, corresp: str, element_type: str = None) -> ElementBase:
+        """Helper method to create an element with a corresp attribute."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        elem.set("corresp", corresp)
+        if element_type:
+            elem.set("type", element_type)
+        return elem
 
     def _create_xml_file(self, project: str, file_name: str, urns: list[str]):
         """Helper to create an XML file with URNs."""
@@ -528,7 +591,7 @@ class TestReferenceDatabaseSync(unittest.TestCase):
     def test_sync_file_removed(self):
         """Test syncing removed file deletes from database."""
         # Index a file that doesn't exist
-        self.db.add_urn_mapping("urn:x-opensiddur:test:1", "test_proj", "doc1.xml")
+        self.db.add_urn_mapping("test_proj", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:1", "chapter"))
         
         # Sync (file doesn't exist)
         result = self.db.sync_file("doc1.xml", "test_proj", self.project_dir)
@@ -558,7 +621,7 @@ class TestReferenceDatabaseSync(unittest.TestCase):
     def test_sync_project_remove_orphaned(self):
         """Test syncing project removes orphaned files."""
         # Add file to database that doesn't exist on disk
-        self.db.add_urn_mapping("urn:x-opensiddur:test:orphan", "test_proj", "orphan.xml")
+        self.db.add_urn_mapping("test_proj", "orphan.xml", self._create_element_with_corresp("urn:x-opensiddur:test:orphan", "chapter"))
         
         # Create one real file
         self._create_xml_file("test_proj", "doc1.xml", ["urn:x-opensiddur:test:1"])
@@ -577,7 +640,7 @@ class TestReferenceDatabaseSync(unittest.TestCase):
     def test_sync_project_nonexistent(self):
         """Test syncing non-existent project removes it from database."""
         # Add project to database
-        self.db.add_urn_mapping("urn:x-opensiddur:test:1", "nonexistent", "doc1.xml")
+        self.db.add_urn_mapping("nonexistent", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:1", "chapter"))
         
         # Sync non-existent project
         result = self.db.sync_project("nonexistent", self.project_dir)
@@ -596,7 +659,7 @@ class TestReferenceDatabaseSync(unittest.TestCase):
         self._create_xml_file("proj2", "doc2.xml", ["urn:x-opensiddur:test:2"])
         
         # Add orphaned project to database
-        self.db.add_urn_mapping("urn:x-opensiddur:test:orphan", "orphaned_proj", "orphan.xml")
+        self.db.add_urn_mapping("orphaned_proj", "orphan.xml", self._create_element_with_corresp("urn:x-opensiddur:test:orphan", "chapter"))
         
         # Sync all projects
         result = self.db.sync_projects(self.project_dir)
@@ -614,7 +677,7 @@ class TestReferenceDatabaseSync(unittest.TestCase):
     def test_sync_projects_empty_directory(self):
         """Test syncing with empty project directory."""
         # Add some data to database
-        self.db.add_urn_mapping("urn:x-opensiddur:test:1", "proj1", "doc1.xml")
+        self.db.add_urn_mapping("proj1", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:1", "chapter"))
         
         # Sync with empty directory
         result = self.db.sync_projects(self.project_dir)
@@ -649,6 +712,15 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
             elem.set("targetEnd", target_end)
         if corresp:
             elem.set("corresp", corresp)
+        return elem
+    
+    def _create_element_with_corresp(self, corresp: str, element_type: str = None) -> ElementBase:
+        """Helper method to create an element with a corresp attribute."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        elem.set("corresp", corresp)
+        if element_type:
+            elem.set("type", element_type)
         return elem
 
     def test_add_reference_with_urn_target(self):
@@ -843,7 +915,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         self.db.add_reference("proj1", "file1.xml", elem)
         
         # Also add a URN mapping
-        self.db.add_urn_mapping("urn:x-opensiddur:test:urn1", "proj1", "file1.xml")
+        self.db.add_urn_mapping("proj1", "file1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:urn1", "chapter"))
         
         # Remove the file
         removed_count = self.db.remove_file("file1.xml", "proj1")
@@ -859,7 +931,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         """Test that removing a project also removes its references."""
         elem = self._create_element_with_target(target="urn:x-opensiddur:test:doc1")
         self.db.add_reference("proj1", "file1.xml", elem)
-        self.db.add_urn_mapping("urn:x-opensiddur:test:urn1", "proj1", "file1.xml")
+        self.db.add_urn_mapping("proj1", "file1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:urn1", "chapter"))
         
         # Remove the project
         removed_count = self.db.remove_project("proj1")
@@ -961,7 +1033,13 @@ class TestReferenceDatabaseContextManager(unittest.TestCase):
             db_path = Path(temp_dir) / 'test_urn.db'
             
             with ReferenceDatabase(db_path) as db:
-                db.add_urn_mapping("urn:x-opensiddur:test:doc1", "test", "doc1.xml")
+                # Create element with corresp attribute
+                root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+                elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+                elem.set("corresp", "urn:x-opensiddur:test:doc1")
+                elem.set("type", "chapter")
+                
+                db.add_urn_mapping("test", "doc1.xml", elem)
                 results = db.get_urn_mappings(urn="urn:x-opensiddur:test:doc1")
                 self.assertEqual(len(results), 1)
             
