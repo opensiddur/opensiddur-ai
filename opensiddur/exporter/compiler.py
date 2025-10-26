@@ -267,17 +267,6 @@ class CompilerProcessor:
         
         return element
 
-    def _extract_metadata(self, root: ElementBase) -> Optional[ElementBase]:
-        """
-        Extract a TEI metadata subset from the root element's TEI header.
-        """
-        metadata = etree.Element(f"{{{PROCESSING_NAMESPACE}}}fileDesc", nsmap=self.ns_map)
-        file_desc = root.find(".//tei:fileDesc", namespaces=self.ns_map)
-        if file_desc:
-            metadata.extend(file_desc.iterchildren())
-            return metadata
-        return None
-
     def _mark_file_source(self, element: ElementBase, 
         project: Optional[str] = None,
         file_name: Optional[str] = None, 

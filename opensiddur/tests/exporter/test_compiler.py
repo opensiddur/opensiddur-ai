@@ -2188,9 +2188,10 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
     def test_instructional_note_with_no_corresp(self):
         """Test that an instructional note with no corresp or xml:id is included as-is."""
         urn = None
+        xid= "wo_corresp"
         
         # Create main file with instructional note with URN that won't be found in database
-        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a no corresp instruction", None)
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a no corresp instruction", xid)
         
         # all references will return nothing
         self.refdb.get_references_to.return_value = []
