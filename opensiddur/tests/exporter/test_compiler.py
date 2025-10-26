@@ -304,7 +304,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             def mock_resolve_range(urn):
                 return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
             
-            def mock_prioritize_range(urns, priority_list):
+            def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
             
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
@@ -364,7 +364,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             def mock_resolve_range(urn):
                 return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
             
-            def mock_prioritize_range(urns, priority_list):
+            def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
             
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
@@ -426,7 +426,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                     return [ResolvedUrn(urn="#fragment2", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
                 return []
             
-            def mock_prioritize_range(urns, priority_list):
+            def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
             
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
@@ -515,7 +515,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             # Return a different project/file to avoid infinite recursion
             return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
         
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
@@ -630,7 +630,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                 return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
             return []
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
         
         def mock_get_path_from_urn(resolved_urn):
@@ -752,7 +752,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             # Return a different project/file to avoid infinite recursion
             return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
         
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
