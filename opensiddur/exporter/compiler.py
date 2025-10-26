@@ -49,6 +49,9 @@ class _AnnotationCommand(Enum):
     INSERT = "insert"
     # replace the original annotation with the annotated element
     REPLACE = "replace"
+    # keep the element, despite instructions for inlining
+    # outside of inline mode, equivalent to NONE
+    KEEP = "keep"
     # no action needed
     NONE = "none"
 
@@ -218,10 +221,10 @@ class CompilerProcessor:
                 else:
                     # No alternative found, keep as is
                     result_elements = []
-                    annotation_command = _AnnotationCommand.NONE
+                    annotation_command = _AnnotationCommand.KEEP
             else:
                 result_elements = []
-                annotation_command = _AnnotationCommand.NONE
+                annotation_command = _AnnotationCommand.KEEP
         else:
             # For commentary/editorial notes, select all annotations for corresp or xml_id
             # May be standoff annotation, or inline.
@@ -364,7 +367,7 @@ class CompilerProcessor:
         copied.text = element.text
 
         for child in element:
-            processed = self._process_element(child)
+            processed = self._process_element(child, root)
             if child.tail:
                 processed.tail = child.tail
             copied.append(processed)
@@ -518,7 +521,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 context['after_end'] = True
     
 
-    def _process_element(self, element: ElementBase) -> list[ElementBase]:
+    def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
         """
         Process the given element and return the list of processed elements.
         """
@@ -534,6 +537,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if transcluded is not None:
             return [transcluded]
         
+        annotations, annotation_command = self._annotate(element, root)
+        if annotation_command == _AnnotationCommand.REPLACE:
+            return [annotations[0]]
+
         if context["command"] == _ProcessingCommand.RECURSE:
             append_to = processed
         elif context["command"] == _ProcessingCommand.COPY_ELEMENT_AND_RECURSE:
@@ -551,7 +558,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             append_to = copied
         
         for child in element:
-            child_result = self._process_element(child)
+            child_result = self._process_element(child, root)
             append_to.extend(child_result)
             if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
                 if child.tail and child_result:
@@ -561,7 +568,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                             child_result[-1].tail = child.tail
                         else:
                             child_result[-1].tail += child.tail
-                
+        
+        if annotation_command == _AnnotationCommand.INSERT:
+            for annotation in reversed(annotations):
+                self._insert_first_element(processed, annotation)
+
         self._update_processing_context_after(element)
         return processed
 
@@ -580,7 +591,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             inside_deepest_common_ancestor=False,
         ))
 
-        processed = self._process_element(root)
+        processed = self._process_element(root, root)
 
         # pop the processing context
         self.linear_data.processing_context.pop()
@@ -649,7 +660,7 @@ class InlineCompilerProcessor(CompilerProcessor):
             if is_end:
                 context['after_end'] = True
     
-    def _process_element(self, element: ElementBase) -> ElementBase:
+    def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
         """
         Process the given element and return the text content.
         """
@@ -670,6 +681,21 @@ class InlineCompilerProcessor(CompilerProcessor):
             # The tail will be handled by the parent's processing
             return transcluded
 
+        annotations, annotation_command = self._annotate(element, root)
+        if annotation_command == _AnnotationCommand.REPLACE:
+            # This is a case of an instructional notation that needs to replace the current element
+            # and *not* be treated as inline text
+            return annotations[0]
+        elif annotation_command == _AnnotationCommand.KEEP:
+            # This is a case of an instructional notation that needs to be kept as is
+            processor =CompilerProcessor(
+                self.project,
+                self.file_name,
+                linear_data=self.linear_data,
+                reference_database=self._refdb
+            )
+            return processor.process(element)
+
         if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
             if element.text:
                 text_element.text += element.text
@@ -678,7 +704,7 @@ class InlineCompilerProcessor(CompilerProcessor):
         
         previous_child = None
         for child in element:
-            processed = self._process_element(child)
+            processed = self._process_element(child, root)
             if processed.tag == f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
                 # Extract text from nested p:transcludeInline elements
                 text_element.text += processed.text
@@ -702,6 +728,10 @@ class InlineCompilerProcessor(CompilerProcessor):
                     else:
                         text_element.text += " " + child.tail
         
+        if annotation_command == _AnnotationCommand.INSERT:
+            for annotation in reversed(annotations):
+                self._insert_first_element(text_element, annotation)
+
         self._update_processing_context_after(element)
         return text_element
         
@@ -720,7 +750,7 @@ class InlineCompilerProcessor(CompilerProcessor):
             inside_deepest_common_ancestor=False,
         ))
 
-        element = self._process_element(root)
+        element = self._process_element(root, root)
 
         # pop the processing context
         self.linear_data.processing_context.pop()

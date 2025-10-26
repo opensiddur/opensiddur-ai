@@ -1617,8 +1617,13 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.test_project_dir.mkdir(parents=True)
         
         # Patch the xml_cache base_path to use our temp directory
-        linear_data = get_linear_data()
-        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        self.linear_data = LinearData(
+            instruction_priority=["priority_project", "test_project"],
+            annotation_projects=["priority_project", "test_project"],
+            project_priority=["priority_project", "test_project"],
+        )
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        
 
     def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
         """Create a test XML file and return (project, file_name) tuple."""
@@ -1640,7 +1645,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("siblings.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         # Result should be a p:transcludeInline element with the extracted text
@@ -1674,7 +1679,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("ancestor.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1708,7 +1713,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("depth_diff.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1744,7 +1749,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("diff_siblings.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1769,7 +1774,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("text_elem.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         # Should be a p:transcludeInline element
@@ -1791,7 +1796,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("whitespace.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1813,7 +1818,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("xmlid.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "#start_id", "#end_id")
+        processor = InlineCompilerProcessor(project, file_name, "#start_id", "#end_id", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1836,7 +1841,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("mixed.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "#end_id")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "#end_id", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1856,7 +1861,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("single.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:target", "urn:target")
+        processor = InlineCompilerProcessor(project, file_name, "urn:target", "urn:target", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1883,7 +1888,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("both_level2.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1895,8 +1900,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
                              f"Result text should match pattern. Got: {result_text!r}")
 
     @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
-    @patch('opensiddur.exporter.urn.UrnResolver.prioritize_range')
-    def test_inline_transclusion(self, mock_prioritize, mock_resolve_range):
+    def test_inline_transclusion(self, mock_resolve_range):
         """Test InlineCompilerProcessor with a transclusion element."""
         # Create main file with transclusion element
         # Include text before start, after end, and tail text on elements
@@ -1928,13 +1932,9 @@ class TestInlineCompilerProcessor(unittest.TestCase):
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
         ]
-        mock_prioritize.side_effect = [
-            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]"),
-            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")
-        ]
         
         # Process the main file
-        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end")
+        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1987,8 +1987,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertIn("tail after transclude", transclude_elem.tail)
 
     @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
-    @patch('opensiddur.exporter.urn.UrnResolver.prioritize_range')
-    def test_nested_transclusion(self, mock_prioritize, mock_resolve_range):
+    def test_nested_transclusion(self, mock_resolve_range):
         """Test InlineCompilerProcessor with nested transclusions (transcluded file has its own transclusion)."""
         # Create main file with transclusion element
         main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
@@ -2029,15 +2028,9 @@ class TestInlineCompilerProcessor(unittest.TestCase):
             [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]")],
             [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
         ]
-        mock_prioritize.side_effect = [
-            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]"),
-            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]"),
-            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]"),
-            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")
-        ]
         
         # Process the main file
-        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end")
+        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
