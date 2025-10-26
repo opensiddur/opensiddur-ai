@@ -1,6 +1,7 @@
 """Tests for the CompilerProcessor class."""
 
 import re
+from typing import Optional
 import unittest
 import tempfile
 from pathlib import Path
@@ -2109,8 +2110,13 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         xml = etree.parse(file_path)
         return project, file_name, xml
 
-    def _create_instructional_note_file(self, project: str, file_name: str, title: str, urn: str, content: str) -> tuple[str, str]:
+    def _create_instructional_note_file(self, project: str, 
+        file_name: str, title: str, 
+        urn: Optional[str], 
+        content: str,
+        xml_id: Optional[str]) -> tuple[str, str]:
         """Create a test file with an instructional note."""
+        corresp = f"corresp='{urn}'" if urn else f"xml:id='{xml_id}'" if xml_id else ""
         xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
     <tei:teiHeader>
         <tei:fileDesc>
@@ -2124,7 +2130,7 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
             <tei:div>
                 <tei:p>Element before note</tei:p>
                 Text before note
-                <tei:note type="instruction" corresp="{urn}">
+                <tei:note type="instruction" {corresp}>
                     {content}
                 </tei:note>
                 Text after note
@@ -2158,7 +2164,7 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         urn = "urn:test:instruction:nonexistent"
         
         # Create main file with instructional note with URN that won't be found in database
-        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction")
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction", None)
         
         # all references will return nothing
         self.refdb.get_references_to.return_value = []
@@ -2179,13 +2185,40 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
         self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
 
+    def test_instructional_note_with_no_corresp(self):
+        """Test that an instructional note with no corresp or xml:id is included as-is."""
+        urn = None
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a no corresp instruction", None)
+        
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the original text
+        self.assertIn("This is a no corresp instruction", notes[0].text.strip())
+        
+        # The instructional note itself should NOT have p:project and p:file_name attributes
+        # since it's not transcluded from another file
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+
     def test_instructional_note_with_alternative_urn_in_database(self):
         """Test that an instructional note with URN that is not found elsewhere is included as-is."""
         urn = "urn:test:instruction:alternative"
         
         # Create main file with instructional note with URN that won't be found in database
-        project, file_name, xml = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction")
-        priority_project, priority_file_name, priority_xml = self._create_instructional_note_file("priority_project", "priority.xml", "Priority Document", urn, "This is a priority instruction")
+        project, file_name, xml = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction", None)
+        priority_project, priority_file_name, priority_xml = self._create_instructional_note_file("priority_project", "priority.xml", "Priority Document", urn, "This is a priority instruction", None)
         lxml_note_element = priority_xml.xpath("//tei:note[@type='instruction']", 
             namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
         lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
