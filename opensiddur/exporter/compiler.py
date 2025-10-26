@@ -53,6 +53,8 @@ class _AnnotationCommand(Enum):
     NONE = "none"
 
 class _ProcessingContext(TypedDict):
+    project: str
+    file_name: str
     from_start: Optional[str]
     to_end: Optional[str]
     before_start: bool
@@ -209,7 +211,8 @@ class CompilerProcessor:
                         raise ValueError(f"Replacement instruction element {replacement_instruction.element_path=} not found")
                     replacement_element = replacement_element[0]
                     processed_replacement_element = replacement_processor.process(replacement_element)
-                    self._mark_file_source(processed_replacement_element, project=replacement_instruction.project, file_name=replacement_instruction.file_name)
+                    if not(replacement_instruction.project == self.project and replacement_instruction.file_name == self.file_name):
+                        self._mark_file_source(processed_replacement_element, project=replacement_instruction.project, file_name=replacement_instruction.file_name)
                     result_elements = [processed_replacement_element]
                     annotation_command = _AnnotationCommand.REPLACE
                 else:
@@ -222,7 +225,7 @@ class CompilerProcessor:
         else:
             # For commentary/editorial notes, select all annotations for corresp or xml_id
             # May be standoff annotation, or inline.
-            references = self._refdb.get_references_to(corresp, xml_id,project, file_name)
+            references = self._refdb.get_references_to(corresp, xml_id, project, file_name)
             note_references = [r for r in references 
                 if r.element_tag =="{http://www.tei-c.org/ns/1.0}note"]
             limited_references = self._urn_resolver.prioritize_range(note_references, self.linear_data.annotation_projects, return_all=True)
@@ -241,7 +244,8 @@ class CompilerProcessor:
                         raise ValueError(f"Reference element {reference.element_path=} not found")
                     reference_element = reference_element[0]
                     processed_element = processor.process(reference_element)
-                    self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
+                    if not(reference.project == self.project and reference.file_name == self.file_name):
+                        self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
                     result_elements.append(processed_element)
             if result_elements:
                 annotation_command = _AnnotationCommand.INSERT
@@ -272,10 +276,18 @@ class CompilerProcessor:
         file_name: Optional[str] = None, 
         ) -> ElementBase:
         """
-        Mark the file source of the given element.
+        Mark the file source of the given element if the processing context has changed
         """
-        element.set(f"{{{PROCESSING_NAMESPACE}}}file_name", file_name or self.file_name)
-        element.set(f"{{{PROCESSING_NAMESPACE}}}project", project or self.project)
+        mark_source = False
+        if len(self.linear_data.processing_context) > 1:
+            previous_context = self.linear_data.processing_context[-2]
+            mark_source = not(previous_context['project'] == self.project and previous_context['file_name'] == self.file_name)
+        else:
+            mark_source = True   # first context
+        
+        if mark_source:
+            element.set(f"{{{PROCESSING_NAMESPACE}}}file_name", file_name or self.file_name)
+            element.set(f"{{{PROCESSING_NAMESPACE}}}project", project or self.project)
         return element
 
     def _get_start_and_end_from_ranges(
@@ -375,6 +387,8 @@ class CompilerProcessor:
 
         # set up the processing context
         self.linear_data.processing_context.append(_ProcessingContext(
+            project=self.project,
+            file_name=self.file_name,
             from_start=None,
             to_end=None,
             before_start=False,
@@ -556,6 +570,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             root = self.root_tree
 
         self.linear_data.processing_context.append(_ProcessingContext(
+            project=self.project,
+            file_name=self.file_name,
             from_start=self.from_start,
             to_end=self.to_end,
             before_start=self.from_start is not None,
@@ -694,6 +710,8 @@ class InlineCompilerProcessor(CompilerProcessor):
             root = self.root_tree
 
         self.linear_data.processing_context.append(_ProcessingContext(
+            project=self.project,
+            file_name=self.file_name,
             from_start=self.from_start,
             to_end=self.to_end,
             before_start=self.from_start is not None,

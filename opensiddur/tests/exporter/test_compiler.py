@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.compiler import CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
-from opensiddur.exporter.refdb import ReferenceDatabase, UrnMapping
+from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
 
 
@@ -2159,6 +2159,38 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
 </TEI>'''.encode('utf-8')
         return self._create_test_file(project, file_name, xml_content)
 
+    def _create_targeted_note_file(self, project: str, 
+        file_name: str, title: str, 
+        urn: Optional[str],
+        xml_id: Optional[str],
+        internal_note: str = "") -> tuple[str, str]:
+        """Create a test file with a target for a note."""
+        corresp = f"corresp='{urn}'" if urn else f"xml:id='{xml_id}'" if xml_id else ""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>{title}</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Element before note</tei:p>
+                Text before note
+                <tei:p {corresp}>This element is targeted by the note <tei:hi>Child element</tei:hi></tei:p>
+                Text after note
+                <tei:p>Element after note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+    <tei:standOff>
+        {internal_note}
+    </tei:standOff>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
     def test_instructional_note_with_urn_not_found_in_database(self):
         """Test that an instructional note with URN that is not found elsewhere is included as-is."""
         urn = "urn:test:instruction:nonexistent"
@@ -2212,6 +2244,32 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
         self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
 
+    def test_instructional_note_with_no_corresp_or_xml_id(self):
+        """Test that an instructional note with no corresp or xml:id is included as-is."""
+        urn = None
+        xid = None
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a no corresp instruction", xid)
+        
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the original text
+        self.assertIn("This is a no corresp instruction", notes[0].text.strip())
+        
+        # The instructional note itself should NOT have p:project and p:file_name attributes
+        # since it's not transcluded from another file
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
 
     def test_instructional_note_with_alternative_urn_in_database(self):
         """Test that an instructional note with URN that is not found elsewhere is included as-is."""
@@ -2250,8 +2308,109 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}project"), priority_project)
         self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"), priority_file_name)
 
+    def test_editorial_note_with_urn_in_database(self):
+        """Test that an editorial note that targets the URN of an element."""
+        urn = "urn:test:editorial:note"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, xml = self._create_targeted_note_file("test_project", "main.xml", "Main Document", urn, None)
+        priority_project, priority_file_name, priority_xml = self._create_editorial_note_file("priority_project", "priority.xml", "Priority Document", urn, "Editorial note")
+        lxml_note_element = priority_xml.xpath("//tei:note[@type='editorial']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        # all references will return nothing
+        self.refdb.get_references_to.reset_mock()
+        self.refdb.get_references_to.return_value = [
+            Reference(element_path=lxml_note_element_path, 
+                element_tag="{http://www.tei-c.org/ns/1.0}note", 
+                element_type="editorial",
+                project=priority_project,
+                file_name=priority_file_name,
+                target_start=urn,
+                target_end=None,
+                target_is_id=False,
+                corresponding_urn=None
+            ),
+            Reference(element_path=lxml_note_element_path, 
+                element_tag="{http://www.tei-c.org/ns/1.0}something_else", 
+                element_type="another",
+                project=priority_project,
+                file_name=priority_file_name,
+                target_start=urn,
+                target_end=None,
+                target_is_id=False,
+                corresponding_urn=None
+            )
+        ]
+        
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # make sure refdb was called with the correct arguments
+        self.refdb.get_references_to.assert_called_once_with(urn, None, None, None)
 
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='editorial']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the priority editorial note text
+        self.assertIn("Editorial note", notes[0].text.strip())
+        
+        # The editorial note itself should have p:project and p:file_name attributes
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}project"), priority_project)
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"), priority_file_name)
 
+        self.assertEqual(notes[0].getparent().tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertIn(notes[0].tail.strip(), "This element is targeted by the note <tei:hi>Child element</tei:hi>")
+        self.assertIs(notes[0].getparent().getchildren()[0], notes[0])
+
+    def test_editorial_note_with_xml_id_in_database(self):
+        """Test that an editorial note that targets the xml:id of an element."""
+        urn = None
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, xml = self._create_targeted_note_file("test_project", "main.xml", "Main Document", None, "note_id", 
+            '<tei:note target="#note_id" type="editorial">Editorial note</tei:note>')
+        lxml_note_element = xml.xpath("//tei:note[@type='editorial']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        self.refdb.get_references_to.reset_mock()
+        self.refdb.get_references_to.return_value = [
+            Reference(element_path=lxml_note_element_path, 
+                element_tag="{http://www.tei-c.org/ns/1.0}note", 
+                element_type="editorial",
+                project=project,
+                file_name=file_name,
+                target_start="#note_id",
+                target_end=None,
+                target_is_id=True,
+                corresponding_urn=None
+            )
+        ]
+        
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # make sure refdb was called with the correct arguments
+        self.refdb.get_references_to.assert_called_once_with(None, "note_id", project, file_name)
+
+        # Find the new note element
+        notes = result.xpath(".//tei:body//tei:note[@type='editorial']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the priority editorial note text
+        self.assertIn("Editorial note", notes[0].text.strip())
+        
+        # The editorial note itself should NOT have p:project and p:file_name attributes
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+        self.assertEqual(notes[0].getparent().tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertIn(notes[0].tail.strip(), "This element is targeted by the note <tei:hi>Child element</tei:hi>")
+        self.assertIs(notes[0].getparent().getchildren()[0], notes[0])
+        
 
 if __name__ == '__main__':
     unittest.main()
