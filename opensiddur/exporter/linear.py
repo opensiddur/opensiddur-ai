@@ -23,8 +23,12 @@ class LinearData(BaseModel):
     xml_cache: XMLCache = Field(default_factory=XMLCache)
     # dictionary linking the starting point of the settings to changes at that point.
     settings: list[tuple[str, Setting]] = Field(default_factory=list)
-    # project priority for URN resolution
+    # project priority for URN resolution of texts
     project_priority: list[str] = Field(default_factory=list)
+    # project priority for URN resolution of instructions
+    instruction_priority: list[str] = Field(default_factory=list)
+    # projects from which to include annotations (not a priority list)
+    annotation_projects: list[str] = Field(default_factory=list)
     # processing context includes processor-specific data. Because there is recursion, it acts as a stack.
     processing_context: list[dict[str, Any]] = Field(default_factory=list)
 

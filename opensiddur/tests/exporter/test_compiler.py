@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.compiler import CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
+from opensiddur.exporter.refdb import ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
 
 
@@ -1244,7 +1245,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
                 ]
             return []
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             """Mock prioritize_range to return a single ResolvedUrn (not a range)."""
             if urns and len(urns) > 0:
                 # Return the first URN (single URN, not a range)
@@ -2074,6 +2075,148 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertIn("Level 2 start", level2_transclude.text)
         self.assertIn("Level 2 middle", level2_transclude.text)
         self.assertIn("Level 2 end", level2_transclude.text)
+
+
+class TestCompilerProcessorAnnotations(unittest.TestCase):
+    """Test annotation inclusion functionality in CompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        # This creates coupling in the test, which is not good.
+        self.linear_data = LinearData(
+            instruction_priority=["priority_project", "test_project"],
+            annotation_projects=["priority_project", "test_project"]
+        )
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+        self.refdb = MagicMock(spec=ReferenceDatabase)
+        # each test needs to set its own refdb results
+
+    def _create_test_file(self, project: str, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        project_dir = Path(self.temp_dir.name) / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        xml = etree.parse(file_path)
+        return project, file_name, xml
+
+    def _create_instructional_note_file(self, project: str, file_name: str, title: str, urn: str, content: str) -> tuple[str, str]:
+        """Create a test file with an instructional note."""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>{title}</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Element before note</tei:p>
+                Text before note
+                <tei:note type="instruction" corresp="{urn}">
+                    {content}
+                </tei:note>
+                Text after note
+                <tei:p>Element after note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def _create_editorial_note_file(self, project: str, file_name: str, title: str, urn: str, content: str) -> tuple[str, str]:
+        """Create a test file with an editorial note."""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>{title}</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:standOff>
+        <tei:note type="editorial" target="{urn}">
+            {content}
+        </tei:note>
+    </tei:standOff>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def test_instructional_note_with_urn_not_found_in_database(self):
+        """Test that an instructional note with URN that is not found elsewhere is included as-is."""
+        urn = "urn:test:instruction:nonexistent"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction")
+        
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the original text
+        self.assertIn("This is a local instruction", notes[0].text.strip())
+        
+        # The instructional note itself should NOT have p:project and p:file_name attributes
+        # since it's not transcluded from another file
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+    def test_instructional_note_with_alternative_urn_in_database(self):
+        """Test that an instructional note with URN that is not found elsewhere is included as-is."""
+        urn = "urn:test:instruction:alternative"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, xml = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction")
+        priority_project, priority_file_name, priority_xml = self._create_instructional_note_file("priority_project", "priority.xml", "Priority Document", urn, "This is a priority instruction")
+        lxml_note_element = priority_xml.xpath("//tei:note[@type='instruction']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = [
+            UrnMapping(
+                project=priority_project, 
+                file_name=priority_file_name, 
+                urn=urn, 
+                element_path=lxml_note_element_path,
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="instruction"
+            )
+        ]
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the priority instruction text
+        self.assertIn("This is a priority instruction", notes[0].text.strip())
+        
+        # The instructional note itself should have p:project and p:file_name attributes
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}project"), priority_project)
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"), priority_file_name)
+
+
 
 
 if __name__ == '__main__':
