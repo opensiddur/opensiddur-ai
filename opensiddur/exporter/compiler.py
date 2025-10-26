@@ -18,7 +18,7 @@ import argparse
 from enum import Enum
 from pathlib import Path
 import sys
-from typing import Literal, Optional, TypedDict
+from typing import Annotated, Literal, Optional, TypedDict
 from unittest import result
 from lxml.etree import ElementBase
 from lxml import etree
@@ -127,7 +127,8 @@ class CompilerProcessor:
                     transclude_range.start.file_name, 
                     from_start=transclude_range.start.urn, 
                     to_end=transclude_range.end.urn, 
-                    linear_data=self.linear_data)
+                    linear_data=self.linear_data,
+                    reference_database=self._refdb)
                 processed_list = processor.process()
                 for processed in processed_list:
                     processing_element.append(processed)
@@ -137,7 +138,8 @@ class CompilerProcessor:
                     transclude_range.start.file_name, 
                     from_start=transclude_range.start.urn, 
                     to_end=transclude_range.end.urn, 
-                    linear_data=self.linear_data)
+                    linear_data=self.linear_data,
+                    reference_database=self._refdb)
                 processed = processor.process()
                 processing_element.text = processed.text
                 for child in processed:
@@ -173,7 +175,13 @@ class CompilerProcessor:
             return [], _AnnotationCommand.NONE
         corresp = element.get("corresp")
         xml_id = element.get("{http://www.w3.org/XML/1998/namespace}id")
-        if not corresp and not xml_id:
+
+        # Assume a utility function (maybe xml namespace ns_map) is present
+        tei_ns = self.ns_map.get("tei")
+        tag_note = f"{{{tei_ns}}}note"
+        is_note = (element.tag == tag_note)
+
+        if not is_note and not corresp and not xml_id:
             return [], _AnnotationCommand.NONE
         project = self.project if xml_id else None
         file_name = self.file_name if xml_id else None
@@ -181,14 +189,10 @@ class CompilerProcessor:
         # Determine whether this is an instructional note (tei:note with @type='instruction' and has a URN)
         # or otherwise select all annotations for corresp/xml_id.
         result_elements = []
-        annotation_command = None  # Placeholder for INSERT or REPLACE, as per eventual usage.
-
-        # Assume a utility function (maybe xml namespace ns_map) is present
-        tei_ns = self.ns_map.get("tei")
-        tag_note = f"{{{tei_ns}}}note"
+        annotation_command = _AnnotationCommand.NONE
 
         is_instruction_note = (
-            element.tag == tag_note
+            is_note
             and element.get("type", "") == "instruction"
         )
 
@@ -225,7 +229,7 @@ class CompilerProcessor:
             else:
                 result_elements = []
                 annotation_command = _AnnotationCommand.KEEP
-        else:
+        elif corresp or xml_id:
             # For commentary/editorial notes, select all annotations for corresp or xml_id
             # May be standoff annotation, or inline.
             references = self._refdb.get_references_to(corresp, xml_id, project, file_name)
@@ -447,12 +451,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
         file_name: str,
         from_start: str,
         to_end: str,
-        linear_data: Optional[LinearData] = None):
+        linear_data: Optional[LinearData] = None,
+        reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project. 
         Only start from the given start and end, inclusive.
         Start and end must be in the same file
         """
-        super().__init__(project, file_name, linear_data=linear_data)
+        super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
         self.from_start = from_start
         self.to_end = to_end
 
@@ -605,12 +610,13 @@ class InlineCompilerProcessor(CompilerProcessor):
         file_name: str,
         from_start: str,
         to_end: str,
-        linear_data: Optional[LinearData] = None):
+        linear_data: Optional[LinearData] = None,
+        reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project.
         Only start from the given start and end, inclusive.
         Start and end must be in the same file
         """
-        super().__init__(project, file_name, linear_data=linear_data)
+        super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
         self.from_start = from_start
         self.to_end = to_end
 
@@ -707,7 +713,7 @@ class InlineCompilerProcessor(CompilerProcessor):
             processed = self._process_element(child, root)
             if processed.tag == f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
                 # Extract text from nested p:transcludeInline elements
-                text_element.text += processed.text
+                text_element.text += processed.text or ""
                 # Also extract any p:transclude children (nested transclusions)
                 for nested_child in processed:
                     text_element.append(nested_child)
