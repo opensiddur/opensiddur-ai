@@ -12,6 +12,10 @@
     
     <xsl:mode on-no-match="fail"/>
     
+    <xsl:template match="document-node()">
+        <xsl:apply-templates/>
+    </xsl:template>
+    
     <!-- Identity transform: copies all nodes and attributes by default -->
     <xsl:template match="@*|node()">
         <xsl:copy>

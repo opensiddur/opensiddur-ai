@@ -28,13 +28,13 @@ def main():
     xslt_directory = get_xslt_directory()
 
     xslt_transform(xslt_directory / "transform_index.xslt", 
-        source_directory / "TanachHeader.xml", 
+        source_directory / "Books" / "TanachHeader.xml", 
         project_directory / "index.xml")
     for book in os.listdir(source_directory / "Books"):
         if book not in ["TanachHeader.xml", "TanachIndex.xml"] and not book.endswith(".DH.xml"):
             print(f"Transforming {book}")
             xslt_transform(xslt_directory / "transform_book.xslt", 
-                source_directory / book, 
+                source_directory / "Books" / book, 
                 project_directory / book.lower())
 
     for book in os.listdir(project_directory):

@@ -25,6 +25,7 @@ from lxml import etree
 
 from opensiddur.exporter.linear import LinearData, get_linear_data
 from opensiddur.exporter.refdb import ReferenceDatabase
+from opensiddur.exporter.settings import load_default_settings, load_settings
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
 
 JLPTEI_NAMESPACE = 'http://jewishliturgy.org/ns/jlptei/2'
@@ -764,14 +765,20 @@ class InlineCompilerProcessor(CompilerProcessor):
         return element
 
 
-def main():
+def main():  # pragma: no cover
     parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")
     parser.add_argument("--project", "-p", type=str, help="The project name.", required=True)
     parser.add_argument("--file_name", "-f", type=str, help="The file name (relative to the project).", required=True)
     parser.add_argument("--output_file", "-o", type=str, help="The output XML file.")
+    parser.add_argument("--settings", "-s", type=Path, help="YAML file with compiler settings. See README.md for more details.")
     args = parser.parse_args()
-    
-    compiler = CompilerProcessor(args.project, args.file_name)
+
+    if args.settings:
+        linear_data = load_settings(args.settings)
+    else:
+        linear_data = load_default_settings(args.project, args.file_name)
+
+    compiler = CompilerProcessor(args.project, args.file_name, linear_data=linear_data)
     result = compiler.process()
     etree.ElementTree(result).write(
         args.output_file if args.output_file else sys.stdout, 

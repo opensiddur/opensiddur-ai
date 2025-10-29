@@ -33,12 +33,7 @@
     <!-- Add your custom templates here -->
     <xsl:template match="Tanach">
         <tei:TEI>
-            <xsl:apply-templates select="teiHeader|tanach"/>
-            <xsl:if test="//x">
-                <tei:standOff type="notes">
-                    <xsl:apply-templates select="//x" mode="standoff"/>
-                </tei:standOff>
-            </xsl:if>
+            <xsl:apply-templates select="teiHeader|tanach|notes"/>
         </tei:TEI>
     </xsl:template>
 
@@ -143,9 +138,9 @@
             <xsl:copy-of select="@n"/>
         </tei:milestone>
         <xsl:apply-templates select="node() except (pe, samekh)[last()]"/>
-        <tei:pc>
+        <!--tei:pc>
             <xsl:text>׃</xsl:text>
-        </tei:pc>
+        </tei:pc-->
         <xsl:apply-templates select="(pe,samekh)[last()]"/>
     </xsl:template>
 
@@ -203,13 +198,40 @@
         </tei:anchor>
     </xsl:template>
 
-    <xsl:template match="x" mode="standoff">
+    <xsl:template match="notes">
+        <xsl:variable name="note-content" as="element()*">
+            <xsl:apply-templates select="note"/>
+        </xsl:variable>
+        <xsl:if test="exists($note-content)">
+            <tei:standOff type="notes">
+                <xsl:copy-of select="$note-content"/>
+            </tei:standOff>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="note[code]">
+        <xsl:variable name="note-id" select="code/text()"/>
+        <xsl:variable name="note-targets" as="xs:string*">
+            <xsl:apply-templates select="//x[. = $note-id]" mode="standoff"/>
+        </xsl:variable>
+        <xsl:if test="exists($note-targets)">        
+            <tei:note>
+                <xsl:attribute name="xml:id" select="concat('note-', $note-id)"/>
+                <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:notes:tanakh.wlc.', $note-id)"/>
+                <xsl:attribute name="target" select="string-join($note-targets, ' ')"/>
+                <xsl:apply-templates select="note/node()"/>
+            </tei:note>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="x" mode="standoff" as="xs:string">
         <xsl:variable name="book" select="ancestor::book/names/name/lower-case(.)"/>
         <xsl:variable name="chapter" select="ancestor::c/@n"/>
         <xsl:variable name="verse" select="ancestor::v/@n"/>
         <xsl:variable name="note-id" select="text()"/>
         <xsl:variable name="note-num" select="count(preceding::x[ancestor::v[1] = current()/ancestor::v[1]]) + 1"/>
-        <tei:link type="note" target="#note-ref-{replace($book, ' ', '_')}-{$chapter}-{$verse}-{$note-num} urn:cite:opensiddur:bible.tanakh.notes.wlc.{$note-id}" />
+        
+        <xsl:value-of select="concat('#note-ref-', replace($book, ' ', '_'), '-', $chapter, '-', $verse, '-', $note-num)" />
     </xsl:template>
 
     <xsl:template match="s">

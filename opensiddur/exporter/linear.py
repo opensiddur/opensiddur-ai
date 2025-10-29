@@ -5,7 +5,7 @@ so the data are the same independent of depth.
 """
 from typing import Annotated, Any, Optional, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from opensiddur.exporter.cache import XMLCache
 
@@ -17,7 +17,9 @@ class Setting(BaseModel):
 
 
 class LinearData(BaseModel):
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        validate_assignment=True)
     
     # parsed XML cache
     xml_cache: XMLCache = Field(default_factory=XMLCache)
