@@ -120,7 +120,7 @@ class TestWLCMain(unittest.TestCase):
         # Verify xslt_transform was called for index
         expected_index_call = call(
             mock_xslt_dir / "transform_index.xslt",
-            mock_source_dir / "TanachHeader.xml",
+            mock_source_dir / "Books" / "TanachHeader.xml",
             mock_project_dir / "index.xml"
         )
         self.assertIn(expected_index_call, mock_xslt_transform.call_args_list)
@@ -129,17 +129,17 @@ class TestWLCMain(unittest.TestCase):
         expected_book_calls = [
             call(
                 mock_xslt_dir / "transform_book.xslt",
-                mock_source_dir / "Genesis.xml",
+                mock_source_dir / "Books" / "Genesis.xml",
                 mock_project_dir / "genesis.xml"
             ),
             call(
                 mock_xslt_dir / "transform_book.xslt",
-                mock_source_dir / "Exodus.xml",
+                mock_source_dir / "Books" / "Exodus.xml",
                 mock_project_dir / "exodus.xml"
             ),
             call(
                 mock_xslt_dir / "transform_book.xslt",
-                mock_source_dir / "Leviticus.xml",
+                mock_source_dir / "Books" / "Leviticus.xml",
                 mock_project_dir / "leviticus.xml"
             )
         ]
