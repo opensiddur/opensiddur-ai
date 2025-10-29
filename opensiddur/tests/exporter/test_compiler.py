@@ -113,7 +113,8 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Should preserve all attributes
         self.assertIn('type="chapter"', result_str)
         self.assertIn('n="1"', result_str)
-        self.assertIn('xml:id="ch1"', result_str)
+        # xml:id should be rewritten with hash
+        self.assertTrue('xml:id="ch1_' in result_str, f"Expected rewritten xml:id, got: {result_str}")
         self.assertIn('rend="italic"', result_str)
 
     def test_process_preserves_tail_text(self):
@@ -799,6 +800,332 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         self.assertEqual(project_attr_count, 2, "p:project attribute should only appear on root and p:transclude")
 
 
+class TestCompilerProcessorIdRewriting(unittest.TestCase):
+    """Test ID rewriting functionality in CompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Create priority project directory
+        self.priority_project_dir = Path(self.temp_dir.name) / "priority_project"
+        self.priority_project_dir.mkdir(parents=True)
+        
+        # Reset linear data
+        reset_linear_data()
+        self.linear_data = get_linear_data()
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_id_rewriting_consistency_within_transclusion(self):
+        """Test that ID rewriting uses the same hash within the same transclusion path."""
+        # Main file with two transclusions to the same external file
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="main1">Main content 1</tei:p>
+        <jlp:transclude target="#external1" type="external"/>
+        <tei:p xml:id="main2">Main content 2</tei:p>
+        <jlp:transclude target="#external2" type="external"/>
+        <tei:p xml:id="main3">Main content 3</tei:p>
+    </tei:div>
+</root>'''
+        
+        # External file with elements that have IDs
+        external_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="external1">External content 1</tei:p>
+        <tei:p xml:id="external2">External content 2</tei:p>
+        <tei:p xml:id="external3" target="#external1">Reference to external1</tei:p>
+        <tei:p xml:id="external4" target="#external2">Reference to external2</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("main.xml", main_xml_content)
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                # Main file - create a mock tree for the main file
+                main_tree = MagicMock()
+                main_tree.getroot.return_value = etree.fromstring(main_xml_content)
+                return main_tree
+            elif len(args) == 2 and args[0] == "external_project":
+                # External file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if urn.startswith("#external1"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+            elif urn.startswith("#external2"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[2]")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            return urns[0] if urns else None
+        
+        def mock_get_path_from_urn(resolved_urn):
+            from pathlib import Path
+            return Path(self.temp_dir.name) / "external_project" / "external.xml"
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
+                        processor = CompilerProcessor(project, file_name)
+                        result = processor.process()
+        
+        # Find the transclude elements (they use the processing namespace p:)
+        transclude_elements = result.xpath(".//p:transclude", namespaces={"p": "http://jewishliturgy.org/ns/processing"})
+        self.assertEqual(len(transclude_elements), 2, "Should have 2 transclude elements")
+        
+        # Get the transcluded content from each transclude element
+        transclude1_children = list(transclude_elements[0])
+        transclude2_children = list(transclude_elements[1])
+        
+        # Both transclusions should have content
+        self.assertGreater(len(transclude1_children), 0, "First transclude should have content")
+        self.assertGreater(len(transclude2_children), 0, "Second transclude should have content")
+        
+        # Extract all xml:id attributes from both transclusions
+        all_ids_transclude1 = []
+        all_ids_transclude2 = []
+        
+        for child in transclude1_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude1.append(xml_id)
+        
+        for child in transclude2_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude2.append(xml_id)
+        
+        # Both transclusions should have rewritten IDs
+        self.assertGreater(len(all_ids_transclude1), 0, "First transclude should have rewritten IDs")
+        self.assertGreater(len(all_ids_transclude2), 0, "Second transclude should have rewritten IDs")
+        
+        # Extract hash suffixes from the IDs
+        def extract_hash_suffix(xml_id):
+            if '_' in xml_id:
+                return xml_id.split('_', 1)[1]
+            return ""
+        
+        hash_suffixes_1 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude1 if '_' in xml_id]
+        hash_suffixes_2 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude2 if '_' in xml_id]
+        
+        # All IDs within the same transclusion should have the same hash suffix
+        if hash_suffixes_1:
+            first_hash_1 = hash_suffixes_1[0]
+            for hash_suffix in hash_suffixes_1:
+                self.assertEqual(hash_suffix, first_hash_1, 
+                               f"All IDs in first transclude should have same hash: {hash_suffixes_1}")
+        
+        if hash_suffixes_2:
+            first_hash_2 = hash_suffixes_2[0]
+            for hash_suffix in hash_suffixes_2:
+                self.assertEqual(hash_suffix, first_hash_2, 
+                               f"All IDs in second transclude should have same hash: {hash_suffixes_2}")
+        
+        # The two transclusions should have different hash suffixes (different processing paths)
+        if hash_suffixes_1 and hash_suffixes_2:
+            self.assertNotEqual(first_hash_1, first_hash_2, 
+                              f"Different transclusions should have different hashes: {first_hash_1} vs {first_hash_2}")
+        
+        # Check that target attributes are also rewritten consistently
+        all_targets_transclude1 = []
+        all_targets_transclude2 = []
+        
+        for child in transclude1_children:
+            target = child.get("target")
+            if target:
+                all_targets_transclude1.append(target)
+        
+        for child in transclude2_children:
+            target = child.get("target")
+            if target:
+                all_targets_transclude2.append(target)
+        
+        # Targets should be rewritten with the same hash as their corresponding IDs
+        for target in all_targets_transclude1:
+            if target.startswith("#"):
+                target_id = target[1:]  # Remove the #
+                # Find the corresponding xml:id in the same transclude
+                for xml_id in all_ids_transclude1:
+                    if xml_id.startswith(target_id.split('_')[0] + '_'):  # Match base ID + hash
+                        expected_hash = xml_id.split('_', 1)[1]
+                        self.assertTrue(target.endswith('_' + expected_hash), 
+                                      f"Target {target} should end with same hash as ID {xml_id}")
+
+    def test_id_rewriting_different_hashes_for_same_entity_transcluded_twice(self):
+        """Test that the same entity transcluded twice gets different rewritten xml:ids."""
+        # Main file with two transclusions to the same external entity
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="main1">Main content 1</tei:p>
+        <jlp:transclude target="#external1" type="external"/>
+        <tei:p xml:id="main2">Main content 2</tei:p>
+        <jlp:transclude target="#external1" type="external"/>
+        <tei:p xml:id="main3">Main content 3</tei:p>
+    </tei:div>
+</root>'''
+        
+        # External file with a single entity that will be transcluded twice
+        external_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="external1">External content 1</tei:p>
+        <tei:p xml:id="external2">External content 2</tei:p>
+        <tei:p xml:id="external3" target="#external1">Reference to external1</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("main.xml", main_xml_content)
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                # Main file - create a mock tree for the main file
+                main_tree = MagicMock()
+                main_tree.getroot.return_value = etree.fromstring(main_xml_content)
+                return main_tree
+            elif len(args) == 2 and args[0] == "external_project":
+                # External file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if urn.startswith("#external1"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            return urns[0] if urns else None
+        
+        def mock_get_path_from_urn(resolved_urn):
+            from pathlib import Path
+            return Path(self.temp_dir.name) / "external_project" / "external.xml"
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
+                        processor = CompilerProcessor(project, file_name)
+                        result = processor.process()
+        
+        # Find the transclude elements (they use the processing namespace p:)
+        transclude_elements = result.xpath(".//p:transclude", namespaces={"p": "http://jewishliturgy.org/ns/processing"})
+        self.assertEqual(len(transclude_elements), 2, "Should have 2 transclude elements")
+        
+        # Get the transcluded content from each transclude element
+        transclude1_children = list(transclude_elements[0])
+        transclude2_children = list(transclude_elements[1])
+        
+        # Both transclusions should have content
+        self.assertGreater(len(transclude1_children), 0, "First transclude should have content")
+        self.assertGreater(len(transclude2_children), 0, "Second transclude should have content")
+        
+        # Extract all xml:id attributes from both transclusions
+        all_ids_transclude1 = []
+        all_ids_transclude2 = []
+        
+        for child in transclude1_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude1.append(xml_id)
+        
+        for child in transclude2_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude2.append(xml_id)
+        
+        # Both transclusions should have rewritten IDs
+        self.assertGreater(len(all_ids_transclude1), 0, "First transclude should have rewritten IDs")
+        self.assertGreater(len(all_ids_transclude2), 0, "Second transclude should have rewritten IDs")
+        
+        # Extract hash suffixes from the IDs
+        def extract_hash_suffix(xml_id):
+            if '_' in xml_id:
+                return xml_id.split('_', 1)[1]
+            return ""
+        
+        hash_suffixes_1 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude1 if '_' in xml_id]
+        hash_suffixes_2 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude2 if '_' in xml_id]
+        
+        # All IDs within the same transclusion should have the same hash suffix
+        if hash_suffixes_1:
+            first_hash_1 = hash_suffixes_1[0]
+            for hash_suffix in hash_suffixes_1:
+                self.assertEqual(hash_suffix, first_hash_1, 
+                               f"All IDs in first transclude should have same hash: {hash_suffixes_1}")
+        
+        if hash_suffixes_2:
+            first_hash_2 = hash_suffixes_2[0]
+            for hash_suffix in hash_suffixes_2:
+                self.assertEqual(hash_suffix, first_hash_2, 
+                               f"All IDs in second transclude should have same hash: {hash_suffixes_2}")
+        
+        # The two transclusions should have different hash suffixes (different processing paths)
+        if hash_suffixes_1 and hash_suffixes_2:
+            self.assertNotEqual(first_hash_1, first_hash_2, 
+                              f"Same entity transcluded twice should have different hashes: {first_hash_1} vs {first_hash_2}")
+        
+        # Verify that the same base IDs exist in both transclusions but with different hashes
+        def extract_base_id(xml_id):
+            if '_' in xml_id:
+                return xml_id.split('_')[0]
+            return xml_id
+        
+        base_ids_1 = [extract_base_id(xml_id) for xml_id in all_ids_transclude1]
+        base_ids_2 = [extract_base_id(xml_id) for xml_id in all_ids_transclude2]
+        
+        # The same base IDs should appear in both transclusions
+        self.assertEqual(set(base_ids_1), set(base_ids_2), 
+                        f"Both transclusions should have the same base IDs: {base_ids_1} vs {base_ids_2}")
+        
+        # But the full IDs (with hashes) should be different
+        self.assertNotEqual(set(all_ids_transclude1), set(all_ids_transclude2), 
+                           f"Full IDs with hashes should be different: {all_ids_transclude1} vs {all_ids_transclude2}")
+
+
 class TestExternalCompilerProcessor(unittest.TestCase):
     """Test ExternalCompilerProcessor for extracting XML hierarchy between start and end markers."""
 
@@ -1086,9 +1413,10 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3)
         
-        # First element should have xml:id="start"
+        # First element should have xml:id="start" (rewritten with hash)
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "start")
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("start_"), f"Expected rewritten xml:id starting with 'start_', got: {xml_id}")
         self.assertEqual(result[0].text, "Start element")
         
         # Check tail text is preserved
@@ -1097,7 +1425,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Middle element
         self.assertEqual(result[1].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[1].get("{http://www.w3.org/XML/1998/namespace}id"), "middle")
+        # xml:id should be rewritten with hash
+        xml_id = result[1].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("middle_"), f"Expected rewritten xml:id starting with 'middle_', got: {xml_id}")
         self.assertEqual(result[1].text, "Middle element")
         
         # Check tail text is preserved
@@ -1106,7 +1436,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # End element
         self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        # xml:id should be rewritten with hash
+        xml_id = result[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("end_"), f"Expected rewritten xml:id starting with 'end_', got: {xml_id}")
         self.assertEqual(result[2].text, "End element")
         
         # Tail after end should NOT be included
@@ -1154,9 +1486,10 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertEqual(result[1].text, "Middle element")
         self.assertIn("Tail after middle", result[1].tail)
         
-        # End element should have xml:id="end"
+        # End element should have xml:id="end" (rewritten with hash)
         self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        xml_id = result[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("end_"), f"Expected rewritten xml:id starting with 'end_', got: {xml_id}")
         self.assertEqual(result[2].text, "End with xml:id")
         
         # Tail after end should NOT be included
@@ -1272,14 +1605,19 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # First element: start
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "start")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("start_"), f"Expected rewritten xml:id starting with 'start_', got: {xml_id}")
         self.assertEqual(result[0].text, "Start element")
         self.assertIn("Tail after start", result[0].tail)
         
         # Second element: transclude (p:transclude)
         self.assertEqual(result[1].tag, "{http://jewishliturgy.org/ns/processing}transclude")
-        self.assertEqual(result[1].get("target"), "#fragment-start")
-        self.assertEqual(result[1].get("targetEnd"), "#fragment-end")
+        # Target should be rewritten with hash to prevent ID collisions
+        target = result[1].get("target")
+        self.assertTrue(target.startswith("#fragment-start_"), f"Expected target to start with '#fragment-start_', got: {target}")
+        target_end = result[1].get("targetEnd")
+        self.assertTrue(target_end.startswith("#fragment-end_"), f"Expected targetEnd to start with '#fragment-end_', got: {target_end}")
         
         # Check that transclusion has children (the transcluded content)
         transcluded_children = list(result[1])
@@ -1292,7 +1630,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Check first transcluded element
         self.assertEqual(transcluded_children[0].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(transcluded_children[0].get("{http://www.w3.org/XML/1998/namespace}id"), "fragment-start")
+        # xml:id should be rewritten with hash
+        xml_id = transcluded_children[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("fragment-start_"), f"Expected rewritten xml:id starting with 'fragment-start_', got: {xml_id}")
         self.assertEqual(transcluded_children[0].get("type"), "fragment")
         self.assertEqual(transcluded_children[0].get("n"), "1")
         self.assertEqual(transcluded_children[0].text, "Transcluded start")
@@ -1300,13 +1640,17 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Check middle transcluded element
         self.assertEqual(transcluded_children[1].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(transcluded_children[1].get("{http://www.w3.org/XML/1998/namespace}id"), "fragment-middle")
+        # xml:id should be rewritten with hash
+        xml_id = transcluded_children[1].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("fragment-middle_"), f"Expected rewritten xml:id starting with 'fragment-middle_', got: {xml_id}")
         self.assertEqual(transcluded_children[1].text, "Transcluded middle")
         self.assertIn("Transcluded tail 2", transcluded_children[1].tail)
         
         # Check nested div element
         self.assertEqual(transcluded_children[2].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(transcluded_children[2].get("{http://www.w3.org/XML/1998/namespace}id"), "fragment-nested")
+        # xml:id should be rewritten with hash
+        xml_id = transcluded_children[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("fragment-nested_"), f"Expected rewritten xml:id starting with 'fragment-nested_', got: {xml_id}")
         self.assertIn("Nested div text", transcluded_children[2].text)
         self.assertIn("Transcluded tail 3", transcluded_children[2].tail)
         
@@ -1322,7 +1666,8 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         # Find the fragment-end element (might not be at index 3 due to parsing variations)
         fragment_end = None
         for child in transcluded_children:
-            if child.get("{http://www.w3.org/XML/1998/namespace}id") == "fragment-end":
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id and xml_id.startswith("fragment-end_"):
                 fragment_end = child
                 break
         
@@ -1337,7 +1682,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Third element: end
         self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        # xml:id should be rewritten with hash
+        xml_id = result[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("end_"), f"Expected rewritten xml:id starting with 'end_', got: {xml_id}")
         self.assertEqual(result[2].text, "End element")
         # Tail after end should NOT be included
         self.assertIsNone(result[2].tail)
@@ -1392,7 +1739,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # First element should be the target div with all its children
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "target")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("target_"), f"Expected rewritten xml:id starting with 'target_', got: {xml_id}")
         self.assertIn("Target div text", result[0].text)
         
         # Should have 2 children
@@ -1536,7 +1885,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Should be the outer div
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "outer")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("outer_"), f"Expected rewritten xml:id starting with 'outer_', got: {xml_id}")
         # Text may be None if children consume it
         if result[0].text:
             self.assertIn("Outer div", result[0].text)
@@ -1546,8 +1897,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertIn("Start (3 levels deep)", result_str)
         self.assertIn("End (1 level deep)", result_str)
         # Structure elements (middle, inner) should be present even if text is not copied
-        self.assertIn('xml:id="middle"', result_str)
-        self.assertIn('xml:id="inner"', result_str)
+        # xml:id should be rewritten with hash
+        self.assertTrue('xml:id="middle_' in result_str, f"Expected rewritten xml:id for middle, got: {result_str}")
+        self.assertTrue('xml:id="inner_' in result_str, f"Expected rewritten xml:id for inner, got: {result_str}")
         self.assertIn("After inner", result_str)
         
         # Verify excluded content
@@ -1585,7 +1937,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Should be the outer div
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "outer")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("outer_"), f"Expected rewritten xml:id starting with 'outer_', got: {xml_id}")
         # Text may be None if children consume it
         if result[0].text:
             self.assertIn("Outer div", result[0].text)

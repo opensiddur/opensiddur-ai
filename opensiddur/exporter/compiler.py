@@ -16,7 +16,9 @@ their instructions.
 
 import argparse
 from enum import Enum
+import hashlib
 from pathlib import Path
+import re
 import sys
 from typing import Annotated, Literal, Optional, TypedDict
 from unittest import result
@@ -59,6 +61,7 @@ class _AnnotationCommand(Enum):
 class _ProcessingContext(TypedDict):
     project: str
     file_name: str
+    element_path: Optional[str]
     from_start: Optional[str]
     to_end: Optional[str]
     before_start: bool
@@ -99,6 +102,62 @@ class CompilerProcessor:
 
         self._refdb = reference_database or ReferenceDatabase()
         self._urn_resolver = UrnResolver(self._refdb)
+
+    def _get_path_hash(self, element: Optional[ElementBase] = None) -> str:
+        """ Get a hash of the path taken to get to the current processing context and element if available """
+        context_path_elements = []
+        num_contexts = len(self.linear_data.processing_context)
+        for i, context in enumerate(self.linear_data.processing_context):
+            context_path_element = (
+                context['project'] + '/' + 
+                context['file_name'] + ':' +
+                (context.get('element_path') or "") if i < num_contexts - 1 else ""
+            )
+            context_path_elements.append(context_path_element)
+        if element is not None:
+            element_path = element.getroottree().getpath(element)
+            context_path_elements.append(':' + element_path)
+        full_context_path ='+'.join(context_path_elements)
+        path_hash = hashlib.sha256(full_context_path.encode('utf-8')).hexdigest()[:8]
+        return path_hash
+
+    def _rewrite_ids(self, element_or_list) -> ElementBase | list[ElementBase]:
+        """ Rewrite the ids of the given element(s), rewrite local targets """
+        if isinstance(element_or_list, list):
+            # Handle list of elements (ExternalCompilerProcessor case)
+            for element in element_or_list:
+                self._rewrite_single_element_ids(element)
+            return element_or_list
+        else:
+            # Handle single element (CompilerProcessor case)
+            return self._rewrite_single_element_ids(element_or_list)
+    
+    def _rewrite_single_element_ids(self, element: ElementBase) -> ElementBase:
+        """ Rewrite the ids of a single element """
+        xml_id = element.attrib.get('{http://www.w3.org/XML/1998/namespace}id')
+        target = element.attrib.get('target')
+        target_end = element.attrib.get('targetEnd')
+        if not xml_id and not target and not target_end:
+            return element
+        path_hash = self._get_path_hash()
+        if xml_id:
+            new_xml_id = f"{xml_id}_{path_hash}"
+            element.set('{http://www.w3.org/XML/1998/namespace}id', new_xml_id)
+        
+        rewrite_target = lambda target: ' '.join([
+                (target_part 
+                if not target_part.startswith('#') 
+                else target_part.replace(f"#{target_part[1:]}", f"#{target_part[1:]}_{path_hash}"))
+                for target_part in re.split(r'\s+', target)
+            ])
+
+        if target:
+            new_target = rewrite_target(target)
+            element.set('target', new_target)
+        if target_end:
+            new_target_end = rewrite_target(target_end)
+            element.set('targetEnd', new_target_end)
+        return element
 
     def _transclude(self, 
         element: ElementBase, 
@@ -340,21 +399,25 @@ class CompilerProcessor:
         return ResolvedUrnRange(start=start, end=end)
 
 
-    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingCommand:
+    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, before the element has been processed.
         """
-        return _ProcessingCommand.COPY_AND_RECURSE
+        context = self.linear_data.processing_context[-1]
+        context['element_path'] = element.getroottree().getpath(element)
+        context['command'] = _ProcessingCommand.COPY_AND_RECURSE
+        return context
         
-    def _update_processing_context_after(self, element: ElementBase) -> None:
+    def _update_processing_context_after(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, after the element has been processed.
         """
-        pass    
+        context = self.linear_data.processing_context[-1]
+        context['element_path'] = None
+        return context
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
-        context = self.linear_data.processing_context[-1]
-        context["command"] = self._update_processing_context_before(element)
+        context = self._update_processing_context_before(element)
         
         transcluded = self._transclude(element)
         if transcluded is not None:
@@ -365,7 +428,7 @@ class CompilerProcessor:
             return annotated[0]
 
         copied = etree.Element(element.tag, nsmap=self.ns_map)
-
+        
         # Copy attributes
         for key, value in element.attrib.items():
             copied.set(key, value)
@@ -380,6 +443,8 @@ class CompilerProcessor:
         if annotation_command == _AnnotationCommand.INSERT:
             for annotated_element in reversed(annotated):
                 self._insert_first_element(copied, annotated_element)
+
+        copied = self._rewrite_ids(copied)
 
         self._update_processing_context_after(element)
         return copied
@@ -465,12 +530,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
         self.deepest_common_ancestor = self._get_deepest_common_ancestor(from_start, to_end)
 
 
-    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingCommand:
+    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, before the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
-
+        context['element_path'] = element.getroottree().getpath(element)
         # Possible contexts: 
         #    before the deepest common ancestor has been reached, RECURSE
         #    deepest common ancestor has been reached, 
@@ -482,7 +547,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
         #    after end, SKIP
 
         if context['after_end']:
-            return _ProcessingCommand.SKIP
+            context['command'] = _ProcessingCommand.SKIP
+            return context
         
         corresp = element.attrib.get("corresp", "")
         xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
@@ -493,29 +559,34 @@ class ExternalCompilerProcessor(CompilerProcessor):
                        (self.from_start.startswith('#') and xml_id == self.from_start.split('#')[1]))
             if is_start:
                 context['before_start'] = False
-                return _ProcessingCommand.COPY_AND_RECURSE
+                context['command'] = _ProcessingCommand.COPY_AND_RECURSE
+                return context
 
         # is after start?
         if context['before_start']:
             if element is self.deepest_common_ancestor:
                 context['inside_deepest_common_ancestor'] = True
-                return _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+                context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+                return context
             elif context['inside_deepest_common_ancestor']:
-                return _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+                context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+                return context
             else:
-                return _ProcessingCommand.RECURSE
+                context['command'] = _ProcessingCommand.RECURSE
+                return context
             
         # must be after start and before end
-        return _ProcessingCommand.COPY_AND_RECURSE
+        context['command'] = _ProcessingCommand.COPY_AND_RECURSE
+        return context
     
-    def _update_processing_context_after(self, element: ElementBase) -> None:
+    def _update_processing_context_after(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, after the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
         if element is self.deepest_common_ancestor:
             context['inside_deepest_common_ancestor'] = False
-            return
+            return context
 
         if not context['before_start'] and not context['after_end']:
             corresp = element.attrib.get("corresp", "")
@@ -525,14 +596,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
                      (self.to_end.startswith('#') and xml_id == self.to_end.split('#')[1]))
             if is_end:
                 context['after_end'] = True
-    
+        context['element_path'] = None
+        return context
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
         """
         Process the given element and return the list of processed elements.
         """
-        context = self.linear_data.processing_context[-1]
-        context["command"] = self._update_processing_context_before(element)
+        context = self._update_processing_context_before(element)
         
         processed = []
 
@@ -579,6 +650,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             for annotation in reversed(annotations):
                 self._insert_first_element(processed, annotation)
 
+        processed = self._rewrite_ids(processed)
+
         self._update_processing_context_after(element)
         return processed
 
@@ -621,12 +694,12 @@ class InlineCompilerProcessor(CompilerProcessor):
         self.from_start = from_start
         self.to_end = to_end
 
-    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingCommand:
+    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, before the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
-
+        context['element_path'] = element.getroottree().getpath(element)
         # Possible contexts:
         #    after end? SKIP 
         #    before start?
@@ -635,7 +708,8 @@ class InlineCompilerProcessor(CompilerProcessor):
         #    between start and end? COPY_TEXT_AND_RECURSE
         
         if context['after_end']:
-            return _ProcessingCommand.SKIP
+            context['command'] = _ProcessingCommand.SKIP
+            return context
         
         corresp = element.attrib.get("corresp", "")
         xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
@@ -645,20 +719,24 @@ class InlineCompilerProcessor(CompilerProcessor):
             is_start = (corresp == self.from_start) or (self.from_start.startswith('#') and xml_id == self.from_start[1:])
             if is_start:
                 context['before_start'] = False
-                return _ProcessingCommand.COPY_TEXT_AND_RECURSE
+                context['command'] = _ProcessingCommand.COPY_TEXT_AND_RECURSE
+                return context
 
         # is after start?
         if context['before_start']:
-            return _ProcessingCommand.RECURSE
+            context['command'] = _ProcessingCommand.RECURSE
+            return context
             
         # must be after start and before end
-        return _ProcessingCommand.COPY_TEXT_AND_RECURSE
+        context['command'] = _ProcessingCommand.COPY_TEXT_AND_RECURSE
+        return context
     
-    def _update_processing_context_after(self, element: ElementBase) -> None:
+    def _update_processing_context_after(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, after the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
+        context['element_path'] = None
         if not context['before_start'] and not context['after_end']:
             corresp = element.attrib.get("corresp", "")
             xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
@@ -666,13 +744,13 @@ class InlineCompilerProcessor(CompilerProcessor):
             is_end = (self.to_end == corresp) or (self.to_end.startswith('#') and xml_id == self.to_end[1:])
             if is_end:
                 context['after_end'] = True
-    
+        return context
+
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
         """
         Process the given element and return the text content.
         """
-        context = self.linear_data.processing_context[-1]
-        context["command"] = self._update_processing_context_before(element) 
+        context = self._update_processing_context_before(element) 
 
 
         text_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transcludeInline", nsmap=self.ns_map)
