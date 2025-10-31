@@ -2733,6 +2733,103 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertIn("Level 2 middle", level2_transclude.text)
         self.assertIn("Level 2 end", level2_transclude.text)
 
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_inline_transclusion_language_differences(self, mock_resolve_range):
+        """Test that InlineCompilerProcessor adds xml:lang when transcluding text with a different language."""
+        # Main file with English default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>English text before transclusion</tei:p>
+        <j:transclude target="urn:hebrew:start" targetEnd="urn:hebrew:end" type="inline"/>
+        <tei:p>English text after transclusion</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Transcluded file with Hebrew default
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:p>טקסט בעברית לפני</tei:p>
+        <tei:p corresp="urn:hebrew:start">טקסט בעברית בהתחלה</tei:p>
+        <tei:p>טקסט בעברית באמצע</tei:p>
+        <tei:p corresp="urn:hebrew:end">טקסט בעברית בסוף</tei:p>
+        <tei:p>טקסט בעברית אחרי</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
+        ]
+        
+        # Process with InlineCompilerProcessor
+        processor = InlineCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end", linear_data=self.linear_data)
+        result = processor.process()
+        
+        # Result should be a p:transcludeInline element with xml:lang="he"
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
+        
+        # Should have xml:lang="he" because the transcluded content is Hebrew
+        transclude_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(transclude_lang, 'he', "p:transcludeInline should have xml:lang='he'")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_inline_transclusion_language_change_in_middle(self, mock_resolve_range):
+        """Test that InlineCompilerProcessor includes p:transcludeInline when language changes mid-text."""
+        # Main file with English default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <j:transclude target="urn:start" targetEnd="urn:end" type="inline"/>
+    </tei:div>
+</root>'''
+        
+        # Transcluded file with mixed languages (English default, Hebrew in middle)
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p corresp="urn:start">English text at start</tei:p>
+        <tei:p xml:lang="he">טקסט בעברית באמצע</tei:p>
+        <tei:p>English text after Hebrew</tei:p>
+        <tei:p corresp="urn:end">English text at end</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:start", element_path="/root/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:end", element_path="/root/div[1]")]
+        ]
+        
+        # Process with InlineCompilerProcessor
+        processor = InlineCompilerProcessor(trans_project, trans_file, "urn:start", "urn:end", linear_data=self.linear_data)
+        result = processor.process()
+        
+        # Result should be a p:transcludeInline element
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
+        
+        # Should have a nested p:transcludeInline for the Hebrew section
+        nested_transclude = result.findall(".//{http://jewishliturgy.org/ns/processing}transcludeInline")
+        self.assertGreater(len(nested_transclude), 0, "Should have at least one nested p:transcludeInline for Hebrew")
+        
+        # Find the nested p:transcludeInline and check it has xml:lang="he"
+        hebrew_transclude = None
+        for elem in nested_transclude:
+            if elem != result:  # Not the root one
+                hebrew_lang = elem.get('{http://www.w3.org/XML/1998/namespace}lang')
+                if hebrew_lang == 'he':
+                    hebrew_transclude = elem
+                    break
+        
+        self.assertIsNotNone(hebrew_transclude, "Should have a nested p:transcludeInline with xml:lang='he'")
+        self.assertEqual(hebrew_transclude.get('{http://www.w3.org/XML/1998/namespace}lang'), 'he')
+
 
 class TestCompilerProcessorAnnotations(unittest.TestCase):
     """Test annotation inclusion functionality in CompilerProcessor."""

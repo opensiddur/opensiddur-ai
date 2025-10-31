@@ -846,17 +846,24 @@ class InlineCompilerProcessor(CompilerProcessor):
                 text_element.text += element.text
 
         # the command is some kind of recursion now, COPY_TEXT_AND_RECURSE or RECURSE
-        
+        context_lang = self._get_in_scope_language(element)
         previous_child = None
         for child in element:
             processed = self._process_element(child, root)
+            # Check if this child has a language different from the root
+            child_lang = self._get_in_scope_language(child)
             if processed.tag == f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
-                # Extract text from nested p:transcludeInline elements
-                text_element.text += processed.text or ""
-                # Also extract any p:transclude children (nested transclusions)
-                for nested_child in processed:
-                    text_element.append(nested_child)
-                    previous_child = nested_child
+                # If language differs, keep as nested element
+                if child_lang and child_lang != context_lang:
+                    text_element.append(processed)
+                    previous_child = processed
+                else:
+                    # Extract text from nested p:transcludeInline elements
+                    text_element.text += processed.text or ""
+                    # Also extract any p:transclude children (nested transclusions)
+                    for nested_child in processed:
+                        text_element.append(nested_child)
+                        previous_child = nested_child
             elif processed.tag == f"{{{PROCESSING_NAMESPACE}}}transclude":
                 # p:transclude elements are kept as children (for inline transclusions)
                 # Add the p:transclude element as a child
