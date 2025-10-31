@@ -68,7 +68,7 @@ class _ProcessingContext(TypedDict):
     after_end: bool
     inside_deepest_common_ancestor: bool
     command: _ProcessingCommand
-
+    
 class CompilerProcessor:
     def __init__(
         self, 
@@ -82,6 +82,14 @@ class CompilerProcessor:
             file_name: The file name
             linear_data: The linear data (will use the default singleton if not given)
             reference_database: The reference database (will use the default if not given)
+        
+        Public data:
+        self.root_tree: The root element of the tree being processed
+        self.project: The project name
+        self.file_name: The file name
+        self.ns_map: The namespace map
+        self.root_language: The language of the first processed element
+            (if the processed text needs to be included in something, use this language)
         """
         self.linear_data = linear_data or get_linear_data()
 
@@ -102,6 +110,19 @@ class CompilerProcessor:
 
         self._refdb = reference_database or ReferenceDatabase()
         self._urn_resolver = UrnResolver(self._refdb)
+
+        self.root_language = None
+
+    def _get_in_scope_language(self, element: ElementBase) -> Optional[str]:
+        """ Get the xml:lang attribute from the element or its ancestors.
+        Returns the first xml:lang found walking up the ancestor chain, or None if not found.
+        """
+        lang_attr = '{http://www.w3.org/XML/1998/namespace}lang'
+        for ancestor in [element] + list(element.iterancestors()):
+            lang = ancestor.attrib.get(lang_attr)
+            if lang:
+                return lang
+        return None
 
     def _get_path_hash(self, element: Optional[ElementBase] = None) -> str:
         """ Get a hash of the path taken to get to the current processing context and element if available """
@@ -181,6 +202,8 @@ class CompilerProcessor:
 
             transclude_range = self._get_start_and_end_from_ranges(target, target_end)
             
+            context_lang = self._get_in_scope_language(element)
+
             if transclusion_type == 'external':
                 processor = ExternalCompilerProcessor(
                     transclude_range.start.project, 
@@ -207,6 +230,12 @@ class CompilerProcessor:
             
             # Mark the file source using the transcluded file's project and file_name
             processing_element = processor._mark_file_source(processing_element)
+            
+            # Check if language differs and add xml:lang if needed
+            # Get language of transcluded start element
+            if processor.root_language and context_lang != processor.root_language:
+                processing_element.set('{http://www.w3.org/XML/1998/namespace}lang', processor.root_language)
+            
             return processing_element
 
     def _annotate(self, element: ElementBase, root: Optional[ElementBase] = None) -> tuple[list[ElementBase], _AnnotationCommand]:
@@ -280,6 +309,13 @@ class CompilerProcessor:
                     processed_replacement_element = replacement_processor.process(replacement_element)
                     if not(replacement_instruction.project == self.project and replacement_instruction.file_name == self.file_name):
                         self._mark_file_source(processed_replacement_element, project=replacement_instruction.project, file_name=replacement_instruction.file_name)
+                    
+                    # Check if language differs and add xml:lang if needed
+                    annotation_lang = replacement_processor.root_language
+                    insertion_context_lang = self._get_in_scope_language(element)
+                    if annotation_lang and annotation_lang != insertion_context_lang:
+                        processed_replacement_element.set('{http://www.w3.org/XML/1998/namespace}lang', annotation_lang)
+                    
                     result_elements = [processed_replacement_element]
                     annotation_command = _AnnotationCommand.REPLACE
                 else:
@@ -313,6 +349,13 @@ class CompilerProcessor:
                     processed_element = processor.process(reference_element)
                     if not(reference.project == self.project and reference.file_name == self.file_name):
                         self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
+                    
+                    # Check if language differs and add xml:lang if needed
+                    annotation_lang = processor.root_language
+                    insertion_context_lang = self._get_in_scope_language(element)
+                    if annotation_lang and annotation_lang != insertion_context_lang:
+                        processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', annotation_lang)
+                    
                     result_elements.append(processed_element)
             if result_elements:
                 annotation_command = _AnnotationCommand.INSERT
@@ -445,7 +488,7 @@ class CompilerProcessor:
                 self._insert_first_element(copied, annotated_element)
 
         copied = self._rewrite_ids(copied)
-
+        
         self._update_processing_context_after(element)
         return copied
 
@@ -454,9 +497,13 @@ class CompilerProcessor:
         Recursively process elements and text nodes of root_tree as an identity transform.
         If root is not provided, use self.root_tree.
         Yields elements and string text nodes (identity traversal).
+
+        Set the root language.
         """
         if root is None:
             root = self.root_tree
+
+        self.root_language = self._get_in_scope_language(root)
 
         # set up the processing context
         self.linear_data.processing_context.append(_ProcessingContext(
@@ -659,6 +706,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if root is None:
             root = self.root_tree
 
+        # set the root language to the language of the deepest common ancestor
+        self.root_language = self._get_in_scope_language(self.deepest_common_ancestor)
+
         self.linear_data.processing_context.append(_ProcessingContext(
             project=self.project,
             file_name=self.file_name,
@@ -779,7 +829,17 @@ class InlineCompilerProcessor(CompilerProcessor):
                 linear_data=self.linear_data,
                 reference_database=self._refdb
             )
-            return processor.process(element)
+            processed_element = processor.process(element)
+            context_lang = self._get_in_scope_language(element)
+            if (processor.root_language 
+                and processor.root_language != context_lang
+                and not processed_element.get('{http://www.w3.org/XML/1998/namespace}lang')):
+                processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', processor.root_language)
+            return processed_element
+
+        element_lang = element.get('{http://www.w3.org/XML/1998/namespace}lang')
+        if element_lang:
+            text_element.set('{http://www.w3.org/XML/1998/namespace}lang', element_lang)
 
         if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
             if element.text:
@@ -823,6 +883,8 @@ class InlineCompilerProcessor(CompilerProcessor):
     def process(self, root: Optional[ElementBase] = None) -> ElementBase:
         if root is None:
             root = self.root_tree
+
+        self.root_language = self._get_in_scope_language(root)
 
         self.linear_data.processing_context.append(_ProcessingContext(
             project=self.project,

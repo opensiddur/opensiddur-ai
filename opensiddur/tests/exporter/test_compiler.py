@@ -298,6 +298,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance._mark_file_source.return_value = mock_result
             mock_instance.project = "transcluded_project"
             mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
             MockInlineProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
@@ -358,6 +359,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance._mark_file_source.side_effect = mock_mark_file_source
             mock_instance.project = "transcluded_project"
             mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
@@ -386,7 +388,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[1]['from_start'], "#start")
             self.assertEqual(call_args[1]['to_end'], "#end")
             self.assertIn('linear_data', call_args[1])
-            
+        
             # Verify process() was called
             mock_instance.process.assert_called_once()
 
@@ -416,6 +418,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance._mark_file_source.side_effect = mock_mark_file_source
             mock_instance.project = "external_project"
             mock_instance.file_name = "external.xml"
+            mock_instance.root_language = "xx"
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs pointing to external file
@@ -798,6 +801,312 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         project_attr_count = len(re.findall(r'p:project="', result_str))
         # Should be exactly 2: one on root, one on p:transclude
         self.assertEqual(project_attr_count, 2, "p:project attribute should only appear on root and p:transclude")
+
+    def test_language_handling_in_transclusions(self):
+        """Test that language differences are correctly handled in transclusions."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file with English as default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:text>
+        <tei:div xml:id="start">
+            <tei:p>Before transclusion</tei:p>
+            <jlp:transclude target="#ext_frag" targetEnd="#ext_frag" type="external"/>
+            <tei:p>After transclusion</tei:p>
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        # External transcluded file with Hebrew
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:text>
+        <tei:div>
+            <tei:p xml:id="ext_frag">טקסט בעברית</tei:p>
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("main_lang_test.xml", main_xml_content)
+        
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2:
+                if args[0] == project and args[1] == file_name:
+                    return original_parse_xml(*args, **kwargs)
+                else:
+                    mock_tree = MagicMock()
+                    mock_tree.getroot.return_value = transcluded_tree_root
+                    return mock_tree
+            return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if "ext_frag" in urn:
+                return [ResolvedUrn(urn="#ext_frag", project="external_project", file_name="external.xml", element_path="/root/text[1]/div[1]/p[1]")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Check that external transclusion has correct language
+        transclude_elem = result.xpath('.//p:transclude', namespaces={'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'})
+        self.assertEqual(len(transclude_elem), 1, "Should have exactly one transclude element")
+        
+        # The p:transclude element should have xml:lang="he" because the transcluded content is Hebrew
+        transclude_lang = transclude_elem[0].get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(transclude_lang, 'he', "Transclude element should have xml:lang='he'")
+        
+        # Verify the root element has xml:lang="en" (from main file)
+        root_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
+
+    def test_language_handling_in_instructional_annotations(self):
+        """Test that language differences are correctly handled in instructional annotations."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file with English as default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Element before note</tei:p>
+                <tei:note type="instruction" corresp="urn:test:instruction:lang"/>
+                <tei:p>Element after note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        # Instructional note file with Hebrew
+        instruction_xml_content = '''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Instruction Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:note type="instruction" corresp="urn:test:instruction:lang">
+                    <tei:p>הוראה בעברית</tei:p>
+                </tei:note>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</TEI>'''
+        
+        project, file_name = self._create_test_file("main_inst_test.xml", main_xml_content)
+        
+        # Parse the instruction XML tree
+        instruction_tree_root = etree.fromstring(instruction_xml_content)
+        
+        # Get the actual element path from the parsed tree
+        lxml_note_element = instruction_tree_root.xpath("//tei:note[@type='instruction']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import LinearData
+        from opensiddur.exporter.refdb import ReferenceDatabase
+        linear_data = LinearData(
+            instruction_priority=["instructions_project", "test_project"],
+            annotation_projects=["notes_project", "test_project"],
+            project_priority=["test_project", "notes_project"]
+        )
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        refdb = MagicMock(spec=ReferenceDatabase)
+        
+        # Mock get_urn_mappings to return the instruction note mapping
+        from opensiddur.exporter.refdb import UrnMapping
+        refdb.get_urn_mappings.return_value = [
+            UrnMapping(
+                urn="urn:test:instruction:lang",
+                project="instructions_project",
+                file_name="instruction.xml",
+                element_path=lxml_note_element_path,
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="instruction"
+            )
+        ]
+        refdb.get_references_to.return_value = []
+        
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2:
+                if args[0] == project and args[1] == file_name:
+                    return original_parse_xml(*args, **kwargs)
+                else:
+                    mock_tree = MagicMock()
+                    mock_tree.getroot.return_value = instruction_tree_root
+                    return mock_tree
+            return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve(urn):
+            if urn == "urn:test:instruction:lang":
+                return [ResolvedUrn(urn="urn:test:instruction:lang", project="instructions_project", file_name="instruction.xml", element_path=lxml_note_element_path)]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve', side_effect=mock_resolve):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name, linear_data=linear_data, reference_database=refdb)
+                    result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Check that instructional note has correct language
+        instructional_notes = result.xpath('.//tei:note[@type="instruction"]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0'})
+        self.assertEqual(len(instructional_notes), 1, "Should have exactly one instructional note")
+        
+        # The instructional note should have xml:lang="he" because the note content is Hebrew
+        inst_note_lang = instructional_notes[0].get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(inst_note_lang, 'he', "Instructional note should have xml:lang='he'")
+        
+        # Verify the root element has xml:lang="en" (from main file)
+        root_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
+
+    def test_language_handling_in_editorial_annotations(self):
+        """Test that language differences are correctly handled in editorial annotations."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file with English as default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p xml:id="target1">This element is targeted by the note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        # Editorial note file with Hebrew
+        editorial_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Editorial Note Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:standOff>
+        <tei:note type="editorial" target="#target1">
+            <tei:p>הערה בעברית</tei:p>
+        </tei:note>
+    </tei:standOff>
+</root>'''
+        
+        project, file_name = self._create_test_file("main_edit_test.xml", main_xml_content)
+        
+        # Parse the editorial note XML tree
+        editorial_tree_root = etree.fromstring(editorial_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import LinearData
+        from opensiddur.exporter.refdb import ReferenceDatabase
+        linear_data = LinearData(
+            instruction_priority=["notes_project", "test_project"],
+            annotation_projects=["notes_project", "test_project"],
+            project_priority=["test_project", "notes_project"]
+        )
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        refdb = MagicMock(spec=ReferenceDatabase)
+        
+        # Mock get_references_to to return the editorial note reference
+        from opensiddur.exporter.refdb import Reference
+        import xml.etree.ElementTree as ET
+        # Get the note element from the parsed XML to get its path
+        note_elem = editorial_tree_root.xpath('//tei:note[@type="editorial"]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0'})[0]
+        note_path = note_elem.getroottree().getpath(note_elem)
+        
+        refdb.get_references_to.return_value = [
+            Reference(
+                element_path=note_path,
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="editorial",
+                target_start="#target1",
+                target_end=None,
+                target_is_id=True,
+                corresponding_urn=None,
+                project="notes_project",
+                file_name="editorial.xml"
+            )
+        ]
+        refdb.get_urn_mappings.return_value = []
+        
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2:
+                if args[0] == project and args[1] == file_name:
+                    return original_parse_xml(*args, **kwargs)
+                else:
+                    mock_tree = MagicMock()
+                    mock_tree.getroot.return_value = editorial_tree_root
+                    return mock_tree
+            return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                processor = CompilerProcessor(project, file_name, linear_data=linear_data, reference_database=refdb)
+                result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Check that editorial note has correct language
+        editorial_notes = result.xpath('.//tei:note[@type="editorial"]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0'})
+        self.assertEqual(len(editorial_notes), 1, "Should have exactly one editorial note")
+        
+        # The editorial note should have xml:lang="he" because the note content is Hebrew
+        edit_note_lang = editorial_notes[0].get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(edit_note_lang, 'he', "Editorial note should have xml:lang='he'")
+        
+        # Verify the root element has xml:lang="en" (from main file)
+        root_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
 
 
 class TestCompilerProcessorIdRewriting(unittest.TestCase):
