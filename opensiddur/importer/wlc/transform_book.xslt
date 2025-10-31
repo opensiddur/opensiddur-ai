@@ -32,7 +32,7 @@
     
     <!-- Add your custom templates here -->
     <xsl:template match="Tanach">
-        <tei:TEI>
+        <tei:TEI xml:lang="he">
             <xsl:apply-templates select="teiHeader|tanach|notes"/>
         </tei:TEI>
     </xsl:template>
@@ -203,7 +203,7 @@
             <xsl:apply-templates select="note"/>
         </xsl:variable>
         <xsl:if test="exists($note-content)">
-            <tei:standOff type="notes">
+            <tei:standOff type="notes" xml:lang="en">
                 <xsl:copy-of select="$note-content"/>
             </tei:standOff>
         </xsl:if>

@@ -443,6 +443,11 @@
             Global validation rules that apply to all attributes in the document.
           </desc>
           <constraint>
+            <sch:rule context="tei:TEI" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:assert test="@xml:lang">
+                The TEI element must declare a default language using the xml:lang attribute.
+              </sch:assert>
+            </sch:rule>
             <sch:rule context="//@*" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
               <sch:assert test="normalize-space(.) != ''">
                 Attribute must not be empty or contain only whitespace.
