@@ -2266,6 +2266,53 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertNotIn("Before (excluded)", result_str)
         self.assertNotIn("After (excluded)", result_str)
 
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_external_transclusion_language_differences(self, mock_resolve_range):
+        """Test that ExternalCompilerProcessor adds xml:lang when transcluding text with a different language."""
+        # Main file with English default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>English text before transclusion</tei:p>
+        <j:transclude target="urn:hebrew:start" targetEnd="urn:hebrew:end" type="external"/>
+        <tei:p>English text after transclusion</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Transcluded file with Hebrew default
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:p>טקסט בעברית לפני</tei:p>
+        <tei:p corresp="urn:hebrew:start">טקסט בעברית בהתחלה</tei:p>
+        <tei:p>טקסט בעברית באמצע</tei:p>
+        <tei:p corresp="urn:hebrew:end">טקסט בעברית בסוף</tei:p>
+        <tei:p>טקסט בעברית אחרי</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end")
+        result = processor.process()
+        
+        # Result should be a list of elements (not p:transcludeInline)
+        self.assertIsInstance(result, list)
+        
+        # Should have elements (start, middle, end)
+        self.assertGreater(len(result), 0)
+        
+        # All elements should be from the transcluded file, check that the root_language is Hebrew
+        self.assertEqual(processor.root_language, 'he')
+
+
 
 class TestInlineCompilerProcessor(unittest.TestCase):
     """Test InlineCompilerProcessor for extracting text content between start and end markers."""
