@@ -9,6 +9,17 @@ The exporter operates in two stages:
     1. TeX typesetting system (XeLaTeX)
     2. PDF, via XeLaTeX
 
+## Run the compiler
+
+See
+`poetry run python -m opensiddur.exporter.compiler --help`
+
+## Export to PDF
+
+For TeX and PDF export, you will need an installation of XeLaTeX. See `install-tex.sh`.
+
+For round-trip command examples, 
+see `tei-to-pdf.sh`.
 
 ## Settings file
 

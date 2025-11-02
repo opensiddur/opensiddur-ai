@@ -2312,6 +2312,239 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         # All elements should be from the transcluded file, check that the root_language is Hebrew
         self.assertEqual(processor.root_language, 'he')
 
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_includes_start_excludes_end(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/4"/>
+        Verse 4 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/5"/>
+        Verse 5 text
+    </tei:div>
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        
+        # Convert result to string for easier inspection
+        result_str = ''.join([etree.tostring(elem, encoding='unicode') for elem in result])
+        
+        # Should include the start milestone (1/3)
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/1/3"', result_str, 
+                     "Should include the start milestone with corresp='urn:x-opensiddur:text:bible:book/1/3'")
+        
+        # Should NOT include the end milestone (1/4)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/4"', result_str,
+                        "Should NOT include the end milestone with corresp='urn:x-opensiddur:text:bible:book/1/4'")
+        
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should include the choice element
+        self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include text after verse 3 (including verse 4 and 5)
+        self.assertNotIn("Verse 4 text", result_str, "Should not include verse 4")
+        self.assertNotIn("Verse 5 text", result_str, "Should not include verse 5")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/5"', result_str,
+                        "Should not include verse 5 milestone")
+
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_even_if_there_is_no_end_milestone(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        
+        # Convert result to string for easier inspection
+        result_str = ''.join([etree.tostring(elem, encoding='unicode') for elem in result])
+        
+        # Should include the start milestone (1/3)
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/1/3"', result_str, 
+                     "Should include the start milestone with corresp='urn:x-opensiddur:text:bible:book/1/3'")
+                
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should include the choice element
+        self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('Higher level', result_str,
+                        "Should not include anything in higher levels")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_when_the_end_is_the_next_unit(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/1"/>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/2"/>
+        Chapter 2 text
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        
+        # Convert result to string for easier inspection
+        result_str = ''.join([etree.tostring(elem, encoding='unicode') for elem in result])
+        
+        # Should include the start milestone (1/3)
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/1/3"', result_str, 
+                     "Should include the start milestone with corresp='urn:x-opensiddur:text:bible:book/1/3'")
+                
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should include the choice element
+        self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the chapter milestone (chap 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/2', result_str,
+                        "Should not include the next chapter")
+        # Should not include the chapter 2 text
+        self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
 
 
 class TestInlineCompilerProcessor(unittest.TestCase):

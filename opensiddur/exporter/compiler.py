@@ -66,6 +66,10 @@ class _ProcessingContext(TypedDict):
     to_end: Optional[str]
     before_start: bool
     after_end: bool
+    include_tail_after_end: bool
+    
+    """ An exclusive end is the case where a transclusion ends just before the end element. """
+    exclusive_end: bool
     inside_deepest_common_ancestor: bool
     command: _ProcessingCommand
     
@@ -179,6 +183,56 @@ class CompilerProcessor:
             new_target_end = rewrite_target(target_end)
             element.set('targetEnd', new_target_end)
         return element
+
+    def _get_start_and_end_elements_from_ranges(self, from_start: str, to_end: str) -> tuple[ElementBase, ElementBase, bool, bool]:
+        """ Get the start and end elements from the given ranges.
+        Args:
+            from_start: The start urn
+            to_end: The end urn
+        Returns:
+            The start and end elements, 
+            a flag indicating whether the end is exclusive,
+            a flag indicating whether to include the tail after the end element
+        """
+        exclusive_end = False
+        include_tail_after_end = False
+        start_xpath = (
+            f"./descendant::*[@corresp='{from_start}']" if from_start.startswith('urn:') 
+            else f"./descendant::*[@xml:id='{from_start.split('#')[1]}']"
+        )
+        end_xpath = (
+            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
+            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
+        )
+        start_element = self.root_tree.xpath(start_xpath)
+        if not start_element:
+            raise ValueError(f"Start URN {from_start=} not found")
+        start_element = start_element[0]
+        end_element = self.root_tree.xpath(end_xpath)
+        if not end_element:
+            raise ValueError(f"End URN {to_end=} not found")
+        end_element = end_element[0]
+        if not to_end.startswith('#') and end_element.tag == f"{{{self.ns_map.get('tei')}}}milestone":  # the end is a milestone
+            # the end element is a milestone. The actual end is the element before the next milestone at the same level, inclusive.
+            # If no such element exists, use the last sibling of the end element.
+            last_part = to_end.split(':')[-1]
+            num_dividers_in_last_part = last_part.count('/')
+            following_milestones = end_element.xpath(f"""./following::tei:milestone[@corresp][ancestor::tei:text]""", namespaces=self.ns_map)
+            actual_end = None
+            for milestone in following_milestones:
+                following_corresp = milestone.attrib.get("corresp", "")
+                last_part_of_following_corresp = following_corresp.split(':')[-1]
+                num_dividers_in_last_part_of_following_corresp = last_part_of_following_corresp.count('/')
+                if num_dividers_in_last_part_of_following_corresp <= num_dividers_in_last_part:
+                    actual_end = milestone
+                    exclusive_end = True
+                    break
+            if actual_end is None:
+                # There is no ending milestone, so we just have to include everything until the last sibling, including text
+                actual_end = end_element.xpath(f"./following-sibling::*[last()]|self::*")[-1]
+                include_tail_after_end = True
+            end_element = actual_end
+        return start_element, end_element, exclusive_end, include_tail_after_end
 
     def _transclude(self, 
         element: ElementBase, 
@@ -515,6 +569,7 @@ class CompilerProcessor:
             after_end=False,
             command=_ProcessingCommand.COPY_AND_RECURSE,
             inside_deepest_common_ancestor=False,
+            include_tail_after_end=False,
         ))
 
         copied = self._process_element(root, root)
@@ -525,37 +580,30 @@ class CompilerProcessor:
         return copied
 
 class ExternalCompilerProcessor(CompilerProcessor):
-    def _get_deepest_common_ancestor(self, from_start: str, to_end: str) -> ElementBase:
+    def _get_deepest_common_ancestor(self, from_start: str, to_end: str) -> tuple[ElementBase, ElementBase, ElementBase, bool, bool]:
         """
-        Get the deepest common ancestor of the given start and end.
+        Get the deepest common ancestor, 
+        the start element, 
+        the end element, 
+        a flag indicating whether the end is exclusive given xml:id or correp urns,
+        a flag indicating whether to include the tail after the end element
 
         There is one exception: if start and end are siblings, return the start element.
         We do this because then we don't need the surrounding elements to be copied.
         """
-        start_xpath = (
-            f"./descendant::*[@corresp='{from_start}']" if from_start.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{from_start.split('#')[1]}']"
-        )
+        start_element, end_element, exclusive_end, include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end)
+        if start_element is end_element:
+            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
+        if start_element.getparent() is end_element.getparent():
+            # siblings... no need to go deeper
+            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
         end_xpath = (
             f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
             else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
         )
-        start_element = self.root_tree.xpath(start_xpath)
-        if not start_element:
-            raise ValueError(f"Start URN {from_start=} not found")
-        start_element = start_element[0]
-        end_element = self.root_tree.xpath(end_xpath)
-        if not end_element:
-            raise ValueError(f"End URN {to_end=} not found")
-        end_element = end_element[0]
-        if start_element is end_element:
-            return start_element
-        if start_element.getparent() is end_element.getparent():
-            # siblings... no need to go deeper
-            return start_element
         for element in start_element.iterancestors():
             if element.xpath(end_xpath):
-                return element
+                return element, start_element, end_element, exclusive_end, include_tail_after_end
         raise ValueError(f"No common ancestor found for {from_start=} and {to_end=}")
 
     def __init__(
@@ -574,7 +622,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         self.from_start = from_start
         self.to_end = to_end
 
-        self.deepest_common_ancestor = self._get_deepest_common_ancestor(from_start, to_end)
+        self.deepest_common_ancestor, self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end)
 
 
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
@@ -582,6 +630,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         Update the processing context for the given element, before the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
+        
+        # always reset the include_tail_after_end flag
+        context['include_tail_after_end'] = False
+
         context['element_path'] = element.getroottree().getpath(element)
         # Possible contexts: 
         #    before the deepest common ancestor has been reached, RECURSE
@@ -593,6 +645,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         #           after start? COPY_AND_RECURSE
         #    after end, SKIP
 
+        if self.exclusive_end and element is self.end_element:
+            # implement exclusive end on this element
+            context['after_end'] = True
+        
         if context['after_end']:
             context['command'] = _ProcessingCommand.SKIP
             return context
@@ -602,9 +658,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         # is start
         if corresp or xml_id:
-            is_start = (corresp == self.from_start or 
-                       (self.from_start.startswith('#') and xml_id == self.from_start.split('#')[1]))
-            if is_start:
+            if element is self.start_element:
                 context['before_start'] = False
                 context['command'] = _ProcessingCommand.COPY_AND_RECURSE
                 return context
@@ -635,14 +689,16 @@ class ExternalCompilerProcessor(CompilerProcessor):
             context['inside_deepest_common_ancestor'] = False
             return context
 
+
+        # always reset the include_tail_after_end flag except for the one case where we are processing the end element
+        context["include_tail_after_end"] = False
+
         if not context['before_start'] and not context['after_end']:
-            corresp = element.attrib.get("corresp", "")
-            xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
             # between start and end
-            is_end = (self.to_end == corresp or 
-                     (self.to_end.startswith('#') and xml_id == self.to_end.split('#')[1]))
-            if is_end:
+            if element is self.end_element:
                 context['after_end'] = True
+                context["include_tail_after_end"] = self.include_tail_after_end
+            
         context['element_path'] = None
         return context
 
@@ -673,7 +729,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 copied.set(key, value)
             processed.append(copied)
             append_to = copied
-        if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+        elif context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
             copied = etree.Element(element.tag, nsmap=self.ns_map)
             for key, value in element.attrib.items():
                 copied.set(key, value)
@@ -684,10 +740,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
         for child in element:
             child_result = self._process_element(child, root)
             append_to.extend(child_result)
-            if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+            if (
+                context["command"] == _ProcessingCommand.COPY_AND_RECURSE 
+                or context["include_tail_after_end"]):
                 if child.tail and child_result:
                     # Only copy tail if we're not after the end marker
-                    if not context['after_end']:
+                    if context["include_tail_after_end"] or not context['after_end']:
                         if child_result[-1].tail is None:
                             child_result[-1].tail = child.tail
                         else:
@@ -716,6 +774,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             to_end=self.to_end,
             before_start=self.from_start is not None,
             after_end=False,  # We haven't processed anything yet, so we're not after end
+            include_tail_after_end=False,
             command=_ProcessingCommand.RECURSE,
             inside_deepest_common_ancestor=False,
         ))
@@ -743,12 +802,17 @@ class InlineCompilerProcessor(CompilerProcessor):
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
         self.from_start = from_start
         self.to_end = to_end
+        self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end)
 
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
         """
         Update the processing context for the given element, before the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
+        
+        # always reset the include_tail_after_end flag
+        context['include_tail_after_end'] = False
+        
         context['element_path'] = element.getroottree().getpath(element)
         # Possible contexts:
         #    after end? SKIP 
@@ -756,6 +820,10 @@ class InlineCompilerProcessor(CompilerProcessor):
         #       check if this element is start? if yes, set before_start to False and return COPY_TEXT_AND_RECURSE
         #       else RECURSE
         #    between start and end? COPY_TEXT_AND_RECURSE
+        
+        if self.exclusive_end and element is self.end_element:
+            # implement exclusive end on this element
+            context['after_end'] = True
         
         if context['after_end']:
             context['command'] = _ProcessingCommand.SKIP
@@ -766,8 +834,7 @@ class InlineCompilerProcessor(CompilerProcessor):
 
         # is start
         if corresp or xml_id:
-            is_start = (corresp == self.from_start) or (self.from_start.startswith('#') and xml_id == self.from_start[1:])
-            if is_start:
+            if element is self.start_element:
                 context['before_start'] = False
                 context['command'] = _ProcessingCommand.COPY_TEXT_AND_RECURSE
                 return context
@@ -788,12 +855,12 @@ class InlineCompilerProcessor(CompilerProcessor):
         context = self.linear_data.processing_context[-1]
         context['element_path'] = None
         if not context['before_start'] and not context['after_end']:
-            corresp = element.attrib.get("corresp", "")
-            xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
             # between start and end - check if this is the end element
-            is_end = (self.to_end == corresp) or (self.to_end.startswith('#') and xml_id == self.to_end[1:])
-            if is_end:
+            if element is self.end_element:
                 context['after_end'] = True
+                context["include_tail_after_end"] = self.include_tail_after_end
+            else:
+                context["include_tail_after_end"] = False
         return context
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
@@ -873,7 +940,9 @@ class InlineCompilerProcessor(CompilerProcessor):
                 # Other element types (shouldn't normally happen in InlineCompilerProcessor)
                 text_element.append(processed)
                 previous_child = processed
-            if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
+            if (
+                context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE 
+                or context["include_tail_after_end"]):
                 if child.tail:
                     if previous_child is not None:
                         previous_child.tail = (previous_child.tail or "") + " " + child.tail
@@ -900,6 +969,7 @@ class InlineCompilerProcessor(CompilerProcessor):
             to_end=self.to_end,
             before_start=self.from_start is not None,
             after_end=False,  # We haven't processed anything yet, so we're not after end
+            include_tail_after_end=False,
             command=_ProcessingCommand.RECURSE,
             inside_deepest_common_ancestor=False,
         ))
