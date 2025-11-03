@@ -854,13 +854,16 @@ class InlineCompilerProcessor(CompilerProcessor):
         """
         context = self.linear_data.processing_context[-1]
         context['element_path'] = None
+        context["include_tail_after_end"] = False
         if not context['before_start'] and not context['after_end']:
             # between start and end - check if this is the end element
             if element is self.end_element:
                 context['after_end'] = True
                 context["include_tail_after_end"] = self.include_tail_after_end
-            else:
-                context["include_tail_after_end"] = False
+        elif context['after_end']:
+            # force exclusion of tails after the end element
+            context["command"] = _ProcessingCommand.SKIP
+
         return context
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:

@@ -2870,15 +2870,34 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content)
         
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == trans_project and args[1] == trans_file:
+                # Transcluded file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
         # Mock URN resolution to return the transcluded file location
         mock_resolve_range.side_effect = [
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
         ]
         
-        # Process the main file
-        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
-        result = processor.process()
+        # Process the main file with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
+            result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         
@@ -2962,6 +2981,30 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         level1_project, level1_file = self._create_test_file("level1.xml", level1_xml_content)
         level2_project, level2_file = self._create_test_file("level2.xml", level2_xml_content)
         
+        # Parse the transcluded XML trees
+        level1_tree_root = etree.fromstring(level1_xml_content)
+        level2_tree_root = etree.fromstring(level2_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == level1_project and args[1] == level1_file:
+                # Level1 file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = level1_tree_root
+                return mock_tree
+            elif len(args) == 2 and args[0] == level2_project and args[1] == level2_file:
+                # Level2 file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = level2_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
         # Mock URN resolution for multiple levels
         # First two calls are for the main file's transclusion
         # Next two calls are for the level1 file's transclusion
@@ -2972,9 +3015,10 @@ class TestInlineCompilerProcessor(unittest.TestCase):
             [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
         ]
         
-        # Process the main file
-        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
-        result = processor.process()
+        # Process the main file with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
+            result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         
@@ -3040,15 +3084,34 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
         
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == trans_project and args[1] == trans_file:
+                # Transcluded file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
         # Mock URN resolution
         mock_resolve_range.side_effect = [
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
         ]
         
-        # Process with InlineCompilerProcessor
-        processor = InlineCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end", linear_data=self.linear_data)
-        result = processor.process()
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end", linear_data=self.linear_data)
+            result = processor.process()
         
         # Result should be a p:transcludeInline element with xml:lang="he"
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -3081,15 +3144,34 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
         
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == trans_project and args[1] == trans_file:
+                # Transcluded file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
         # Mock URN resolution
         mock_resolve_range.side_effect = [
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:start", element_path="/root/div[1]")],
             [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:end", element_path="/root/div[1]")]
         ]
         
-        # Process with InlineCompilerProcessor
-        processor = InlineCompilerProcessor(trans_project, trans_file, "urn:start", "urn:end", linear_data=self.linear_data)
-        result = processor.process()
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(trans_project, trans_file, "urn:start", "urn:end", linear_data=self.linear_data)
+            result = processor.process()
         
         # Result should be a p:transcludeInline element
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -3109,6 +3191,265 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         self.assertIsNotNone(hebrew_transclude, "Should have a nested p:transcludeInline with xml:lang='he'")
         self.assertEqual(hebrew_transclude.get('{http://www.w3.org/XML/1998/namespace}lang'), 'he')
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_includes_start_excludes_end(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/4"/>
+        Verse 4 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/5"/>
+        Verse 5 text
+    </tei:div>
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == ext_project and args[1] == ext_file:
+                # External file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            result = processor.process()
+        
+        
+        # Convert result to string for easier inspection
+        result_str = etree.tostring(result, encoding='unicode')
+        
+
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should not include the choice element
+        # self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include text after verse 3 (including verse 4 and 5)
+        self.assertNotIn("Verse 4 text", result_str, "Should not include verse 4")
+        self.assertNotIn("Verse 5 text", result_str, "Should not include verse 5")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/5"', result_str,
+                        "Should not include verse 5 milestone")
+
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_even_if_there_is_no_end_milestone(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == ext_project and args[1] == ext_file:
+                # External file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            result = processor.process()
+        
+        # Convert result to string for easier inspection
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should not include the choice element
+        # self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('Higher level', result_str,
+                        "Should not include anything in higher levels")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_when_the_end_is_the_next_unit(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/1"/>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/2"/>
+        Chapter 2 text
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == ext_project and args[1] == ext_file:
+                # External file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            result = processor.process()
+        
+        # Convert result to string for easier inspection
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should not include the choice element
+        # self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the chapter milestone (chap 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/2', result_str,
+                        "Should not include the next chapter")
+        # Should not include the chapter 2 text
+        self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
 
 
 class TestCompilerProcessorAnnotations(unittest.TestCase):
