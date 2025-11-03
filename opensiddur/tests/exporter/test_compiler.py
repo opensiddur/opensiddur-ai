@@ -1,6 +1,7 @@
 """Tests for the CompilerProcessor class."""
 
 import re
+from typing import Optional
 import unittest
 import tempfile
 from pathlib import Path
@@ -8,6 +9,7 @@ from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.compiler import CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
+from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
 
 
@@ -111,7 +113,8 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Should preserve all attributes
         self.assertIn('type="chapter"', result_str)
         self.assertIn('n="1"', result_str)
-        self.assertIn('xml:id="ch1"', result_str)
+        # xml:id should be rewritten with hash
+        self.assertTrue('xml:id="ch1_' in result_str, f"Expected rewritten xml:id, got: {result_str}")
         self.assertIn('rend="italic"', result_str)
 
     def test_process_preserves_tail_text(self):
@@ -295,15 +298,16 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance._mark_file_source.return_value = mock_result
             mock_instance.project = "transcluded_project"
             mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
             MockInlineProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
             from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
             
             def mock_resolve_range(urn):
-                return [ResolvedUrn(urn=urn, project=project, file_name=file_name)]
+                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
             
-            def mock_prioritize_range(urns, priority_list):
+            def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
             
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
@@ -355,15 +359,16 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance._mark_file_source.side_effect = mock_mark_file_source
             mock_instance.project = "transcluded_project"
             mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
             from opensiddur.exporter.urn import ResolvedUrn
             
             def mock_resolve_range(urn):
-                return [ResolvedUrn(urn=urn, project=project, file_name=file_name)]
+                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
             
-            def mock_prioritize_range(urns, priority_list):
+            def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
             
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
@@ -383,7 +388,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[1]['from_start'], "#start")
             self.assertEqual(call_args[1]['to_end'], "#end")
             self.assertIn('linear_data', call_args[1])
-            
+        
             # Verify process() was called
             mock_instance.process.assert_called_once()
 
@@ -413,6 +418,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_instance._mark_file_source.side_effect = mock_mark_file_source
             mock_instance.project = "external_project"
             mock_instance.file_name = "external.xml"
+            mock_instance.root_language = "xx"
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs pointing to external file
@@ -420,12 +426,12 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             
             def mock_resolve_range(urn):
                 if "fragment1" in urn:
-                    return [ResolvedUrn(urn="#fragment1", project="external_project", file_name="external.xml")]
+                    return [ResolvedUrn(urn="#fragment1", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
                 elif "fragment2" in urn:
-                    return [ResolvedUrn(urn="#fragment2", project="external_project", file_name="external.xml")]
+                    return [ResolvedUrn(urn="#fragment2", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
                 return []
             
-            def mock_prioritize_range(urns, priority_list):
+            def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
             
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
@@ -512,9 +518,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml")]
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
         
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
@@ -626,10 +632,10 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             if urn.startswith("#transclude"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml")]
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
             return []
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
         
         def mock_get_path_from_urn(resolved_urn):
@@ -749,9 +755,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml")]
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
         
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
@@ -795,6 +801,638 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         project_attr_count = len(re.findall(r'p:project="', result_str))
         # Should be exactly 2: one on root, one on p:transclude
         self.assertEqual(project_attr_count, 2, "p:project attribute should only appear on root and p:transclude")
+
+    def test_language_handling_in_transclusions(self):
+        """Test that language differences are correctly handled in transclusions."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file with English as default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:text>
+        <tei:div xml:id="start">
+            <tei:p>Before transclusion</tei:p>
+            <jlp:transclude target="#ext_frag" targetEnd="#ext_frag" type="external"/>
+            <tei:p>After transclusion</tei:p>
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        # External transcluded file with Hebrew
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:text>
+        <tei:div>
+            <tei:p xml:id="ext_frag">טקסט בעברית</tei:p>
+        </tei:div>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("main_lang_test.xml", main_xml_content)
+        
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2:
+                if args[0] == project and args[1] == file_name:
+                    return original_parse_xml(*args, **kwargs)
+                else:
+                    mock_tree = MagicMock()
+                    mock_tree.getroot.return_value = transcluded_tree_root
+                    return mock_tree
+            return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if "ext_frag" in urn:
+                return [ResolvedUrn(urn="#ext_frag", project="external_project", file_name="external.xml", element_path="/root/text[1]/div[1]/p[1]")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Check that external transclusion has correct language
+        transclude_elem = result.xpath('.//p:transclude', namespaces={'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'})
+        self.assertEqual(len(transclude_elem), 1, "Should have exactly one transclude element")
+        
+        # The p:transclude element should have xml:lang="he" because the transcluded content is Hebrew
+        transclude_lang = transclude_elem[0].get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(transclude_lang, 'he', "Transclude element should have xml:lang='he'")
+        
+        # Verify the root element has xml:lang="en" (from main file)
+        root_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
+
+    def test_language_handling_in_instructional_annotations(self):
+        """Test that language differences are correctly handled in instructional annotations."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file with English as default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Element before note</tei:p>
+                <tei:note type="instruction" corresp="urn:test:instruction:lang"/>
+                <tei:p>Element after note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        # Instructional note file with Hebrew
+        instruction_xml_content = '''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Instruction Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:note type="instruction" corresp="urn:test:instruction:lang">
+                    <tei:p>הוראה בעברית</tei:p>
+                </tei:note>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</TEI>'''
+        
+        project, file_name = self._create_test_file("main_inst_test.xml", main_xml_content)
+        
+        # Parse the instruction XML tree
+        instruction_tree_root = etree.fromstring(instruction_xml_content)
+        
+        # Get the actual element path from the parsed tree
+        lxml_note_element = instruction_tree_root.xpath("//tei:note[@type='instruction']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import LinearData
+        from opensiddur.exporter.refdb import ReferenceDatabase
+        linear_data = LinearData(
+            instruction_priority=["instructions_project", "test_project"],
+            annotation_projects=["notes_project", "test_project"],
+            project_priority=["test_project", "notes_project"]
+        )
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        refdb = MagicMock(spec=ReferenceDatabase)
+        
+        # Mock get_urn_mappings to return the instruction note mapping
+        from opensiddur.exporter.refdb import UrnMapping
+        refdb.get_urn_mappings.return_value = [
+            UrnMapping(
+                urn="urn:test:instruction:lang",
+                project="instructions_project",
+                file_name="instruction.xml",
+                element_path=lxml_note_element_path,
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="instruction"
+            )
+        ]
+        refdb.get_references_to.return_value = []
+        
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2:
+                if args[0] == project and args[1] == file_name:
+                    return original_parse_xml(*args, **kwargs)
+                else:
+                    mock_tree = MagicMock()
+                    mock_tree.getroot.return_value = instruction_tree_root
+                    return mock_tree
+            return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve(urn):
+            if urn == "urn:test:instruction:lang":
+                return [ResolvedUrn(urn="urn:test:instruction:lang", project="instructions_project", file_name="instruction.xml", element_path=lxml_note_element_path)]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve', side_effect=mock_resolve):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name, linear_data=linear_data, reference_database=refdb)
+                    result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Check that instructional note has correct language
+        instructional_notes = result.xpath('.//tei:note[@type="instruction"]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0'})
+        self.assertEqual(len(instructional_notes), 1, "Should have exactly one instructional note")
+        
+        # The instructional note should have xml:lang="he" because the note content is Hebrew
+        inst_note_lang = instructional_notes[0].get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(inst_note_lang, 'he', "Instructional note should have xml:lang='he'")
+        
+        # Verify the root element has xml:lang="en" (from main file)
+        root_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
+
+    def test_language_handling_in_editorial_annotations(self):
+        """Test that language differences are correctly handled in editorial annotations."""
+        from unittest.mock import patch, MagicMock
+        
+        # Main file with English as default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p xml:id="target1">This element is targeted by the note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        # Editorial note file with Hebrew
+        editorial_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Editorial Note Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:standOff>
+        <tei:note type="editorial" target="#target1">
+            <tei:p>הערה בעברית</tei:p>
+        </tei:note>
+    </tei:standOff>
+</root>'''
+        
+        project, file_name = self._create_test_file("main_edit_test.xml", main_xml_content)
+        
+        # Parse the editorial note XML tree
+        editorial_tree_root = etree.fromstring(editorial_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import LinearData
+        from opensiddur.exporter.refdb import ReferenceDatabase
+        linear_data = LinearData(
+            instruction_priority=["notes_project", "test_project"],
+            annotation_projects=["notes_project", "test_project"],
+            project_priority=["test_project", "notes_project"]
+        )
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        refdb = MagicMock(spec=ReferenceDatabase)
+        
+        # Mock get_references_to to return the editorial note reference
+        from opensiddur.exporter.refdb import Reference
+        import xml.etree.ElementTree as ET
+        # Get the note element from the parsed XML to get its path
+        note_elem = editorial_tree_root.xpath('//tei:note[@type="editorial"]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0'})[0]
+        note_path = note_elem.getroottree().getpath(note_elem)
+        
+        refdb.get_references_to.return_value = [
+            Reference(
+                element_path=note_path,
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="editorial",
+                target_start="#target1",
+                target_end=None,
+                target_is_id=True,
+                corresponding_urn=None,
+                project="notes_project",
+                file_name="editorial.xml"
+            )
+        ]
+        refdb.get_urn_mappings.return_value = []
+        
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2:
+                if args[0] == project and args[1] == file_name:
+                    return original_parse_xml(*args, **kwargs)
+                else:
+                    mock_tree = MagicMock()
+                    mock_tree.getroot.return_value = editorial_tree_root
+                    return mock_tree
+            return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0] if urns else None
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                processor = CompilerProcessor(project, file_name, linear_data=linear_data, reference_database=refdb)
+                result = processor.process()
+        
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Check that editorial note has correct language
+        editorial_notes = result.xpath('.//tei:note[@type="editorial"]', namespaces={'tei': 'http://www.tei-c.org/ns/1.0'})
+        self.assertEqual(len(editorial_notes), 1, "Should have exactly one editorial note")
+        
+        # The editorial note should have xml:lang="he" because the note content is Hebrew
+        edit_note_lang = editorial_notes[0].get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(edit_note_lang, 'he', "Editorial note should have xml:lang='he'")
+        
+        # Verify the root element has xml:lang="en" (from main file)
+        root_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
+
+
+class TestCompilerProcessorIdRewriting(unittest.TestCase):
+    """Test ID rewriting functionality in CompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Create priority project directory
+        self.priority_project_dir = Path(self.temp_dir.name) / "priority_project"
+        self.priority_project_dir.mkdir(parents=True)
+        
+        # Reset linear data
+        reset_linear_data()
+        self.linear_data = get_linear_data()
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_id_rewriting_consistency_within_transclusion(self):
+        """Test that ID rewriting uses the same hash within the same transclusion path."""
+        # Main file with two transclusions to the same external file
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="main1">Main content 1</tei:p>
+        <jlp:transclude target="#external1" type="external"/>
+        <tei:p xml:id="main2">Main content 2</tei:p>
+        <jlp:transclude target="#external2" type="external"/>
+        <tei:p xml:id="main3">Main content 3</tei:p>
+    </tei:div>
+</root>'''
+        
+        # External file with elements that have IDs
+        external_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="external1">External content 1</tei:p>
+        <tei:p xml:id="external2">External content 2</tei:p>
+        <tei:p xml:id="external3" target="#external1">Reference to external1</tei:p>
+        <tei:p xml:id="external4" target="#external2">Reference to external2</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("main.xml", main_xml_content)
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                # Main file - create a mock tree for the main file
+                main_tree = MagicMock()
+                main_tree.getroot.return_value = etree.fromstring(main_xml_content)
+                return main_tree
+            elif len(args) == 2 and args[0] == "external_project":
+                # External file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if urn.startswith("#external1"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+            elif urn.startswith("#external2"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[2]")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            return urns[0] if urns else None
+        
+        def mock_get_path_from_urn(resolved_urn):
+            from pathlib import Path
+            return Path(self.temp_dir.name) / "external_project" / "external.xml"
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
+                        processor = CompilerProcessor(project, file_name)
+                        result = processor.process()
+        
+        # Find the transclude elements (they use the processing namespace p:)
+        transclude_elements = result.xpath(".//p:transclude", namespaces={"p": "http://jewishliturgy.org/ns/processing"})
+        self.assertEqual(len(transclude_elements), 2, "Should have 2 transclude elements")
+        
+        # Get the transcluded content from each transclude element
+        transclude1_children = list(transclude_elements[0])
+        transclude2_children = list(transclude_elements[1])
+        
+        # Both transclusions should have content
+        self.assertGreater(len(transclude1_children), 0, "First transclude should have content")
+        self.assertGreater(len(transclude2_children), 0, "Second transclude should have content")
+        
+        # Extract all xml:id attributes from both transclusions
+        all_ids_transclude1 = []
+        all_ids_transclude2 = []
+        
+        for child in transclude1_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude1.append(xml_id)
+        
+        for child in transclude2_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude2.append(xml_id)
+        
+        # Both transclusions should have rewritten IDs
+        self.assertGreater(len(all_ids_transclude1), 0, "First transclude should have rewritten IDs")
+        self.assertGreater(len(all_ids_transclude2), 0, "Second transclude should have rewritten IDs")
+        
+        # Extract hash suffixes from the IDs
+        def extract_hash_suffix(xml_id):
+            if '_' in xml_id:
+                return xml_id.split('_', 1)[1]
+            return ""
+        
+        hash_suffixes_1 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude1 if '_' in xml_id]
+        hash_suffixes_2 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude2 if '_' in xml_id]
+        
+        # All IDs within the same transclusion should have the same hash suffix
+        if hash_suffixes_1:
+            first_hash_1 = hash_suffixes_1[0]
+            for hash_suffix in hash_suffixes_1:
+                self.assertEqual(hash_suffix, first_hash_1, 
+                               f"All IDs in first transclude should have same hash: {hash_suffixes_1}")
+        
+        if hash_suffixes_2:
+            first_hash_2 = hash_suffixes_2[0]
+            for hash_suffix in hash_suffixes_2:
+                self.assertEqual(hash_suffix, first_hash_2, 
+                               f"All IDs in second transclude should have same hash: {hash_suffixes_2}")
+        
+        # The two transclusions should have different hash suffixes (different processing paths)
+        if hash_suffixes_1 and hash_suffixes_2:
+            self.assertNotEqual(first_hash_1, first_hash_2, 
+                              f"Different transclusions should have different hashes: {first_hash_1} vs {first_hash_2}")
+        
+        # Check that target attributes are also rewritten consistently
+        all_targets_transclude1 = []
+        all_targets_transclude2 = []
+        
+        for child in transclude1_children:
+            target = child.get("target")
+            if target:
+                all_targets_transclude1.append(target)
+        
+        for child in transclude2_children:
+            target = child.get("target")
+            if target:
+                all_targets_transclude2.append(target)
+        
+        # Targets should be rewritten with the same hash as their corresponding IDs
+        for target in all_targets_transclude1:
+            if target.startswith("#"):
+                target_id = target[1:]  # Remove the #
+                # Find the corresponding xml:id in the same transclude
+                for xml_id in all_ids_transclude1:
+                    if xml_id.startswith(target_id.split('_')[0] + '_'):  # Match base ID + hash
+                        expected_hash = xml_id.split('_', 1)[1]
+                        self.assertTrue(target.endswith('_' + expected_hash), 
+                                      f"Target {target} should end with same hash as ID {xml_id}")
+
+    def test_id_rewriting_different_hashes_for_same_entity_transcluded_twice(self):
+        """Test that the same entity transcluded twice gets different rewritten xml:ids."""
+        # Main file with two transclusions to the same external entity
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="main1">Main content 1</tei:p>
+        <jlp:transclude target="#external1" type="external"/>
+        <tei:p xml:id="main2">Main content 2</tei:p>
+        <jlp:transclude target="#external1" type="external"/>
+        <tei:p xml:id="main3">Main content 3</tei:p>
+    </tei:div>
+</root>'''
+        
+        # External file with a single entity that will be transcluded twice
+        external_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>
+        <tei:p xml:id="external1">External content 1</tei:p>
+        <tei:p xml:id="external2">External content 2</tei:p>
+        <tei:p xml:id="external3" target="#external1">Reference to external1</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("main.xml", main_xml_content)
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        from opensiddur.exporter.linear import get_linear_data
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == project and args[1] == file_name:
+                # Main file - create a mock tree for the main file
+                main_tree = MagicMock()
+                main_tree.getroot.return_value = etree.fromstring(main_xml_content)
+                return main_tree
+            elif len(args) == 2 and args[0] == "external_project":
+                # External file
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock UrnResolver methods
+        from opensiddur.exporter.urn import ResolvedUrn
+        
+        def mock_resolve_range(urn):
+            if urn.startswith("#external1"):
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+            return []
+        
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            return urns[0] if urns else None
+        
+        def mock_get_path_from_urn(resolved_urn):
+            from pathlib import Path
+            return Path(self.temp_dir.name) / "external_project" / "external.xml"
+        
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
+                        processor = CompilerProcessor(project, file_name)
+                        result = processor.process()
+        
+        # Find the transclude elements (they use the processing namespace p:)
+        transclude_elements = result.xpath(".//p:transclude", namespaces={"p": "http://jewishliturgy.org/ns/processing"})
+        self.assertEqual(len(transclude_elements), 2, "Should have 2 transclude elements")
+        
+        # Get the transcluded content from each transclude element
+        transclude1_children = list(transclude_elements[0])
+        transclude2_children = list(transclude_elements[1])
+        
+        # Both transclusions should have content
+        self.assertGreater(len(transclude1_children), 0, "First transclude should have content")
+        self.assertGreater(len(transclude2_children), 0, "Second transclude should have content")
+        
+        # Extract all xml:id attributes from both transclusions
+        all_ids_transclude1 = []
+        all_ids_transclude2 = []
+        
+        for child in transclude1_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude1.append(xml_id)
+        
+        for child in transclude2_children:
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id:
+                all_ids_transclude2.append(xml_id)
+        
+        # Both transclusions should have rewritten IDs
+        self.assertGreater(len(all_ids_transclude1), 0, "First transclude should have rewritten IDs")
+        self.assertGreater(len(all_ids_transclude2), 0, "Second transclude should have rewritten IDs")
+        
+        # Extract hash suffixes from the IDs
+        def extract_hash_suffix(xml_id):
+            if '_' in xml_id:
+                return xml_id.split('_', 1)[1]
+            return ""
+        
+        hash_suffixes_1 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude1 if '_' in xml_id]
+        hash_suffixes_2 = [extract_hash_suffix(xml_id) for xml_id in all_ids_transclude2 if '_' in xml_id]
+        
+        # All IDs within the same transclusion should have the same hash suffix
+        if hash_suffixes_1:
+            first_hash_1 = hash_suffixes_1[0]
+            for hash_suffix in hash_suffixes_1:
+                self.assertEqual(hash_suffix, first_hash_1, 
+                               f"All IDs in first transclude should have same hash: {hash_suffixes_1}")
+        
+        if hash_suffixes_2:
+            first_hash_2 = hash_suffixes_2[0]
+            for hash_suffix in hash_suffixes_2:
+                self.assertEqual(hash_suffix, first_hash_2, 
+                               f"All IDs in second transclude should have same hash: {hash_suffixes_2}")
+        
+        # The two transclusions should have different hash suffixes (different processing paths)
+        if hash_suffixes_1 and hash_suffixes_2:
+            self.assertNotEqual(first_hash_1, first_hash_2, 
+                              f"Same entity transcluded twice should have different hashes: {first_hash_1} vs {first_hash_2}")
+        
+        # Verify that the same base IDs exist in both transclusions but with different hashes
+        def extract_base_id(xml_id):
+            if '_' in xml_id:
+                return xml_id.split('_')[0]
+            return xml_id
+        
+        base_ids_1 = [extract_base_id(xml_id) for xml_id in all_ids_transclude1]
+        base_ids_2 = [extract_base_id(xml_id) for xml_id in all_ids_transclude2]
+        
+        # The same base IDs should appear in both transclusions
+        self.assertEqual(set(base_ids_1), set(base_ids_2), 
+                        f"Both transclusions should have the same base IDs: {base_ids_1} vs {base_ids_2}")
+        
+        # But the full IDs (with hashes) should be different
+        self.assertNotEqual(set(all_ids_transclude1), set(all_ids_transclude2), 
+                           f"Full IDs with hashes should be different: {all_ids_transclude1} vs {all_ids_transclude2}")
 
 
 class TestExternalCompilerProcessor(unittest.TestCase):
@@ -1084,9 +1722,10 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3)
         
-        # First element should have xml:id="start"
+        # First element should have xml:id="start" (rewritten with hash)
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "start")
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("start_"), f"Expected rewritten xml:id starting with 'start_', got: {xml_id}")
         self.assertEqual(result[0].text, "Start element")
         
         # Check tail text is preserved
@@ -1095,7 +1734,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Middle element
         self.assertEqual(result[1].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[1].get("{http://www.w3.org/XML/1998/namespace}id"), "middle")
+        # xml:id should be rewritten with hash
+        xml_id = result[1].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("middle_"), f"Expected rewritten xml:id starting with 'middle_', got: {xml_id}")
         self.assertEqual(result[1].text, "Middle element")
         
         # Check tail text is preserved
@@ -1104,7 +1745,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # End element
         self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        # xml:id should be rewritten with hash
+        xml_id = result[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("end_"), f"Expected rewritten xml:id starting with 'end_', got: {xml_id}")
         self.assertEqual(result[2].text, "End element")
         
         # Tail after end should NOT be included
@@ -1152,9 +1795,10 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertEqual(result[1].text, "Middle element")
         self.assertIn("Tail after middle", result[1].tail)
         
-        # End element should have xml:id="end"
+        # End element should have xml:id="end" (rewritten with hash)
         self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        xml_id = result[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("end_"), f"Expected rewritten xml:id starting with 'end_', got: {xml_id}")
         self.assertEqual(result[2].text, "End with xml:id")
         
         # Tail after end should NOT be included
@@ -1238,12 +1882,13 @@ class TestExternalCompilerProcessor(unittest.TestCase):
                     ResolvedUrn(
                         urn=urn_range,  # Return the same xml:id reference
                         project="external_project",
-                        file_name="external.xml"
+                        file_name="external.xml",
+                        element_path="/TEI/div[1]"
                     )
                 ]
             return []
         
-        def mock_prioritize_range(urns, priority_list):
+        def mock_prioritize_range(urns, priority_list, return_all=False):
             """Mock prioritize_range to return a single ResolvedUrn (not a range)."""
             if urns and len(urns) > 0:
                 # Return the first URN (single URN, not a range)
@@ -1269,14 +1914,19 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # First element: start
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "start")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("start_"), f"Expected rewritten xml:id starting with 'start_', got: {xml_id}")
         self.assertEqual(result[0].text, "Start element")
         self.assertIn("Tail after start", result[0].tail)
         
         # Second element: transclude (p:transclude)
         self.assertEqual(result[1].tag, "{http://jewishliturgy.org/ns/processing}transclude")
-        self.assertEqual(result[1].get("target"), "#fragment-start")
-        self.assertEqual(result[1].get("targetEnd"), "#fragment-end")
+        # Target should be rewritten with hash to prevent ID collisions
+        target = result[1].get("target")
+        self.assertTrue(target.startswith("#fragment-start_"), f"Expected target to start with '#fragment-start_', got: {target}")
+        target_end = result[1].get("targetEnd")
+        self.assertTrue(target_end.startswith("#fragment-end_"), f"Expected targetEnd to start with '#fragment-end_', got: {target_end}")
         
         # Check that transclusion has children (the transcluded content)
         transcluded_children = list(result[1])
@@ -1289,7 +1939,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Check first transcluded element
         self.assertEqual(transcluded_children[0].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(transcluded_children[0].get("{http://www.w3.org/XML/1998/namespace}id"), "fragment-start")
+        # xml:id should be rewritten with hash
+        xml_id = transcluded_children[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("fragment-start_"), f"Expected rewritten xml:id starting with 'fragment-start_', got: {xml_id}")
         self.assertEqual(transcluded_children[0].get("type"), "fragment")
         self.assertEqual(transcluded_children[0].get("n"), "1")
         self.assertEqual(transcluded_children[0].text, "Transcluded start")
@@ -1297,13 +1949,17 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Check middle transcluded element
         self.assertEqual(transcluded_children[1].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(transcluded_children[1].get("{http://www.w3.org/XML/1998/namespace}id"), "fragment-middle")
+        # xml:id should be rewritten with hash
+        xml_id = transcluded_children[1].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("fragment-middle_"), f"Expected rewritten xml:id starting with 'fragment-middle_', got: {xml_id}")
         self.assertEqual(transcluded_children[1].text, "Transcluded middle")
         self.assertIn("Transcluded tail 2", transcluded_children[1].tail)
         
         # Check nested div element
         self.assertEqual(transcluded_children[2].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(transcluded_children[2].get("{http://www.w3.org/XML/1998/namespace}id"), "fragment-nested")
+        # xml:id should be rewritten with hash
+        xml_id = transcluded_children[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("fragment-nested_"), f"Expected rewritten xml:id starting with 'fragment-nested_', got: {xml_id}")
         self.assertIn("Nested div text", transcluded_children[2].text)
         self.assertIn("Transcluded tail 3", transcluded_children[2].tail)
         
@@ -1319,7 +1975,8 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         # Find the fragment-end element (might not be at index 3 due to parsing variations)
         fragment_end = None
         for child in transcluded_children:
-            if child.get("{http://www.w3.org/XML/1998/namespace}id") == "fragment-end":
+            xml_id = child.get("{http://www.w3.org/XML/1998/namespace}id")
+            if xml_id and xml_id.startswith("fragment-end_"):
                 fragment_end = child
                 break
         
@@ -1334,7 +1991,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Third element: end
         self.assertEqual(result[2].tag, "{http://www.tei-c.org/ns/1.0}p")
-        self.assertEqual(result[2].get("{http://www.w3.org/XML/1998/namespace}id"), "end")
+        # xml:id should be rewritten with hash
+        xml_id = result[2].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("end_"), f"Expected rewritten xml:id starting with 'end_', got: {xml_id}")
         self.assertEqual(result[2].text, "End element")
         # Tail after end should NOT be included
         self.assertIsNone(result[2].tail)
@@ -1389,7 +2048,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # First element should be the target div with all its children
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "target")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("target_"), f"Expected rewritten xml:id starting with 'target_', got: {xml_id}")
         self.assertIn("Target div text", result[0].text)
         
         # Should have 2 children
@@ -1533,7 +2194,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Should be the outer div
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "outer")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("outer_"), f"Expected rewritten xml:id starting with 'outer_', got: {xml_id}")
         # Text may be None if children consume it
         if result[0].text:
             self.assertIn("Outer div", result[0].text)
@@ -1543,8 +2206,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertIn("Start (3 levels deep)", result_str)
         self.assertIn("End (1 level deep)", result_str)
         # Structure elements (middle, inner) should be present even if text is not copied
-        self.assertIn('xml:id="middle"', result_str)
-        self.assertIn('xml:id="inner"', result_str)
+        # xml:id should be rewritten with hash
+        self.assertTrue('xml:id="middle_' in result_str, f"Expected rewritten xml:id for middle, got: {result_str}")
+        self.assertTrue('xml:id="inner_' in result_str, f"Expected rewritten xml:id for inner, got: {result_str}")
         self.assertIn("After inner", result_str)
         
         # Verify excluded content
@@ -1582,7 +2246,9 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Should be the outer div
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
-        self.assertEqual(result[0].get("{http://www.w3.org/XML/1998/namespace}id"), "outer")
+        # xml:id should be rewritten with hash
+        xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
+        self.assertTrue(xml_id.startswith("outer_"), f"Expected rewritten xml:id starting with 'outer_', got: {xml_id}")
         # Text may be None if children consume it
         if result[0].text:
             self.assertIn("Outer div", result[0].text)
@@ -1600,6 +2266,286 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertNotIn("Before (excluded)", result_str)
         self.assertNotIn("After (excluded)", result_str)
 
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_external_transclusion_language_differences(self, mock_resolve_range):
+        """Test that ExternalCompilerProcessor adds xml:lang when transcluding text with a different language."""
+        # Main file with English default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>English text before transclusion</tei:p>
+        <j:transclude target="urn:hebrew:start" targetEnd="urn:hebrew:end" type="external"/>
+        <tei:p>English text after transclusion</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Transcluded file with Hebrew default
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:p>טקסט בעברית לפני</tei:p>
+        <tei:p corresp="urn:hebrew:start">טקסט בעברית בהתחלה</tei:p>
+        <tei:p>טקסט בעברית באמצע</tei:p>
+        <tei:p corresp="urn:hebrew:end">טקסט בעברית בסוף</tei:p>
+        <tei:p>טקסט בעברית אחרי</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end")
+        result = processor.process()
+        
+        # Result should be a list of elements (not p:transcludeInline)
+        self.assertIsInstance(result, list)
+        
+        # Should have elements (start, middle, end)
+        self.assertGreater(len(result), 0)
+        
+        # All elements should be from the transcluded file, check that the root_language is Hebrew
+        self.assertEqual(processor.root_language, 'he')
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_includes_start_excludes_end(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/4"/>
+        Verse 4 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/5"/>
+        Verse 5 text
+    </tei:div>
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        
+        # Convert result to string for easier inspection
+        result_str = ''.join([etree.tostring(elem, encoding='unicode') for elem in result])
+        
+        # Should include the start milestone (1/3)
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/1/3"', result_str, 
+                     "Should include the start milestone with corresp='urn:x-opensiddur:text:bible:book/1/3'")
+        
+        # Should NOT include the end milestone (1/4)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/4"', result_str,
+                        "Should NOT include the end milestone with corresp='urn:x-opensiddur:text:bible:book/1/4'")
+        
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should include the choice element
+        self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include text after verse 3 (including verse 4 and 5)
+        self.assertNotIn("Verse 4 text", result_str, "Should not include verse 4")
+        self.assertNotIn("Verse 5 text", result_str, "Should not include verse 5")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/5"', result_str,
+                        "Should not include verse 5 milestone")
+
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_even_if_there_is_no_end_milestone(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        
+        # Convert result to string for easier inspection
+        result_str = ''.join([etree.tostring(elem, encoding='unicode') for elem in result])
+        
+        # Should include the start milestone (1/3)
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/1/3"', result_str, 
+                     "Should include the start milestone with corresp='urn:x-opensiddur:text:bible:book/1/3'")
+                
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should include the choice element
+        self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('Higher level', result_str,
+                        "Should not include anything in higher levels")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_when_the_end_is_the_next_unit(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/1"/>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/2"/>
+        Chapter 2 text
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with ExternalCompilerProcessor
+        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        result = processor.process()
+        
+        # Should return a list of elements
+        self.assertIsInstance(result, list)
+        
+        # Convert result to string for easier inspection
+        result_str = ''.join([etree.tostring(elem, encoding='unicode') for elem in result])
+        
+        # Should include the start milestone (1/3)
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/1/3"', result_str, 
+                     "Should include the start milestone with corresp='urn:x-opensiddur:text:bible:book/1/3'")
+                
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should include the choice element
+        self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the chapter milestone (chap 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/2', result_str,
+                        "Should not include the next chapter")
+        # Should not include the chapter 2 text
+        self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
+
 
 class TestInlineCompilerProcessor(unittest.TestCase):
     """Test InlineCompilerProcessor for extracting text content between start and end markers."""
@@ -1614,8 +2560,13 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.test_project_dir.mkdir(parents=True)
         
         # Patch the xml_cache base_path to use our temp directory
-        linear_data = get_linear_data()
-        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        self.linear_data = LinearData(
+            instruction_priority=["priority_project", "test_project"],
+            annotation_projects=["priority_project", "test_project"],
+            project_priority=["priority_project", "test_project"],
+        )
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        
 
     def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
         """Create a test XML file and return (project, file_name) tuple."""
@@ -1637,7 +2588,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("siblings.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         # Result should be a p:transcludeInline element with the extracted text
@@ -1671,7 +2622,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("ancestor.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1705,7 +2656,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("depth_diff.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1741,7 +2692,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("diff_siblings.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1766,7 +2717,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("text_elem.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         # Should be a p:transcludeInline element
@@ -1788,7 +2739,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("whitespace.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1810,7 +2761,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("xmlid.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "#start_id", "#end_id")
+        processor = InlineCompilerProcessor(project, file_name, "#start_id", "#end_id", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1833,7 +2784,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("mixed.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "#end_id")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "#end_id", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1853,7 +2804,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("single.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:target", "urn:target")
+        processor = InlineCompilerProcessor(project, file_name, "urn:target", "urn:target", linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -1880,7 +2831,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("both_level2.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -1892,8 +2843,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
                              f"Result text should match pattern. Got: {result_text!r}")
 
     @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
-    @patch('opensiddur.exporter.urn.UrnResolver.prioritize_range')
-    def test_inline_transclusion(self, mock_prioritize, mock_resolve_range):
+    def test_inline_transclusion(self, mock_resolve_range):
         """Test InlineCompilerProcessor with a transclusion element."""
         # Create main file with transclusion element
         # Include text before start, after end, and tail text on elements
@@ -1920,19 +2870,34 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content)
         
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == trans_project and args[1] == trans_file:
+                # Transcluded file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
         # Mock URN resolution to return the transcluded file location
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start")],
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end")]
-        ]
-        mock_prioritize.side_effect = [
-            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start"),
-            ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end")
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
         ]
         
-        # Process the main file
-        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end")
-        result = processor.process()
+        # Process the main file with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
+            result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         
@@ -1984,8 +2949,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertIn("tail after transclude", transclude_elem.tail)
 
     @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
-    @patch('opensiddur.exporter.urn.UrnResolver.prioritize_range')
-    def test_nested_transclusion(self, mock_prioritize, mock_resolve_range):
+    def test_nested_transclusion(self, mock_resolve_range):
         """Test InlineCompilerProcessor with nested transclusions (transcluded file has its own transclusion)."""
         # Create main file with transclusion element
         main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
@@ -2017,25 +2981,44 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         level1_project, level1_file = self._create_test_file("level1.xml", level1_xml_content)
         level2_project, level2_file = self._create_test_file("level2.xml", level2_xml_content)
         
+        # Parse the transcluded XML trees
+        level1_tree_root = etree.fromstring(level1_xml_content)
+        level2_tree_root = etree.fromstring(level2_xml_content)
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == level1_project and args[1] == level1_file:
+                # Level1 file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = level1_tree_root
+                return mock_tree
+            elif len(args) == 2 and args[0] == level2_project and args[1] == level2_file:
+                # Level2 file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = level2_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
         # Mock URN resolution for multiple levels
         # First two calls are for the main file's transclusion
         # Next two calls are for the level1 file's transclusion
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start")],
-            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end")],
-            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start")],
-            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end")]
-        ]
-        mock_prioritize.side_effect = [
-            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start"),
-            ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end"),
-            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start"),
-            ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end")
+            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]")],
+            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
         ]
         
-        # Process the main file
-        processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end")
-        result = processor.process()
+        # Process the main file with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
+            result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
         
@@ -2073,6 +3056,933 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertIn("Level 2 start", level2_transclude.text)
         self.assertIn("Level 2 middle", level2_transclude.text)
         self.assertIn("Level 2 end", level2_transclude.text)
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_inline_transclusion_language_differences(self, mock_resolve_range):
+        """Test that InlineCompilerProcessor adds xml:lang when transcluding text with a different language."""
+        # Main file with English default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>English text before transclusion</tei:p>
+        <j:transclude target="urn:hebrew:start" targetEnd="urn:hebrew:end" type="inline"/>
+        <tei:p>English text after transclusion</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Transcluded file with Hebrew default
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:p>טקסט בעברית לפני</tei:p>
+        <tei:p corresp="urn:hebrew:start">טקסט בעברית בהתחלה</tei:p>
+        <tei:p>טקסט בעברית באמצע</tei:p>
+        <tei:p corresp="urn:hebrew:end">טקסט בעברית בסוף</tei:p>
+        <tei:p>טקסט בעברית אחרי</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
+        
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == trans_project and args[1] == trans_file:
+                # Transcluded file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end", linear_data=self.linear_data)
+            result = processor.process()
+        
+        # Result should be a p:transcludeInline element with xml:lang="he"
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
+        
+        # Should have xml:lang="he" because the transcluded content is Hebrew
+        transclude_lang = result.get('{http://www.w3.org/XML/1998/namespace}lang')
+        self.assertEqual(transclude_lang, 'he', "p:transcludeInline should have xml:lang='he'")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_inline_transclusion_language_change_in_middle(self, mock_resolve_range):
+        """Test that InlineCompilerProcessor includes p:transcludeInline when language changes mid-text."""
+        # Main file with English default
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <j:transclude target="urn:start" targetEnd="urn:end" type="inline"/>
+    </tei:div>
+</root>'''
+        
+        # Transcluded file with mixed languages (English default, Hebrew in middle)
+        transcluded_xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p corresp="urn:start">English text at start</tei:p>
+        <tei:p xml:lang="he">טקסט בעברית באמצע</tei:p>
+        <tei:p>English text after Hebrew</tei:p>
+        <tei:p corresp="urn:end">English text at end</tei:p>
+    </tei:div>
+</root>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
+        
+        # Parse the transcluded XML tree
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == main_project and args[1] == main_file:
+                # Main file - call original
+                return original_parse_xml(*args, **kwargs)
+            elif len(args) == 2 and args[0] == trans_project and args[1] == trans_file:
+                # Transcluded file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = transcluded_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:start", element_path="/root/div[1]")],
+            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:end", element_path="/root/div[1]")]
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(trans_project, trans_file, "urn:start", "urn:end", linear_data=self.linear_data)
+            result = processor.process()
+        
+        # Result should be a p:transcludeInline element
+        self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
+        
+        # Should have a nested p:transcludeInline for the Hebrew section
+        nested_transclude = result.findall(".//{http://jewishliturgy.org/ns/processing}transcludeInline")
+        self.assertGreater(len(nested_transclude), 0, "Should have at least one nested p:transcludeInline for Hebrew")
+        
+        # Find the nested p:transcludeInline and check it has xml:lang="he"
+        hebrew_transclude = None
+        for elem in nested_transclude:
+            if elem != result:  # Not the root one
+                hebrew_lang = elem.get('{http://www.w3.org/XML/1998/namespace}lang')
+                if hebrew_lang == 'he':
+                    hebrew_transclude = elem
+                    break
+        
+        self.assertIsNotNone(hebrew_transclude, "Should have a nested p:transcludeInline with xml:lang='he'")
+        self.assertEqual(hebrew_transclude.get('{http://www.w3.org/XML/1998/namespace}lang'), 'he')
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_includes_start_excludes_end(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/4"/>
+        Verse 4 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/5"/>
+        Verse 5 text
+    </tei:div>
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == ext_project and args[1] == ext_file:
+                # External file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            result = processor.process()
+        
+        
+        # Convert result to string for easier inspection
+        result_str = etree.tostring(result, encoding='unicode')
+        
+
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should not include the choice element
+        # self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include text after verse 3 (including verse 4 and 5)
+        self.assertNotIn("Verse 4 text", result_str, "Should not include verse 4")
+        self.assertNotIn("Verse 5 text", result_str, "Should not include verse 5")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/5"', result_str,
+                        "Should not include verse 5 milestone")
+
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_even_if_there_is_no_end_milestone(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == ext_project and args[1] == ext_file:
+                # External file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            result = processor.process()
+        
+        # Convert result to string for easier inspection
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should not include the choice element
+        # self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the fifth milestone (verse 5)
+        self.assertNotIn('Higher level', result_str,
+                        "Should not include anything in higher levels")
+
+    @patch('opensiddur.exporter.urn.UrnResolver.resolve_range')
+    def test_milestone_transclusion_works_when_the_end_is_the_next_unit(self, mock_resolve_range):
+        """Test transclusion using milestone elements includes start milestone but not end milestone."""
+        # Main file that transcludes verse 3 from external file
+        main_xml_content = b'''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <j:transclude target="urn:x-opensiddur:text:bible:book/1/3" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</tei:text>'''
+        
+        # External file with milestone-style verse markers
+        external_xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/1"/>
+        Text before verse 3
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/>
+        Verse 2 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/>
+        Verse 3 text part 1
+        <tei:choice>
+            <tei:abbr>abbr</tei:abbr>
+            <tei:expan>abbreviation</tei:expan>
+        </tei:choice>
+        Verse 3 text part 2
+        <tei:milestone type="chapter" corresp="urn:x-opensiddur:text:bible:book/2"/>
+        Chapter 2 text
+    </tei:div>
+    Higher level text
+</tei:text>'''
+        
+        # Set up files
+        main_project, main_file = self._create_test_file("main.xml", main_xml_content)
+        ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
+        
+        # Parse the external XML tree
+        external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
+        
+        # Mock XMLCache.parse_xml
+        original_parse_xml = self.linear_data.xml_cache.parse_xml
+        
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 2 and args[0] == ext_project and args[1] == ext_file:
+                # External file - return mocked tree
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree_root
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+        
+        # Mock URN resolution for milestones
+        mock_resolve_range.side_effect = [
+            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+        ]
+        
+        # Process with InlineCompilerProcessor with mocked parse_xml
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            result = processor.process()
+        
+        # Convert result to string for easier inspection
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should include all text between the milestones
+        self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
+        self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
+        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        
+        # Should not include the choice element
+        # self.assertIn("<tei:choice", result_str, "Should include the choice element")
+        
+        # Should NOT include text before verse 3
+        self.assertNotIn("Text before verse 3", result_str, "Should not include text before verse 3")
+        self.assertNotIn("Verse 2 text", result_str, "Should not include verse 2")
+        
+        # Should NOT include the first milestone (verse 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/1/2"', result_str,
+                        "Should not include verse 2 milestone")
+        
+        # Should NOT include the chapter milestone (chap 2)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/2', result_str,
+                        "Should not include the next chapter")
+        # Should not include the chapter 2 text
+        self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
+
+
+class TestCompilerProcessorAnnotations(unittest.TestCase):
+    """Test annotation inclusion functionality in CompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        # This creates coupling in the test, which is not good.
+        self.linear_data = LinearData(
+            instruction_priority=["priority_project", "test_project"],
+            annotation_projects=["priority_project", "test_project"]
+        )
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+        self.refdb = MagicMock(spec=ReferenceDatabase)
+        # each test needs to set its own refdb results
+
+    def _create_test_file(self, project: str, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        project_dir = Path(self.temp_dir.name) / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        xml = etree.parse(file_path)
+        return project, file_name, xml
+
+    def _create_instructional_note_file(self, project: str, 
+        file_name: str, title: str, 
+        urn: Optional[str], 
+        content: str,
+        xml_id: Optional[str]) -> tuple[str, str]:
+        """Create a test file with an instructional note."""
+        corresp = f"corresp='{urn}'" if urn else f"xml:id='{xml_id}'" if xml_id else ""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>{title}</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Element before note</tei:p>
+                Text before note
+                <tei:note type="instruction" {corresp}>
+                    {content}
+                </tei:note>
+                Text after note
+                <tei:p>Element after note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def _create_editorial_note_file(self, project: str, file_name: str, title: str, urn: str, content: str) -> tuple[str, str]:
+        """Create a test file with an editorial note."""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>{title}</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:standOff>
+        <tei:note type="editorial" target="{urn}">
+            {content}
+        </tei:note>
+    </tei:standOff>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def _create_targeted_note_file(self, project: str, 
+        file_name: str, title: str, 
+        urn: Optional[str],
+        xml_id: Optional[str],
+        internal_note: str = "") -> tuple[str, str]:
+        """Create a test file with a target for a note."""
+        corresp = f"corresp='{urn}'" if urn else f"xml:id='{xml_id}'" if xml_id else ""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>{title}</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Element before note</tei:p>
+                Text before note
+                <tei:p {corresp}>This element is targeted by the note <tei:hi>Child element</tei:hi></tei:p>
+                Text after note
+                <tei:p>Element after note</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+    <tei:standOff>
+        {internal_note}
+    </tei:standOff>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def test_instructional_note_with_urn_not_found_in_database(self):
+        """Test that an instructional note with URN that is not found elsewhere is included as-is."""
+        urn = "urn:test:instruction:nonexistent"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction", None)
+        
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the original text
+        self.assertIn("This is a local instruction", notes[0].text.strip())
+        
+        # The instructional note itself should NOT have p:project and p:file_name attributes
+        # since it's not transcluded from another file
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+    def test_instructional_note_with_no_corresp(self):
+        """Test that an instructional note with no corresp or xml:id is included as-is."""
+        urn = None
+        xid= "wo_corresp"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a no corresp instruction", xid)
+        
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the original text
+        self.assertIn("This is a no corresp instruction", notes[0].text.strip())
+        
+        # The instructional note itself should NOT have p:project and p:file_name attributes
+        # since it's not transcluded from another file
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+    def test_instructional_note_with_no_corresp_or_xml_id(self):
+        """Test that an instructional note with no corresp or xml:id is included as-is."""
+        urn = None
+        xid = None
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, _ = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a no corresp instruction", xid)
+        
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the original text
+        self.assertIn("This is a no corresp instruction", notes[0].text.strip())
+        
+        # The instructional note itself should NOT have p:project and p:file_name attributes
+        # since it's not transcluded from another file
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+    def test_instructional_note_with_alternative_urn_in_database(self):
+        """Test that an instructional note with URN that is not found elsewhere is included as-is."""
+        urn = "urn:test:instruction:alternative"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, xml = self._create_instructional_note_file("test_project", "main.xml", "Main Document", urn, "This is a local instruction", None)
+        priority_project, priority_file_name, priority_xml = self._create_instructional_note_file("priority_project", "priority.xml", "Priority Document", urn, "This is a priority instruction", None)
+        lxml_note_element = priority_xml.xpath("//tei:note[@type='instruction']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        # all references will return nothing
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = [
+            UrnMapping(
+                project=priority_project, 
+                file_name=priority_file_name, 
+                urn=urn, 
+                element_path=lxml_note_element_path,
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="instruction"
+            )
+        ]
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the priority instruction text
+        self.assertIn("This is a priority instruction", notes[0].text.strip())
+        
+        # The instructional note itself should have p:project and p:file_name attributes
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}project"), priority_project)
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"), priority_file_name)
+
+    def test_editorial_note_with_urn_in_database(self):
+        """Test that an editorial note that targets the URN of an element."""
+        urn = "urn:test:editorial:note"
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, xml = self._create_targeted_note_file("test_project", "main.xml", "Main Document", urn, None)
+        priority_project, priority_file_name, priority_xml = self._create_editorial_note_file("priority_project", "priority.xml", "Priority Document", urn, "Editorial note")
+        lxml_note_element = priority_xml.xpath("//tei:note[@type='editorial']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        # all references will return nothing
+        self.refdb.get_references_to.reset_mock()
+        self.refdb.get_references_to.return_value = [
+            Reference(element_path=lxml_note_element_path, 
+                element_tag="{http://www.tei-c.org/ns/1.0}note", 
+                element_type="editorial",
+                project=priority_project,
+                file_name=priority_file_name,
+                target_start=urn,
+                target_end=None,
+                target_is_id=False,
+                corresponding_urn=None
+            ),
+            Reference(element_path=lxml_note_element_path, 
+                element_tag="{http://www.tei-c.org/ns/1.0}something_else", 
+                element_type="another",
+                project=priority_project,
+                file_name=priority_file_name,
+                target_start=urn,
+                target_end=None,
+                target_is_id=False,
+                corresponding_urn=None
+            )
+        ]
+        
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # make sure refdb was called with the correct arguments
+        self.refdb.get_references_to.assert_called_once_with(urn, None, None, None)
+
+        # Find the note element
+        notes = result.xpath(".//tei:note[@type='editorial']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the priority editorial note text
+        self.assertIn("Editorial note", notes[0].text.strip())
+        
+        # The editorial note itself should have p:project and p:file_name attributes
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}project"), priority_project)
+        self.assertEqual(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"), priority_file_name)
+
+        self.assertEqual(notes[0].getparent().tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertIn(notes[0].tail.strip(), "This element is targeted by the note <tei:hi>Child element</tei:hi>")
+        self.assertIs(notes[0].getparent().getchildren()[0], notes[0])
+
+    def test_editorial_note_with_xml_id_in_database(self):
+        """Test that an editorial note that targets the xml:id of an element."""
+        urn = None
+        
+        # Create main file with instructional note with URN that won't be found in database
+        project, file_name, xml = self._create_targeted_note_file("test_project", "main.xml", "Main Document", None, "note_id", 
+            '<tei:note target="#note_id" type="editorial">Editorial note</tei:note>')
+        lxml_note_element = xml.xpath("//tei:note[@type='editorial']", 
+            namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        lxml_note_element_path = lxml_note_element.getroottree().getpath(lxml_note_element)
+        self.refdb.get_references_to.reset_mock()
+        self.refdb.get_references_to.return_value = [
+            Reference(element_path=lxml_note_element_path, 
+                element_tag="{http://www.tei-c.org/ns/1.0}note", 
+                element_type="editorial",
+                project=project,
+                file_name=file_name,
+                target_start="#note_id",
+                target_end=None,
+                target_is_id=True,
+                corresponding_urn=None
+            )
+        ]
+        
+        
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+        result = processor.process()
+        
+        # make sure refdb was called with the correct arguments
+        self.refdb.get_references_to.assert_called_once_with(None, "note_id", project, file_name)
+
+        # Find the new note element
+        notes = result.xpath(".//tei:body//tei:note[@type='editorial']", namespaces=processor.ns_map)
+        self.assertEqual(len(notes), 1)
+        
+        # Should contain the priority editorial note text
+        self.assertIn("Editorial note", notes[0].text.strip())
+        
+        # The editorial note itself should NOT have p:project and p:file_name attributes
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}project"))
+        self.assertIsNone(notes[0].get(f"{{{processor.ns_map['p']}}}file_name"))
+
+        self.assertEqual(notes[0].getparent().tag, "{http://www.tei-c.org/ns/1.0}p")
+        self.assertIn(notes[0].tail.strip(), "This element is targeted by the note <tei:hi>Child element</tei:hi>")
+        self.assertIs(notes[0].getparent().getchildren()[0], notes[0])
+
+
+class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
+    """Test annotation inclusion functionality in InlineCompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Create priority project directory
+        self.priority_project_dir = Path(self.temp_dir.name) / "priority_project"
+        self.priority_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        self.linear_data = LinearData(
+            instruction_priority=["priority_project", "test_project"],
+            annotation_projects=["priority_project", "test_project"]
+        )
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+        self.refdb = MagicMock(spec=ReferenceDatabase)
+        # Each test needs to set its own refdb results
+
+    def _create_test_file(self, project: str, file_name: str, content: bytes) -> tuple[str, str, etree._ElementTree]:
+        """Create a test XML file and return (project, file_name, tree) tuple."""
+        project_dir = Path(self.temp_dir.name) / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        xml = etree.parse(file_path)
+        return project, file_name, xml
+
+    def _create_file_with_element_for_annotation(self, project: str, file_name: str, 
+                                                   start_urn: str, end_urn: str,
+                                                   element_with_note: str = "") -> tuple[str, str]:
+        """Create a file with elements that can be targeted for annotation."""
+        xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Test Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>Before start</tei:p>
+                <tei:p corresp="{start_urn}">Start element</tei:p>
+                Before the note.
+                {element_with_note}
+                After the note.
+                <tei:p corresp="{end_urn}">End element</tei:p>
+                <tei:p>After end</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+    <tei:standOff>
+    </tei:standOff>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def _create_note_file(self, project: str, file_name: str, target_urn: str, 
+                          note_content: str, note_type: str = "editorial") -> tuple[str, str, etree._ElementTree]:
+        """Create a file with an editorial or instructional note."""
+        if note_type == "instructional":
+            xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Note Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:note type="instruction" corresp="{target_urn}">
+                    {note_content}
+                </tei:note>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</TEI>'''.encode('utf-8')
+        else:  # editorial
+            xml_content = f'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Note Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:standOff>
+        <tei:note type="editorial" target="{target_urn}">
+            {note_content}
+        </tei:note>
+    </tei:standOff>
+</TEI>'''.encode('utf-8')
+        return self._create_test_file(project, file_name, xml_content)
+
+    def test_editorial_note_in_range(self):
+        """Test that an editorial note targeting an element within the range is included."""
+        start_urn = "urn:test:start"
+        end_urn = "urn:test:end"
+        target_urn = "urn:test:target"
+        
+        # Create main file with element that has a corresp and falls within range
+        project, file_name, _ = self._create_file_with_element_for_annotation(
+            "test_project", "main.xml", start_urn, end_urn,
+            f'<tei:p corresp="{target_urn}">Targeted element</tei:p>'
+        )
+        
+        # Create note file with editorial note
+        note_project, note_file, note_tree = self._create_note_file(
+            "test_project", "notes.xml", target_urn, "This is an editorial note", "editorial"
+        )
+        
+        # Get the note element from the tree
+        ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
+        note_element = note_tree.xpath('//tei:note[@type="editorial"]', namespaces=ns)[0]
+        note_path = note_element.getroottree().getpath(note_element)
+        
+        # Mock the reference database to return the note
+        from opensiddur.exporter.refdb import Reference
+        mock_reference = Reference(
+            project=note_project,
+            file_name=note_file,
+            element_path=note_path,
+            element_tag="{http://www.tei-c.org/ns/1.0}note",
+            element_type=None,
+            target_start=target_urn,
+            target_end=None,
+            target_is_id=False,
+            corresponding_urn=target_urn
+        )
+        # 3 urns: start, target, end
+        self.refdb.get_references_to.side_effect = [[], [mock_reference], []]
+        
+        # Process with InlineCompilerProcessor
+        processor = InlineCompilerProcessor(
+            project, file_name, start_urn, end_urn,
+            linear_data=self.linear_data,
+            reference_database=self.refdb
+        )
+        result = processor.process()
+        
+        # The note should be inserted before the targeted element (which is within the range)
+        # In InlineCompilerProcessor, the note gets inserted into the inline text result
+        # Since the targeted element is within the range, the note should appear in the result
+        notes = result.xpath(".//tei:note[@type='editorial']", namespaces=ns)
+        # Should find at least one editorial note (the one targeting the element in the range)
+        self.assertEqual(len(notes), 1, "Should find one editorial note")
+        # At least one of the notes should be the one we created
+        note = notes[0]
+        note_texts = note.text.strip()
+        self.assertIn("This is an editorial note", note_texts)
+        self.assertIn("After the note.", note.tail.strip())
+        self.assertIn("Before the note.", note.getparent().text.strip())
+
+
+    def test_instructional_note_in_range(self):
+        """Test that an instructional note within the range is included."""
+        start_urn = "urn:test:start"
+        end_urn = "urn:test:end"
+        ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
+        # Create main file with element that has a corresp and falls within range
+        project, file_name, _ = self._create_file_with_element_for_annotation(
+            "test_project", "main.xml", start_urn, end_urn,
+            f'<tei:note type="instruction">Inline instruction note</tei:note>'
+        )
+
+        self.refdb.get_references_to.return_value = []
+                
+        # Process with InlineCompilerProcessor
+        processor = InlineCompilerProcessor(
+            project, file_name, start_urn, end_urn,
+            linear_data=self.linear_data,
+            reference_database=self.refdb
+        )
+        result = processor.process()
+        
+        # The note should be inserted before the targeted element (which is within the range)
+        # In InlineCompilerProcessor, the note gets inserted into the inline text result
+        # Since the targeted element is within the range, the note should appear in the result
+        notes = result.xpath(".//tei:note[@type='instruction']", namespaces=ns)
+        # Should find exactly one note
+        self.assertEqual(len(notes), 1, "Should find one inline instruction note")
+        
+        note = notes[0]
+        note_texts = note.text.strip()
+        self.assertIn("Inline instruction note", note_texts)
+        self.assertIn("After the note.", note.tail.strip())
+        self.assertIn("Before the note.", note.getparent().text.strip())
 
 
 if __name__ == '__main__':

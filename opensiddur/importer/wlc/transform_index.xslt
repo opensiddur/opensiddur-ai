@@ -12,6 +12,10 @@
     
     <xsl:mode on-no-match="fail"/>
     
+    <xsl:template match="document-node()">
+        <xsl:apply-templates/>
+    </xsl:template>
+    
     <!-- Identity transform: copies all nodes and attributes by default -->
     <xsl:template match="@*|node()">
         <xsl:copy>
@@ -29,7 +33,7 @@
     
     <!-- root transform -->
     <xsl:template match="Tanach">
-        <tei:TEI>
+        <tei:TEI xml:lang="he">
             <xsl:apply-templates select="teiHeader"/>
             <tei:text>
                 <tei:body>
@@ -139,7 +143,7 @@
 
     <!-- notes -->
     <xsl:template match="tanach">
-        <tei:standOff type="notes">
+        <tei:standOff type="notes" xml:lang="en">
             <xsl:apply-templates/>
         </tei:standOff>
     </xsl:template>
