@@ -7,6 +7,9 @@ import unittest
 import tempfile
 from pathlib import Path
 from lxml import etree
+from io import StringIO
+from unittest.mock import patch, MagicMock
+import sys
 
 from opensiddur.exporter.tex.xelatex import (
     extract_licenses,
@@ -16,6 +19,8 @@ from opensiddur.exporter.tex.xelatex import (
     group_credits,
     credits_to_tex,
     get_file_references,
+    extract_sources,
+    transform_xml_to_tex,
     LicenseRecord,
     CreditRecord,
 )
@@ -603,6 +608,946 @@ class TestGetFileReferences(unittest.TestCase):
         self.assertIn(self.project_dir / "project1" / "main.xml", result)
         self.assertIn(self.project_dir / "project2" / "file2.xml", result)
         self.assertIn(self.project_dir / "project3" / "file3.xml", result)
+
+
+class TestExtractSources(unittest.TestCase):
+    """Test source extraction from index.xml files."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name) / "project"
+        self.test_dir.mkdir(parents=True)
+
+    def _create_xml_file(self, project: str, filename: str, content: bytes) -> Path:
+        """Helper to create an XML file in a project subdirectory."""
+        project_dir = self.test_dir / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / filename
+        file_path.write_bytes(content)
+        return file_path
+
+    def test_extract_sources_with_valid_index(self):
+        """Test extracting sources from a valid index.xml file with bibl elements."""
+        index_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:listBibl>
+        <tei:bibl>
+            <tei:title>Test Book</tei:title>
+            <tei:author>Test Author</tei:author>
+            <tei:date>2023</tei:date>
+        </tei:bibl>
+    </tei:listBibl>
+</root>'''
+        
+        # Create a file in project1
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        index_file = self._create_xml_file("project1", "index.xml", index_content)
+        
+        result = extract_sources([file1])
+        
+        preamble, postamble = result
+        self.assertIn(r'\begin{filecontents*}{job.bib}', preamble)
+        self.assertIn(r'\addbibresource{job.bib}', preamble)
+        self.assertIn(r'\printbibliography', postamble)
+        self.assertIn(r'\renewcommand{\refname}{Sources}', postamble)
+        # Should contain BibTeX entry with the actual source information
+        self.assertIn('@', preamble)
+        self.assertIn('Test Book', preamble)
+        self.assertIn('Test Author', preamble)
+        self.assertIn('2023', preamble)
+
+    def test_extract_sources_no_bibl_elements(self):
+        """Test handling of index.xml with no bibl elements."""
+        index_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>No bibliography</tei:text>
+</root>'''
+        
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        index_file = self._create_xml_file("project1", "index.xml", index_content)
+        
+        preamble, postamble = extract_sources([file1])
+        
+        # Should return empty strings when no bibliography
+        self.assertEqual(preamble, "")
+        self.assertEqual(postamble, "")
+
+    def test_extract_sources_missing_index_file(self):
+        """Test handling of missing index.xml file (graceful skipping)."""
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        # Don't create index.xml
+        
+        # Should not raise exception
+        preamble, postamble = extract_sources([file1])
+        
+        # Should return empty strings
+        self.assertEqual(preamble, "")
+        self.assertEqual(postamble, "")
+
+    def test_extract_sources_invalid_xml(self):
+        """Test handling of invalid XML in index file."""
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        index_file = self._create_xml_file("project1", "index.xml", b"not valid xml <")
+        
+        # Should not raise exception, should skip gracefully
+        preamble, postamble = extract_sources([file1])
+        
+        self.assertEqual(preamble, "")
+        self.assertEqual(postamble, "")
+
+    def test_extract_sources_multiple_projects(self):
+        """Test extracting sources from multiple projects with index files."""
+        index1_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:listBibl>
+        <tei:bibl>
+            <tei:title>Book 1</tei:title>
+            <tei:author>Author 1</tei:author>
+        </tei:bibl>
+    </tei:listBibl>
+</root>'''
+        
+        index2_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:listBibl>
+        <tei:bibl>
+            <tei:title>Book 2</tei:title>
+            <tei:author>Author 2</tei:author>
+        </tei:bibl>
+    </tei:listBibl>
+</root>'''
+        
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        file2 = self._create_xml_file("project2", "doc2.xml", b"<root/>")
+        index1 = self._create_xml_file("project1", "index.xml", index1_content)
+        index2 = self._create_xml_file("project2", "index.xml", index2_content)
+        
+        result = extract_sources([file1, file2])
+        
+        preamble, postamble = result
+        # Should contain bibliography entries from both projects
+        self.assertIn(r'\begin{filecontents*}{job.bib}', preamble)
+        # Should contain entries from both index files
+        self.assertIn('Book 1', preamble)
+        self.assertIn('Author 1', preamble)
+        self.assertIn('Book 2', preamble)
+        self.assertIn('Author 2', preamble)
+        # Should have exactly 2 BibTeX entries (one from each project)
+        bibtex_count = preamble.count('@')
+        self.assertEqual(bibtex_count, 2, 
+                         f"Expected exactly 2 BibTeX entries (one per project), but found {bibtex_count}")
+
+    def test_extract_sources_deduplicates_index_files(self):
+        """Test that same index.xml is only processed once."""
+        index_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:listBibl>
+        <tei:bibl>
+            <tei:title>Test Book</tei:title>
+            <tei:author>Test Author</tei:author>
+        </tei:bibl>
+    </tei:listBibl>
+</root>'''
+        
+        # Multiple files from same project should reference same index
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        file2 = self._create_xml_file("project1", "doc2.xml", b"<root/>")
+        file3 = self._create_xml_file("project1", "doc3.xml", b"<root/>")
+        index_file = self._create_xml_file("project1", "index.xml", index_content)
+        
+        result = extract_sources([file1, file2, file3])
+        
+        preamble, postamble = result
+        # Should have bibliography
+        self.assertIn(r'\begin{filecontents*}{job.bib}', preamble)
+        # BibTeX should appear exactly once (deduplicated by set)
+        # Count '@' symbols which appear at the start of each BibTeX entry
+        bibtex_count = preamble.count('@')
+        # Should have exactly one entry since all files reference the same index
+        self.assertEqual(bibtex_count, 1, 
+                         f"Expected exactly 1 BibTeX entry, but found {bibtex_count}")
+
+
+class TestTransformXmlToTex(unittest.TestCase):
+    """Test the main transform_xml_to_tex function."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name) / "project"
+        self.test_dir.mkdir(parents=True)
+
+    def _create_xml_file(self, project: str, filename: str, content: bytes) -> Path:
+        """Helper to create an XML file in a project subdirectory."""
+        project_dir = self.test_dir / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / filename
+        file_path.write_bytes(content)
+        return file_path
+
+    def test_transform_xml_to_tex_basic(self):
+        """Test basic XML to LaTeX transformation."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Hello World</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should produce LaTeX output
+        self.assertIsInstance(result, str)
+        self.assertIn(r'\documentclass{book}', result)
+        self.assertIn(r'\begin{document}', result)
+        self.assertIn('Hello World', result)
+        self.assertIn(r'\end{document}', result)
+
+    def test_transform_xml_to_tex_with_output_file(self):
+        """Test transformation with output file specified."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Test content</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        output_file = Path(self.temp_dir.name) / "output.tex"
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            with patch('sys.stdout'):
+                transform_xml_to_tex(input_file, output_file=str(output_file))
+        
+        # Check that output file was created
+        self.assertTrue(output_file.exists())
+        content = output_file.read_text(encoding='utf-8')
+        self.assertIn(r'\documentclass{book}', content)
+        self.assertIn('Test content', content)
+
+    def test_transform_xml_to_tex_integrates_licenses(self):
+        """Test that transform integrates license extraction."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:publicationStmt>
+                <tei:availability>
+                    <tei:licence target="http://example.com/license">Test License</tei:licence>
+                </tei:availability>
+            </tei:publicationStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:p>Content</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should include license section in postamble
+        self.assertIn(r'\chapter{Legal}', result)
+        self.assertIn('Test License', result)
+
+    def test_transform_xml_to_tex_integrates_credits(self):
+        """Test that transform integrates credit extraction."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:respStmt>
+                    <tei:resp key="aut">Author</tei:resp>
+                    <tei:name ref="urn:x-opensiddur:ns/contrib">Author Name</tei:name>
+                </tei:respStmt>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:p>Content</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should include credits section in postamble
+        self.assertIn(r'\chapter{Contributor credits}', result)
+        self.assertIn('Author Name', result)
+
+    def test_transform_xml_to_tex_integrates_sources(self):
+        """Test that transform integrates source extraction."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Content</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        index_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:listBibl>
+        <tei:bibl>
+            <tei:title>Source Book</tei:title>
+            <tei:author>Source Author</tei:author>
+        </tei:bibl>
+    </tei:listBibl>
+</root>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        index_file = self._create_xml_file("project1", "index.xml", index_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should include bibliography in preamble and postamble
+        self.assertIn(r'\addbibresource{job.bib}', result)
+        self.assertIn(r'\printbibliography', result)
+
+    def test_transform_xml_to_tex_handles_invalid_xml(self):
+        """Test error handling for invalid XML."""
+        from unittest.mock import patch, Mock
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        input_file = self._create_xml_file("project1", "invalid.xml", b"not valid xml <")
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            mock_exit = Mock()
+            with patch('sys.exit', mock_exit):
+                # The function should catch the exception and call sys.exit(1)
+                transform_xml_to_tex(input_file)
+                # Verify that sys.exit was called with exit code 1
+                mock_exit.assert_called_once_with(1)
+
+    def test_transform_xml_to_tex_with_stdout(self):
+        """Test transformation output to stdout when output_file is None."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Content</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        mock_stdout = StringIO()
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            with patch('sys.stdout', mock_stdout):
+                transform_xml_to_tex(input_file, output_file=None)
+                output = mock_stdout.getvalue()
+        
+        # Should have written to stdout
+        self.assertIn(r'\documentclass{book}', output)
+        self.assertIn('Content', output)
+
+
+class TestXSLTTransformation(unittest.TestCase):
+    """Test XSLT transformation directly."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.xslt_file = Path(__file__).parent.parent.parent / "exporter" / "tex" / "xelatex.xslt"
+
+    def test_xslt_tei_div(self):
+        """Test div element conversion."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:div>
+            <tei:head>Chapter Title</tei:head>
+            <tei:p>Content</tei:p>
+        </tei:div>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\part{Chapter Title}', result)
+        self.assertIn('Content', result)
+
+    def test_xslt_tei_p(self):
+        """Test paragraph element conversion."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Paragraph text</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn('Paragraph text', result)
+
+    def test_xslt_tei_milestone_chapter(self):
+        """Test milestone with chapter unit."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:milestone unit="chapter" n="1"/>
+            <tei:p>Text</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\chapter{1}', result)
+
+    def test_xslt_tei_milestone_verse(self):
+        """Test milestone with verse unit."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:milestone unit="verse" n="5"/>
+            <tei:p>Text</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\textsuperscript{5}', result)
+
+    def test_xslt_tei_choice(self):
+        """Test choice element (kri/ktiv)."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:choice>
+                    <j:read>read</j:read>
+                    <j:written>written</j:written>
+                </tei:choice>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\textit{read}', result)
+        self.assertIn('(written)', result)
+
+    def test_xslt_tei_emph(self):
+        """Test emphasis element."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:emph>emphasized</tei:emph>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\emph{emphasized}', result)
+
+    def test_xslt_rend_italic(self):
+        """Test rend attribute with italic value."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:hi rend="italic">italic text</tei:hi>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\textit{italic text}', result)
+
+    def test_xslt_rend_small_caps(self):
+        """Test rend attribute with small-caps value."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:hi rend="small-caps">small caps</tei:hi>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\textsc{small caps}', result)
+
+    def test_xslt_rend_superscript(self):
+        """Test rend attribute with superscript value."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:hi rend="superscript">superscript</tei:hi>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\textsuperscript{superscript}', result)
+
+    def test_xslt_rend_align_right(self):
+        """Test rend attribute with align-right value."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:hi rend="align-right">right aligned</tei:hi>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\begin{flushright}', result)
+        self.assertIn(r'\end{flushright}', result)
+
+    def test_xslt_hebrew_language_inline(self):
+        """Test Hebrew language handling for inline text."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:hi xml:lang="he">עברית</tei:hi>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\texthebrew{', result)
+        self.assertIn('עברית', result)
+
+    def test_xslt_hebrew_language_block(self):
+        """Test Hebrew language handling for block elements."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:text>
+        <tei:body>
+            <tei:div xml:lang="he">
+                <tei:p>עברית</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\begin{hebrew}', result)
+        self.assertIn(r'\end{hebrew}', result)
+
+    def test_xslt_tei_foreign(self):
+        """Test foreign text element."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                <tei:foreign xml:lang="he">עברית</tei:foreign>
+                <tei:foreign xml:lang="la">Latin</tei:foreign>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\texthebrew{עברית}', result)
+        self.assertIn(r'\textit{Latin}', result)
+
+    def test_xslt_tei_note(self):
+        """Test note element conversion to footnote."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                Text<tei:note>Note content</tei:note>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\footnote{Note content}', result)
+
+    def test_xslt_tei_lb(self):
+        """Test line break element."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                Line 1<tei:lb/>Line 2
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\\', result)
+
+    def test_xslt_tei_pb(self):
+        """Test page break element (should be skipped)."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>
+                Text<tei:pb/>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        # Should not contain pb-related content
+        self.assertIn('Text', result)
+
+    def test_xslt_tei_lg_l(self):
+        """Test line group and line elements (poetry)."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:lg>
+                <tei:l>Line 1</tei:l>
+                <tei:l>Line 2</tei:l>
+            </tei:lg>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        
+        self.assertIn(r'\begin{verse}', result)
+        self.assertIn(r'\end{verse}', result)
+        self.assertIn('Line 1', result)
+        self.assertIn('Line 2', result)
+
+    def test_xslt_additional_preamble_postamble(self):
+        """Test that additional-preamble and additional-postamble parameters work."""
+        from opensiddur.common.xslt import xslt_transform_string
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Content</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        preamble = "\\usepackage{testpackage}\n"
+        postamble = "\\chapter{Appendix}\nAppendix content\n"
+        
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={
+                "additional-preamble": preamble,
+                "additional-postamble": postamble
+            })
+        
+        self.assertIn(preamble, result)
+        self.assertIn(postamble, result)
+
+
+class TestEdgeCases(unittest.TestCase):
+    """Test edge cases and error handling."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name) / "project"
+        self.test_dir.mkdir(parents=True)
+
+    def _create_xml_file(self, project: str, filename: str, content: bytes) -> Path:
+        """Helper to create an XML file."""
+        project_dir = self.test_dir / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / filename
+        file_path.write_bytes(content)
+        return file_path
+
+    def test_extract_sources_empty_xml(self):
+        """Test extract_sources with empty XML file."""
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        index_file = self._create_xml_file("project1", "index.xml", b"<root/>")
+        
+        preamble, postamble = extract_sources([file1])
+        
+        self.assertEqual(preamble, "")
+        self.assertEqual(postamble, "")
+
+    def test_transform_xml_to_tex_minimal_structure(self):
+        """Test transform with minimal valid XML structure."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text/>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should still produce valid LaTeX structure
+        self.assertIn(r'\documentclass{book}', result)
+        self.assertIn(r'\begin{document}', result)
+        self.assertIn(r'\end{document}', result)
+
+    def test_transform_xml_to_tex_special_characters(self):
+        """Test transform with special characters that need LaTeX escaping."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Text with $special &amp; characters</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should handle special characters (XSLT will pass through)
+        self.assertIn('Text with', result)
+
+    def test_extract_sources_files_outside_project(self):
+        """Test extract_sources with files outside project directory."""
+        # Create a file outside the project structure
+        outside_file = Path(self.temp_dir.name) / "outside.xml"
+        outside_file.write_bytes(b"<root/>")
+        
+        # Should not crash, but skip the file gracefully
+        # Note: extract_sources expects files in project directories, 
+        # so outside files will be skipped
+        preamble, postamble = extract_sources([outside_file])
+        
+        self.assertEqual(preamble, "")
+        self.assertEqual(postamble, "")
+
+    def test_transform_xml_to_tex_complex_nested_structure(self):
+        """Test transform with complex nested divs."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:head>Section 1</tei:head>
+                <tei:div>
+                    <tei:head>Subsection</tei:head>
+                    <tei:p>Nested content</tei:p>
+                </tei:div>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should handle nested structures
+        self.assertIn(r'\part{Section 1}', result)
+        self.assertIn('Nested content', result)
+
+    def test_transform_xml_to_tex_mixed_languages(self):
+        """Test transform with mixed English and Hebrew content."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:text>
+        <tei:body>
+            <tei:p>English text <tei:hi xml:lang="he">עברית</tei:hi> more English</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''.encode('utf-8')
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should handle mixed languages
+        self.assertIn('English text', result)
+        self.assertIn(r'\texthebrew{', result)
+        self.assertIn('עברית', result)
+
+    def test_extract_sources_multiple_files_same_project(self):
+        """Test extract_sources with multiple files from same project."""
+        index_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:listBibl>
+        <tei:bibl>
+            <tei:title>Book</tei:title>
+            <tei:author>Author</tei:author>
+        </tei:bibl>
+    </tei:listBibl>
+</root>'''
+        
+        file1 = self._create_xml_file("project1", "doc1.xml", b"<root/>")
+        file2 = self._create_xml_file("project1", "doc2.xml", b"<root/>")
+        index_file = self._create_xml_file("project1", "index.xml", index_content)
+        
+        preamble, postamble = extract_sources([file1, file2])
+        
+        # Should extract from same index file (deduplicated)
+        self.assertIn(r'\begin{filecontents*}{job.bib}', preamble)
+
+    def test_transform_xml_to_tex_empty_licenses_credits(self):
+        """Test transform with no licenses or credits."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+        
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:p>Content only</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+        
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+        
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+        
+        # Should still produce valid LaTeX even without licenses/credits
+        self.assertIn(r'\documentclass{book}', result)
+        # Should not have empty metadata sections
+        # (The postamble will be empty if no licenses/credits/sources)
 
 
 if __name__ == '__main__':
