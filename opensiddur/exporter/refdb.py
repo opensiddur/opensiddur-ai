@@ -615,7 +615,7 @@ class ReferenceDatabase:
         self.close()
 
 
-def main():
+def main():  # pragma: no cover
     """Synchronize the reference database with the project directory.
     
     Opens the default database and syncs all projects, printing a summary
@@ -669,5 +669,5 @@ def main():
             raise
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
