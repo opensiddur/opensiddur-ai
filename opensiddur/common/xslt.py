@@ -85,7 +85,7 @@ def xslt_transform(
         raise
 
 
-def main():
+def main(): # pragma: no cover
     parser = ArgumentParser()
     parser.add_argument("-o", "--output", type=Path, required=False, default=None)
     parser.add_argument("transform_file", type=Path)
@@ -96,5 +96,5 @@ def main():
     xslt_transform(args.transform_file, args.input_file, args.output)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     main()

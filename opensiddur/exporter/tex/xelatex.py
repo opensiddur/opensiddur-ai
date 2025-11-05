@@ -235,10 +235,9 @@ def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
         tuple: (preamble_tex, postamble_tex) for the bibliography
     """
     index_files = set(get_project_index(fp) for fp in xml_file_paths)
+    bibtex_records_all = []
+    unique_bibtex_records = set()
     for index_xml in index_files:
-        bibtex_records_all = []
-        unique_bibtex_records = set()
-        
         try:
             # Convert the index xml to .bib using bibtex.xslt
             index_xml_text = index_xml.read_text(encoding="utf-8")
@@ -251,24 +250,24 @@ def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
         except Exception as e:
             print(f"Could not extract bibtex from {index_xml}: {e}", file=sys.stderr)
             continue
-        bibtex_blob = "\n\n".join(bibtex_records_all)
-        preamble_tex = ""
-        postamble_tex = ""
-        if bibtex_blob:
-            preamble_tex = f"""\\begin{{filecontents*}}{{job.bib}}
+    bibtex_blob = "\n\n".join(bibtex_records_all)
+    preamble_tex = ""
+    postamble_tex = ""
+    if bibtex_blob:
+        preamble_tex = f"""\\begin{{filecontents*}}{{job.bib}}
 {bibtex_blob}
 \\end{{filecontents*}}
 \\addbibresource{{job.bib}}
 """
-            postamble_tex = f"""
+        postamble_tex = f"""
 \\begingroup
 \\renewcommand{{\\refname}}{{Sources}}
 \\nocite{{*}}
 \\printbibliography
 \\endgroup
 """
-        return preamble_tex, postamble_tex
-    return "", ""
+    return preamble_tex, postamble_tex
+
 
 def get_file_references(input_file: Path, project_directory: Path = projects_source_root) -> list[Path]:
     """
@@ -346,12 +345,14 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         else:
             sys.stdout.write(result)
         
+        return result
+        
     except Exception as e:
         print(f"Transformation error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-def main():
+def main():  # pragma: no cover
     """Main function to handle command line arguments and run the transformation."""
     parser = argparse.ArgumentParser(
         description="Convert JLPTEI XML files to XeLaTeX format",
