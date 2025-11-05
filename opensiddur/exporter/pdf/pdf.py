@@ -199,7 +199,7 @@ def export_to_pdf(input_file, output_pdf):
         return True
 
 
-def main():
+def main():  # pragma: no cover
     """Main function to handle command line arguments and run the PDF generation."""
     parser = argparse.ArgumentParser(
         description="Convert JLPTEI XML files to PDF format",
