@@ -19,6 +19,8 @@ class UrnMapping(BaseModel):
     element_path: str
     element_tag: str
     element_type: Optional[str]
+    end_element_path: str
+    end_includes_tail: bool
 
 class Reference(BaseModel):
     element_path: str
@@ -57,6 +59,8 @@ class ReferenceDatabase:
                 element_path TEXT NOT NULL,
                 element_tag TEXT NOT NULL,
                 element_type TEXT,
+                end_element_path TEXT,
+                end_includes_tail BOOLEAN,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (urn, project)
@@ -126,18 +130,27 @@ class ReferenceDatabase:
         cursor = self.conn.cursor()
         if urn and project:
             cursor.execute('''
-                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings WHERE urn = ? AND project = ?''', (urn, project))
+                SELECT * FROM urn_mappings WHERE urn = ? AND project = ?''', (urn, project))
         elif urn:
             cursor.execute('''
-                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings WHERE urn = ?''', (urn,))
+                SELECT * FROM urn_mappings WHERE urn = ?''', (urn,))
         elif project:
             cursor.execute('''
-                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings WHERE project = ?''', (project,))
+                SELECT * FROM urn_mappings WHERE project = ?''', (project,))
         else:
             cursor.execute('''
-                SELECT project, file_name, urn, element_path, element_tag, element_type FROM urn_mappings''')
+                SELECT * FROM urn_mappings''')
         return [
-            UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn'], element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type']) 
+            UrnMapping(
+                project=row['project'], 
+                file_name=row['file_name'], 
+                urn=row['urn'], 
+                element_path=row['element_path'], 
+                element_tag=row['element_tag'], 
+                element_type=row['element_type'],
+                end_element_path=row['end_element_path'],
+                end_includes_tail=row['end_includes_tail']
+            ) 
             for row in cursor.fetchall()]
     
     def get_references_to(self, urn: Optional[str] = None, id: Optional[str] = None, project: Optional[str] = None, file_name: Optional[str] = None) -> list[Reference]:
@@ -190,16 +203,62 @@ class ReferenceDatabase:
         if not urn:
             return
         element_path = element.getroottree().getpath(element)
+        end_element_path, end_includes_tail = self._find_end_of_mapping(element)
         element_tag = element.tag
         element_type = element.get('type')
         cursor.execute('''
-            INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag, element_type)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(urn, project) DO UPDATE SET
                 file_name = excluded.file_name,
                 updated_at = CURRENT_TIMESTAMP
-        ''', (urn, project, file_name, element_path, element_tag, element_type))
+        ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail))
         self.conn.commit()
+
+    def _find_end_of_mapping(self, element: ElementBase) -> tuple[str, bool]:
+        """ Find the end of the mapping for the given element.
+        The end of the mapping has 2 elements:
+        1. The path to the element that ends the mapping
+        2. If the tail of the end element should be included as part of the mapping
+        
+        All ends are inclusive.
+
+        Args:
+            element: The element that has the URN mapping
+        
+        Returns:
+            A tuple of the path to the end of the mapping and a boolean indicating if the tail of the end element should be included as part of the mapping
+        """
+        ns_map = {
+            'tei': 'http://www.tei-c.org/ns/1.0',
+        }
+        include_tail = False
+
+        is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
+        corresp = element.get('corresp')
+        if is_milestone:
+            last_part = corresp.split(':')[-1]
+            num_dividers_in_last_part = last_part.count('/')
+            following_milestones = element.xpath(f"""./following::tei:milestone[@corresp][ancestor::tei:text]""", namespaces=ns_map)
+            actual_end = None
+            for milestone in following_milestones:
+                following_corresp = milestone.attrib.get("corresp", "")
+                last_part_of_following_corresp = following_corresp.split(':')[-1]
+                num_dividers_in_last_part_of_following_corresp = last_part_of_following_corresp.count('/')
+                if num_dividers_in_last_part_of_following_corresp <= num_dividers_in_last_part:
+                    actual_end = milestone.xpath(f"./preceding::*[1]")[0]
+                    include_tail = True
+                    break
+            if actual_end is None:
+                # There is no ending milestone, so we just have to include everything until the last sibling, including text
+                actual_end = element.xpath(f"./following-sibling::*[last()]|self::*")[-1]
+                include_tail = True
+            end_path = actual_end.getroottree().getpath(actual_end)
+            return end_path, include_tail
+        else:
+            # not a milestone - the corresp refers to the element itself
+            end_path = element.getroottree().getpath(element)
+            return end_path, include_tail
 
     def add_reference(self, project: str, file_name: str, element: ElementBase):
         """ Add a reference to the database.
@@ -237,10 +296,22 @@ class ReferenceDatabase:
         """
         cursor = self.conn.cursor()
         cursor.execute(
-            'SELECT urn, project, file_name, element_path, element_tag, element_type FROM urn_mappings WHERE project = ?',
+            'SELECT * FROM urn_mappings WHERE project = ?',
             (project,)
         )
-        return [UrnMapping(project=row['project'], file_name=row['file_name'], urn=row['urn'], element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type']) for row in cursor.fetchall()]
+        return [
+            UrnMapping(
+                project=row['project'], 
+                file_name=row['file_name'], 
+                urn=row['urn'], 
+                element_path=row['element_path'], 
+                element_tag=row['element_tag'], 
+                element_type=row['element_type'],
+                end_element_path=row['end_element_path'],
+                end_includes_tail=row['end_includes_tail']
+            ) 
+            for row in cursor.fetchall()
+        ]
     
     def get_files_by_project(self, project: str) -> list[str]:
         """Get a list of all distinct file names in a project.

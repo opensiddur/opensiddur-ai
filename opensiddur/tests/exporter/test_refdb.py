@@ -53,6 +53,7 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         project = "test_project"
         file_name = "doc1.xml"
         elem = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        expected_path = elem.getroottree().getpath(elem)
         
         self.db.add_urn_mapping(project, file_name, elem)
         
@@ -65,6 +66,8 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         self.assertEqual(row['urn'], "urn:x-opensiddur:test:doc1")
         self.assertEqual(row['project'], project)
         self.assertEqual(row['file_name'], file_name)
+        self.assertEqual(row['end_element_path'], expected_path)
+        self.assertEqual(row['end_includes_tail'], 0)
 
     def test_add_urn_mapping_update(self):
         """Test updating an existing URN mapping."""
@@ -84,6 +87,74 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
                       ("urn:x-opensiddur:test:doc1", project))
         row = cursor.fetchone()
         self.assertEqual(row['file_name'], "file2.xml")
+
+    def test_add_urn_mapping_milestone_end_path(self):
+        """Test that milestone URN mappings record an end element path and include tail."""
+        project = "test_project"
+        file_name = "doc1.xml"
+        xml = """
+        <TEI xmlns="http://www.tei-c.org/ns/1.0">
+          <text>
+            <body>
+              <milestone corresp="urn:x-opensiddur:test:verse/1"/>
+              <p n="1">First paragraph</p>
+              <p n="2">Second paragraph</p>
+              <milestone corresp="urn:x-opensiddur:test:verse/2"/>
+            </body>
+          </text>
+        </TEI>
+        """
+        root = etree.fromstring(xml)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        milestone = root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:test:verse/1']", namespaces=ns)[0]
+        expected_end = root.xpath("//tei:p[@n='2']", namespaces=ns)[0]
+
+        self.db.add_urn_mapping(project, file_name, milestone)
+
+        cursor = self.db.conn.cursor()
+        cursor.execute(
+            'SELECT end_element_path, end_includes_tail FROM urn_mappings WHERE urn = ?',
+            ("urn:x-opensiddur:test:verse/1",)
+        )
+        row = cursor.fetchone()
+
+        self.assertIsNotNone(row)
+        self.assertEqual(row["end_element_path"], expected_end.getroottree().getpath(expected_end))
+        self.assertTrue(row["end_includes_tail"])
+
+    def test_add_urn_mapping_milestone_without_matching_following(self):
+        """Test milestone URN mapping end path when no matching-level milestone follows."""
+        project = "test_project"
+        file_name = "doc2.xml"
+        xml = """
+        <TEI xmlns="http://www.tei-c.org/ns/1.0">
+          <text>
+            <body>
+              <milestone corresp="urn:x-opensiddur:test:verse/1"/>
+              <p n="1">First paragraph</p>
+              <milestone corresp="urn:x-opensiddur:test:verse/1/1"/>
+              <p n="2">Second paragraph</p>
+            </body>
+          </text>
+        </TEI>
+        """
+        root = etree.fromstring(xml)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        milestone = root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:test:verse/1']", namespaces=ns)[0]
+        expected_end = root.xpath("//tei:p[@n='2']", namespaces=ns)[0]
+
+        self.db.add_urn_mapping(project, file_name, milestone)
+
+        cursor = self.db.conn.cursor()
+        cursor.execute(
+            'SELECT end_element_path, end_includes_tail FROM urn_mappings WHERE urn = ?',
+            ("urn:x-opensiddur:test:verse/1",)
+        )
+        row = cursor.fetchone()
+
+        self.assertIsNotNone(row)
+        self.assertEqual(row["end_element_path"], expected_end.getroottree().getpath(expected_end))
+        self.assertTrue(row["end_includes_tail"])
 
     def test_add_urn_mapping_multiple_projects(self):
         """Test that same URN can exist in multiple projects."""
