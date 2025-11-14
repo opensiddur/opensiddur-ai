@@ -19,6 +19,7 @@ def _validate_project_list(project_list: list[str],
 class Prioritizations(BaseModel):
     transclusion: list[str] = Field(default_factory=list)
     instructions: list[str] = Field(default_factory=list)
+    alignment: list[str] = Field(default_factory=list)
 
     @field_validator("transclusion")
     def validate_transclusion(cls, v: list[str]) -> list[str]:
@@ -26,6 +27,10 @@ class Prioritizations(BaseModel):
 
     @field_validator("instructions")
     def validate_instructions(cls, v: list[str]) -> list[str]:
+        return _validate_project_list(v)
+
+    @field_validator("alignment")
+    def validate_alignment(cls, v: list[str]) -> list[str]:
         return _validate_project_list(v)
 
 class SettingsYaml(BaseModel):
@@ -46,6 +51,7 @@ def load_settings(settings_file: Path, linear_data: Optional[LinearData] = None)
     linear_data.project_priority = settings.priority.transclusion
     linear_data.instruction_priority = settings.priority.instructions
     linear_data.annotation_projects = settings.annotations
+    linear_data.alignment_priority = settings.priority.alignment
     return linear_data
 
 
@@ -58,4 +64,5 @@ def load_default_settings(
     linear_data.project_priority = [project]
     linear_data.instruction_priority = [project]
     linear_data.annotation_projects = [project]
+    linear_data.alignment_priority = []
     return linear_data

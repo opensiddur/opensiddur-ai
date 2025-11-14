@@ -31,6 +31,8 @@ class LinearData(BaseModel):
     instruction_priority: list[str] = Field(default_factory=list)
     # projects from which to include annotations (not a priority list)
     annotation_projects: list[str] = Field(default_factory=list)
+    # projects from which to include alignment, in priority order
+    alignment_priority: list[str] = Field(default_factory=list)
     # processing context includes processor-specific data. Because there is recursion, it acts as a stack.
     processing_context: list[dict[str, Any]] = Field(default_factory=list)
 

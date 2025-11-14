@@ -28,7 +28,7 @@ from lxml import etree
 from opensiddur.exporter.linear import LinearData, get_linear_data
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.settings import load_default_settings, load_settings
-from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
+from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange, UrnResolver
 
 JLPTEI_NAMESPACE = 'http://jewishliturgy.org/ns/jlptei/2'
 PROCESSING_NAMESPACE = 'http://jewishliturgy.org/ns/processing'
@@ -94,6 +94,7 @@ class CompilerProcessor:
         self.ns_map: The namespace map
         self.root_language: The language of the first processed element
             (if the processed text needs to be included in something, use this language)
+        self.alignment_map: A map of corresp elements to alignment urns (ResolvedUrn)
         """
         self.linear_data = linear_data or get_linear_data()
 
@@ -103,6 +104,8 @@ class CompilerProcessor:
 
         self.project = project
         self.file_name = file_name
+        
+        self.alignment_map = {}
 
         # Extract namespaces from root_tree and save to self.ns_map
         # lxml stores nsmap at the Element level, not the whole tree for parsed objects
@@ -127,6 +130,39 @@ class CompilerProcessor:
             if lang:
                 return lang
         return None
+
+    def _lookup_alignment(self, element: ElementBase) -> Optional[ResolvedUrn]:
+        """ Look up the prioritized alignment for the given element.
+        """
+        alignment_projects = self.linear_data.alignment_priority
+        if not alignment_projects:
+            return None
+        corresp = element.get("corresp")
+        if not corresp or not corresp.startswith('urn:'):
+            return None
+        
+        resolved_urns = self._urn_resolver.resolve(corresp)
+        alignment_urn = UrnResolver.prioritize_range(resolved_urns, alignment_projects)
+        return alignment_urn
+
+    def _plan_alignment(self):
+        """ Plan the alignment for the current processing.
+        Assume that self.start_element and self.end_element are set, if applicable.
+        """
+        self.alignment_map = {}
+        alignment_projects = self.linear_data.alignment_priority
+        if not alignment_projects:
+            return None
+        
+        # first, get all of the elements with corresp that are between the start and end, inclusive
+        corresp_elements = self.root_tree.xpath(f"./descendant-or-self::*[@corresp][ancestor::tei:text]", namespaces=self.ns_map)
+        if not corresp_elements:
+            return None
+        # this will map all of the corresp elements in order
+        for corresp_element in corresp_elements:
+            alignment_urn = self._lookup_alignment(corresp_element)
+            if alignment_urn:
+                self.alignment_map[corresp_element] = alignment_urn
 
     def _get_path_hash(self, element: Optional[ElementBase] = None) -> str:
         """ Get a hash of the path taken to get to the current processing context and element if available """

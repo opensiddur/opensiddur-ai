@@ -7,6 +7,48 @@ from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange
 from opensiddur.exporter.refdb import UrnMapping
 
 
+def make_urn_mapping(
+    project: str,
+    file_name: str,
+    urn: str,
+    element_path: str = "/TEI/div[1]",
+    element_tag: str = "{http://www.tei-c.org/ns/1.0}div",
+    element_type: str | None = "chapter",
+    end_element_path: str | None = None,
+    end_includes_tail: bool = False,
+) -> UrnMapping:
+    """Helper to create UrnMapping test instances with the new end fields."""
+    return UrnMapping(
+        project=project,
+        file_name=file_name,
+        urn=urn,
+        element_path=element_path,
+        element_tag=element_tag,
+        element_type=element_type,
+        end_element_path=end_element_path or element_path,
+        end_includes_tail=end_includes_tail,
+    )
+
+
+def make_resolved_urn(
+    project: str,
+    file_name: str,
+    urn: str,
+    element_path: str = "/TEI/div[1]",
+    end_element_path: str | None = None,
+    end_includes_tail: bool = False,
+) -> ResolvedUrn:
+    """Helper to create ResolvedUrn test instances with the new end fields."""
+    return ResolvedUrn(
+        project=project,
+        file_name=file_name,
+        urn=urn,
+        element_path=element_path,
+        end_element_path=end_element_path or element_path,
+        end_includes_tail=end_includes_tail,
+    )
+
+
 class TestUrnResolverResolve(unittest.TestCase):
     """Test URN resolution functionality."""
 
@@ -19,8 +61,8 @@ class TestUrnResolverResolve(unittest.TestCase):
         """Test resolving URN without project specifier returns all matches."""
         # Mock database to return mappings for two projects
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
-            UrnMapping(project="jps1917", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
+            make_urn_mapping(project="jps1917", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
         ]
         
         results = self.resolver.resolve("urn:x-opensiddur:test:doc1")
@@ -38,6 +80,8 @@ class TestUrnResolverResolve(unittest.TestCase):
             self.assertEqual(result.urn, "urn:x-opensiddur:test:doc1")
             self.assertEqual(result.file_name, "doc1.xml")
             self.assertEqual(result.element_path, "/TEI/div[1]")
+            self.assertEqual(result.end_element_path, "/TEI/div[1]")
+            self.assertFalse(result.end_includes_tail)
         
         # Verify database was called correctly
         self.mock_db.get_urn_mappings.assert_called_once_with("urn:x-opensiddur:test:doc1")
@@ -46,7 +90,7 @@ class TestUrnResolverResolve(unittest.TestCase):
         """Test resolving URN with @project specifier."""
         # Mock database to return mapping for specific project
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
         ]
         
         results = self.resolver.resolve("urn:x-opensiddur:test:doc1@wlc")
@@ -56,6 +100,8 @@ class TestUrnResolverResolve(unittest.TestCase):
         self.assertEqual(results[0].project, "wlc")
         self.assertEqual(results[0].file_name, "doc1.xml")
         self.assertEqual(results[0].element_path, "/TEI/div[1]")
+        self.assertEqual(results[0].end_element_path, "/TEI/div[1]")
+        self.assertFalse(results[0].end_includes_tail)
         
         # Verify database was called with both urn and project
         self.mock_db.get_urn_mappings.assert_called_once_with("urn:x-opensiddur:test:doc1", "wlc")
@@ -82,7 +128,7 @@ class TestUrnResolverResolve(unittest.TestCase):
         """Test that resolve always returns a list."""
         # Existing URN
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
         ]
         result = self.resolver.resolve("urn:x-opensiddur:test:doc1")
         self.assertIsInstance(result, list)
@@ -106,8 +152,8 @@ class TestUrnResolverGetByProject(unittest.TestCase):
         """Test getting all URNs for a project."""
         # Mock database to return URNs for wlc project
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
-            UrnMapping(project="wlc", file_name="doc2.xml", urn="urn:x-opensiddur:test:doc2", element_path="/TEI/div[2]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
+            make_urn_mapping(project="wlc", file_name="doc2.xml", urn="urn:x-opensiddur:test:doc2", element_path="/TEI/div[2]", end_element_path="/TEI/div[2]"),
         ]
         
         results = self.resolver.get_urns_by_project("wlc")
@@ -119,6 +165,8 @@ class TestUrnResolverGetByProject(unittest.TestCase):
         # All should be in wlc project
         for result in results:
             self.assertEqual(result.project, "wlc")
+            self.assertEqual(result.end_element_path, result.element_path)
+            self.assertFalse(result.end_includes_tail)
         
         # Verify database was called with project parameter
         self.mock_db.get_urn_mappings.assert_called_once_with(project="wlc")
@@ -147,13 +195,13 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             elif urn == "urn:x-opensiddur:test:bible:genesis/1/2":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             return []
         
@@ -171,6 +219,10 @@ class TestUrnResolverRange(unittest.TestCase):
             self.assertEqual(result.start.file_name, result.end.file_name)
             self.assertEqual(result.start.element_path, "/TEI/div[1]")
             self.assertEqual(result.end.element_path, "/TEI/div[1]")
+            self.assertEqual(result.start.end_element_path, "/TEI/div[1]")
+            self.assertEqual(result.end.end_element_path, "/TEI/div[1]")
+            self.assertFalse(result.start.end_includes_tail)
+            self.assertFalse(result.end.end_includes_tail)
 
     def test_resolve_range_with_project(self):
         """Test resolving range with @project specifier."""
@@ -178,9 +230,9 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if project == "wlc":
                 if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
-                    return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                    return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
                 elif urn == "urn:x-opensiddur:test:bible:genesis/1/2":
-                    return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                    return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             return []
         
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
@@ -197,13 +249,13 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             elif urn == "urn:x-opensiddur:test:bible:genesis/2/3":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             return []
         
@@ -225,13 +277,13 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             elif urn == "urn:x-opensiddur:test:bible:genesis/2":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             return []
         
@@ -261,7 +313,7 @@ class TestUrnResolverRange(unittest.TestCase):
         # Mock database
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
-                return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             return []
         
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
@@ -274,8 +326,8 @@ class TestUrnResolverRange(unittest.TestCase):
         """Test resolving URN without dash calls resolve() and returns results."""
         # Mock database
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-            UrnMapping(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+            make_urn_mapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_type="verse"),
+            make_urn_mapping(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_type="verse"),
         ]
         
         results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1")
@@ -292,9 +344,9 @@ class TestUrnResolverRange(unittest.TestCase):
         # Valid range
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
-                return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             elif urn == "urn:x-opensiddur:test:bible:genesis/1/2":
-                return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             return []
         
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
@@ -304,7 +356,7 @@ class TestUrnResolverRange(unittest.TestCase):
         
         # Non-ranged URN (calls resolve())
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+            make_urn_mapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_type="verse"),
         ]
         result = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1")
         self.assertIsInstance(result, list)
@@ -314,7 +366,13 @@ class TestUrnResolverRange(unittest.TestCase):
     def test_resolve_range_calls_resolve_for_non_ranged_urn(self, mock_resolve):
         """Test that resolve_range calls resolve() when given a non-ranged URN."""
         # Setup mock to return a known result
-        expected_result = [ResolvedUrn(project="test", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")]
+        expected_result = [
+            make_resolved_urn(
+                project="test",
+                file_name="test.xml",
+                urn="urn:x-opensiddur:test:doc",
+            )
+        ]
         mock_resolve.return_value = expected_result
         
         # Call resolve_range with a non-ranged URN
@@ -330,7 +388,13 @@ class TestUrnResolverRange(unittest.TestCase):
     def test_resolve_range_calls_resolve_for_non_ranged_urn_with_project(self, mock_resolve):
         """Test that resolve_range calls resolve() with @project for non-ranged URN."""
         # Setup mock to return a known result
-        expected_result = [ResolvedUrn(project="wlc", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")]
+        expected_result = [
+            make_resolved_urn(
+                project="wlc",
+                file_name="test.xml",
+                urn="urn:x-opensiddur:test:doc",
+            )
+        ]
         mock_resolve.return_value = expected_result
         
         # Call resolve_range with a non-ranged URN with @project
@@ -346,7 +410,13 @@ class TestUrnResolverRange(unittest.TestCase):
     def test_resolve_range_calls_resolve_for_urn_with_dash_not_in_last_part(self, mock_resolve):
         """Test that resolve_range calls resolve() for URNs with dash in non-final component."""
         # Setup mock
-        expected_result = [ResolvedUrn(project="test", file_name="some-book.xml", urn="urn:x-opensiddur:text:some-book/1", element_path="/TEI/div[1]")]
+        expected_result = [
+            make_resolved_urn(
+                project="test",
+                file_name="some-book.xml",
+                urn="urn:x-opensiddur:text:some-book/1",
+            )
+        ]
         mock_resolve.return_value = expected_result
         
         # URN with dash in book name (not in last component)
@@ -362,7 +432,7 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
 
     def test_get_path_from_urn_basic(self):
         """Test basic path construction from ResolvedUrn."""
-        resolved = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
+        resolved = make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc")
         
         result = UrnResolver.get_path_from_urn(resolved)
         
@@ -373,7 +443,7 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
 
     def test_get_path_from_urn_with_custom_project_directory(self):
         """Test path construction with custom project directory."""
-        resolved = ResolvedUrn(project="jps1917", file_name="exodus.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
+        resolved = make_resolved_urn(project="jps1917", file_name="exodus.xml", urn="urn:x-opensiddur:test:doc")
         custom_dir = Path("/custom/project/dir")
         
         result = UrnResolver.get_path_from_urn(resolved, project_directory=custom_dir)
@@ -383,8 +453,8 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
 
     def test_get_path_from_urn_different_projects(self):
         """Test path construction for different projects."""
-        resolved1 = ResolvedUrn(project="wlc", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
-        resolved2 = ResolvedUrn(project="jps1917", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
+        resolved1 = make_resolved_urn(project="wlc", file_name="test.xml", urn="urn:x-opensiddur:test:doc")
+        resolved2 = make_resolved_urn(project="jps1917", file_name="test.xml", urn="urn:x-opensiddur:test:doc")
         
         result1 = UrnResolver.get_path_from_urn(resolved1)
         result2 = UrnResolver.get_path_from_urn(resolved2)
@@ -396,8 +466,8 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
 
     def test_get_path_from_urn_different_files(self):
         """Test path construction for different files in same project."""
-        resolved1 = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]")
-        resolved2 = ResolvedUrn(project="wlc", file_name="exodus.xml", urn="urn:x-opensiddur:test:doc2", element_path="/TEI/div[1]")
+        resolved1 = make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc1")
+        resolved2 = make_resolved_urn(project="wlc", file_name="exodus.xml", urn="urn:x-opensiddur:test:doc2")
         
         result1 = UrnResolver.get_path_from_urn(resolved1)
         result2 = UrnResolver.get_path_from_urn(resolved2)
@@ -409,7 +479,7 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
 
     def test_get_path_from_urn_is_classmethod(self):
         """Test that get_path_from_urn can be called without an instance."""
-        resolved = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
+        resolved = make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc")
         
         # Should be callable as a class method
         result = UrnResolver.get_path_from_urn(resolved)
@@ -418,7 +488,7 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
 
     def test_get_path_from_urn_returns_path_object(self):
         """Test that get_path_from_urn returns a Path object."""
-        resolved = ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
+        resolved = make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc")
         
         result = UrnResolver.get_path_from_urn(resolved)
         
@@ -427,7 +497,7 @@ class TestUrnResolverGetPathFromUrn(unittest.TestCase):
     def test_get_path_from_urn_with_nested_project(self):
         """Test path construction with project that looks like a path."""
         # Some projects might have dashes or special characters
-        resolved = ResolvedUrn(project="some-project", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]")
+        resolved = make_resolved_urn(project="some-project", file_name="test.xml", urn="urn:x-opensiddur:test:doc")
         custom_dir = Path("/base")
         
         result = UrnResolver.get_path_from_urn(resolved, project_directory=custom_dir)
@@ -442,9 +512,9 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_with_resolved_urns(self):
         """Test prioritizing a list of ResolvedUrn objects."""
         urns = [
-            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # wlc should have priority
@@ -459,16 +529,16 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
         """Test prioritizing a list of ResolvedUrnRange objects."""
         ranges = [
             ResolvedUrnRange(
-                start=ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1", element_path="/TEI/div[1]"),
-                end=ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2", element_path="/TEI/div[1]")
+                start=make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
             ),
             ResolvedUrnRange(
-                start=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1", element_path="/TEI/div[1]"),
-                end=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2", element_path="/TEI/div[1]")
+                start=make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
             ),
             ResolvedUrnRange(
-                start=ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1", element_path="/TEI/div[1]"),
-                end=ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2", element_path="/TEI/div[1]")
+                start=make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
             ),
         ]
         
@@ -483,12 +553,12 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_mixed_types(self):
         """Test prioritizing a mixed list of ResolvedUrn and ResolvedUrnRange objects."""
         mixed = [
-            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
             ResolvedUrnRange(
-                start=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1", element_path="/TEI/div[1]"),
-                end=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2", element_path="/TEI/div[1]")
+                start=make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
             ),
-            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # wlc should have priority even though it's a ResolvedUrnRange
@@ -508,8 +578,8 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_empty_priority_list(self):
         """Test prioritizing with empty priority list returns None."""
         urns = [
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         result = UrnResolver.prioritize_range(urns, [])
@@ -519,8 +589,8 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_no_matching_projects(self):
         """Test prioritizing when no URNs match the priority list returns None."""
         urns = [
-            ResolvedUrn(project="other1", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="other2", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="other1", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="other2", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Priority list doesn't include other1 or other2
@@ -532,9 +602,9 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_partial_matching_projects(self):
         """Test prioritizing when only some URNs match the priority list."""
         urns = [
-            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Only wlc and jps1917 are in priority list
@@ -547,7 +617,7 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_single_urn(self):
         """Test prioritizing a single URN."""
         urns = [
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         priority = ["wlc", "jps1917"]
@@ -559,9 +629,9 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_respects_priority_order(self):
         """Test that priority order is respected (first in list is highest priority)."""
         urns = [
-            ResolvedUrn(project="project1", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="project2", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="project3", file_name="test.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="project1", file_name="test.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="project2", file_name="test.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="project3", file_name="test.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # project2 should win
@@ -581,9 +651,9 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_with_duplicate_projects(self):
         """Test prioritizing when multiple URNs have the same project."""
         urns = [
-            ResolvedUrn(project="wlc", file_name="file1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="wlc", file_name="file2.xml", urn="urn:x-opensiddur:test:doc2", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="jps1917", file_name="file3.xml", urn="urn:x-opensiddur:test:doc3", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="wlc", file_name="file1.xml", urn="urn:x-opensiddur:test:doc1"),
+            make_resolved_urn(project="wlc", file_name="file2.xml", urn="urn:x-opensiddur:test:doc2"),
+            make_resolved_urn(project="jps1917", file_name="file3.xml", urn="urn:x-opensiddur:test:doc3"),
         ]
         
         priority = ["wlc", "jps1917"]
@@ -597,7 +667,7 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_is_classmethod(self):
         """Test that prioritize_range can be called without an instance."""
         urns = [
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Should be callable as a class method
@@ -609,9 +679,9 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_return_all_with_matching_results(self):
         """Test prioritize_range with return_all=True when there are matching results."""
         urns = [
-            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Only wlc and jps1917 are in priority list
@@ -629,8 +699,8 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_return_all_with_no_matching_results(self):
         """Test prioritize_range with return_all=True when there are no matching results."""
         urns = [
-            ResolvedUrn(project="other1", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="other2", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="other1", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="other2", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Priority list doesn't include other1 or other2
@@ -642,12 +712,12 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_return_all_with_mixed_types(self):
         """Test prioritize_range with return_all=True with mixed ResolvedUrn and ResolvedUrnRange objects."""
         mixed = [
-            ResolvedUrn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
             ResolvedUrnRange(
-                start=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1", element_path="/TEI/div[1]"),
-                end=ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2", element_path="/TEI/div[1]")
+                start=make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/1"),
+                end=make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc/2")
             ),
-            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Only wlc and jps1917 are in priority list
@@ -671,8 +741,8 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
     def test_prioritize_range_return_all_single_match(self):
         """Test prioritize_range with return_all=True with single matching result."""
         urns = [
-            ResolvedUrn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
-            ResolvedUrn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc", element_path="/TEI/div[1]"),
+            make_resolved_urn(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
+            make_resolved_urn(project="other", file_name="genesis.xml", urn="urn:x-opensiddur:test:doc"),
         ]
         
         # Only wlc is in priority list
@@ -685,5 +755,3 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
         self.assertEqual(results[0].project, "wlc")
 
 
-if __name__ == '__main__':
-    unittest.main()

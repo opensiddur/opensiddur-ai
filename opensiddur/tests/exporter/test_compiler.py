@@ -13,6 +13,50 @@ from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
 
 
+def make_resolved_urn(
+    *,
+    urn: str,
+    project: str,
+    file_name: str,
+    element_path: str,
+    end_element_path: str | None = None,
+    end_includes_tail: bool = False,
+) -> ResolvedUrn:
+    """Helper to create ResolvedUrn instances with default end path fields."""
+    return ResolvedUrn(
+        urn=urn,
+        project=project,
+        file_name=file_name,
+        element_path=element_path,
+        end_element_path=end_element_path or element_path,
+        end_includes_tail=end_includes_tail,
+    )
+
+
+def make_urn_mapping(
+    *,
+    urn: str,
+    project: str,
+    file_name: str,
+    element_path: str,
+    element_tag: str,
+    element_type: str | None = None,
+    end_element_path: str | None = None,
+    end_includes_tail: bool = False,
+) -> UrnMapping:
+    """Helper to create UrnMapping instances with default end path fields."""
+    return UrnMapping(
+        urn=urn,
+        project=project,
+        file_name=file_name,
+        element_path=element_path,
+        element_tag=element_tag,
+        element_type=element_type,
+        end_element_path=end_element_path or element_path,
+        end_includes_tail=end_includes_tail,
+    )
+
+
 class TestCompilerProcessorWithFiles(unittest.TestCase):
     """Test CompilerProcessor with file-based input (no transclusions, no start/end)."""
 
@@ -302,10 +346,16 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             MockInlineProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
-            from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
-            
+
             def mock_resolve_range(urn):
-                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project=project,
+                        file_name=file_name,
+                        element_path="/TEI/div[1]",
+                    )
+                ]
             
             def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
@@ -363,10 +413,16 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs
-            from opensiddur.exporter.urn import ResolvedUrn
             
             def mock_resolve_range(urn):
-                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project=project,
+                        file_name=file_name,
+                        element_path="/TEI/div[1]",
+                    )
+                ]
             
             def mock_prioritize_range(urns, priority_list, return_all=False):
                 return urns[0] if urns else None
@@ -422,13 +478,26 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             MockExternalProcessor.return_value = mock_instance
             
             # Mock UrnResolver methods to return resolved URNs pointing to external file
-            from opensiddur.exporter.urn import ResolvedUrn
-            
+
             def mock_resolve_range(urn):
                 if "fragment1" in urn:
-                    return [ResolvedUrn(urn="#fragment1", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
+                    return [
+                        make_resolved_urn(
+                            urn="#fragment1",
+                            project="external_project",
+                            file_name="external.xml",
+                            element_path="/TEI/div[1]",
+                        )
+                    ]
                 elif "fragment2" in urn:
-                    return [ResolvedUrn(urn="#fragment2", project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
+                    return [
+                        make_resolved_urn(
+                            urn="#fragment2",
+                            project="external_project",
+                            file_name="external.xml",
+                            element_path="/TEI/div[1]",
+                        )
+                    ]
                 return []
             
             def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -514,11 +583,17 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                 return mock_tree
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
+            return [
+                make_resolved_urn(
+                    urn=urn,
+                    project="transcluded_project",
+                    file_name="transcluded.xml",
+                    element_path="/TEI/div[1]",
+                )
+            ]
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
@@ -628,11 +703,17 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn):
             if urn.startswith("#transclude"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path="/TEI/div[1]",
+                    )
+                ]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -751,11 +832,17 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                 return mock_tree
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
+            return [
+                make_resolved_urn(
+                    urn=urn,
+                    project="transcluded_project",
+                    file_name="transcluded.xml",
+                    element_path="/TEI/div[1]",
+                )
+            ]
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
@@ -847,11 +934,17 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             return original_parse_xml(*args, **kwargs)
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn):
             if "ext_frag" in urn:
-                return [ResolvedUrn(urn="#ext_frag", project="external_project", file_name="external.xml", element_path="/root/text[1]/div[1]/p[1]")]
+                return [
+                    make_resolved_urn(
+                        urn="#ext_frag",
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path="/root/text[1]/div[1]/p[1]",
+                    )
+                ]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -942,13 +1035,13 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Mock get_urn_mappings to return the instruction note mapping
         from opensiddur.exporter.refdb import UrnMapping
         refdb.get_urn_mappings.return_value = [
-            UrnMapping(
+            make_urn_mapping(
                 urn="urn:test:instruction:lang",
                 project="instructions_project",
                 file_name="instruction.xml",
                 element_path=lxml_note_element_path,
                 element_tag="{http://www.tei-c.org/ns/1.0}note",
-                element_type="instruction"
+                element_type="instruction",
             )
         ]
         refdb.get_references_to.return_value = []
@@ -966,11 +1059,17 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             return original_parse_xml(*args, **kwargs)
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve(urn):
             if urn == "urn:test:instruction:lang":
-                return [ResolvedUrn(urn="urn:test:instruction:lang", project="instructions_project", file_name="instruction.xml", element_path=lxml_note_element_path)]
+                return [
+                    make_resolved_urn(
+                        urn="urn:test:instruction:lang",
+                        project="instructions_project",
+                        file_name="instruction.xml",
+                        element_path=lxml_note_element_path,
+                    )
+                ]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -1185,13 +1284,26 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn):
             if urn.startswith("#external1"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path="/root/div[1]/p[1]",
+                    )
+                ]
             elif urn.startswith("#external2"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[2]")]
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path="/root/div[1]/p[2]",
+                    )
+                ]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -1339,11 +1451,17 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn):
             if urn.startswith("#external1"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path="/root/div[1]/p[1]",
+                    )
+                ]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -1873,17 +1991,16 @@ class TestExternalCompilerProcessor(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock UrnResolver methods
-        from opensiddur.exporter.urn import ResolvedUrn
         
         def mock_resolve_range(urn_range):
             """Mock resolve_range to return resolved URNs for the external file."""
             if urn_range.startswith("#fragment"):
                 return [
-                    ResolvedUrn(
-                        urn=urn_range,  # Return the same xml:id reference
+                    make_resolved_urn(
+                        urn=urn_range,
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/TEI/div[1]"
+                        element_path="/TEI/div[1]",
                     )
                 ]
             return []
@@ -2295,8 +2412,8 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
         ]
         
         # Process with ExternalCompilerProcessor
@@ -2350,8 +2467,8 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution for milestones
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
         ]
         
         # Process with ExternalCompilerProcessor
@@ -2432,7 +2549,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution for milestones
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
         ]
         
         # Process with ExternalCompilerProcessor
@@ -2507,7 +2624,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution for milestones
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
         ]
         
         # Process with ExternalCompilerProcessor
@@ -2890,8 +3007,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution to return the transcluded file location
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
         ]
         
         # Process the main file with mocked parse_xml
@@ -3009,10 +3126,10 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # First two calls are for the main file's transclusion
         # Next two calls are for the level1 file's transclusion
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]")],
-            [ResolvedUrn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]")],
-            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]")],
-            [ResolvedUrn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
+            [make_resolved_urn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]")],
+            [make_resolved_urn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]")],
+            [make_resolved_urn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]")],
+            [make_resolved_urn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
         ]
         
         # Process the main file with mocked parse_xml
@@ -3104,8 +3221,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:hebrew:end", element_path="/root/div[1]")]
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
@@ -3164,8 +3281,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:start", element_path="/root/div[1]")],
-            [ResolvedUrn(project=trans_project, file_name=trans_file, urn="urn:end", element_path="/root/div[1]")]
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:start", element_path="/root/div[1]")],
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:end", element_path="/root/div[1]")]
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
@@ -3245,8 +3362,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution for milestones
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
@@ -3334,7 +3451,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution for milestones
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
@@ -3418,7 +3535,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution for milestones
         mock_resolve_range.side_effect = [
-            [ResolvedUrn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
@@ -3658,13 +3775,13 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         # all references will return nothing
         self.refdb.get_references_to.return_value = []
         self.refdb.get_urn_mappings.return_value = [
-            UrnMapping(
-                project=priority_project, 
-                file_name=priority_file_name, 
-                urn=urn, 
+            make_urn_mapping(
+                project=priority_project,
+                file_name=priority_file_name,
+                urn=urn,
                 element_path=lxml_note_element_path,
                 element_tag="{http://www.tei-c.org/ns/1.0}note",
-                element_type="instruction"
+                element_type="instruction",
             )
         ]
         

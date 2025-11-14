@@ -13,6 +13,8 @@ class ResolvedUrn(BaseModel):
     file_name: str
     urn: str
     element_path: str
+    end_element_path: Optional[str]
+    end_includes_tail: bool
 
 
 class ResolvedUrnRange(BaseModel):
@@ -51,8 +53,17 @@ class UrnResolver:
             actual_urn = urn
             mappings = self.database.get_urn_mappings(urn)
         
-        return [ResolvedUrn(project=row.project, file_name=row.file_name, urn=actual_urn, element_path=row.element_path) 
-                for row in mappings]
+        return [
+            ResolvedUrn(
+                project=row.project, 
+                file_name=row.file_name, 
+                urn=actual_urn, 
+                element_path=row.element_path,
+                end_element_path=row.end_element_path,
+                end_includes_tail=row.end_includes_tail
+            ) 
+            for row in mappings
+        ]
     
     def resolve_range(self, ranged_urn: str) -> list[ResolvedUrnRange | ResolvedUrn]:
         """Resolve a ranged URN to start and end URNs, or a non-ranged URN.
@@ -188,8 +199,16 @@ class UrnResolver:
         """
         mappings = self.database.get_urn_mappings(project=project)
         return [
-            ResolvedUrn(project=mapping.project, file_name=mapping.file_name, urn=mapping.urn, element_path=mapping.element_path) 
-            for mapping in mappings]
+            ResolvedUrn(
+                project=mapping.project, 
+                file_name=mapping.file_name, 
+                urn=mapping.urn, 
+                element_path=mapping.element_path,
+                end_element_path=mapping.end_element_path,
+                end_includes_tail=mapping.end_includes_tail
+            ) 
+            for mapping in mappings
+        ]
     
     
     @classmethod
