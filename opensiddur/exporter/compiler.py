@@ -25,7 +25,7 @@ from unittest import result
 from lxml.etree import ElementBase
 from lxml import etree
 
-from opensiddur.exporter.linear import LinearData, get_linear_data
+from opensiddur.exporter.linear import AlignmentMapping, LinearData, get_linear_data
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.settings import load_default_settings, load_settings
 from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange, UrnResolver
@@ -68,9 +68,13 @@ class _ProcessingContext(TypedDict):
     after_end: bool
     include_tail_after_end: bool
     
+    """ The alignment map maps the next elements to their alignments """
+    alignment_map: Optional[list[tuple[ElementBase, ResolvedUrn]]]
+
     """ An exclusive end is the case where a transclusion ends just before the end element. """
     exclusive_end: bool
     inside_deepest_common_ancestor: bool
+
     command: _ProcessingCommand
     
 class CompilerProcessor:
@@ -147,10 +151,11 @@ class CompilerProcessor:
         alignment_urn = UrnResolver.prioritize_range(resolved_urns, alignment_projects)
         return alignment_urn
 
-    def _plan_alignment(self) -> list[tuple[ElementBase, ResolvedUrn]]:
+    def _plan_alignment(self) -> list[AlignmentMapping]:
         """ Plan the alignment for the current processing.
         Assume that self.start_element and self.end_element are set, if applicable.
         
+        Return an empty list if no alignment is needed, or a list of tuples of the corresp element and the alignment URN.
         """
         alignment_map = []
         alignment_projects = self.linear_data.alignment_priority
@@ -165,7 +170,8 @@ class CompilerProcessor:
         for corresp_element in corresp_elements:
             alignment_urn = self._lookup_alignment(corresp_element)
             if alignment_urn:
-                alignment_map.append((corresp_element, alignment_urn))
+                end_element =corresp_element.getroottree().getpath(alignment_urn.end_element_path)
+                alignment_map.append(AlignmentMapping(start=corresp_element, end=end_element, resolved_urn=alignment_urn))
         
         return alignment_map
 
@@ -225,56 +231,35 @@ class CompilerProcessor:
             element.set('targetEnd', new_target_end)
         return element
 
-    def _get_start_and_end_elements_from_ranges(self, from_start: str, to_end: str, force_exclusive_end: bool = False) -> tuple[ElementBase, ElementBase, bool, bool]:
+    def _get_start_and_end_elements_from_ranges(self, 
+        from_start: Optional[str] = None,
+        to_end: Optional[str] = None
+    ) -> tuple[Optional[ElementBase], Optional[ElementBase]]:
         """ Get the start and end elements from the given ranges.
         Args:
-            from_start: The start urn
-            to_end: The end urn
-            force_exclusive_end: If True, the end is exclusive even if it is not a milestone
+            from_start: The start element path, if available
+            to_end: The end element path, if available
         Returns:
-            The start and end elements, 
-            a flag indicating whether the end is exclusive,
-            a flag indicating whether to include the tail after the end element
+            The start and end elements
         """
-        exclusive_end = force_exclusive_end
-        include_tail_after_end = False
-        start_xpath = (
-            f"./descendant::*[@corresp='{from_start}']" if from_start.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{from_start.split('#')[1]}']"
-        )
-        end_xpath = (
-            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
-        )
-        start_element = self.root_tree.xpath(start_xpath)
-        if not start_element:
-            raise ValueError(f"Start URN {from_start=} not found")
-        start_element = start_element[0]
-        end_element = self.root_tree.xpath(end_xpath)
-        if not end_element:
-            raise ValueError(f"End URN {to_end=} not found")
-        end_element = end_element[0]
-        if not to_end.startswith('#') and end_element.tag == f"{{{self.ns_map.get('tei')}}}milestone":  # the end is a milestone
-            # the end element is a milestone. The actual end is the element before the next milestone at the same level, inclusive.
-            # If no such element exists, use the last sibling of the end element.
-            last_part = to_end.split(':')[-1]
-            num_dividers_in_last_part = last_part.count('/')
-            following_milestones = end_element.xpath(f"""./following::tei:milestone[@corresp][ancestor::tei:text]""", namespaces=self.ns_map)
-            actual_end = None
-            for milestone in following_milestones:
-                following_corresp = milestone.attrib.get("corresp", "")
-                last_part_of_following_corresp = following_corresp.split(':')[-1]
-                num_dividers_in_last_part_of_following_corresp = last_part_of_following_corresp.count('/')
-                if num_dividers_in_last_part_of_following_corresp <= num_dividers_in_last_part:
-                    actual_end = milestone
-                    exclusive_end = True
-                    break
-            if actual_end is None:
-                # There is no ending milestone, so we just have to include everything until the last sibling, including text
-                actual_end = end_element.xpath(f"./following-sibling::*[last()]|self::*")[-1]
-                include_tail_after_end = True
-            end_element = actual_end
-        return start_element, end_element, exclusive_end, include_tail_after_end
+        
+        if from_start:
+            start_element = self.root_tree.xpath(from_start, namespaces=self.ns_map)
+            if not start_element:
+                raise ValueError(f"Start element {from_start=} not found")
+            start_element = start_element[0]
+        else:
+            start_element = None
+
+        if to_end:
+            end_element = self.root_tree.xpath(to_end, namespaces=self.ns_map)
+            if not end_element:
+                raise ValueError(f"End element {to_end=} not found")
+            end_element = end_element[0]
+        else:
+            end_element = None
+        
+        return start_element, end_element
 
     def _transclude(self, 
         element: ElementBase, 
@@ -304,8 +289,9 @@ class CompilerProcessor:
                 processor = ExternalCompilerProcessor(
                     transclude_range.start.project, 
                     transclude_range.start.file_name, 
-                    from_start=transclude_range.start.urn, 
-                    to_end=transclude_range.end.urn, 
+                    from_start=transclude_range.start.element_path, 
+                    to_end=transclude_range.end.end_element_path,
+                    include_tail_after_end=transclude_range.end.end_includes_tail,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
                 processed_list = processor.process()
@@ -315,8 +301,9 @@ class CompilerProcessor:
                 processor = InlineCompilerProcessor(
                     transclude_range.start.project, 
                     transclude_range.start.file_name, 
-                    from_start=transclude_range.start.urn, 
-                    to_end=transclude_range.end.urn, 
+                    from_start=transclude_range.start.element_path, 
+                    to_end=transclude_range.end.end_element_path,
+                    include_tail_after_end=transclude_range.end.end_includes_tail,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
                 processed = processor.process()
@@ -333,6 +320,29 @@ class CompilerProcessor:
                 processing_element.set('{http://www.w3.org/XML/1998/namespace}lang', processor.root_language)
             
             return processing_element
+
+    def _process_alignment_before(self, element: ElementBase) -> Optional[list[ElementBase]]:
+        alignment_map = self.linear_data.alignment_map
+        if not alignment_map:
+            return None
+        
+        next_alignment = alignment_map[0]
+
+        if element is next_alignment.start:
+            # the current element is the start of an alignment.
+            parallel_block_start = etree.Element("p:parallelBlock", nsmap=self.ns_map)
+            parallel_block_start.set("start", next_alignment.resolved_urn.urn)
+            
+            processor = ExternalCompilerProcessor(
+                next_alignment.resolved_urn.project,
+                next_alignment.resolved_urn.file_name,
+                from_start=next_alignment.resolved_urn.urn,
+                to_end=next_alignment.resolved_urn.urn,
+                linear_data=self.linear_data,
+                reference_database=self._refdb,
+                exclusive_end=next_alignment.resolved_urn.end_includes_tail,
+            )
+            parallel_block_start.extend(processor.process())
 
     def _annotate(self, element: ElementBase, root: Optional[ElementBase] = None) -> tuple[list[ElementBase], _AnnotationCommand]:
         """
@@ -432,7 +442,7 @@ class CompilerProcessor:
             result_elements = []
             if limited_references:  # Handle case where prioritize_range returns None
                 for reference in limited_references:
-                    processor = CompilerProcessor(
+                    processor = ExternalCompilerProcessor(
                         reference.project,
                         reference.file_name,
                         linear_data=self.linear_data,
@@ -442,17 +452,19 @@ class CompilerProcessor:
                     if not reference_element:
                         raise ValueError(f"Reference element {reference.element_path=} not found")
                     reference_element = reference_element[0]
-                    processed_element = processor.process(reference_element)
+                    processed_elements = processor.process(reference_element)
                     if not(reference.project == self.project and reference.file_name == self.file_name):
-                        self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
+                        for processed_element in processed_elements:
+                            self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
                     
                     # Check if language differs and add xml:lang if needed
                     annotation_lang = processor.root_language
                     insertion_context_lang = self._get_in_scope_language(element)
                     if annotation_lang and annotation_lang != insertion_context_lang:
-                        processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', annotation_lang)
+                        for processed_element in processed_elements:
+                            processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', annotation_lang)
                     
-                    result_elements.append(processed_element)
+                    result_elements.extend(processed_elements)
             if result_elements:
                 annotation_command = _AnnotationCommand.INSERT
             else:
@@ -588,21 +600,6 @@ class CompilerProcessor:
         self._update_processing_context_after(element)
         return copied
 
-    def _process_with_alignment(self, root: ElementBase, alignment_map: dict[ElementBase, ResolvedUrn]) -> ElementBase:
-        """
-        Process the given root element with the given alignment map.
-        """
-        
-        for element, alignment_urn in alignment_map.items():
-            parallel_element = etree.Element("p:parallels", nsmap=self.ns_map)
-            parallel_element.set("{http://jewishliturgy.org/ns/processing}corresp", alignment_urn.urn)
-            parallel_element.append(element)
-            # put the self parallel first, then the other parallel
-            self_parallel = etree.Element("p:parallel", nsmap=self.ns_map)
-            other_parallel = etree.Element("p:parallel", nsmap=self.ns_map)
-
-            # process the self parallel with ExternalCompilerProcessor
-            # process the other parallel with ExternalCompilerProcessor
 
     def process(self, root: Optional[ElementBase] = None):
         """
@@ -616,6 +613,7 @@ class CompilerProcessor:
             root = self.root_tree
 
         self.root_language = self._get_in_scope_language(root)
+        alignment_map = self._plan_alignment()
 
         # set up the processing context
         self.linear_data.processing_context.append(_ProcessingContext(
@@ -628,13 +626,10 @@ class CompilerProcessor:
             command=_ProcessingCommand.COPY_AND_RECURSE,
             inside_deepest_common_ancestor=False,
             include_tail_after_end=False,
+            alignment_map=alignment_map,
         ))
 
-        alignment_map = self._plan_alignment()
-        if alignment_map:
-            copied = self._process_with_alignment(root, alignment_map)
-        else:
-            copied = self._process_element(root, root)
+        copied = self._process_element(root, root)
 
         copied = self._mark_file_source(copied)
         # pop the processing context
@@ -653,50 +648,63 @@ class CompilerProcessor:
         return copied
 
 class ExternalCompilerProcessor(CompilerProcessor):
-    def _get_deepest_common_ancestor(self, from_start: str, to_end: str, force_exclusive_end: bool = False) -> tuple[ElementBase, ElementBase, ElementBase, bool, bool]:
+    def _get_deepest_common_ancestor(self, 
+        from_start: Optional[str] = None,
+        to_end: Optional[str] = None,
+        include_tail_after_end: bool = False
+    ) -> tuple[Optional[ElementBase], Optional[ElementBase], Optional[ElementBase], bool]:
         """
         Get the deepest common ancestor, 
         the start element, 
         the end element, 
-        a flag indicating whether the end is exclusive given xml:id or correp urns,
         a flag indicating whether to include the tail after the end element
 
         There is one exception: if start and end are siblings, return the start element.
         We do this because then we don't need the surrounding elements to be copied.
         """
-        start_element, end_element, exclusive_end, include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end, force_exclusive_end)
+        start_element, end_element = self._get_start_and_end_elements_from_ranges(from_start, to_end)
+        
+        if start_element is None or end_element is None:
+            return None, None, None, include_tail_after_end
+
         if start_element is end_element:
-            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
+            return start_element, start_element, end_element, include_tail_after_end
         if start_element.getparent() is end_element.getparent():
             # siblings... no need to go deeper
-            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
-        end_xpath = (
-            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
-        )
+            return start_element, start_element, end_element, include_tail_after_end
+        end_element_ancestors = set(end_element.iterancestors())
         for element in start_element.iterancestors():
-            if element.xpath(end_xpath):
-                return element, start_element, end_element, exclusive_end, include_tail_after_end
+            if element in end_element_ancestors:
+                return element, start_element, end_element, include_tail_after_end
         raise ValueError(f"No common ancestor found for {from_start=} and {to_end=}")
 
     def __init__(
         self,
         project: str,
         file_name: str,
-        from_start: str,
-        to_end: str,
-        exclusive_end: bool = False,
+        from_start: Optional[str] = None,
+        to_end: Optional[str] = None,
+        include_tail_after_end: bool = False,
         linear_data: Optional[LinearData] = None,
         reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project. 
         Only start from the given start and end, inclusive.
         Start and end must be in the same file
+
+        Arguments:
+            from_start: the start element path, or None to include the entire file
+            to_end: the end element path, or None to include the entire file; by default, the end always inclusive
+            include_tail_after_end: whether to include the tail after the end element (ignored if from_start is None)
+            linear_data: the linear data
+            reference_database: the reference database
         """
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
+
+        if (from_start is None and to_end is not None) or (from_start is not None and to_end is None):
+            raise ValueError("Either from_start or to_end must be None, but not both")
         self.from_start = from_start
         self.to_end = to_end
-
-        self.deepest_common_ancestor, self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end, exclusive_end)
+        self.deepest_common_ancestor, self.start_element, self.end_element, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end, include_tail_after_end)
 
 
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
@@ -718,10 +726,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
         #           before start? COPY_ELEMENT_AND_RECURSE
         #           after start? COPY_AND_RECURSE
         #    after end, SKIP
-
-        if self.exclusive_end and element is self.end_element:
-            # implement exclusive end on this element
-            context['after_end'] = True
         
         if context['after_end']:
             context['command'] = _ProcessingCommand.SKIP
@@ -838,10 +842,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if root is None:
             root = self.root_tree
 
-        # set the root language to the language of the deepest common ancestor
-        self.root_language = self._get_in_scope_language(self.deepest_common_ancestor)
-
-        self._plan_alignment()
+        # set the root language to the language of the deepest common ancestor or the self element if there is none
+        self.root_language = self._get_in_scope_language(
+            self.deepest_common_ancestor if self.deepest_common_ancestor is not None 
+            else root)
 
         self.linear_data.processing_context.append(_ProcessingContext(
             project=self.project,
@@ -869,6 +873,7 @@ class InlineCompilerProcessor(CompilerProcessor):
         file_name: str,
         from_start: str,
         to_end: str,
+        include_tail_after_end: bool = False,
         linear_data: Optional[LinearData] = None,
         reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project.
@@ -878,7 +883,8 @@ class InlineCompilerProcessor(CompilerProcessor):
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
         self.from_start = from_start
         self.to_end = to_end
-        self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end, False)
+        self.include_tail_after_end = include_tail_after_end
+        self.start_element, self.end_element = self._get_start_and_end_elements_from_ranges(from_start, to_end)
 
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
         """
@@ -897,9 +903,6 @@ class InlineCompilerProcessor(CompilerProcessor):
         #       else RECURSE
         #    between start and end? COPY_TEXT_AND_RECURSE
         
-        if self.exclusive_end and element is self.end_element:
-            # implement exclusive end on this element
-            context['after_end'] = True
         
         if context['after_end']:
             context['command'] = _ProcessingCommand.SKIP
@@ -969,13 +972,13 @@ class InlineCompilerProcessor(CompilerProcessor):
             return annotations[0]
         elif annotation_command == _AnnotationCommand.KEEP:
             # This is a case of an instructional notation that needs to be kept as is
-            processor =CompilerProcessor(
+            processor = ExternalCompilerProcessor(
                 self.project,
                 self.file_name,
                 linear_data=self.linear_data,
                 reference_database=self._refdb
             )
-            processed_element = processor.process(element)
+            processed_element = processor.process(element)[0]
             context_lang = self._get_in_scope_language(element)
             if (processor.root_language 
                 and processor.root_language != context_lang
@@ -1074,8 +1077,9 @@ def main():  # pragma: no cover
     else:
         linear_data = load_default_settings(args.project, args.file_name)
 
-    compiler = CompilerProcessor(args.project, args.file_name, linear_data=linear_data)
-    result = compiler.process()
+    compiler = ExternalCompilerProcessor(
+        args.project, args.file_name, linear_data=linear_data)
+    result = compiler.process()[0]
     etree.ElementTree(result).write(
         args.output_file if args.output_file else sys.stdout, 
         pretty_print=True,

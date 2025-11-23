@@ -374,8 +374,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[0][1], file_name)  # file_name
             
             # Check keyword arguments: from_start, to_end
-            self.assertEqual(call_args[1]['from_start'], "#start")
-            self.assertEqual(call_args[1]['to_end'], "#end")
+            # The compiler now uses element_path from resolved URNs
+            self.assertEqual(call_args[1]['from_start'], "/TEI/div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/TEI/div[1]")
             self.assertIn('linear_data', call_args[1])
             
             # Verify process() was called
@@ -441,8 +442,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[0][1], file_name)  # file_name
             
             # Check keyword arguments: from_start, to_end
-            self.assertEqual(call_args[1]['from_start'], "#start")
-            self.assertEqual(call_args[1]['to_end'], "#end")
+            # The compiler now uses element_path from resolved URNs
+            self.assertEqual(call_args[1]['from_start'], "/TEI/div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/TEI/div[1]")
             self.assertIn('linear_data', call_args[1])
         
             # Verify process() was called
@@ -516,9 +518,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[0][0], "external_project")  # project
             self.assertEqual(call_args[0][1], "external.xml")  # file_name
             
-            # Check keyword arguments: from_start, to_end (resolved URNs)
-            self.assertEqual(call_args[1]['from_start'], "#fragment1")
-            self.assertEqual(call_args[1]['to_end'], "#fragment2")
+            # Check keyword arguments: from_start, to_end (element paths from resolved URNs)
+            self.assertEqual(call_args[1]['from_start'], "/TEI/div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/TEI/div[1]")
 
     def test_inline_transclusion_with_metadata(self):
         """Test CompilerProcessor with inline transclusion that includes teiHeader metadata."""
@@ -567,6 +569,13 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Parse the transcluded XML tree
         transcluded_tree_root = etree.fromstring(transcluded_xml_content)
         
+        # Get the actual element paths from the parsed tree
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = transcluded_tree_root.xpath("//tei:p[@xml:id='transclude-start']", namespaces=ns)[0]
+        end_elem = transcluded_tree_root.xpath("//tei:p[@xml:id='transclude-end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
@@ -586,12 +595,31 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
+            # Use start_path for start, end_path for end
+            if "transclude-start" in urn or urn == "#transclude-start":
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="transcluded_project",
+                        file_name="transcluded.xml",
+                        element_path=start_path,
+                    )
+                ]
+            elif "transclude-end" in urn or urn == "#transclude-end":
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="transcluded_project",
+                        file_name="transcluded.xml",
+                        element_path=end_path,
+                    )
+                ]
             return [
                 make_resolved_urn(
                     urn=urn,
                     project="transcluded_project",
                     file_name="transcluded.xml",
-                    element_path="/TEI/div[1]",
+                    element_path=start_path,
                 )
             ]
         
@@ -680,6 +708,13 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Parse the external XML tree
         external_tree_root = etree.fromstring(external_xml_content)
         
+        # Get the actual element paths from the parsed tree
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = external_tree_root.xpath("//tei:p[@xml:id='transclude-start']", namespaces=ns)[0]
+        end_elem = external_tree_root.xpath("//tei:p[@xml:id='transclude-end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
@@ -705,13 +740,22 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Mock UrnResolver methods
         
         def mock_resolve_range(urn):
-            if urn.startswith("#transclude"):
+            if "transclude-start" in urn or urn == "#transclude-start":
                 return [
                     make_resolved_urn(
                         urn=urn,
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/TEI/div[1]",
+                        element_path=start_path,
+                    )
+                ]
+            elif "transclude-end" in urn or urn == "#transclude-end":
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path=end_path,
                     )
                 ]
             return []
@@ -818,6 +862,10 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         # Parse the transcluded XML tree
         transcluded_tree_root = etree.fromstring(transcluded_xml_content)
         
+        # Get the actual element path from the parsed tree
+        fragment_elem = transcluded_tree_root.xpath("//tei:p[@xml:id='fragment']", namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        fragment_path = fragment_elem.getroottree().getpath(fragment_elem)
+        
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
@@ -840,7 +888,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                     urn=urn,
                     project="transcluded_project",
                     file_name="transcluded.xml",
-                    element_path="/TEI/div[1]",
+                    element_path=fragment_path,
                 )
             ]
         
@@ -916,7 +964,11 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         project, file_name = self._create_test_file("main_lang_test.xml", main_xml_content)
         
         # Parse the transcluded XML tree
-        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
+        
+        # Get the actual element path from the parsed tree
+        ext_frag_elem = transcluded_tree_root.xpath("//tei:p[@xml:id='ext_frag']", namespaces={"tei": "http://www.tei-c.org/ns/1.0"})[0]
+        ext_frag_path = ext_frag_elem.getroottree().getpath(ext_frag_elem)
         
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
@@ -942,7 +994,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                         urn="#ext_frag",
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/root/text[1]/div[1]/p[1]",
+                        element_path=ext_frag_path,
                     )
                 ]
             return []
@@ -1208,6 +1260,479 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
 
 
+class TestExternalCompilerProcessorWithFiles(unittest.TestCase):
+    """Test ExternalCompilerProcessor with file-based input (no start/end, processes entire file)."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        reset_linear_data()
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_process_simple_xml_file(self):
+        """Test processing a simple XML file with no transclusions."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p>Simple text content</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("simple.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        # ExternalCompilerProcessor returns a list, should have one element (the root)
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        
+        # Convert to string for comparison
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve namespace prefixes
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result_str)
+        self.assertIn('<tei:div>', result_str)
+        self.assertIn('<tei:p>', result_str)
+        self.assertIn('Simple text content', result_str)
+        
+        # Should add processing namespace
+        self.assertIn('xmlns:p="http://jewishliturgy.org/ns/processing"', result_str)
+        
+        # Verify structure is preserved
+        self.assertIn('<tei:div>', result_str)
+        self.assertIn('</tei:div>', result_str)
+
+    def test_process_preserves_multiple_namespaces(self):
+        """Test that processing preserves multiple namespace prefixes."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p>TEI content</tei:p>
+                <j:milestone unit="verse"/>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("multi_ns.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve both namespace prefixes
+        self.assertIn('xmlns:tei="http://www.tei-c.org/ns/1.0"', result_str)
+        self.assertIn('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"', result_str)
+        self.assertIn('<tei:text>', result_str)
+        self.assertIn('<tei:body>', result_str)
+        self.assertIn('<j:milestone', result_str)
+        
+        # Verify content is preserved
+        self.assertIn('TEI content', result_str)
+
+    def test_process_preserves_attributes(self):
+        """Test that processing preserves element attributes."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div type="chapter" n="1" xml:id="ch1">
+        <tei:p rend="italic">Italic text</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("attributes.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve all attributes
+        self.assertIn('type="chapter"', result_str)
+        self.assertIn('n="1"', result_str)
+        # xml:id should be rewritten with hash
+        self.assertTrue('xml:id="ch1_' in result_str, f"Expected rewritten xml:id, got: {result_str}")
+        self.assertIn('rend="italic"', result_str)
+
+    def test_process_preserves_tail_text(self):
+        """Test that processing preserves tail text."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>Content</tei:div>Tail text after div
+    <tei:p>Paragraph</tei:p>More tail
+</root>'''
+        
+        project, file_name = self._create_test_file("tail.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve tail text
+        self.assertIn('Tail text after div', result_str)
+        self.assertIn('More tail', result_str)
+
+    def test_process_empty_elements(self):
+        """Test that processing preserves empty elements."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div/>
+    <tei:pb n="1"/>
+    <tei:br/>
+</root>'''
+        
+        project, file_name = self._create_test_file("empty.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve empty/self-closing elements
+        self.assertIn('<tei:div/>', result_str)
+        self.assertIn('<tei:pb', result_str)
+        self.assertIn('n="1"', result_str)
+        self.assertIn('<tei:br/>', result_str)
+
+    def test_process_complex_structure(self):
+        """Test processing a complex XML structure."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:teiHeader>
+        <tei:fileDesc>
+            <tei:titleStmt>
+                <tei:title>Test Document</tei:title>
+            </tei:titleStmt>
+        </tei:fileDesc>
+    </tei:teiHeader>
+    <tei:text>
+        <tei:body>
+            <tei:div type="chapter" n="1">
+                <tei:p>First paragraph</tei:p>
+                <j:milestone unit="verse" n="1"/>
+                <tei:p>Second paragraph</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("complex.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve all structure
+        self.assertIn('<tei:teiHeader>', result_str)
+        self.assertIn('<tei:fileDesc>', result_str)
+        self.assertIn('<tei:titleStmt>', result_str)
+        self.assertIn('<tei:title>', result_str)
+        self.assertIn('Test Document', result_str)
+        self.assertIn('<tei:text>', result_str)
+        self.assertIn('<tei:body>', result_str)
+        self.assertIn('<tei:div', result_str)
+        self.assertIn('type="chapter"', result_str)
+        self.assertIn('<j:milestone', result_str)
+        self.assertIn('unit="verse"', result_str)
+        self.assertIn('First paragraph', result_str)
+        self.assertIn('Second paragraph', result_str)
+
+    def test_process_namespace_declarations_only_at_root(self):
+        """Test that namespace declarations are only at root, not duplicated."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <tei:p>Content</tei:p>
+        <j:milestone unit="verse"/>
+    </tei:div>
+    <tei:div>
+        <tei:note>Note</tei:note>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("ns_decl.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Count namespace declarations - should only be at root
+        tei_ns_count = result_str.count('xmlns:tei="http://www.tei-c.org/ns/1.0"')
+        j_ns_count = result_str.count('xmlns:j="http://jewishliturgy.org/ns/jlptei/2"')
+        
+        self.assertEqual(tei_ns_count, 1, f"Expected exactly 1 TEI namespace declaration, found {tei_ns_count}")
+        self.assertEqual(j_ns_count, 1, f"Expected exactly 1 J namespace declaration, found {j_ns_count}")
+        
+        # Verify child elements don't have namespace declarations
+        self.assertNotIn('<tei:div xmlns:', result_str)
+        self.assertNotIn('<tei:p xmlns:', result_str)
+        self.assertNotIn('<j:milestone xmlns:', result_str)
+
+    def test_process_with_unicode_content(self):
+        """Test processing XML with Unicode content."""
+        xml_content = '''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div xml:lang="he">
+        <tei:p>עברית Hebrew text</tei:p>
+    </tei:div>
+    <tei:div xml:lang="zh">
+        <tei:p>中文 Chinese text</tei:p>
+    </tei:div>
+</root>'''.encode('utf-8')
+        
+        project, file_name = self._create_test_file("unicode.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should preserve Unicode content
+        self.assertIn('עברית', result_str)
+        self.assertIn('中文', result_str)
+        self.assertIn('Hebrew text', result_str)
+        self.assertIn('Chinese text', result_str)
+
+    def test_process_adds_processing_namespace(self):
+        """Test that processing adds the processing namespace to root."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p>Content</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("processing_ns.xml", xml_content)
+        
+        processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+        result_list = processor.process()
+        
+        self.assertEqual(len(result_list), 1)
+        result = result_list[0]
+        result_str = etree.tostring(result, encoding='unicode')
+        
+        # Should add processing namespace
+        self.assertIn('xmlns:p="http://jewishliturgy.org/ns/processing"', result_str)
+
+    def test_internal_transclusion_calls_inline_processor(self):
+        """Test that ExternalCompilerProcessor calls InlineCompilerProcessor for inline transclusions."""
+        from unittest.mock import patch, MagicMock
+        
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                               xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <jlp:transclude target="#start" targetEnd="#end" type="inline"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("inline_transclude.xml", xml_content)
+        
+        # Mock InlineCompilerProcessor
+        with patch('opensiddur.exporter.compiler.InlineCompilerProcessor') as MockInlineProcessor:
+            # Create a mock instance and mock process() to return a simple element
+            mock_instance = MagicMock()
+            mock_result = etree.Element("{http://jewishliturgy.org/ns/processing}transcludeInline")
+            mock_result.text = "transcluded content"
+            mock_instance.process.return_value = mock_result
+            # Mock _mark_file_source to return the element unchanged
+            mock_instance._mark_file_source.return_value = mock_result
+            mock_instance.project = "transcluded_project"
+            mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
+            MockInlineProcessor.return_value = mock_instance
+            
+            # Mock UrnResolver methods to return resolved URNs
+
+            def mock_resolve_range(urn):
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project=project,
+                        file_name=file_name,
+                        element_path="/root/tei:div[1]",
+                    )
+                ]
+            
+            def mock_prioritize_range(urns, priority_list, return_all=False):
+                return urns[0] if urns else None
+            
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+                    result_list = processor.process()
+            
+            # Verify InlineCompilerProcessor was instantiated
+            MockInlineProcessor.assert_called_once()
+            call_args = MockInlineProcessor.call_args
+            
+            # Check the positional arguments: project, file_name
+            self.assertEqual(call_args[0][0], project)  # project
+            self.assertEqual(call_args[0][1], file_name)  # file_name
+            
+            # Check keyword arguments: from_start, to_end
+            # The compiler now uses element_path from resolved URNs
+            self.assertEqual(call_args[1]['from_start'], "/root/tei:div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/root/tei:div[1]")
+            self.assertIn('linear_data', call_args[1])
+            
+            # Verify process() was called
+            mock_instance.process.assert_called_once()
+            
+            # Verify result is a list
+            self.assertEqual(len(result_list), 1)
+
+    def test_external_transclusion_calls_external_processor(self):
+        """Test that ExternalCompilerProcessor calls ExternalCompilerProcessor for external transclusions."""
+        from unittest.mock import patch, MagicMock
+        
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                               xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <tei:p>Before transclusion</tei:p>
+        <jlp:transclude target="#start" targetEnd="#end" type="external"/>
+        <tei:p>After transclusion</tei:p>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("external_transclude.xml", xml_content)
+        
+        # Mock ExternalCompilerProcessor (nested call)
+        with patch('opensiddur.exporter.compiler.ExternalCompilerProcessor') as MockExternalProcessor:
+            # Create a mock instance and mock process() to return a list of elements
+            mock_instance = MagicMock()
+            mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
+            mock_elem.text = "transcluded content"
+            mock_instance.process.return_value = [mock_elem]
+            # Mock _mark_file_source to act like a passthrough
+            def mock_mark_file_source(elem):
+                return elem
+            mock_instance._mark_file_source.side_effect = mock_mark_file_source
+            mock_instance.project = "transcluded_project"
+            mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
+            MockExternalProcessor.return_value = mock_instance
+            
+            # Mock UrnResolver methods to return resolved URNs
+            
+            def mock_resolve_range(urn):
+                return [
+                    make_resolved_urn(
+                        urn=urn,
+                        project=project,
+                        file_name=file_name,
+                        element_path="/root/tei:div[1]",
+                    )
+                ]
+            
+            def mock_prioritize_range(urns, priority_list, return_all=False):
+                return urns[0] if urns else None
+            
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+                    result_list = processor.process()
+            
+            # Verify ExternalCompilerProcessor was instantiated (for the nested transclusion)
+            # It should be called at least once for the nested transclusion
+            self.assertGreaterEqual(MockExternalProcessor.call_count, 1)
+            
+            # Verify result is a list
+            self.assertEqual(len(result_list), 1)
+
+    def test_transclusion_with_urn_resolves_correctly(self):
+        """Test that ExternalCompilerProcessor correctly resolves URNs and passes them to processors."""
+        from unittest.mock import patch, MagicMock
+        
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" 
+                               xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <jlp:transclude target="urn:external:file#fragment1" 
+                        targetEnd="urn:external:file#fragment2" 
+                        type="external"/>
+    </tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("urn_transclude.xml", xml_content)
+        
+        # Mock ExternalCompilerProcessor (nested call)
+        with patch('opensiddur.exporter.compiler.ExternalCompilerProcessor') as MockExternalProcessor:
+            mock_instance = MagicMock()
+            mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
+            mock_instance.process.return_value = [mock_elem]
+            # Mock _mark_file_source to act like a passthrough
+            def mock_mark_file_source(elem):
+                return elem
+            mock_instance._mark_file_source.side_effect = mock_mark_file_source
+            mock_instance.project = "external_project"
+            mock_instance.file_name = "external.xml"
+            mock_instance.root_language = "xx"
+            MockExternalProcessor.return_value = mock_instance
+            
+            # Mock UrnResolver methods to return resolved URNs pointing to external file
+
+            def mock_resolve_range(urn):
+                if "fragment1" in urn:
+                    return [
+                        make_resolved_urn(
+                            urn="#fragment1",
+                            project="external_project",
+                            file_name="external.xml",
+                            element_path="/root/tei:div[1]",
+                        )
+                    ]
+                elif "fragment2" in urn:
+                    return [
+                        make_resolved_urn(
+                            urn="#fragment2",
+                            project="external_project",
+                            file_name="external.xml",
+                            element_path="/root/tei:div[1]",
+                        )
+                    ]
+                return []
+            
+            def mock_prioritize_range(urns, priority_list, return_all=False):
+                return urns[0] if urns else None
+            
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = ExternalCompilerProcessor(project, file_name, from_start=None, to_end=None)
+                    result_list = processor.process()
+            
+            # Verify ExternalCompilerProcessor was called with resolved URNs
+            self.assertGreaterEqual(MockExternalProcessor.call_count, 1)
+            
+            # Verify result is a list
+            self.assertEqual(len(result_list), 1)
+
+
 class TestCompilerProcessorIdRewriting(unittest.TestCase):
     """Test ID rewriting functionality in CompilerProcessor."""
 
@@ -1264,6 +1789,13 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
         # Parse the external XML tree
         external_tree_root = etree.fromstring(external_xml_content)
         
+        # Get the actual element paths from the parsed tree
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        p1_elem = external_tree_root.xpath("//tei:p[@xml:id='external1']", namespaces=ns)[0]
+        p2_elem = external_tree_root.xpath("//tei:p[@xml:id='external2']", namespaces=ns)[0]
+        p1_path = p1_elem.getroottree().getpath(p1_elem)
+        p2_path = p2_elem.getroottree().getpath(p2_elem)
+        
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
@@ -1292,7 +1824,7 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                         urn=urn,
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/root/div[1]/p[1]",
+                        element_path=p1_path,
                     )
                 ]
             elif urn.startswith("#external2"):
@@ -1301,7 +1833,7 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                         urn=urn,
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/root/div[1]/p[2]",
+                        element_path=p2_path,
                     )
                 ]
             return []
@@ -1431,6 +1963,11 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
         # Parse the external XML tree
         external_tree_root = etree.fromstring(external_xml_content)
         
+        # Get the actual element path from the parsed tree
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        p1_elem = external_tree_root.xpath("//tei:p[@xml:id='external1']", namespaces=ns)[0]
+        p1_path = p1_elem.getroottree().getpath(p1_elem)
+        
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
@@ -1459,7 +1996,7 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                         urn=urn,
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/root/div[1]/p[1]",
+                        element_path=p1_path,
                     )
                 ]
             return []
@@ -1590,7 +2127,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("siblings.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return a list of elements
@@ -1650,7 +2195,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("hierarchy.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:div[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return a list
@@ -1704,7 +2257,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("attributes.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Check that attributes are preserved
@@ -1737,7 +2298,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("tails.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should have 3 elements
@@ -1777,7 +2346,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("exclusions.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "urn:end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should only have 3 elements (start, middle, end)
@@ -1832,8 +2409,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("xmlid.xml", xml_content)
         
-        # Use #id notation for xml:id references
-        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@xml:id='start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return a list of 3 elements
@@ -1894,8 +2478,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("mixed.xml", xml_content)
         
-        # Use URN for start and xml:id for end
-        processor = ExternalCompilerProcessor(project, file_name, "urn:start", "#end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return a list of 3 elements
@@ -1963,8 +2554,23 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("main.xml", main_xml_content)
         
+        # Parse the main XML tree and get element paths
+        main_tree = etree.fromstring(main_xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = main_tree.xpath("//tei:p[@xml:id='start']", namespaces=ns)[0]
+        end_elem = main_tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
         # Parse the external XML tree
         external_tree = etree.fromstring(external_xml_content)
+        
+        # Get the actual element paths from the external XML
+        ext_ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        fragment_start_elem = external_tree.xpath("//tei:p[@xml:id='fragment-start']", namespaces=ext_ns)[0]
+        fragment_end_elem = external_tree.xpath("//tei:p[@xml:id='fragment-end']", namespaces=ext_ns)[0]
+        fragment_start_path = fragment_start_elem.getroottree().getpath(fragment_start_elem)
+        fragment_end_path = fragment_end_elem.getroottree().getpath(fragment_end_elem)
         
         # Mock XMLCache.parse_xml to return the external tree when requested
         from unittest.mock import patch, MagicMock
@@ -1994,13 +2600,24 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         def mock_resolve_range(urn_range):
             """Mock resolve_range to return resolved URNs for the external file."""
-            if urn_range.startswith("#fragment"):
+            if urn_range == "#fragment-start" or urn_range.startswith("#fragment-start"):
                 return [
                     make_resolved_urn(
                         urn=urn_range,
                         project="external_project",
                         file_name="external.xml",
-                        element_path="/TEI/div[1]",
+                        element_path=fragment_start_path,
+                        end_element_path=fragment_start_path,
+                    )
+                ]
+            elif urn_range == "#fragment-end" or urn_range.startswith("#fragment-end"):
+                return [
+                    make_resolved_urn(
+                        urn=urn_range,
+                        project="external_project",
+                        file_name="external.xml",
+                        element_path=fragment_end_path,
+                        end_element_path=fragment_end_path,
                     )
                 ]
             return []
@@ -2022,7 +2639,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
                 with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
                     with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
-                        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+                        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
                         result = processor.process()
         
         # Should return elements: start, transclude, end
@@ -2155,8 +2772,14 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("hierarchy_equal.xml", xml_content)
         
+        # Parse XML and get element path
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        target_elem = tree.xpath("//tei:div[@xml:id='target']", namespaces=ns)[0]
+        target_path = target_elem.getroottree().getpath(target_elem)
+        
         # When start == end, should return that element with its full hierarchy
-        processor = ExternalCompilerProcessor(project, file_name, "#target", "#target")
+        processor = ExternalCompilerProcessor(project, file_name, target_path, target_path)
         result = processor.process()
         
         # Should return a list (may include content after the target due to implementation details)
@@ -2202,7 +2825,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("hierarchy_descendant.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:div[@xml:id='start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return the start element (which is also the deepest common ancestor)
@@ -2257,7 +2888,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("hierarchy_siblings.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@xml:id='start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return the parent container (deepest common ancestor)
@@ -2302,7 +2941,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("hierarchy_start_deeper.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@xml:id='start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return the outer div (deepest common ancestor)
@@ -2354,7 +3001,15 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("hierarchy_end_deeper.xml", xml_content)
         
-        processor = ExternalCompilerProcessor(project, file_name, "#start", "#end")
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@xml:id='start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
         result = processor.process()
         
         # Should return the outer div (deepest common ancestor)
@@ -2410,6 +3065,14 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content.encode('utf-8'))
         
+        # Parse transcluded XML and get element paths
+        trans_tree = etree.fromstring(transcluded_xml_content.encode('utf-8'))
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = trans_tree.xpath("//tei:p[@corresp='urn:hebrew:start']", namespaces=ns)[0]
+        end_elem = trans_tree.xpath("//tei:p[@corresp='urn:hebrew:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock URN resolution
         mock_resolve_range.side_effect = [
             [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:hebrew:start", element_path="/root/div[1]")],
@@ -2417,7 +3080,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         ]
         
         # Process with ExternalCompilerProcessor
-        processor = ExternalCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end")
+        processor = ExternalCompilerProcessor(trans_project, trans_file, start_path, end_path)
         result = processor.process()
         
         # Result should be a list of elements (not p:transcludeInline)
@@ -2465,14 +3128,42 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
         
+        # Parse external XML and get milestone element paths
+        ext_tree = etree.fromstring(external_xml_content.encode('utf-8'))
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_milestone_elem = ext_tree.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/3']", namespaces=ns)[0]
+        end_milestone_elem = ext_tree.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/4']", namespaces=ns)[0]
+        start_milestone_path = start_milestone_elem.getroottree().getpath(start_milestone_elem)
+        
+        # For milestone transclusions, the end element is the element preceding the next milestone
+        # Find the element before the end milestone
+        parent = end_milestone_elem.getparent()
+        end_elem = None
+        for elem in parent:
+            if elem is end_milestone_elem:
+                break
+            end_elem = elem
+        # If no element found, use the parent div
+        if end_elem is None:
+            end_elem = parent
+        end_element_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock URN resolution for milestones
+        # For milestone transclusions, start and end are the same URN, but end_element_path points to the element before the next milestone
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+            [make_resolved_urn(
+                project=ext_project, 
+                file_name=ext_file, 
+                urn="urn:x-opensiddur:text:bible:book/1/3", 
+                element_path=start_milestone_path,
+                end_element_path=end_element_path,
+                end_includes_tail=True  # Include tail after the end element (before the next milestone)
+            )]
         ]
         
         # Process with ExternalCompilerProcessor
-        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        # For milestone transclusions, start is the milestone, end is the element before the next milestone
+        processor = ExternalCompilerProcessor(ext_project, ext_file, start_milestone_path, end_element_path, include_tail_after_end=True)
         result = processor.process()
         
         # Should return a list of elements
@@ -2547,13 +3238,46 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
         
+        # Parse external XML and get milestone element path
+        ext_tree = etree.fromstring(external_xml_content.encode('utf-8'))
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        milestone_elem = ext_tree.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/3']", namespaces=ns)[0]
+        milestone_path = milestone_elem.getroottree().getpath(milestone_elem)
+        # When there's no end milestone, find the last element in the parent div
+        parent_div = milestone_elem.getparent()
+        while parent_div is not None and parent_div.tag != f"{{{ns['tei']}}}div":
+            parent_div = parent_div.getparent()
+        # Find the last element in the div (before the div ends)
+        end_elem = None
+        if parent_div is not None:
+            for elem in reversed(list(parent_div)):
+                if elem is not milestone_elem:
+                    end_elem = elem
+                    break
+            # If no element found, use the parent div itself
+            if end_elem is None:
+                end_elem = parent_div
+            end_path = end_elem.getroottree().getpath(end_elem)
+        else:
+            # Fallback to milestone path if no div found
+            end_path = milestone_path
+        
         # Mock URN resolution for milestones
+        # When there's no end milestone, end_element_path points to the last element in the div
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(
+                project=ext_project, 
+                file_name=ext_file, 
+                urn="urn:x-opensiddur:text:bible:book/1/3", 
+                element_path=milestone_path,
+                end_element_path=end_path,
+                end_includes_tail=True  # Include tail after the end element
+            )]
         ]
         
         # Process with ExternalCompilerProcessor
-        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        # When there's no end milestone, include everything to the end of the containing div
+        processor = ExternalCompilerProcessor(ext_project, ext_file, milestone_path, end_path, include_tail_after_end=True)
         result = processor.process()
         
         # Should return a list of elements
@@ -2622,13 +3346,42 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         ext_project, ext_file = self._create_test_file("external.xml", external_xml_content.encode('utf-8'))
         
+        # Parse external XML and get milestone element paths
+        ext_tree = etree.fromstring(external_xml_content.encode('utf-8'))
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_milestone_elem = ext_tree.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/3']", namespaces=ns)[0]
+        end_milestone_elem = ext_tree.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/2']", namespaces=ns)[0]
+        start_milestone_path = start_milestone_elem.getroottree().getpath(start_milestone_elem)
+        
+        # For milestone transclusions, the end element is the element preceding the next milestone
+        # Find the element before the end milestone (chapter milestone)
+        parent = end_milestone_elem.getparent()
+        end_elem = None
+        for elem in parent:
+            if elem is end_milestone_elem:
+                break
+            end_elem = elem
+        # If no element found, use the parent div
+        if end_elem is None:
+            end_elem = parent
+        end_element_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock URN resolution for milestones
+        # When the end is the next unit (chapter), end_element_path points to the element before that milestone
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(
+                project=ext_project, 
+                file_name=ext_file, 
+                urn="urn:x-opensiddur:text:bible:book/1/3", 
+                element_path=start_milestone_path,
+                end_element_path=end_element_path,
+                end_includes_tail=True  # Include tail after the end element (before the next milestone)
+            )]
         ]
         
         # Process with ExternalCompilerProcessor
-        processor = ExternalCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3")
+        # When the end is the next unit (chapter), use the element before that milestone as the end
+        processor = ExternalCompilerProcessor(ext_project, ext_file, start_milestone_path, end_element_path, include_tail_after_end=True)
         result = processor.process()
         
         # Should return a list of elements
@@ -2705,7 +3458,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("siblings.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         # Result should be a p:transcludeInline element with the extracted text
@@ -2739,7 +3500,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("ancestor.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:div[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -2773,7 +3542,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("depth_diff.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -2809,7 +3586,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("diff_siblings.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -2834,7 +3619,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("text_elem.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         # Should be a p:transcludeInline element
@@ -2856,7 +3649,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("whitespace.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -2878,7 +3679,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("xmlid.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "#start_id", "#end_id", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@xml:id='start_id']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end_id']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -2901,7 +3710,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("mixed.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "#end_id", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0", "xml": "http://www.w3.org/XML/1998/namespace"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@xml:id='end_id']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -2921,7 +3738,13 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("single.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:target", "urn:target", linear_data=self.linear_data)
+        # Parse XML and get element path
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        target_elem = tree.xpath("//tei:p[@corresp='urn:target']", namespaces=ns)[0]
+        target_path = target_elem.getroottree().getpath(target_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, target_path, target_path, linear_data=self.linear_data)
         result = processor.process()
         
         result_text = result.text
@@ -2948,7 +3771,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         project, file_name = self._create_test_file("both_level2.xml", xml_content)
         
-        processor = InlineCompilerProcessor(project, file_name, "urn:start", "urn:end", linear_data=self.linear_data)
+        # Parse XML and get element paths
+        tree = etree.fromstring(xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = tree.xpath("//tei:p[@corresp='urn:start']", namespaces=ns)[0]
+        end_elem = tree.xpath("//tei:p[@corresp='urn:end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
+        processor = InlineCompilerProcessor(project, file_name, start_path, end_path, linear_data=self.linear_data)
         result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -2987,8 +3818,22 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         main_project, main_file = self._create_test_file("main.xml", main_xml_content)
         trans_project, trans_file = self._create_test_file("transcluded.xml", transcluded_xml_content)
         
+        # Parse the main XML tree and get element paths
+        main_tree = etree.fromstring(main_xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_elem = main_tree.xpath("//tei:p[@corresp='urn:main-start']", namespaces=ns)[0]
+        end_elem = main_tree.xpath("//tei:p[@corresp='urn:main-end']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
+        
         # Parse the transcluded XML tree
         transcluded_tree_root = etree.fromstring(transcluded_xml_content)
+        
+        # Get element paths from the transcluded XML
+        trans_start_elem = transcluded_tree_root.xpath("//tei:p[@corresp='urn:other:start']", namespaces=ns)[0]
+        trans_end_elem = transcluded_tree_root.xpath("//tei:p[@corresp='urn:other:end']", namespaces=ns)[0]
+        trans_start_path = trans_start_elem.getroottree().getpath(trans_start_elem)
+        trans_end_path = trans_end_elem.getroottree().getpath(trans_end_elem)
         
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
@@ -3007,13 +3852,13 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Mock URN resolution to return the transcluded file location
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path="/TEI/div[1]")],
-            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path="/TEI/div[1]")]
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:other:start", element_path=trans_start_path)],
+            [make_resolved_urn(project=trans_project, file_name=trans_file, urn="urn:other:end", element_path=trans_end_path)]
         ]
         
         # Process the main file with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(main_project, main_file, start_path, end_path, linear_data=self.linear_data)
             result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -3098,9 +3943,29 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         level1_project, level1_file = self._create_test_file("level1.xml", level1_xml_content)
         level2_project, level2_file = self._create_test_file("level2.xml", level2_xml_content)
         
+        # Parse the main XML tree and get element paths
+        main_tree = etree.fromstring(main_xml_content)
+        ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        main_start_elem = main_tree.xpath("//tei:p[@corresp='urn:main-start']", namespaces=ns)[0]
+        main_end_elem = main_tree.xpath("//tei:p[@corresp='urn:main-end']", namespaces=ns)[0]
+        main_start_path = main_start_elem.getroottree().getpath(main_start_elem)
+        main_end_path = main_end_elem.getroottree().getpath(main_end_elem)
+        
         # Parse the transcluded XML trees
         level1_tree_root = etree.fromstring(level1_xml_content)
         level2_tree_root = etree.fromstring(level2_xml_content)
+        
+        # Get element paths from the transcluded XML trees
+        level1_ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        level1_start_elem = level1_tree_root.xpath("//tei:p[@corresp='urn:level1:start']", namespaces=level1_ns)[0]
+        level1_end_elem = level1_tree_root.xpath("//tei:p[@corresp='urn:level1:end']", namespaces=level1_ns)[0]
+        level1_start_path = level1_start_elem.getroottree().getpath(level1_start_elem)
+        level1_end_path = level1_end_elem.getroottree().getpath(level1_end_elem)
+        
+        level2_start_elem = level2_tree_root.xpath("//tei:p[@corresp='urn:level2:start']", namespaces=level1_ns)[0]
+        level2_end_elem = level2_tree_root.xpath("//tei:p[@corresp='urn:level2:end']", namespaces=level1_ns)[0]
+        level2_start_path = level2_start_elem.getroottree().getpath(level2_start_elem)
+        level2_end_path = level2_end_elem.getroottree().getpath(level2_end_elem)
         
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
@@ -3126,15 +3991,15 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # First two calls are for the main file's transclusion
         # Next two calls are for the level1 file's transclusion
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path="/TEI/div[1]")],
-            [make_resolved_urn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path="/TEI/div[1]")],
-            [make_resolved_urn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path="/TEI/div[1]")],
-            [make_resolved_urn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path="/TEI/div[1]")]
+            [make_resolved_urn(project=level1_project, file_name=level1_file, urn="urn:level1:start", element_path=level1_start_path)],
+            [make_resolved_urn(project=level1_project, file_name=level1_file, urn="urn:level1:end", element_path=level1_end_path)],
+            [make_resolved_urn(project=level2_project, file_name=level2_file, urn="urn:level2:start", element_path=level2_start_path)],
+            [make_resolved_urn(project=level2_project, file_name=level2_file, urn="urn:level2:end", element_path=level2_end_path)]
         ]
         
         # Process the main file with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(main_project, main_file, "urn:main-start", "urn:main-end", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(main_project, main_file, main_start_path, main_end_path, linear_data=self.linear_data)
             result = processor.process()
         
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
@@ -3204,6 +4069,13 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Parse the transcluded XML tree
         transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
         
+        # Get element paths from the transcluded XML
+        trans_ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        trans_start_elem = transcluded_tree_root.xpath("//tei:p[@corresp='urn:hebrew:start']", namespaces=trans_ns)[0]
+        trans_end_elem = transcluded_tree_root.xpath("//tei:p[@corresp='urn:hebrew:end']", namespaces=trans_ns)[0]
+        trans_start_path = trans_start_elem.getroottree().getpath(trans_start_elem)
+        trans_end_path = trans_end_elem.getroottree().getpath(trans_end_elem)
+        
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
         
@@ -3227,7 +4099,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(trans_project, trans_file, "urn:hebrew:start", "urn:hebrew:end", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(trans_project, trans_file, trans_start_path, trans_end_path, linear_data=self.linear_data)
             result = processor.process()
         
         # Result should be a p:transcludeInline element with xml:lang="he"
@@ -3264,6 +4136,13 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Parse the transcluded XML tree
         transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode('utf-8'))
         
+        # Get element paths from the transcluded XML
+        trans_ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        trans_start_elem = transcluded_tree_root.xpath("//tei:p[@corresp='urn:start']", namespaces=trans_ns)[0]
+        trans_end_elem = transcluded_tree_root.xpath("//tei:p[@corresp='urn:end']", namespaces=trans_ns)[0]
+        trans_start_path = trans_start_elem.getroottree().getpath(trans_start_elem)
+        trans_end_path = trans_end_elem.getroottree().getpath(trans_end_elem)
+        
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
         
@@ -3287,7 +4166,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(trans_project, trans_file, "urn:start", "urn:end", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(trans_project, trans_file, trans_start_path, trans_end_path, linear_data=self.linear_data)
             result = processor.process()
         
         # Result should be a p:transcludeInline element
@@ -3348,6 +4227,23 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Parse the external XML tree
         external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
         
+        # Get milestone element paths
+        ext_ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_milestone_elem = external_tree_root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/3']", namespaces=ext_ns)[0]
+        end_milestone_elem = external_tree_root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/4']", namespaces=ext_ns)[0]
+        start_milestone_path = start_milestone_elem.getroottree().getpath(start_milestone_elem)
+        
+        # For milestone transclusions, the end element is the element preceding the next milestone
+        parent = end_milestone_elem.getparent()
+        end_elem = None
+        for elem in parent:
+            if elem is end_milestone_elem:
+                break
+            end_elem = elem
+        if end_elem is None:
+            end_elem = parent
+        end_element_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
         
@@ -3361,14 +4257,21 @@ class TestInlineCompilerProcessor(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock URN resolution for milestones
+        # For milestone transclusions, end_element_path points to the element before the next milestone
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")]
+            [make_resolved_urn(
+                project=ext_project, 
+                file_name=ext_file, 
+                urn="urn:x-opensiddur:text:bible:book/1/3", 
+                element_path=start_milestone_path,
+                end_element_path=end_element_path,
+                end_includes_tail=True  # Include tail after the end element (before the next milestone)
+            )]
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(ext_project, ext_file, start_milestone_path, end_element_path, include_tail_after_end=True, linear_data=self.linear_data)
             result = processor.process()
         
         
@@ -3437,6 +4340,29 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Parse the external XML tree
         external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
         
+        # Get milestone element paths
+        ext_ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        milestone_elem = external_tree_root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/3']", namespaces=ext_ns)[0]
+        milestone_path = milestone_elem.getroottree().getpath(milestone_elem)
+        # When there's no end milestone, find the last element in the parent div
+        parent_div = milestone_elem.getparent()
+        while parent_div is not None and parent_div.tag != f"{{{ext_ns['tei']}}}div":
+            parent_div = parent_div.getparent()
+        # Find the last element in the div (before the div ends)
+        end_elem = None
+        if parent_div is not None:
+            for elem in reversed(list(parent_div)):
+                if elem is not milestone_elem:
+                    end_elem = elem
+                    break
+            # If no element found, use the parent div itself
+            if end_elem is None:
+                end_elem = parent_div
+            end_path = end_elem.getroottree().getpath(end_elem)
+        else:
+            # Fallback to milestone path if no div found
+            end_path = milestone_path
+        
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
         
@@ -3450,13 +4376,21 @@ class TestInlineCompilerProcessor(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock URN resolution for milestones
+        # When there's no end milestone, end_element_path points to the last element in the div
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(
+                project=ext_project, 
+                file_name=ext_file, 
+                urn="urn:x-opensiddur:text:bible:book/1/3", 
+                element_path=milestone_path,
+                end_element_path=end_path,
+                end_includes_tail=True  # Include tail after the end element
+            )]
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(ext_project, ext_file, milestone_path, end_path, include_tail_after_end=True, linear_data=self.linear_data)
             result = processor.process()
         
         # Convert result to string for easier inspection
@@ -3521,6 +4455,23 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Parse the external XML tree
         external_tree_root = etree.fromstring(external_xml_content.encode('utf-8'))
         
+        # Get milestone element paths
+        ext_ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+        start_milestone_elem = external_tree_root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/1/3']", namespaces=ext_ns)[0]
+        start_milestone_path = start_milestone_elem.getroottree().getpath(start_milestone_elem)
+        # Find the next chapter milestone
+        end_milestone_elem = external_tree_root.xpath("//tei:milestone[@corresp='urn:x-opensiddur:text:bible:book/2']", namespaces=ext_ns)[0]
+        # For milestone transclusions, the end element is the element preceding the next milestone
+        parent = end_milestone_elem.getparent()
+        end_elem = None
+        for elem in parent:
+            if elem is end_milestone_elem:
+                break
+            end_elem = elem
+        if end_elem is None:
+            end_elem = parent
+        end_element_path = end_elem.getroottree().getpath(end_elem)
+        
         # Mock XMLCache.parse_xml
         original_parse_xml = self.linear_data.xml_cache.parse_xml
         
@@ -3534,13 +4485,21 @@ class TestInlineCompilerProcessor(unittest.TestCase):
                 return original_parse_xml(*args, **kwargs)
         
         # Mock URN resolution for milestones
+        # For milestone transclusions, end_element_path points to the element before the next milestone
         mock_resolve_range.side_effect = [
-            [make_resolved_urn(project=ext_project, file_name=ext_file, urn="urn:x-opensiddur:text:bible:book/1/3", element_path="/root/div[1]/milestone[2]")],
+            [make_resolved_urn(
+                project=ext_project, 
+                file_name=ext_file, 
+                urn="urn:x-opensiddur:text:bible:book/1/3", 
+                element_path=start_milestone_path,
+                end_element_path=end_element_path,
+                end_includes_tail=True  # Include tail after the end element (before the next milestone)
+            )]
         ]
         
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
-            processor = InlineCompilerProcessor(ext_project, ext_file, "urn:x-opensiddur:text:bible:book/1/3", "urn:x-opensiddur:text:bible:book/1/3", linear_data=self.linear_data)
+            processor = InlineCompilerProcessor(ext_project, ext_file, start_milestone_path, end_element_path, include_tail_after_end=True, linear_data=self.linear_data)
             result = processor.process()
         
         # Convert result to string for easier inspection
@@ -4014,10 +4973,18 @@ class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
         target_urn = "urn:test:target"
         
         # Create main file with element that has a corresp and falls within range
-        project, file_name, _ = self._create_file_with_element_for_annotation(
+        project, file_name, main_tree = self._create_file_with_element_for_annotation(
             "test_project", "main.xml", start_urn, end_urn,
             f'<tei:p corresp="{target_urn}">Targeted element</tei:p>'
         )
+        
+        # Get element paths from the main file
+        ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
+        main_root = main_tree.getroot()
+        start_elem = main_root.xpath(f"//tei:p[@corresp='{start_urn}']", namespaces=ns)[0]
+        end_elem = main_root.xpath(f"//tei:p[@corresp='{end_urn}']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
         
         # Create note file with editorial note
         note_project, note_file, note_tree = self._create_note_file(
@@ -4025,7 +4992,6 @@ class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
         )
         
         # Get the note element from the tree
-        ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
         note_element = note_tree.xpath('//tei:note[@type="editorial"]', namespaces=ns)[0]
         note_path = note_element.getroottree().getpath(note_element)
         
@@ -4047,7 +5013,7 @@ class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
         
         # Process with InlineCompilerProcessor
         processor = InlineCompilerProcessor(
-            project, file_name, start_urn, end_urn,
+            project, file_name, start_path, end_path,
             linear_data=self.linear_data,
             reference_database=self.refdb
         )
@@ -4073,16 +5039,23 @@ class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
         end_urn = "urn:test:end"
         ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
         # Create main file with element that has a corresp and falls within range
-        project, file_name, _ = self._create_file_with_element_for_annotation(
+        project, file_name, main_tree = self._create_file_with_element_for_annotation(
             "test_project", "main.xml", start_urn, end_urn,
             f'<tei:note type="instruction">Inline instruction note</tei:note>'
         )
+        
+        # Get element paths from the main file
+        main_root = main_tree.getroot()
+        start_elem = main_root.xpath(f"//tei:p[@corresp='{start_urn}']", namespaces=ns)[0]
+        end_elem = main_root.xpath(f"//tei:p[@corresp='{end_urn}']", namespaces=ns)[0]
+        start_path = start_elem.getroottree().getpath(start_elem)
+        end_path = end_elem.getroottree().getpath(end_elem)
 
         self.refdb.get_references_to.return_value = []
                 
         # Process with InlineCompilerProcessor
         processor = InlineCompilerProcessor(
-            project, file_name, start_urn, end_urn,
+            project, file_name, start_path, end_path,
             linear_data=self.linear_data,
             reference_database=self.refdb
         )

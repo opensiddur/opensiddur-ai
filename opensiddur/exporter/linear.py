@@ -17,6 +17,10 @@ class Setting(BaseModel):
     value: Any
 
 class AlignmentMapping(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        validate_assignment=True)
+    
     start: ElementBase
     end: ElementBase
     resolved_urn: ResolvedUrn
