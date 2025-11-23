@@ -8,12 +8,18 @@ from typing import Annotated, Any, Optional, TypedDict
 from pydantic import BaseModel, ConfigDict, Field
 
 from opensiddur.exporter.cache import XMLCache
-
+from opensiddur.exporter.urn import ResolvedUrn
+from lxml.etree import ElementBase
 
 class Setting(BaseModel):
     fs_type: str
     name: str
     value: Any
+
+class AlignmentMapping(BaseModel):
+    start: ElementBase
+    end: ElementBase
+    resolved_urn: ResolvedUrn
 
 
 class LinearData(BaseModel):
@@ -35,6 +41,8 @@ class LinearData(BaseModel):
     alignment_priority: list[str] = Field(default_factory=list)
     # processing context includes processor-specific data. Because there is recursion, it acts as a stack.
     processing_context: list[dict[str, Any]] = Field(default_factory=list)
+    # the alignment map maps the next elements to their alignments
+    alignment_map: Optional[list[AlignmentMapping]] = Field(default_factory=list)
 
 _linear_data = LinearData()
 
