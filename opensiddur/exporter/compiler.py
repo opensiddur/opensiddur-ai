@@ -321,10 +321,10 @@ class CompilerProcessor:
             
             return processing_element
 
-    def _process_alignment_before(self, element: ElementBase) -> Optional[list[ElementBase]]:
+    def _process_alignment_before(self, element: ElementBase) -> list[ElementBase]:
         alignment_map = self.linear_data.alignment_map
         if not alignment_map:
-            return None
+            return []
         
         next_alignment = alignment_map[0]
 
@@ -336,13 +336,32 @@ class CompilerProcessor:
             processor = ExternalCompilerProcessor(
                 next_alignment.resolved_urn.project,
                 next_alignment.resolved_urn.file_name,
-                from_start=next_alignment.resolved_urn.urn,
-                to_end=next_alignment.resolved_urn.urn,
+                from_start=next_alignment.resolved_urn.element_path,
+                to_end=next_alignment.resolved_urn.end_element_path,
+                include_tail_after_end=next_alignment.resolved_urn.end_includes_tail,
                 linear_data=self.linear_data,
                 reference_database=self._refdb,
-                exclusive_end=next_alignment.resolved_urn.end_includes_tail,
             )
             parallel_block_start.extend(processor.process())
+            return [parallel_block_start]
+        else:
+            return []
+
+    def _process_alignment_after(self, element: ElementBase) -> list[ElementBase]:
+        alignment_map = self.linear_data.alignment_map
+        if not alignment_map:
+            return []
+        
+        next_alignment = alignment_map[0]
+        
+        if element is next_alignment.end:
+            parallel_block_end = etree.Element("p:parallelBlock", nsmap=self.ns_map)
+            parallel_block_end.set("end", next_alignment.resolved_urn.urn)
+            alignment_map.pop(0)
+            return [parallel_block_end]
+        else:
+            return []
+            
 
     def _annotate(self, element: ElementBase, root: Optional[ElementBase] = None) -> tuple[list[ElementBase], _AnnotationCommand]:
         """
@@ -799,25 +818,37 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if annotation_command == _AnnotationCommand.REPLACE:
             return [annotations[0]]
 
-        if context["command"] == _ProcessingCommand.RECURSE:
-            append_to = processed
-        elif context["command"] == _ProcessingCommand.COPY_ELEMENT_AND_RECURSE:
-            copied = etree.Element(element.tag, nsmap=self.ns_map)
+        element_uuid = self._get_path_hash(element)
+        element_has_children = bool(element.getchildren())
+
+        copied = None
+        if context["command"] in [
+            _ProcessingCommand.COPY_ELEMENT_AND_RECURSE,
+            _ProcessingCommand.COPY_AND_RECURSE,
+        ]:
+            # for flattening the copied element:
+            # if it has children, we need to add p:start attribute
+            attrib = {f"{{{PROCESSING_NAMESPACE}}}start": element_uuid} if element_has_children else {}
+            copied = etree.Element(element.tag, nsmap=self.ns_map, attrib=attrib)
             for key, value in element.attrib.items():
                 copied.set(key, value)
+            
+            
             processed.append(copied)
-            append_to = copied
-        elif context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
-            copied = etree.Element(element.tag, nsmap=self.ns_map)
-            for key, value in element.attrib.items():
-                copied.set(key, value)
-            copied.text = element.text
-            processed.append(copied)
-            append_to = copied
+            if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+                # Preserve element text:
+                # - For elements with children: text goes to tail (will be converted back to text during unflattening)
+                # - For elements without children: text stays as text (no flattening needed)
+                if element_has_children:
+                    # Element will be flattened, so preserve text as tail
+                    copied.tail = element.text
+                else:
+                    # Element won't be flattened, so preserve text as text
+                    copied.text = element.text
         
         for child in element:
             child_result = self._process_element(child, root)
-            append_to.extend(child_result)
+            processed.extend(child_result)
             if (
                 context["command"] == _ProcessingCommand.COPY_AND_RECURSE 
                 or context["include_tail_after_end"]):
@@ -832,11 +863,28 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
                 self._insert_first_element(processed, annotation)
-
+        if element_has_children and copied is not None:
+            processed.append(
+                etree.Element(copied.tag, 
+                    nsmap=self.ns_map, 
+                    attrib={f"{{{PROCESSING_NAMESPACE}}}end": element_uuid}))
         processed = self._rewrite_ids(processed)
 
         self._update_processing_context_after(element)
         return processed
+
+    def _unflatten(self, elements: list[ElementBase]) -> list[ElementBase]:
+        """ unflatten the given list of elements """
+        unflattened = []
+        temporary_container = etree.Element(f"{{{PROCESSING_NAMESPACE}}}temporaryContainer", nsmap=self.ns_map)
+        temporary_container.extend(elements)
+        
+        unflattening_processor = UnflatteningProcessor(temporary_container, self.ns_map)
+        unflattened_container = unflattening_processor.process()
+        for child in unflattened_container:
+            unflattened.append(child)
+        return unflattened
+
 
     def process(self, root: Optional[ElementBase] = None) -> list[ElementBase]:
         if root is None:
@@ -861,10 +909,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         processed = self._process_element(root, root)
 
+        unflattened = self._unflatten(processed)
         # pop the processing context
         self.linear_data.processing_context.pop()
 
-        return processed
+        return unflattened
 
 class InlineCompilerProcessor(CompilerProcessor):
     def __init__(
@@ -1063,6 +1112,148 @@ class InlineCompilerProcessor(CompilerProcessor):
 
         return element
 
+
+class UnflatteningProcessor:
+    """Processor that unflattens XML structures marked with p:start and p:end attributes.
+    
+    When an element has a p:start attribute, it collects all following siblings
+    (and their descendants) until a matching p:end attribute is found, then
+    moves that content as children of the element with p:start. The element's
+    tail becomes its text content.
+    """
+    
+    def __init__(self, root_element: ElementBase, ns_map: Optional[dict] = None):
+        """Initialize the unflattening processor.
+        
+        Args:
+            root_element: The root element to process
+            ns_map: Namespace map (will extract from root_element if not provided)
+        """
+        self.root_element = root_element
+        if ns_map is None:
+            if hasattr(root_element, 'nsmap'):
+                self.ns_map = dict(root_element.nsmap) if root_element.nsmap else {}
+            else:
+                self.ns_map = {}
+        else:
+            self.ns_map = ns_map
+        
+        # Ensure processing namespace is in the map
+        if "p" not in self.ns_map:
+            self.ns_map["p"] = PROCESSING_NAMESPACE
+    
+    def _get_start_attr(self, element: ElementBase) -> Optional[str]:
+        """Get the p:start attribute value from an element."""
+        start_attr = f"{{{PROCESSING_NAMESPACE}}}start"
+        return element.get(start_attr)
+    
+    def _get_end_attr(self, element: ElementBase) -> Optional[str]:
+        """Get the p:end attribute value from an element."""
+        end_attr = f"{{{PROCESSING_NAMESPACE}}}end"
+        return element.get(end_attr)
+    
+    def _remove_start_attr(self, element: ElementBase):
+        """Remove the p:start attribute from an element."""
+        start_attr = f"{{{PROCESSING_NAMESPACE}}}start"
+        if start_attr in element.attrib:
+            del element.attrib[start_attr]
+    
+    def _remove_end_attr(self, element: ElementBase):
+        """Remove the p:end attribute from an element."""
+        end_attr = f"{{{PROCESSING_NAMESPACE}}}end"
+        if end_attr in element.attrib:
+            del element.attrib[end_attr]
+    
+    def _process_element(self, element: ElementBase, parent: Optional[ElementBase] = None) -> ElementBase:
+        """Process a single element, handling unflattening if needed.
+        
+        Args:
+            element: The element to process
+            parent: The parent element (used to access siblings)
+            
+        Returns:
+            The processed element
+        """
+        start_uuid = self._get_start_attr(element)
+        
+        # If this element has a p:start attribute, we need to collect siblings
+        if start_uuid is not None:
+            # The element's tail becomes its text
+            if element.tail:
+                if element.text:
+                    element.text = element.text + element.tail
+                else:
+                    element.text = element.tail
+                element.tail = None
+            
+            # Collect all following siblings until we find the matching p:end
+            if parent is not None:
+                collected_children = []
+                
+                # Find all siblings after this element
+                siblings = list(parent)
+                try:
+                    element_index = siblings.index(element)
+                except ValueError:
+                    # Element not found in siblings (shouldn't happen, but handle gracefully)
+                    element_index = -1
+                
+                if element_index >= 0:
+                    # Collect siblings to process (from element_index+1 onwards)
+                    siblings_to_process = siblings[element_index + 1:]
+                    
+                    for sibling in siblings_to_process:
+                        # Check if sibling is still a child of parent (it might have been removed
+                        # during recursive processing if it had nested p:start/p:end)
+                        if sibling.getparent() is not parent:
+                            # Sibling was already removed, skip it
+                            continue
+                        
+                        end_uuid = self._get_end_attr(sibling)
+                        
+                        if end_uuid == start_uuid:
+                            # Found the matching end marker
+                            # Save its tail to become the tail of the unflattened element
+                            end_tail = sibling.tail
+                            # Remove the end marker (check again that it's still a child)
+                            if sibling.getparent() is parent:
+                                parent.remove(sibling)
+                            # Set the element's tail to the end marker's tail
+                            if end_tail:
+                                element.tail = end_tail
+                            break
+                        else:
+                            # This sibling is part of the content to collect
+                            # Process it recursively first (in case it has nested p:start/p:end)
+                            processed_sibling = self._process_element(sibling, parent)
+                            collected_children.append(processed_sibling)
+                            # Remove from parent (we'll add it as child of element)
+                            # Check that it's still a child before removing
+                            if sibling.getparent() is parent:
+                                parent.remove(sibling)
+                    
+                    # Add collected children to the element
+                    for child in collected_children:
+                        element.append(child)
+            
+            # Remove the p:start attribute
+            self._remove_start_attr(element)
+        
+        # Process children recursively (they may have their own p:start/p:end)
+        # Make a copy of children list since we'll be modifying it during recursion
+        children = list(element)
+        for child in children:
+            self._process_element(child, element)
+        
+        return element
+    
+    def process(self) -> ElementBase:
+        """Process the root element and unflatten the structure.
+        
+        Returns:
+            The processed root element (modified in place)
+        """
+        return self._process_element(self.root_element, None)
 
 def main():  # pragma: no cover
     parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")

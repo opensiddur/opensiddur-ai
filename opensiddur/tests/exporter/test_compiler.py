@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from lxml import etree
-from opensiddur.exporter.compiler import CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor
+from opensiddur.exporter.compiler import CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor, UnflatteningProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
@@ -5073,6 +5073,430 @@ class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
         self.assertIn("Inline instruction note", note_texts)
         self.assertIn("After the note.", note.tail.strip())
         self.assertIn("Before the note.", note.getparent().text.strip())
+
+
+class TestUnflatteningProcessor(unittest.TestCase):
+    """Tests for the UnflatteningProcessor class."""
+    
+    PROCESSING_NS = 'http://jewishliturgy.org/ns/processing'
+    TEI_NS = 'http://www.tei-c.org/ns/1.0'
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.ns_map = {
+            'tei': self.TEI_NS,
+            'p': self.PROCESSING_NS
+        }
+    
+    def _create_element(self, tag, text=None, tail=None, attrib=None, children=None):
+        """Helper to create an element with namespace."""
+        if attrib is None:
+            attrib = {}
+        if children is None:
+            children = []
+        
+        # Handle namespace prefix
+        if ':' in tag:
+            prefix, local = tag.split(':', 1)
+            ns_uri = self.ns_map.get(prefix, '')
+            elem = etree.Element(f"{{{ns_uri}}}{local}", nsmap=self.ns_map, attrib=attrib)
+        else:
+            elem = etree.Element(tag, nsmap=self.ns_map, attrib=attrib)
+        
+        if text:
+            elem.text = text
+        if tail:
+            elem.tail = tail
+        
+        for child in children:
+            elem.append(child)
+        
+        return elem
+    
+    def test_no_flattened_elements(self):
+        """Test processing XML with no flattened elements (p:start/p:end)."""
+        root = self._create_element('root', children=[
+            self._create_element('tei:div', text='Content', children=[
+                self._create_element('tei:p', text='Paragraph')
+            ])
+        ])
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should remain unchanged
+        self.assertEqual(len(result), 1)
+        div = result[0]
+        self.assertEqual(div.tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(div.text, 'Content')
+        self.assertEqual(len(div), 1)
+        p = div[0]
+        self.assertEqual(p.tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(p.text, 'Paragraph')
+    
+    def test_flattened_elements_children_of_hierarchical(self):
+        """Test flattened elements that are children of hierarchical elements."""
+        # Create structure: div with p:start, then siblings, then p:end
+        uuid = "test-uuid-123"
+        root = self._create_element('root')
+        
+        div = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid})
+        root.append(div)
+        
+        p1 = self._create_element('tei:p', text='First paragraph')
+        root.append(p1)
+        
+        p2 = self._create_element('tei:p', text='Second paragraph')
+        root.append(p2)
+        
+        end_marker = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid})
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # The div should now have p1 and p2 as children
+        self.assertEqual(len(result), 1)  # Only the div remains
+        div = result[0]
+        self.assertEqual(div.tag, f"{{{self.TEI_NS}}}div")
+        # p:start attribute should be removed
+        self.assertNotIn(f"{{{self.PROCESSING_NS}}}start", div.attrib)
+        # Should have two children
+        self.assertEqual(len(div), 2)
+        self.assertEqual(div[0].tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(div[0].text, 'First paragraph')
+        self.assertEqual(div[1].tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(div[1].text, 'Second paragraph')
+        # End marker should be removed
+        self.assertEqual(len([e for e in result if f"{{{self.PROCESSING_NS}}}end" in e.attrib]), 0)
+    
+    def test_hierarchical_elements_children_of_flattened(self):
+        """Test hierarchical elements that are children of flattened elements."""
+        uuid = "test-uuid-456"
+        root = self._create_element('root')
+        
+        # Outer flattened element
+        outer = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid})
+        root.append(outer)
+        
+        # Inner hierarchical element (should become child of outer)
+        inner = self._create_element('tei:div', children=[
+            self._create_element('tei:p', text='Inner paragraph')
+        ])
+        root.append(inner)
+        
+        end_marker = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid})
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Outer div should have inner div as child
+        self.assertEqual(len(result), 1)
+        outer = result[0]
+        self.assertEqual(len(outer), 1)
+        inner = outer[0]
+        self.assertEqual(inner.tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(len(inner), 1)
+        self.assertEqual(inner[0].tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(inner[0].text, 'Inner paragraph')
+    
+    def test_tail_text_on_start_element_becomes_text(self):
+        """Test that tail text on start element becomes text content."""
+        uuid = "test-uuid-789"
+        root = self._create_element('root')
+        
+        div = self._create_element(
+            'tei:div', 
+            text='Initial text',
+            tail='Tail text that becomes content',
+            attrib={f"{{{self.PROCESSING_NS}}}start": uuid}
+        )
+        root.append(div)
+        
+        p = self._create_element('tei:p', text='Paragraph')
+        root.append(p)
+        
+        end_marker = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid})
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        div = result[0]
+        # Tail should become text (concatenated with existing text)
+        self.assertEqual(div.text, 'Initial textTail text that becomes content')
+        self.assertIsNone(div.tail)
+        # Should have paragraph as child
+        self.assertEqual(len(div), 1)
+        self.assertEqual(div[0].text, 'Paragraph')
+    
+    def test_tail_text_on_start_element_no_existing_text(self):
+        """Test tail text on start element when there's no existing text."""
+        uuid = "test-uuid-101"
+        root = self._create_element('root')
+        
+        div = self._create_element(
+            'tei:div',
+            tail='Only tail text',
+            attrib={f"{{{self.PROCESSING_NS}}}start": uuid}
+        )
+        root.append(div)
+        
+        p = self._create_element('tei:p', text='Paragraph')
+        root.append(p)
+        
+        end_marker = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid})
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        div = result[0]
+        # Tail should become text
+        self.assertEqual(div.text, 'Only tail text')
+        self.assertIsNone(div.tail)
+    
+    def test_tail_text_on_end_element_becomes_tail(self):
+        """Test that tail text on end element becomes tail of unflattened element."""
+        uuid = "test-uuid-202"
+        root = self._create_element('root')
+        
+        div = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid})
+        root.append(div)
+        
+        p = self._create_element('tei:p', text='Paragraph')
+        root.append(p)
+        
+        end_marker = self._create_element(
+            'tei:div',
+            tail='Tail after end marker',
+            attrib={f"{{{self.PROCESSING_NS}}}end": uuid}
+        )
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        div = result[0]
+        # End marker's tail should become tail of the unflattened div
+        self.assertEqual(div.tail, 'Tail after end marker')
+    
+    def test_tail_text_on_children(self):
+        """Test that tail text on children is preserved."""
+        uuid = "test-uuid-303"
+        root = self._create_element('root')
+        
+        div = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid})
+        root.append(div)
+        
+        p1 = self._create_element('tei:p', text='First', tail=' tail after first')
+        root.append(p1)
+        
+        p2 = self._create_element('tei:p', text='Second', tail=' tail after second')
+        root.append(p2)
+        
+        end_marker = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid})
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        div = result[0]
+        self.assertEqual(len(div), 2)
+        # Tail text should be preserved on children
+        self.assertEqual(div[0].text, 'First')
+        self.assertEqual(div[0].tail, ' tail after first')
+        self.assertEqual(div[1].text, 'Second')
+        self.assertEqual(div[1].tail, ' tail after second')
+    
+    def test_nested_flattened_elements(self):
+        """Test nested flattened elements (flattened element inside another)."""
+        outer_uuid = "outer-uuid"
+        inner_uuid = "inner-uuid"
+        root = self._create_element('root')
+        
+        # Outer flattened element
+        outer = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": outer_uuid})
+        root.append(outer)
+        
+        # Inner flattened element
+        inner = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": inner_uuid})
+        root.append(inner)
+        
+        p = self._create_element('tei:p', text='Paragraph')
+        root.append(p)
+        
+        inner_end = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": inner_uuid})
+        root.append(inner_end)
+        
+        outer_end = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": outer_uuid})
+        root.append(outer_end)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Outer div should contain inner div, which contains paragraph
+        self.assertEqual(len(result), 1)
+        outer = result[0]
+        self.assertEqual(len(outer), 1)  # Should have inner div as child
+        inner = outer[0]
+        self.assertEqual(len(inner), 1)  # Should have paragraph as child
+        self.assertEqual(inner[0].tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(inner[0].text, 'Paragraph')
+    
+    def test_multiple_flattened_elements_same_level(self):
+        """Test multiple flattened elements at the same level."""
+        uuid1 = "uuid-1"
+        uuid2 = "uuid-2"
+        root = self._create_element('root')
+        
+        # First flattened element
+        div1 = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid1})
+        root.append(div1)
+        p1 = self._create_element('tei:p', text='First paragraph')
+        root.append(p1)
+        end1 = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid1})
+        root.append(end1)
+        
+        # Second flattened element
+        div2 = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid2})
+        root.append(div2)
+        p2 = self._create_element('tei:p', text='Second paragraph')
+        root.append(p2)
+        end2 = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid2})
+        root.append(end2)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should have two divs as children
+        self.assertEqual(len(result), 2)
+        self.assertEqual(len(result[0]), 1)  # First div has one child
+        self.assertEqual(result[0][0].text, 'First paragraph')
+        self.assertEqual(len(result[1]), 1)  # Second div has one child
+        self.assertEqual(result[1][0].text, 'Second paragraph')
+    
+    def test_complex_nested_structure(self):
+        """Test a complex structure with hierarchical and flattened elements."""
+        uuid = "complex-uuid"
+        root = self._create_element('root')
+        
+        # Hierarchical div
+        hierarchical = self._create_element('tei:div', children=[
+            self._create_element('tei:head', text='Title')
+        ])
+        root.append(hierarchical)
+        
+        # Flattened div
+        flattened = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid})
+        root.append(flattened)
+        
+        # Content for flattened div
+        p1 = self._create_element('tei:p', text='Paragraph 1', tail=' tail 1')
+        root.append(p1)
+        
+        nested_div = self._create_element('tei:div', children=[
+            self._create_element('tei:p', text='Nested paragraph')
+        ])
+        root.append(nested_div)
+        
+        p2 = self._create_element('tei:p', text='Paragraph 2', tail=' tail 2')
+        root.append(p2)
+        
+        end_marker = self._create_element('tei:div', tail=' tail after end', attrib={f"{{{self.PROCESSING_NS}}}end": uuid})
+        root.append(end_marker)
+        
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should have hierarchical div and flattened div
+        self.assertEqual(len(result), 2)
+        hierarchical = result[0]
+        self.assertEqual(hierarchical.tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(len(hierarchical), 1)
+        self.assertEqual(hierarchical[0].tag, f"{{{self.TEI_NS}}}head")
+        
+        flattened = result[1]
+        self.assertEqual(flattened.tag, f"{{{self.TEI_NS}}}div")
+        # Should have p1, nested_div, and p2 as children
+        self.assertEqual(len(flattened), 3)
+        self.assertEqual(flattened[0].text, 'Paragraph 1')
+        self.assertEqual(flattened[0].tail, ' tail 1')
+        self.assertEqual(flattened[1].tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(flattened[2].text, 'Paragraph 2')
+        self.assertEqual(flattened[2].tail, ' tail 2')
+        # End marker's tail should become flattened div's tail
+        self.assertEqual(flattened.tail, ' tail after end')
+    
+    def test_nested_flattened_elements_removal_error(self):
+        """Test that nested flattened elements don't cause 'Element is not a child' error.
+        
+        This tests the case where:
+        - elem1 has p:start="uuid1"
+        - elem2 (a sibling of elem1) has p:start="uuid2" 
+        - When processing elem1, it processes elem2 recursively
+        - elem2 removes siblings from root during its processing
+        - Then elem1 tries to remove elem2 from root
+        - This should not cause an error
+        """
+        uuid1 = "uuid1"
+        uuid2 = "uuid2"
+        root = self._create_element('root')
+        
+        # First element with p:start
+        elem1 = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid1})
+        root.append(elem1)
+        
+        # Second element that also has p:start (nested flattened structure)
+        elem2 = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}start": uuid2})
+        root.append(elem2)
+        
+        # Content for elem2
+        p1 = self._create_element('tei:p', text='Content for elem2')
+        root.append(p1)
+        
+        # End marker for elem2
+        elem2_end = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid2})
+        root.append(elem2_end)
+        
+        # Content for elem1
+        p2 = self._create_element('tei:p', text='Content for elem1')
+        root.append(p2)
+        
+        # End marker for elem1
+        elem1_end = self._create_element('tei:div', attrib={f"{{{self.PROCESSING_NS}}}end": uuid1})
+        root.append(elem1_end)
+        
+        # This should not raise "Element is not a child of this node" error
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Verify the structure is correct
+        # elem1 should contain elem2, p1, and p2
+        self.assertEqual(len(result), 1)
+        elem1_result = result[0]
+        self.assertEqual(elem1_result.tag, f"{{{self.TEI_NS}}}div")
+        # Should have elem2 (which contains p1) and p2 as children
+        self.assertEqual(len(elem1_result), 2)
+        
+        # First child should be elem2, which contains p1
+        elem2_result = elem1_result[0]
+        self.assertEqual(elem2_result.tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(len(elem2_result), 1)
+        self.assertEqual(elem2_result[0].tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(elem2_result[0].text, 'Content for elem2')
+        
+        # Second child should be p2
+        p2_result = elem1_result[1]
+        self.assertEqual(p2_result.tag, f"{{{self.TEI_NS}}}p")
+        self.assertEqual(p2_result.text, 'Content for elem1')
+        
+        # Verify no p:start or p:end attributes remain
+        self.assertNotIn(f"{{{self.PROCESSING_NS}}}start", elem1_result.attrib)
+        self.assertNotIn(f"{{{self.PROCESSING_NS}}}start", elem2_result.attrib)
+        self.assertNotIn(f"{{{self.PROCESSING_NS}}}end", elem1_result.attrib)
+        self.assertNotIn(f"{{{self.PROCESSING_NS}}}end", elem2_result.attrib)
 
 
 if __name__ == '__main__':
