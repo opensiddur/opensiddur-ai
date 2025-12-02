@@ -175,7 +175,9 @@ class CompilerProcessor:
         
         return alignment_map
 
-    def _get_path_hash(self, element: Optional[ElementBase] = None) -> str:
+    def _get_path_hash(self, 
+        element: Optional[ElementBase] = None,
+        suffix: str = "") -> str:
         """ Get a hash of the path taken to get to the current processing context and element if available """
         context_path_elements = []
         num_contexts = len(self.linear_data.processing_context)
@@ -190,7 +192,7 @@ class CompilerProcessor:
             element_path = element.getroottree().getpath(element)
             context_path_elements.append(':' + element_path)
         full_context_path ='+'.join(context_path_elements)
-        path_hash = hashlib.sha256(full_context_path.encode('utf-8')).hexdigest()[:8]
+        path_hash = hashlib.sha256(full_context_path.encode('utf-8')).hexdigest()[:8] + suffix
         return path_hash
 
     def _rewrite_ids(self, element_or_list) -> ElementBase | list[ElementBase]:
@@ -331,36 +333,58 @@ class CompilerProcessor:
         if element is next_alignment.start:
             # the current element is the start of an alignment.
             parallel_block_start = etree.Element("p:parallelBlock", nsmap=self.ns_map)
-            parallel_block_start.set("start", next_alignment.resolved_urn.urn)
+            parallel_block_start.set("urn", next_alignment.resolved_urn.urn)
+            path_hash = self._get_path_hash(element)
+            parallel_block_start.set("start", path_hash + "_parallel")
             
+            parallel_external_element = etree.Element("p:parallelExternal", nsmap=self.ns_map)
+            parallel_internal_element = etree.Element("p:parallelInternal", nsmap=self.ns_map)
+            parallel_internal_element.set("start", path_hash + "_parallel_internal")
+
             processor = ExternalCompilerProcessor(
                 next_alignment.resolved_urn.project,
                 next_alignment.resolved_urn.file_name,
                 from_start=next_alignment.resolved_urn.element_path,
                 to_end=next_alignment.resolved_urn.end_element_path,
                 include_tail_after_end=next_alignment.resolved_urn.end_includes_tail,
-                linear_data=self.linear_data,
+                # when processing in parallel, all the pre-alignment settings should be respected, 
+                #  but parallel texts should not be able to modify the linear data.
+                linear_data=self.linear_data.model_copy(deep=True),
                 reference_database=self._refdb,
             )
-            parallel_block_start.extend(processor.process())
-            return [parallel_block_start]
+            parallel_external_element.extend(processor.process())
+            parallel_block_start.append(parallel_external_element)
+            return [parallel_block_start, parallel_internal_element]
         else:
             return []
 
-    def _process_alignment_after(self, element: ElementBase) -> list[ElementBase]:
+    def _process_alignment_after(self, element: ElementBase) -> tuple[list[ElementBase], bool]:
+        """ 
+        Process the alignment after the given element.
+        Returns a tuple of a list of elements to insert and a boolean indicating 
+        whether the element tail has already been added after the parallel end element.
+        """
         alignment_map = self.linear_data.alignment_map
         if not alignment_map:
-            return []
+            return [], False
         
+        path_hash = self._get_path_hash(element)
         next_alignment = alignment_map[0]
         
         if element is next_alignment.end:
+            parallel_internal_end = etree.Element("p:parallelInternal", nsmap=self.ns_map)
+            parallel_internal_end.set("end", path_hash + "_parallel_internal")
             parallel_block_end = etree.Element("p:parallelBlock", nsmap=self.ns_map)
-            parallel_block_end.set("end", next_alignment.resolved_urn.urn)
+            parallel_block_end.set("end", path_hash + "_parallel")
+            tail_added = False
+            if not next_alignment.resolved_urn.end_includes_tail:
+                parallel_block_end.tail = element.tail
+                tail_added = True
+                # the tail has been duplicated. We need to remove it from the preceding element
             alignment_map.pop(0)
-            return [parallel_block_end]
+            return [parallel_internal_end, parallel_block_end], tail_added
         else:
-            return []
+            return [], False
             
 
     def _annotate(self, element: ElementBase, root: Optional[ElementBase] = None) -> tuple[list[ElementBase], _AnnotationCommand]:
@@ -809,14 +833,27 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         if context["command"] == _ProcessingCommand.SKIP:
             return []
-
-        transcluded = self._transclude(element)
-        if transcluded is not None:
-            return [transcluded]
         
-        annotations, annotation_command = self._annotate(element, root)
-        if annotation_command == _AnnotationCommand.REPLACE:
-            return [annotations[0]]
+        # Initialize annotations and annotation_command for all commands
+        annotations = []
+        annotation_command = _AnnotationCommand.NONE
+        
+        if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+            # transclusion and annotation do not occur when we are only
+            # adding elements for the sake of structure.
+            transcluded = self._transclude(element)
+            if transcluded is not None:
+                return [transcluded]
+            
+            annotations, annotation_command = self._annotate(element, root)
+            if annotation_command == _AnnotationCommand.REPLACE:
+                return [annotations[0]]
+
+            start_parallel = self._process_alignment_before(element)
+            processed.extend(start_parallel)
+            end_parallel, tail_added = self._process_alignment_after(element)
+            if end_parallel:
+                processed.extend(end_parallel)
 
         element_uuid = self._get_path_hash(element)
         element_has_children = bool(element.getchildren())
@@ -832,7 +869,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
             copied = etree.Element(element.tag, nsmap=self.ns_map, attrib=attrib)
             for key, value in element.attrib.items():
                 copied.set(key, value)
-            
             
             processed.append(copied)
             if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
