@@ -335,11 +335,11 @@ class CompilerProcessor:
             parallel_block_start = etree.Element("p:parallelBlock", nsmap=self.ns_map)
             parallel_block_start.set("urn", next_alignment.resolved_urn.urn)
             path_hash = self._get_path_hash(element)
-            parallel_block_start.set("start", path_hash + "_parallel")
+            parallel_block_start.set(f"{{{PROCESSING_NAMESPACE}}}start", path_hash + "_parallel")
             
             parallel_external_element = etree.Element("p:parallelExternal", nsmap=self.ns_map)
             parallel_internal_element = etree.Element("p:parallelInternal", nsmap=self.ns_map)
-            parallel_internal_element.set("start", path_hash + "_parallel_internal")
+            parallel_internal_element.set(f"{{{PROCESSING_NAMESPACE}}}start", path_hash + "_parallel_internal")
 
             processor = ExternalCompilerProcessor(
                 next_alignment.resolved_urn.project,
@@ -373,9 +373,9 @@ class CompilerProcessor:
         
         if element is next_alignment.end:
             parallel_internal_end = etree.Element("p:parallelInternal", nsmap=self.ns_map)
-            parallel_internal_end.set("end", path_hash + "_parallel_internal")
+            parallel_internal_end.set(f"{{{PROCESSING_NAMESPACE}}}end", path_hash + "_parallel_internal")
             parallel_block_end = etree.Element("p:parallelBlock", nsmap=self.ns_map)
-            parallel_block_end.set("end", path_hash + "_parallel")
+            parallel_block_end.set(f"{{{PROCESSING_NAMESPACE}}}end", path_hash + "_parallel")
             tail_added = False
             if not next_alignment.resolved_urn.end_includes_tail:
                 parallel_block_end.tail = element.tail
@@ -1200,17 +1200,50 @@ class UnflatteningProcessor:
         if end_attr in element.attrib:
             del element.attrib[end_attr]
     
-    def _process_element(self, element: ElementBase, parent: Optional[ElementBase] = None) -> ElementBase:
+    def _is_parallel_element(self, element: ElementBase) -> bool:
+        """Check if element is p:parallelBlock or p:parallelInternal."""
+        parallel_block_tag = f"{{{PROCESSING_NAMESPACE}}}parallelBlock"
+        parallel_internal_tag = f"{{{PROCESSING_NAMESPACE}}}parallelInternal"
+        return element.tag in (parallel_block_tag, parallel_internal_tag)
+    
+    def _is_external_transclusion(self, element: ElementBase) -> bool:
+        """Check if element is p:transclude with type='external' or no type."""
+        transclude_tag = f"{{{PROCESSING_NAMESPACE}}}transclude"
+        if element.tag != transclude_tag:
+            return False
+        transclude_type = element.get("type")
+        # External if type is "external" or type is not specified (None)
+        return transclude_type == "external" or transclude_type is None
+    
+    def _should_pause_hierarchy(self, element: ElementBase) -> bool:
+        """Returns True if element is parallel block or external transclusion."""
+        return self._is_parallel_element(element) or self._is_external_transclusion(element)
+    
+    def _process_element(self, element: ElementBase, parent: Optional[ElementBase] = None, 
+                        inside_parallel: bool = False, hierarchy_tag: Optional[str] = None,
+                        hierarchy_marked: bool = False) -> ElementBase:
         """Process a single element, handling unflattening if needed.
         
         Args:
             element: The element to process
             parent: The parent element (used to access siblings)
+            inside_parallel: Whether we're currently inside a parallel block
+            hierarchy_tag: The tag of the hierarchy being processed (if any)
+            hierarchy_marked: Whether the hierarchy has been marked with part=first
             
         Returns:
             The processed element
         """
         start_uuid = self._get_start_attr(element)
+        
+        # Check if this is a parallel element
+        is_parallel = self._is_parallel_element(element)
+        is_external_trans = self._is_external_transclusion(element)
+        
+        # Update inside_parallel state
+        if is_parallel:
+            # We're entering a parallel block
+            inside_parallel = True
         
         # If this element has a p:start attribute, we need to collect siblings
         if start_uuid is not None:
@@ -1221,6 +1254,18 @@ class UnflatteningProcessor:
                 else:
                     element.text = element.tail
                 element.tail = None
+            
+            # Determine if this is a hierarchy element (not a parallel block)
+            is_hierarchy = not is_parallel and not is_external_trans
+            current_hierarchy_tag = element.tag if is_hierarchy else hierarchy_tag
+            current_hierarchy_marked = hierarchy_marked
+            
+            # If this is a hierarchy element inside a parallel block, mark it with part=continue
+            if is_hierarchy and inside_parallel and hierarchy_tag == element.tag:
+                element.set("part", "continue")
+                current_hierarchy_marked = True
+            # If this is a hierarchy element and we haven't marked it yet, we'll mark it later
+            # if we encounter a parallel block or external transclusion
             
             # Collect all following siblings until we find the matching p:end
             if parent is not None:
@@ -1237,6 +1282,7 @@ class UnflatteningProcessor:
                 if element_index >= 0:
                     # Collect siblings to process (from element_index+1 onwards)
                     siblings_to_process = siblings[element_index + 1:]
+                    current_inside_parallel = inside_parallel
                     
                     for sibling in siblings_to_process:
                         # Check if sibling is still a child of parent (it might have been removed
@@ -1245,6 +1291,18 @@ class UnflatteningProcessor:
                             # Sibling was already removed, skip it
                             continue
                         
+                        # Check if sibling is a parallel block or external transclusion
+                        sibling_is_parallel = self._is_parallel_element(sibling)
+                        sibling_is_external_trans = self._is_external_transclusion(sibling)
+                        sibling_should_pause = sibling_is_parallel or sibling_is_external_trans
+                        
+                        # If we encounter a parallel block or external transclusion while processing a hierarchy
+                        if sibling_should_pause and is_hierarchy and not current_hierarchy_marked:
+                            # Mark the hierarchy with part=first
+                            element.set("part", "first")
+                            current_hierarchy_marked = True
+                        
+                        # Check if sibling is the end marker for this element
                         end_uuid = self._get_end_attr(sibling)
                         
                         if end_uuid == start_uuid:
@@ -1260,13 +1318,35 @@ class UnflatteningProcessor:
                             break
                         else:
                             # This sibling is part of the content to collect
-                            # Process it recursively first (in case it has nested p:start/p:end)
-                            processed_sibling = self._process_element(sibling, parent)
-                            collected_children.append(processed_sibling)
-                            # Remove from parent (we'll add it as child of element)
-                            # Check that it's still a child before removing
-                            if sibling.getparent() is parent:
-                                parent.remove(sibling)
+                            # If it's a parallel block or external transclusion, process it with priority
+                            if sibling_should_pause:
+                                # Process the parallel block/transclusion first (priority)
+                                # Pass the hierarchy info so elements inside can be marked
+                                # For parallel blocks, we enter them, so inside_parallel=True
+                                # For external transclusions, we don't enter a parallel block
+                                processed_sibling = self._process_element(
+                                    sibling, parent, 
+                                    inside_parallel=sibling_is_parallel,  # True if parallel block
+                                    hierarchy_tag=current_hierarchy_tag,
+                                    hierarchy_marked=current_hierarchy_marked
+                                )
+                                # After processing, add to collected children
+                                collected_children.append(processed_sibling)
+                                # Remove from parent (we'll add it as child of element)
+                                if sibling.getparent() is parent:
+                                    parent.remove(sibling)
+                            else:
+                                # Regular sibling processing
+                                processed_sibling = self._process_element(
+                                    sibling, parent,
+                                    inside_parallel=current_inside_parallel,
+                                    hierarchy_tag=current_hierarchy_tag,
+                                    hierarchy_marked=current_hierarchy_marked
+                                )
+                                collected_children.append(processed_sibling)
+                                # Remove from parent (we'll add it as child of element)
+                                if sibling.getparent() is parent:
+                                    parent.remove(sibling)
                     
                     # Add collected children to the element
                     for child in collected_children:
@@ -1279,7 +1359,29 @@ class UnflatteningProcessor:
         # Make a copy of children list since we'll be modifying it during recursion
         children = list(element)
         for child in children:
-            self._process_element(child, element)
+            # Determine if we're still inside a parallel block
+            child_inside_parallel = inside_parallel
+            if is_parallel:
+                # We're inside this parallel block
+                child_inside_parallel = True
+            
+            # Check if child is a hierarchy element that should get part=continue
+            child_start_uuid = self._get_start_attr(child)
+            if (child_start_uuid is not None and 
+                not self._is_parallel_element(child) and 
+                not self._is_external_transclusion(child) and
+                child_inside_parallel and 
+                hierarchy_tag is not None and
+                child.tag == hierarchy_tag):
+                # This is a continuation of the hierarchy inside a parallel block
+                child.set("part", "continue")
+            
+            self._process_element(
+                child, element,
+                inside_parallel=child_inside_parallel,
+                hierarchy_tag=hierarchy_tag if not is_parallel else None,
+                hierarchy_marked=hierarchy_marked
+            )
         
         return element
     

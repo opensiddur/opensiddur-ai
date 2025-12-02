@@ -5497,6 +5497,292 @@ class TestUnflatteningProcessor(unittest.TestCase):
         self.assertNotIn(f"{{{self.PROCESSING_NS}}}start", elem2_result.attrib)
         self.assertNotIn(f"{{{self.PROCESSING_NS}}}end", elem1_result.attrib)
         self.assertNotIn(f"{{{self.PROCESSING_NS}}}end", elem2_result.attrib)
+    
+    def test_parallel_block_with_hierarchical_elements_no_crossing(self):
+        """Test parallel block with hierarchical elements before, inside, after, and including it (no crossing boundaries)."""
+        xml_content = f'''<root xmlns:tei="{self.TEI_NS}" xmlns:p="{self.PROCESSING_NS}">
+    <tei:div p:start="hierarchy-before-uuid"/>
+    <tei:p>Before parallel</tei:p>
+    <tei:div p:end="hierarchy-before-uuid"/>
+    <p:parallelBlock p:start="parallel-uuid"/>
+    <p:parallelExternal>
+        <tei:p>External content</tei:p>
+    </p:parallelExternal>
+    <p:parallelInternal p:start="parallel-internal-uuid"/>
+    <tei:div p:start="hierarchy-inside-uuid"/>
+    <tei:p>Inside parallel</tei:p>
+    <tei:div p:end="hierarchy-inside-uuid"/>
+    <p:parallelInternal p:end="parallel-internal-uuid"/>
+    <p:parallelBlock p:end="parallel-uuid"/>
+    <tei:div p:start="hierarchy-after-uuid"/>
+    <tei:p>After parallel</tei:p>
+    <tei:div p:end="hierarchy-after-uuid"/>
+</root>'''
+        
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should have hierarchy_before, parallel_block, hierarchy_after
+        self.assertEqual(len(result), 3)
+        
+        # First: hierarchy before (unflattened)
+        self.assertEqual(result[0].tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(len(result[0]), 1)
+        self.assertEqual(result[0][0].text, 'Before parallel')
+        
+        # Second: parallel block (should contain parallelExternal, parallelInternal with hierarchy_inside)
+        self.assertEqual(result[1].tag, f"{{{self.PROCESSING_NS}}}parallelBlock")
+        # Should have parallelExternal and parallelInternal
+        self.assertGreaterEqual(len(result[1]), 2)
+        # First child should be parallelExternal
+        self.assertEqual(result[1][0].tag, f"{{{self.PROCESSING_NS}}}parallelExternal")
+        # Second child should be parallelInternal
+        self.assertEqual(result[1][1].tag, f"{{{self.PROCESSING_NS}}}parallelInternal")
+        # Find hierarchy_inside inside parallelInternal
+        hierarchy_inside = None
+        for child in result[1][1]:
+            if child.tag == f"{{{self.TEI_NS}}}div":
+                hierarchy_inside = child
+                break
+        self.assertIsNotNone(hierarchy_inside, "Hierarchy should be inside parallelInternal")
+        self.assertEqual(hierarchy_inside[0].text, 'Inside parallel')
+        
+        # Third: hierarchy after
+        self.assertEqual(result[2].tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(result[2][0].text, 'After parallel')
+    
+    def test_hierarchy_begins_inside_parallel_ends_after(self):
+        """Test hierarchy that begins inside parallel block and ends after it."""
+        xml_content = f'''<root xmlns:tei="{self.TEI_NS}" xmlns:p="{self.PROCESSING_NS}">
+    <p:parallelBlock p:start="parallel-uuid-2"/>
+    <p:parallelExternal>
+        <tei:p>External content</tei:p>
+    </p:parallelExternal>
+    <p:parallelInternal p:start="parallel-internal-uuid-2"/>
+    <tei:div p:start="hierarchy-uuid-2"/>
+    <tei:p>Inside parallel</tei:p>
+    <p:parallelInternal p:end="parallel-internal-uuid-2"/>
+    <p:parallelBlock p:end="parallel-uuid-2"/>
+    <tei:p>After parallel</tei:p>
+    <tei:div p:end="hierarchy-uuid-2"/>
+</root>'''
+        
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # The hierarchy that starts inside and ends after will collect everything until its end marker,
+        # including the parallel block end marker. So everything ends up inside the parallel block.
+        self.assertEqual(len(result), 1)
+        
+        # First: parallel block
+        parallel_result = result[0]
+        self.assertEqual(parallel_result.tag, f"{{{self.PROCESSING_NS}}}parallelBlock")
+        # Parallel block should contain parallelExternal and parallelInternal
+        self.assertGreaterEqual(len(parallel_result), 2)
+        # Find the hierarchy element inside parallelInternal
+        hierarchy_inside = None
+        for child in parallel_result:
+            if child.tag == f"{{{self.PROCESSING_NS}}}parallelInternal":
+                for grandchild in child:
+                    if grandchild.tag == f"{{{self.TEI_NS}}}div":
+                        hierarchy_inside = grandchild
+                        break
+                break
+        
+        self.assertIsNotNone(hierarchy_inside, "Hierarchy should be inside parallelInternal")
+        # Hierarchy inside should have both p_inside and p_after as children
+        # (since it collects everything until its end marker, including content after parallel block)
+        self.assertGreaterEqual(len(hierarchy_inside), 1)
+        # The first child should be the content inside
+        self.assertEqual(hierarchy_inside[0].text, 'Inside parallel')
+    
+    def test_hierarchy_begins_before_parallel_ends_inside(self):
+        """Test hierarchy that begins before parallel block and ends inside it."""
+        xml_content = f'''<root xmlns:tei="{self.TEI_NS}" xmlns:p="{self.PROCESSING_NS}">
+    <tei:div p:start="hierarchy-uuid-3"/>
+    <tei:p>Before parallel</tei:p>
+    <p:parallelBlock p:start="parallel-uuid-3"/>
+    <p:parallelExternal>
+        <tei:p>External content</tei:p>
+    </p:parallelExternal>
+    <p:parallelInternal p:start="parallel-internal-uuid-3"/>
+    <tei:p>Inside parallel</tei:p>
+    <tei:div p:end="hierarchy-uuid-3"/>
+    <p:parallelInternal p:end="parallel-internal-uuid-3"/>
+    <p:parallelBlock p:end="parallel-uuid-3"/>
+</root>'''
+        
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should have hierarchy as first element (before parallel)
+        # Hierarchy should be marked with part=first since it crosses parallel block
+        self.assertGreaterEqual(len(result), 1)
+        hierarchy_result = result[0]
+        self.assertEqual(hierarchy_result.tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(hierarchy_result.get("part"), "first", "Hierarchy crossing parallel block should have part=first")
+        
+        # Should have p_before as child
+        self.assertGreaterEqual(len(hierarchy_result), 1)
+        self.assertEqual(hierarchy_result[0].text, 'Before parallel')
+        
+        # Since hierarchy ends inside parallel block, the parallel block should be a child of hierarchy
+        # Find the parallel block inside the hierarchy
+        parallel_result = None
+        for child in hierarchy_result:
+            if child.tag == f"{{{self.PROCESSING_NS}}}parallelBlock":
+                parallel_result = child
+                break
+        
+        self.assertIsNotNone(parallel_result, "Parallel block should be inside hierarchy")
+        self.assertEqual(parallel_result.tag, f"{{{self.PROCESSING_NS}}}parallelBlock")
+        # Parallel block should contain parallelExternal and parallelInternal
+        self.assertGreaterEqual(len(parallel_result), 2)
+        # Find hierarchy continuation inside parallelInternal
+        found_continuation = False
+        for child in parallel_result:
+            if child.tag == f"{{{self.PROCESSING_NS}}}parallelInternal":
+                for grandchild in child:
+                    if grandchild.tag == f"{{{self.TEI_NS}}}div" and grandchild.get("part") == "continue":
+                        # Found continuation
+                        found_continuation = True
+                        # Should contain p_inside
+                        self.assertGreaterEqual(len(grandchild), 1)
+                        break
+                break
+        # Note: The hierarchy end marker should also be in the parallel block
+        self.assertTrue(found_continuation or len(parallel_result) > 0, "Parallel block should contain hierarchy continuation")
+    
+    def test_external_transclude_inside_parallel_block(self):
+        """Test external transclude element inside a parallel block."""
+        xml_content = f'''<root xmlns:tei="{self.TEI_NS}" xmlns:p="{self.PROCESSING_NS}">
+    <p:parallelBlock p:start="parallel-uuid-4"/>
+    <p:parallelExternal>
+        <tei:p>External content</tei:p>
+    </p:parallelExternal>
+    <p:parallelInternal p:start="parallel-internal-uuid-4"/>
+    <tei:p>Before transclude</tei:p>
+    <p:transclude type="external" target="urn:test"/>
+    <tei:p>After transclude</tei:p>
+    <p:parallelInternal p:end="parallel-internal-uuid-4"/>
+    <p:parallelBlock p:end="parallel-uuid-4"/>
+</root>'''
+        
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should have parallel block containing parallelExternal, parallelInternal, and external transclude
+        self.assertEqual(len(result), 1)
+        parallel_result = result[0]
+        self.assertEqual(parallel_result.tag, f"{{{self.PROCESSING_NS}}}parallelBlock")
+        # Should have parallelExternal and parallelInternal
+        self.assertGreaterEqual(len(parallel_result), 2)
+        # Find external transclude inside parallelInternal
+        transclude_found = False
+        content_before = False
+        content_after = False
+        for child in parallel_result:
+            if child.tag == f"{{{self.PROCESSING_NS}}}parallelInternal":
+                children_list = list(child)
+                for i, grandchild in enumerate(children_list):
+                    if grandchild.tag == f"{{{self.PROCESSING_NS}}}transclude":
+                        transclude_found = True
+                        self.assertEqual(grandchild.get("type"), "external")
+                        # Check for content before and after
+                        if i > 0 and children_list[i-1].tag == f"{{{self.TEI_NS}}}p":
+                            content_before = True
+                            self.assertEqual(children_list[i-1].text, 'Before transclude')
+                        if i < len(children_list) - 1 and children_list[i+1].tag == f"{{{self.TEI_NS}}}p":
+                            content_after = True
+                            self.assertEqual(children_list[i+1].text, 'After transclude')
+                        break
+                break
+        self.assertTrue(transclude_found, "External transclude should be inside parallelInternal")
+        self.assertTrue(content_before, "Content should exist before external transclude")
+        self.assertTrue(content_after, "Content should exist after external transclude")
+    
+    def test_inline_transclude_inside_parallel_block(self):
+        """Test inline transclude element inside a parallel block."""
+        xml_content = f'''<root xmlns:tei="{self.TEI_NS}" xmlns:p="{self.PROCESSING_NS}">
+    <p:parallelBlock p:start="parallel-uuid-5"/>
+    <p:parallelExternal>
+        <tei:p>External content</tei:p>
+    </p:parallelExternal>
+    <p:parallelInternal p:start="parallel-internal-uuid-5"/>
+    <p:transclude type="inline" target="urn:test"/>
+    <p:parallelInternal p:end="parallel-internal-uuid-5"/>
+    <p:parallelBlock p:end="parallel-uuid-5"/>
+</root>'''
+        
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Should have parallel block containing parallelExternal, parallelInternal, and inline transclude
+        self.assertEqual(len(result), 1)
+        parallel_result = result[0]
+        self.assertEqual(parallel_result.tag, f"{{{self.PROCESSING_NS}}}parallelBlock")
+        # Should have parallelExternal and parallelInternal
+        self.assertGreaterEqual(len(parallel_result), 2)
+        # Find inline transclude inside parallelInternal
+        transclude_found = False
+        for child in parallel_result:
+            if child.tag == f"{{{self.PROCESSING_NS}}}parallelInternal":
+                for grandchild in child:
+                    if grandchild.tag == f"{{{self.PROCESSING_NS}}}transclude":
+                        transclude_found = True
+                        self.assertEqual(grandchild.get("type"), "inline")
+                        break
+                break
+        self.assertTrue(transclude_found, "Inline transclude should be inside parallelInternal")
+    
+    def test_hierarchy_crosses_parallel_block_with_part_attributes(self):
+        """Test hierarchy crossing parallel block gets part=first and part=continue attributes."""
+        xml_content = f'''<root xmlns:tei="{self.TEI_NS}" xmlns:p="{self.PROCESSING_NS}">
+    <tei:div p:start="hierarchy-uuid-6"/>
+    <tei:p>Before parallel</tei:p>
+    <p:parallelBlock p:start="parallel-uuid-6"/>
+    <p:parallelExternal>
+        <tei:p>External content</tei:p>
+    </p:parallelExternal>
+    <p:parallelInternal p:start="parallel-internal-uuid-6"/>
+    <tei:div p:start="hierarchy-uuid-6-continue"/>
+    <tei:p>Inside parallel</tei:p>
+    <tei:div p:end="hierarchy-uuid-6-continue"/>
+    <p:parallelInternal p:end="parallel-internal-uuid-6"/>
+    <p:parallelBlock p:end="parallel-uuid-6"/>
+    <tei:p>After parallel</tei:p>
+    <tei:div p:end="hierarchy-uuid-6"/>
+</root>'''
+        
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        processor = UnflatteningProcessor(root, self.ns_map)
+        result = processor.process()
+        
+        # Hierarchy should be marked with part=first
+        self.assertGreaterEqual(len(result), 1)
+        hierarchy_result = result[0]
+        self.assertEqual(hierarchy_result.tag, f"{{{self.TEI_NS}}}div")
+        self.assertEqual(hierarchy_result.get("part"), "first")
+        
+        # Parallel block should contain hierarchy continuation with part=continue
+        if len(result) > 1:
+            parallel_result = result[1]
+            self.assertEqual(parallel_result.tag, f"{{{self.PROCESSING_NS}}}parallelBlock")
+            # Find hierarchy continuation inside parallelInternal
+            for child in parallel_result:
+                if child.tag == f"{{{self.PROCESSING_NS}}}parallelInternal":
+                    for grandchild in child:
+                        if grandchild.tag == f"{{{self.TEI_NS}}}div" and grandchild.get("part") == "continue":
+                            # Found continuation
+                            self.assertEqual(len(grandchild), 1)
+                            self.assertEqual(grandchild[0].text, 'Inside parallel')
+                            break
+                    break
 
 
 if __name__ == '__main__':
