@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
-from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
+from opensiddur.exporter.linear import AlignmentMapping, LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
 
@@ -1951,6 +1951,606 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         self.assertIn(notes[0].tail.strip(), "This element is targeted by the note <tei:hi>Child element</tei:hi>")
         self.assertIs(notes[0].getparent().getchildren()[0], notes[0])
 
+
+
+class TestCompilerProcessorLookupAlignment(unittest.TestCase):
+    """Test the _lookup_alignment internal method of CompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        reset_linear_data()
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_lookup_alignment_no_corresp(self):
+        """Test _lookup_alignment when element has no corresp attribute."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>No corresp attribute</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("no_corresp.xml", xml_content)
+        processor = CompilerProcessor(project, file_name)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        result = processor._lookup_alignment(element)
+        self.assertIsNone(result, "Should return None when element has no corresp")
+
+    def test_lookup_alignment_corresp_not_urn(self):
+        """Test _lookup_alignment when element has corresp that doesn't start with 'urn:'."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="#local-reference">Not a URN</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("not_urn.xml", xml_content)
+        processor = CompilerProcessor(project, file_name)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        result = processor._lookup_alignment(element)
+        self.assertIsNone(result, "Should return None when corresp doesn't start with 'urn:'")
+
+    def test_lookup_alignment_no_alignment_projects(self):
+        """Test _lookup_alignment when there are no alignment projects configured."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("no_alignment.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = []  # No alignment projects
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        result = processor._lookup_alignment(element)
+        self.assertIsNone(result, "Should return None when no alignment projects configured")
+
+    def test_lookup_alignment_only_current_project(self):
+        """Test _lookup_alignment when alignment projects only contains current project."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("self_only.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["test_project"]  # Only current project
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        result = processor._lookup_alignment(element)
+        self.assertIsNone(result, "Should return None when alignment projects only contains current project")
+
+    def test_lookup_alignment_no_matching_projects(self):
+        """Test _lookup_alignment when aligned projects exist but none match."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("no_match.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project", "another_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        # Mock the URN resolver
+        resolved_urns = [
+            make_resolved_urn(
+                urn="urn:test:alignment",
+                project="unmatched_project",
+                file_name="unmatched.xml",
+                element_path="/root/tei:div[1]"
+            )
+        ]
+        
+        with patch.object(processor._urn_resolver, 'resolve', return_value=resolved_urns):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', return_value=None):
+                result = processor._lookup_alignment(element)
+        
+        self.assertIsNone(result, "Should return None when no matching projects found")
+
+    def test_lookup_alignment_matching_project(self):
+        """Test _lookup_alignment when aligned projects exist and one matches."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("match.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project", "aligned_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        # Mock the URN resolver - return multiple resolved URNs from different projects
+        resolved_urns = [
+            make_resolved_urn(
+                urn="urn:test:alignment",
+                project="unmatched_project",
+                file_name="unmatched.xml",
+                element_path="/root/tei:div[1]"
+            ),
+            make_resolved_urn(
+                urn="urn:test:alignment",
+                project="aligned_project",
+                file_name="aligned.xml",
+                element_path="/root/tei:div[1]"
+            ),
+            make_resolved_urn(
+                urn="urn:test:alignment",
+                project="other_project",
+                file_name="other.xml",
+                element_path="/root/tei:div[1]"
+            )
+        ]
+        
+        # First prioritize_range call returns self URN (current project), second returns alignment URN
+        self_urn = make_resolved_urn(
+            urn="urn:test:alignment",
+            project="test_project",
+            file_name="match.xml",
+            element_path="/root/tei:div[1]"
+        )
+        expected_urn = make_resolved_urn(
+            urn="urn:test:alignment",
+            project="aligned_project",
+            file_name="aligned.xml",
+            element_path="/root/tei:div[1]"
+        )
+        
+        with patch.object(processor._urn_resolver, 'resolve', return_value=resolved_urns):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=[self_urn, expected_urn]):
+                self_urn, result_urn = processor._lookup_alignment(element)
+
+        self.assertIsNotNone(self_urn, "Should return self URN when matching project found")
+        self.assertEqual(self_urn.project, "test_project")
+        self.assertEqual(self_urn.file_name, "match.xml")
+        self.assertEqual(self_urn.urn, "urn:test:alignment")
+
+        self.assertIsNotNone(result_urn, "Should return ResolvedUrn when matching project found")
+        self.assertEqual(result_urn.project, "aligned_project")
+        self.assertEqual(result_urn.file_name, "aligned.xml")
+        self.assertEqual(result_urn.urn, "urn:test:alignment")
+
+    def test_lookup_alignment_filters_current_project(self):
+        """Test _lookup_alignment filters out current project from alignment priority."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+</root>'''
+        
+        project, file_name = self._create_test_file("filter_self.xml", xml_content)
+        # Include current project in alignment priority - it should be filtered out
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["test_project", "other_project", "aligned_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element
+        root = processor.root_tree
+        element = root[0]
+        
+        # Mock the URN resolver
+        resolved_urns = [
+            make_resolved_urn(
+                urn="urn:test:alignment",
+                project="aligned_project",
+                file_name="aligned.xml",
+                element_path="/root/tei:div[1]"
+            )
+        ]
+        
+        # First prioritize_range call returns self URN (current project), second returns alignment URN
+        self_urn = make_resolved_urn(
+            urn="urn:test:alignment",
+            project="test_project",
+            file_name="filter_self.xml",
+            element_path="/root/tei:div[1]"
+        )
+        expected_urn = make_resolved_urn(
+            urn="urn:test:alignment",
+            project="aligned_project",
+            file_name="aligned.xml",
+            element_path="/root/tei:div[1]"
+        )
+        
+        with patch.object(processor._urn_resolver, 'resolve', return_value=resolved_urns):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=[self_urn, expected_urn]) as mock_prioritize:
+                self_urn, result_urn = processor._lookup_alignment(element)
+                
+                # Second call is for alignment; verify alignment_projects excludes current project
+                self.assertEqual(mock_prioritize.call_count, 2)
+                priority_list = mock_prioritize.call_args_list[1][0][1]  # Second call, second positional argument
+                self.assertNotIn("test_project", priority_list, "Current project should be filtered out")
+                self.assertIn("other_project", priority_list)
+                self.assertIn("aligned_project", priority_list)
+        
+        self.assertIsNotNone(self_urn)
+        self.assertEqual(self_urn.project, "test_project")
+        self.assertIsNotNone(result_urn)
+        self.assertEqual(result_urn.project, "aligned_project")
+
+
+class TestCompilerProcessorPlanAlignment(unittest.TestCase):
+    """Test the _plan_alignment internal method of CompilerProcessor."""
+
+    def setUp(self):
+        """Set up test fixtures and reset linear data."""
+        reset_linear_data()
+        # Create a temporary directory for test files
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        
+        # Patch the xml_cache base_path to use our temp directory
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        """Create a test XML file and return (project, file_name) tuple."""
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_plan_alignment_no_alignment_projects(self):
+        """Test _plan_alignment when there are no alignment projects configured."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("no_alignment.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = []  # No alignment projects
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        result = processor._plan_alignment()
+        self.assertEqual(result, [], "Should return empty list when no alignment projects")
+
+    def test_plan_alignment_no_corresp_elements(self):
+        """Test _plan_alignment when there are no corresp elements."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div>No corresp attribute</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("no_corresp.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        result = processor._plan_alignment()
+        self.assertEqual(result, [], "Should return empty list when no corresp elements")
+
+    def test_plan_alignment_corresp_not_in_text(self):
+        """Test _plan_alignment when corresp elements are not inside tei:text."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div corresp="urn:test:alignment">Outside tei:text</tei:div>
+    <tei:text>
+        <tei:body>
+            <tei:div>Inside tei:text</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("not_in_text.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        result = processor._plan_alignment()
+        self.assertEqual(result, [], "Should return empty list when corresp not in tei:text")
+
+    def test_plan_alignment_no_matching_alignments(self):
+        """Test _plan_alignment when corresp elements exist but _lookup_alignment returns None."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="urn:test:alignment1">First</tei:div>
+            <tei:div corresp="urn:test:alignment2">Second</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("no_match.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Mock _lookup_alignment to return None for all elements
+        with patch.object(processor, '_lookup_alignment', return_value=None):
+            result = processor._plan_alignment()
+        
+        self.assertEqual(result, [], "Should return empty list when no alignments found")
+
+    def test_plan_alignment_single_matching_alignment(self):
+        """Test _plan_alignment when one corresp element has a matching alignment."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="urn:test:alignment1">First</tei:div>
+            <tei:div corresp="urn:test:alignment2">Second</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("single_match.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the elements
+        root = processor.root_tree
+        corresp_elements = root.xpath(".//*[@corresp='urn:test:alignment1']", namespaces=processor.ns_map)
+        self.assertEqual(len(corresp_elements), 1)
+        corresp_element = corresp_elements[0]
+        
+        # Create mock ResolvedUrns: self (current doc) and alignment
+        end_element_path = corresp_element.getroottree().getpath(corresp_element)
+        self_urn = make_resolved_urn(
+            urn="urn:test:alignment1",
+            project="test_project",
+            file_name="single_match.xml",
+            element_path=end_element_path,
+            end_element_path=end_element_path,
+        )
+        alignment_urn = make_resolved_urn(
+            urn="urn:test:alignment1",
+            project="other_project",
+            file_name="aligned.xml",
+            element_path="/root/tei:text[1]/tei:body[1]/tei:div[1]",
+            end_element_path=end_element_path,
+        )
+        
+        def mock_lookup_alignment(element):
+            if element.get("corresp") == "urn:test:alignment1":
+                return (self_urn, alignment_urn)
+            return None
+        
+        with patch.object(processor, '_lookup_alignment', side_effect=mock_lookup_alignment):
+            result = processor._plan_alignment()
+        
+        self.assertEqual(len(result), 1, "Should return one AlignmentMapping")
+        mapping = result[0]
+        self.assertIsInstance(mapping, AlignmentMapping)
+        self.assertEqual(mapping.start, corresp_element)
+        self.assertEqual(mapping.resolved_urn, alignment_urn)
+        self.assertEqual(mapping.end.getroottree().getpath(mapping.end), end_element_path)
+
+    def test_plan_alignment_multiple_matching_alignments(self):
+        """Test _plan_alignment when multiple corresp elements have matching alignments."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="urn:test:alignment1">First</tei:div>
+            <tei:div corresp="urn:test:alignment2">Second</tei:div>
+            <tei:div corresp="urn:test:alignment3">Third</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("multiple_match.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the elements
+        root = processor.root_tree
+        corresp_elements = root.xpath(".//*[@corresp]", namespaces=processor.ns_map)
+        self.assertEqual(len(corresp_elements), 3)
+        
+        # Get actual paths for the elements
+        end_path1 = corresp_elements[0].getroottree().getpath(corresp_elements[0])
+        end_path2 = corresp_elements[1].getroottree().getpath(corresp_elements[1])
+        
+        # Create mock ResolvedUrns: self (current doc) and alignments
+        self_urn1 = make_resolved_urn(
+            urn="urn:test:alignment1",
+            project="test_project",
+            file_name="multiple_match.xml",
+            element_path=end_path1,
+            end_element_path=end_path1,
+        )
+        self_urn2 = make_resolved_urn(
+            urn="urn:test:alignment2",
+            project="test_project",
+            file_name="multiple_match.xml",
+            element_path=end_path2,
+            end_element_path=end_path2,
+        )
+        alignment_urn1 = make_resolved_urn(
+            urn="urn:test:alignment1",
+            project="other_project",
+            file_name="aligned1.xml",
+            element_path="/root/tei:text[1]/tei:body[1]/tei:div[1]",
+            end_element_path=end_path1,
+        )
+        alignment_urn2 = make_resolved_urn(
+            urn="urn:test:alignment2",
+            project="other_project",
+            file_name="aligned2.xml",
+            element_path="/root/tei:text[1]/tei:body[1]/tei:div[2]",
+            end_element_path=end_path2,
+        )
+        
+        def mock_lookup_alignment(element):
+            corresp = element.get("corresp")
+            if corresp == "urn:test:alignment1":
+                return (self_urn1, alignment_urn1)
+            elif corresp == "urn:test:alignment2":
+                return (self_urn2, alignment_urn2)
+            return None
+        
+        with patch.object(processor, '_lookup_alignment', side_effect=mock_lookup_alignment):
+            result = processor._plan_alignment()
+        
+        self.assertEqual(len(result), 2, "Should return two AlignmentMappings")
+        # Verify first mapping
+        self.assertEqual(result[0].start.get("corresp"), "urn:test:alignment1")
+        self.assertEqual(result[0].resolved_urn, alignment_urn1)
+        # Verify second mapping
+        self.assertEqual(result[1].start.get("corresp"), "urn:test:alignment2")
+        self.assertEqual(result[1].resolved_urn, alignment_urn2)
+
+    def test_plan_alignment_mixed_results(self):
+        """Test _plan_alignment when some corresp elements match and others don't."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="urn:test:alignment1">First</tei:div>
+            <tei:div corresp="urn:test:alignment2">Second</tei:div>
+            <tei:div corresp="urn:test:alignment3">Third</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("mixed.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element for alignment2
+        root = processor.root_tree
+        corresp_elements = root.xpath(".//*[@corresp='urn:test:alignment2']", namespaces=processor.ns_map)
+        self.assertEqual(len(corresp_elements), 1)
+        end_path2 = corresp_elements[0].getroottree().getpath(corresp_elements[0])
+        
+        # Create mock ResolvedUrns: self and alignment for the middle element only
+        self_urn2 = make_resolved_urn(
+            urn="urn:test:alignment2",
+            project="test_project",
+            file_name="mixed.xml",
+            element_path=end_path2,
+            end_element_path=end_path2,
+        )
+        alignment_urn2 = make_resolved_urn(
+            urn="urn:test:alignment2",
+            project="other_project",
+            file_name="aligned2.xml",
+            element_path="/root/tei:text[1]/tei:body[1]/tei:div[2]",
+            end_element_path=end_path2,
+        )
+        
+        def mock_lookup_alignment(element):
+            if element.get("corresp") == "urn:test:alignment2":
+                return (self_urn2, alignment_urn2)
+            return None
+        
+        with patch.object(processor, '_lookup_alignment', side_effect=mock_lookup_alignment):
+            result = processor._plan_alignment()
+        
+        self.assertEqual(len(result), 1, "Should return one AlignmentMapping for the matching element")
+        self.assertEqual(result[0].start.get("corresp"), "urn:test:alignment2")
+        self.assertEqual(result[0].resolved_urn, alignment_urn2)
+
+    def test_plan_alignment_corresp_not_urn(self):
+        """Test _plan_alignment when corresp elements don't start with 'urn:'."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="#local-reference">Not a URN</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("not_urn.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        result = processor._plan_alignment()
+        self.assertEqual(result, [], "Should return empty list when corresp doesn't start with 'urn:'")
+
+    def test_plan_alignment_end_element_path(self):
+        """Test _plan_alignment uses end_element_path from ResolvedUrn for the end field."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:body>
+            <tei:div corresp="urn:test:alignment">Has URN</tei:div>
+        </tei:body>
+    </tei:text>
+</root>'''
+        
+        project, file_name = self._create_test_file("end_path.xml", xml_content)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        linear_data.alignment_priority = ["other_project"]
+        processor = CompilerProcessor(project, file_name, linear_data=linear_data)
+        
+        # Get the element
+        root = processor.root_tree
+        corresp_element = root.xpath(".//*[@corresp='urn:test:alignment']", namespaces=processor.ns_map)[0]
+        end_path = corresp_element.getroottree().getpath(corresp_element)
+        
+        # Create mock ResolvedUrns: self (provides end path) and alignment
+        self_urn = make_resolved_urn(
+            urn="urn:test:alignment",
+            project="test_project",
+            file_name="end_path.xml",
+            element_path=end_path,
+            end_element_path=end_path,
+        )
+        alignment_urn = make_resolved_urn(
+            urn="urn:test:alignment",
+            project="other_project",
+            file_name="aligned.xml",
+            element_path="/root/tei:text[1]/tei:body[1]/tei:div[1]",
+            end_element_path=end_path,
+        )
+        
+        with patch.object(processor, '_lookup_alignment', return_value=(self_urn, alignment_urn)):
+            result = processor._plan_alignment()
+        
+        self.assertEqual(len(result), 1)
+        mapping = result[0]
+        self.assertEqual(mapping.end.getroottree().getpath(mapping.end), end_path)
 
 
 if __name__ == '__main__':

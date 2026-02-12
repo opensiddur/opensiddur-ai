@@ -19,6 +19,7 @@ from enum import Enum
 import hashlib
 from pathlib import Path
 import re
+import logging
 import sys
 from typing import Annotated, Literal, Optional, TypedDict
 from unittest import result
@@ -31,6 +32,8 @@ from opensiddur.exporter.settings import load_default_settings, load_settings
 from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange, UrnResolver
 JLPTEI_NAMESPACE = 'http://jewishliturgy.org/ns/jlptei/2'
 PROCESSING_NAMESPACE = 'http://jewishliturgy.org/ns/processing'
+
+logger = logging.getLogger(__name__)
 
 class _ProcessingCommand(Enum):
     """ Possible ways the compiler can process an element """
@@ -131,8 +134,10 @@ class CompilerProcessor:
                 return lang
         return None
 
-    def _lookup_alignment(self, element: ElementBase) -> Optional[ResolvedUrn]:
+    def _lookup_alignment(self, element: ElementBase) -> Optional[tuple[ResolvedUrn, ResolvedUrn]]:
         """ Look up the prioritized alignment for the given element.
+
+        Return the alignment details for this project and for the corresponding element 
         """
         corresp = element.get("corresp")
         if not corresp or not corresp.startswith('urn:'):
@@ -147,8 +152,15 @@ class CompilerProcessor:
             return None
         
         resolved_urns = self._urn_resolver.resolve(corresp)
+        self_urn = UrnResolver.prioritize_range(resolved_urns, [self.project])
         alignment_urn = UrnResolver.prioritize_range(resolved_urns, alignment_projects)
-        return alignment_urn
+        if not self_urn:
+            logger.warning(f"No self URN found for {corresp=}. Will not align, but this is a bug and probably indicates an out of date URN database.")
+            return None
+        if alignment_urn:
+            return self_urn, alignment_urn
+        else:
+            return None
 
     def _plan_alignment(self) -> list[AlignmentMapping]:
         """ Plan the alignment for the current processing.
@@ -167,10 +179,22 @@ class CompilerProcessor:
             return []
         # this will map all of the corresp elements in order
         for corresp_element in corresp_elements:
-            alignment_urn = self._lookup_alignment(corresp_element)
+            lookup_result = self._lookup_alignment(corresp_element)
+            if not lookup_result:
+                continue
+            self_urn, alignment_urn = lookup_result
             if alignment_urn:
-                end_element =corresp_element.getroottree().getpath(alignment_urn.end_element_path)
-                alignment_map.append(AlignmentMapping(start=corresp_element, end=end_element, resolved_urn=alignment_urn))
+                if self_urn.end_element_path == self_urn.element_path:
+                    end_element = corresp_element
+                else:
+                    end_elements = self.root_tree.xpath(self_urn.end_element_path, namespaces=self.ns_map)
+                    end_element = end_elements[0] if end_elements else corresp_element
+                # Use model_construct to bypass Pydantic's strict type checking for lxml elements
+                alignment_map.append(
+                    AlignmentMapping.model_construct(
+                        start=corresp_element, 
+                        end=end_element, 
+                        resolved_urn=alignment_urn))
         
         return alignment_map
 
@@ -325,7 +349,7 @@ class CompilerProcessor:
             return processing_element
 
     def _process_alignment_before(self, element: ElementBase) -> list[ElementBase]:
-        alignment_map = self.linear_data.alignment_map
+        alignment_map = self.linear_data.processing_context[-1].get('alignment_map')
         if not alignment_map:
             return []
         
@@ -333,13 +357,13 @@ class CompilerProcessor:
 
         if element is next_alignment.start:
             # the current element is the start of an alignment.
-            parallel_block_start = etree.Element("p:parallelBlock", nsmap=self.ns_map)
+            parallel_block_start = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelBlock", nsmap=self.ns_map)
             parallel_block_start.set("urn", next_alignment.resolved_urn.urn)
             path_hash = self._get_path_hash(element)
             parallel_block_start.set(f"{{{PROCESSING_NAMESPACE}}}start", path_hash + "_parallel")
             
-            parallel_external_element = etree.Element("p:parallelExternal", nsmap=self.ns_map)
-            parallel_internal_element = etree.Element("p:parallelInternal", nsmap=self.ns_map)
+            parallel_external_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelExternal", nsmap=self.ns_map)
+            parallel_internal_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelInternal", nsmap=self.ns_map)
             parallel_internal_element.set(f"{{{PROCESSING_NAMESPACE}}}start", path_hash + "_parallel_internal")
 
             from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
@@ -366,7 +390,7 @@ class CompilerProcessor:
         Returns a tuple of a list of elements to insert and a boolean indicating 
         whether the element tail has already been added after the parallel end element.
         """
-        alignment_map = self.linear_data.alignment_map
+        alignment_map = self.linear_data.processing_context[-1].get('alignment_map')
         if not alignment_map:
             return [], False
         
@@ -374,9 +398,9 @@ class CompilerProcessor:
         next_alignment = alignment_map[0]
         
         if element is next_alignment.end:
-            parallel_internal_end = etree.Element("p:parallelInternal", nsmap=self.ns_map)
+            parallel_internal_end = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelInternal", nsmap=self.ns_map)
             parallel_internal_end.set(f"{{{PROCESSING_NAMESPACE}}}end", path_hash + "_parallel_internal")
-            parallel_block_end = etree.Element("p:parallelBlock", nsmap=self.ns_map)
+            parallel_block_end = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelBlock", nsmap=self.ns_map)
             parallel_block_end.set(f"{{{PROCESSING_NAMESPACE}}}end", path_hash + "_parallel")
             tail_added = False
             if not next_alignment.resolved_urn.end_includes_tail:
@@ -681,16 +705,6 @@ class CompilerProcessor:
         # pop the processing context
         self.linear_data.processing_context.pop()
 
-        return copied
-
-    def _process_with_alignment(self, root: ElementBase, alignment_map: dict[ElementBase, ResolvedUrn]) -> ElementBase:
-        """
-        Process the given root element with the given alignment map.
-        """
-        copied = etree.Element(root.tag, nsmap=self.ns_map)
-        for key, value in root.attrib.items():
-            copied.set(key, value)
-        copied.text = root.text
         return copied
 
 def main():  # pragma: no cover

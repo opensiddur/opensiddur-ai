@@ -256,6 +256,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         self.root_language = self._get_in_scope_language(
             self.deepest_common_ancestor if self.deepest_common_ancestor is not None 
             else root)
+        alignment_map = self._plan_alignment()
 
         self.linear_data.processing_context.append(_ProcessingContext(
             project=self.project,
@@ -267,6 +268,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             include_tail_after_end=False,
             command=_ProcessingCommand.RECURSE,
             inside_deepest_common_ancestor=False,
+            alignment_map=alignment_map,
         ))
 
         processed = self._process_element(root, root)
