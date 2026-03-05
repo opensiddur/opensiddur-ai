@@ -1,14 +1,15 @@
-Open Siddur Project (AI aided version)
+# Open Siddur Project (AI aided version)
 
 [![Tests](https://github.com/efeins/opensiddur-ai/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/efeins/opensiddur-ai/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/efeins/opensiddur-ai/branch/main/graph/badge.svg)](https://codecov.io/gh/efeins/opensiddur-ai)
 
 This is a work in progress to convert the Open Siddur Project to use AI to aid in the conversion of the liturgical texts.
 
-Features:
+## Features:
 * A new version of JLPTEI (2) with a simplified schema.
 * Less emphasis on UI: This is primarily about converting texts from any input format to JLPTEI, and converting the JLPTEI to useful output formats and combining texts in novel ways.
 
+## Schema
 To compile the schema:
 
 Prerequisites:
@@ -20,3 +21,14 @@ $ scripts/build-schema.sh
 ```
 
 The output will be in the `schema` directory as RelaxNG XML (and, eventually, ISO Schematron).
+
+## Sources
+
+Available sources in their original (or close to original) form are in the `sources` directory.
+
+Input converters for each specific source are in the `importer` directory.
+
+## JLPTEI sources
+
+JLPTEI sources are compiled into the `project` directory. 
+
