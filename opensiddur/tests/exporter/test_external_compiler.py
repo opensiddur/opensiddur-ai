@@ -2214,6 +2214,230 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
 
 
+class TestExternalCompilerUncoveredLines(unittest.TestCase):
+    """Tests targeting the four uncovered lines in external_compiler.py."""
+
+    TEI = 'http://www.tei-c.org/ns/1.0'
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+
+        self.linear_data = get_linear_data()
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+        self.refdb = MagicMock(spec=ReferenceDatabase)
+        self.refdb.get_references_to.return_value = []
+        self.refdb.get_urn_mappings.return_value = []
+
+    def _write(self, project: str, file_name: str, content: bytes) -> None:
+        d = Path(self.temp_dir.name) / project
+        d.mkdir(parents=True, exist_ok=True)
+        (d / file_name).write_bytes(content)
+
+    def _bare_processor(self, xml: bytes = b'<root/>') -> ExternalCompilerProcessor:
+        """Write xml as test_project/main.xml and return a no-range processor for it."""
+        self._write('test_project', 'main.xml', xml)
+        return ExternalCompilerProcessor(
+            'test_project', 'main.xml',
+            linear_data=self.linear_data,
+            reference_database=self.refdb,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Line 48: ValueError when start and end have no common ancestor
+    # ------------------------------------------------------------------ #
+
+    def test_no_common_ancestor_raises_value_error(self):
+        """Line 48: ValueError when start/end elements come from completely separate trees."""
+        processor = self._bare_processor()
+
+        # Elements from unrelated trees share no ancestor
+        tree1 = etree.fromstring('<root1><child1/></root1>')
+        tree2 = etree.fromstring('<root2><child2/></root2>')
+        elem1 = list(tree1)[0]   # child of root1
+        elem2 = list(tree2)[0]   # child of root2 — no shared ancestor
+
+        with patch.object(processor, '_get_start_and_end_elements_from_ranges',
+                          return_value=(elem1, elem2)):
+            with self.assertRaises(ValueError,
+                                   msg="Should raise when no common ancestor exists"):
+                processor._get_deepest_common_ancestor('/irrelevant', '/irrelevant2')
+
+    # ------------------------------------------------------------------ #
+    # Line 73: ValueError for mismatched from_start / to_end
+    # ------------------------------------------------------------------ #
+
+    def test_from_start_without_to_end_raises_value_error(self):
+        """Line 73 (case 1): from_start set but to_end=None raises ValueError."""
+        self._write('test_project', 'main.xml',
+                    b'<root><a corresp="urn:1">text</a></root>')
+        with self.assertRaisesRegex(ValueError,
+                                    "Either from_start or to_end must be None"):
+            ExternalCompilerProcessor(
+                'test_project', 'main.xml',
+                from_start='/root/a',
+                to_end=None,
+                linear_data=self.linear_data,
+                reference_database=self.refdb,
+            )
+
+    def test_to_end_without_from_start_raises_value_error(self):
+        """Line 73 (case 2): to_end set but from_start=None raises ValueError."""
+        self._write('test_project', 'main.xml',
+                    b'<root><a corresp="urn:1">text</a></root>')
+        with self.assertRaisesRegex(ValueError,
+                                    "Either from_start or to_end must be None"):
+            ExternalCompilerProcessor(
+                'test_project', 'main.xml',
+                from_start=None,
+                to_end='/root/a',
+                linear_data=self.linear_data,
+                reference_database=self.refdb,
+            )
+
+    # ------------------------------------------------------------------ #
+    # Line 176: REPLACE annotation short-circuits _process_element
+    # ------------------------------------------------------------------ #
+
+    def test_instruction_note_with_corresp_replaced(self):
+        """Line 176: when _annotate returns REPLACE, _process_element returns [replacement]."""
+        TEI = self.TEI
+        INSTR_URN = 'urn:example:instruction/1'
+
+        # Replacement instruction lives in a higher-priority project
+        repl_xml = (
+            f'<TEI xmlns:tei="{TEI}">'
+            f'<tei:text><tei:body>'
+            f'<tei:note type="instruction">REPLACEMENT TEXT</tei:note>'
+            f'</tei:body></tei:text></TEI>'
+        ).encode()
+        self._write('instruction_project', 'replacement.xml', repl_xml)
+        repl_root = etree.fromstring(repl_xml)
+        repl_note = repl_root.xpath('//tei:note', namespaces={'tei': TEI})[0]
+        repl_path = repl_note.getroottree().getpath(repl_note)
+
+        # Main file: instruction note (with corresp) sits between start and end
+        main_xml = (
+            f'<TEI xmlns:tei="{TEI}">'
+            f'<tei:text><tei:body>'
+            f'<tei:ab corresp="urn:start">Start</tei:ab>'
+            f'<tei:note type="instruction" corresp="{INSTR_URN}">Default</tei:note>'
+            f'<tei:ab corresp="urn:end">End</tei:ab>'
+            f'</tei:body></tei:text></TEI>'
+        ).encode()
+        self._write('test_project', 'main.xml', main_xml)
+
+        ns = {'tei': TEI}
+        main_root = etree.fromstring(main_xml)
+        start_path = main_root.xpath("//tei:ab[@corresp='urn:start']", namespaces=ns)[0] \
+            .getroottree().getpath(
+                main_root.xpath("//tei:ab[@corresp='urn:start']", namespaces=ns)[0])
+        end_path = main_root.xpath("//tei:ab[@corresp='urn:end']", namespaces=ns)[0] \
+            .getroottree().getpath(
+                main_root.xpath("//tei:ab[@corresp='urn:end']", namespaces=ns)[0])
+
+        self.refdb.get_urn_mappings.return_value = [
+            make_urn_mapping(
+                urn=INSTR_URN,
+                project='instruction_project',
+                file_name='replacement.xml',
+                element_path=repl_path,
+                element_tag=f'{{{TEI}}}note',
+            )
+        ]
+        self.linear_data.instruction_priority = ['instruction_project', 'test_project']
+
+        processor = ExternalCompilerProcessor(
+            'test_project', 'main.xml',
+            from_start=start_path, to_end=end_path,
+            linear_data=self.linear_data,
+            reference_database=self.refdb,
+        )
+        result = processor.process()
+        result_str = ''.join(etree.tostring(r, encoding='unicode') for r in result)
+
+        self.assertIn('REPLACEMENT TEXT', result_str,
+                      "Replacement instruction should appear in output")
+        self.assertNotIn('Default', result_str,
+                         "Original instruction should have been replaced")
+
+    # ------------------------------------------------------------------ #
+    # Lines 223-224: INSERT annotation inserts note before annotated element
+    # ------------------------------------------------------------------ #
+
+    def test_editorial_annotation_inserted_before_element(self):
+        """Lines 223-224: INSERT annotation loop prepends the note to processed output."""
+        TEI = self.TEI
+        TARGET = 'urn:example:target/1'
+
+        # Standoff note file
+        note_xml = (
+            f'<TEI xmlns:tei="{TEI}">'
+            f'<tei:standOff>'
+            f'<tei:note type="editorial" target="{TARGET}">Editorial note text</tei:note>'
+            f'</tei:standOff></TEI>'
+        ).encode()
+        self._write('test_project', 'notes.xml', note_xml)
+        note_root = etree.fromstring(note_xml)
+        note_elem = note_root.xpath('//tei:note', namespaces={'tei': TEI})[0]
+        note_path = note_elem.getroottree().getpath(note_elem)
+
+        # Main file: annotated element sits between start and end
+        main_xml = (
+            f'<TEI xmlns:tei="{TEI}">'
+            f'<tei:text><tei:body>'
+            f'<tei:ab corresp="urn:start">Start</tei:ab>'
+            f'<tei:p corresp="{TARGET}">Annotated text</tei:p>'
+            f'<tei:ab corresp="urn:end">End</tei:ab>'
+            f'</tei:body></tei:text></TEI>'
+        ).encode()
+        self._write('test_project', 'main.xml', main_xml)
+
+        ns = {'tei': TEI}
+        main_root = etree.fromstring(main_xml)
+        start_path = main_root.xpath("//tei:ab[@corresp='urn:start']", namespaces=ns)[0] \
+            .getroottree().getpath(
+                main_root.xpath("//tei:ab[@corresp='urn:start']", namespaces=ns)[0])
+        end_path = main_root.xpath("//tei:ab[@corresp='urn:end']", namespaces=ns)[0] \
+            .getroottree().getpath(
+                main_root.xpath("//tei:ab[@corresp='urn:end']", namespaces=ns)[0])
+
+        # Return the note reference only when the annotated element's corresp is queried
+        def _refs(corresp, xml_id, project, file_name):
+            if corresp == TARGET:
+                return [Reference(
+                    project='test_project',
+                    file_name='notes.xml',
+                    element_path=note_path,
+                    element_tag=f'{{{TEI}}}note',
+                    element_type=None,
+                    target_start=TARGET,
+                    target_end=None,
+                    target_is_id=False,
+                    corresponding_urn=TARGET,
+                )]
+            return []
+
+        self.refdb.get_references_to.side_effect = _refs
+        self.linear_data.annotation_projects = ['test_project']
+
+        processor = ExternalCompilerProcessor(
+            'test_project', 'main.xml',
+            from_start=start_path, to_end=end_path,
+            linear_data=self.linear_data,
+            reference_database=self.refdb,
+        )
+        result = processor.process()
+        result_str = ''.join(etree.tostring(r, encoding='unicode') for r in result)
+
+        self.assertIn('Editorial note text', result_str,
+                      "Inserted editorial note should appear in output")
+        self.assertIn('Annotated text', result_str,
+                      "Annotated element content should still be present")
+
+
 if __name__ == '__main__':
     unittest.main()
 

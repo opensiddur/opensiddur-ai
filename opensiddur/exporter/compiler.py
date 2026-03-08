@@ -394,10 +394,11 @@ class CompilerProcessor:
         if not alignment_map:
             return [], False
         
-        path_hash = self._get_path_hash(element)
+        
         next_alignment = alignment_map[0]
         
         if element is next_alignment.end:
+            path_hash = self._get_path_hash(next_alignment.start)
             parallel_internal_end = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelInternal", nsmap=self.ns_map)
             parallel_internal_end.set(f"{{{PROCESSING_NAMESPACE}}}end", path_hash + "_parallel_internal")
             parallel_block_end = etree.Element(f"{{{PROCESSING_NAMESPACE}}}parallelBlock", nsmap=self.ns_map)

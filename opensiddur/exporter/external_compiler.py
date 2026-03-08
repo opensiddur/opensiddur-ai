@@ -170,16 +170,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
             transcluded = self._transclude(element)
             if transcluded is not None:
                 return [transcluded]
-            
+
             annotations, annotation_command = self._annotate(element, root)
             if annotation_command == _AnnotationCommand.REPLACE:
                 return [annotations[0]]
 
             start_parallel = self._process_alignment_before(element)
             processed.extend(start_parallel)
-            end_parallel, tail_added = self._process_alignment_after(element)
-            if end_parallel:
-                processed.extend(end_parallel)
 
         element_uuid = self._get_path_hash(element)
         element_has_children = bool(element.getchildren())
@@ -224,12 +221,18 @@ class ExternalCompilerProcessor(CompilerProcessor):
         
         if annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
-                self._insert_first_element(processed, annotation)
+                self._insert_first_element(processed[0], annotation)
         if element_has_children and copied is not None:
             processed.append(
-                etree.Element(copied.tag, 
-                    nsmap=self.ns_map, 
+                etree.Element(copied.tag,
+                    nsmap=self.ns_map,
                     attrib={f"{{{PROCESSING_NAMESPACE}}}end": element_uuid}))
+
+        if context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
+            end_parallel, tail_added = self._process_alignment_after(element)
+            if end_parallel:
+                processed.extend(end_parallel)
+
         processed = self._rewrite_ids(processed)
 
         self._update_processing_context_after(element)
