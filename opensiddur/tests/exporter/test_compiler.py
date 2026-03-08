@@ -11,7 +11,7 @@ from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
 from opensiddur.exporter.linear import AlignmentMapping, LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
-from opensiddur.exporter.urn import ResolvedUrn
+from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
 
 
 def make_resolved_urn(
@@ -2551,6 +2551,421 @@ class TestCompilerProcessorPlanAlignment(unittest.TestCase):
         self.assertEqual(len(result), 1)
         mapping = result[0]
         self.assertEqual(mapping.end.getroottree().getpath(mapping.end), end_path)
+
+
+class TestCompilerProcessorInit(unittest.TestCase):
+    """Test CompilerProcessor initialization edge cases."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        self.linear_data = get_linear_data()
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_root_tree_without_nsmap_uses_empty_dict(self):
+        """Test that when root_tree has no nsmap attribute, ns_map defaults to empty dict (line 118)."""
+        xml_content = b'<root/>'
+        project, file_name = self._create_test_file("no_nsmap.xml", xml_content)
+
+        class _NoNsmapRoot:
+            """A minimal root element object without nsmap."""
+            pass
+
+        mock_tree = MagicMock()
+        mock_tree.getroot.return_value = _NoNsmapRoot()
+        with patch.object(self.linear_data.xml_cache, 'parse_xml', return_value=mock_tree):
+            processor = CompilerProcessor(project, file_name, linear_data=self.linear_data)
+
+        # Only the processing namespace should be in ns_map (added after the else branch)
+        from opensiddur.exporter.compiler import PROCESSING_NAMESPACE
+        self.assertIn('p', processor.ns_map)
+        self.assertEqual(processor.ns_map['p'], PROCESSING_NAMESPACE)
+        # No other keys since the else branch sets ns_map to {}
+        self.assertEqual(len(processor.ns_map), 1)
+
+
+class TestGetStartAndEndElementsFromRanges(unittest.TestCase):
+    """Test _get_start_and_end_elements_from_ranges error paths (lines 274, 282)."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+        xml_content = b'<root xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:div/></root>'
+        file_path = self.test_project_dir / "test.xml"
+        file_path.write_bytes(xml_content)
+        self.processor = CompilerProcessor("test_project", "test.xml")
+
+    def test_start_element_not_found_raises_value_error(self):
+        """Test that a non-matching from_start XPath raises ValueError (line 274)."""
+        with self.assertRaisesRegex(ValueError, r"Start element"):
+            self.processor._get_start_and_end_elements_from_ranges(
+                "/nonexistent/path/that/does/not/match", None
+            )
+
+    def test_end_element_not_found_raises_value_error(self):
+        """Test that a non-matching to_end XPath raises ValueError (line 282)."""
+        with self.assertRaisesRegex(ValueError, r"End element"):
+            self.processor._get_start_and_end_elements_from_ranges(
+                None, "/nonexistent/path/that/does/not/match"
+            )
+
+
+class TestInlineTransclusionWithChildren(unittest.TestCase):
+    """Test inline transclusion when the result element has child elements (line 339)."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _create_test_file(self, file_name: str, content: bytes) -> tuple[str, str]:
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return "test_project", file_name
+
+    def test_inline_transclusion_result_with_child_elements_appended(self):
+        """Test that child elements in an inline transclusion result are appended (line 339)."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0"
+                               xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <jlp:transclude target="#frag" type="inline"/>
+    </tei:div>
+</root>'''
+        project, file_name = self._create_test_file("inline_child.xml", xml_content)
+
+        with patch('opensiddur.exporter.inline_compiler.InlineCompilerProcessor') as MockInlineProcessor:
+            mock_instance = MagicMock()
+            # Create a result element WITH child elements (triggers line 339)
+            mock_result = etree.Element("{http://jewishliturgy.org/ns/processing}result")
+            mock_result.text = "prefix text "
+            child_elem = etree.SubElement(mock_result, "{http://www.tei-c.org/ns/1.0}hi")
+            child_elem.text = "highlighted"
+            child_elem.tail = " suffix"
+            mock_instance.process.return_value = mock_result
+            mock_instance._mark_file_source.return_value = MagicMock()
+            mock_instance._mark_file_source.side_effect = lambda e: e
+            mock_instance.project = project
+            mock_instance.file_name = file_name
+            mock_instance.root_language = None
+            MockInlineProcessor.return_value = mock_instance
+
+            def mock_resolve_range(urn):
+                return [make_resolved_urn(
+                    urn=urn, project=project, file_name=file_name, element_path="/root/tei:div[1]"
+                )]
+
+            def mock_prioritize_range(urns, priority_list, return_all=False):
+                return urns[0] if urns else None
+
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
+
+        result_str = etree.tostring(result, encoding='unicode')
+        # The child element from inline result should have been appended to p:transclude
+        ns = {'p': 'http://jewishliturgy.org/ns/processing', 'tei': 'http://www.tei-c.org/ns/1.0'}
+        transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
+        self.assertEqual(len(transclude_elem), 1)
+        # The hi child should have been appended
+        hi_elements = transclude_elem[0].xpath('.//tei:hi', namespaces=ns)
+        self.assertEqual(len(hi_elements), 1)
+        self.assertEqual(hi_elements[0].text, "highlighted")
+
+
+class TestInsertFirstElement(unittest.TestCase):
+    """Test _insert_first_element static method, including line 556."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        xml_content = b'<root/>'
+        (self.test_project_dir / "test.xml").write_bytes(xml_content)
+        self.processor = CompilerProcessor("test_project", "test.xml")
+
+    def test_insert_first_element_no_text_no_tail(self):
+        """Test _insert_first_element when element has no text and new_child has no tail."""
+        element = etree.Element("parent")
+        existing_child = etree.SubElement(element, "existing")
+        new_child = etree.Element("new")
+
+        self.processor._insert_first_element(element, new_child)
+
+        self.assertIs(element[0], new_child)
+        self.assertIsNone(element.text)
+        self.assertIsNone(new_child.tail)
+
+    def test_insert_first_element_text_no_tail(self):
+        """Test _insert_first_element when element has text but new_child has no tail (line 558)."""
+        element = etree.Element("parent")
+        element.text = "parent text"
+        new_child = etree.Element("new")
+
+        self.processor._insert_first_element(element, new_child)
+
+        self.assertIs(element[0], new_child)
+        self.assertEqual(new_child.tail, "parent text")
+        self.assertIsNone(element.text)
+
+    def test_insert_first_element_text_and_tail_concatenated(self):
+        """Test _insert_first_element when both element.text and new_child.tail are set (line 556)."""
+        element = etree.Element("parent")
+        element.text = "parent text"
+        new_child = etree.Element("new")
+        new_child.tail = "existing tail"
+
+        self.processor._insert_first_element(element, new_child)
+
+        self.assertIs(element[0], new_child)
+        # Line 556: new_child.tail = element.text + " " + new_child.tail
+        self.assertEqual(new_child.tail, "parent text existing tail")
+        self.assertIsNone(element.text)
+
+
+class TestAnnotationElementNotFound(unittest.TestCase):
+    """Test ValueError paths when annotation element XPath not found (lines 483, 524)."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        self.linear_data = LinearData(
+            instruction_priority=["priority_project", "test_project"],
+            annotation_projects=["priority_project", "test_project"],
+            project_priority=["test_project", "priority_project"],
+        )
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        self.refdb = MagicMock(spec=ReferenceDatabase)
+
+    def _create_test_file(self, project: str, file_name: str, content: bytes):
+        project_dir = Path(self.temp_dir.name) / project
+        project_dir.mkdir(parents=True, exist_ok=True)
+        file_path = project_dir / file_name
+        file_path.write_bytes(content)
+        return project, file_name, etree.parse(str(file_path))
+
+    def test_instruction_replacement_element_not_found_raises(self):
+        """Test that a bad XPath for replacement instruction raises ValueError (line 483)."""
+        urn = "urn:test:instruction:bad-path"
+
+        main_xml = b'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>Test</tei:title></tei:titleStmt></tei:fileDesc></tei:teiHeader>
+    <tei:text><tei:body><tei:div>
+        <tei:note type="instruction" corresp="urn:test:instruction:bad-path">Original</tei:note>
+    </tei:div></tei:body></tei:text>
+</TEI>'''
+        instruction_xml = b'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>Instr</tei:title></tei:titleStmt></tei:fileDesc></tei:teiHeader>
+    <tei:text><tei:body><tei:div>
+        <tei:note type="instruction" corresp="urn:test:instruction:bad-path">Replacement</tei:note>
+    </tei:div></tei:body></tei:text>
+</TEI>'''
+
+        project, file_name, _ = self._create_test_file("test_project", "main.xml", main_xml)
+        inst_project, inst_file, inst_xml = self._create_test_file("priority_project", "instr.xml", instruction_xml)
+
+        # The element_path points to a non-existent element
+        self.refdb.get_urn_mappings.return_value = [
+            make_urn_mapping(
+                urn=urn,
+                project=inst_project,
+                file_name=inst_file,
+                element_path="/nonexistent/path/that/does/not/exist",
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="instruction",
+            )
+        ]
+        self.refdb.get_references_to.return_value = []
+
+        processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+
+        with self.assertRaisesRegex(ValueError, r"Replacement instruction element"):
+            processor.process()
+
+    def test_reference_element_not_found_raises(self):
+        """Test that a bad XPath for editorial note reference raises ValueError (line 524)."""
+        urn = "urn:test:editorial:bad-path"
+
+        main_xml = b'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>Test</tei:title></tei:titleStmt></tei:fileDesc></tei:teiHeader>
+    <tei:text><tei:body><tei:div>
+        <tei:p corresp="urn:test:editorial:bad-path">Targeted element</tei:p>
+    </tei:div></tei:body></tei:text>
+</TEI>'''
+        note_xml = b'''<TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:standOff>
+        <tei:note type="editorial" target="urn:test:editorial:bad-path">Note</tei:note>
+    </tei:standOff>
+</TEI>'''
+
+        project, file_name, _ = self._create_test_file("test_project", "main2.xml", main_xml)
+        note_project, note_file, note_xml_tree = self._create_test_file("priority_project", "note.xml", note_xml)
+
+        self.refdb.get_urn_mappings.return_value = []
+        self.refdb.get_references_to.return_value = [
+            Reference(
+                element_path="/nonexistent/path/that/does/not/exist",
+                element_tag="{http://www.tei-c.org/ns/1.0}note",
+                element_type="editorial",
+                project=note_project,
+                file_name=note_file,
+                target_start=urn,
+                target_end=None,
+                target_is_id=False,
+                corresponding_urn=None,
+            )
+        ]
+
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if not urns:
+                return None
+            if return_all:
+                return urns
+            return urns[0]
+
+        with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+            processor = CompilerProcessor(project, file_name, self.linear_data, self.refdb)
+            with self.assertRaisesRegex(ValueError, r"Reference element"):
+                processor.process()
+
+
+class TestTransclusionRangeResolution(unittest.TestCase):
+    """Test all error paths in _get_start_and_end_from_ranges (lines 593, 598, 601-604, 610, 613, 617)."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        linear_data = get_linear_data()
+        linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        xml_content = b'<root/>'
+        (self.test_project_dir / "test.xml").write_bytes(xml_content)
+        self.processor = CompilerProcessor("test_project", "test.xml")
+
+    def test_target_urn_not_found_raises(self):
+        """Test that resolve_range returning [] raises ValueError (line 593)."""
+        with patch.object(self.processor._urn_resolver, 'resolve_range', return_value=[]):
+            with self.assertRaisesRegex(ValueError, r"Target URN.*not found"):
+                self.processor._get_start_and_end_from_ranges("urn:missing:target")
+
+    def test_no_prioritized_urns_raises(self):
+        """Test that prioritize_range returning None raises ValueError (line 598)."""
+        resolved = [make_resolved_urn(
+            urn="urn:test", project="other", file_name="f.xml", element_path="/root"
+        )]
+        with patch.object(self.processor._urn_resolver, 'resolve_range', return_value=resolved):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', return_value=None):
+                with self.assertRaisesRegex(ValueError, r"No prioritized URNs found"):
+                    self.processor._get_start_and_end_from_ranges("urn:test")
+
+    def test_range_target_with_target_end_raises(self):
+        """Test that providing target_end when target is already a range raises ValueError (lines 601-604)."""
+        start_urn = make_resolved_urn(
+            urn="urn:test:start", project="p", file_name="f.xml", element_path="/start"
+        )
+        end_urn = make_resolved_urn(
+            urn="urn:test:end", project="p", file_name="f.xml", element_path="/end"
+        )
+        resolved_range = ResolvedUrnRange(start=start_urn, end=end_urn)
+        with patch.object(self.processor._urn_resolver, 'resolve_range', return_value=[resolved_range]):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', return_value=resolved_range):
+                with self.assertRaisesRegex(ValueError, r"target.*is a range.*target_end.*cannot be provided"):
+                    self.processor._get_start_and_end_from_ranges(
+                        "urn:test:start", "urn:test:end"
+                    )
+
+    def test_target_end_urn_not_found_raises(self):
+        """Test that resolve_range returning [] for target_end raises ValueError (line 610)."""
+        start_urn = make_resolved_urn(
+            urn="urn:test:start", project="p", file_name="f.xml", element_path="/start"
+        )
+
+        def mock_resolve_range(urn):
+            if "start" in urn:
+                return [start_urn]
+            return []
+
+        with patch.object(self.processor._urn_resolver, 'resolve_range', side_effect=mock_resolve_range):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', return_value=start_urn):
+                with self.assertRaisesRegex(ValueError, r"Target URN.*target_end.*not found"):
+                    self.processor._get_start_and_end_from_ranges(
+                        "urn:test:start", "urn:missing:end"
+                    )
+
+    def test_target_end_no_prioritized_urns_raises(self):
+        """Test that prioritize_range returning None for target_end raises ValueError (line 613)."""
+        start_urn = make_resolved_urn(
+            urn="urn:test:start", project="p", file_name="f.xml", element_path="/start"
+        )
+        end_urn = make_resolved_urn(
+            urn="urn:test:end", project="p", file_name="f.xml", element_path="/end"
+        )
+
+        def mock_resolve_range(urn):
+            if "start" in urn:
+                return [start_urn]
+            return [end_urn]
+
+        prioritize_side_effects = [start_urn, None]
+
+        with patch.object(self.processor._urn_resolver, 'resolve_range', side_effect=mock_resolve_range):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=prioritize_side_effects):
+                with self.assertRaisesRegex(ValueError, r"No prioritized URNs found.*target_end"):
+                    self.processor._get_start_and_end_from_ranges(
+                        "urn:test:start", "urn:test:end"
+                    )
+
+    def test_start_end_in_different_files_raises(self):
+        """Test that start and end in different files raises ValueError (line 617)."""
+        start_urn = make_resolved_urn(
+            urn="urn:test:start", project="p", file_name="file_a.xml", element_path="/start"
+        )
+        end_urn = make_resolved_urn(
+            urn="urn:test:end", project="p", file_name="file_b.xml", element_path="/end"
+        )
+
+        def mock_resolve_range(urn):
+            if "start" in urn:
+                return [start_urn]
+            return [end_urn]
+
+        prioritize_side_effects = [start_urn, end_urn]
+
+        with patch.object(self.processor._urn_resolver, 'resolve_range', side_effect=mock_resolve_range):
+            with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=prioritize_side_effects):
+                with self.assertRaisesRegex(ValueError, r"same file"):
+                    self.processor._get_start_and_end_from_ranges(
+                        "urn:test:start", "urn:test:end"
+                    )
 
 
 if __name__ == '__main__':
