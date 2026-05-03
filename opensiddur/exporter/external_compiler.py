@@ -16,30 +16,34 @@ from lxml import etree
 
 
 class ExternalCompilerProcessor(CompilerProcessor):
-    def _get_deepest_common_ancestor(self, from_start: str, to_end: str) -> tuple[ElementBase, ElementBase, ElementBase, bool, bool]:
+    def _get_deepest_common_ancestor(self,
+        from_start: Optional[str] = None,
+        to_end: Optional[str] = None,
+        include_tail_after_end: bool = False
+    ) -> tuple[Optional[ElementBase], Optional[ElementBase], Optional[ElementBase], bool]:
         """
         Get the deepest common ancestor,
         the start element,
         the end element,
-        a flag indicating whether the end is exclusive given xml:id or corresp urns,
         a flag indicating whether to include the tail after the end element
 
         There is one exception: if start and end are siblings, return the start element.
         We do this because then we don't need the surrounding elements to be copied.
         """
-        start_element, end_element, exclusive_end, include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end)
+        start_element, end_element = self._get_start_and_end_elements_from_ranges(from_start, to_end)
+
+        if start_element is None or end_element is None:
+            return None, None, None, include_tail_after_end
+
         if start_element is end_element:
-            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
+            return start_element, start_element, end_element, include_tail_after_end
         if start_element.getparent() is end_element.getparent():
             # siblings... no need to go deeper
-            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
-        end_xpath = (
-            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:')
-            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
-        )
+            return start_element, start_element, end_element, include_tail_after_end
+        end_element_ancestors = set(end_element.iterancestors())
         for element in start_element.iterancestors():
-            if element.xpath(end_xpath):
-                return element, start_element, end_element, exclusive_end, include_tail_after_end
+            if element in end_element_ancestors:
+                return element, start_element, end_element, include_tail_after_end
         raise ValueError(f"No common ancestor found for {from_start=} and {to_end=}")
 
     def __init__(
@@ -48,6 +52,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         file_name: str,
         from_start: Optional[str] = None,
         to_end: Optional[str] = None,
+        include_tail_after_end: bool = False,
         linear_data: Optional[LinearData] = None,
         reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project.
@@ -55,26 +60,20 @@ class ExternalCompilerProcessor(CompilerProcessor):
         Start and end must be in the same file.
 
         Arguments:
-            from_start: the start URN or xml:id reference, or None to process the entire file
-            to_end: the end URN or xml:id reference, or None to process the entire file
+            from_start: the start element path, or None to process the entire file
+            to_end: the end element path, or None to process the entire file; always inclusive
+            include_tail_after_end: whether to include the tail after the end element
             linear_data: the linear data
             reference_database: the reference database
         """
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
 
-        if (from_start is None) != (to_end is None):
-            raise ValueError("Either both from_start and to_end must be provided, or neither")
+        if (from_start is None and to_end is not None) or (from_start is not None and to_end is None):
+            raise ValueError("Either from_start or to_end must be None, but not both")
         self.from_start = from_start
         self.to_end = to_end
 
-        if from_start is not None:
-            self.deepest_common_ancestor, self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end)
-        else:
-            self.deepest_common_ancestor = None
-            self.start_element = None
-            self.end_element = None
-            self.exclusive_end = False
-            self.include_tail_after_end = False
+        self.deepest_common_ancestor, self.start_element, self.end_element, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end, include_tail_after_end)
 
 
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
@@ -96,10 +95,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
         #           before start? COPY_ELEMENT_AND_RECURSE
         #           after start? COPY_AND_RECURSE
         #    after end, SKIP
-
-        if self.exclusive_end and element is self.end_element:
-            # implement exclusive end on this element
-            context['after_end'] = True
 
         if context['after_end']:
             context['command'] = _ProcessingCommand.SKIP

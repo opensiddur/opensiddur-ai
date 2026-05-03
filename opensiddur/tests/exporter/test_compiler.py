@@ -325,11 +325,11 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[0][0], project)  # project
             self.assertEqual(call_args[0][1], file_name)  # file_name
             
-            # Check keyword arguments: from_start, to_end
-            self.assertEqual(call_args[1]['from_start'], "#start")
-            self.assertEqual(call_args[1]['to_end'], "#end")
+            # Check keyword arguments: from_start, to_end (now element paths from ResolvedUrn)
+            self.assertEqual(call_args[1]['from_start'], "/TEI/div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/TEI/div[1]")
             self.assertIn('linear_data', call_args[1])
-            
+
             # Verify process() was called
             mock_instance.process.assert_called_once()
 
@@ -386,11 +386,11 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[0][0], project)  # project
             self.assertEqual(call_args[0][1], file_name)  # file_name
             
-            # Check keyword arguments: from_start, to_end
-            self.assertEqual(call_args[1]['from_start'], "#start")
-            self.assertEqual(call_args[1]['to_end'], "#end")
+            # Check keyword arguments: from_start, to_end (now element paths from ResolvedUrn)
+            self.assertEqual(call_args[1]['from_start'], "/TEI/div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/TEI/div[1]")
             self.assertIn('linear_data', call_args[1])
-        
+
             # Verify process() was called
             mock_instance.process.assert_called_once()
 
@@ -449,9 +449,9 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             self.assertEqual(call_args[0][0], "external_project")  # project
             self.assertEqual(call_args[0][1], "external.xml")  # file_name
             
-            # Check keyword arguments: from_start, to_end (resolved URNs)
-            self.assertEqual(call_args[1]['from_start'], "#fragment1")
-            self.assertEqual(call_args[1]['to_end'], "#fragment2")
+            # Check keyword arguments: from_start, to_end (now element paths from ResolvedUrn)
+            self.assertEqual(call_args[1]['from_start'], "/TEI/div[1]")
+            self.assertEqual(call_args[1]['to_end'], "/TEI/div[1]")
 
     def test_inline_transclusion_with_metadata(self):
         """Test CompilerProcessor with inline transclusion that includes teiHeader metadata."""
@@ -497,34 +497,47 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         
         project, file_name = self._create_test_file("main_inline.xml", main_xml_content)
         
-        # Parse the transcluded XML tree
+        # Parse the transcluded XML into a real tree so XPath lookups work
         transcluded_tree_root = etree.fromstring(transcluded_xml_content)
-        
+        transcluded_tree = transcluded_tree_root.getroottree()
+
+        # Compute actual element paths for start/end within the transcluded tree
+        trans_start_elem = transcluded_tree_root.xpath(
+            "//*[@xml:id='transclude-start']",
+            namespaces={'xml': 'http://www.w3.org/XML/1998/namespace'})[0]
+        trans_end_elem = transcluded_tree_root.xpath(
+            "//*[@xml:id='transclude-end']",
+            namespaces={'xml': 'http://www.w3.org/XML/1998/namespace'})[0]
+        trans_start_path = transcluded_tree.getpath(trans_start_elem)
+        trans_end_path = transcluded_tree.getpath(trans_end_elem)
+
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
         original_parse_xml = linear_data.xml_cache.parse_xml
-        
+
         def mock_parse_xml(*args, **kwargs):
             if len(args) == 2 and args[0] == project and args[1] == file_name:
-                # Main file - call original
                 return original_parse_xml(*args, **kwargs)
             else:
-                # Transcluded file
-                mock_tree = MagicMock()
-                mock_tree.getroot.return_value = transcluded_tree_root
-                return mock_tree
-        
+                return transcluded_tree
+
         # Mock UrnResolver methods
         from opensiddur.exporter.urn import ResolvedUrn
-        
+
         def mock_resolve_range(urn):
-            # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
-        
+            return [ResolvedUrn(
+                urn=urn,
+                project="transcluded_project",
+                file_name="transcluded.xml",
+                element_path=trans_start_path,
+                end_element_path=trans_end_path,
+                end_includes_tail=False,
+            )]
+
         def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
-        
+
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
                 with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
@@ -603,53 +616,54 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
 </root>'''
         
         project, file_name = self._create_test_file("main_external.xml", main_xml_content)
-        
-        # Parse the external XML tree
+
+        # Parse the external XML into a real tree so XPath lookups work
         external_tree_root = etree.fromstring(external_xml_content)
-        
+        external_tree = external_tree_root.getroottree()
+
+        # Compute actual element paths for start/end within the external tree
+        xml_id_ns = {'xml': 'http://www.w3.org/XML/1998/namespace'}
+        ext_start_elem = external_tree_root.xpath(
+            "//*[@xml:id='transclude-start']", namespaces=xml_id_ns)[0]
+        ext_end_elem = external_tree_root.xpath(
+            "//*[@xml:id='transclude-end']", namespaces=xml_id_ns)[0]
+        ext_start_path = external_tree.getpath(ext_start_elem)
+        ext_end_path = external_tree.getpath(ext_end_elem)
+
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
         original_parse_xml = linear_data.xml_cache.parse_xml
-        
+
         def mock_parse_xml(*args, **kwargs):
             if len(args) == 2 and args[0] == project and args[1] == file_name:
-                # Main file - call original
                 return original_parse_xml(*args, **kwargs)
-            elif len(args) == 2 and args[0] == "external_project":
-                # External file
-                mock_tree = MagicMock()
-                mock_tree.getroot.return_value = external_tree_root
-                return mock_tree
-            elif len(args) == 1 and hasattr(args[0], '__fspath__'):
-                # Path-based call for external file
-                mock_tree = MagicMock()
-                mock_tree.getroot.return_value = external_tree_root
-                return mock_tree
             else:
-                return original_parse_xml(*args, **kwargs)
-        
+                return external_tree
+
         # Mock UrnResolver methods
         from opensiddur.exporter.urn import ResolvedUrn
-        
+
         def mock_resolve_range(urn):
             if urn.startswith("#transclude"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/TEI/div[1]")]
+                return [ResolvedUrn(
+                    urn=urn,
+                    project="external_project",
+                    file_name="external.xml",
+                    element_path=ext_start_path,
+                    end_element_path=ext_end_path,
+                    end_includes_tail=False,
+                )]
             return []
-        
+
         def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
-        
-        def mock_get_path_from_urn(resolved_urn):
-            from pathlib import Path
-            return Path(self.temp_dir.name) / "external_project" / "external.xml"
-        
+
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
                 with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
-                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
-                        processor = CompilerProcessor(project, file_name)
-                        result = processor.process()
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
         
         result_str = etree.tostring(result, encoding='unicode')
         
@@ -735,15 +749,20 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
 </root>'''
         
         project, file_name = self._create_test_file("metadata_test.xml", main_xml_content)
-        
-        # Parse the transcluded XML tree
+
+        # Parse the transcluded XML tree and compute actual element paths
         transcluded_tree_root = etree.fromstring(transcluded_xml_content)
-        
+        transcluded_tree = transcluded_tree_root.getroottree()
+        fragment_elem = transcluded_tree_root.xpath(
+            "//*[@xml:id='fragment']",
+            namespaces={'xml': 'http://www.w3.org/XML/1998/namespace'})[0]
+        fragment_path = transcluded_tree.getpath(fragment_elem)
+
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
         original_parse_xml = linear_data.xml_cache.parse_xml
-        
+
         def mock_parse_xml(*args, **kwargs):
             if len(args) == 2 and args[0] == project and args[1] == file_name:
                 return original_parse_xml(*args, **kwargs)
@@ -751,13 +770,14 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                 mock_tree = MagicMock()
                 mock_tree.getroot.return_value = transcluded_tree_root
                 return mock_tree
-        
+
         # Mock UrnResolver methods
         from opensiddur.exporter.urn import ResolvedUrn
-        
+
         def mock_resolve_range(urn):
             # Return a different project/file to avoid infinite recursion
-            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml", element_path="/TEI/div[1]")]
+            return [ResolvedUrn(urn=urn, project="transcluded_project", file_name="transcluded.xml",
+                               element_path=fragment_path, end_element_path=fragment_path)]
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
@@ -829,15 +849,20 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
 </root>'''
         
         project, file_name = self._create_test_file("main_lang_test.xml", main_xml_content)
-        
-        # Parse the transcluded XML tree
-        transcluded_tree_root = etree.fromstring(transcluded_xml_content)
-        
+
+        # Parse the transcluded XML tree and compute actual element paths
+        transcluded_tree_root = etree.fromstring(transcluded_xml_content.encode())
+        transcluded_tree = transcluded_tree_root.getroottree()
+        ext_frag_elem = transcluded_tree_root.xpath(
+            "//*[@xml:id='ext_frag']",
+            namespaces={'xml': 'http://www.w3.org/XML/1998/namespace'})[0]
+        ext_frag_path = transcluded_tree.getpath(ext_frag_elem)
+
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
         original_parse_xml = linear_data.xml_cache.parse_xml
-        
+
         def mock_parse_xml(*args, **kwargs):
             if len(args) == 2:
                 if args[0] == project and args[1] == file_name:
@@ -847,13 +872,14 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
                     mock_tree.getroot.return_value = transcluded_tree_root
                     return mock_tree
             return original_parse_xml(*args, **kwargs)
-        
+
         # Mock UrnResolver methods
         from opensiddur.exporter.urn import ResolvedUrn
-        
+
         def mock_resolve_range(urn):
             if "ext_frag" in urn:
-                return [ResolvedUrn(urn="#ext_frag", project="external_project", file_name="external.xml", element_path="/root/text[1]/div[1]/p[1]")]
+                return [ResolvedUrn(urn="#ext_frag", project="external_project", file_name="external.xml",
+                                   element_path=ext_frag_path, end_element_path=ext_frag_path)]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -1163,15 +1189,23 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
 </root>'''
         
         project, file_name = self._create_test_file("main.xml", main_xml_content)
-        
-        # Parse the external XML tree
+
+        # Parse the external XML tree and compute actual element paths
         external_tree_root = etree.fromstring(external_xml_content)
-        
+        external_tree = external_tree_root.getroottree()
+        xml_ns = 'http://www.w3.org/XML/1998/namespace'
+        external1_elem = external_tree_root.xpath(
+            "//*[@xml:id='external1']", namespaces={'xml': xml_ns})[0]
+        external2_elem = external_tree_root.xpath(
+            "//*[@xml:id='external2']", namespaces={'xml': xml_ns})[0]
+        external1_path = external_tree.getpath(external1_elem)
+        external2_path = external_tree.getpath(external2_elem)
+
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
         original_parse_xml = linear_data.xml_cache.parse_xml
-        
+
         def mock_parse_xml(*args, **kwargs):
             if len(args) == 2 and args[0] == project and args[1] == file_name:
                 # Main file - create a mock tree for the main file
@@ -1185,15 +1219,17 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                 return mock_tree
             else:
                 return original_parse_xml(*args, **kwargs)
-        
+
         # Mock UrnResolver methods
         from opensiddur.exporter.urn import ResolvedUrn
-        
+
         def mock_resolve_range(urn):
             if urn.startswith("#external1"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml",
+                                   element_path=external1_path, end_element_path=external1_path)]
             elif urn.startswith("#external2"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[2]")]
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml",
+                                   element_path=external2_path, end_element_path=external2_path)]
             return []
         
         def mock_prioritize_range(urns, priority_list, return_all=False):
@@ -1317,15 +1353,20 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
 </root>'''
         
         project, file_name = self._create_test_file("main.xml", main_xml_content)
-        
-        # Parse the external XML tree
+
+        # Parse the external XML tree and compute actual element paths
         external_tree_root = etree.fromstring(external_xml_content)
-        
+        external_tree = external_tree_root.getroottree()
+        xml_ns = 'http://www.w3.org/XML/1998/namespace'
+        external1_elem = external_tree_root.xpath(
+            "//*[@xml:id='external1']", namespaces={'xml': xml_ns})[0]
+        external1_path = external_tree.getpath(external1_elem)
+
         # Mock XMLCache.parse_xml
         from opensiddur.exporter.linear import get_linear_data
         linear_data = get_linear_data()
         original_parse_xml = linear_data.xml_cache.parse_xml
-        
+
         def mock_parse_xml(*args, **kwargs):
             if len(args) == 2 and args[0] == project and args[1] == file_name:
                 # Main file - create a mock tree for the main file
@@ -1339,29 +1380,30 @@ class TestCompilerProcessorIdRewriting(unittest.TestCase):
                 return mock_tree
             else:
                 return original_parse_xml(*args, **kwargs)
-        
+
         # Mock UrnResolver methods
         from opensiddur.exporter.urn import ResolvedUrn
-        
+
         def mock_resolve_range(urn):
             if urn.startswith("#external1"):
-                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml", element_path="/root/div[1]/p[1]")]
+                return [ResolvedUrn(urn=urn, project="external_project", file_name="external.xml",
+                                   element_path=external1_path, end_element_path=external1_path)]
             return []
-        
+
         def mock_prioritize_range(urns, priority_list, return_all=False):
             return urns[0] if urns else None
-        
+
         def mock_get_path_from_urn(resolved_urn):
             from pathlib import Path
             return Path(self.temp_dir.name) / "external_project" / "external.xml"
-        
+
         with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
             with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
                 with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
                     with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
                         processor = CompilerProcessor(project, file_name)
                         result = processor.process()
-        
+
         # Find the transclude elements (they use the processing namespace p:)
         transclude_elements = result.xpath(".//p:transclude", namespaces={"p": "http://jewishliturgy.org/ns/processing"})
         self.assertEqual(len(transclude_elements), 2, "Should have 2 transclude elements")

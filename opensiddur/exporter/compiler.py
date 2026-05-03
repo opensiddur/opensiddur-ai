@@ -66,9 +66,6 @@ class _ProcessingContext(TypedDict):
     before_start: bool
     after_end: bool
     include_tail_after_end: bool
-    
-    """ An exclusive end is the case where a transclusion ends just before the end element. """
-    exclusive_end: bool
     inside_deepest_common_ancestor: bool
     command: _ProcessingCommand
     
@@ -183,55 +180,34 @@ class CompilerProcessor:
             element.set('targetEnd', new_target_end)
         return element
 
-    def _get_start_and_end_elements_from_ranges(self, from_start: str, to_end: str) -> tuple[ElementBase, ElementBase, bool, bool]:
-        """ Get the start and end elements from the given ranges.
+    def _get_start_and_end_elements_from_ranges(self,
+        from_start: Optional[str] = None,
+        to_end: Optional[str] = None
+    ) -> tuple[Optional[ElementBase], Optional[ElementBase]]:
+        """ Get the start and end elements from element XPath paths.
         Args:
-            from_start: The start urn
-            to_end: The end urn
+            from_start: The start element path, if available
+            to_end: The end element path, if available
         Returns:
-            The start and end elements, 
-            a flag indicating whether the end is exclusive,
-            a flag indicating whether to include the tail after the end element
+            The start and end elements
         """
-        exclusive_end = False
-        include_tail_after_end = False
-        start_xpath = (
-            f"./descendant::*[@corresp='{from_start}']" if from_start.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{from_start.split('#')[1]}']"
-        )
-        end_xpath = (
-            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
-        )
-        start_element = self.root_tree.xpath(start_xpath)
-        if not start_element:
-            raise ValueError(f"Start URN {from_start=} not found")
-        start_element = start_element[0]
-        end_element = self.root_tree.xpath(end_xpath)
-        if not end_element:
-            raise ValueError(f"End URN {to_end=} not found")
-        end_element = end_element[0]
-        if not to_end.startswith('#') and end_element.tag == f"{{{self.ns_map.get('tei')}}}milestone":  # the end is a milestone
-            # the end element is a milestone. The actual end is the element before the next milestone at the same level, inclusive.
-            # If no such element exists, use the last sibling of the end element.
-            last_part = to_end.split(':')[-1]
-            num_dividers_in_last_part = last_part.count('/')
-            following_milestones = end_element.xpath(f"""./following::tei:milestone[@corresp][ancestor::tei:text]""", namespaces=self.ns_map)
-            actual_end = None
-            for milestone in following_milestones:
-                following_corresp = milestone.attrib.get("corresp", "")
-                last_part_of_following_corresp = following_corresp.split(':')[-1]
-                num_dividers_in_last_part_of_following_corresp = last_part_of_following_corresp.count('/')
-                if num_dividers_in_last_part_of_following_corresp <= num_dividers_in_last_part:
-                    actual_end = milestone
-                    exclusive_end = True
-                    break
-            if actual_end is None:
-                # There is no ending milestone, so we just have to include everything until the last sibling, including text
-                actual_end = end_element.xpath(f"./following-sibling::*[last()]|self::*")[-1]
-                include_tail_after_end = True
-            end_element = actual_end
-        return start_element, end_element, exclusive_end, include_tail_after_end
+        if from_start:
+            start_element = self.root_tree.xpath(from_start, namespaces=self.ns_map)
+            if not start_element:
+                raise ValueError(f"Start element {from_start=} not found")
+            start_element = start_element[0]
+        else:
+            start_element = None
+
+        if to_end:
+            end_element = self.root_tree.xpath(to_end, namespaces=self.ns_map)
+            if not end_element:
+                raise ValueError(f"End element {to_end=} not found")
+            end_element = end_element[0]
+        else:
+            end_element = None
+
+        return start_element, end_element
 
     def _transclude(self, 
         element: ElementBase, 
@@ -257,13 +233,15 @@ class CompilerProcessor:
             
             context_lang = self._get_in_scope_language(element)
 
+            end_element_path = transclude_range.end.end_element_path or transclude_range.end.element_path
             if transclusion_type == 'external':
                 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
                 processor = ExternalCompilerProcessor(
                     transclude_range.start.project,
                     transclude_range.start.file_name,
-                    from_start=transclude_range.start.urn,
-                    to_end=transclude_range.end.urn,
+                    from_start=transclude_range.start.element_path,
+                    to_end=end_element_path,
+                    include_tail_after_end=transclude_range.end.end_includes_tail,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
                 processed_list = processor.process()
@@ -274,8 +252,9 @@ class CompilerProcessor:
                 processor = InlineCompilerProcessor(
                     transclude_range.start.project,
                     transclude_range.start.file_name,
-                    from_start=transclude_range.start.urn,
-                    to_end=transclude_range.end.urn,
+                    from_start=transclude_range.start.element_path,
+                    to_end=end_element_path,
+                    include_tail_after_end=transclude_range.end.end_includes_tail,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
                 processed = processor.process()

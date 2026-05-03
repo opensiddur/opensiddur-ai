@@ -23,6 +23,7 @@ class InlineCompilerProcessor(CompilerProcessor):
         file_name: str,
         from_start: str,
         to_end: str,
+        include_tail_after_end: bool = False,
         linear_data: Optional[LinearData] = None,
         reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project.
@@ -32,7 +33,8 @@ class InlineCompilerProcessor(CompilerProcessor):
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
         self.from_start = from_start
         self.to_end = to_end
-        self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end)
+        self.include_tail_after_end = include_tail_after_end
+        self.start_element, self.end_element = self._get_start_and_end_elements_from_ranges(from_start, to_end)
 
     def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
         """
@@ -50,10 +52,6 @@ class InlineCompilerProcessor(CompilerProcessor):
         #       check if this element is start? if yes, set before_start to False and return COPY_TEXT_AND_RECURSE
         #       else RECURSE
         #    between start and end? COPY_TEXT_AND_RECURSE
-
-        if self.exclusive_end and element is self.end_element:
-            # implement exclusive end on this element
-            context['after_end'] = True
 
         if context['after_end']:
             context['command'] = _ProcessingCommand.SKIP
