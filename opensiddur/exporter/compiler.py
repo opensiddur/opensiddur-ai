@@ -20,8 +20,7 @@ import hashlib
 from pathlib import Path
 import re
 import sys
-from typing import Annotated, Literal, Optional, TypedDict
-from unittest import result
+from typing import Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
 
@@ -259,22 +258,24 @@ class CompilerProcessor:
             context_lang = self._get_in_scope_language(element)
 
             if transclusion_type == 'external':
+                from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
                 processor = ExternalCompilerProcessor(
-                    transclude_range.start.project, 
-                    transclude_range.start.file_name, 
-                    from_start=transclude_range.start.urn, 
-                    to_end=transclude_range.end.urn, 
+                    transclude_range.start.project,
+                    transclude_range.start.file_name,
+                    from_start=transclude_range.start.urn,
+                    to_end=transclude_range.end.urn,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
                 processed_list = processor.process()
                 for processed in processed_list:
                     processing_element.append(processed)
             else:
+                from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
                 processor = InlineCompilerProcessor(
-                    transclude_range.start.project, 
-                    transclude_range.start.file_name, 
-                    from_start=transclude_range.start.urn, 
-                    to_end=transclude_range.end.urn, 
+                    transclude_range.start.project,
+                    transclude_range.start.file_name,
+                    from_start=transclude_range.start.urn,
+                    to_end=transclude_range.end.urn,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
                 processed = processor.process()
@@ -579,411 +580,6 @@ class CompilerProcessor:
 
         return copied
 
-class ExternalCompilerProcessor(CompilerProcessor):
-    def _get_deepest_common_ancestor(self, from_start: str, to_end: str) -> tuple[ElementBase, ElementBase, ElementBase, bool, bool]:
-        """
-        Get the deepest common ancestor, 
-        the start element, 
-        the end element, 
-        a flag indicating whether the end is exclusive given xml:id or correp urns,
-        a flag indicating whether to include the tail after the end element
-
-        There is one exception: if start and end are siblings, return the start element.
-        We do this because then we don't need the surrounding elements to be copied.
-        """
-        start_element, end_element, exclusive_end, include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end)
-        if start_element is end_element:
-            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
-        if start_element.getparent() is end_element.getparent():
-            # siblings... no need to go deeper
-            return start_element, start_element, end_element, exclusive_end, include_tail_after_end
-        end_xpath = (
-            f"./descendant::*[@corresp='{to_end}']" if to_end.startswith('urn:') 
-            else f"./descendant::*[@xml:id='{to_end.split('#')[1]}']"
-        )
-        for element in start_element.iterancestors():
-            if element.xpath(end_xpath):
-                return element, start_element, end_element, exclusive_end, include_tail_after_end
-        raise ValueError(f"No common ancestor found for {from_start=} and {to_end=}")
-
-    def __init__(
-        self,
-        project: str,
-        file_name: str,
-        from_start: str,
-        to_end: str,
-        linear_data: Optional[LinearData] = None,
-        reference_database: Optional[ReferenceDatabase] = None):
-        """ Process the given file/project. 
-        Only start from the given start and end, inclusive.
-        Start and end must be in the same file
-        """
-        super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
-        self.from_start = from_start
-        self.to_end = to_end
-
-        self.deepest_common_ancestor, self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end)
-
-
-    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
-        """
-        Update the processing context for the given element, before the element has been processed.
-        """
-        context = self.linear_data.processing_context[-1]
-        
-        # always reset the include_tail_after_end flag
-        context['include_tail_after_end'] = False
-
-        context['element_path'] = element.getroottree().getpath(element)
-        # Possible contexts: 
-        #    before the deepest common ancestor has been reached, RECURSE
-        #    deepest common ancestor has been reached, 
-        #      check if this element is the start 
-        #       if yes, set before_start to False and return COPY_AND_RECURSE, 
-        #       else 
-        #           before start? COPY_ELEMENT_AND_RECURSE
-        #           after start? COPY_AND_RECURSE
-        #    after end, SKIP
-
-        if self.exclusive_end and element is self.end_element:
-            # implement exclusive end on this element
-            context['after_end'] = True
-        
-        if context['after_end']:
-            context['command'] = _ProcessingCommand.SKIP
-            return context
-        
-        corresp = element.attrib.get("corresp", "")
-        xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
-
-        # is start
-        if corresp or xml_id:
-            if element is self.start_element:
-                context['before_start'] = False
-                context['command'] = _ProcessingCommand.COPY_AND_RECURSE
-                return context
-
-        # is after start?
-        if context['before_start']:
-            if element is self.deepest_common_ancestor:
-                context['inside_deepest_common_ancestor'] = True
-                context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
-                return context
-            elif context['inside_deepest_common_ancestor']:
-                context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
-                return context
-            else:
-                context['command'] = _ProcessingCommand.RECURSE
-                return context
-            
-        # must be after start and before end
-        context['command'] = _ProcessingCommand.COPY_AND_RECURSE
-        return context
-    
-    def _update_processing_context_after(self, element: ElementBase) -> _ProcessingContext:
-        """
-        Update the processing context for the given element, after the element has been processed.
-        """
-        context = self.linear_data.processing_context[-1]
-        if element is self.deepest_common_ancestor:
-            context['inside_deepest_common_ancestor'] = False
-            return context
-
-
-        # always reset the include_tail_after_end flag except for the one case where we are processing the end element
-        context["include_tail_after_end"] = False
-
-        if not context['before_start'] and not context['after_end']:
-            # between start and end
-            if element is self.end_element:
-                context['after_end'] = True
-                context["include_tail_after_end"] = self.include_tail_after_end
-            
-        context['element_path'] = None
-        return context
-
-    def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
-        """
-        Process the given element and return the list of processed elements.
-        """
-        context = self._update_processing_context_before(element)
-        
-        processed = []
-
-        if context["command"] == _ProcessingCommand.SKIP:
-            return []
-
-        transcluded = self._transclude(element)
-        if transcluded is not None:
-            return [transcluded]
-        
-        annotations, annotation_command = self._annotate(element, root)
-        if annotation_command == _AnnotationCommand.REPLACE:
-            return [annotations[0]]
-
-        if context["command"] == _ProcessingCommand.RECURSE:
-            append_to = processed
-        elif context["command"] == _ProcessingCommand.COPY_ELEMENT_AND_RECURSE:
-            copied = etree.Element(element.tag, nsmap=self.ns_map)
-            for key, value in element.attrib.items():
-                copied.set(key, value)
-            processed.append(copied)
-            append_to = copied
-        elif context["command"] == _ProcessingCommand.COPY_AND_RECURSE:
-            copied = etree.Element(element.tag, nsmap=self.ns_map)
-            for key, value in element.attrib.items():
-                copied.set(key, value)
-            copied.text = element.text
-            processed.append(copied)
-            append_to = copied
-        
-        for child in element:
-            child_result = self._process_element(child, root)
-            append_to.extend(child_result)
-            if (
-                context["command"] == _ProcessingCommand.COPY_AND_RECURSE 
-                or context["include_tail_after_end"]):
-                if child.tail and child_result:
-                    # Only copy tail if we're not after the end marker
-                    if context["include_tail_after_end"] or not context['after_end']:
-                        if child_result[-1].tail is None:
-                            child_result[-1].tail = child.tail
-                        else:
-                            child_result[-1].tail += child.tail
-        
-        if annotation_command == _AnnotationCommand.INSERT:
-            for annotation in reversed(annotations):
-                self._insert_first_element(processed, annotation)
-
-        processed = self._rewrite_ids(processed)
-
-        self._update_processing_context_after(element)
-        return processed
-
-    def process(self, root: Optional[ElementBase] = None) -> list[ElementBase]:
-        if root is None:
-            root = self.root_tree
-
-        # set the root language to the language of the deepest common ancestor
-        self.root_language = self._get_in_scope_language(self.deepest_common_ancestor)
-
-        self.linear_data.processing_context.append(_ProcessingContext(
-            project=self.project,
-            file_name=self.file_name,
-            from_start=self.from_start,
-            to_end=self.to_end,
-            before_start=self.from_start is not None,
-            after_end=False,  # We haven't processed anything yet, so we're not after end
-            include_tail_after_end=False,
-            command=_ProcessingCommand.RECURSE,
-            inside_deepest_common_ancestor=False,
-        ))
-
-        processed = self._process_element(root, root)
-
-        # pop the processing context
-        self.linear_data.processing_context.pop()
-
-        return processed
-
-class InlineCompilerProcessor(CompilerProcessor):
-    def __init__(
-        self,
-        project: str,
-        file_name: str,
-        from_start: str,
-        to_end: str,
-        linear_data: Optional[LinearData] = None,
-        reference_database: Optional[ReferenceDatabase] = None):
-        """ Process the given file/project.
-        Only start from the given start and end, inclusive.
-        Start and end must be in the same file
-        """
-        super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
-        self.from_start = from_start
-        self.to_end = to_end
-        self.start_element, self.end_element, self.exclusive_end, self.include_tail_after_end = self._get_start_and_end_elements_from_ranges(from_start, to_end)
-
-    def _update_processing_context_before(self, element: ElementBase) -> _ProcessingContext:
-        """
-        Update the processing context for the given element, before the element has been processed.
-        """
-        context = self.linear_data.processing_context[-1]
-        
-        # always reset the include_tail_after_end flag
-        context['include_tail_after_end'] = False
-        
-        context['element_path'] = element.getroottree().getpath(element)
-        # Possible contexts:
-        #    after end? SKIP 
-        #    before start?
-        #       check if this element is start? if yes, set before_start to False and return COPY_TEXT_AND_RECURSE
-        #       else RECURSE
-        #    between start and end? COPY_TEXT_AND_RECURSE
-        
-        if self.exclusive_end and element is self.end_element:
-            # implement exclusive end on this element
-            context['after_end'] = True
-        
-        if context['after_end']:
-            context['command'] = _ProcessingCommand.SKIP
-            return context
-        
-        corresp = element.attrib.get("corresp", "")
-        xml_id = element.attrib.get("{http://www.w3.org/XML/1998/namespace}id", "")
-
-        # is start
-        if corresp or xml_id:
-            if element is self.start_element:
-                context['before_start'] = False
-                context['command'] = _ProcessingCommand.COPY_TEXT_AND_RECURSE
-                return context
-
-        # is after start?
-        if context['before_start']:
-            context['command'] = _ProcessingCommand.RECURSE
-            return context
-            
-        # must be after start and before end
-        context['command'] = _ProcessingCommand.COPY_TEXT_AND_RECURSE
-        return context
-    
-    def _update_processing_context_after(self, element: ElementBase) -> _ProcessingContext:
-        """
-        Update the processing context for the given element, after the element has been processed.
-        """
-        context = self.linear_data.processing_context[-1]
-        context['element_path'] = None
-        context["include_tail_after_end"] = False
-        if not context['before_start'] and not context['after_end']:
-            # between start and end - check if this is the end element
-            if element is self.end_element:
-                context['after_end'] = True
-                context["include_tail_after_end"] = self.include_tail_after_end
-        elif context['after_end']:
-            # force exclusion of tails after the end element
-            context["command"] = _ProcessingCommand.SKIP
-
-        return context
-
-    def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
-        """
-        Process the given element and return the text content.
-        """
-        context = self._update_processing_context_before(element) 
-
-
-        text_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transcludeInline", nsmap=self.ns_map)
-        text_element.text = ""
-
-        if context["command"] == _ProcessingCommand.SKIP:
-            return text_element
-
-        # Check if this element itself is a transclusion
-        transcluded = self._transclude(element, type_override='inline')
-        if transcluded is not None:
-            # Don't process children of j:transclude elements - just return the p:transclude
-            # The tail will be handled by the parent's processing
-            return transcluded
-
-        annotations, annotation_command = self._annotate(element, root)
-        if annotation_command == _AnnotationCommand.REPLACE:
-            # This is a case of an instructional notation that needs to replace the current element
-            # and *not* be treated as inline text
-            return annotations[0]
-        elif annotation_command == _AnnotationCommand.KEEP:
-            # This is a case of an instructional notation that needs to be kept as is
-            processor =CompilerProcessor(
-                self.project,
-                self.file_name,
-                linear_data=self.linear_data,
-                reference_database=self._refdb
-            )
-            processed_element = processor.process(element)
-            context_lang = self._get_in_scope_language(element)
-            if (processor.root_language 
-                and processor.root_language != context_lang
-                and not processed_element.get('{http://www.w3.org/XML/1998/namespace}lang')):
-                processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', processor.root_language)
-            return processed_element
-
-        element_lang = element.get('{http://www.w3.org/XML/1998/namespace}lang')
-        if element_lang:
-            text_element.set('{http://www.w3.org/XML/1998/namespace}lang', element_lang)
-
-        if context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE:
-            if element.text:
-                text_element.text += element.text
-
-        # the command is some kind of recursion now, COPY_TEXT_AND_RECURSE or RECURSE
-        context_lang = self._get_in_scope_language(element)
-        previous_child = None
-        for child in element:
-            processed = self._process_element(child, root)
-            # Check if this child has a language different from the root
-            child_lang = self._get_in_scope_language(child)
-            if processed.tag == f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
-                # If language differs, keep as nested element
-                if child_lang and child_lang != context_lang:
-                    text_element.append(processed)
-                    previous_child = processed
-                else:
-                    # Extract text from nested p:transcludeInline elements
-                    text_element.text += processed.text or ""
-                    # Also extract any p:transclude children (nested transclusions)
-                    for nested_child in processed:
-                        text_element.append(nested_child)
-                        previous_child = nested_child
-            elif processed.tag == f"{{{PROCESSING_NAMESPACE}}}transclude":
-                # p:transclude elements are kept as children (for inline transclusions)
-                # Add the p:transclude element as a child
-                text_element.append(processed)
-                previous_child = processed
-            else:
-                # Other element types (shouldn't normally happen in InlineCompilerProcessor)
-                text_element.append(processed)
-                previous_child = processed
-            if (
-                context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE 
-                or context["include_tail_after_end"]):
-                if child.tail:
-                    if previous_child is not None:
-                        previous_child.tail = (previous_child.tail or "") + " " + child.tail
-                    else:
-                        text_element.text += " " + child.tail
-        
-        if annotation_command == _AnnotationCommand.INSERT:
-            for annotation in reversed(annotations):
-                self._insert_first_element(text_element, annotation)
-
-        self._update_processing_context_after(element)
-        return text_element
-        
-    def process(self, root: Optional[ElementBase] = None) -> ElementBase:
-        if root is None:
-            root = self.root_tree
-
-        self.root_language = self._get_in_scope_language(root)
-
-        self.linear_data.processing_context.append(_ProcessingContext(
-            project=self.project,
-            file_name=self.file_name,
-            from_start=self.from_start,
-            to_end=self.to_end,
-            before_start=self.from_start is not None,
-            after_end=False,  # We haven't processed anything yet, so we're not after end
-            include_tail_after_end=False,
-            command=_ProcessingCommand.RECURSE,
-            inside_deepest_common_ancestor=False,
-        ))
-
-        element = self._process_element(root, root)
-
-        # pop the processing context
-        self.linear_data.processing_context.pop()
-
-        return element
-
 
 def main():  # pragma: no cover
     parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")
@@ -998,13 +594,14 @@ def main():  # pragma: no cover
     else:
         linear_data = load_default_settings(args.project, args.file_name)
 
-    compiler = CompilerProcessor(args.project, args.file_name, linear_data=linear_data)
-    result = compiler.process()
+    from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
+    compiler = ExternalCompilerProcessor(args.project, args.file_name, linear_data=linear_data)
+    result = compiler.process()[0]
     etree.ElementTree(result).write(
-        args.output_file if args.output_file else sys.stdout, 
+        args.output_file if args.output_file else sys.stdout,
         pretty_print=True,
         encoding='utf-8')
-    
+
 
 if __name__ == "__main__":  # pragma: no cover
     main()
