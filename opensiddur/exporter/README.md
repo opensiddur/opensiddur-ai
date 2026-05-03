@@ -12,7 +12,7 @@ The exporter operates in two stages:
 ## Run the compiler
 
 See
-`poetry run python -m opensiddur.exporter.compiler --help`
+`uv run python -m opensiddur.exporter.compiler --help`
 
 ## Export to PDF
 

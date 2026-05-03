@@ -12,6 +12,6 @@
 # The output file will be a PDF file.
 
 
-poetry run python -m opensiddur.exporter.compiler -p $1 -f $2 -o $3.xml
-poetry run python -m opensiddur.exporter.pdf.pdf $3.xml $3 
+uv run python -m opensiddur.exporter.compiler -p $1 -f $2 -o $3.xml
+uv run python -m opensiddur.exporter.pdf.pdf $3.xml $3
 rm -f $3.xml
