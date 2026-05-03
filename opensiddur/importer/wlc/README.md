@@ -3,19 +3,19 @@ This directory has scripts for downloading and converting The Westminster Lening
 Preqrequisites:
 Install the Python dependencies:
 ```bash
-$ poetry install
+$ uv sync
 ```
 
 To download the data:
 ```bash
-poetry run python -m download_tanach 
+uv run python -m download_tanach 
 ```
 
 The data will be downloaded to the `sources/wlc` directory.
 
 To convert the data to JLPTEI 2:
 ```bash
-poetry run python -m opensiddur.importer.wlc.wlc
+uv run python -m opensiddur.importer.wlc.wlc
 ```
 
 The output will be in the `project/wlc` directory.

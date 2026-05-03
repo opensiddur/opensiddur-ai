@@ -71,7 +71,7 @@ The conversion process follows a three-stage pipeline:
 
 ```bash
 # Run the complete conversion workflow from command line
-poetry run python -m opensiddur.importer.jps1917.convert_wikisource
+uv run python -m opensiddur.importer.jps1917.convert_wikisource
 ```
 
 ### Complete Workflow (Programmatic)
