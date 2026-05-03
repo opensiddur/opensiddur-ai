@@ -379,6 +379,201 @@ class TestCompileTexToPdf(unittest.TestCase):
         self.assertFalse(result)
 
 
+class TestRunBibtexBehavior(unittest.TestCase):
+    """Tests for the run_bibtex() nested function invoked inside compile_tex_to_pdf.
+
+    run_bibtex() is reached only when the xelatex .aux file contains \\bibdata or
+    \\citation.  It calls ['bibtex', stem] with cwd=tex_dir (the original .tex
+    directory), ignores the bibtex exit code, and checks result.stdout
+    case-insensitively for "error message" to decide success.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.tex_dir = Path(self.temp_dir.name)
+        self.tex_file = self.tex_dir / "mydoc.tex"
+        self.tex_file.write_text(r"\documentclass{article}\begin{document}Hello\end{document}")
+        self.output_pdf = self.tex_dir / "output.pdf"
+
+    def _make_run_side_effect(self, aux_content=None, bibtex_stdout="", bibtex_returncode=0):
+        """Return a subprocess.run side_effect that simulates xelatex and bibtex.
+
+        xelatex writes aux_content (if given) and a fake PDF to its -output-directory.
+        bibtex returns the configured stdout and returncode.
+        """
+        tex_stem = self.tex_file.stem
+
+        def side_effect(cmd, **kwargs):
+            result = MagicMock()
+            if cmd[0] == 'xelatex':
+                out_dir = Path(cmd[cmd.index('-output-directory') + 1])
+                if aux_content is not None:
+                    (out_dir / f"{tex_stem}.aux").write_text(aux_content)
+                (out_dir / f"{tex_stem}.pdf").write_bytes(b"%PDF-1.4 fake")
+                result.returncode = 0
+                result.stdout = ""
+                result.stderr = ""
+            elif cmd[0] == 'bibtex':
+                result.returncode = bibtex_returncode
+                result.stdout = bibtex_stdout
+                result.stderr = ""
+            return result
+
+        return side_effect
+
+    def _bibtex_calls(self, mock_run):
+        return [c for c in mock_run.call_args_list if c.args[0][0] == 'bibtex']
+
+    def _xelatex_calls(self, mock_run):
+        return [c for c in mock_run.call_args_list if c.args[0][0] == 'xelatex']
+
+    # --- triggering conditions ---
+
+    def test_bibtex_invoked_when_aux_contains_bibdata(self):
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{references}"
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertEqual(len(self._bibtex_calls(mock_run)), 1)
+
+    def test_bibtex_invoked_when_aux_contains_citation(self):
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\citation{smith2020}"
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertEqual(len(self._bibtex_calls(mock_run)), 1)
+
+    def test_bibtex_not_invoked_when_aux_has_no_bibliography_markers(self):
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\relax"
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertEqual(len(self._bibtex_calls(mock_run)), 0)
+
+    def test_bibtex_not_invoked_when_no_aux_file_produced(self):
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=None
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertEqual(len(self._bibtex_calls(mock_run)), 0)
+
+    # --- command construction ---
+
+    def test_bibtex_called_with_stem_only_and_tex_cwd(self):
+        """bibtex receives just the file stem (no extension) and runs in the .tex directory."""
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{refs}"
+        )) as mock_run:
+            compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        bibtex_calls = self._bibtex_calls(mock_run)
+        self.assertEqual(len(bibtex_calls), 1)
+        self.assertEqual(bibtex_calls[0].args[0], ['bibtex', 'mydoc'])
+        self.assertEqual(bibtex_calls[0].kwargs['cwd'], self.tex_dir)
+
+    # --- success path ---
+
+    def test_bibtex_success_returns_true_and_overall_compile_succeeds(self):
+        """Clean bibtex output (no 'error message') → run_bibtex returns True."""
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{refs}",
+            bibtex_stdout="This is BibTeX, Version 0.99d (TeX Live 2023)"
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertEqual(len(self._bibtex_calls(mock_run)), 1)
+
+    def test_bibtex_forces_xelatex_rerun_regardless_of_success(self):
+        """After bibtex, needs_rerun is always set to True, causing ≥2 xelatex passes."""
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{refs}",
+            bibtex_stdout=""  # clean output, no rerun indicators from xelatex either
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertGreaterEqual(len(self._xelatex_calls(mock_run)), 2)
+
+    def test_bibtex_nonzero_returncode_is_not_checked(self):
+        """BibTeX exit code is ignored; only stdout matters for error detection."""
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{refs}",
+            bibtex_stdout="Warnings, but no error message",
+            bibtex_returncode=2
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertEqual(len(self._bibtex_calls(mock_run)), 1)
+
+    def test_bibtex_error_only_in_stderr_is_not_detected(self):
+        """Errors appearing in bibtex stderr (not stdout) do not trigger the error path."""
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{refs}",
+            bibtex_stdout="",                       # stdout clean
+            bibtex_returncode=1                     # stderr would have errors
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+
+    # --- error path ---
+
+    def test_bibtex_error_message_in_stdout_is_nonfatal(self):
+        """'error message' in bibtex stdout → run_bibtex returns False, but
+        compile_tex_to_pdf still continues and succeeds (bibtex errors are warnings)."""
+        with patch('subprocess.run', side_effect=self._make_run_side_effect(
+            aux_content=r"\bibdata{refs}",
+            bibtex_stdout="I found no \\bibdata command---error message: missing entry"
+        )) as mock_run:
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        # xelatex still reruns after bibtex even when bibtex "failed"
+        self.assertGreaterEqual(len(self._xelatex_calls(mock_run)), 2)
+
+    def test_bibtex_error_message_check_is_case_insensitive(self):
+        """The 'error message' match uses .lower(), so any capitalisation triggers it."""
+        for variant in ["error message: bad", "Error Message: bad", "ERROR MESSAGE: bad"]:
+            with self.subTest(stdout_variant=variant):
+                with patch('subprocess.run', side_effect=self._make_run_side_effect(
+                    aux_content=r"\bibdata{refs}",
+                    bibtex_stdout=variant
+                )):
+                    result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+                # All capitalisation variants are treated identically (nonfatal)
+                self.assertTrue(result)
+
+    def test_bibtex_file_not_found_returns_false(self):
+        """FileNotFoundError from bibtex (not installed) → compile_tex_to_pdf returns False."""
+        def side_effect(cmd, **kwargs):
+            result = MagicMock()
+            if cmd[0] == 'xelatex':
+                out_dir = Path(cmd[cmd.index('-output-directory') + 1])
+                (out_dir / f"{self.tex_file.stem}.aux").write_text(r"\bibdata{refs}")
+                (out_dir / f"{self.tex_file.stem}.pdf").write_bytes(b"%PDF fake")
+                result.returncode = 0
+                result.stdout = result.stderr = ""
+            elif cmd[0] == 'bibtex':
+                raise FileNotFoundError("bibtex: No such file or directory")
+            return result
+
+        with patch('subprocess.run', side_effect=side_effect):
+            result = compile_tex_to_pdf(self.tex_file, self.output_pdf)
+
+        self.assertFalse(result)
+
+
 class TestExportToPdf(unittest.TestCase):
     """Test the export_to_pdf function."""
 
