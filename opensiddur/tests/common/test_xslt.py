@@ -3,7 +3,7 @@ import tempfile
 import sys
 from io import StringIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from opensiddur.common.xslt import xslt_transform_string, xslt_transform, _to_xdm_value
 from saxonche import PySaxonProcessor, PyXdmAtomicValue
@@ -209,6 +209,28 @@ class TestXSLTTransformString(unittest.TestCase):
             with self.assertRaises(Exception):
                 xslt_transform_string(xslt_file, input_xml)
     
+    def test_compile_stylesheet_none_raises_value_error(self):
+        """Line 35: raises ValueError when compile_stylesheet returns None."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as f:
+            f.write('<root/>')
+            f.flush()
+
+            with patch('opensiddur.common.xslt.PySaxonProcessor') as mock_proc_class:
+                mock_proc = MagicMock()
+                mock_proc_class.return_value.__enter__.return_value = mock_proc
+                mock_proc_class.return_value.__exit__.return_value = False
+
+                mock_xslt_proc = MagicMock()
+                mock_proc.new_xslt30_processor.return_value = mock_xslt_proc
+                mock_xslt_proc.compile_stylesheet.return_value = None
+                mock_xslt_proc.error_message = 'Stylesheet compilation failed'
+
+                with self.assertRaises(ValueError) as ctx:
+                    xslt_transform_string(Path(f.name), '<root/>')
+
+            self.assertIn('Failed to compile XSLT', str(ctx.exception))
+            self.assertIn('Stylesheet compilation failed', str(ctx.exception))
+
     def test_single_result_returns_string(self):
         """Test that single result mode returns a string, not a dict"""
         xslt_content = '''<?xml version="1.0" encoding="UTF-8"?>
