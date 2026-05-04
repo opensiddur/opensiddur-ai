@@ -232,4 +232,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         # pop the processing context
         self.linear_data.processing_context.pop()
 
+        # When processing the full file (not a range transclusion), mark the file source on the root element
+        # so that get_file_references() can find source files for metadata extraction
+        if self.from_start is None and processed:
+            self._mark_file_source(processed[0])
+
         return processed

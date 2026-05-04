@@ -383,9 +383,9 @@ class TestRunBibtexBehavior(unittest.TestCase):
     """Tests for the run_bibtex() nested function invoked inside compile_tex_to_pdf.
 
     run_bibtex() is reached only when the xelatex .aux file contains \\bibdata or
-    \\citation.  It calls ['bibtex', stem] with cwd=tex_dir (the original .tex
-    directory), ignores the bibtex exit code, and checks result.stdout
-    case-insensitively for "error message" to decide success.
+    \\citation.  It calls ['bibtex', stem] with cwd set to xelatex's output directory
+    (where the .aux file was written), ignores the bibtex exit code, and checks
+    result.stdout case-insensitively for "error message" to decide success.
     """
 
     def setUp(self):
@@ -467,17 +467,19 @@ class TestRunBibtexBehavior(unittest.TestCase):
 
     # --- command construction ---
 
-    def test_bibtex_called_with_stem_only_and_tex_cwd(self):
-        """bibtex receives just the file stem (no extension) and runs in the .tex directory."""
+    def test_bibtex_called_with_stem_only_and_output_cwd(self):
+        """bibtex receives just the file stem (no extension) and runs in xelatex's output directory."""
         with patch('subprocess.run', side_effect=self._make_run_side_effect(
             aux_content=r"\bibdata{refs}"
         )) as mock_run:
             compile_tex_to_pdf(self.tex_file, self.output_pdf)
 
         bibtex_calls = self._bibtex_calls(mock_run)
+        xelatex_calls = self._xelatex_calls(mock_run)
+        xelatex_out_dir = Path(xelatex_calls[0].args[0][xelatex_calls[0].args[0].index('-output-directory') + 1])
         self.assertEqual(len(bibtex_calls), 1)
         self.assertEqual(bibtex_calls[0].args[0], ['bibtex', 'mydoc'])
-        self.assertEqual(bibtex_calls[0].kwargs['cwd'], self.tex_dir)
+        self.assertEqual(bibtex_calls[0].kwargs['cwd'], str(xelatex_out_dir))
 
     # --- success path ---
 

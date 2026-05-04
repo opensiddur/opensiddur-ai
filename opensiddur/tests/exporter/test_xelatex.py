@@ -847,7 +847,9 @@ class TestTransformXmlToTex(unittest.TestCase):
         import opensiddur.exporter.tex.xelatex as xelatex_module
         
         xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
-<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:p="http://jewishliturgy.org/ns/processing"
+         p:project="project1" p:file_name="input.xml">
     <tei:teiHeader>
         <tei:fileDesc>
             <tei:publicationStmt>
@@ -863,12 +865,12 @@ class TestTransformXmlToTex(unittest.TestCase):
         </tei:body>
     </tei:text>
 </tei:TEI>'''
-        
+
         input_file = self._create_xml_file("project1", "input.xml", xml_content)
-        
+
         with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
             result = transform_xml_to_tex(input_file)
-        
+
         # Should include license section in postamble
         self.assertIn(r'\chapter{Legal}', result)
         self.assertIn('Test License', result)
@@ -879,7 +881,9 @@ class TestTransformXmlToTex(unittest.TestCase):
         import opensiddur.exporter.tex.xelatex as xelatex_module
         
         xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
-<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:p="http://jewishliturgy.org/ns/processing"
+         p:project="project1" p:file_name="input.xml">
     <tei:teiHeader>
         <tei:fileDesc>
             <tei:titleStmt>
@@ -896,12 +900,12 @@ class TestTransformXmlToTex(unittest.TestCase):
         </tei:body>
     </tei:text>
 </tei:TEI>'''
-        
+
         input_file = self._create_xml_file("project1", "input.xml", xml_content)
-        
+
         with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
             result = transform_xml_to_tex(input_file)
-        
+
         # Should include credits section in postamble
         self.assertIn(r'\chapter{Contributor credits}', result)
         self.assertIn('Author Name', result)
@@ -912,14 +916,16 @@ class TestTransformXmlToTex(unittest.TestCase):
         import opensiddur.exporter.tex.xelatex as xelatex_module
         
         xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
-<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:p="http://jewishliturgy.org/ns/processing"
+         p:project="project1" p:file_name="input.xml">
     <tei:text>
         <tei:body>
             <tei:p>Content</tei:p>
         </tei:body>
     </tei:text>
 </tei:TEI>'''
-        
+
         index_content = b'''<?xml version="1.0" encoding="UTF-8"?>
 <root xmlns:tei="http://www.tei-c.org/ns/1.0">
     <tei:listBibl>
@@ -929,13 +935,13 @@ class TestTransformXmlToTex(unittest.TestCase):
         </tei:bibl>
     </tei:listBibl>
 </root>'''
-        
+
         input_file = self._create_xml_file("project1", "input.xml", xml_content)
         index_file = self._create_xml_file("project1", "index.xml", index_content)
-        
+
         with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
             result = transform_xml_to_tex(input_file)
-        
+
         # Should include bibliography in preamble and postamble
         self.assertIn(r'\addbibresource{job.bib}', result)
         self.assertIn(r'\printbibliography', result)
