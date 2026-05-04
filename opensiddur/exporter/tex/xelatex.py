@@ -319,7 +319,7 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         with open(input_file, 'r', encoding='utf-8') as input_fd:
             input_xml = input_fd.read()
         
-        file_references = [Path(input_file)] + get_file_references(input_file)
+        file_references = get_file_references(input_file, projects_source_root)
 
         licenses = extract_licenses(file_references)
         licenses_tex = licenses_to_tex(group_licenses(licenses))
@@ -327,13 +327,13 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         credits_tex = credits_to_tex(group_credits(credits))
         sources_preamble_tex, sources_postamble_tex = extract_sources(file_references)
         # Use the string-based XSLT transformation function
-        result = xslt_transform_string(Path(xslt_file), input_xml, 
+        result = xslt_transform_string(Path(xslt_file), input_xml,
             xslt_params={
                 "additional-preamble": sources_preamble_tex,
                 "additional-postamble": (
-                    "\\part{Metadata}\n" + 
-                    licenses_tex + "\n" + 
-                    credits_tex + "\n" + 
+                    "\\part{Metadata}\n" +
+                    licenses_tex + "\n" +
+                    credits_tex + "\n" +
                     sources_postamble_tex
                 ),
             })

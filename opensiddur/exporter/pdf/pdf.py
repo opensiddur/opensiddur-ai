@@ -87,10 +87,11 @@ def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
             
             return True, output, needs_rerun
         
-        def run_bibtex():
+        def run_bibtex(temp_dir):
             """Run BibTeX and return success status"""
             cmd = ['bibtex', str(tex_name)]
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=tex_dir)
+            # Run in the xelatex output directory where the .aux file was written
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=temp_dir)
             
             # BibTeX may return non-zero even on success with warnings
             # Check for actual errors in output
@@ -104,11 +105,11 @@ def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
             # First XeLaTeX run
             print("Running XeLaTeX (pass 1)...", file=sys.stderr)
             success, output, needs_rerun = run_xelatex(temp_dir)
-            
+
             if not success:
-                print(f"XeLaTeX compilation failed:", file=sys.stderr)
+                print(f"XeLaTeX reported errors (pass 1):", file=sys.stderr)
                 print(output, file=sys.stderr)
-                return False
+                # Don't abort yet — check if a PDF was produced despite errors
             
             # Check if bibliography exists and run BibTeX
             aux_file = Path(temp_dir) / f"{tex_name}.aux"
@@ -116,7 +117,7 @@ def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
                 aux_content = aux_file.read_text()
                 if '\\bibdata' in aux_content or '\\citation' in aux_content:
                     print("Running BibTeX...", file=sys.stderr)
-                    if not run_bibtex():
+                    if not run_bibtex(temp_dir):
                         print("Warning: BibTeX encountered errors", file=sys.stderr)
                     # After BibTeX, we definitely need to rerun XeLaTeX
                     needs_rerun = True
@@ -127,11 +128,12 @@ def compile_tex_to_pdf(tex_file, output_pdf, max_runs=7):
                 run_count += 1
                 print(f"Running XeLaTeX (pass {run_count})...", file=sys.stderr)
                 success, output, needs_rerun = run_xelatex(temp_dir)
-                
+
                 if not success:
-                    print(f"XeLaTeX compilation failed:", file=sys.stderr)
+                    print(f"XeLaTeX reported errors (pass {run_count}):", file=sys.stderr)
                     print(output, file=sys.stderr)
-                    return False
+                    # Don't abort — check if a PDF was produced despite errors
+                    break
             
             if run_count >= max_runs:
                 print(f"Warning: Reached maximum number of runs ({max_runs})", file=sys.stderr)

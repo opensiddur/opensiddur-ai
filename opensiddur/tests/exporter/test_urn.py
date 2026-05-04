@@ -7,6 +7,48 @@ from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange
 from opensiddur.exporter.refdb import UrnMapping
 
 
+def make_urn_mapping(
+    project: str,
+    file_name: str,
+    urn: str,
+    element_path: str = "/TEI/div[1]",
+    element_tag: str = "{http://www.tei-c.org/ns/1.0}div",
+    element_type: str | None = "chapter",
+    end_element_path: str | None = None,
+    end_includes_tail: bool = False,
+) -> UrnMapping:
+    """Helper to create UrnMapping test instances with the new end fields."""
+    return UrnMapping(
+        project=project,
+        file_name=file_name,
+        urn=urn,
+        element_path=element_path,
+        element_tag=element_tag,
+        element_type=element_type,
+        end_element_path=end_element_path or element_path,
+        end_includes_tail=end_includes_tail,
+    )
+
+
+def make_resolved_urn(
+    project: str,
+    file_name: str,
+    urn: str,
+    element_path: str = "/TEI/div[1]",
+    end_element_path: str | None = None,
+    end_includes_tail: bool = False,
+) -> ResolvedUrn:
+    """Helper to create ResolvedUrn test instances with the new end fields."""
+    return ResolvedUrn(
+        project=project,
+        file_name=file_name,
+        urn=urn,
+        element_path=element_path,
+        end_element_path=end_element_path or element_path,
+        end_includes_tail=end_includes_tail,
+    )
+
+
 class TestUrnResolverResolve(unittest.TestCase):
     """Test URN resolution functionality."""
 
@@ -19,10 +61,10 @@ class TestUrnResolverResolve(unittest.TestCase):
         """Test resolving URN without project specifier returns all matches."""
         # Mock database to return mappings for two projects
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
-            UrnMapping(project="jps1917", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
+            make_urn_mapping(project="jps1917", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
         ]
-        
+
         results = self.resolver.resolve("urn:x-opensiddur:test:doc1")
         
         self.assertEqual(len(results), 2)
@@ -46,9 +88,9 @@ class TestUrnResolverResolve(unittest.TestCase):
         """Test resolving URN with @project specifier."""
         # Mock database to return mapping for specific project
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
         ]
-        
+
         results = self.resolver.resolve("urn:x-opensiddur:test:doc1@wlc")
         
         self.assertEqual(len(results), 1)
@@ -82,7 +124,7 @@ class TestUrnResolverResolve(unittest.TestCase):
         """Test that resolve always returns a list."""
         # Existing URN
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
         ]
         result = self.resolver.resolve("urn:x-opensiddur:test:doc1")
         self.assertIsInstance(result, list)
@@ -106,8 +148,8 @@ class TestUrnResolverGetByProject(unittest.TestCase):
         """Test getting all URNs for a project."""
         # Mock database to return URNs for wlc project
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
-            UrnMapping(project="wlc", file_name="doc2.xml", urn="urn:x-opensiddur:test:doc2", element_path="/TEI/div[2]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="chapter"),
+            make_urn_mapping(project="wlc", file_name="doc1.xml", urn="urn:x-opensiddur:test:doc1"),
+            make_urn_mapping(project="wlc", file_name="doc2.xml", urn="urn:x-opensiddur:test:doc2", element_path="/TEI/div[2]", end_element_path="/TEI/div[2]"),
         ]
         
         results = self.resolver.get_urns_by_project("wlc")
@@ -147,18 +189,18 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             elif urn == "urn:x-opensiddur:test:bible:genesis/1/2":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             return []
-        
+
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
-        
+
         results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1-2")
         
         self.assertEqual(len(results), 2)  # wlc and jps1917
@@ -178,9 +220,9 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if project == "wlc":
                 if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
-                    return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                    return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
                 elif urn == "urn:x-opensiddur:test:bible:genesis/1/2":
-                    return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                    return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             return []
         
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
@@ -197,13 +239,13 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             elif urn == "urn:x-opensiddur:test:bible:genesis/2/3":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             return []
         
@@ -225,13 +267,13 @@ class TestUrnResolverRange(unittest.TestCase):
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             elif urn == "urn:x-opensiddur:test:bible:genesis/2":
                 return [
-                    UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-                    UrnMapping(project="jps1917", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+                    make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse"),
+                    make_urn_mapping(project="jps1917", file_name="genesis.xml", urn=urn, element_type="verse"),
                 ]
             return []
         
@@ -261,11 +303,11 @@ class TestUrnResolverRange(unittest.TestCase):
         # Mock database
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
-                return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             return []
-        
+
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
-        
+
         results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1-99")
         
         self.assertEqual(results, [])
@@ -274,10 +316,10 @@ class TestUrnResolverRange(unittest.TestCase):
         """Test resolving URN without dash calls resolve() and returns results."""
         # Mock database
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
-            UrnMapping(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+            make_urn_mapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_type="verse"),
+            make_urn_mapping(project="jps1917", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_type="verse"),
         ]
-        
+
         results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1")
         
         # Should call resolve() and return ResolvedUrn objects (not ResolvedUrnRange)
@@ -292,11 +334,11 @@ class TestUrnResolverRange(unittest.TestCase):
         # Valid range
         def mock_get_urn_mappings(urn, project=None):
             if urn == "urn:x-opensiddur:test:bible:genesis/1/1":
-                return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             elif urn == "urn:x-opensiddur:test:bible:genesis/1/2":
-                return [UrnMapping(project="wlc", file_name="genesis.xml", urn=urn, element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse")]
+                return [make_urn_mapping(project="wlc", file_name="genesis.xml", urn=urn, element_type="verse")]
             return []
-        
+
         self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
         result = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1-2")
         self.assertIsInstance(result, list)
@@ -304,7 +346,7 @@ class TestUrnResolverRange(unittest.TestCase):
         
         # Non-ranged URN (calls resolve())
         self.mock_db.get_urn_mappings.return_value = [
-            UrnMapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_path="/TEI/div[1]", element_tag="{http://www.tei-c.org/ns/1.0}div", element_type="verse"),
+            make_urn_mapping(project="wlc", file_name="genesis.xml", urn="urn:x-opensiddur:test:bible:genesis/1/1", element_type="verse"),
         ]
         result = self.resolver.resolve_range("urn:x-opensiddur:test:bible:genesis/1/1")
         self.assertIsInstance(result, list)
