@@ -112,6 +112,7 @@ class CompilerProcessor:
         self._urn_resolver = UrnResolver(self._refdb)
 
         self.root_language = None
+        self._in_parallel_compilation = False
 
     def _get_in_scope_language(self, element: ElementBase) -> Optional[str]:
         """ Get the xml:lang attribute from the element or its ancestors.
@@ -230,7 +231,17 @@ class CompilerProcessor:
             processing_element.set('type', transclusion_type)
 
             transclude_range = self._get_start_and_end_from_ranges(target, target_end)
-            
+
+            # Parallel trigger: delegate to subclass if parallel projects are configured
+            if (transclusion_type == 'external'
+                    and self.linear_data.parallel_projects
+                    and not self._in_parallel_compilation
+                    and hasattr(self, '_transclude_parallel')):
+                result = self._transclude_parallel(element, transclude_range, transclusion_type)
+                if result is not None:
+                    return result
+                # result is None → no parallel found, fall through to normal transclusion
+
             context_lang = self._get_in_scope_language(element)
 
             end_element_path = transclude_range.end.end_element_path or transclude_range.end.element_path
@@ -244,6 +255,10 @@ class CompilerProcessor:
                     include_tail_after_end=transclude_range.end.end_includes_tail,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
+                # Propagate marker mode to nested processor
+                if hasattr(self, 'marker_stack') and self.marker_stack is not None:
+                    processor.marker_stack = []
+                    processor._parallel_corresp_cache = self._parallel_corresp_cache
                 processed_list = processor.process()
                 for processed in processed_list:
                     processing_element.append(processed)
