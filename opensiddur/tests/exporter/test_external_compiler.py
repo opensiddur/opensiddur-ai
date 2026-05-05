@@ -13,6 +13,8 @@ from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
 from opensiddur.exporter.urn import ResolvedUrn
 
+TEI_NS = "http://www.tei-c.org/ns/1.0"
+
 class TestExternalCompilerProcessor(unittest.TestCase):
     """Test ExternalCompilerProcessor for extracting XML hierarchy between start and end markers."""
 
@@ -57,6 +59,39 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         if not elements:
             raise ValueError(f"Element with identifier '{identifier}' not found in XML")
         return tree.getpath(elements[0])
+
+    def test_insert_annotation_does_not_crash_when_processed_is_list(self):
+        """Regression: INSERT annotations in ExternalCompilerProcessor must not call _insert_first_element on a list."""
+        xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+  <tei:text>
+    <tei:body>
+      <tei:div xml:id="root">
+        <tei:p>Body</tei:p>
+      </tei:div>
+    </tei:body>
+  </tei:text>
+</tei:TEI>"""
+
+        project, file_name = self._create_test_file("doc.xml", xml)
+        start_path = self._get_element_path(xml, "#root")
+        end_path = start_path
+
+        proc = ExternalCompilerProcessor(project, file_name, start_path, end_path)
+        annotation = etree.Element(f"{{{TEI_NS}}}note")
+        annotation.text = "ann"
+
+        from opensiddur.exporter.compiler import _AnnotationCommand
+        with patch.object(proc, "_annotate", return_value=([annotation], _AnnotationCommand.INSERT)):
+            out = proc.process()
+
+        # Must produce a list and include the inserted annotation somewhere without crashing
+        self.assertIsInstance(out, list)
+        # Find note in output
+        all_notes = []
+        for el in out:
+            all_notes.extend(el.findall(f".//{{{TEI_NS}}}note"))
+        self.assertTrue(all_notes)
 
     def _get_milestone_end_path(self, milestone_elem: etree._Element) -> tuple[str, bool]:
         """Compute the end element path for a milestone element.

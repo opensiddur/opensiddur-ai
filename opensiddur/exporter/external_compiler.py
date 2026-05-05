@@ -739,7 +739,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         if annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
-                self._insert_first_element(processed, annotation)
+                # ExternalCompilerProcessor returns a list[Element]; insertion is at the
+                # sequence level, not as a child of an element.
+                processed.insert(0, annotation)
 
         processed = self._rewrite_ids(processed)
 
