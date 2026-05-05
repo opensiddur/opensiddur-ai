@@ -394,6 +394,53 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             # Verify process() was called
             mock_instance.process.assert_called_once()
 
+    def test_external_transclusion_defaults_type_to_external_when_missing(self):
+        """Regression: j:transclude without @type must behave as external, not crash setting type=None."""
+        from unittest.mock import patch, MagicMock
+
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0"
+                               xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:div>
+        <tei:p>Before</tei:p>
+        <jlp:transclude target="#start" targetEnd="#end"/>
+        <tei:p>After</tei:p>
+    </tei:div>
+</root>'''
+
+        project, file_name = self._create_test_file("external_transclude_default_type.xml", xml_content)
+
+        with patch('opensiddur.exporter.external_compiler.ExternalCompilerProcessor') as MockExternalProcessor:
+            mock_instance = MagicMock()
+            mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
+            mock_elem.text = "transcluded content"
+            mock_instance.process.return_value = [mock_elem]
+            mock_instance._mark_file_source.side_effect = lambda e: e
+            mock_instance.project = "transcluded_project"
+            mock_instance.file_name = "transcluded.xml"
+            mock_instance.root_language = "xx"
+            MockExternalProcessor.return_value = mock_instance
+
+            from opensiddur.exporter.urn import ResolvedUrn
+
+            def mock_resolve_range(urn):
+                return [ResolvedUrn(urn=urn, project=project, file_name=file_name, element_path="/TEI/div[1]")]
+
+            def mock_prioritize_range(urns, priority_list, return_all=False):
+                return urns[0] if urns else None
+
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    processor = CompilerProcessor(project, file_name)
+                    result = processor.process()
+
+            # Ensure ExternalCompilerProcessor was used (i.e., treated as external)
+            MockExternalProcessor.assert_called_once()
+            # Ensure p:transclude exists and has type="external"
+            ns = {"p": "http://jewishliturgy.org/ns/processing"}
+            transclude_elem = result.xpath('.//p:transclude', namespaces=ns)
+            self.assertEqual(len(transclude_elem), 1)
+            self.assertEqual(transclude_elem[0].get('type'), 'external')
+
     def test_transclusion_with_urn_resolves_correctly(self):
         """Test that CompilerProcessor correctly resolves URNs and passes them to processors."""
         from unittest.mock import patch, MagicMock

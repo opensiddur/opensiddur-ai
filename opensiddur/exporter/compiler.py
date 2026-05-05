@@ -228,7 +228,8 @@ class CompilerProcessor:
         if element.tag == f"{{{JLPTEI_NAMESPACE}}}transclude":
             target = element.get('target')
             target_end = element.get('targetEnd')
-            transclusion_type = type_override or element.get('type')
+            # Default transclusion type is external (schema default)
+            transclusion_type = type_override or element.get('type') or 'external'
 
             processing_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transclude", nsmap=self.ns_map)
             
