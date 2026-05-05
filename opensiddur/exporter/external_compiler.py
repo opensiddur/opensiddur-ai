@@ -1,6 +1,7 @@
 """External compiler processor for processing specific ranges of XML files."""
 
 import re
+from contextlib import contextmanager
 from typing import Optional
 from lxml.etree import ElementBase
 
@@ -385,17 +386,18 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 continue
             p_project, p_file, p_start, p_end, p_tail = resolved
             try:
-                parallel_proc = ExternalCompilerProcessor(
-                    p_project, p_file,
-                    from_start=p_start,
-                    to_end=p_end,
-                    include_tail_after_end=p_tail,
-                    linear_data=self.linear_data,
-                    reference_database=self._refdb,
-                    _in_parallel_compilation=True)
-                parallel_proc.marker_stack = []
-                parallel_proc._parallel_corresp_cache = self._parallel_corresp_cache
-                parallel_result = parallel_proc.process()
+                with self._parallel_priority(p_project):
+                    parallel_proc = ExternalCompilerProcessor(
+                        p_project, p_file,
+                        from_start=p_start,
+                        to_end=p_end,
+                        include_tail_after_end=p_tail,
+                        linear_data=self.linear_data,
+                        reference_database=self._refdb,
+                        _in_parallel_compilation=True)
+                    parallel_proc.marker_stack = []
+                    parallel_proc._parallel_corresp_cache = self._parallel_corresp_cache
+                    parallel_result = parallel_proc.process()
                 parallel_project = p_project
                 parallel_file = p_file
                 break
@@ -431,6 +433,19 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         return processing_element
 
+    @contextmanager
+    def _parallel_priority(self, parallel_project: str):
+        """Temporarily set project_priority and instruction_priority to [parallel_project]."""
+        saved_priority = self.linear_data.project_priority
+        saved_instr = self.linear_data.instruction_priority
+        try:
+            self.linear_data.project_priority = [parallel_project]
+            self.linear_data.instruction_priority = [parallel_project]
+            yield
+        finally:
+            self.linear_data.project_priority = saved_priority
+            self.linear_data.instruction_priority = saved_instr
+
     def _process_parallel_root(self) -> list[ElementBase]:
         """Compile this file in parallel mode, replacing tei:body with p:parallel content."""
         primary_proc = ExternalCompilerProcessor(
@@ -448,14 +463,15 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         for proj in self.linear_data.parallel_projects:
             try:
-                parallel_proc = ExternalCompilerProcessor(
-                    proj, self.file_name,
-                    linear_data=self.linear_data,
-                    reference_database=self._refdb,
-                    _in_parallel_compilation=True)
-                parallel_proc.marker_stack = []
-                parallel_proc._parallel_corresp_cache = primary_proc._parallel_corresp_cache
-                parallel_result = parallel_proc.process()
+                with self._parallel_priority(proj):
+                    parallel_proc = ExternalCompilerProcessor(
+                        proj, self.file_name,
+                        linear_data=self.linear_data,
+                        reference_database=self._refdb,
+                        _in_parallel_compilation=True)
+                    parallel_proc.marker_stack = []
+                    parallel_proc._parallel_corresp_cache = primary_proc._parallel_corresp_cache
+                    parallel_result = parallel_proc.process()
                 parallel_project = proj
                 break
             except Exception:
