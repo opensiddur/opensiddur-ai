@@ -2,7 +2,7 @@
 
 import re
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Optional
 from lxml.etree import ElementBase
 
 from opensiddur.exporter.compiler import (
@@ -19,6 +19,7 @@ from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
 from lxml import etree
 
 TEI_NS = "http://www.tei-c.org/ns/1.0"
+XML_NS = "http://www.w3.org/XML/1998/namespace"
 
 STRUCTURAL_BLOCKS = frozenset({
     f"{{{TEI_NS}}}div",
@@ -27,6 +28,23 @@ STRUCTURAL_BLOCKS = frozenset({
     f"{{{TEI_NS}}}lg",
     f"{{{TEI_NS}}}l",
 })
+
+
+def _attrs_structural_original(source: ElementBase) -> dict[str, str]:
+    """Structural node attrs copied onto exporter carriers; never duplicate xml:id."""
+    xml_id_key = f"{{{XML_NS}}}id"
+    return {k: v for k, v in source.attrib.items() if k != xml_id_key}
+
+
+def _carrier_attrs_from_marker_el(el: ElementBase, p_ns: str) -> dict[str, str]:
+    """Attrs from flattened marker TEI nodes: drop xml:id and p:* markers."""
+    xml_id_key = f"{{{XML_NS}}}id"
+    p_pref = f"{{{p_ns}}}"
+    return {
+        k: v
+        for k, v in el.attrib.items()
+        if k != xml_id_key and not k.startswith(p_pref)
+    }
 
 
 class ExternalCompilerProcessor(CompilerProcessor):
@@ -97,7 +115,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
     # ── Marker-mode helpers ─────────────────────────────────────────────────
 
-    def _process_element_as_marker(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
+    def _process_element_as_marker(
+        self,
+        element: ElementBase,
+        root: Optional[ElementBase] = None,
+        *,
+        copy_text: bool = True,
+    ) -> list[ElementBase]:
         """Compile element as a marker-ified structural element.
 
         Emits empty start/end tags with p:start/p:end attributes.
@@ -106,12 +130,15 @@ class ExternalCompilerProcessor(CompilerProcessor):
         p_id = self._get_path_hash(element=element)
         p_ns = PROCESSING_NAMESPACE
 
+        xml_id_key = f"{{{XML_NS}}}id"
         start_marker = etree.Element(element.tag, nsmap=self.ns_map)
         for key, value in element.attrib.items():
+            if key == xml_id_key:
+                continue
             start_marker.set(key, value)
         start_marker.set(f"{{{p_ns}}}start", p_id)
         # text before first child moves to start_marker.tail
-        start_marker.tail = element.text
+        start_marker.tail = element.text if copy_text else None
 
         self.marker_stack.append((p_id, element))
         result = [start_marker]
@@ -132,9 +159,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 if transcluded is not None:
                     result.append(transcluded)
 
-                # Resume: FIFO
+                # Resume: FIFO (copy TEI/XML attrs like xml:lang, not xml:id)
                 for sid, selem in self.marker_stack:
                     resume = etree.Element(selem.tag, nsmap=self.ns_map)
+                    for k, v in _attrs_structural_original(selem).items():
+                        resume.set(k, v)
                     resume.set(f"{{{p_ns}}}resume", sid)
                     result.append(resume)
 
@@ -180,7 +209,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         p_ns = PROCESSING_NAMESPACE
         tei_milestone_tag = f"{{{TEI_NS}}}milestone"
 
-        open_stack: list[tuple[str, str]] = []  # [(p_id, tag)]
+        open_stack: list[dict[str, Any]] = []  # id, tag, attrs (no xml:id, no p:*)
         result: list[tuple[Optional[str], list]] = [(None, [])]
 
         for el in elements:
@@ -192,31 +221,43 @@ class ExternalCompilerProcessor(CompilerProcessor):
             if el.tag == tei_milestone_tag and el.get('corresp'):
                 corresp = el.get('corresp')
 
-                # Close current sub-segment: emit suspends LIFO
-                for sid, stag in reversed(open_stack):
-                    s = etree.Element(stag, nsmap=ns_map)
-                    s.set(f"{{{p_ns}}}suspend", sid)
+                # Close current sub-segment: emit suspends LIFO (carry TEI/XML attrs)
+                for item in reversed(open_stack):
+                    s = etree.Element(item["tag"], nsmap=ns_map)
+                    for ak, av in item["attrs"].items():
+                        s.set(ak, av)
+                    s.set(f"{{{p_ns}}}suspend", item["id"])
                     result[-1][1].append(s)
 
                 # Start new sub-segment
                 result.append((corresp, []))
 
                 # Open new sub-segment: emit resumes FIFO
-                for sid, stag in open_stack:
-                    r = etree.Element(stag, nsmap=ns_map)
-                    r.set(f"{{{p_ns}}}resume", sid)
+                for item in open_stack:
+                    r = etree.Element(item["tag"], nsmap=ns_map)
+                    for ak, av in item["attrs"].items():
+                        r.set(ak, av)
+                    r.set(f"{{{p_ns}}}resume", item["id"])
                     result[-1][1].append(r)
 
                 result[-1][1].append(el)
             else:
                 if p_start:
-                    open_stack.append((p_start, el.tag))
+                    open_stack.append({
+                        "id": p_start,
+                        "tag": el.tag,
+                        "attrs": _carrier_attrs_from_marker_el(el, p_ns),
+                    })
                 elif p_resume:
-                    open_stack.append((p_resume, el.tag))
+                    open_stack.append({
+                        "id": p_resume,
+                        "tag": el.tag,
+                        "attrs": _carrier_attrs_from_marker_el(el, p_ns),
+                    })
                 elif p_end:
-                    open_stack = [(s, t) for s, t in open_stack if s != p_end]
+                    open_stack = [x for x in open_stack if x["id"] != p_end]
                 elif p_suspend:
-                    open_stack = [(s, t) for s, t in open_stack if s != p_suspend]
+                    open_stack = [x for x in open_stack if x["id"] != p_suspend]
 
                 result[-1][1].append(el)
 
@@ -650,7 +691,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         # In marker mode, all structural blocks use start/end marker pairs
         if self.marker_stack is not None and element.tag in STRUCTURAL_BLOCKS:
-            result = self._process_element_as_marker(element, root)
+            result = self._process_element_as_marker(
+                element,
+                root,
+                copy_text=(context["command"] == _ProcessingCommand.COPY_AND_RECURSE),
+            )
             self._update_processing_context_after(element)
             return result
 

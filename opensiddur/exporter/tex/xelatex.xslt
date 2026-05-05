@@ -3,8 +3,10 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:tei="http://www.tei-c.org/ns/1.0"
     xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
+    xmlns:p="http://jewishliturgy.org/ns/processing"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    exclude-result-prefixes="tei j xs">
+    exclude-result-prefixes="tei j p xs">
 
     <xsl:output method="text" encoding="UTF-8" omit-xml-declaration="yes" indent="no"/>
 
@@ -49,23 +51,69 @@
         <xsl:apply-templates/>
     </xsl:template>
 
+    <!-- Parallel row -->
+    <xsl:template match="p:parallel" priority="5">
+        <xsl:variable name="pri" select="p:parallelItem[@role='primary'][1]"/>
+        <xsl:variable name="sec" select="p:parallelItem[@role='parallel'][1]"/>
+        <xsl:variable name="left" select="if (@column-order='primary_last') then $sec else $pri"/>
+        <xsl:variable name="right" select="if (@column-order='primary_last') then $pri else $sec"/>
+        <xsl:variable name="left-lang" select="string($left/@xml:lang)"/>
+        <xsl:variable name="right-lang" select="string($right/@xml:lang)"/>
+        <xsl:text>\noindent\begin{minipage}[t]{0.48\textwidth}&#10;</xsl:text>
+        <xsl:text>\begin{</xsl:text>
+        <xsl:value-of select="if ($left-lang='he') then 'hebrew' else 'english'"/>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:apply-templates select="$left/node()"/>
+        <xsl:text>\end{</xsl:text>
+        <xsl:value-of select="if ($left-lang='he') then 'hebrew' else 'english'"/>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:text>\end{minipage}\hfill&#10;</xsl:text>
+        <xsl:text>\begin{minipage}[t]{0.48\textwidth}&#10;</xsl:text>
+        <xsl:text>\begin{</xsl:text>
+        <xsl:value-of select="if ($right-lang='he') then 'hebrew' else 'english'"/>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:apply-templates select="$right/node()"/>
+        <xsl:text>\end{</xsl:text>
+        <xsl:value-of select="if ($right-lang='he') then 'hebrew' else 'english'"/>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:text>\end{minipage}\par\vspace{0.75em}&#10;</xsl:text>
+    </xsl:template>
+
+    <xsl:template match="p:parallelItem" priority="5">
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <xsl:template match="p:transclude" priority="5">
+        <xsl:apply-templates/>
+    </xsl:template>
+
     <!-- Template for head elements -->
     <xsl:template match="tei:head">
         <xsl:apply-templates/>
     </xsl:template>
 
-    <!-- Template for div elements -->
+    <!-- Split div: middle / last — no new \part -->
+    <xsl:template match="tei:div[@p:part=('middle','last')]" priority="15">
+        <xsl:apply-templates select="node()"/>
+    </xsl:template>
+
+    <!-- Whole div or first segment of a split -->
     <xsl:template match="tei:div">
         <xsl:text>\part{</xsl:text>
         <xsl:if test="tei:head">
             <xsl:apply-templates select="tei:head"/>
         </xsl:if>
         <xsl:text>}&#10;</xsl:text>
-        <xsl:apply-templates select="*[not(self::tei:head)]"/>
+        <xsl:apply-templates select="*[not(self::tei:head)] | text()"/>
     </xsl:template>
 
     <!-- Template for ab elements without rend attribute -->
     <xsl:template match="tei:ab">
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <!-- Split paragraph: first/middle stay in same logical block -->
+    <xsl:template match="tei:p[@p:part=('first','middle')]" priority="15">
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -75,11 +123,40 @@
         <xsl:text>&#10;&#10;</xsl:text>
     </xsl:template>
 
+    <!-- tei:ab: same pattern as paragraphs -->
+    <xsl:template match="tei:ab[@p:part=('first','middle')]" priority="15">
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <xsl:template match="tei:ab">
+        <xsl:apply-templates/>
+        <xsl:text>&#10;&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- Split line groups -->
+    <xsl:template match="tei:lg[@p:part='first']" priority="15">
+        <xsl:text>\begin{verse}&#10;</xsl:text>
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <xsl:template match="tei:lg[@p:part='middle']" priority="15">
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <xsl:template match="tei:lg[@p:part='last']" priority="15">
+        <xsl:apply-templates/>
+        <xsl:text>\end{verse}&#10;</xsl:text>
+    </xsl:template>
+
     <!-- Template for line groups (poetry) -->
     <xsl:template match="tei:lg">
         <xsl:text>\begin{verse}&#10;</xsl:text>
         <xsl:apply-templates/>
         <xsl:text>\end{verse}&#10;</xsl:text>
+    </xsl:template>
+
+    <xsl:template match="tei:l[@p:part=('first','middle')]" priority="15">
+        <xsl:apply-templates/>
     </xsl:template>
 
     <!-- Template for lines (poetry) -->
@@ -128,6 +205,15 @@
     <!-- Template for emphasis -->
     <xsl:template match="tei:emph">
         <xsl:text>\emph{</xsl:text>
+        <xsl:apply-templates/>
+        <xsl:text>}</xsl:text>
+    </xsl:template>
+
+    <!-- Template for TEI references -->
+    <xsl:template match="tei:ref[@target]">
+        <xsl:text>\href{</xsl:text>
+        <xsl:value-of select="@target"/>
+        <xsl:text>}{</xsl:text>
         <xsl:apply-templates/>
         <xsl:text>}</xsl:text>
     </xsl:template>

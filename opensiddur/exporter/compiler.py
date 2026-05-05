@@ -266,7 +266,27 @@ class CompilerProcessor:
                 if hasattr(self, 'marker_stack') and self.marker_stack is not None:
                     processor.marker_stack = []
                 processed_list = processor.process()
+                # External transclusions should contribute textual content only (tei:text),
+                # never teiHeader/sourceDesc metadata.
+                tei_ns = self.ns_map.get("tei", "http://www.tei-c.org/ns/1.0")
+                tei_root_tag = f"{{{tei_ns}}}TEI"
                 for processed in processed_list:
+                    if processed.tag == tei_root_tag:
+                        text_el = processed.find(f"{{{tei_ns}}}text")
+                        if text_el is None:
+                            text_el = processed.find(f".//{{{tei_ns}}}text")
+                        if text_el is not None:
+                            for child in list(text_el):
+                                processing_element.append(child)
+                            continue
+                        # fallback: older/invalid trees
+                        body = processed.find(f"{{{tei_ns}}}text/{{{tei_ns}}}body")
+                        if body is None:
+                            body = processed.find(f".//{{{tei_ns}}}body")
+                        if body is not None:
+                            for child in list(body):
+                                processing_element.append(child)
+                        continue
                     processing_element.append(processed)
             else:
                 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor

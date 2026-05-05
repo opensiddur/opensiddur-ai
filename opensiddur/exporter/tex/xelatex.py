@@ -20,6 +20,10 @@ projects_source_root = project_root / "project"
 sys.path.insert(0, str(project_root))
 
 from opensiddur.common.xslt import xslt_transform, xslt_transform_string
+from opensiddur.exporter.tex.marker_reconstruct import (
+    doc_needs_marker_reconstruction,
+    reconstruct_markered_document,
+)
 
 XSLT_FILE = Path(__file__).parent / "xelatex.xslt"
 
@@ -318,7 +322,12 @@ def transform_xml_to_tex(input_file, xslt_file=XSLT_FILE, output_file=None):
         # Read the input XML
         with open(input_file, 'r', encoding='utf-8') as input_fd:
             input_xml = input_fd.read()
-        
+
+        root = etree.fromstring(input_xml.encode("utf-8"))
+        if doc_needs_marker_reconstruction(root):
+            reconstruct_markered_document(root)
+            input_xml = etree.tostring(root, encoding="unicode", xml_declaration=False)
+
         file_references = get_file_references(input_file, projects_source_root)
 
         licenses = extract_licenses(file_references)
