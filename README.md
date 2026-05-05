@@ -47,15 +47,4 @@ cross-reference mappings for changed files, and removes stale entries for
 projects or files that no longer exist.  It prints a per-project summary on
 completion.
 
-You must re-sync before running the compiler on any newly-added project. For
-example, after adding `project/original-example` and
-`project/translation-example`:
-
-```bash
-uv run python -m opensiddur.exporter.refdb
-uv run python -m opensiddur.exporter.compiler \
-    -p original-example -f index.xml \
-    -s settings-test.yaml \
-    -o /tmp/compiled.xml
-```
-
+You must re-sync before running the compiler on any newly-added project. 
