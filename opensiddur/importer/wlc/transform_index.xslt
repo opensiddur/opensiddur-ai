@@ -163,7 +163,7 @@
     <xsl:template match="book">
         <xsl:variable name="book-name" select="lower-case(replace(names/name/text(), ' ', '_'))"/>
         <j:transclude type="external">
-            <xsl:attribute name="target" select="concat('urn:x-opensiddur:bible:', $book-name)"/>
+            <xsl:attribute name="target" select="concat('urn:x-opensiddur:text:bible:', $book-name)"/>
         </j:transclude>
 
     </xsl:template>
