@@ -94,42 +94,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
         self._in_parallel_compilation = _in_parallel_compilation
         # None = marker mode off; [] = marker mode active
         self.marker_stack: list[tuple[str, ElementBase]] | None = None
-        self._parallel_corresp_cache: dict[str, bool] = {}
 
     # ── Marker-mode helpers ─────────────────────────────────────────────────
-
-    def _is_active_parallel_milestone(self, milestone: ElementBase) -> bool:
-        """Return True if this milestone's corresp resolves in a configured parallel project."""
-        corresp = milestone.get('corresp')
-        if not corresp:
-            return False
-        if corresp in self._parallel_corresp_cache:
-            return self._parallel_corresp_cache[corresp]
-        try:
-            resolved = self._urn_resolver.resolve_range(corresp)
-            if not resolved:
-                result = False
-            else:
-                resolved_list = resolved if isinstance(resolved, list) else [resolved]
-                result = any(
-                    (r.project if hasattr(r, 'project') else r.start.project)
-                    in self.linear_data.parallel_projects
-                    for r in resolved_list
-                )
-        except Exception:
-            result = False
-        self._parallel_corresp_cache[corresp] = result
-        return result
-
-    def _needs_marker_treatment(self, element: ElementBase) -> bool:
-        """True if element has an external-transclusion or active-parallel-milestone descendant."""
-        for desc in element.iter(f"{{{JLPTEI_NAMESPACE}}}transclude"):
-            if desc.get('type', 'external') == 'external':
-                return True
-        for ms in element.iter(f"{{{TEI_NS}}}milestone"):
-            if self._is_active_parallel_milestone(ms):
-                return True
-        return False
 
     def _process_element_as_marker(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
         """Compile element as a marker-ified structural element.
@@ -200,6 +166,64 @@ class ExternalCompilerProcessor(CompilerProcessor):
         return f"{target}@{parallel_project}"
 
     @staticmethod
+    def _split_at_milestones(
+        elements: list[ElementBase],
+        ns_map: dict,
+    ) -> list[tuple[Optional[str], list[ElementBase]]]:
+        """Split a flat marker stream at tei:milestone[@corresp] boundaries.
+
+        Returns a list of (corresp_or_None, [elements]) tuples.
+        corresp_or_None is None for content before the first milestone.
+        At each milestone, open structural markers are suspended (LIFO) into the
+        current sub-segment and resumed (FIFO) into the new sub-segment.
+        """
+        p_ns = PROCESSING_NAMESPACE
+        tei_milestone_tag = f"{{{TEI_NS}}}milestone"
+
+        open_stack: list[tuple[str, str]] = []  # [(p_id, tag)]
+        result: list[tuple[Optional[str], list]] = [(None, [])]
+
+        for el in elements:
+            p_start = el.get(f"{{{p_ns}}}start")
+            p_end = el.get(f"{{{p_ns}}}end")
+            p_suspend = el.get(f"{{{p_ns}}}suspend")
+            p_resume = el.get(f"{{{p_ns}}}resume")
+
+            if el.tag == tei_milestone_tag and el.get('corresp'):
+                corresp = el.get('corresp')
+
+                # Close current sub-segment: emit suspends LIFO
+                for sid, stag in reversed(open_stack):
+                    s = etree.Element(stag, nsmap=ns_map)
+                    s.set(f"{{{p_ns}}}suspend", sid)
+                    result[-1][1].append(s)
+
+                # Start new sub-segment
+                result.append((corresp, []))
+
+                # Open new sub-segment: emit resumes FIFO
+                for sid, stag in open_stack:
+                    r = etree.Element(stag, nsmap=ns_map)
+                    r.set(f"{{{p_ns}}}resume", sid)
+                    result[-1][1].append(r)
+
+                result[-1][1].append(el)
+            else:
+                if p_start:
+                    open_stack.append((p_start, el.tag))
+                elif p_resume:
+                    open_stack.append((p_resume, el.tag))
+                elif p_end:
+                    open_stack = [(s, t) for s, t in open_stack if s != p_end]
+                elif p_suspend:
+                    open_stack = [(s, t) for s, t in open_stack if s != p_suspend]
+
+                result[-1][1].append(el)
+
+        result = [(c, els) for c, els in result if els]
+        return result if result else [(None, [])]
+
+    @staticmethod
     def _assemble_parallel_streams(
         primary: list[ElementBase],
         primary_lang: Optional[str],
@@ -214,8 +238,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
     ) -> list[ElementBase]:
         """Zip primary and parallel flat streams into p:parallel / p:transclude pairs.
 
-        Splits each stream at p:transclude elements (direct children only).
-        Returns a list: [p:parallel, p:transclude, p:parallel, ...].
+        Splits each stream at p:transclude elements and at tei:milestone[@corresp]
+        boundaries. Returns a list: [p:parallel, p:transclude, p:parallel, ...].
         """
         p_ns = PROCESSING_NAMESPACE
         xml_lang = '{http://www.w3.org/XML/1998/namespace}lang'
@@ -231,6 +255,62 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     segments[-1].append(el)
             return segments, transcludes
 
+        def make_item(role, lang, project, file_name, elements):
+            pi = etree.Element(f"{{{p_ns}}}parallelItem", nsmap=ns_map)
+            pi.set("role", role)
+            if lang:
+                pi.set(xml_lang, lang)
+            pi.set(f"{{{p_ns}}}project", project)
+            pi.set(f"{{{p_ns}}}file_name", file_name)
+            for el in elements:
+                pi.append(el)
+            return pi
+
+        def make_parallel(col_order, pi_prim, pi_par):
+            parallel_el = etree.Element(f"{{{p_ns}}}parallel", nsmap=ns_map)
+            parallel_el.set("column-order", col_order)
+            parallel_el.append(pi_prim)
+            parallel_el.append(pi_par)
+            return parallel_el
+
+        def make_rows(prim_flat, par_flat):
+            prim_sub = ExternalCompilerProcessor._split_at_milestones(prim_flat, ns_map)
+            par_sub = ExternalCompilerProcessor._split_at_milestones(par_flat, ns_map)
+
+            prim_by_c: dict[Optional[str], list] = {}
+            for c, els in prim_sub:
+                if c not in prim_by_c:
+                    prim_by_c[c] = els
+
+            par_by_c: dict[Optional[str], list] = {}
+            for c, els in par_sub:
+                if c not in par_by_c:
+                    par_by_c[c] = els
+
+            seen: set = set()
+            ordered = []
+            for c, _ in prim_sub:
+                if c not in seen:
+                    seen.add(c)
+                    ordered.append(c)
+            for c, _ in par_sub:
+                if c not in seen:
+                    seen.add(c)
+                    ordered.append(c)
+
+            rows = []
+            for c in ordered:
+                p_elems = prim_by_c.get(c, [])
+                q_elems = par_by_c.get(c, [])
+                if not p_elems and not q_elems:
+                    continue
+                rows.append(make_parallel(
+                    column_order,
+                    make_item("primary", primary_lang, primary_project, primary_file, p_elems),
+                    make_item("parallel", parallel_lang, parallel_project, parallel_file, q_elems),
+                ))
+            return rows
+
         primary_segments, primary_transcludes = split_at_transcludes(primary)
         parallel_segments, parallel_transcludes = split_at_transcludes(parallel)
 
@@ -244,29 +324,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         output = []
         for i in range(max_segments):
-            pi_prim = etree.Element(f"{{{p_ns}}}parallelItem", nsmap=ns_map)
-            pi_prim.set("role", "primary")
-            if primary_lang:
-                pi_prim.set(xml_lang, primary_lang)
-            pi_prim.set(f"{{{p_ns}}}project", primary_project)
-            pi_prim.set(f"{{{p_ns}}}file_name", primary_file)
-            for el in primary_segments[i]:
-                pi_prim.append(el)
-
-            pi_par = etree.Element(f"{{{p_ns}}}parallelItem", nsmap=ns_map)
-            pi_par.set("role", "parallel")
-            if parallel_lang:
-                pi_par.set(xml_lang, parallel_lang)
-            pi_par.set(f"{{{p_ns}}}project", parallel_project)
-            pi_par.set(f"{{{p_ns}}}file_name", parallel_file)
-            for el in parallel_segments[i]:
-                pi_par.append(el)
-
-            parallel_el = etree.Element(f"{{{p_ns}}}parallel", nsmap=ns_map)
-            parallel_el.set("column-order", column_order)
-            parallel_el.append(pi_prim)
-            parallel_el.append(pi_par)
-            output.append(parallel_el)
+            output.extend(make_rows(primary_segments[i], parallel_segments[i]))
 
             if i < max_transcludes:
                 prim_t = primary_transcludes[i] if i < len(primary_transcludes) else None
@@ -277,26 +335,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     for key, val in prim_t.attrib.items():
                         combined.set(key, val)
 
-                    inner_prim = etree.Element(f"{{{p_ns}}}parallelItem", nsmap=ns_map)
-                    inner_prim.set("role", "primary")
-                    if primary_lang:
-                        inner_prim.set(xml_lang, primary_lang)
-                    for el in list(prim_t):
-                        inner_prim.append(el)
+                    inner_rows = make_rows(list(prim_t), list(par_t) if par_t is not None else [])
+                    for row in inner_rows:
+                        combined.append(row)
 
-                    inner_par = etree.Element(f"{{{p_ns}}}parallelItem", nsmap=ns_map)
-                    inner_par.set("role", "parallel")
-                    if parallel_lang:
-                        inner_par.set(xml_lang, parallel_lang)
-                    if par_t is not None:
-                        for el in list(par_t):
-                            inner_par.append(el)
-
-                    inner_parallel = etree.Element(f"{{{p_ns}}}parallel", nsmap=ns_map)
-                    inner_parallel.set("column-order", column_order)
-                    inner_parallel.append(inner_prim)
-                    inner_parallel.append(inner_par)
-                    combined.append(inner_parallel)
                     output.append(combined)
 
         return output
@@ -372,7 +414,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
             reference_database=self._refdb,
             _in_parallel_compilation=True)
         primary_proc.marker_stack = []
-        primary_proc._parallel_corresp_cache = self._parallel_corresp_cache
         primary_result = primary_proc.process()
 
         parallel_result = None
@@ -396,7 +437,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         reference_database=self._refdb,
                         _in_parallel_compilation=True)
                     parallel_proc.marker_stack = []
-                    parallel_proc._parallel_corresp_cache = self._parallel_corresp_cache
                     parallel_result = parallel_proc.process()
                 parallel_project = p_project
                 parallel_file = p_file
@@ -470,7 +510,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         reference_database=self._refdb,
                         _in_parallel_compilation=True)
                     parallel_proc.marker_stack = []
-                    parallel_proc._parallel_corresp_cache = primary_proc._parallel_corresp_cache
                     parallel_result = parallel_proc.process()
                 parallel_project = proj
                 break
@@ -609,12 +648,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if context["command"] == _ProcessingCommand.SKIP:
             return []
 
-        # Marker-mode dispatch: structural blocks with parallel milestone/transclusion descendants
+        # In marker mode, all structural blocks use start/end marker pairs
         if self.marker_stack is not None and element.tag in STRUCTURAL_BLOCKS:
-            if self._needs_marker_treatment(element):
-                result = self._process_element_as_marker(element, root)
-                self._update_processing_context_after(element)
-                return result
+            result = self._process_element_as_marker(element, root)
+            self._update_processing_context_after(element)
+            return result
 
         transcluded = self._transclude(element)
         if transcluded is not None:

@@ -170,111 +170,115 @@ class _ProcessorBase(unittest.TestCase):
         )
 
 
-# ── _is_active_parallel_milestone ───────────────────────────────────────────
+# ── _split_at_milestones ────────────────────────────────────────────────────
 
-class TestIsActiveParallelMilestone(_ProcessorBase):
+class TestSplitAtMilestones(unittest.TestCase):
 
-    def _milestone(self, corresp):
-        ns = {"tei": TEI_NS}
-        el = etree.Element(f"{{{TEI_NS}}}milestone", nsmap=ns)
-        if corresp:
-            el.set("corresp", corresp)
+    def setUp(self):
+        self.ns = {"p": P_NS, "tei": TEI_NS}
+
+    def _ms(self, corresp, tail=None):
+        el = etree.Element(f"{{{TEI_NS}}}milestone", nsmap=self.ns)
+        el.set("unit", "verse")
+        el.set("corresp", corresp)
+        if tail:
+            el.tail = tail
         return el
 
-    def _make_resolved(self, project):
-        return ResolvedUrn(
-            urn="urn:test", project=project,
-            file_name="file.xml", element_path="/root")
+    def _start(self, tag, p_id):
+        el = etree.Element(f"{{{TEI_NS}}}{tag}", nsmap=self.ns)
+        el.set(f"{{{P_NS}}}start", p_id)
+        return el
 
-    def test_resolves_in_parallel_project_returns_true(self):
-        proc = self._make_processor()
-        self.linear_data.parallel_projects = ["parallel-proj"]
-        ms = self._milestone("urn:x-test:verse/1@parallel-proj")
-        with patch.object(proc._urn_resolver, "resolve_range",
-                          return_value=[self._make_resolved("parallel-proj")]):
-            self.assertTrue(proc._is_active_parallel_milestone(ms))
+    def _end(self, tag, p_id):
+        el = etree.Element(f"{{{TEI_NS}}}{tag}", nsmap=self.ns)
+        el.set(f"{{{P_NS}}}end", p_id)
+        return el
 
-    def test_resolves_only_in_non_parallel_project_returns_false(self):
-        proc = self._make_processor()
-        self.linear_data.parallel_projects = ["parallel-proj"]
-        ms = self._milestone("urn:x-test:verse/1@other-proj")
-        with patch.object(proc._urn_resolver, "resolve_range",
-                          return_value=[self._make_resolved("other-proj")]):
-            self.assertFalse(proc._is_active_parallel_milestone(ms))
+    def _split(self, elements):
+        return ExternalCompilerProcessor._split_at_milestones(elements, self.ns)
 
-    def test_no_corresp_returns_false(self):
-        proc = self._make_processor()
-        self.linear_data.parallel_projects = ["parallel-proj"]
-        ms = self._milestone(None)
-        self.assertFalse(proc._is_active_parallel_milestone(ms))
+    def test_no_milestones_returns_single_preamble(self):
+        div = etree.Element(f"{{{TEI_NS}}}div", nsmap=self.ns)
+        result = self._split([div])
+        self.assertEqual(len(result), 1)
+        self.assertIsNone(result[0][0])
+        self.assertEqual(len(result[0][1]), 1)
 
-    def test_result_cached(self):
-        proc = self._make_processor()
-        self.linear_data.parallel_projects = ["parallel-proj"]
-        ms = self._milestone("urn:x-test:verse/1")
-        call_count = [0]
+    def test_empty_input_returns_single_empty_preamble(self):
+        result = self._split([])
+        self.assertEqual(len(result), 1)
+        self.assertIsNone(result[0][0])
 
-        def mock_resolve(urn):
-            call_count[0] += 1
-            return [self._make_resolved("parallel-proj")]
+    def test_one_milestone_splits_into_milestone_sub_segment(self):
+        result = self._split([self._ms("urn:x-test:1")])
+        corresps = [c for c, _ in result]
+        self.assertIn("urn:x-test:1", corresps)
+        # Empty preamble is filtered out
+        self.assertNotIn(None, corresps)
 
-        with patch.object(proc._urn_resolver, "resolve_range", side_effect=mock_resolve):
-            proc._is_active_parallel_milestone(ms)
-            proc._is_active_parallel_milestone(ms)
+    def test_milestone_in_preamble_creates_split(self):
+        """Milestones always start a new sub-segment."""
+        elements = [
+            self._start("p", "p1"),
+            self._ms("urn:x-test:1", "verse 1 text"),
+            self._ms("urn:x-test:2", "verse 2 text"),
+            self._end("p", "p1"),
+        ]
+        result = self._split(elements)
+        corresps = [c for c, _ in result]
+        self.assertIn("urn:x-test:1", corresps)
+        self.assertIn("urn:x-test:2", corresps)
 
-        self.assertEqual(call_count[0], 1)  # cached after first call
+    def test_open_elements_get_suspend_and_resume(self):
+        """Elements open at a milestone boundary get suspend/resume markers."""
+        elements = [
+            self._start("div", "d1"),
+            self._start("p", "p1"),
+            self._ms("urn:x-test:1"),
+            self._end("p", "p1"),
+            self._end("div", "d1"),
+        ]
+        result = self._split(elements)
+        # preamble should have d1 and p1 suspends (LIFO: p1 first, then d1)
+        preamble_els = result[0][1]
+        suspend_ids = [el.get(f"{{{P_NS}}}suspend") for el in preamble_els if el.get(f"{{{P_NS}}}suspend")]
+        self.assertEqual(suspend_ids, ["p1", "d1"])  # LIFO
 
+        # milestone sub-segment should have d1 and p1 resumes (FIFO: d1 first, then p1)
+        ms_els = result[1][1]
+        resume_ids = [el.get(f"{{{P_NS}}}resume") for el in ms_els if el.get(f"{{{P_NS}}}resume")]
+        self.assertEqual(resume_ids, ["d1", "p1"])  # FIFO
 
-# ── _needs_marker_treatment ─────────────────────────────────────────────────
+    def test_milestone_tail_preserved(self):
+        elements = [self._ms("urn:x-test:1", "verse text")]
+        result = self._split(elements)
+        ms_sub = next(els for c, els in result if c == "urn:x-test:1")
+        milestone = next(el for el in ms_sub if el.tag == f"{{{TEI_NS}}}milestone")
+        self.assertEqual(milestone.tail, "verse text")
 
-class TestNeedsMarkerTreatment(_ProcessorBase):
+    def test_multiple_milestones_each_get_own_sub_segment(self):
+        elements = [
+            self._ms("urn:x-test:1", "v1"),
+            self._ms("urn:x-test:2", "v2"),
+            self._ms("urn:x-test:3", "v3"),
+        ]
+        result = self._split(elements)
+        corresps = [c for c, _ in result if c is not None]
+        self.assertEqual(corresps, ["urn:x-test:1", "urn:x-test:2", "urn:x-test:3"])
 
-    def _make_resolved(self, project):
-        return ResolvedUrn(
-            urn="urn:test", project=project,
-            file_name="file.xml", element_path="/root")
+    def test_p_resume_pushed_to_open_stack(self):
+        """p:resume markers are treated as element-open for milestone splitting."""
+        resume = etree.Element(f"{{{TEI_NS}}}div", nsmap=self.ns)
+        resume.set(f"{{{P_NS}}}resume", "d1")
+        ms = self._ms("urn:x-test:1")
+        end = etree.Element(f"{{{TEI_NS}}}div", nsmap=self.ns)
+        end.set(f"{{{P_NS}}}end", "d1")
 
-    def test_element_with_active_milestone_needs_markers(self):
-        proc = self._make_processor()
-        self.linear_data.parallel_projects = ["par-proj"]
-        xml = etree.fromstring(b"""<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0">
-          <tei:p>
-            <tei:milestone unit="verse" n="1" corresp="urn:x-test:verse/1@par-proj"/>
-          </tei:p>
-        </tei:div>""")
-        with patch.object(proc._urn_resolver, "resolve_range",
-                          return_value=[self._make_resolved("par-proj")]):
-            self.assertTrue(proc._needs_marker_treatment(xml))
-
-    def test_element_with_only_non_parallel_milestone_no_markers(self):
-        proc = self._make_processor()
-        self.linear_data.parallel_projects = ["par-proj"]
-        xml = etree.fromstring(b"""<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0">
-          <tei:p>
-            <tei:milestone unit="verse" n="1" corresp="urn:x-test:verse/1@other-proj"/>
-          </tei:p>
-        </tei:div>""")
-        with patch.object(proc._urn_resolver, "resolve_range",
-                          return_value=[self._make_resolved("other-proj")]):
-            self.assertFalse(proc._needs_marker_treatment(xml))
-
-    def test_element_with_external_transclude_needs_markers(self):
-        proc = self._make_processor()
-        xml = etree.fromstring(
-            b'<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0"'
-            b'         xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'
-            b'  <j:transclude type="external" target="urn:x-test:foo"/>'
-            b'</tei:div>')
-        self.assertTrue(proc._needs_marker_treatment(xml))
-
-    def test_plain_element_no_markers_needed(self):
-        proc = self._make_processor()
-        xml = etree.fromstring(
-            b'<tei:div xmlns:tei="http://www.tei-c.org/ns/1.0">'
-            b'  <tei:p>plain text</tei:p>'
-            b'</tei:div>')
-        with patch.object(proc._urn_resolver, "resolve_range", return_value=[]):
-            self.assertFalse(proc._needs_marker_treatment(xml))
+        result = self._split([resume, ms, end])
+        preamble_els = result[0][1]
+        suspend_ids = [el.get(f"{{{P_NS}}}suspend") for el in preamble_els if el.get(f"{{{P_NS}}}suspend")]
+        self.assertIn("d1", suspend_ids)
 
 
 # ── _process_element_as_marker ──────────────────────────────────────────────
@@ -458,19 +462,16 @@ class TestParallelCompilationFlag(_ProcessorBase):
             proc.process()
             mock_root.assert_called_once()
 
-    def test_non_marker_structural_element_compiled_normally(self):
-        """A structural element with no milestone/transclude descendants → no markers emitted."""
+    def test_structural_elements_always_get_markers_in_marker_mode(self):
+        """In marker mode, all structural elements get start/end marker pairs."""
         proc = self._make_processor(_in_parallel_compilation=True)
         proc.marker_stack = []
         self.linear_data.parallel_projects = ["par-proj"]
 
-        with patch.object(proc._urn_resolver, "resolve_range", return_value=[]):
-            result = proc.process()
+        result = proc.process()
 
         result_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
-        # No p:start attributes should appear in the output
-        self.assertNotIn(f"{{{P_NS}}}start", result_xml)
-        self.assertNotIn(f"p:start", result_xml)
+        self.assertIn(":start=", result_xml)
 
 
 if __name__ == "__main__":

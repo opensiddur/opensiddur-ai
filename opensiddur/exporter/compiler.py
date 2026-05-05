@@ -130,11 +130,18 @@ class CompilerProcessor:
         context_path_elements = []
         num_contexts = len(self.linear_data.processing_context)
         for i, context in enumerate(self.linear_data.processing_context):
-            context_path_element = (
-                context['project'] + '/' + 
-                context['file_name'] + ':' +
-                (context.get('element_path') or "") if i < num_contexts - 1 else ""
-            )
+            if i < num_contexts - 1:
+                # For outer contexts include element_path (the range entry point)
+                context_path_element = (
+                    context['project'] + '/' +
+                    context['file_name'] + ':' +
+                    (context.get('element_path') or "")
+                )
+            else:
+                # For the current context include project/file but not element_path —
+                # element_path varies per element and would break ID-rewriting consistency.
+                # When a specific element is needed it is appended separately below.
+                context_path_element = context['project'] + '/' + context['file_name']
             context_path_elements.append(context_path_element)
         if element is not None:
             element_path = element.getroottree().getpath(element)
@@ -258,7 +265,6 @@ class CompilerProcessor:
                 # Propagate marker mode to nested processor
                 if hasattr(self, 'marker_stack') and self.marker_stack is not None:
                     processor.marker_stack = []
-                    processor._parallel_corresp_cache = self._parallel_corresp_cache
                 processed_list = processor.process()
                 for processed in processed_list:
                     processing_element.append(processed)
