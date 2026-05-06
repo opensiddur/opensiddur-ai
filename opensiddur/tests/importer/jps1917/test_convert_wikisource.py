@@ -1012,7 +1012,7 @@ class TestValidateAndWriteTeiFile(unittest.TestCase):
         validate_and_write_tei_file("<tei:TEI>Raw XML</tei:TEI>", "my_book")
         
         # Verify file was opened with correct path
-        expected_path = Path(self.temp_dir) / "my_book.xml"
+        expected_path = Path(self.temp_dir) / "jps1917" / "my_book.xml"
         mock_file.assert_called_once_with(expected_path, "w")
     
     @patch('opensiddur.importer.jps1917.convert_wikisource.validate')
@@ -1519,7 +1519,7 @@ class TestIndexFile(unittest.TestCase):
         
         # Verify body structure
         self.assertIn('<tei:body>', body_content)
-        self.assertIn('<tei:div>', body_content)
+        self.assertIn('<tei:div corresp="urn:x-opensiddur:text:bible:test">', body_content)
         self.assertIn('<tei:head>Test Index</tei:head>', body_content)
         
         # Verify transclusions are properly formatted

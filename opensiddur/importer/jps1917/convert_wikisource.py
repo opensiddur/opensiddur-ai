@@ -12,7 +12,6 @@ from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
-JPS_DIRECTORY = PROJECT_DIRECTORY / "jps1917"
 
 class Book(BaseModel):
     book_name_he: str
@@ -498,12 +497,13 @@ def process_mediawiki(
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
 def validate_and_write_tei_file(tei_content: str, file_name: str):
-    print(f"Writing {JPS_DIRECTORY / f'{file_name}.xml'}")
+    out_path = PROJECT_DIRECTORY / "jps1917" / f"{file_name}.xml"
+    print(f"Writing {out_path}")
     pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
     is_valid, errors = validate(pretty_xml)
     if not is_valid:
         raise Exception(f"Errors in {file_name}: {errors}")
-    with open(JPS_DIRECTORY / f"{file_name}.xml", "w") as f:
+    with open(out_path, "w") as f:
         f.write(pretty_xml)
 
 def book_file(book: Book) -> str:
@@ -578,7 +578,7 @@ def index_file(idx: Index) -> str:
     return tei_content
 
 def main(): # pragma: no cover
-    JPS_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    (PROJECT_DIRECTORY / "jps1917").mkdir(parents=True, exist_ok=True)
     for part in JPS_1917:
         index_file(part)
 

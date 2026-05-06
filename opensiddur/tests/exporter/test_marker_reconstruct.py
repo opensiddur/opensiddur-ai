@@ -115,7 +115,7 @@ class TestMarkerReconstruct(unittest.TestCase):
             etree.tostring(root, encoding="unicode"),
             xslt_params={"additional-preamble": "", "additional-postamble": ""},
         )
-        self.assertIn(r"\begin{minipage}", out)
+        self.assertIn(r"\begin{paracol}{2}", out)
         self.assertIn("שלום", out)
         self.assertIn("Hello", out)
 
