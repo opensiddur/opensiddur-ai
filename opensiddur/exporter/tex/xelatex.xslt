@@ -23,7 +23,21 @@
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
-        <xsl:text>\newfontfamily\hebrewfont[Script=Hebrew]{Frank Ruehl CLM}&#10;</xsl:text>
+        <!-- Pick a Hebrew font that exists on the system. If no preferred font is installed,
+             fall back to FreeSerif (commonly present on Linux). -->
+        <xsl:text>\IfFontExistsTF{Frank Ruehl CLM}{&#10;</xsl:text>
+        <xsl:text>  \newfontfamily\hebrewfont[Script=Hebrew]{Frank Ruehl CLM}&#10;</xsl:text>
+        <xsl:text>}{&#10;</xsl:text>
+        <xsl:text>  \IfFontExistsTF{Ezra SIL}{&#10;</xsl:text>
+        <xsl:text>    \newfontfamily\hebrewfont[Script=Hebrew]{Ezra SIL}&#10;</xsl:text>
+        <xsl:text>  }{&#10;</xsl:text>
+        <xsl:text>    \IfFontExistsTF{SBL Hebrew}{&#10;</xsl:text>
+        <xsl:text>      \newfontfamily\hebrewfont[Script=Hebrew]{SBL Hebrew}&#10;</xsl:text>
+        <xsl:text>    }{&#10;</xsl:text>
+        <xsl:text>      \newfontfamily\hebrewfont[Script=Hebrew]{FreeSerif}&#10;</xsl:text>
+        <xsl:text>    }&#10;</xsl:text>
+        <xsl:text>  }&#10;</xsl:text>
+        <xsl:text>}&#10;</xsl:text>
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
         <xsl:text>\setlength{\parskip}{1em}&#10;</xsl:text>
         
@@ -32,7 +46,16 @@
         
         <xsl:text>\begin{document}&#10;</xsl:text>
 
+        <!-- Wrap the main text in Hebrew context when the document's root language is Hebrew.
+             This handles documents where xml:lang is set only on tei:TEI and inherited. -->
+        <xsl:variable name="root-lang" select="string(tei:TEI/@xml:lang)"/>
+        <xsl:if test="$root-lang='he'">
+            <xsl:text>\begin{hebrew}&#10;</xsl:text>
+        </xsl:if>
         <xsl:apply-templates select="tei:TEI/tei:text"/>
+        <xsl:if test="$root-lang='he'">
+            <xsl:text>&#10;\end{hebrew}&#10;</xsl:text>
+        </xsl:if>
         
         <xsl:text>&#10;</xsl:text>
         <xsl:value-of select="$additional-postamble"/>
@@ -289,7 +312,9 @@
     </xsl:template>
 
     <!-- Template for any element with Hebrew language -->
-    <xsl:template match="*[@xml:lang='he']" priority="0">
+    <!-- Priority must beat specific element templates (e.g., tei:text/tei:body),
+         otherwise Hebrew content inherits xml:lang but never enters a Hebrew context. -->
+    <xsl:template match="*[@xml:lang='he']" priority="20">
         <!-- heuristic to determine if this is a block of text -->
         <xsl:variable name="is-block" as="xs:boolean" 
             select="exists(.//descendant-or-self::*[self::tei:p or self::tei:lg or self::tei:div or self::tei:ab])"/>

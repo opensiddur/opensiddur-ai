@@ -813,6 +813,34 @@ class TestTransformXmlToTex(unittest.TestCase):
         self.assertIn(r'\begin{document}', result)
         self.assertIn('Hello World', result)
         self.assertIn(r'\end{document}', result)
+        # Hebrew font should be selected robustly (fonts vary per system)
+        self.assertIn(r'\IfFontExistsTF{Frank Ruehl CLM}', result)
+        self.assertIn(r'\newfontfamily\hebrewfont', result)
+        self.assertIn(r'FreeSerif', result)
+
+    def test_transform_xml_to_tex_wraps_inherited_hebrew_lang(self):
+        """Hebrew may be inherited from ancestors; output must enter Hebrew context."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+
+        # Only the root carries xml:lang; descendants inherit it.
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+    <tei:text>
+        <tei:body>
+            <tei:p><tei:milestone unit="verse" n="1"/>בְּרֵאשִׁית</tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''.encode("utf-8")
+
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+
+        # We should enter a Hebrew context somewhere above the Hebrew text.
+        self.assertIn(r'\begin{hebrew}', result)
+        self.assertIn('בְּרֵאשִׁית', result)
 
     def test_transform_xml_to_tex_with_output_file(self):
         """Test transformation with output file specified."""
