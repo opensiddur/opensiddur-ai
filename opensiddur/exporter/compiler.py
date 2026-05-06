@@ -112,6 +112,7 @@ class CompilerProcessor:
         self._urn_resolver = UrnResolver(self._refdb)
 
         self.root_language = None
+        self._in_parallel_compilation = False
 
     def _get_in_scope_language(self, element: ElementBase) -> Optional[str]:
         """ Get the xml:lang attribute from the element or its ancestors.
@@ -129,11 +130,18 @@ class CompilerProcessor:
         context_path_elements = []
         num_contexts = len(self.linear_data.processing_context)
         for i, context in enumerate(self.linear_data.processing_context):
-            context_path_element = (
-                context['project'] + '/' + 
-                context['file_name'] + ':' +
-                (context.get('element_path') or "") if i < num_contexts - 1 else ""
-            )
+            if i < num_contexts - 1:
+                # For outer contexts include element_path (the range entry point)
+                context_path_element = (
+                    context['project'] + '/' +
+                    context['file_name'] + ':' +
+                    (context.get('element_path') or "")
+                )
+            else:
+                # For the current context include project/file but not element_path —
+                # element_path varies per element and would break ID-rewriting consistency.
+                # When a specific element is needed it is appended separately below.
+                context_path_element = context['project'] + '/' + context['file_name']
             context_path_elements.append(context_path_element)
         if element is not None:
             element_path = element.getroottree().getpath(element)
@@ -220,7 +228,8 @@ class CompilerProcessor:
         if element.tag == f"{{{JLPTEI_NAMESPACE}}}transclude":
             target = element.get('target')
             target_end = element.get('targetEnd')
-            transclusion_type = type_override or element.get('type')
+            # Default transclusion type is external (schema default)
+            transclusion_type = type_override or element.get('type') or 'external'
 
             processing_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transclude", nsmap=self.ns_map)
             
@@ -230,7 +239,17 @@ class CompilerProcessor:
             processing_element.set('type', transclusion_type)
 
             transclude_range = self._get_start_and_end_from_ranges(target, target_end)
-            
+
+            # Parallel trigger: delegate to subclass if parallel projects are configured
+            if (transclusion_type == 'external'
+                    and self.linear_data.parallel_projects
+                    and not self._in_parallel_compilation
+                    and hasattr(self, '_transclude_parallel')):
+                result = self._transclude_parallel(element, transclude_range, transclusion_type)
+                if result is not None:
+                    return result
+                # result is None → no parallel found, fall through to normal transclusion
+
             context_lang = self._get_in_scope_language(element)
 
             end_element_path = transclude_range.end.end_element_path or transclude_range.end.element_path
@@ -244,8 +263,31 @@ class CompilerProcessor:
                     include_tail_after_end=transclude_range.end.end_includes_tail,
                     linear_data=self.linear_data,
                     reference_database=self._refdb)
+                # Propagate marker mode to nested processor
+                if hasattr(self, 'marker_stack') and self.marker_stack is not None:
+                    processor.marker_stack = []
                 processed_list = processor.process()
+                # External transclusions should contribute textual content only (tei:text),
+                # never teiHeader/sourceDesc metadata.
+                tei_ns = self.ns_map.get("tei", "http://www.tei-c.org/ns/1.0")
+                tei_root_tag = f"{{{tei_ns}}}TEI"
                 for processed in processed_list:
+                    if processed.tag == tei_root_tag:
+                        text_el = processed.find(f"{{{tei_ns}}}text")
+                        if text_el is None:
+                            text_el = processed.find(f".//{{{tei_ns}}}text")
+                        if text_el is not None:
+                            for child in list(text_el):
+                                processing_element.append(child)
+                            continue
+                        # fallback: older/invalid trees
+                        body = processed.find(f"{{{tei_ns}}}text/{{{tei_ns}}}body")
+                        if body is None:
+                            body = processed.find(f".//{{{tei_ns}}}body")
+                        if body is not None:
+                            for child in list(body):
+                                processing_element.append(child)
+                        continue
                     processing_element.append(processed)
             else:
                 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor

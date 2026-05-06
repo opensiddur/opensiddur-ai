@@ -30,5 +30,21 @@ Input converters for each specific source are in the `importer` directory.
 
 ## JLPTEI sources
 
-JLPTEI sources are compiled into the `project` directory. 
+JLPTEI sources are compiled into the `project` directory.
 
+## Reference database
+
+The exporter resolves `urn:x-opensiddur:` URIs to project files via a SQLite
+database at `database/reference.db`. Whenever you add, remove, or rename files
+in the `project/` directory, re-sync the database so the compiler can find them:
+
+```bash
+uv run python -m opensiddur.exporter.refdb
+```
+
+The command scans every `project/<name>/` subdirectory, updates URN and
+cross-reference mappings for changed files, and removes stale entries for
+projects or files that no longer exist.  It prints a per-project summary on
+completion.
+
+You must re-sync before running the compiler on any newly-added project. 

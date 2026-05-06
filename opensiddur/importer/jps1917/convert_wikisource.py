@@ -497,12 +497,13 @@ def process_mediawiki(
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
 def validate_and_write_tei_file(tei_content: str, file_name: str):
-    print(f"Writing {PROJECT_DIRECTORY / f'{file_name}.xml'}")
+    out_path = PROJECT_DIRECTORY / "jps1917" / f"{file_name}.xml"
+    print(f"Writing {out_path}")
     pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
     is_valid, errors = validate(pretty_xml)
     if not is_valid:
         raise Exception(f"Errors in {file_name}: {errors}")
-    with open(PROJECT_DIRECTORY / f"{file_name}.xml", "w") as f:
+    with open(out_path, "w") as f:
         f.write(pretty_xml)
 
 def book_file(book: Book) -> str:
@@ -552,7 +553,7 @@ def index_file(idx: Index) -> str:
         for book in idx.transclusions
     ])
     index_body = f"""<tei:body>
-    <tei:div>
+    <tei:div corresp="urn:x-opensiddur:text:bible:{idx.file_name}">
         <tei:head>{idx.index_title_en}</tei:head>
         {transclusion_str}
     </tei:div>
@@ -577,7 +578,7 @@ def index_file(idx: Index) -> str:
     return tei_content
 
 def main(): # pragma: no cover
-    PROJECT_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    (PROJECT_DIRECTORY / "jps1917").mkdir(parents=True, exist_ok=True)
     for part in JPS_1917:
         index_file(part)
 

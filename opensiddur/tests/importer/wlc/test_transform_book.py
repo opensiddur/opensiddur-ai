@@ -133,7 +133,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             # Should not have original edition info
             self.assertNotIn('Original edition info', result)
             # Should have reference to WLC
-            self.assertIn('urn:x-opensiddur:bible:tanakh@wlc', result)
+            self.assertIn('urn:x-opensiddur:text:bible:tanakh@wlc', result)
             self.assertIn('WLC Tanakh header', result)
     
     def test_publication_stmt_with_book_urn(self):

@@ -66,7 +66,7 @@
 
     <xsl:template match="editionStmt">
         <tei:editionStmt>
-            <tei:p>See <tei:ref target="urn:x-opensiddur:bible:tanakh@wlc">WLC Tanakh header for version information</tei:ref></tei:p>
+            <tei:p>See <tei:ref target="urn:x-opensiddur:text:bible:tanakh@wlc">WLC Tanakh header for version information</tei:ref></tei:p>
         </tei:editionStmt>
     </xsl:template>
 
