@@ -11,9 +11,10 @@ from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
-from opensiddur.exporter.urn import ResolvedUrn
+from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
 
 TEI_NS = "http://www.tei-c.org/ns/1.0"
+P_NS = "http://jewishliturgy.org/ns/processing"
 
 class TestExternalCompilerProcessor(unittest.TestCase):
     """Test ExternalCompilerProcessor for extracting XML hierarchy between start and end markers."""
@@ -1263,3 +1264,155 @@ class TestExternalCompilerProcessor(unittest.TestCase):
                         "Should not include the next chapter")
         # Should not include the chapter 2 text
         self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
+
+
+def _linear_data_with_root_parallel(root: etree._Element):
+    class _XmlCache:
+        @staticmethod
+        def parse_xml(project: str, file_name: str):
+            return etree.ElementTree(root)
+
+    class _LD:
+        xml_cache = _XmlCache()
+        processing_context = [{"project": "ctx", "file_name": "ctx.xml"}]
+        project_priority = ["primary"]
+        instruction_priority = ["primary"]
+        parallel_projects = ["primary", "bad", "parallel"]
+        parallel_column_order = 0
+
+    return _LD()
+
+
+class TestExternalCompilerParallelTransclude(unittest.TestCase):
+    """Targeted tests for parallel transclusion resolution/assembly (external_compiler.py 392–519)."""
+
+    def _make_processor(self):
+        root = etree.Element(f"{{{TEI_NS}}}TEI", nsmap={"tei": TEI_NS})
+        return ExternalCompilerProcessor(
+            "primary",
+            "root.xml",
+            linear_data=_linear_data_with_root_parallel(root),
+        )
+
+    def test_resolve_parallel_range_ambiguous_range_with_target_end(self):
+        proc = self._make_processor()
+
+        resolved_range = ResolvedUrnRange(
+            start=ResolvedUrn(project="parallel", file_name="p.xml", urn="u", element_path="/tei:TEI"),
+            end=ResolvedUrn(project="parallel", file_name="p.xml", urn="u", element_path="/tei:TEI"),
+        )
+
+        with patch.object(proc._urn_resolver, "resolve_range", return_value=[resolved_range]):
+            got = proc._resolve_parallel_range("urn:x", target_end="urn:y", parallel_project="parallel")
+        self.assertIsNone(got)
+
+    def test_resolve_parallel_range_nonrange_with_target_end(self):
+        proc = self._make_processor()
+
+        start = ResolvedUrn(project="parallel", file_name="p.xml", urn="u", element_path="/tei:TEI")
+        end = ResolvedUrn(
+            project="parallel",
+            file_name="p.xml",
+            urn="u2",
+            element_path="/tei:TEI",
+            end_element_path="/tei:TEI/tei:text",
+            end_includes_tail=True,
+        )
+
+        def _resolve_range_side_effect(arg):
+            if arg.startswith("urn:x"):
+                return [start]
+            return [end]
+
+        with patch.object(proc._urn_resolver, "resolve_range", side_effect=_resolve_range_side_effect):
+            got = proc._resolve_parallel_range("urn:x", target_end="urn:y", parallel_project="parallel")
+
+        self.assertEqual(got, ("parallel", "p.xml", "/tei:TEI", "/tei:TEI/tei:text", True))
+
+    def test_resolve_parallel_range_returns_none_when_unresolved(self):
+        proc = self._make_processor()
+
+        with patch.object(proc._urn_resolver, "resolve_range", return_value=[]):
+            got = proc._resolve_parallel_range("urn:x", target_end=None, parallel_project="parallel")
+        self.assertIsNone(got)
+
+    def test_resolve_parallel_range_returns_none_when_prioritize_fails(self):
+        proc = self._make_processor()
+
+        start = ResolvedUrn(project="parallel", file_name="p.xml", urn="u", element_path="/tei:TEI")
+        with (
+            patch.object(proc._urn_resolver, "resolve_range", return_value=[start]),
+            patch("opensiddur.exporter.external_compiler.UrnResolver.prioritize_range", return_value=None),
+        ):
+            got = proc._resolve_parallel_range("urn:x", target_end=None, parallel_project="parallel")
+        self.assertIsNone(got)
+
+    def test_resolve_parallel_range_returns_none_on_exception(self):
+        proc = self._make_processor()
+
+        with patch.object(proc._urn_resolver, "resolve_range", side_effect=RuntimeError("boom")):
+            got = proc._resolve_parallel_range("urn:x", target_end=None, parallel_project="parallel")
+        self.assertIsNone(got)
+
+    def test_transclude_parallel_returns_none_when_no_parallel_resolves(self):
+        proc = self._make_processor()
+
+        element = etree.Element("{http://jewishliturgy.org/ns/jlptei/2}transclude", nsmap=proc.ns_map)
+        element.set("target", "urn:x")
+
+        transclude_range = ResolvedUrnRange(
+            start=ResolvedUrn(project="primary", file_name="a.xml", urn="u", element_path="/tei:TEI"),
+            end=ResolvedUrn(project="primary", file_name="a.xml", urn="u", element_path="/tei:TEI"),
+        )
+
+        with (
+            patch.object(proc, "_resolve_parallel_range", return_value=None),
+            patch.object(ExternalCompilerProcessor, "process", return_value=[]),
+        ):
+            out = proc._transclude_parallel(element, transclude_range, "external")
+
+        self.assertIsNone(out)
+
+    def test_transclude_parallel_assembles_processing_transclude(self):
+        proc = self._make_processor()
+
+        element = etree.Element("{http://jewishliturgy.org/ns/jlptei/2}transclude", nsmap=proc.ns_map)
+        element.set("target", "urn:x")
+        element.set("targetEnd", "urn:y")
+
+        transclude_range = ResolvedUrnRange(
+            start=ResolvedUrn(project="primary", file_name="a.xml", urn="u", element_path="/tei:TEI"),
+            end=ResolvedUrn(project="primary", file_name="a.xml", urn="u", element_path="/tei:TEI"),
+        )
+
+        assembled_child = etree.Element(f"{{{P_NS}}}row", nsmap=proc.ns_map)
+
+        def _fake_process(self):
+            if self.project == "bad":
+                raise RuntimeError("fail this parallel project")
+            self.root_language = "he"
+            return []
+
+        with (
+            patch.object(
+                proc,
+                "_resolve_parallel_range",
+                side_effect=[
+                    ("bad", "bad.xml", "/tei:TEI", "/tei:TEI", False),
+                    ("parallel", "b.xml", "/tei:TEI", "/tei:TEI", False),
+                ],
+            ),
+            patch.object(ExternalCompilerProcessor, "process", _fake_process),
+            patch.object(proc, "_assemble_parallel_streams", return_value=[assembled_child]),
+        ):
+            out = proc._transclude_parallel(element, transclude_range, "external")
+
+        self.assertIsNotNone(out)
+        self.assertEqual(out.tag, f"{{{P_NS}}}transclude")
+        self.assertEqual(out.get("target"), "urn:x")
+        self.assertEqual(out.get("targetEnd"), "urn:y")
+        self.assertEqual(out.get(f"{{{P_NS}}}project"), "primary")
+        self.assertEqual(out.get(f"{{{P_NS}}}file_name"), "a.xml")
+        self.assertEqual(out.get("{http://www.w3.org/XML/1998/namespace}lang"), "he")
+        self.assertEqual(len(list(out)), 1)
+        self.assertEqual(list(out)[0].tag, f"{{{P_NS}}}row")

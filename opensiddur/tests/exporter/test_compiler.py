@@ -7,12 +7,12 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from lxml import etree
-from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.compiler import CompilerProcessor, JLPTEI_NAMESPACE
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
-from opensiddur.exporter.urn import ResolvedUrn
+from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
 
 
 class TestCompilerProcessorWithFiles(unittest.TestCase):
@@ -1858,5 +1858,103 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         self.assertEqual(notes[0].getparent().tag, "{http://www.tei-c.org/ns/1.0}p")
         self.assertIn(notes[0].tail.strip(), "This element is targeted by the note <tei:hi>Child element</tei:hi>")
         self.assertIs(notes[0].getparent().getchildren()[0], notes[0])
+
+
+def _linear_data_with_root(root: etree._Element):
+    class _XmlCache:
+        @staticmethod
+        def parse_xml(project: str, file_name: str):
+            return etree.ElementTree(root)
+
+    class _LD:
+        xml_cache = _XmlCache()
+        processing_context = [{"project": "ctx", "file_name": "ctx.xml"}]
+        parallel_projects = []
+        project_priority = ["p"]
+        instruction_priority = ["p"]
+
+    return _LD()
+
+
+class TestCompilerTranscludeTextOnly(unittest.TestCase):
+    """Targeted tests for external transclusion text extraction (compiler.py 276–290)."""
+
+    TEI_NS = "http://www.tei-c.org/ns/1.0"
+
+    def _make_processor(self):
+        root = etree.Element(f"{{{self.TEI_NS}}}TEI", nsmap={"tei": self.TEI_NS, "j": JLPTEI_NAMESPACE})
+        return CompilerProcessor("p", "root.xml", linear_data=_linear_data_with_root(root))
+
+    @staticmethod
+    def _fake_range():
+        return ResolvedUrnRange(
+            start=ResolvedUrn(project="p", file_name="x.xml", urn="u", element_path="/a"),
+            end=ResolvedUrn(project="p", file_name="x.xml", urn="u", element_path="/b", end_includes_tail=False),
+        )
+
+    def test_external_transclude_extracts_text_children(self):
+        proc = self._make_processor()
+        transclude_el = etree.Element(f"{{{JLPTEI_NAMESPACE}}}transclude", nsmap=proc.ns_map)
+        transclude_el.set("target", "urn:test")
+
+        tei = etree.Element(f"{{{self.TEI_NS}}}TEI", nsmap={"tei": self.TEI_NS})
+        tei_header = etree.SubElement(tei, f"{{{self.TEI_NS}}}teiHeader")
+        etree.SubElement(tei_header, f"{{{self.TEI_NS}}}fileDesc")
+        text = etree.SubElement(tei, f"{{{self.TEI_NS}}}text")
+        body = etree.SubElement(text, f"{{{self.TEI_NS}}}body")
+        p = etree.SubElement(body, f"{{{self.TEI_NS}}}p")
+        p.text = "hello"
+
+        class FakeExternal:
+            def __init__(self, *args, **kwargs):
+                self.root_language = None
+
+            def process(self):
+                return [tei]
+
+            def _mark_file_source(self, element):
+                return element
+
+        with (
+            patch.object(proc, "_get_start_and_end_from_ranges", return_value=self._fake_range()),
+            patch("opensiddur.exporter.external_compiler.ExternalCompilerProcessor", FakeExternal),
+        ):
+            out = proc._transclude(transclude_el)
+
+        self.assertIsNotNone(out)
+        children_tags = [c.tag for c in list(out)]
+        self.assertIn(f"{{{self.TEI_NS}}}body", children_tags)
+        self.assertNotIn(f"{{{self.TEI_NS}}}TEI", children_tags)
+
+    def test_external_transclude_falls_back_to_body_when_text_missing(self):
+        proc = self._make_processor()
+        transclude_el = etree.Element(f"{{{JLPTEI_NAMESPACE}}}transclude", nsmap=proc.ns_map)
+        transclude_el.set("target", "urn:test")
+
+        tei = etree.Element(f"{{{self.TEI_NS}}}TEI", nsmap={"tei": self.TEI_NS})
+        body = etree.SubElement(tei, f"{{{self.TEI_NS}}}body")
+        p = etree.SubElement(body, f"{{{self.TEI_NS}}}p")
+        p.text = "fallback"
+
+        class FakeExternal:
+            def __init__(self, *args, **kwargs):
+                self.root_language = None
+
+            def process(self):
+                return [tei]
+
+            def _mark_file_source(self, element):
+                return element
+
+        with (
+            patch.object(proc, "_get_start_and_end_from_ranges", return_value=self._fake_range()),
+            patch("opensiddur.exporter.external_compiler.ExternalCompilerProcessor", FakeExternal),
+        ):
+            out = proc._transclude(transclude_el)
+
+        self.assertIsNotNone(out)
+        children_tags = [c.tag for c in list(out)]
+        self.assertIn(f"{{{self.TEI_NS}}}p", [gc.tag for c in list(out) for gc in list(c.iter())])
+        self.assertNotIn(f"{{{self.TEI_NS}}}TEI", children_tags)
 
 
