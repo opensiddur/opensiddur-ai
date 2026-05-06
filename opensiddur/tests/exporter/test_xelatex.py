@@ -1280,7 +1280,47 @@ class TestXSLTTransformation(unittest.TestCase):
         result = xslt_transform_string(self.xslt_file, xml_content,
             xslt_params={"additional-preamble": "", "additional-postamble": ""})
         
-        self.assertIn(r'\footnote{Note content}', result)
+        self.assertIn(r'\footnote{\textenglish{Note content}}', result)
+
+    def test_xslt_tei_note_forces_english_inside_hebrew_context(self):
+        """English notes should still be LTR when surrounding content is Hebrew."""
+        from opensiddur.common.xslt import xslt_transform_string
+
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:text>
+        <tei:body>
+            <tei:p xml:lang="he">
+                עברית<tei:note xml:lang="en">English note</tei:note>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+
+        self.assertIn(r'\footnote{\textenglish{English note}}', result)
+
+    def test_xslt_tei_note_lang_inherited_from_standoff(self):
+        """Note language should be derived from in-scope @xml:lang, even if not on tei:note."""
+        from opensiddur.common.xslt import xslt_transform_string
+
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:text>
+        <tei:body>
+            <tei:p xml:lang="he">
+                עברית<tei:hi xml:lang="en"><tei:note>English note</tei:note></tei:hi>
+            </tei:p>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+
+        result = xslt_transform_string(self.xslt_file, xml_content,
+            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+
+        self.assertIn(r'\footnote{\textenglish{English note}}', result)
 
     def test_xslt_tei_lb(self):
         """Test line break element."""

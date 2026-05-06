@@ -320,8 +320,21 @@
 
     <!-- Template for notes -->
     <xsl:template match="tei:note">
+        <xsl:variable name="note-lang" select="string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
         <xsl:text>\footnote{</xsl:text>
-        <xsl:apply-templates/>
+        <xsl:choose>
+            <!-- Force direction/language inside footnotes to follow note language -->
+            <xsl:when test="$note-lang='he'">
+                <xsl:text>\texthebrew{</xsl:text>
+                <xsl:apply-templates/>
+                <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\textenglish{</xsl:text>
+                <xsl:apply-templates/>
+                <xsl:text>}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
         <xsl:text>}</xsl:text>
     </xsl:template>
 
