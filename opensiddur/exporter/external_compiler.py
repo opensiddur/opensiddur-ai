@@ -463,6 +463,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         parallel_proc = None
 
         for proj in self.linear_data.parallel_projects:
+            # Never parallelize a project against itself; doing so duplicates streams and
+            # can introduce duplicate xml:id values (e.g., anchors) into the assembled output.
+            if proj == primary_project:
+                continue
             resolved = self._resolve_parallel_range(target, target_end, proj)
             if resolved is None:
                 continue
@@ -543,6 +547,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         parallel_proc = None
 
         for proj in self.linear_data.parallel_projects:
+            # Never parallelize a project against itself.
+            if proj == self.project:
+                continue
             try:
                 with self._parallel_priority(proj):
                     parallel_proc = ExternalCompilerProcessor(
