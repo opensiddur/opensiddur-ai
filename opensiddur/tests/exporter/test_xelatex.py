@@ -818,6 +818,88 @@ class TestTransformXmlToTex(unittest.TestCase):
         self.assertIn(r'\newfontfamily\hebrewfont', result)
         self.assertIn(r'FreeSerif', result)
 
+    def test_transform_xml_to_tex_parallel_uses_paracol(self):
+        """Parallel rendering must be page-breakable (paracol, not minipage)."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:p="http://jewishliturgy.org/ns/processing">
+  <tei:text>
+    <tei:body>
+      <p:parallel column-order="primary_first">
+        <p:parallelItem role="primary" xml:lang="en"><tei:p>A<tei:lb/>B</tei:p></p:parallelItem>
+        <p:parallelItem role="parallel" xml:lang="he"><tei:p>א<tei:lb/>ב</tei:p></p:parallelItem>
+      </p:parallel>
+    </tei:body>
+  </tei:text>
+</tei:TEI>'''.encode("utf-8")
+
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+
+        self.assertIn(r'\usepackage{paracol}', result)
+        self.assertIn(r'\begin{paracol}{2}', result)
+        self.assertNotIn(r'\begin{minipage}', result)
+        # Line breaks must be safe; \\[0pt] prevents next line '[' from being parsed as \\[dimen].
+        self.assertIn(r'\leavevmode\\[0pt]', result)
+
+    def test_transform_xml_to_tex_parallel_skips_outer_hebrew_when_root_is_he(self):
+        """Hebrew root + p:parallel must not wrap the whole body in \\begin{hebrew} (breaks EN column)."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:p="http://jewishliturgy.org/ns/processing"
+         xml:lang="he">
+  <tei:text>
+    <tei:body>
+      <p:parallel column-order="primary_first">
+        <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+        <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hi</tei:p></p:parallelItem>
+      </p:parallel>
+    </tei:body>
+  </tei:text>
+</tei:TEI>'''.encode("utf-8")
+
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+
+        # Outer wrapper: document should go straight into parallel (paracol), not global hebrew.
+        self.assertRegex(result, r"\\begin\{document\}\s*\\begin\{paracol\}")
+        self.assertNotRegex(result, r"\\begin\{document\}\s*\\begin\{hebrew\}")
+
+    def test_transform_xml_to_tex_ignores_standoff_notes(self):
+        """Standoff notes should not render as free-floating footnotes."""
+        from unittest.mock import patch
+        import opensiddur.exporter.tex.xelatex as xelatex_module
+
+        xml_content = b'''<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+  <tei:text>
+    <tei:body>
+      <tei:p>Body text</tei:p>
+      <tei:standOff type="notes">
+        <tei:note>This should not appear</tei:note>
+      </tei:standOff>
+    </tei:body>
+  </tei:text>
+</tei:TEI>'''
+
+        input_file = self._create_xml_file("project1", "input.xml", xml_content)
+
+        with patch.object(xelatex_module, 'projects_source_root', self.test_dir):
+            result = transform_xml_to_tex(input_file)
+
+        self.assertIn("Body text", result)
+        self.assertNotIn("This should not appear", result)
+
     def test_transform_xml_to_tex_wraps_inherited_hebrew_lang(self):
         """Hebrew may be inherited from ancestors; output must enter Hebrew context."""
         from unittest.mock import patch
@@ -1032,10 +1114,12 @@ class TestXSLTTransformation(unittest.TestCase):
         xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
 <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
     <tei:text>
-        <tei:div>
-            <tei:head>Chapter Title</tei:head>
-            <tei:p>Content</tei:p>
-        </tei:div>
+        <tei:body>
+            <tei:div>
+                <tei:head>Chapter Title</tei:head>
+                <tei:p>Content</tei:p>
+            </tei:div>
+        </tei:body>
     </tei:text>
 </tei:TEI>'''
         

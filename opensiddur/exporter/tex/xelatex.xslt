@@ -20,6 +20,12 @@
         <xsl:text>\usepackage{fontspec}&#10;</xsl:text>
         <xsl:text>\usepackage{polyglossia}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
+        <!-- Parallel columns: paracol page-breaks (unlike minipage). Alternatives worth
+             considering for speed/alignment: (1) reledpar — parallel critical editions with
+             sync; (2) xltabular/longtable — one table row per p:parallel (row alignment) but
+             \chapter and footnotes need careful handling inside tables; (3) LuaLaTeX + a
+             dedicated parallel engine. -->
+        <xsl:text>\usepackage{paracol}&#10;</xsl:text>
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
@@ -47,13 +53,16 @@
         <xsl:text>\begin{document}&#10;</xsl:text>
 
         <!-- Wrap the main text in Hebrew context when the document's root language is Hebrew.
-             This handles documents where xml:lang is set only on tei:TEI and inherited. -->
+             This handles documents where xml:lang is set only on tei:TEI and inherited.
+             Do NOT wrap the whole document when p:parallel is present: an outer Hebrew/bidi
+             scope breaks the English column and makes side-by-side parallel text meaningless. -->
         <xsl:variable name="root-lang" select="string(tei:TEI/@xml:lang)"/>
-        <xsl:if test="$root-lang='he'">
+        <xsl:variable name="has-parallel" select="exists(//p:parallel)"/>
+        <xsl:if test="$root-lang='he' and not($has-parallel)">
             <xsl:text>\begin{hebrew}&#10;</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="tei:TEI/tei:text"/>
-        <xsl:if test="$root-lang='he'">
+        <xsl:if test="$root-lang='he' and not($has-parallel)">
             <xsl:text>&#10;\end{hebrew}&#10;</xsl:text>
         </xsl:if>
         
@@ -74,7 +83,9 @@
         <xsl:apply-templates/>
     </xsl:template>
 
-    <!-- Parallel row -->
+    <!-- Parallel row: one paracol pair per p:parallel so left/right stay a synchronized row.
+         (Coalescing multiple rows into one paracol breaks alignment unless you add explicit
+         sync primitives; per-row environments are slower but correct.) -->
     <xsl:template match="p:parallel" priority="5">
         <xsl:variable name="pri" select="p:parallelItem[@role='primary'][1]"/>
         <xsl:variable name="sec" select="p:parallelItem[@role='parallel'][1]"/>
@@ -82,7 +93,7 @@
         <xsl:variable name="right" select="if (@column-order='primary_last') then $pri else $sec"/>
         <xsl:variable name="left-lang" select="string($left/@xml:lang)"/>
         <xsl:variable name="right-lang" select="string($right/@xml:lang)"/>
-        <xsl:text>\noindent\begin{minipage}[t]{0.48\textwidth}&#10;</xsl:text>
+        <xsl:text>\begin{paracol}{2}&#10;</xsl:text>
         <xsl:text>\begin{</xsl:text>
         <xsl:value-of select="if ($left-lang='he') then 'hebrew' else 'english'"/>
         <xsl:text>}&#10;</xsl:text>
@@ -90,8 +101,7 @@
         <xsl:text>\end{</xsl:text>
         <xsl:value-of select="if ($left-lang='he') then 'hebrew' else 'english'"/>
         <xsl:text>}&#10;</xsl:text>
-        <xsl:text>\end{minipage}\hfill&#10;</xsl:text>
-        <xsl:text>\begin{minipage}[t]{0.48\textwidth}&#10;</xsl:text>
+        <xsl:text>\switchcolumn&#10;</xsl:text>
         <xsl:text>\begin{</xsl:text>
         <xsl:value-of select="if ($right-lang='he') then 'hebrew' else 'english'"/>
         <xsl:text>}&#10;</xsl:text>
@@ -99,7 +109,7 @@
         <xsl:text>\end{</xsl:text>
         <xsl:value-of select="if ($right-lang='he') then 'hebrew' else 'english'"/>
         <xsl:text>}&#10;</xsl:text>
-        <xsl:text>\end{minipage}\par\vspace{0.75em}&#10;</xsl:text>
+        <xsl:text>\end{paracol}\par\vspace{0.75em}&#10;</xsl:text>
     </xsl:template>
 
     <xsl:template match="p:parallelItem" priority="5">
@@ -120,14 +130,21 @@
         <xsl:apply-templates select="node()"/>
     </xsl:template>
 
-    <!-- Whole div or first segment of a split -->
-    <xsl:template match="tei:div">
-        <xsl:text>\part{</xsl:text>
+    <!-- Whole div or first segment of a split.
+         Only top-level body divs become LaTeX \part (and only if they have a head).
+         Emitting empty \part{} (or parts for deeply nested divs) breaks LaTeX structure and
+         can strand notes in vertical mode. -->
+    <xsl:template match="tei:body/tei:div">
         <xsl:if test="tei:head">
+            <xsl:text>\part{</xsl:text>
             <xsl:apply-templates select="tei:head"/>
+            <xsl:text>}&#10;</xsl:text>
         </xsl:if>
-        <xsl:text>}&#10;</xsl:text>
         <xsl:apply-templates select="*[not(self::tei:head)] | text()"/>
+    </xsl:template>
+
+    <xsl:template match="tei:div" priority="-1">
+        <xsl:apply-templates/>
     </xsl:template>
 
     <!-- Template for ab elements without rend attribute -->
@@ -185,7 +202,10 @@
     <!-- Template for lines (poetry) -->
     <xsl:template match="tei:l">
         <xsl:apply-templates/>
-        <xsl:text>\\&#10;</xsl:text>
+        <!-- \\[0pt] supplies the line break's optional argument so the *next* line cannot start with '['
+             (JPS bracketed glosses), which would otherwise be parsed as \\[dimen] and error.
+             \leavevmode avoids "no line here to end" in vertical mode. -->
+        <xsl:text>\leavevmode\\[0pt]&#10;</xsl:text>
     </xsl:template>
 
     <!-- Template for milestones (chapters, verses, etc.) -->
@@ -363,11 +383,14 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
+    <!-- Ignore standoff markup in TeX output (notes are emitted in-flow). -->
+    <xsl:template match="tei:standOff"/>
+
     <!-- Template for line breaks -->
     <xsl:template match="tei:lb">
         <!-- do not add a line break if this is the first lb in a block of text-->
         <xsl:if test="preceding-sibling::text()[normalize-space(.)][1]">
-            <xsl:text>\\&#10;</xsl:text>
+            <xsl:text>\leavevmode\\[0pt]&#10;</xsl:text>
         </xsl:if>
     </xsl:template>
 
