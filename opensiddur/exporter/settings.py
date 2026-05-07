@@ -1,5 +1,6 @@
 """ Exporter settings management utilities. """
 
+from enum import StrEnum
 from pathlib import Path
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
@@ -38,10 +39,50 @@ class ParallelConfig(BaseModel):
     def validate_projects(cls, v: list[str]) -> list[str]:
         return _validate_project_list(v)
 
+
+class ParallelLayout(StrEnum):
+    """ Parallel-text page layout for the TeX/PDF stage.
+
+    pages: facing pages (reledpar \\Pages) — best for full critical editions.
+    pairs: two columns on the same page (reledpar \\Columns) — best for short docs.
+    """
+    PAGES = "pages"
+    PAIRS = "pairs"
+
+
+class PaperType(StrEnum):
+    """LaTeX \\documentclass paper options.
+
+    Keep this intentionally small and conventional; add more as needed.
+    """
+
+    A4PAPER = "a4paper"
+    LETTERPAPER = "letterpaper"
+    LEGALPAPER = "legalpaper"
+    A5PAPER = "a5paper"
+    B5PAPER = "b5paper"
+    EXECUTIVEPAPER = "executivepaper"
+
+
+class TypographyConfig(BaseModel):
+    """ Output-format settings consumed by the TeX/PDF stage only.
+
+    These don't affect the linear-XML compiler; they're forwarded as XSLT
+    parameters to ``reledmac.xslt``. Defaults match what the in-house LuaLaTeX
+    setup expects on a typical Linux TeXLive install.
+    """
+    hebrew_font: str = "Frank Ruehl CLM"
+    latin_font: str = "Linux Libertine O"
+    layout: ParallelLayout = ParallelLayout.PAIRS
+    paper: PaperType = PaperType.A4PAPER
+    fontsize: str = "11pt"
+
+
 class SettingsYaml(BaseModel):
     priority: Prioritizations
     annotations: list[str] = Field(default_factory=list)
     parallel: Optional[ParallelConfig] = None
+    typography: TypographyConfig = Field(default_factory=TypographyConfig)
 
     @field_validator("annotations")
     def validate_annotations(cls, v: list[str]) -> list[str]:
