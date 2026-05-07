@@ -24,13 +24,11 @@ from typing import Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
 
+from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE
 from opensiddur.exporter.linear import LinearData, get_linear_data
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.settings import load_default_settings, load_settings
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
-
-JLPTEI_NAMESPACE = 'http://jewishliturgy.org/ns/jlptei/2'
-PROCESSING_NAMESPACE = 'http://jewishliturgy.org/ns/processing'
 
 class _ProcessingCommand(Enum):
     """ Possible ways the compiler can process an element """

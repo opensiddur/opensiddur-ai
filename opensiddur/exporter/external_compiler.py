@@ -7,27 +7,26 @@ from lxml.etree import ElementBase
 
 from opensiddur.exporter.compiler import (
     CompilerProcessor,
-    JLPTEI_NAMESPACE,
-    PROCESSING_NAMESPACE,
     _ProcessingCommand,
     _ProcessingContext,
     _AnnotationCommand,
+)
+from opensiddur.exporter.constants import (
+    JLPTEI_NAMESPACE,
+    PROCESSING_NAMESPACE,
+    STRUCTURAL_BLOCKS,
+    TEI_NS,
+    XML_NS,
 )
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
 from lxml import etree
 
-TEI_NS = "http://www.tei-c.org/ns/1.0"
-XML_NS = "http://www.w3.org/XML/1998/namespace"
-
-STRUCTURAL_BLOCKS = frozenset({
-    f"{{{TEI_NS}}}div",
-    f"{{{TEI_NS}}}p",
-    f"{{{TEI_NS}}}ab",
-    f"{{{TEI_NS}}}lg",
-    f"{{{TEI_NS}}}l",
-})
+from opensiddur.exporter.marker_reconstruct import (
+    doc_needs_marker_reconstruction,
+    reconstruct_markered_document,
+)
 
 
 def _attrs_structural_original(source: ElementBase) -> dict[str, str]:
@@ -761,8 +760,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         # Root parallel trigger
         is_root = len(self.linear_data.processing_context) == 0
+        def _reconstruct_if_needed(processed: list[ElementBase]) -> None:
+            if processed and doc_needs_marker_reconstruction(processed[0]):
+                reconstruct_markered_document(processed[0])
+
         if is_root and self.linear_data.parallel_projects and not self._in_parallel_compilation:
-            return self._process_parallel_root()
+            processed = self._process_parallel_root()
+            _reconstruct_if_needed(processed)
+            return processed
 
         # set the root language to the language of the deepest common ancestor if present, else root
         self.root_language = self._get_in_scope_language(
@@ -789,5 +794,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
         # so that get_file_references() can find source files for metadata extraction
         if self.from_start is None and processed:
             self._mark_file_source(processed[0])
+
+        if is_root:
+            _reconstruct_if_needed(processed)
 
         return processed

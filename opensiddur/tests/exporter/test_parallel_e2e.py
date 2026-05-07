@@ -216,34 +216,29 @@ class TestRootTriggerE2E(_E2EBase):
 class TestMarkerStructureE2E(_E2EBase):
 
     def test_structural_elements_with_milestones_get_markers(self):
-        """tei:p with active parallel milestones should produce p:start/p:end markers."""
+        """Compiler output should be reconstructed (no raw p:start/p:end markers)."""
         result = self._compile_primary()
         all_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
         root = etree.fromstring(f"<root>{all_xml}</root>")
 
-        # Look for p:start attributes on tei:p elements
-        start_markers = root.findall(f".//{{{TEI_NS}}}p[@{{{P_NS}}}start]")
-        end_markers = root.findall(f".//{{{TEI_NS}}}p[@{{{P_NS}}}end]")
-        self.assertGreater(len(start_markers), 0, "Expected p:start markers on tei:p")
-        self.assertGreater(len(end_markers), 0, "Expected p:end markers on tei:p")
+        # Reconstruction happens in the compiler now, so markers should not survive
+        start_markers = root.findall(f".//*[@{{{P_NS}}}start]")
+        end_markers = root.findall(f".//*[@{{{P_NS}}}end]")
+        self.assertEqual(len(start_markers), 0, "p:start markers should be consumed by reconstruction")
+        self.assertEqual(len(end_markers), 0, "p:end markers should be consumed by reconstruction")
+
+        # Still expect parallel structure to exist in compiled output
+        parallels = root.findall(f".//{{{P_NS}}}parallel")
+        self.assertGreater(len(parallels), 0)
 
     def test_start_end_marker_ids_match(self):
-        """Every p:start ID should have a corresponding p:end ID."""
+        """Legacy marker pairing test: markers should not be present post-reconstruct."""
         result = self._compile_primary()
         all_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
         root = etree.fromstring(f"<root>{all_xml}</root>")
 
-        start_ids = set()
-        end_ids = set()
-        for el in root.iter():
-            sid = el.get(f"{{{P_NS}}}start")
-            eid = el.get(f"{{{P_NS}}}end")
-            if sid:
-                start_ids.add(sid)
-            if eid:
-                end_ids.add(eid)
-
-        self.assertEqual(start_ids, end_ids, "Every p:start should have a matching p:end")
+        self.assertEqual(len(root.findall(f".//*[@{{{P_NS}}}start]")), 0)
+        self.assertEqual(len(root.findall(f".//*[@{{{P_NS}}}end]")), 0)
 
     def test_column_order_attribute(self):
         """p:parallel elements should have a column-order attribute."""

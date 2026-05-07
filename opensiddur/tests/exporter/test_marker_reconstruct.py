@@ -1,4 +1,4 @@
-"""Tests for flattened parallel marker reconstruction (Pass 1 before XeLaTeX)."""
+"""Tests for flattened parallel marker reconstruction (compiler output stage)."""
 
 import unittest
 import unittest.mock
@@ -7,13 +7,13 @@ from lxml import etree
 
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.external_compiler import PROCESSING_NAMESPACE, TEI_NS
-from opensiddur.exporter.tex.marker_reconstruct import (
+from opensiddur.exporter.marker_reconstruct import (
     doc_needs_marker_reconstruction,
     reconstruct_markered_document,
     reconstruct_parallel_item,
     substantive_content,
 )
-from opensiddur.exporter.tex import marker_reconstruct as mr
+from opensiddur.exporter import marker_reconstruct as mr
 from opensiddur.exporter.tex.xelatex import XSLT_FILE
 
 P_NS = PROCESSING_NAMESPACE
