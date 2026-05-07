@@ -5,11 +5,11 @@ from lxml.etree import ElementBase
 
 from opensiddur.exporter.compiler import (
     CompilerProcessor,
-    PROCESSING_NAMESPACE,
     _ProcessingCommand,
     _ProcessingContext,
     _AnnotationCommand,
 )
+from opensiddur.exporter.constants import PROCESSING_NAMESPACE
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import ReferenceDatabase

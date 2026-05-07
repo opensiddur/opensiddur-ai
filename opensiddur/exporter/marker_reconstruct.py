@@ -11,7 +11,7 @@ from typing import Any
 
 from lxml import etree
 
-from opensiddur.exporter.external_compiler import PROCESSING_NAMESPACE, STRUCTURAL_BLOCKS
+from opensiddur.exporter.constants import PROCESSING_NAMESPACE, STRUCTURAL_BLOCKS
 
 _P_START = f"{{{PROCESSING_NAMESPACE}}}start"
 _P_END = f"{{{PROCESSING_NAMESPACE}}}end"
@@ -70,11 +70,7 @@ def _absorb_marker_strings(frame: _Frame, el: etree.ElementBase) -> None:
 def _carrier_attrs_from_marker_el(el: etree.ElementBase) -> dict[str, str]:
     p_pref = f"{{{PROCESSING_NAMESPACE}}}"
     xml_id_key = "{http://www.w3.org/XML/1998/namespace}id"
-    return {
-        k: v
-        for k, v in el.attrib.items()
-        if k != xml_id_key and not k.startswith(p_pref)
-    }
+    return {k: v for k, v in el.attrib.items() if k != xml_id_key and not k.startswith(p_pref)}
 
 
 def _new_wrapped_segment(
@@ -293,3 +289,4 @@ def reconstruct_markered_document(root: etree.ElementBase) -> None:
     header = root.find(".//{http://www.tei-c.org/ns/1.0}teiHeader")
     if header is not None:
         _strip_stray_processing_markers_under(header)
+
