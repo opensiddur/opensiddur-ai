@@ -201,6 +201,26 @@ class TestParallelMapping(unittest.TestCase):
         out = _transform(xml)
         self.assertNotIn(r"\begin{pages}", out)
 
+    def test_parallel_inside_transclude_is_still_grouped(self):
+        """The compiled XML can wrap p:parallel blocks in p:transclude; the TeX stage
+        must expand the wrapper so parallel blocks still become a reledpar environment."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:transclude target="urn:x-opensiddur:test" type="external">
+              <p:parallel column-order="primary_first">
+                <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+                <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hello</tei:p></p:parallelItem>
+              </p:parallel>
+            </p:transclude>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, layout="pairs")
+        self.assertIn(r"\begin{pairs}", out)
+        self.assertIn(r"\begin{Leftside}", out)
+        self.assertIn(r"\begin{Rightside}", out)
+
     def test_pairs_layout_uses_columns_typesetter(self):
         out = _transform(self.XML, layout="pairs")
         self.assertIn(r"\begin{pairs}", out)

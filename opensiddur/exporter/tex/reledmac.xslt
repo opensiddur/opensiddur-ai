@@ -120,10 +120,44 @@
              reledmac exposes \linenumberstyle; reledpar uses \linenumrepR and a
              right-side flag. -->
         <xsl:text>\renewcommand*{\linenumberstyle}[1]{\begingroup\textdir TLT\selectlanguage{english}#1\endgroup}&#10;</xsl:text>
+        <!-- line numbering by page -->
+        <xsl:text>\lineation{page}&#10;</xsl:text>
+        <xsl:if test="$has-parallel">
+            <!-- Put line numbers on the outer margins by default (pages/facing-page mode). -->
+            <xsl:text>\linenummargin{outer}&#10;</xsl:text>
+            <xsl:text>\linenummarginR{outer}&#10;</xsl:text>
+            <xsl:if test="$layout = 'pairs'">
+                <!-- In pairs/columns mode reledpar places the RTL (Hebrew) Rightside in the
+                     physical LEFT column and the LTR (English) Leftside in the physical RIGHT
+                     column.  Line numbers must therefore go on the physically-outer margins:
+                       L-side (English, physical right, LTR) → {right} = physical right = outer margin
+                       R-side (Hebrew,  physical left,  RTL) → {right} = typographic right
+                                                                        = physical left = outer margin
+                     The naive {left} for L-side puts numbers in the inter-column gap (zero
+                     width), causing them to land inside the text. -->
+                <xsl:text>\linenummarginColumns{right}&#10;</xsl:text>
+                <xsl:text>\linenummarginColumnsR{right}&#10;</xsl:text>
+                <!-- By default reledpar aligns the two-column block to the right edge of the
+                     type area, which can leave essentially no right margin for right-side line
+                     numbers. Center the columns so both outer margins have room. -->
+                <xsl:text>\columnsposition{C}&#10;</xsl:text>
+                <!-- Also slightly shrink column widths to guarantee usable outer margins for
+                     line numbers (especially with A4 + 11pt defaults). -->
+                <xsl:text>\setlength{\Lcolwidth}{0.43\textwidth}&#10;</xsl:text>
+                <xsl:text>\setlength{\Rcolwidth}{0.43\textwidth}&#10;</xsl:text>
+            </xsl:if>
+        </xsl:if>
         <xsl:text>\makeatletter&#10;</xsl:text>
-        <xsl:text>\renewcommand*{\linenumrepR}[1]{\begingroup\textdir TLT\selectlanguage{english}\@arabic{#1}\endgroup}&#10;</xsl:text>
-        <xsl:text>\renewcommand*{\sublinenumrepR}[1]{\begingroup\textdir TLT\selectlanguage{english}\@arabic{#1}\endgroup}&#10;</xsl:text>
-        <xsl:text>\setRlineflag{\begingroup\textdir TLT R\endgroup}&#10;</xsl:text>
+        <!-- Space between the line number and the text block. If too small, right-side
+             line numbers will collide with the right column in pairs layout. -->
+        <xsl:text>\setlength{\linenumsep}{1em}&#10;</xsl:text>
+        <!-- Use an \hbox group to localize \textdir; these tokens can be written
+             to auxiliary files by reledpar, so keep them simple/robust. -->
+        <xsl:text>\renewcommand*{\linenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
+        <xsl:text>\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
+        <!-- Empty flag: no "R" prefix on right-side line numbers. The spatial separation
+             of the two column margins already distinguishes left from right numbers. -->
+        <xsl:text>\setRlineflag{}&#10;</xsl:text>
         <xsl:text>\makeatother&#10;</xsl:text>
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
@@ -158,9 +192,17 @@
 
     <xsl:template match="tei:body">
         <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
-        <!-- Ignore whitespace-only text nodes for grouping, otherwise pretty-printed
+        <!-- Expand p:transclude wrapper elements emitted by the compiler: the TeX stage
+             should group and typeset the transcluded content, not the wrapper itself.
+             Also ignore whitespace-only text nodes for grouping, otherwise pretty-printed
              XML will split runs of adjacent p:parallel blocks. -->
-        <xsl:for-each-group select="node()[not(self::text() and not(normalize-space(.)))]"
+        <xsl:variable name="flow" as="node()*"
+                      select="for $n in node()
+                              return if ($n/self::p:transclude or $n/self::p:transcludeInline)
+                                     then $n/node()
+                                     else $n"/>
+
+        <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
                             group-adjacent="if (self::p:parallel) then 'parallel' else 'inline'">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'parallel'">
@@ -562,6 +604,11 @@
     <xsl:template match="tei:pb" mode="leaves"/>
 
     <xsl:template match="tei:standOff" mode="leaves"/>
+
+    <!-- Internal sentinels produced by this stylesheet must survive flattening. -->
+    <xsl:template match="f:para-break | f:block-break | f:eledpart | f:eledsubsection" mode="leaves">
+        <xsl:sequence select="."/>
+    </xsl:template>
 
     <xsl:template match="tei:body/tei:div" mode="leaves">
         <xsl:if test="tei:head">

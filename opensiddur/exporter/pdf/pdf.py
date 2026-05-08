@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from contextlib import nullcontext
 from typing import Optional
 
 # Add the project root to the Python path
@@ -168,6 +169,7 @@ def _run_manual_loop(tex_file: Path, output_dir: Path, max_runs: int) -> bool:
     if not success:
         print("lualatex reported errors (pass 1):", file=sys.stderr)
         print(output, file=sys.stderr)
+        return False
 
     # Run bibtex once after the first pass when needed; force a rerun afterwards
     # because bibtex updates the .bbl that lualatex needs to read.
@@ -187,7 +189,7 @@ def _run_manual_loop(tex_file: Path, output_dir: Path, max_runs: int) -> bool:
         if not success:
             print(f"lualatex reported errors (pass {run_count}):", file=sys.stderr)
             print(output, file=sys.stderr)
-            break
+            return False
 
     if run_count >= max_runs:
         print(
@@ -203,6 +205,7 @@ def compile_tex_to_pdf(
     tex_file: Path,
     output_pdf: Path,
     max_runs: int = 6,
+    build_dir: Optional[Path] = None,
 ) -> bool:
     """Compile a LuaLaTeX .tex file to PDF.
 
@@ -224,7 +227,13 @@ def compile_tex_to_pdf(
         print(f"Compiling {tex_file} to PDF...", file=sys.stderr)
         tex_stem = tex_file.stem
 
-        with tempfile.TemporaryDirectory() as temp_dir_str:
+        if build_dir is not None:
+            temp_dir = build_dir
+            temp_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            temp_dir = None
+
+        with tempfile.TemporaryDirectory() if temp_dir is None else nullcontext(str(temp_dir)) as temp_dir_str:
             temp_dir = Path(temp_dir_str)
             # latexmk can attempt to invoke biber based on .bcf detection even when
             # biblatex is configured for BibTeX. Since biber is frequently broken or
@@ -235,7 +244,8 @@ def compile_tex_to_pdf(
                     file=sys.stderr,
                 )
                 return False
-            _run_manual_loop(tex_file, temp_dir, max_runs)
+            if not _run_manual_loop(tex_file, temp_dir, max_runs):
+                return False
 
             generated_pdf = temp_dir / f"{tex_stem}.pdf"
             if not generated_pdf.exists():
@@ -264,6 +274,7 @@ def export_to_pdf(
     output_pdf: Path,
     settings_file: Optional[Path] = None,
     tex_output: Optional[Path] = None,
+    build_dir: Optional[Path] = None,
 ) -> bool:
     """Convert a compiled JLPTEI XML file to PDF.
 
@@ -288,7 +299,7 @@ def export_to_pdf(
         if not generate_tex(input_file, temp_tex_file, settings_file=settings_file):
             return False
 
-        if not compile_tex_to_pdf(temp_tex_file, output_pdf):
+        if not compile_tex_to_pdf(temp_tex_file, output_pdf, build_dir=build_dir):
             return False
 
         print(f"Successfully generated PDF: {output_pdf}", file=sys.stderr)
@@ -336,6 +347,12 @@ Examples:
         default=None,
         help="Path to write the intermediate TeX file (implies --keep-tex).",
     )
+    parser.add_argument(
+        "--build-dir",
+        type=Path,
+        default=None,
+        help="Directory to keep LaTeX build artifacts (.log, .aux, etc.) for debugging.",
+    )
 
     args = parser.parse_args()
 
@@ -354,6 +371,7 @@ Examples:
         args.output_pdf,
         settings_file=args.settings_file,
         tex_output=tex_output,
+        build_dir=args.build_dir,
     ):
         sys.exit(1)
 

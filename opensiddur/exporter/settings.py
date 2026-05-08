@@ -74,7 +74,7 @@ class TypographyConfig(BaseModel):
     hebrew_font: str = "Frank Ruehl CLM"
     latin_font: str = "Linux Libertine O"
     layout: ParallelLayout = ParallelLayout.PAIRS
-    paper: PaperType = PaperType.A4PAPER
+    paper: PaperType = PaperType.LETTERPAPER
     fontsize: str = "11pt"
 
 
