@@ -100,7 +100,7 @@ def licenses_to_tex(licenses: list[LicenseRecord]) -> str:
         f"\\item {license.name} (\\url{{{license.url}}})" for license in licenses
     )
     return (
-        "\\chapter{Legal}\n"
+        "\\section*{Legal}\n"
         "This document includes copyrighted texts licensed under the following licenses.\n"
         "The full text of the licenses can be found at the given URLs:\n\n"
         "\\begin{itemize}\n"
@@ -189,14 +189,14 @@ def credits_to_tex(credits: dict[str, dict[str, list[CreditRecord]]]) -> str:
     """Convert grouped credits into a LaTeX appendix section."""
     if not credits:
         return ""
-    tex = "\\chapter{Contributor credits}\n"
+    tex = "\\section*{Contributor credits}\n"
     for role, namespace_dict in credits.items():
         total = sum(len(c) for c in namespace_dict.values())
         role_name = contributor_keys_to_roles.get(role, role) + ("s" if total > 1 else "")
-        tex += f"\\section{{{role_name}}}\n"
+        tex += f"\\subsection*{{{role_name}}}\n"
         for namespace, namespace_credits in namespace_dict.items():
             sorted_credits = sorted(namespace_credits, key=lambda x: x.contributor)
-            tex += f"\\subsection{{From {namespace}}}\n"
+            tex += f"\\subsubsection*{{From {namespace}}}\n"
             tex += "\\begin{itemize}\n"
             for credit in sorted_credits:
                 tex += f"\\item {credit.name_text}\n"
@@ -243,10 +243,10 @@ def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
         "\\addbibresource{job.bib}\n"
     )
     postamble_tex = (
-        "\n\\begingroup\n"
-        "\\renewcommand{\\refname}{Sources}\n"
+        "\n\\section*{Sources}\n"
+        "\\begingroup\n"
         "\\nocite{*}\n"
-        "\\printbibliography\n"
+        "\\printbibliography[heading=none]\n"
         "\\endgroup\n"
     )
     return preamble_tex, postamble_tex
@@ -353,7 +353,9 @@ def transform_xml_to_tex(
             xslt_params={
                 "additional-preamble": sources_preamble_tex,
                 "additional-postamble": (
-                    "\\part{Metadata}\n"
+                    "\\par\\bigskip\n"
+                    "\\hrule\\bigskip\n"
+                    "\\section*{Metadata}\n"
                     + licenses_tex
                     + "\n"
                     + credits_tex

@@ -151,13 +151,17 @@
         <!-- Space between the line number and the text block. If too small, right-side
              line numbers will collide with the right column in pairs layout. -->
         <xsl:text>\setlength{\linenumsep}{1em}&#10;</xsl:text>
-        <!-- Use an \hbox group to localize \textdir; these tokens can be written
-             to auxiliary files by reledpar, so keep them simple/robust. -->
-        <xsl:text>\renewcommand*{\linenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
-        <xsl:text>\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
-        <!-- Empty flag: no "R" prefix on right-side line numbers. The spatial separation
-             of the two column margins already distinguishes left from right numbers. -->
-        <xsl:text>\setRlineflag{}&#10;</xsl:text>
+        <xsl:if test="$has-parallel">
+            <!-- \linenumrepR, \sublinenumrepR, and \setRlineflag are reledpar-only;
+                 they do not exist when reledpar is not loaded. -->
+            <!-- Use an \hbox group to localize \textdir; these tokens can be written
+                 to auxiliary files by reledpar, so keep them simple/robust. -->
+            <xsl:text>\renewcommand*{\linenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
+            <xsl:text>\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
+            <!-- Empty flag: no "R" prefix on right-side line numbers. The spatial separation
+                 of the two column margins already distinguishes left from right numbers. -->
+            <xsl:text>\setRlineflag{}&#10;</xsl:text>
+        </xsl:if>
         <xsl:text>\makeatother&#10;</xsl:text>
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>

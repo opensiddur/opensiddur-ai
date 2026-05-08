@@ -98,7 +98,7 @@ class TestLicensesToTex(unittest.TestCase):
         out = licenses_to_tex(
             [LicenseRecord(url="http://creativecommons.org/cc", name="CC")]
         )
-        self.assertIn(r"\chapter{Legal}", out)
+        self.assertIn(r"\section*{Legal}", out)
         self.assertIn("CC", out)
         self.assertIn(r"\url{http://creativecommons.org/cc}", out)
 
@@ -182,7 +182,7 @@ class TestCreditsToTex(unittest.TestCase):
             name_text="B", namespace="ns", contributor="b",
         )
         out = credits_to_tex({"aut": {"ns": [c1, c2]}})
-        self.assertIn(r"\section{Authors}", out)
+        self.assertIn(r"\subsection*{Authors}", out)
 
     def test_emits_singular_when_one_contributor(self):
         c1 = CreditRecord(
@@ -190,8 +190,8 @@ class TestCreditsToTex(unittest.TestCase):
             name_text="A", namespace="ns", contributor="a",
         )
         out = credits_to_tex({"aut": {"ns": [c1]}})
-        self.assertIn(r"\section{Author}", out)
-        self.assertNotIn(r"\section{Authors}", out)
+        self.assertIn(r"\subsection*{Author}", out)
+        self.assertNotIn(r"\subsection*{Authors}", out)
 
 
 class TestExtractSources(unittest.TestCase):
@@ -444,7 +444,8 @@ class TestTransformXmlToTex(unittest.TestCase):
         f = self._create("p", "input.xml", xml)
         with patch.object(latex_module, "projects_source_root", self.test_dir):
             out = transform_xml_to_tex(f)
-        self.assertIn(r"\chapter{Legal}", out)
+        self.assertIn(r"\section*{Metadata}", out)
+        self.assertIn(r"\section*{Legal}", out)
         self.assertIn("My License", out)
 
 
