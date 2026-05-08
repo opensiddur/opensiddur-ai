@@ -123,7 +123,7 @@ class TestSingleStreamMapping(unittest.TestCase):
     def test_chapter_milestone_emits_eledsection(self):
         out = _transform(self.XML)
         # Chapter numbers are forced LTR to avoid digit reversal in RTL contexts.
-        self.assertIn(r"\eledsection{\begingroup\textdir TLT\selectlanguage{english}1\endgroup}", out)
+        self.assertIn(r"\eledsection{{\textdir TLT\selectlanguage{english}1}}", out)
 
     def test_chapter_number_forces_ltr_digits_in_hebrew_context(self):
         """Digits inside Hebrew RTL contexts can render reversed unless forced LTR."""
@@ -137,7 +137,7 @@ class TestSingleStreamMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\eledsection{\begingroup\textdir TLT\selectlanguage{english}12\endgroup}", out)
+        self.assertIn(r"\eledsection{{\textdir TLT\selectlanguage{english}12}}", out)
 
     def test_verse_numbers_appear_as_superscripts(self):
         out = _transform(self.XML)
@@ -333,7 +333,7 @@ class TestNotesMapping(unittest.TestCase):
         out = _transform(xml)
         # \edtext{}{\Bfootnote{}} is the proper reledmac idiom for apparatus notes:
         # zero-width lemma + B-series footnote at page bottom (not an endnote after \pend).
-        self.assertIn(r"\edtext{}{\Bfootnote{\notenote{", out)
+        self.assertIn(r"{\@RTLfalse\edtext{}{\Bfootnote{\notenote{", out)
         self.assertIn("commentary", out)
         self.assertNotIn(r"\footnote{", out)
 
@@ -364,10 +364,10 @@ class TestNotesMapping(unittest.TestCase):
           </tei:standOff>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\edtext{}{\Bfootnote{\notenote{", out)
+        self.assertIn(r"{\@RTLfalse\edtext{}{\Bfootnote{\notenote{", out)
         self.assertIn("English annotation", out)
         # English note inside Hebrew stream must force LTR direction.
-        self.assertIn(r"\begingroup\textdir TLT\selectlanguage{english}", out)
+        self.assertIn(r"{{\textdir TLT\selectlanguage{english}", out)
 
     def test_standoff_note_with_multiple_targets(self):
         """A note targeting multiple anchors must appear at each anchor site."""
@@ -403,8 +403,8 @@ class TestNotesMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\begingroup\textdir TLT\selectlanguage{english} English note\endgroup", out)
-        self.assertIn(r"\begingroup\textdir TLT\selectlanguage{english} Inline English instruction\endgroup", out)
+        self.assertIn(r"{{\textdir TLT\selectlanguage{english} English note}}", out)
+        self.assertIn(r"{{\textdir TLT\selectlanguage{english} Inline English instruction}}", out)
 
 
 class TestInlineFormatting(unittest.TestCase):

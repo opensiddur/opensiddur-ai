@@ -104,22 +104,34 @@
              misconfigured on some systems. -->
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
+        <!-- hyperref builds PDF strings for bookmarks/outlines.  Direction and
+             language switches (luabidi/polyglossia) are not representable in
+             PDF strings and generate warnings (and sometimes broken outlines).
+             Disable them *only* for PDF-string construction. -->
+        <xsl:text>\pdfstringdefDisableCommands{&#10;</xsl:text>
+        <xsl:text>  \def\textdir#1{}&#10;</xsl:text>
+        <xsl:text>  \def\selectlanguage#1{}&#10;</xsl:text>
+        <xsl:text>}&#10;</xsl:text>
 
         <!-- Verse numbers rendered as superscripts at the start of each verse.
              Force LTR for digits even inside Hebrew RTL contexts. -->
-        <xsl:text>\newcommand{\vno}[1]{\textsuperscript{\begingroup\textdir TLT\selectlanguage{english}#1\endgroup}\,}&#10;</xsl:text>
+        <xsl:text>\newcommand{\vno}[1]{\textsuperscript{{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
 
         <!-- Notes styling.
              - All notes must force direction/language using the xml:lang-derived wrappers
                emitted by note-content (\texthebrew{...} / \textenglish{...}).
-             - Styling lives in macros so it can be changed in one place. -->
-        <xsl:text>\newcommand{\instructionnote}[1]{\begingroup\bfseries #1\endgroup}&#10;</xsl:text>
-        <xsl:text>\newcommand{\notenote}[1]{\begingroup\bfseries #1\endgroup}&#10;</xsl:text>
+             - Styling lives in macros so it can be changed in one place.
+             - Use {{\bfseries ...}} (regular braces) not \begingroup/\endgroup — the latter
+               can prematurely close reledmac's internal groups inside \edtext/\Bfootnote. -->
+        <xsl:text>\newcommand{\instructionnote}[1]{{\bfseries #1}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
 
         <!-- Line numbers must always be LTR (otherwise RTL contexts can flip digits).
              reledmac exposes \linenumberstyle; reledpar uses \linenumrepR and a
-             right-side flag. -->
-        <xsl:text>\renewcommand*{\linenumberstyle}[1]{\begingroup\textdir TLT\selectlanguage{english}#1\endgroup}&#10;</xsl:text>
+             right-side flag.
+             Use \hbox to contain direction/language changes without leaking
+             \begingroup/\endgroup into reledmac's aux-file write machinery. -->
+        <xsl:text>\renewcommand*{\linenumberstyle}[1]{\hbox{\textdir TLT\selectlanguage{english}#1}}&#10;</xsl:text>
         <!-- line numbering by page -->
         <xsl:text>\lineation{page}&#10;</xsl:text>
         <xsl:if test="$has-parallel">
@@ -406,9 +418,9 @@
                                 <xsl:choose>
                                     <xsl:when test="matches(string(@n), '^[0-9]+$')">
                                         <!-- Force LTR digits in Hebrew RTL contexts -->
-                                        <xsl:text>\begingroup\textdir TLT\selectlanguage{english}</xsl:text>
+                                        <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                        <xsl:text>\endgroup</xsl:text>
+                                        <xsl:text>}</xsl:text>
                                     </xsl:when>
                                     <xsl:otherwise>
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
@@ -423,19 +435,24 @@
                                 <xsl:if test="$in-pstart">
                                     <xsl:text>\pend&#10;</xsl:text>
                                 </xsl:if>
+                                <!-- reledmac sectioning can behave poorly if a section heading is emitted
+                                     "between" \pstart blocks. Wrap the heading in its own skipped paragraph
+                                     so the section boundary is anchored in the numbered stream without
+                                     consuming a numbered line of text. -->
+                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
                                 <xsl:text>\eledsection{</xsl:text>
                                 <xsl:choose>
                                     <xsl:when test="matches(string(@n), '^[0-9]+$')">
                                         <!-- Force LTR digits in Hebrew RTL contexts -->
-                                        <xsl:text>\begingroup\textdir TLT\selectlanguage{english}</xsl:text>
+                                        <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                        <xsl:text>\endgroup</xsl:text>
+                                        <xsl:text>}</xsl:text>
                                     </xsl:when>
                                     <xsl:otherwise>
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
                                     </xsl:otherwise>
                                 </xsl:choose>
-                                <xsl:text>}&#10;</xsl:text>
+                                <xsl:text>}&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="false()"/>
                                 </xsl:next-iteration>
@@ -474,9 +491,13 @@
                         <!-- Parsha boundary: emit as a B-series footnote anchored
                              to the current verse. Only meaningful inside a pstart. -->
                         <xsl:if test="$in-pstart">
-                            <xsl:text>\edtext{}{\Bfootnote{Parsha: </xsl:text>
+                            <!-- Empty-lemma \edtext{} is fragile in bidi/RTL contexts and
+                                 can cause reledmac to drop surrounding text or corrupt
+                                 its .1 aux file. Use an explicit zero-width box lemma
+                                 to keep the argument structure stable. -->
+                            <xsl:text>{\@RTLfalse\edtext{\mbox{}}{\Bfootnote{Parsha: </xsl:text>
                             <xsl:value-of select="f:escape-tex(string(@n))"/>
-                            <xsl:text>}}</xsl:text>
+                            <xsl:text>}}}</xsl:text>
                         </xsl:if>
                         <xsl:next-iteration>
                             <xsl:with-param name="in-pstart" select="$in-pstart"/>
@@ -792,14 +813,18 @@
     </xsl:template>
 
     <xsl:template match="tei:note" mode="emit">
-        <!-- \edtext{}{\Bfootnote{}} is the correct reledmac idiom: empty first arg
-             means zero-width lemma (superscript mark only), \Bfootnote routes the
+        <!-- In bidi/RTL contexts, empty-lemma \edtext{} can be fragile with reledmac's
+             aux-file writes. Use an explicit zero-width box lemma. \Bfootnote routes the
              content to the B-series apparatus at the page bottom.  Plain \footnote
              inside \pstart...\pend is flushed by reledmac after \pend, making it
-             appear as an endnote or inline run rather than a bottom-of-page note. -->
-        <xsl:text>\edtext{}{\Bfootnote{\notenote{</xsl:text>
+             appear as an endnote or inline run rather than a bottom-of-page note.
+             \@RTLfalse forces reledmac's LTR code path for .1-file writes: in RTL
+             mode reledmac writes ] before \@ref[N][ for single-line lemmas, which
+             corrupts the catcode-group that controls [ ] delimiters when the .1
+             file is re-read on the next pass. -->
+        <xsl:text>{\@RTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{</xsl:text>
         <xsl:call-template name="note-content"/>
-        <xsl:text>}}}</xsl:text>
+        <xsl:text>}}}}</xsl:text>
     </xsl:template>
 
     <xsl:template name="note-content">
@@ -807,18 +832,20 @@
         <xsl:choose>
             <xsl:when test="$note-lang='he'">
                 <!-- Force explicit RTL direction inside notes even when nested
-                     in an LTR context. -->
-                <xsl:text>\begingroup\textdir TRT\selectlanguage{hebrew} </xsl:text>
+                     in an LTR context.
+                     Use {{\textdir TRT ...}} (regular braces) to avoid leaking
+                     \begingroup/\endgroup into reledmac's aux-file write machinery. -->
+                <xsl:text>{{\textdir TRT\selectlanguage{hebrew} </xsl:text>
                 <xsl:apply-templates mode="emit"/>
-                <xsl:text>\endgroup</xsl:text>
+                <xsl:text>}}</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <!-- Force explicit LTR direction inside notes even when nested
                      in an RTL (Hebrew) context. This avoids visual reversal of
                      LTR runs like \"note\" rendering backwards. -->
-                <xsl:text>\begingroup\textdir TLT\selectlanguage{english} </xsl:text>
+                <xsl:text>{{\textdir TLT\selectlanguage{english} </xsl:text>
                 <xsl:apply-templates mode="emit"/>
-                <xsl:text>\endgroup</xsl:text>
+                <xsl:text>}}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
