@@ -116,9 +116,11 @@ class TestSingleStreamMapping(unittest.TestCase):
     def test_verses_flow_inline_in_single_stream(self):
         out = _transform(self.XML)
         # The fixture has one tei:p containing 3 verse milestones, so we expect
-        # one paragraph-level \\pstart/\\pend pair (not 1 per verse).
-        self.assertEqual(out.count(r"\pstart"), 1)
-        self.assertEqual(out.count(r"\pend"), 1)
+        # one verse-paragraph-level \\pstart/\\pend pair (not 1 per verse).
+        #
+        # Note: chapter milestones may be emitted in their own skipnumbering pstart.
+        self.assertEqual(out.count(r"\pstart \vno{"), 1)
+        self.assertEqual(out.count(r"\pend"), 2)
 
     def test_chapter_milestone_emits_eledsection(self):
         out = _transform(self.XML)
@@ -333,7 +335,7 @@ class TestNotesMapping(unittest.TestCase):
         out = _transform(xml)
         # \edtext{}{\Bfootnote{}} is the proper reledmac idiom for apparatus notes:
         # zero-width lemma + B-series footnote at page bottom (not an endnote after \pend).
-        self.assertIn(r"{\@RTLfalse\edtext{}{\Bfootnote{\notenote{", out)
+        self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{", out)
         self.assertIn("commentary", out)
         self.assertNotIn(r"\footnote{", out)
 
@@ -364,7 +366,7 @@ class TestNotesMapping(unittest.TestCase):
           </tei:standOff>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"{\@RTLfalse\edtext{}{\Bfootnote{\notenote{", out)
+        self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{", out)
         self.assertIn("English annotation", out)
         # English note inside Hebrew stream must force LTR direction.
         self.assertIn(r"{{\textdir TLT\selectlanguage{english}", out)

@@ -160,6 +160,9 @@
             </xsl:if>
         </xsl:if>
         <xsl:text>\makeatletter&#10;</xsl:text>
+        <!-- reledmac/reledpar use @ in internal bidi helpers; expose a public wrapper
+             so emitted document content doesn't depend on \makeatletter being in scope. -->
+        <xsl:text>\newcommand*{\OSRTLfalse}{\@RTLfalse}&#10;</xsl:text>
         <!-- Space between the line number and the text block. If too small, right-side
              line numbers will collide with the right column in pairs layout. -->
         <xsl:text>\setlength{\linenumsep}{1em}&#10;</xsl:text>
@@ -495,7 +498,7 @@
                                  can cause reledmac to drop surrounding text or corrupt
                                  its .1 aux file. Use an explicit zero-width box lemma
                                  to keep the argument structure stable. -->
-                            <xsl:text>{\@RTLfalse\edtext{\mbox{}}{\Bfootnote{Parsha: </xsl:text>
+                            <xsl:text>\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{Parsha: </xsl:text>
                             <xsl:value-of select="f:escape-tex(string(@n))"/>
                             <xsl:text>}}}</xsl:text>
                         </xsl:if>
@@ -818,11 +821,11 @@
              content to the B-series apparatus at the page bottom.  Plain \footnote
              inside \pstart...\pend is flushed by reledmac after \pend, making it
              appear as an endnote or inline run rather than a bottom-of-page note.
-             \@RTLfalse forces reledmac's LTR code path for .1-file writes: in RTL
+             \OSRTLfalse forces reledmac's LTR code path for .1-file writes: in RTL
              mode reledmac writes ] before \@ref[N][ for single-line lemmas, which
              corrupts the catcode-group that controls [ ] delimiters when the .1
              file is re-read on the next pass. -->
-        <xsl:text>{\@RTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{</xsl:text>
+        <xsl:text>\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{</xsl:text>
         <xsl:call-template name="note-content"/>
         <xsl:text>}}}}</xsl:text>
     </xsl:template>
