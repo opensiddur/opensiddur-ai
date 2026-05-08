@@ -48,3 +48,60 @@ projects or files that no longer exist.  It prints a per-project summary on
 completion.
 
 You must re-sync before running the compiler on any newly-added project. 
+
+## Compilation (JLPTEI → compiled linear XML)
+
+The compiler takes a `project/<name>/` file, resolves transclusions, annotations, and parallel texts,
+and outputs a single “compiled” XML file that can be 
+converted into a final printable format (eg, PDF).
+
+Example (compile `project/wlc/ruth.xml` to `compiled.xml`):
+
+```bash
+uv run python -m opensiddur.exporter.compiler \
+  --project wlc \
+  --file_name ruth.xml \
+  --output_file compiled.xml
+```
+
+Example with a settings YAML (controls project priorities, annotations, and optional parallel lookup):
+
+```bash
+uv run python -m opensiddur.exporter.compiler \
+  --project wlc \
+  --file_name ruth.xml \
+  --settings doc/exporter-settings.example.yaml \
+  --output_file compiled.xml
+```
+
+## TeX export (compiled XML → LuaLaTeX)
+
+Convert the compiled XML file to LuaLaTeX using the `reledmac`/`reledpar` pipeline:
+
+```bash
+uv run python -m opensiddur.exporter.tex.latex \
+  compiled.xml \
+  --settings doc/exporter-settings.example.yaml \
+  --output compiled.tex
+```
+
+## PDF export (compiled XML → PDF)
+
+Export directly to PDF (generates TeX internally, then runs LuaLaTeX/latexmk):
+
+```bash
+uv run python -m opensiddur.exporter.pdf.pdf \
+  --settings doc/exporter-settings.example.yaml \
+  compiled.xml \
+  output.pdf
+```
+
+Keep the intermediate TeX (helpful for debugging LaTeX issues):
+
+```bash
+uv run python -m opensiddur.exporter.pdf.pdf \
+  --settings doc/exporter-settings.example.yaml \
+  --keep-tex \
+  compiled.xml \
+  output.pdf
+```
