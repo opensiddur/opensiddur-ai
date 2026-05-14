@@ -10,8 +10,11 @@
   nodes (text, milestones, and non-block inline elements) and then walked with
   `xsl:iterate` to emit `\pstart`/`\pend` pairs per verse. Chapter milestones
   break out of the current `\pstart` to emit `\eledsection{N}` headings between
-  verses. Notes become reledmac apparatus footnotes (`\Bfootnote` for editorial
-  notes). Instructional notes are rendered inline via a dedicated macro so they
+  verses. Editorial notes in the body become reledmac apparatus footnotes (`\Bfootnote` for editorial
+  notes) with interlinear serial marks (`\OSInterlinearNotemark`) matching the
+  apparatus prefix (`\OSFootnotemark`). The compiler materializes stand-off notes
+  into the body; this stylesheet does not resolve `tei:standOff` or `tei:anchor`
+  targets into apparatus. Instructional notes are rendered inline via a dedicated macro so they
   can be styled independently without entering the apparatus.
 
   Parallel mode wraps two such streams in `\begin{pages}` / `\Pages` (facing
@@ -32,12 +35,6 @@
     exclude-result-prefixes="tei j p xs f">
 
     <xsl:output method="text" encoding="UTF-8" omit-xml-declaration="yes" indent="no"/>
-
-    <!-- Index standOff notes by each whitespace-separated target anchor reference
-         so the anchor emit template can look up notes in O(1) per anchor. -->
-    <xsl:key name="note-by-anchor"
-             match="tei:standOff[@type='notes']/tei:note"
-             use="tokenize(@target, '\s+')"/>
 
     <!-- Optional pre-built additions to the preamble/postamble (license/bib/credits) -->
     <xsl:param name="additional-preamble" as="xs:string?"/>
@@ -91,6 +88,9 @@
         <xsl:text>    }&#10;</xsl:text>
         <xsl:text>  }&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
+        <!-- Polyglossia expects \hebrewfontsf if anything uses \sffamily inside Hebrew;
+             alias to \hebrewfont so we need not duplicate font paths. -->
+        <xsl:text>\let\hebrewfontsf\hebrewfont&#10;</xsl:text>
 
         <!-- reledmac/reledpar provide critical-edition apparatus and parallel-stream
              synchronization. Series A/B/C/D/E are predefined; we use:
@@ -125,6 +125,19 @@
                can prematurely close reledmac's internal groups inside \edtext/\Bfootnote. -->
         <xsl:text>\newcommand{\instructionnote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
+        <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
+             sits in the interlinear band (not a letter-attached superscript). -->
+        <xsl:text>\newcommand{\OSInterlinearNotemark}[1]{%&#10;</xsl:text>
+        <xsl:text>  \leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.1ex}{{\selectlanguage{english}\kern0.05em\normalfont\scriptsize\sffamily #1\kern0.05em}}}\hss}%&#10;</xsl:text>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSFootnotemark}[1]{%&#10;</xsl:text>
+        <xsl:text>  {\textdir TLT\selectlanguage{english}\scriptsize\sffamily #1}\space&#10;</xsl:text>
+        <xsl:text>}&#10;</xsl:text>
+        <!-- B-series apparatus: drop line-number lemmas; the footnote body carries
+             the same serial as \OSInterlinearNotemark. -->
+        <xsl:text>\Xnonumber[B]&#10;</xsl:text>
+        <xsl:text>\Xnolemmaseparator[B]&#10;</xsl:text>
+        <xsl:text>\Xinplaceofnumber[B]{0pt}&#10;</xsl:text>
 
         <!-- Line numbers must always be LTR (otherwise RTL contexts can flip digits).
              reledmac exposes \linenumberstyle; reledpar uses \linenumrepR and a
@@ -139,15 +152,12 @@
             <xsl:text>\linenummargin{outer}&#10;</xsl:text>
             <xsl:text>\linenummarginR{outer}&#10;</xsl:text>
             <xsl:if test="$layout = 'pairs'">
-                <!-- In pairs/columns mode reledpar places the RTL (Hebrew) Rightside in the
-                     physical LEFT column and the LTR (English) Leftside in the physical RIGHT
-                     column.  Line numbers must therefore go on the physically-outer margins:
-                       L-side (English, physical right, LTR) → {right} = physical right = outer margin
-                       R-side (Hebrew,  physical left,  RTL) → {right} = typographic right
-                                                                        = physical left = outer margin
-                     The naive {left} for L-side puts numbers in the inter-column gap (zero
-                     width), causing them to land inside the text. -->
-                <xsl:text>\linenummarginColumns{right}&#10;</xsl:text>
+                <!-- In \Columns mode reledpar maps \begin{Leftside} to the physical LEFT column
+                     and \begin{Rightside} to the physical RIGHT column (regardless of
+                     column-order / which language is primary).  Line numbers must sit on the
+                     outer page margins: left column → {left}, right column → {right}.  Using
+                     {right} for the left column places numbers in the inter-column gap. -->
+                <xsl:text>\linenummarginColumns{left}&#10;</xsl:text>
                 <xsl:text>\linenummarginColumnsR{right}&#10;</xsl:text>
                 <!-- By default reledpar aligns the two-column block to the right edge of the
                      type area, which can leave essentially no right margin for right-side line
@@ -157,6 +167,11 @@
                      line numbers (especially with A4 + 11pt defaults). -->
                 <xsl:text>\setlength{\Lcolwidth}{0.43\textwidth}&#10;</xsl:text>
                 <xsl:text>\setlength{\Rcolwidth}{0.43\textwidth}&#10;</xsl:text>
+                <!-- Polyglossia Hebrew uses TRT; if \pardir stays RTL when \Columns runs,
+                     LuaTeX lays out the two-column \hbox right-to-left and Leftside (Hebrew)
+                     lands in the physical right column.  Force LTR for assembly only. -->
+                <xsl:text>\let\OSreledparColumnsOrig\Columns&#10;</xsl:text>
+                <xsl:text>\renewcommand{\Columns}{\begingroup\pardir TLT\relax\textdir TLT\relax\OSreledparColumnsOrig\endgroup}&#10;</xsl:text>
             </xsl:if>
         </xsl:if>
         <xsl:text>\makeatletter&#10;</xsl:text>
@@ -709,12 +724,7 @@
         <xsl:text>\leavevmode\\&#10;</xsl:text>
     </xsl:template>
 
-    <!-- Anchors in the body text mark where standOff notes should appear.
-         Look up the note via the key and emit it as a footnote at this position. -->
-    <xsl:template match="tei:anchor[@xml:id]" mode="emit" priority="5">
-        <xsl:apply-templates select="key('note-by-anchor', concat('#', @xml:id))" mode="emit"/>
-    </xsl:template>
-
+    <!-- tei:anchor: linkage ids only; editorial notes are already inlined in the body. -->
     <xsl:template match="tei:anchor" mode="emit"/>
 
     <xsl:template match="tei:hi[@rend='small-caps']" mode="emit" priority="10">
@@ -815,17 +825,29 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
-    <xsl:template match="tei:note" mode="emit">
+    <xsl:template match="tei:note[not(ancestor::tei:standOff)][not(@type='instruction')]" mode="emit">
+        <xsl:variable name="serial" as="xs:integer"
+                      select="f:editorial-note-emissions-before(.) + 1"/>
+        <xsl:call-template name="os-b-footnote">
+            <xsl:with-param name="serial" select="$serial"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="os-b-footnote">
+        <xsl:param name="serial" as="xs:integer"/>
         <!-- In bidi/RTL contexts, empty-lemma \edtext{} can be fragile with reledmac's
-             aux-file writes. Use an explicit zero-width box lemma. \Bfootnote routes the
-             content to the B-series apparatus at the page bottom.  Plain \footnote
-             inside \pstart...\pend is flushed by reledmac after \pend, making it
-             appear as an endnote or inline run rather than a bottom-of-page note.
+             aux-file writes. Use an explicit visible-but-zero-width lemma via
+             \OSInterlinearNotemark. \Bfootnote routes content to the B-series apparatus.
+             Plain \footnote inside \pstart...\pend is flushed by reledmac after \pend.
              \OSRTLfalse forces reledmac's LTR code path for .1-file writes: in RTL
              mode reledmac writes ] before \@ref[N][ for single-line lemmas, which
              corrupts the catcode-group that controls [ ] delimiters when the .1
              file is re-read on the next pass. -->
-        <xsl:text>\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{</xsl:text>
+        <xsl:text>\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{</xsl:text>
+        <xsl:value-of select="string($serial)"/>
+        <xsl:text>}}{\Bfootnote{\OSFootnotemark{</xsl:text>
+        <xsl:value-of select="string($serial)"/>
+        <xsl:text>}\notenote{</xsl:text>
         <xsl:call-template name="note-content"/>
         <xsl:text>}}}}</xsl:text>
     </xsl:template>
@@ -861,6 +883,11 @@
     <!-- ====================================================================
          TeX escaping helpers
          ==================================================================== -->
+
+    <xsl:function name="f:editorial-note-emissions-before" as="xs:integer">
+        <xsl:param name="ctx" as="element()"/>
+        <xsl:sequence select="count($ctx/preceding::tei:note[not(@type='instruction') and not(ancestor::tei:standOff)])"/>
+    </xsl:function>
 
     <xsl:function name="f:escape-tex" as="xs:string">
         <xsl:param name="s" as="xs:string"/>
