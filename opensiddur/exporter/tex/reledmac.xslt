@@ -128,13 +128,13 @@
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
              sits in the interlinear band (not a letter-attached superscript). -->
         <xsl:text>\newcommand{\OSInterlinearNotemark}[1]{%&#10;</xsl:text>
-        <xsl:text>  \leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.1ex}{{\selectlanguage{english}\kern0.05em\normalfont\scriptsize\sffamily #1\kern0.05em}}}\hss}%&#10;</xsl:text>
+        <xsl:text>  \leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.5ex}{{\selectlanguage{english}\kern0.05em\normalfont\scriptsize\sffamily #1\kern0.05em}}}\hss}%&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSFootnotemark}[1]{%&#10;</xsl:text>
         <xsl:text>  {\textdir TLT\selectlanguage{english}\scriptsize\sffamily #1}\space&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
-        <!-- B-series apparatus: drop line-number lemmas; the footnote body carries
-             the same serial as \OSInterlinearNotemark. -->
+        <!-- B-series apparatus: no line numbers; lemma text is not repeated in the
+             footnote (\Xwraplemma[B]{\@gobble}) — only \OSFootnotemark + \notenote. -->
         <xsl:text>\Xnonumber[B]&#10;</xsl:text>
         <xsl:text>\Xnolemmaseparator[B]&#10;</xsl:text>
         <xsl:text>\Xinplaceofnumber[B]{0pt}&#10;</xsl:text>
@@ -175,6 +175,10 @@
             </xsl:if>
         </xsl:if>
         <xsl:text>\makeatletter&#10;</xsl:text>
+        <!-- reledmac repeats the \edtext lemma in the apparatus; our lemma is the raised
+             \OSInterlinearNotemark. Gobble it for series B so apparatus shows only
+             \OSFootnotemark + note text (no duplicate serial). -->
+        <xsl:text>\Xwraplemma[B]{\@gobble}&#10;</xsl:text>
         <!-- reledmac/reledpar use @ in internal bidi helpers; expose a public wrapper
              so emitted document content doesn't depend on \makeatletter being in scope. -->
         <xsl:text>\newcommand*{\OSRTLfalse}{\@RTLfalse}&#10;</xsl:text>
