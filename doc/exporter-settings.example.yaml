@@ -1,0 +1,45 @@
+---
+# Example exporter settings file.
+# This file includes every currently supported exporter settings 
+#
+# Notes:
+# - Project names must correspond to directories under `project/`.
+# - `parallel.column_order` values: `primary_first` | `primary_last`
+# - `typography.layout` values: `pages` | `pairs`
+# - `typography.paper` values: `a4paper` | `letterpaper` | `legalpaper` | `a5paper` | `b5paper` | `executivepaper`
+
+priority:
+  # Project priority for resolving `urn:x-opensiddur:` references to *texts* (transclusions)
+  # The first entry will typically be the project you are compiling.
+  # The lower priority projects can be used when the first project wants to import from others (eg, a siddur that borrows Tanach text from another source)
+  transclusion:
+    - wlc
+    - jps1917
+
+  # Project priority for resolving `urn:x-opensiddur:` references to *instructions*
+  instructions:
+    - wlc
+    - jps1917
+
+# Projects from which to include annotations
+# *All* annotations from the given projects will be included.
+annotations:
+  - wlc
+  - jps1917
+
+# Optional parallel-text configuration. Omit to disable.
+parallel:
+  # Projects to search for parallel text content (in priority order)
+  projects:
+    - wlc
+    - jps1917
+  # Column order for parallel text display in printed output
+  column_order: primary_first
+
+# Output-format settings consumed by the TeX/PDF stage only.
+typography:
+  hebrew_font: "Frank Ruehl CLM"
+  latin_font: "Linux Libertine O"
+  layout: pairs
+  paper: letterpaper
+  fontsize: "11pt"

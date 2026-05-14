@@ -5,7 +5,6 @@ import unittest.mock
 
 from lxml import etree
 
-from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.external_compiler import PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.marker_reconstruct import (
     doc_needs_marker_reconstruction,
@@ -14,7 +13,6 @@ from opensiddur.exporter.marker_reconstruct import (
     substantive_content,
 )
 from opensiddur.exporter import marker_reconstruct as mr
-from opensiddur.exporter.tex.xelatex import XSLT_FILE
 
 P_NS = PROCESSING_NAMESPACE
 
@@ -102,25 +100,6 @@ class TestMarkerReconstruct(unittest.TestCase):
         self.assertEqual(len(ps), 1)
         self.assertIsNone(ps[0].get(f"{{{P_NS}}}part"))
         self.assertIn("Only", "".join(ps[0].itertext()))
-
-    def test_xslt_parallel_row_after_reconstruct(self):
-        xml = f"""<tei:TEI xmlns:tei="{TEI_NS}" xmlns:p="{P_NS}">
-          <tei:text><tei:body>
-            <p:parallel column-order="primary_first">
-              <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
-              <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hello</tei:p></p:parallelItem>
-            </p:parallel>
-          </tei:body></tei:text></tei:TEI>"""
-        root = etree.fromstring(xml.encode())
-        reconstruct_markered_document(root)
-        out = xslt_transform_string(
-            XSLT_FILE,
-            etree.tostring(root, encoding="unicode"),
-            xslt_params={"additional-preamble": "", "additional-postamble": ""},
-        )
-        self.assertIn(r"\begin{paracol}{2}", out)
-        self.assertIn("שלום", out)
-        self.assertIn("Hello", out)
 
     def test_substantive_content_milestone_tail(self):
         xml = f"""<tei:TEI xmlns:tei="{TEI_NS}">

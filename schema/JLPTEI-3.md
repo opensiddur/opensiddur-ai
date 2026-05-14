@@ -102,30 +102,23 @@ All URIs reference the following scopes:
 2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the next milestone of the same unit *or* the end of the file if no subsequent milestone of the same unit exists.
 3. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
 
-#### The user's contributor profile
-Every contributor to the project has their contribution identified via a 
-URN.
+#### Contributors and contributor URNs
+Contributions are credited in the file header using `tei:respStmt` entries, with a contributor URN stored in `tei:name/@ref`.
 
-The contributor URN is referenced as `urn:x-opensiddur:contributor:{contributor_space}/{identifier}`.
+Contributor URNs use the form `urn:x-opensiddur:<namespace>/<identifier>`.
 
-The `contribuor_space` indicates where the contributor made the contribution or where
-their identifier is meaningful. For example, contributors to Hebrew Wikisource will be in the `he.wikisource.org` space, and the `identifier` will
-reference their Wikisource username.
+The `namespace` indicates where the identifier is meaningful. For example:
+- `en.wikisource.org/{username}` for English Wikisource contributors
+- `he.wikisource.org/{username}` for Hebrew Wikisource contributors
+- `opensiddur.org/{identifier}` for original Open Siddur contributors
 
-Contributors to Open Siddur will be in the `opensiddur.org` space and the identifier will identify a file in the `contributors` directory.
-
-Contributor profiles have the following XML form:
+Example:
 ```xml
-<j:contributor xmlns:tei="http://www.tei-c.org/ns/1.0"
-               xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
-   <tei:name>{contributor name}</tei:name>
-   <tei:orgName>{optional contributor's organization name}</tei:orgName>
-   <tei:email>{contributor contact email}</tei:email>
-   <tei:ref type="url" target="{website}">{website name}</tei:ref>
-</j:contributor>
+<tei:respStmt>
+  <tei:resp key="trc">Transcribed by</tei:resp>
+  <tei:name ref="urn:x-opensiddur:en.wikisource.org/Prosody">Prosody (English Wikisource contributor)</tei:name>
+</tei:respStmt>
 ```
-
-Only the `tei:name` and `tei:email` are required.
 
 ### Project index
 Every project has an entry point file called `index.xml`. This file contains the project metadata, including the project header.
@@ -207,9 +200,6 @@ Every document has a TEI header with a standardized structure.
             </tei:bibl>
          </tei:sourceDesc>
      </tei:fileDesc>
-     <tei:revisionDesc>
-         <tei:change when="{now}">{revision_message}</tei:change>
-     </tei:revisionDesc>
  </tei:teiHeader>
 ```
 
@@ -382,7 +372,7 @@ The following rules apply to anchors:
 ### Inclusions
 To include one text inside another, use the `j:transclude` tag inline in the text. Preferentially, use the URN reference of the text to be included, using the `target` attribute for the pointer target.
 
-Two types of inclusions are supported. The intended type is indicated by the `type` attribute on the `ptr` element:
+Two types of inclusions are supported. The intended type is indicated by the `type` attribute on the `j:transclude` element:
 * `inline`: The text is to be included in place. Any XML hierarchy (including paragraphs, line groups, etc) 
   within the included text are excluded.
 * `external`: The text and its XML hierarchy are to be included in place.

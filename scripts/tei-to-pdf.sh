@@ -1,32 +1,51 @@
 #!/bin/bash
 
-# This script converts a TEI file to a PDF file using the Open Siddur TEI to PDF converter.
-
+# Convert a JLPTEI source file (in a project directory) to a PDF using the
+# LuaLaTeX + reledmac/reledpar pipeline.
+#
+# Two stages run sequentially:
+#   1. opensiddur.exporter.compiler           — JLPTEI → linear pseudo-TEI
+#   2. opensiddur.exporter.pdf.pdf            — pseudo-TEI → reledmac LuaLaTeX → PDF
+#
+# The optional ``-s <settings-file>`` flag is forwarded to *both* stages:
+#   - the compiler reads ``priority``, ``parallel``, ``annotations``;
+#   - the PDF stage reads ``typography`` (fonts, layout, paper, fontsize).
+#
 # Usage:
-# ./tei-to-pdf.sh <project> <file_name> <output-file>
+#   ./tei-to-pdf.sh [-s <settings-file>] [--keep-tex | --tex-output <path>] <project> <file_name> <output-file>
 
-# Example:
-# ./tei-to-pdf.sh  output.pdf
-
-# The input file should be a valid TEI file.
-# The output file will be a PDF file.
-# Parse arguments, supporting optional -s <settings-file>
 set -e
 
 usage() {
-  echo "Usage: $0 [-s <settings-file>] <project> <file_name> <output-file>"
+  echo "Usage: $0 [-s <settings-file>] [--keep-tex | --tex-output <path>] <project> <file_name> <output-file>"
   exit 1
 }
 
 SETTINGS_FILE=""
-while getopts ":s:" opt; do
-  case "$opt" in
-    s) SETTINGS_FILE="$OPTARG" ;;
-    \?) echo "Invalid option: -$OPTARG" >&2; usage ;;
-    :)  echo "Option -$OPTARG requires an argument." >&2; usage ;;
+KEEP_TEX=false
+TEX_OUTPUT=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -s)
+      SETTINGS_FILE="${2:-}"; shift 2 ;;
+    --keep-tex)
+      KEEP_TEX=true; shift ;;
+    --tex-output)
+      TEX_OUTPUT="${2:-}"; shift 2 ;;
+    --)
+      shift; break ;;
+    -*)
+      echo "Invalid option: $1" >&2; usage ;;
+    *)
+      break ;;
   esac
 done
-shift $((OPTIND-1))
+
+if $KEEP_TEX && [ -n "$TEX_OUTPUT" ]; then
+  echo "Error: --keep-tex and --tex-output are mutually exclusive." >&2
+  exit 2
+fi
 
 if [ "$#" -ne 3 ]; then
   usage
@@ -37,12 +56,18 @@ FILE_NAME="$2"
 OUTPUT="$3"
 
 if [ -n "$SETTINGS_FILE" ]; then
-  SETTINGS_ARG="-s $SETTINGS_FILE"
+  SETTINGS_ARG=(-s "$SETTINGS_FILE")
 else
-  SETTINGS_ARG=""
+  SETTINGS_ARG=()
 fi
 
+TEX_OUTPUT_ARGS=()
+if [ -n "$TEX_OUTPUT" ]; then
+  TEX_OUTPUT_ARGS=(--tex-output "$TEX_OUTPUT")
+elif $KEEP_TEX; then
+  TEX_OUTPUT_ARGS=(--keep-tex)
+fi
 
-uv run python -m opensiddur.exporter.compiler ${SETTINGS_ARG} -p $1 -f $2 -o $3.xml
-uv run python -m opensiddur.exporter.pdf.pdf $3.xml $3
-rm -f $3.xml
+uv run python -m opensiddur.exporter.compiler "${SETTINGS_ARG[@]}" -p "$PROJECT" -f "$FILE_NAME" -o "$OUTPUT.xml"
+uv run python -m opensiddur.exporter.pdf.pdf "${SETTINGS_ARG[@]}" "${TEX_OUTPUT_ARGS[@]}" "$OUTPUT.xml" "$OUTPUT"
+rm -f "$OUTPUT.xml"
