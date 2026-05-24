@@ -323,8 +323,9 @@ class CompilerProcessor:
         will continue to use this instruction as-is. 
 
         2. If the element has standoff annotation (a commentary or editorial note),
-        we need to determine which project's commentary set should be used to provide the corresponding commentary.
-        All selected commentaries should be loaded and returned.
+        we need to determine which project's commentary set should be used to provide
+        the corresponding commentary. All selected commentaries should be loaded and
+        returned.
 
         Args:
             element: The element to annotate
@@ -403,12 +404,13 @@ class CompilerProcessor:
             # For commentary/editorial notes, select all annotations for corresp or xml_id
             # May be standoff annotation, or inline.
             references = self._refdb.get_references_to(corresp, xml_id, project, file_name)
-            note_references = [r for r in references 
+            note_references = [r for r in references
                 if r.element_tag =="{http://www.tei-c.org/ns/1.0}note"]
-            limited_references = self._urn_resolver.prioritize_range(note_references, self.linear_data.annotation_projects, return_all=True)
-            
+            limited_references = self._urn_resolver.prioritize_range(
+                note_references, self.linear_data.annotation_projects, return_all=True)
+
             result_elements = []
-            if limited_references:  # Handle case where prioritize_range returns None
+            if limited_references:
                 for reference in limited_references:
                     processor = CompilerProcessor(
                         reference.project,
@@ -423,22 +425,19 @@ class CompilerProcessor:
                     processed_element = processor.process(reference_element)
                     if not(reference.project == self.project and reference.file_name == self.file_name):
                         self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
-                    
-                    # Check if language differs and add xml:lang if needed
+
                     annotation_lang = processor.root_language
                     insertion_context_lang = self._get_in_scope_language(element)
                     if annotation_lang and annotation_lang != insertion_context_lang:
                         processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', annotation_lang)
-                    
+
                     result_elements.append(processed_element)
             if result_elements:
                 annotation_command = _AnnotationCommand.INSERT
             else:
                 annotation_command = _AnnotationCommand.NONE
         return result_elements, annotation_command
-    
 
-        
     @staticmethod
     def _insert_first_element(element: ElementBase, new_child: ElementBase) -> ElementBase:
         """

@@ -53,6 +53,8 @@ class TestPreamble(unittest.TestCase):
         self.assertIn(r"\documentclass", out)
         self.assertIn(r"\usepackage{polyglossia}", out)
         self.assertIn(r"\usepackage{reledmac}", out)
+        self.assertIn(r"\Xnonumber[B]", out)
+        self.assertIn(r"\newcommand{\OSInterlinearNotemark}", out)
         # No parallel content → no reledpar package.
         self.assertNotIn(r"\usepackage{reledpar}", out)
         self.assertIn(r"\setotherlanguage{hebrew}", out)
@@ -230,6 +232,19 @@ class TestParallelMapping(unittest.TestCase):
         self.assertNotIn(r"\begin{pages}", out)
         self.assertNotIn(r"\Pages", out)
 
+    def test_pairs_layout_line_numbers_on_outer_column_margins(self):
+        """Leftside is the physical left column; Rightside is the physical right column.
+        Both margins {right} regresses Hebrew numbers into the gutter."""
+        out = _transform(self.XML, layout="pairs")
+        self.assertIn(r"\linenummarginColumns{left}", out)
+        self.assertIn(r"\linenummarginColumnsR{right}", out)
+
+    def test_pairs_layout_forces_ltr_for_columns_assembly(self):
+        r"""Avoid RTL \pardir flipping the visual order of the two-column row."""
+        out = _transform(self.XML, layout="pairs")
+        self.assertIn(r"\let\OSreledparColumnsOrig\Columns", out)
+        self.assertIn(r"\pardir TLT\relax\textdir TLT\relax\OSreledparColumnsOrig", out)
+
     def test_each_side_has_its_own_numbering(self):
         out = _transform(self.XML)
         # One \beginnumbering per side, one \endnumbering per side.
@@ -321,9 +336,10 @@ class TestParallelMapping(unittest.TestCase):
 
 
 class TestNotesMapping(unittest.TestCase):
-    """tei:note elements must become reledmac apparatus footnotes anchored
-    via \\edtext{...}{\\Bfootnote{...}}. Instructional notes are inline via
-    \\instructionnote{...}, not footnotes."""
+    """Body ``tei:note`` elements (materialized by the compiler) become reledmac
+    apparatus footnotes via ``\\edtext{...}{\\Bfootnote{...}}``. ``tei:standOff``
+    is not expanded at the TeX stage. Instructional notes use ``\\instructionnote``.
+    """
 
     def test_default_note_is_b_series_apparatus(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -333,9 +349,9 @@ class TestNotesMapping(unittest.TestCase):
           </tei:p></tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        # \edtext{}{\Bfootnote{}} is the proper reledmac idiom for apparatus notes:
-        # zero-width lemma + B-series footnote at page bottom (not an endnote after \pend).
-        self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{", out)
+        # \edtext{\OSInterlinearNotemark}{... \Bfootnote{\OSFootnotemark ...}}: interlinear
+        # serial mark + B-series footnote at page bottom (not an endnote after \pend).
+        self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{1}}{\Bfootnote{\OSFootnotemark{1}\notenote{", out)
         self.assertIn("commentary", out)
         self.assertNotIn(r"\footnote{", out)
 
@@ -350,9 +366,24 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn(r"\instructionnote{", out)
         self.assertIn("stand", out)
 
-    def test_standoff_note_appears_at_anchor_position(self):
-        """Notes stored in tei:standOff must be emitted as B-series apparatus
-        footnotes at the tei:anchor position in the body, not silently dropped."""
+    def test_body_editorial_note_emits_apparatus(self):
+        """Compiler inlines editorial tei:note in the body; XSLT maps it to B-series."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:p>
+              <tei:milestone unit="verse" n="1"/>
+              Hebrew text<tei:note xml:lang="en">English annotation</tei:note> more
+            </tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{1}}{\Bfootnote{\OSFootnotemark{1}\notenote{", out)
+        self.assertIn("English annotation", out)
+        self.assertIn(r"{{\textdir TLT\selectlanguage{english}", out)
+
+    def test_standoff_not_resolved_at_tex_stage(self):
+        """tei:standOff is not expanded here; only body notes become apparatus."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
           <tei:text><tei:body>
@@ -362,32 +393,73 @@ class TestNotesMapping(unittest.TestCase):
             </tei:p>
           </tei:body></tei:text>
           <tei:standOff type="notes" xml:lang="en">
-            <tei:note target="#note-ref-1">English annotation</tei:note>
+            <tei:note target="#note-ref-1">StandOff only.</tei:note>
           </tei:standOff>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{\notenote{", out)
-        self.assertIn("English annotation", out)
-        # English note inside Hebrew stream must force LTR direction.
-        self.assertIn(r"{{\textdir TLT\selectlanguage{english}", out)
+        self.assertNotIn("StandOff only.", out)
+        self.assertNotIn(r"\leavevmode{\OSRTLfalse\edtext", out)
 
-    def test_standoff_note_with_multiple_targets(self):
-        """A note targeting multiple anchors must appear at each anchor site."""
+    def test_inline_note_with_standoff_duplicate_emits_once(self):
+        """Body note plus matching tei:standOff (compiler leaves both) must not double TeX."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
           <tei:text><tei:body>
             <tei:p>
               <tei:milestone unit="verse" n="1"/>
-              Word1<tei:anchor xml:id="a1"/> Word2<tei:anchor xml:id="a2"/>
+              Hebrew<tei:note xml:lang="en">Transcription uncertain.</tei:note><tei:anchor xml:id="a1"/>after
             </tei:p>
           </tei:body></tei:text>
           <tei:standOff type="notes" xml:lang="en">
-            <tei:note target="#a1 #a2">Shared note</tei:note>
+            <tei:note target="#a1">Transcription uncertain.</tei:note>
           </tei:standOff>
         </tei:TEI>"""
         out = _transform(xml)
-        # The same note appears twice — once per anchor.
-        self.assertEqual(out.count("Shared note"), 2)
+        self.assertEqual(out.count("Transcription uncertain."), 1)
+        self.assertEqual(out.count(r"\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{1}"), 1)
+
+    def test_two_body_editorial_notes_distinct_serials(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:p>
+              <tei:milestone unit="verse" n="1"/>
+              A<tei:note xml:lang="en">First</tei:note> B<tei:note xml:lang="en">Second</tei:note>
+            </tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\OSInterlinearNotemark{1}", out)
+        self.assertIn(r"\OSInterlinearNotemark{2}", out)
+        self.assertEqual(out.count("First"), 1)
+        self.assertEqual(out.count("Second"), 1)
+
+    def test_parallel_body_note_per_column(self):
+        """Each parallel stream numbers its own editorial notes from 1."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he"><tei:p>
+                <tei:milestone unit="verse" n="1"/>א<tei:note xml:lang="en">Heb note</tei:note>
+              </tei:p></p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en"><tei:p>
+                <tei:milestone unit="verse" n="1"/>A<tei:note>Eng note</tei:note>
+              </tei:p></p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        left = re.search(r"\\begin\{Leftside\}(.*?)\\end\{Leftside\}", out, re.DOTALL)
+        right = re.search(r"\\begin\{Rightside\}(.*?)\\end\{Rightside\}", out, re.DOTALL)
+        self.assertIsNotNone(left)
+        self.assertIsNotNone(right)
+        self.assertIn(r"\OSInterlinearNotemark{1}", left.group(1))
+        self.assertIn("Heb note", left.group(1))
+        # Editorial serials count preceding notes in document order (Leftside before Rightside).
+        self.assertIn(r"\OSInterlinearNotemark{2}", right.group(1))
+        self.assertIn("Eng note", right.group(1))
 
     def test_note_language_forces_direction(self):
         """Notes must force their own direction based on the in-scope xml:lang.

@@ -64,15 +64,19 @@ def xslt_transform_string(
 
 def xslt_transform(
     xslt_file: Path,
-    input_file: Path, 
-    output_file: Optional[Path] = None):
-    
+    input_file: Path,
+    output_file: Optional[Path] = None,
+    *,
+    xslt_params: Optional[dict[str, Any]] = None,
+):
     try:
         # Read the input XML
         with open(input_file, 'r', encoding='utf-8') as input_fd:
-            input_xml = input_fd.read()        
-        
-        result = xslt_transform_string(xslt_file, input_xml)
+            input_xml = input_fd.read()
+
+        result = xslt_transform_string(
+            xslt_file, input_xml, xslt_params=xslt_params
+        )
         
         if output_file:
             with open(output_file, 'w', encoding='utf-8') as output_fd:
