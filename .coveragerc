@@ -4,6 +4,7 @@ omit =
     opensiddur/tests/*
     */__pycache__/*
     */test_*.py
+    opensiddur/importer/wlc/download_tanach.py
 
 [report]
 precision = 2
