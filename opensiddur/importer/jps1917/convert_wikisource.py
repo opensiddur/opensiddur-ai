@@ -18,6 +18,25 @@ from opensiddur.common.constants import PROJECT_DIRECTORY
 
 MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
 
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent.parent.parent
+
+
+def make_project_directory(project_dir: Path | None = None) -> Path:
+    """Create the JPS 1917 project directory if missing; return its path."""
+    directory = (
+        project_dir.resolve()
+        if project_dir is not None
+        else PROJECT_DIRECTORY / "jps1917"
+    )
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def _default_project_directory() -> Path:
+    return PROJECT_DIRECTORY / "jps1917"
+
 class Book(BaseModel):
     book_name_he: str
     book_name_en: str
@@ -509,8 +528,15 @@ def process_mediawiki(
     #     f.write(pre_xml)
     return mediawiki_xml_to_tei(pre_xml, xslt_params=kwargs)
 
-def validate_and_write_tei_file(tei_content: str, file_name: str):
-    out_path = PROJECT_DIRECTORY / "jps1917" / f"{file_name}.xml"
+def validate_and_write_tei_file(
+    tei_content: str,
+    file_name: str,
+    project_dir: Path | None = None,
+):
+    directory = (
+        project_dir.resolve() if project_dir is not None else _default_project_directory()
+    )
+    out_path = directory / f"{file_name}.xml"
     print(f"Writing {out_path}")
     pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
     is_valid, errors = validate(pretty_xml)
@@ -519,7 +545,11 @@ def validate_and_write_tei_file(tei_content: str, file_name: str):
     with open(out_path, "w") as f:
         f.write(pretty_xml)
 
-def book_file(book: Book, sourcetexts_root: Path | None = None) -> str:
+def book_file(
+    book: Book,
+    sourcetexts_root: Path | None = None,
+    project_dir: Path | None = None,
+) -> str:
     transcription_credits = get_credits_pages(
         book.start_page, book.end_page, sourcetexts_root
     )
@@ -544,12 +574,16 @@ def book_file(book: Book, sourcetexts_root: Path | None = None) -> str:
     )
     with open("temp.tei.xml", "w") as f:
         f.write(tei_content)
-    validate_and_write_tei_file(tei_content, book.file_name)
+    validate_and_write_tei_file(tei_content, book.file_name, project_dir)
 
     return tei_content
 
 
-def index_file(idx: Index, sourcetexts_root: Path | None = None) -> str:
+def index_file(
+    idx: Index,
+    sourcetexts_root: Path | None = None,
+    project_dir: Path | None = None,
+) -> str:
     if idx.start_page is not None and idx.end_page is not None:
         transcription_credits = get_credits_pages(
             idx.start_page, idx.end_page, sourcetexts_root
@@ -594,20 +628,27 @@ def index_file(idx: Index, sourcetexts_root: Path | None = None) -> str:
     )
     with open("temp.tei.xml", "w") as f:
         f.write(tei_content)
-    validate_and_write_tei_file(tei_content, idx.file_name)
+    validate_and_write_tei_file(tei_content, idx.file_name, project_dir)
 
     for transclusion in idx.transclusions:
         if isinstance(transclusion, Index):
-            index_file(transclusion, sourcetexts_root)
+            index_file(transclusion, sourcetexts_root, project_dir)
         else:
-            book_file(transclusion, sourcetexts_root)
+            book_file(transclusion, sourcetexts_root, project_dir)
 
     return tei_content
 
 
-def main(argv: list[str] | None = None) -> None:  # pragma: no cover
+def _build_arg_parser() -> argparse.ArgumentParser:
+    repo = _repo_root()
     parser = argparse.ArgumentParser(
         description="Convert JPS 1917 Wikisource page dumps to JLPTEI under project/jps1917."
+    )
+    parser.add_argument(
+        "--project-dir",
+        type=Path,
+        default=repo / "project" / "jps1917",
+        help="Output directory for generated JLPTEI (default: <repo>/project/jps1917).",
     )
     parser.add_argument(
         "--sourcetexts-root",
@@ -618,10 +659,14 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
             "<root>/jps1917 (default: <repo>/sources)."
         ),
     )
-    args = parser.parse_args(argv)
-    (PROJECT_DIRECTORY / "jps1917").mkdir(parents=True, exist_ok=True)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:  # pragma: no cover
+    args = _build_arg_parser().parse_args(argv)
+    project_directory = make_project_directory(args.project_dir)
     for part in JPS_1917:
-        index_file(part, args.sourcetexts_root)
+        index_file(part, args.sourcetexts_root, project_directory)
 
 
 if __name__ == "__main__":  # pragma: no cover
