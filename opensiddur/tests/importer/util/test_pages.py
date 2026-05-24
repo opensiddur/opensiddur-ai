@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, mock_open, MagicMock
 from pathlib import Path
 
-from opensiddur.importer.util.pages import get_page, get_credits
+from opensiddur.importer.util.pages import get_page, get_credits, jps1917_text_directory
 from opensiddur.importer.util.constants import Page
 
 
@@ -20,7 +20,7 @@ class TestGetPage(unittest.TestCase):
         self.assertEqual(result.content, 'Page content here')
         
         # Should open the correct file
-        expected_path = Path(__file__).parent.parent.parent.parent.parent / "sources/jps1917/text/0025.txt"
+        expected_path = jps1917_text_directory() / "0025.txt"
         mock_file.assert_called_once()
         # Check that the path used ends with the expected filename
         actual_call = str(mock_file.call_args[0][0])

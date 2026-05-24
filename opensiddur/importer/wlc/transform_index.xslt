@@ -9,6 +9,10 @@
     exclude-result-prefixes="xs">
     
     <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
+
+    <!-- File URI of the WLC root (…/sources/wlc): directory that contains Books/. Trailing / required for resolve-uri; set from wlc.py. -->
+    <xsl:param name="wlc-root-uri" as="xs:string" select="''"/>
+    <xsl:variable name="tanach-index-books" as="node()*" select="if (normalize-space($wlc-root-uri)) then doc(resolve-uri('Books/TanachIndex.xml', $wlc-root-uri))//book else doc(resolve-uri('../../../sources/wlc/Books/TanachIndex.xml', static-base-uri()))//book"/>
     
     <xsl:mode on-no-match="fail"/>
     
@@ -38,7 +42,7 @@
             <tei:text>
                 <tei:body>
                     <tei:div corresp="urn:x-opensiddur:text:bible:tanakh">
-                        <xsl:apply-templates select="doc('../../../sources/wlc/Books/TanachIndex.xml')//book"/>
+                        <xsl:apply-templates select="$tanach-index-books"/>
                     </tei:div>
                 </tei:body>
             </tei:text>

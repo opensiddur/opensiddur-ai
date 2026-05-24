@@ -200,11 +200,27 @@
         <attList>
           <attDef ident="type" mode="add">
             <desc>Characterizes the element in some sense, using any convenient classification scheme or typology.</desc>
-            <datatype>
-              <dataRef key="teidata.enumerated"/>
-            </datatype>
+            <valList type="closed">
+              <valItem ident="open-1"/>
+              <valItem ident="closed-1"/>
+              <valItem ident="open-3"/>
+            </valList>
           </attDef>
         </attList>
+      </elementSpec>
+
+      <elementSpec ident="divineName" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+        <desc>
+          Indicates that the enclosed text is a divine name (e.g., the Tetragrammaton or other epithet) for special handling by downstream processors.
+        </desc>
+        <classes>
+          <memberOf key="model.phrase"/>
+          <memberOf key="model.global"/>
+          <memberOf key="model.nameLike.agent"/>
+        </classes>
+        <content>
+          <macroRef key="macro.paraContent"/>
+        </content>
       </elementSpec>
       
       <elementSpec ident="title" module="core" mode="change">

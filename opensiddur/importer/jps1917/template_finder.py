@@ -11,10 +11,14 @@ from typing import Dict, Optional
 from pathlib import Path
 
 # Import the get_page function from the agent tools
-from opensiddur.importer.util.pages import get_page
+from opensiddur.importer.util.pages import default_sourcetexts_root, get_page
 
 
-def find_all_tags(start_page: int = 1, end_page: Optional[int] = None) -> Dict[str, Dict]:
+def find_all_tags(
+    start_page: int = 1,
+    end_page: Optional[int] = None,
+    sourcetexts_root: Optional[Path] = None,
+) -> Dict[str, Dict]:
     """
     Find all MediaWiki tags used across all pages.
     
@@ -42,13 +46,13 @@ def find_all_tags(start_page: int = 1, end_page: Optional[int] = None) -> Dict[s
     
     # If end_page not specified, try to find the last page
     if end_page is None:
-        start_page, end_page = find_page_range()
+        start_page, end_page = find_page_range(sourcetexts_root)
     
     print(f"Scanning pages {start_page} to {end_page} for MediaWiki tags...")
     
     for page_num in range(start_page, end_page + 1):
         try:
-            page_obj = get_page(page_num)
+            page_obj = get_page(page_num, sourcetexts_root)
             if page_obj is None:
                 print(f"Page {page_num} not found, stopping scan")
                 break
@@ -89,7 +93,11 @@ def find_all_tags(start_page: int = 1, end_page: Optional[int] = None) -> Dict[s
     }
 
 
-def find_all_templates(start_page: int = 1, end_page: Optional[int] = None) -> Dict[str, Dict]:
+def find_all_templates(
+    start_page: int = 1,
+    end_page: Optional[int] = None,
+    sourcetexts_root: Optional[Path] = None,
+) -> Dict[str, Dict]:
     """
     Find all MediaWiki templates used across all pages.
     
@@ -117,13 +125,13 @@ def find_all_templates(start_page: int = 1, end_page: Optional[int] = None) -> D
     
     # If end_page not specified, try to find the last page
     if end_page is None:
-        start_page, end_page = find_page_range()
+        start_page, end_page = find_page_range(sourcetexts_root)
     
     print(f"Scanning pages {start_page} to {end_page} for MediaWiki templates...")
     
     for page_num in range(start_page, end_page + 1):
         try:
-            page_obj = get_page(page_num)
+            page_obj = get_page(page_num, sourcetexts_root)
             if page_obj is None:
                 print(f"Page {page_num} not found, stopping scan")
                 break
@@ -264,7 +272,7 @@ def extract_templates_from_wikitext(wikitext: str) -> Dict[str, Dict]:
     return templates
 
 
-def find_page_range() -> tuple[int, int]:
+def find_page_range(sourcetexts_root: Optional[Path] = None) -> tuple[int, int]:
     """
     Find the last available page by checking for consecutive missing pages.
     
@@ -276,13 +284,13 @@ def find_page_range() -> tuple[int, int]:
     
     # Start from a reasonable point and work backwards
     for page_num in range(1200, 0, -1):
-        page_obj = get_page(page_num)
+        page_obj = get_page(page_num, sourcetexts_root)
         if page_obj is not None:
             last_page = page_num
             break
     
     for page_num in range(last_page, 0, -1):
-        page_obj = get_page(page_num)
+        page_obj = get_page(page_num, sourcetexts_root)
         if page_obj is None:
             first_page = page_num + 1
             break
@@ -407,6 +415,18 @@ def save_template_analysis(template_data: Dict, output_file: str = "template_ana
 
 
 if __name__ == "__main__": # pragma: no cover
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Analyze JPS 1917 Wikisource MediaWiki templates and tags.")
+    parser.add_argument(
+        "--sourcetexts-root",
+        type=Path,
+        default=default_sourcetexts_root(),
+        help="Root of sourcetexts repo; JPS pages under <root>/jps1917 (default: <repo>/sources).",
+    )
+    args = parser.parse_args()
+    root = args.sourcetexts_root
+
     # Example usage
     print("Starting MediaWiki template and tag analysis...")
     
@@ -414,7 +434,7 @@ if __name__ == "__main__": # pragma: no cover
     print("\n" + "="*50)
     print("ANALYZING TEMPLATES")
     print("="*50)
-    template_data = find_all_templates()
+    template_data = find_all_templates(sourcetexts_root=root)
     print_template_summary(template_data)
     save_template_analysis(template_data, "jps1917_template_analysis.json")
     
@@ -422,7 +442,7 @@ if __name__ == "__main__": # pragma: no cover
     print("\n" + "="*50)
     print("ANALYZING TAGS")
     print("="*50)
-    tag_data = find_all_tags()
+    tag_data = find_all_tags(sourcetexts_root=root)
     print_tag_summary(tag_data)
     save_tag_analysis(tag_data, "jps1917_tag_analysis.json")
     

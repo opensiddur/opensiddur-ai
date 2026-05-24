@@ -1,10 +1,15 @@
+import argparse
 from pathlib import Path
 from typing import Any, Optional
 import urllib
 
 from pydantic import BaseModel
 
-from opensiddur.importer.util.pages import get_credits, get_page
+from opensiddur.importer.util.pages import (
+    default_sourcetexts_root,
+    get_credits,
+    get_page,
+)
 from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
@@ -362,10 +367,12 @@ JPS_1917 = [
     ),
 ]
 
-def get_credits_pages(start_page: int, end_page: int) -> list[str]:
+def get_credits_pages(
+    start_page: int, end_page: int, sourcetexts_root: Path | None = None
+) -> list[str]:
     credits = set()
     for page in range(start_page, end_page + 1):
-        page_credits = get_credits(page)
+        page_credits = get_credits(page, sourcetexts_root)
         if page_credits is not None:
             credits.update(page_credits)
     return sorted(credits)
@@ -472,9 +479,10 @@ def mediawiki_xml_to_tei(xml_content: str,
     }
 
 def process_mediawiki(
-    start_page: int, 
-    end_page: int, 
+    start_page: int,
+    end_page: int,
     wrapper_element: str,
+    sourcetexts_root: Path | None = None,
     **kwargs,
 ) -> str:
     mw_processor = create_processor()
@@ -484,7 +492,12 @@ def process_mediawiki(
     content = ""
     for page in range(start_page, end_page + 1):
         print(f"Processing page {page}")
-        page_content = get_page(page).content
+        page_obj = get_page(page, sourcetexts_root)
+        if page_obj is None:
+            raise FileNotFoundError(
+                f"JPS 1917 page file missing for page {page} (check sourcetexts tree)"
+            )
+        page_content = page_obj.content
         content += " " + mw_processor.process_wikitext(page_content).xml_content
 
     pre_xml = f"""<tei:{wrapper_element} xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
@@ -506,17 +519,24 @@ def validate_and_write_tei_file(tei_content: str, file_name: str):
     with open(out_path, "w") as f:
         f.write(pretty_xml)
 
-def book_file(book: Book) -> str:
-    transcription_credits = get_credits_pages(book.start_page, book.end_page)
+def book_file(book: Book, sourcetexts_root: Path | None = None) -> str:
+    transcription_credits = get_credits_pages(
+        book.start_page, book.end_page, sourcetexts_root
+    )
     header_content = header(
         book_name_he = book.book_name_he,
         book_name_en = book.book_name_en,
         transcription_credits = transcription_credits,
     )
-    xml_dict = process_mediawiki(book.start_page, book.end_page, "body", 
+    xml_dict = process_mediawiki(
+        book.start_page,
+        book.end_page,
+        "body",
+        sourcetexts_root=sourcetexts_root,
         wrapper_div_type="book",
         book_name=book.file_name,
-        is_section=book.is_section)
+        is_section=book.is_section,
+    )
     
     tei_content = tei_file(
         header = header_content,
@@ -529,9 +549,11 @@ def book_file(book: Book) -> str:
     return tei_content
 
 
-def index_file(idx: Index) -> str:
+def index_file(idx: Index, sourcetexts_root: Path | None = None) -> str:
     if idx.start_page is not None and idx.end_page is not None:
-        transcription_credits = get_credits_pages(idx.start_page, idx.end_page)
+        transcription_credits = get_credits_pages(
+            idx.start_page, idx.end_page, sourcetexts_root
+        )
     else:
         transcription_credits = None
     header_content = header(
@@ -542,9 +564,14 @@ def index_file(idx: Index) -> str:
         transcription_credits = transcription_credits,
     )
     if idx.start_page is not None and idx.end_page is not None:
-        xml_dict = process_mediawiki(idx.start_page, idx.end_page, "front",
+        xml_dict = process_mediawiki(
+            idx.start_page,
+            idx.end_page,
+            "front",
+            sourcetexts_root=sourcetexts_root,
             wrapper_div_type="",
-            book_name="")
+            book_name="",
+        )
     else:
         xml_dict = {}
 
@@ -571,16 +598,31 @@ def index_file(idx: Index) -> str:
 
     for transclusion in idx.transclusions:
         if isinstance(transclusion, Index):
-            index_file(transclusion)
+            index_file(transclusion, sourcetexts_root)
         else:
-            book_file(transclusion)
-    
+            book_file(transclusion, sourcetexts_root)
+
     return tei_content
 
-def main(): # pragma: no cover
+
+def main(argv: list[str] | None = None) -> None:  # pragma: no cover
+    parser = argparse.ArgumentParser(
+        description="Convert JPS 1917 Wikisource page dumps to JLPTEI under project/jps1917."
+    )
+    parser.add_argument(
+        "--sourcetexts-root",
+        type=Path,
+        default=default_sourcetexts_root(),
+        help=(
+            "Root of the opensiddur/sourcetexts repository; page text is read from "
+            "<root>/jps1917 (default: <repo>/sources)."
+        ),
+    )
+    args = parser.parse_args(argv)
     (PROJECT_DIRECTORY / "jps1917").mkdir(parents=True, exist_ok=True)
     for part in JPS_1917:
-        index_file(part)
+        index_file(part, args.sourcetexts_root)
+
 
 if __name__ == "__main__":  # pragma: no cover
     main()

@@ -1,48 +1,80 @@
-import os
-import requests
+import argparse
+import logging
+import sys
 from pathlib import Path
 from zipfile import ZipFile
-import logging
 
-# Set up logging
+import requests
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def download_and_unzip_tanach():
-    """Download and unzip the latest Tanach XML file from tanach.us."""
-    # URL of the Tanach XML zip file
-    url = "https://tanach.us/Books/Tanach.xml.zip"
-    
-    # Create target directory if it doesn't exist
-    target_dir = Path(__file__).parent.parent / "sources/wlc"
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent.parent.parent
+
+
+def _default_sourcetexts_root() -> Path:
+    return _repo_root() / "sources"
+
+
+def download_and_unzip_tanach(sourcetexts_root: Path | None = None) -> None:
+    """Download and unzip the latest Tanach XML file from tanach.us into <sourcetexts-root>/wlc."""
+    root = (
+        sourcetexts_root.resolve()
+        if sourcetexts_root is not None
+        else _default_sourcetexts_root()
+    )
+    target_dir = root / "wlc"
     target_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Download the zip file
-    logger.info(f"Downloading {url}...")
-    response = requests.get(url)
-    response.raise_for_status()  # Raise an exception for bad status codes
-    
-    # Save the zip file
+
+    url = "https://tanach.us/Books/Tanach.xml.zip"
+
+    logger.info("Downloading %s...", url)
+    response = requests.get(url, timeout=120)
+    response.raise_for_status()
+
     zip_path = target_dir / "Tanach.xml.zip"
-    with open(zip_path, 'wb') as f:
+    with open(zip_path, "wb") as f:
         f.write(response.content)
-    
-    logger.info(f"Downloaded file saved to {zip_path}")
-    
-    # Unzip the file
-    logger.info(f"Unzipping {zip_path}...")
-    with ZipFile(zip_path, 'r') as zip_ref:
+
+    logger.info("Downloaded file saved to %s", zip_path)
+
+    logger.info("Unzipping %s...", zip_path)
+    with ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(target_dir)
-    
-    logger.info(f"Successfully extracted files to {target_dir}")
-    
-    # Clean up the zip file
+
+    logger.info("Successfully extracted files to %s", target_dir)
+
     zip_path.unlink()
-    logger.info(f"Removed temporary zip file")
+    logger.info("Removed temporary zip file")
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Download WLC Tanach XML from tanach.us into the sourcetexts tree."
+    )
+    parser.add_argument(
+        "--sourcetexts-root",
+        type=Path,
+        default=_default_sourcetexts_root(),
+        help=(
+            "Root of the opensiddur/sourcetexts repository; files are written under "
+            "<root>/wlc (default: <repo>/sources so output matches legacy sources/wlc)."
+        ),
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_arg_parser().parse_args(argv)
+    download_and_unzip_tanach(args.sourcetexts_root)
+    return 0
+
 
 if __name__ == "__main__":
     try:
-        download_and_unzip_tanach()
+        sys.exit(main())
     except Exception as e:
-        logger.error(f"Error downloading/unzipping Tanach: {str(e)}")
+        logger.error("Error downloading/unzipping Tanach: %s", e)
         raise

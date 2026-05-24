@@ -31,9 +31,9 @@ class TestGetCreditsPages(unittest.TestCase):
         
         # Verify get_credits was called for each page
         self.assertEqual(mock_get_credits.call_count, 3)
-        mock_get_credits.assert_any_call(1)
-        mock_get_credits.assert_any_call(2)
-        mock_get_credits.assert_any_call(3)
+        mock_get_credits.assert_any_call(1, None)
+        mock_get_credits.assert_any_call(2, None)
+        mock_get_credits.assert_any_call(3, None)
 
     @patch('opensiddur.importer.jps1917.convert_wikisource.get_credits')
     def test_repeated_strings(self, mock_get_credits):
@@ -104,7 +104,7 @@ class TestGetCreditsPages(unittest.TestCase):
         # Should return sorted credits from single page
         self.assertEqual(result, ["Alice", "Bob"])
         self.assertEqual(mock_get_credits.call_count, 1)
-        mock_get_credits.assert_called_once_with(5)
+        mock_get_credits.assert_called_once_with(5, None)
 
     @patch('opensiddur.importer.jps1917.convert_wikisource.get_credits')
     def test_sorting(self, mock_get_credits):
@@ -657,7 +657,7 @@ class TestProcessMediawiki(unittest.TestCase):
         result = process_mediawiki(1, 1, "body", book_name="test_book")
         
         # Verify get_page was called with correct page number
-        mock_get_page.assert_called_once_with(1)
+        mock_get_page.assert_called_once_with(1, None)
         
         # Verify processor was created and used
         mock_create_processor.assert_called_once()
@@ -719,9 +719,9 @@ class TestProcessMediawiki(unittest.TestCase):
         
         # Verify get_page was called for each page
         self.assertEqual(mock_get_page.call_count, 3)
-        mock_get_page.assert_any_call(1)
-        mock_get_page.assert_any_call(2)
-        mock_get_page.assert_any_call(3)
+        mock_get_page.assert_any_call(1, None)
+        mock_get_page.assert_any_call(2, None)
+        mock_get_page.assert_any_call(3, None)
         
         # Verify processor was used for each page
         self.assertEqual(mock_processor.process_wikitext.call_count, 3)
@@ -1133,7 +1133,7 @@ class TestBookFile(unittest.TestCase):
         result = book_file(self.test_book)
         
         # Verify get_credits_pages was called with correct page range
-        mock_get_credits.assert_called_once_with(1, 5)
+        mock_get_credits.assert_called_once_with(1, 5, None)
         
         # Verify header was called with correct parameters
         mock_header.assert_called_once_with(
@@ -1145,9 +1145,10 @@ class TestBookFile(unittest.TestCase):
         # Verify process_mediawiki was called with correct parameters
         mock_process_mediawiki.assert_called_once_with(
             1, 5, "body",
+            sourcetexts_root=None,
             wrapper_div_type="book",
             book_name="genesis",
-            is_section=False
+            is_section=False,
         )
         
         # Verify tei_file was called with correct parameters
@@ -1203,9 +1204,10 @@ class TestBookFile(unittest.TestCase):
         # Verify process_mediawiki was called with is_section=True
         mock_process_mediawiki.assert_called_once_with(
             10, 15, "body",
+            sourcetexts_root=None,
             wrapper_div_type="book",
             book_name="genesis_ch1",
-            is_section=True
+            is_section=True,
         )
         
         # Verify return value
@@ -1305,7 +1307,7 @@ class TestIndexFile(unittest.TestCase):
         result = index_file(test_index)
         
         # Verify get_credits_pages was called for the index
-        mock_get_credits.assert_any_call(1, 3)
+        mock_get_credits.assert_any_call(1, 3, None)
         
         # Verify header was called with correct parameters for the index
         mock_header.assert_any_call(
@@ -1319,8 +1321,9 @@ class TestIndexFile(unittest.TestCase):
         # Verify process_mediawiki was called for front matter
         mock_process_mediawiki.assert_called_once_with(
             1, 3, "front",
+            sourcetexts_root=None,
             wrapper_div_type="",
-            book_name=""
+            book_name="",
         )
         
         # Verify tei_file was called with correct body containing transclusions
@@ -1433,8 +1436,8 @@ class TestIndexFile(unittest.TestCase):
         
         # Verify that book_file was called for each Book transclusion
         self.assertEqual(mock_book_file.call_count, 2)
-        mock_book_file.assert_any_call(self.test_book1)
-        mock_book_file.assert_any_call(self.test_book2)
+        mock_book_file.assert_any_call(self.test_book1, None)
+        mock_book_file.assert_any_call(self.test_book2, None)
         
         # Verify index_file was not called recursively (no Index transclusions)
         mock_index_file.assert_not_called()
@@ -1476,10 +1479,10 @@ class TestIndexFile(unittest.TestCase):
         result = index_file(parent_index)
         
         # Verify that book_file was called for Book transclusion
-        mock_book_file.assert_called_once_with(self.test_book2)
+        mock_book_file.assert_called_once_with(self.test_book2, None)
         
         # Verify that index_file was called recursively for Index transclusion
-        mock_index_file.assert_called_once_with(child_index)
+        mock_index_file.assert_called_once_with(child_index, None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Parent TEI</tei:TEI>")
