@@ -7,6 +7,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from opensiddur.exporter.pdf.pdf import (
+    _have_command,
+    _run_bibtex,
+    _run_latexmk,
+    _run_lualatex,
+    _run_manual_loop,
     compile_tex_to_pdf,
     export_to_pdf,
     generate_tex,
@@ -334,6 +339,319 @@ class TestExportToPdf(unittest.TestCase):
                 result = export_to_pdf(input_file, output_pdf)
 
         self.assertFalse(result)
+
+
+class TestHaveCommand(unittest.TestCase):
+    def test_returns_true_when_command_on_path(self):
+        with patch("opensiddur.exporter.pdf.pdf.shutil.which", return_value="/usr/bin/lualatex"):
+            self.assertTrue(_have_command("lualatex"))
+
+    def test_returns_false_when_command_missing(self):
+        with patch("opensiddur.exporter.pdf.pdf.shutil.which", return_value=None):
+            self.assertFalse(_have_command("missing-tool"))
+
+
+class TestRunLatexmk(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name)
+        self.tex_file = self.test_dir / "doc.tex"
+        self.tex_file.write_text(r"\documentclass{book}\begin{document}X\end{document}")
+        self.output_dir = self.test_dir / "build"
+        self.output_dir.mkdir()
+
+    def test_success(self):
+        result = MagicMock(returncode=0, stdout="", stderr="")
+        with patch("subprocess.run", return_value=result) as mock_run:
+            self.assertTrue(_run_latexmk(self.tex_file, self.output_dir))
+
+        cmd = mock_run.call_args.args[0]
+        self.assertEqual(cmd[0], "latexmk")
+        self.assertIn("-lualatex", cmd)
+
+    def test_failure(self):
+        result = MagicMock(returncode=1, stdout="stdout", stderr="stderr")
+        with patch("subprocess.run", return_value=result):
+            self.assertFalse(_run_latexmk(self.tex_file, self.output_dir))
+
+
+class TestRunLualatex(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name)
+        self.tex_file = self.test_dir / "doc.tex"
+        self.tex_file.write_text(r"\documentclass{book}\begin{document}X\end{document}")
+        self.output_dir = self.test_dir / "build"
+        self.output_dir.mkdir()
+
+    def test_detects_rerun_markers_from_log(self):
+        def side_effect(cmd, **kwargs):
+            out_dir = Path(next(arg.split("=", 1)[1] for arg in cmd if arg.startswith("-output-directory=")))
+            (out_dir / "doc.log").write_text("Rerun to get cross-references right")
+            return MagicMock(returncode=0)
+
+        with patch("subprocess.run", side_effect=side_effect):
+            success, output, needs_rerun = _run_lualatex(self.tex_file, self.output_dir)
+
+        self.assertTrue(success)
+        self.assertTrue(needs_rerun)
+        self.assertIn("Rerun to get cross-references right", output)
+
+    def test_handles_log_read_failure(self):
+        log_path = self.output_dir / "doc.log"
+
+        def side_effect(cmd, **kwargs):
+            log_path.write_text("ok")
+            return MagicMock(returncode=0)
+
+        with patch("subprocess.run", side_effect=side_effect):
+            with patch.object(
+                type(log_path),
+                "read_text",
+                side_effect=OSError("cannot read log"),
+            ):
+                success, output, needs_rerun = _run_lualatex(self.tex_file, self.output_dir)
+
+        self.assertTrue(success)
+        self.assertEqual(output, "")
+        self.assertFalse(needs_rerun)
+
+    def test_reports_lualatex_failure(self):
+        with patch("subprocess.run", return_value=MagicMock(returncode=1)):
+            success, output, needs_rerun = _run_lualatex(self.tex_file, self.output_dir)
+
+        self.assertFalse(success)
+        self.assertFalse(needs_rerun)
+
+
+class TestRunBibtex(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.output_dir = Path(self.temp_dir.name)
+
+    def test_skips_when_aux_missing(self):
+        with patch("subprocess.run") as mock_run:
+            self.assertTrue(_run_bibtex("doc", self.output_dir))
+        mock_run.assert_not_called()
+
+    def test_skips_when_aux_has_no_bibliography(self):
+        (self.output_dir / "doc.aux").write_text("\\relax")
+        with patch("subprocess.run") as mock_run:
+            self.assertTrue(_run_bibtex("doc", self.output_dir))
+        mock_run.assert_not_called()
+
+    def test_runs_bibtex_when_aux_indicates_bibliography(self):
+        (self.output_dir / "doc.aux").write_text("\\bibdata{job}")
+        result = MagicMock(returncode=0, stdout="")
+        with patch("subprocess.run", return_value=result) as mock_run:
+            self.assertTrue(_run_bibtex("doc", self.output_dir))
+        self.assertEqual(mock_run.call_args.args[0][0], "bibtex")
+
+    def test_reports_bibtex_errors(self):
+        (self.output_dir / "doc.aux").write_text("\\citation{ref}")
+        result = MagicMock(returncode=0, stdout="error message in output")
+        with patch("subprocess.run", return_value=result):
+            self.assertFalse(_run_bibtex("doc", self.output_dir))
+
+
+class TestRunManualLoop(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name)
+        self.tex_file = self.test_dir / "doc.tex"
+        self.tex_file.write_text(r"\documentclass{book}\begin{document}X\end{document}")
+        self.output_dir = self.test_dir / "build"
+        self.output_dir.mkdir()
+
+    def test_returns_false_when_first_pass_fails(self):
+        with patch(
+            "opensiddur.exporter.pdf.pdf._run_lualatex",
+            return_value=(False, "log output", False),
+        ):
+            self.assertFalse(_run_manual_loop(self.tex_file, self.output_dir, max_runs=3))
+
+    def test_returns_false_when_later_pass_fails(self):
+        with patch(
+            "opensiddur.exporter.pdf.pdf._run_lualatex",
+            side_effect=[
+                (True, "", True),
+                (False, "later pass failed", False),
+            ],
+        ):
+            self.assertFalse(_run_manual_loop(self.tex_file, self.output_dir, max_runs=3))
+
+    def test_warns_when_max_runs_reached(self):
+        with patch(
+            "opensiddur.exporter.pdf.pdf._run_lualatex",
+            return_value=(True, "Rerun to get cross-references right", True),
+        ):
+            with patch("sys.stderr", new_callable=Mock) as mock_stderr:
+                self.assertTrue(_run_manual_loop(self.tex_file, self.output_dir, max_runs=2))
+
+        stderr_output = "".join(str(c) for c in mock_stderr.write.call_args_list)
+        self.assertIn("max_runs", stderr_output)
+
+
+class TestCompileTexToPdfEdgeCases(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name)
+        self.tex_file = self.test_dir / "doc.tex"
+        self.tex_file.write_text(r"\documentclass{book}\begin{document}X\end{document}")
+
+    def _tools_available(self, name):
+        return name in {"lualatex", "bibtex"}
+
+    def test_uses_build_dir_when_provided(self):
+        build_dir = self.test_dir / "build"
+        output_pdf = self.test_dir / "out.pdf"
+
+        with patch(
+            "opensiddur.exporter.pdf.pdf._have_command",
+            side_effect=self._tools_available,
+        ):
+            with patch(
+                "opensiddur.exporter.pdf.pdf._run_manual_loop",
+                return_value=True,
+            ) as mock_loop:
+                with patch(
+                    "opensiddur.exporter.pdf.pdf.shutil.copy2",
+                ) as mock_copy:
+                    build_dir.mkdir()
+                    (build_dir / "doc.pdf").write_bytes(b"%PDF fake")
+                    result = compile_tex_to_pdf(
+                        self.tex_file,
+                        output_pdf,
+                        build_dir=build_dir,
+                    )
+
+        self.assertTrue(result)
+        self.assertTrue(build_dir.exists())
+        mock_loop.assert_called_once_with(self.tex_file, build_dir, 6)
+        mock_copy.assert_called_once()
+
+    def test_fails_when_bibtex_missing(self):
+        def have(name):
+            return name == "lualatex"
+
+        with patch("opensiddur.exporter.pdf.pdf._have_command", side_effect=have):
+            with patch("opensiddur.exporter.pdf.pdf._run_manual_loop") as mock_loop:
+                result = compile_tex_to_pdf(self.tex_file, self.test_dir / "out.pdf")
+
+        self.assertFalse(result)
+        mock_loop.assert_not_called()
+
+    def test_fails_when_manual_loop_fails(self):
+        with patch(
+            "opensiddur.exporter.pdf.pdf._have_command",
+            side_effect=self._tools_available,
+        ):
+            with patch(
+                "opensiddur.exporter.pdf.pdf._run_manual_loop",
+                return_value=False,
+            ):
+                result = compile_tex_to_pdf(self.tex_file, self.test_dir / "out.pdf")
+
+        self.assertFalse(result)
+
+    def test_skips_copy_when_output_pdf_is_build_artifact(self):
+        build_dir = self.test_dir / "build"
+        output_pdf = build_dir / "doc.pdf"
+
+        with patch(
+            "opensiddur.exporter.pdf.pdf._have_command",
+            side_effect=self._tools_available,
+        ):
+            with patch(
+                "opensiddur.exporter.pdf.pdf._run_manual_loop",
+                return_value=True,
+            ):
+                with patch("opensiddur.exporter.pdf.pdf.shutil.copy2") as mock_copy:
+                    build_dir.mkdir(parents=True)
+                    output_pdf.write_bytes(b"%PDF fake")
+                    result = compile_tex_to_pdf(
+                        self.tex_file,
+                        output_pdf,
+                        build_dir=build_dir,
+                    )
+
+        self.assertTrue(result)
+        mock_copy.assert_not_called()
+
+    def test_handles_file_not_found_error(self):
+        with patch(
+            "opensiddur.exporter.pdf.pdf._have_command",
+            side_effect=self._tools_available,
+        ):
+            with patch(
+                "opensiddur.exporter.pdf.pdf._run_manual_loop",
+                return_value=True,
+            ):
+                with patch(
+                    "opensiddur.exporter.pdf.pdf.shutil.copy2",
+                    side_effect=FileNotFoundError("lualatex"),
+                ):
+                    with patch("tempfile.TemporaryDirectory") as mock_temp:
+                        temp_path = self.test_dir / "tempbuild"
+                        temp_path.mkdir()
+                        mock_temp.return_value.__enter__.return_value = str(temp_path)
+                        (temp_path / "doc.pdf").write_bytes(b"%PDF fake")
+                        result = compile_tex_to_pdf(
+                            self.tex_file,
+                            self.test_dir / "out.pdf",
+                        )
+
+        self.assertFalse(result)
+
+    def test_handles_unexpected_exception(self):
+        with patch(
+            "opensiddur.exporter.pdf.pdf._have_command",
+            side_effect=RuntimeError("unexpected"),
+        ):
+            result = compile_tex_to_pdf(self.tex_file, self.test_dir / "out.pdf")
+
+        self.assertFalse(result)
+
+
+class TestExportToPdfExtras(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name)
+
+    def test_forwards_build_dir_to_compile(self):
+        input_file = self.test_dir / "input.xml"
+        output_pdf = self.test_dir / "out.pdf"
+        build_dir = self.test_dir / "build"
+        input_file.write_text("<tei:TEI xmlns:tei='http://www.tei-c.org/ns/1.0'/>")
+
+        with patch("opensiddur.exporter.pdf.pdf.generate_tex", return_value=True):
+            with patch(
+                "opensiddur.exporter.pdf.pdf.compile_tex_to_pdf",
+                return_value=True,
+            ) as mock_compile:
+                export_to_pdf(input_file, output_pdf, build_dir=build_dir)
+
+        self.assertEqual(mock_compile.call_args.kwargs.get("build_dir"), build_dir)
+
+    def test_prints_intermediate_tex_message(self):
+        input_file = self.test_dir / "input.xml"
+        output_pdf = self.test_dir / "out.pdf"
+        tex_output = self.test_dir / "intermediate.tex"
+        input_file.write_text("<tei:TEI xmlns:tei='http://www.tei-c.org/ns/1.0'/>")
+
+        with patch("opensiddur.exporter.pdf.pdf.generate_tex", return_value=True):
+            with patch("opensiddur.exporter.pdf.pdf.compile_tex_to_pdf", return_value=True):
+                with patch("sys.stderr", new_callable=Mock) as mock_stderr:
+                    export_to_pdf(input_file, output_pdf, tex_output=tex_output)
+
+        stderr_output = "".join(str(c) for c in mock_stderr.write.call_args_list)
+        self.assertIn("Intermediate TeX saved to", stderr_output)
 
 
 if __name__ == "__main__":
