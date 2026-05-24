@@ -1,18 +1,26 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, call
 from pathlib import Path
 
 from opensiddur.importer.wlc.wlc import (
     make_project_directory,
     get_source_directory,
     get_xslt_directory,
-    main
+    main,
 )
 
 
 class TestWLCPathFunctions(unittest.TestCase):
     """Test path-related utility functions in wlc module"""
     
+    @patch('pathlib.Path.mkdir')
+    def test_make_project_directory_custom_path(self, mock_mkdir):
+        """make_project_directory respects an explicit project directory."""
+        explicit = Path('/tmp/wlc-out')
+        result = make_project_directory(explicit)
+        self.assertEqual(result, explicit.resolve())
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+
     @patch('pathlib.Path.mkdir')
     def test_make_project_directory(self, mock_mkdir):
         """Test that make_project_directory creates the correct directory"""
@@ -39,6 +47,11 @@ class TestWLCPathFunctions(unittest.TestCase):
         
         # Verify the path contains 'opensiddur-ai' (the project root)
         self.assertIn('opensiddur-ai', str(result))
+
+    def test_get_source_directory_custom_sourcetexts_root(self):
+        custom = Path('/tmp/opensiddur-sourcetexts')
+        result = get_source_directory(custom)
+        self.assertEqual(result, custom / 'wlc')
     
     def test_get_xslt_directory(self):
         """Test that get_xslt_directory returns the wlc module directory"""
@@ -65,12 +78,10 @@ class TestWLCMain(unittest.TestCase):
     @patch('opensiddur.importer.wlc.wlc.os.listdir')
     @patch('opensiddur.importer.wlc.wlc.xslt_transform')
     @patch('opensiddur.importer.wlc.wlc.get_xslt_directory')
-    @patch('opensiddur.importer.wlc.wlc.get_source_directory')
     @patch('opensiddur.importer.wlc.wlc.make_project_directory')
     def test_main_transforms_and_validates_all_files(
-        self, 
-        mock_make_project_dir, 
-        mock_get_source_dir, 
+        self,
+        mock_make_project_directory,
         mock_get_xslt_dir,
         mock_xslt_transform,
         mock_listdir,
@@ -81,10 +92,10 @@ class TestWLCMain(unittest.TestCase):
         # Set up mock paths
         mock_project_dir = Path('/mock/project/wlc')
         mock_source_dir = Path('/mock/sources/wlc')
+        mock_sourcetexts_root = Path('/mock/sources')
         mock_xslt_dir = Path('/mock/opensiddur/importer/wlc')
         
-        mock_make_project_dir.return_value = mock_project_dir
-        mock_get_source_dir.return_value = mock_source_dir
+        mock_make_project_directory.return_value = mock_project_dir
         mock_get_xslt_dir.return_value = mock_xslt_dir
         
         # Mock os.listdir to return different values for different calls
@@ -111,17 +122,27 @@ class TestWLCMain(unittest.TestCase):
         # Mock validate to return success
         mock_validate.return_value = (True, [])
         
-        # Run main
-        result = main()
+        # Run main with explicit dirs (sourcetexts root contains wlc/Books)
+        result = main(
+            [
+                "--project-dir",
+                str(mock_project_dir),
+                "--sourcetexts-root",
+                str(mock_sourcetexts_root),
+            ]
+        )
         
         # Verify return value
         self.assertEqual(result, 0)
         
-        # Verify xslt_transform was called for index
+        mock_wlc_uri = mock_source_dir.resolve().as_uri()
+        if not mock_wlc_uri.endswith("/"):
+            mock_wlc_uri += "/"
         expected_index_call = call(
             mock_xslt_dir / "transform_index.xslt",
             mock_source_dir / "Books" / "TanachHeader.xml",
-            mock_project_dir / "index.xml"
+            mock_project_dir / "index.xml",
+            xslt_params={"wlc-root-uri": mock_wlc_uri},
         )
         self.assertIn(expected_index_call, mock_xslt_transform.call_args_list)
         
@@ -130,18 +151,18 @@ class TestWLCMain(unittest.TestCase):
             call(
                 mock_xslt_dir / "transform_book.xslt",
                 mock_source_dir / "Books" / "Genesis.xml",
-                mock_project_dir / "genesis.xml"
+                mock_project_dir / "genesis.xml",
             ),
             call(
                 mock_xslt_dir / "transform_book.xslt",
                 mock_source_dir / "Books" / "Exodus.xml",
-                mock_project_dir / "exodus.xml"
+                mock_project_dir / "exodus.xml",
             ),
             call(
                 mock_xslt_dir / "transform_book.xslt",
                 mock_source_dir / "Books" / "Leviticus.xml",
-                mock_project_dir / "leviticus.xml"
-            )
+                mock_project_dir / "leviticus.xml",
+            ),
         ]
         
         for expected_call in expected_book_calls:
@@ -168,12 +189,10 @@ class TestWLCMain(unittest.TestCase):
     @patch('opensiddur.importer.wlc.wlc.os.listdir')
     @patch('opensiddur.importer.wlc.wlc.xslt_transform')
     @patch('opensiddur.importer.wlc.wlc.get_xslt_directory')
-    @patch('opensiddur.importer.wlc.wlc.get_source_directory')
     @patch('opensiddur.importer.wlc.wlc.make_project_directory')
     def test_main_handles_validation_errors(
-        self, 
-        mock_make_project_dir, 
-        mock_get_source_dir, 
+        self,
+        mock_make_project_directory,
         mock_get_xslt_dir,
         mock_xslt_transform,
         mock_listdir,
@@ -184,10 +203,10 @@ class TestWLCMain(unittest.TestCase):
         # Set up mock paths
         mock_project_dir = Path('/mock/project/wlc')
         mock_source_dir = Path('/mock/sources/wlc')
+        mock_sourcetexts_root = Path('/mock/sources')
         mock_xslt_dir = Path('/mock/opensiddur/importer/wlc')
         
-        mock_make_project_dir.return_value = mock_project_dir
-        mock_get_source_dir.return_value = mock_source_dir
+        mock_make_project_directory.return_value = mock_project_dir
         mock_get_xslt_dir.return_value = mock_xslt_dir
         
         # Mock os.listdir
@@ -202,7 +221,14 @@ class TestWLCMain(unittest.TestCase):
         ]
         
         # Run main - should not raise an exception
-        result = main()
+        result = main(
+            [
+                "--project-dir",
+                str(mock_project_dir),
+                "--sourcetexts-root",
+                str(mock_sourcetexts_root),
+            ]
+        )
         
         # Should still return 0 even with validation errors
         self.assertEqual(result, 0)

@@ -19,12 +19,10 @@ class TestTransformIndexXSLT(unittest.TestCase):
         self.xslt_source = Path(__file__).parent.parent.parent.parent / "importer/wlc/transform_index.xslt"
         xslt_content = self.xslt_source.read_text()
         
-        # Replace the doc() call by matching on the key part
-        # Original line 37 contains: doc('../../../sources/wlc/Books/TanachIndex.xml')//book
-        # We'll replace just the doc() function call to avoid it being evaluated
+        # Neuter TanachIndex lookup so tests do not need TanachIndex.xml on disk
         xslt_content = xslt_content.replace(
-            "doc('../../../sources/wlc/Books/TanachIndex.xml')//book",
-            "(.)[false()]"  # XPath that returns empty sequence
+            "select=\"if (normalize-space($wlc-root-uri)) then doc(resolve-uri('Books/TanachIndex.xml', $wlc-root-uri))//book else doc(resolve-uri('../../../sources/wlc/Books/TanachIndex.xml', static-base-uri()))//book\"",
+            "select=\"()\"",
         )
         
         # Also change mode from "fail" to "shallow-copy" for testing

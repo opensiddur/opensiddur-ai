@@ -1,4 +1,5 @@
 from typing import TypedDict, Annotated, Literal, Optional
+from pathlib import Path
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from pydantic import BaseModel, Field
@@ -55,6 +56,9 @@ class TextEncodingAgentState(TypedDict):
     session_id: Optional[str]
     last_checkpoint_time: Optional[str]
 
+    # JPS 1917 page files live under <sourcetexts_root>/jps1917 (None = default <repo>/sources)
+    sourcetexts_root: Optional[str]
+
 
 class TextEncodingAgentInput(BaseModel):
     """Input for the text encoding agent"""
@@ -67,6 +71,10 @@ class TextEncodingAgentInput(BaseModel):
     max_errors: int = Field(default=5, description="Maximum number of error correction attempts")
     session_id: Optional[str] = Field(default=None, description="Session ID to resume from")
     enable_checkpointing: bool = Field(default=True, description="Enable checkpointing for this session")
+    sourcetexts_root: Optional[Path] = Field(
+        default=None,
+        description="Root of sourcetexts repo; Wikisource page dumps under <root>/jps1917 (default: <repo>/sources).",
+    )
 
 
 def create_session_id(input_data: TextEncodingAgentInput) -> str:
@@ -275,7 +283,7 @@ def advance_page(state: TextEncodingAgentState) -> TextEncodingAgentState:
         print(f"Setting page to {state['current_page']}...")
         new_page = state['current_page']
         previous_page_content = ""
-        current_page_obj = get_page(new_page)
+        current_page_obj = get_page(new_page, Path(state["sourcetexts_root"]) if state.get("sourcetexts_root") else None)
         current_page_content = current_page_obj.content if current_page_obj else ""
 
     else:
@@ -287,7 +295,7 @@ def advance_page(state: TextEncodingAgentState) -> TextEncodingAgentState:
         current_page_content = state["next_page_content"]
     
     # Update next page content
-    next_page_obj = get_page(new_page + 1)
+    next_page_obj = get_page(new_page + 1, Path(state["sourcetexts_root"]) if state.get("sourcetexts_root") else None)
     next_page_content = next_page_obj.content if next_page_obj else ""
     
     return {
@@ -486,7 +494,10 @@ def run_text_encoding_agent(input_data: TextEncodingAgentInput) -> TextEncodingA
         "error_count": 0,
         "max_errors": input_data.max_errors,
         "session_id": session_id,
-        "last_checkpoint_time": None
+        "last_checkpoint_time": None,
+        "sourcetexts_root": str(input_data.sourcetexts_root.resolve())
+        if input_data.sourcetexts_root is not None
+        else None,
     }
     
     # Create and run the agent with checkpointing
