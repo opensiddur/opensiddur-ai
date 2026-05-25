@@ -30,11 +30,8 @@ class TestParallelSettings(unittest.TestCase):
         return path
 
     def _settings_with_patch(self, data: dict) -> LinearData:
-        from unittest.mock import patch
-        from opensiddur.common.constants import PROJECT_DIRECTORY
         path = self._write_yaml(data)
-        with patch("opensiddur.exporter.settings.PROJECT_DIRECTORY", self.project_dir):
-            return load_settings(path)
+        return load_settings(path, project_directory=self.project_dir)
 
     # ── Basic loading ───────────────────────────────────────────────────────
 
@@ -80,11 +77,14 @@ class TestParallelSettings(unittest.TestCase):
     # ── Default settings ────────────────────────────────────────────────────
 
     def test_load_default_settings_no_parallel(self):
-        from unittest.mock import patch
-        with patch("opensiddur.exporter.settings.PROJECT_DIRECTORY", self.project_dir):
-            ld = load_default_settings("proj-a", "index.xml")
+        ld = load_default_settings(
+            "proj-a",
+            "index.xml",
+            project_directory=self.project_dir,
+        )
         self.assertEqual(ld.parallel_projects, [])
         self.assertEqual(ld.parallel_column_order, ParallelColumnOrder.PRIMARY_FIRST)
+        self.assertEqual(ld.xml_cache.base_path, self.project_dir.resolve())
 
 
 if __name__ == "__main__":

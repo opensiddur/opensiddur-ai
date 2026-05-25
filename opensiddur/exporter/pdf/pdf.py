@@ -31,12 +31,14 @@ project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from opensiddur.exporter.tex.latex import transform_xml_to_tex  # noqa: E402
+from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 
 
 def generate_tex(
     input_file: Path,
     temp_tex_file: Path,
     settings_file: Optional[Path] = None,
+    project_directory: Path = PROJECT_DIRECTORY,
 ) -> bool:
     """Generate a LuaLaTeX file from compiled JLPTEI XML.
 
@@ -55,6 +57,7 @@ def generate_tex(
             str(input_file),
             output_file=str(temp_tex_file),
             settings_file=settings_file,
+            project_directory=project_directory,
         )
         print(f"TeX file generated: {temp_tex_file}", file=sys.stderr)
         return True
@@ -275,6 +278,7 @@ def export_to_pdf(
     settings_file: Optional[Path] = None,
     tex_output: Optional[Path] = None,
     build_dir: Optional[Path] = None,
+    project_directory: Path = PROJECT_DIRECTORY,
 ) -> bool:
     """Convert a compiled JLPTEI XML file to PDF.
 
@@ -296,7 +300,12 @@ def export_to_pdf(
         if tex_output is not None:
             tex_output.parent.mkdir(parents=True, exist_ok=True)
 
-        if not generate_tex(input_file, temp_tex_file, settings_file=settings_file):
+        if not generate_tex(
+            input_file,
+            temp_tex_file,
+            settings_file=settings_file,
+            project_directory=project_directory,
+        ):
             return False
 
         if not compile_tex_to_pdf(temp_tex_file, output_pdf, build_dir=build_dir):
@@ -353,6 +362,12 @@ Examples:
         default=None,
         help="Directory to keep LaTeX build artifacts (.log, .aux, etc.) for debugging.",
     )
+    parser.add_argument(
+        "--project-directory",
+        type=Path,
+        default=PROJECT_DIRECTORY,
+        help="Base directory containing project subdirectories (default: <repo>/project).",
+    )
 
     args = parser.parse_args()
 
@@ -372,6 +387,7 @@ Examples:
         settings_file=args.settings_file,
         tex_output=tex_output,
         build_dir=args.build_dir,
+        project_directory=args.project_directory,
     ):
         sys.exit(1)
 

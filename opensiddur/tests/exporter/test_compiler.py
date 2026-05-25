@@ -1958,3 +1958,42 @@ class TestCompilerTranscludeTextOnly(unittest.TestCase):
         self.assertNotIn(f"{{{self.TEI_NS}}}TEI", children_tags)
 
 
+class TestCompilerMain(unittest.TestCase):
+    """Tests for compiler CLI main()."""
+
+    @patch("opensiddur.exporter.external_compiler.ExternalCompilerProcessor")
+    @patch("opensiddur.exporter.compiler.load_default_settings")
+    @patch("opensiddur.exporter.compiler.reset_linear_data")
+    def test_main_uses_project_directory(
+        self,
+        mock_reset_linear_data,
+        mock_load_default_settings,
+        mock_processor_class,
+    ):
+        from opensiddur.exporter.compiler import main as compiler_main
+
+        mock_linear_data = MagicMock()
+        mock_load_default_settings.return_value = mock_linear_data
+        mock_processor = MagicMock()
+        mock_processor.process.return_value = [etree.Element("root")]
+        mock_processor_class.return_value = mock_processor
+
+        project_dir = Path("/custom/project")
+        with tempfile.TemporaryDirectory() as td:
+            output_file = Path(td) / "out.xml"
+            compiler_main([
+                "--project", "wlc",
+                "--file_name", "genesis.xml",
+                "--output_file", str(output_file),
+                "--project-directory", str(project_dir),
+            ])
+
+        mock_load_default_settings.assert_called_once()
+        _, kwargs = mock_load_default_settings.call_args
+        self.assertEqual(kwargs["project_directory"], project_dir.resolve())
+        mock_processor_class.assert_called_once_with(
+            "wlc",
+            "genesis.xml",
+            linear_data=mock_linear_data,
+        )
+

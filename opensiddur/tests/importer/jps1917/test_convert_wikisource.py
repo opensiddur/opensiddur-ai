@@ -6,7 +6,7 @@ from pathlib import Path
 
 from opensiddur.importer.jps1917.convert_wikisource import (
     get_credits_pages, header, tei_file, process_mediawiki, validate_and_write_tei_file,
-    book_file, index_file, Book, Index, mediawiki_xml_to_tei
+    book_file, index_file, Book, Index, mediawiki_xml_to_tei, main, make_project_directory,
 )
 from opensiddur.importer.util.validation import validate_with_start, validate
 
@@ -1164,7 +1164,7 @@ class TestBookFile(unittest.TestCase):
         mock_file().write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>")
         
         # Verify validate_and_write_tei_file was called
-        mock_validate_write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>", "genesis")
+        mock_validate_write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>", "genesis", None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Complete TEI content</tei:TEI>")
@@ -1346,7 +1346,7 @@ class TestIndexFile(unittest.TestCase):
         self.assertGreater(mock_file.call_count, 0)
         
         # Verify validate_and_write_tei_file was called for the index
-        mock_validate_write.assert_any_call("<tei:TEI>Complete index TEI</tei:TEI>", "torah")
+        mock_validate_write.assert_any_call("<tei:TEI>Complete index TEI</tei:TEI>", "torah", None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Complete index TEI</tei:TEI>")
@@ -1436,8 +1436,8 @@ class TestIndexFile(unittest.TestCase):
         
         # Verify that book_file was called for each Book transclusion
         self.assertEqual(mock_book_file.call_count, 2)
-        mock_book_file.assert_any_call(self.test_book1, None)
-        mock_book_file.assert_any_call(self.test_book2, None)
+        mock_book_file.assert_any_call(self.test_book1, None, None)
+        mock_book_file.assert_any_call(self.test_book2, None, None)
         
         # Verify index_file was not called recursively (no Index transclusions)
         mock_index_file.assert_not_called()
@@ -1479,10 +1479,10 @@ class TestIndexFile(unittest.TestCase):
         result = index_file(parent_index)
         
         # Verify that book_file was called for Book transclusion
-        mock_book_file.assert_called_once_with(self.test_book2, None)
-        
+        mock_book_file.assert_called_once_with(self.test_book2, None, None)
+
         # Verify that index_file was called recursively for Index transclusion
-        mock_index_file.assert_called_once_with(child_index, None)
+        mock_index_file.assert_called_once_with(child_index, None, None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Parent TEI</tei:TEI>")
@@ -1750,6 +1750,37 @@ class TestMediawikiXmlToTei(unittest.TestCase):
         self.assertIn('Existing TEI Head', main_output)
         self.assertIn('Existing TEI paragraph', main_output)
         # Note: The note element might not be in the main output due to XSLT processing
+
+
+class TestMakeProjectDirectory(unittest.TestCase):
+  """Tests for make_project_directory."""
+
+  @patch("opensiddur.importer.jps1917.convert_wikisource.Path.mkdir")
+  def test_make_project_directory_custom_path(self, mock_mkdir):
+    explicit = Path("/custom/project/jps1917")
+    result = make_project_directory(explicit)
+    self.assertEqual(result, explicit.resolve())
+    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+
+
+class TestConvertWikisourceMain(unittest.TestCase):
+  """Tests for convert_wikisource main()."""
+
+  @patch("opensiddur.importer.jps1917.convert_wikisource.index_file")
+  @patch("opensiddur.importer.jps1917.convert_wikisource.make_project_directory")
+  def test_main_uses_project_dir(self, mock_make_project_directory, mock_index_file):
+    mock_project_dir = Path("/mock/project/jps1917")
+    mock_sourcetexts_root = Path("/mock/sources")
+    mock_make_project_directory.return_value = mock_project_dir
+
+    main(["--project-dir", str(mock_project_dir), "--sourcetexts-root", str(mock_sourcetexts_root)])
+
+    mock_make_project_directory.assert_called_once_with(mock_project_dir)
+    self.assertGreater(mock_index_file.call_count, 0)
+    for call in mock_index_file.call_args_list:
+      self.assertEqual(call.args[2], mock_project_dir)
+      self.assertEqual(call.kwargs.get("project_dir"), None)
+      self.assertEqual(call.args[1], mock_sourcetexts_root)
 
 
 if __name__ == '__main__':

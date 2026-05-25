@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch, ANY
 
 from opensiddur.exporter.pdf.pdf import (
     _have_command,
@@ -49,6 +49,7 @@ class TestGenerateTex(unittest.TestCase):
             str(input_file),
             output_file=str(output_file),
             settings_file=None,
+            project_directory=ANY,
         )
 
     def test_generate_tex_forwards_settings_file(self):
@@ -65,6 +66,7 @@ class TestGenerateTex(unittest.TestCase):
             str(input_file),
             output_file=str(output_file),
             settings_file=settings_file,
+            project_directory=ANY,
         )
 
     def test_generate_tex_handles_exception(self):
