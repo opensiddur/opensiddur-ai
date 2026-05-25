@@ -25,10 +25,11 @@ from lxml.etree import ElementBase
 from lxml import etree
 
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE
-from opensiddur.exporter.linear import LinearData, get_linear_data
+from opensiddur.exporter.linear import LinearData, get_linear_data, reset_linear_data
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.settings import load_default_settings, load_settings
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
+from opensiddur.common.constants import PROJECT_DIRECTORY
 
 class _ProcessingCommand(Enum):
     """ Possible ways the compiler can process an element """
@@ -599,18 +600,37 @@ class CompilerProcessor:
         return copied
 
 
-def main():  # pragma: no cover
+def main(argv: list[str] | None = None):  # pragma: no cover
     parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")
     parser.add_argument("--project", "-p", type=str, help="The project name.", required=True)
     parser.add_argument("--file_name", "-f", type=str, help="The file name (relative to the project).", required=True)
     parser.add_argument("--output_file", "-o", type=str, help="The output XML file.")
     parser.add_argument("--settings", "-s", type=Path, help="YAML file with compiler settings. See README.md for more details.")
-    args = parser.parse_args()
+    parser.add_argument(
+        "--project-directory",
+        type=Path,
+        default=PROJECT_DIRECTORY,
+        help="Base directory containing project subdirectories (default: <repo>/project).",
+    )
+    args = parser.parse_args(argv)
+
+    project_directory = args.project_directory.resolve()
+    reset_linear_data()
+    linear_data = get_linear_data()
 
     if args.settings:
-        linear_data = load_settings(args.settings)
+        linear_data = load_settings(
+            args.settings,
+            linear_data=linear_data,
+            project_directory=project_directory,
+        )
     else:
-        linear_data = load_default_settings(args.project, args.file_name)
+        linear_data = load_default_settings(
+            args.project,
+            args.file_name,
+            linear_data=linear_data,
+            project_directory=project_directory,
+        )
 
     from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
     compiler = ExternalCompilerProcessor(args.project, args.file_name, linear_data=linear_data)

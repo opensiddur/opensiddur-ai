@@ -1,5 +1,6 @@
 """ Reference Database """
 
+import argparse
 from pathlib import Path
 import re
 import sqlite3
@@ -679,18 +680,37 @@ class ReferenceDatabase:
         self.close()
 
 
-def main():  # pragma: no cover
+def main(argv: list[str] | None = None) -> None:  # pragma: no cover
     """Synchronize the reference database with the project directory.
-    
+
     Opens the default database and syncs all projects, printing a summary
     of the changes made.
     """
-    print(f"Synchronizing reference database: {INDEX_DB_FILE}")
-    print(f"Project directory: {PROJECT_DIRECTORY}\n")
-    
-    with ReferenceDatabase(INDEX_DB_FILE) as refdb:
+    parser = argparse.ArgumentParser(
+        description="Synchronize the reference database with JLPTEI project files."
+    )
+    parser.add_argument(
+        "--project-directory",
+        type=Path,
+        default=PROJECT_DIRECTORY,
+        help="Base directory containing project subdirectories (default: <repo>/project).",
+    )
+    parser.add_argument(
+        "--reference-db",
+        type=Path,
+        default=INDEX_DB_FILE,
+        help="Path to reference.db (default: <repo>/database/reference.db).",
+    )
+    args = parser.parse_args(argv)
+    project_directory = args.project_directory.resolve()
+    reference_db_path = args.reference_db.resolve()
+
+    print(f"Synchronizing reference database: {reference_db_path}")
+    print(f"Project directory: {project_directory}\n")
+
+    with ReferenceDatabase(reference_db_path) as refdb:
         try:
-            result = refdb.sync_projects(PROJECT_DIRECTORY)
+            result = refdb.sync_projects(project_directory)
             
             # Print summary
             print("=" * 70)

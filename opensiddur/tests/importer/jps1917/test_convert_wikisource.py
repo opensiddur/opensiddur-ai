@@ -1164,7 +1164,7 @@ class TestBookFile(unittest.TestCase):
         mock_file().write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>")
         
         # Verify validate_and_write_tei_file was called
-        mock_validate_write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>", "genesis")
+        mock_validate_write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>", "genesis", None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Complete TEI content</tei:TEI>")
@@ -1346,7 +1346,7 @@ class TestIndexFile(unittest.TestCase):
         self.assertGreater(mock_file.call_count, 0)
         
         # Verify validate_and_write_tei_file was called for the index
-        mock_validate_write.assert_any_call("<tei:TEI>Complete index TEI</tei:TEI>", "torah")
+        mock_validate_write.assert_any_call("<tei:TEI>Complete index TEI</tei:TEI>", "torah", None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Complete index TEI</tei:TEI>")
@@ -1436,8 +1436,8 @@ class TestIndexFile(unittest.TestCase):
         
         # Verify that book_file was called for each Book transclusion
         self.assertEqual(mock_book_file.call_count, 2)
-        mock_book_file.assert_any_call(self.test_book1, None)
-        mock_book_file.assert_any_call(self.test_book2, None)
+        mock_book_file.assert_any_call(self.test_book1, None, None)
+        mock_book_file.assert_any_call(self.test_book2, None, None)
         
         # Verify index_file was not called recursively (no Index transclusions)
         mock_index_file.assert_not_called()
@@ -1479,10 +1479,10 @@ class TestIndexFile(unittest.TestCase):
         result = index_file(parent_index)
         
         # Verify that book_file was called for Book transclusion
-        mock_book_file.assert_called_once_with(self.test_book2, None)
-        
+        mock_book_file.assert_called_once_with(self.test_book2, None, None)
+
         # Verify that index_file was called recursively for Index transclusion
-        mock_index_file.assert_called_once_with(child_index, None)
+        mock_index_file.assert_called_once_with(child_index, None, None)
         
         # Verify return value
         self.assertEqual(result, "<tei:TEI>Parent TEI</tei:TEI>")

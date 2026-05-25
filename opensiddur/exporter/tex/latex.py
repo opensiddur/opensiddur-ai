@@ -24,13 +24,16 @@ from pydantic import BaseModel
 
 # Add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent.parent.parent
-projects_source_root = project_root / "project"
 sys.path.insert(0, str(project_root))
 
 from opensiddur.common.xslt import xslt_transform_string  # noqa: E402
+from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 from opensiddur.exporter.settings import TypographyConfig  # noqa: E402
 
 XSLT_FILE = Path(__file__).parent / "reledmac.xslt"
+
+# Default project root for resolving p:project/p:file_name references in compiled XML.
+projects_source_root = PROJECT_DIRECTORY
 
 
 class LicenseRecord(BaseModel):
@@ -49,8 +52,14 @@ class CreditRecord(BaseModel):
     contributor: str  # contributor name at the source
 
 
-def extract_licenses(xml_file_paths: list[Path]) -> dict[Path, LicenseRecord]:
+def extract_licenses(
+    xml_file_paths: list[Path],
+    project_directory: Path | None = None,
+) -> dict[Path, LicenseRecord]:
     """Extract license URLs and names from a list of JLPTEI XML files."""
+    if project_directory is None:
+        project_directory = projects_source_root
+    project_directory = project_directory.resolve()
     ns = {"tei": "http://www.tei-c.org/ns/1.0"}
 
     results: dict[Path, LicenseRecord] = {}
@@ -58,10 +67,10 @@ def extract_licenses(xml_file_paths: list[Path]) -> dict[Path, LicenseRecord]:
     for file_path in xml_file_paths:
         try:
             try:
-                relative_path = file_path.absolute().relative_to(projects_source_root)
+                relative_path = file_path.absolute().relative_to(project_directory)
             except ValueError:
                 print(
-                    f"Warning: {file_path} is not a subdirectory of {projects_source_root}",
+                    f"Warning: {file_path} is not a subdirectory of {project_directory}",
                     file=sys.stderr,
                 )
                 continue
@@ -253,13 +262,16 @@ def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
 
 
 def get_file_references(
-    input_file: Path, project_directory: Path = projects_source_root
+    input_file: Path, project_directory: Path | None = None
 ) -> list[Path]:
     """Get all source file references from a compiled JLPTEI XML file.
 
     Includes the file itself, all transcluded files, and the ``index.xml``
     of every referenced project.
     """
+    if project_directory is None:
+        project_directory = projects_source_root
+    project_directory = project_directory.resolve()
     ns = {
         "tei": "http://www.tei-c.org/ns/1.0",
         "p": "http://jewishliturgy.org/ns/processing",
@@ -319,6 +331,7 @@ def transform_xml_to_tex(
     output_file: Optional[str] = None,
     settings_file: Optional[Path] = None,
     typography: Optional[TypographyConfig] = None,
+    project_directory: Path | None = None,
 ) -> str:
     """Transform a compiled JLPTEI XML file into a LuaLaTeX document.
 
@@ -328,6 +341,7 @@ def transform_xml_to_tex(
         output_file: If given, write to this path; otherwise return the string.
         settings_file: Optional path to a settings.yaml to read typography from.
         typography: Pre-loaded TypographyConfig (takes precedence over settings_file).
+        project_directory: Base directory containing project subdirectories.
 
     Returns:
         The transformed LaTeX content as a string.
@@ -336,9 +350,12 @@ def transform_xml_to_tex(
         with open(input_file, "r", encoding="utf-8") as input_fd:
             input_xml = input_fd.read()
 
-        file_references = get_file_references(input_file, projects_source_root)
+        if project_directory is None:
+            project_directory = projects_source_root
+        project_directory = project_directory.resolve()
+        file_references = get_file_references(input_file, project_directory)
 
-        licenses = extract_licenses(file_references)
+        licenses = extract_licenses(file_references, project_directory)
         licenses_tex = licenses_to_tex(group_licenses(licenses))
         credits = extract_credits(file_references)
         credits_tex = credits_to_tex(group_credits(credits))
@@ -421,6 +438,12 @@ Examples:
         default=str(XSLT_FILE),
         help="Path to the XSLT file (default: reledmac.xslt next to this script)",
     )
+    parser.add_argument(
+        "--project-directory",
+        type=Path,
+        default=PROJECT_DIRECTORY,
+        help="Base directory containing project subdirectories (default: <repo>/project).",
+    )
 
     args = parser.parse_args()
 
@@ -437,6 +460,7 @@ Examples:
         xslt_file=Path(args.xslt_file),
         output_file=args.output_file,
         settings_file=args.settings_file,
+        project_directory=args.project_directory,
     )
 
 

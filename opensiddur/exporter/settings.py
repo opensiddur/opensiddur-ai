@@ -3,15 +3,23 @@
 from enum import StrEnum
 from pathlib import Path
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 import yaml
 
 from opensiddur.exporter.linear import LinearData, ParallelColumnOrder, get_linear_data
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
-def _validate_project_list(project_list: list[str],
-    project_directory: Optional[Path] = None) -> list[str]:
-    """ Validate a list of projects. """
+
+def _project_directory_from_context(info: ValidationInfo) -> Path:
+    context = info.context or {}
+    return Path(context.get("project_directory") or PROJECT_DIRECTORY)
+
+
+def _validate_project_list(
+    project_list: list[str],
+    project_directory: Optional[Path] = None,
+) -> list[str]:
+    """Validate a list of projects."""
     if project_directory is None:
         project_directory = PROJECT_DIRECTORY  # looked up at call time so tests can patch it
     for project in project_list:
@@ -19,25 +27,36 @@ def _validate_project_list(project_list: list[str],
             raise ValueError(f"Project {project} does not exist")
     return project_list
 
+
+def _apply_project_directory(
+    linear_data: LinearData,
+    project_directory: Path,
+) -> None:
+    linear_data.xml_cache.base_path = project_directory.resolve()
+
+
 class Prioritizations(BaseModel):
     transclusion: list[str] = Field(default_factory=list)
     instructions: list[str] = Field(default_factory=list)
 
     @field_validator("transclusion")
-    def validate_transclusion(cls, v: list[str]) -> list[str]:
-        return _validate_project_list(v)
+    @classmethod
+    def validate_transclusion(cls, v: list[str], info: ValidationInfo) -> list[str]:
+        return _validate_project_list(v, _project_directory_from_context(info))
 
     @field_validator("instructions")
-    def validate_instructions(cls, v: list[str]) -> list[str]:
-        return _validate_project_list(v)
+    @classmethod
+    def validate_instructions(cls, v: list[str], info: ValidationInfo) -> list[str]:
+        return _validate_project_list(v, _project_directory_from_context(info))
 
 class ParallelConfig(BaseModel):
     projects: list[str] = Field(default_factory=list)
     column_order: ParallelColumnOrder = ParallelColumnOrder.PRIMARY_FIRST
 
     @field_validator("projects")
-    def validate_projects(cls, v: list[str]) -> list[str]:
-        return _validate_project_list(v)
+    @classmethod
+    def validate_projects(cls, v: list[str], info: ValidationInfo) -> list[str]:
+        return _validate_project_list(v, _project_directory_from_context(info))
 
 
 class ParallelLayout(StrEnum):
@@ -85,16 +104,26 @@ class SettingsYaml(BaseModel):
     typography: TypographyConfig = Field(default_factory=TypographyConfig)
 
     @field_validator("annotations")
-    def validate_annotations(cls, v: list[str]) -> list[str]:
-        return _validate_project_list(v)
+    @classmethod
+    def validate_annotations(cls, v: list[str], info: ValidationInfo) -> list[str]:
+        return _validate_project_list(v, _project_directory_from_context(info))
 
-def load_settings(settings_file: Path, linear_data: Optional[LinearData] = None) -> LinearData:
+def load_settings(
+    settings_file: Path,
+    linear_data: Optional[LinearData] = None,
+    project_directory: Optional[Path] = None,
+) -> LinearData:
     """ Load settings into linear data from a YAML file. """
+    project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
     with open(settings_file, 'r') as f:
         data =  yaml.safe_load(f)
 
-    settings = SettingsYaml.model_validate(data)
+    settings = SettingsYaml.model_validate(
+        data,
+        context={"project_directory": project_directory},
+    )
     linear_data = linear_data or get_linear_data()
+    _apply_project_directory(linear_data, project_directory)
     linear_data.project_priority = settings.priority.transclusion
     linear_data.instruction_priority = settings.priority.instructions
     linear_data.annotation_projects = settings.annotations
@@ -107,9 +136,13 @@ def load_settings(settings_file: Path, linear_data: Optional[LinearData] = None)
 def load_default_settings(
     project: str,
     file_name: str,
-    linear_data: Optional[LinearData] = None) -> LinearData:
+    linear_data: Optional[LinearData] = None,
+    project_directory: Optional[Path] = None,
+) -> LinearData:
     """ Load default settings into linear data. """
+    project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
     linear_data = linear_data or get_linear_data()
+    _apply_project_directory(linear_data, project_directory)
     linear_data.project_priority = [project]
     linear_data.instruction_priority = [project]
     linear_data.annotation_projects = [project]
