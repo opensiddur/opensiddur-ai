@@ -74,6 +74,16 @@ The conversion process follows a three-stage pipeline:
 uv run python -m opensiddur.importer.jps1917.convert_wikisource
 ```
 
+If you are using external clones of [opensiddur/sourcetexts](https://github.com/opensiddur/sourcetexts)
+and [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects), pass the
+paths explicitly:
+
+```bash
+uv run python -m opensiddur.importer.jps1917.convert_wikisource \
+  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
+  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project/jps1917
+```
+
 ### Complete Workflow (Programmatic)
 
 ```python

@@ -19,3 +19,13 @@ uv run python -m opensiddur.importer.wlc.wlc
 ```
 
 The output will be in the `project/wlc` directory.
+
+If you are using external clones of [opensiddur/sourcetexts](https://github.com/opensiddur/sourcetexts)
+and [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects), pass the
+paths explicitly:
+
+```bash
+uv run python -m opensiddur.importer.wlc.wlc \
+  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
+  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project/wlc
+```
