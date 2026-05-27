@@ -29,6 +29,21 @@ def jps1917_credits_directory(sourcetexts_root: Path | None = None) -> Path:
     return jps1917_data_directory(sourcetexts_root) / "credits"
 
 
+def miqra_al_pi_hamasorah_data_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Miqra al pi ha-Masorah raw dumps: <sourcetexts-root>/miqra_al_pi_hamasorah."""
+    root = (
+        sourcetexts_root.resolve()
+        if sourcetexts_root is not None
+        else default_sourcetexts_root()
+    )
+    return root / "miqra_al_pi_hamasorah"
+
+
+def miqra_al_pi_hamasorah_sheets_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Per-tab TSV files from the Google Sheet export."""
+    return miqra_al_pi_hamasorah_data_directory(sourcetexts_root) / "sheets"
+
+
 def get_page(page_number: str | int, sourcetexts_root: Path | None = None) -> Optional[Page]:
     """Return the wikitext of the given Page, or None if it does not exist."""
     page_num = int(page_number)
