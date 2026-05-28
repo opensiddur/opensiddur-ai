@@ -242,6 +242,21 @@ class TestExtractSources(unittest.TestCase):
         preamble, _ = extract_sources([f1, f2])
         self.assertEqual(preamble.count("@"), 1)
 
+    def test_bibtex_wraps_hebrew_fields_in_texthebrew(self):
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title xml:lang="he">מקרא על פי המסורה</tei:title>
+              <tei:editor>Avi Kadish</tei:editor>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn(r"title = {\texthebrew{מקרא על פי המסורה}}", preamble)
+
 
 class TestGetFileReferences(unittest.TestCase):
 
