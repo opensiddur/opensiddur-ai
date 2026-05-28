@@ -4,7 +4,7 @@ Scripts to download [*Miqra according to the Masorah*](https://docs.google.com/s
 
 ## License
 
-The README tab of the source spreadsheet states that the text is prepared by Sefer Avi Kadish, based on Hebrew Wikisource material, and is licensed **CC-BY-SA 4.0 International**, with attribution to Hebrew Wikisource. See the downloaded `sheets/readme.tsv` for the full Hebrew and English wording.
+The README tab of the source spreadsheet states that the text is prepared by Avi Kadish, based on Hebrew Wikisource material, and is licensed **CC-BY-SA 4.0 International**, with attribution to Hebrew Wikisource. See the downloaded `sheets/readme.tsv` for the full Hebrew and English wording.
 
 ## Download
 
