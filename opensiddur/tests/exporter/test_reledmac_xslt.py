@@ -565,8 +565,44 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        # Top-level body div with head → \eledchapter
-        self.assertIn(r"\eledchapter{Genesis}", out)
+        # Top-level body div with head → \eledchapter (LTR wrapper when not Hebrew)
+        self.assertIn(
+            r"\eledchapter{{\textdir TLT\selectlanguage{english}Genesis}}",
+            out,
+        )
+
+    def test_english_head_in_hebrew_document_uses_ltr_wrapper(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head xml:lang="en">Genesis</tei:head>
+              <tei:p><tei:milestone unit="verse" n="1"/>בְּרֵאשִׁית</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\eledchapter{{\textdir TLT\selectlanguage{english}Genesis}}",
+            out,
+        )
+
+    def test_hebrew_head_in_hebrew_document_has_no_ltr_wrapper(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head>בראשית</tei:head>
+              <tei:p><tei:milestone unit="verse" n="1"/>בְּרֵאשִׁית</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\eledchapter{בראשית}", out)
+        self.assertNotIn(
+            r"\eledchapter{{\textdir TLT\selectlanguage{english}בראשית}}",
+            out,
+        )
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ class TestMiqraConvertTsv(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            # Minimal Torah TSV: header + one data row for Genesis 1
+            # Torah TSV: parashah in nav + two verses in one paragraph
             (sheets_dir / "torah.tsv").write_text(
                 "\t".join(["Page key", "Row id", "Nav", "Scaffold", "Text"])
                 + "\n"
@@ -35,9 +35,19 @@ class TestMiqraConvertTsv(unittest.TestCase):
                     [
                         "ספר בראשית/א",
                         "א",
-                        "",
+                        "//{{פפ}}//",
                         "{{מ:פסוק|בראשית|1|1}}",
                         '{{נוסח|{{מ:אות-ג|בְּ}}רֵאשִׁ֖ית|2=test note}}',
+                    ]
+                )
+                + "\n"
+                + "\t".join(
+                    [
+                        "ספר בראשית/א",
+                        "ב",
+                        "",
+                        "{{מ:פסוק|בראשית|1|2}}",
+                        "וְהָאָ֗רֶץ הָיְתָ֥ה תֹ֙הוּ֙ וָבֹ֔הוּ",
                     ]
                 )
                 + "\n",
@@ -64,13 +74,17 @@ class TestMiqraConvertTsv(unittest.TestCase):
             self.assertIn('unit="verse"', xml)
             self.assertIn('n="1"', xml)
             self.assertIn("urn:x-opensiddur:text:bible:genesis/1/1", xml)
-            self.assertIn("<tei:ab>", xml)
+            self.assertNotIn("<tei:ab>", xml)
+            self.assertIn('<tei:p type="open-1">', xml)
+            self.assertIn("וְהָאָ֗רֶץ", xml)
             self.assertIn('<tei:head xml:lang="en">', xml)
             self.assertIn("Genesis", xml)
             self.assertIn('rend="large"', xml)
             self.assertIn("בְּ", xml)
             self.assertIn("tei:standOff", xml)
             self.assertIn("test note", xml)
+            # Standoff notes must link to the in-text marker for annotation resolution
+            self.assertIn('target="#miqra-note-1-ref', xml)
 
     def test_special_tsv_row_does_not_produce_invalid_urn_segments(self):
         # special.tsv uses a 2-column schema; must not be merged into book output.

@@ -539,7 +539,7 @@
                             <xsl:text>\pend&#10;</xsl:text>
                         </xsl:if>
                         <xsl:text>\eledchapter{</xsl:text>
-                        <xsl:value-of select="f:escape-tex(string(@title))"/>
+                        <xsl:value-of select="f:format-section-title(string(@title), string(@xml:lang))"/>
                         <xsl:text>}&#10;</xsl:text>
                         <xsl:next-iteration>
                             <xsl:with-param name="in-pstart" select="false()"/>
@@ -550,7 +550,7 @@
                             <xsl:text>\pend&#10;</xsl:text>
                         </xsl:if>
                         <xsl:text>\eledsubsection{</xsl:text>
-                        <xsl:value-of select="f:escape-tex(string(@title))"/>
+                        <xsl:value-of select="f:format-section-title(string(@title), string(@xml:lang))"/>
                         <xsl:text>}&#10;</xsl:text>
                         <xsl:next-iteration>
                             <xsl:with-param name="in-pstart" select="false()"/>
@@ -659,8 +659,10 @@
 
     <xsl:template match="tei:body/tei:div" mode="leaves">
         <xsl:if test="tei:head">
+            <xsl:variable name="head" select="tei:head[1]"/>
             <xsl:element name="f:eledpart" namespace="urn:opensiddur:reledmac">
-                <xsl:attribute name="title" select="normalize-space(string-join(tei:head//text(), ''))"/>
+                <xsl:attribute name="title" select="normalize-space(string-join($head//text(), ''))"/>
+                <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
             </xsl:element>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
@@ -668,8 +670,10 @@
 
     <xsl:template match="tei:div" mode="leaves" priority="-1">
         <xsl:if test="tei:head">
+            <xsl:variable name="head" select="tei:head[1]"/>
             <xsl:element name="f:eledsubsection" namespace="urn:opensiddur:reledmac">
-                <xsl:attribute name="title" select="normalize-space(string-join(tei:head//text(), ''))"/>
+                <xsl:attribute name="title" select="normalize-space(string-join($head//text(), ''))"/>
+                <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
             </xsl:element>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
@@ -891,6 +895,32 @@
     <xsl:function name="f:editorial-note-emissions-before" as="xs:integer">
         <xsl:param name="ctx" as="element()"/>
         <xsl:sequence select="count($ctx/preceding::tei:note[not(@type='instruction') and not(ancestor::tei:standOff)])"/>
+    </xsl:function>
+
+    <!-- Language for tei:head used in \eledchapter/\eledsubsection titles. -->
+    <xsl:function name="f:section-title-lang" as="xs:string">
+        <xsl:param name="head" as="element(tei:head)"/>
+        <xsl:sequence select="string((
+            $head/@xml:lang,
+            $head/ancestor::tei:div[@xml:lang][1]/@xml:lang,
+            $head/ancestor::tei:TEI[@xml:lang][1]/@xml:lang
+        )[1])"/>
+    </xsl:function>
+
+    <!-- Hebrew titles stay in the stream direction; other languages need an
+         explicit LTR wrapper so Latin text is not reversed in RTL blocks. -->
+    <xsl:function name="f:format-section-title" as="xs:string">
+        <xsl:param name="title" as="xs:string"/>
+        <xsl:param name="lang" as="xs:string"/>
+        <xsl:variable name="escaped" select="f:escape-tex($title)"/>
+        <xsl:choose>
+            <xsl:when test="$lang = 'he' or starts-with($lang, 'he-')">
+                <xsl:sequence select="$escaped"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}', $escaped, '}')"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:function>
 
     <xsl:function name="f:escape-tex" as="xs:string">
