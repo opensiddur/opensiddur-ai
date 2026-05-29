@@ -15,7 +15,6 @@ from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.importer.util.pages import (
     default_sourcetexts_root,
-    miqra_al_pi_hamasorah_data_directory,
     miqra_al_pi_hamasorah_sheets_directory,
 )
 from opensiddur.importer.util.prettify import prettify_xml
