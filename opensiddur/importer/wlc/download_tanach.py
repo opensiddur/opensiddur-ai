@@ -72,9 +72,13 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-if __name__ == "__main__":
+def _run_cli() -> None:  # pragma: no cover
     try:
         sys.exit(main())
     except Exception as e:
         logger.error("Error downloading/unzipping Tanach: %s", e)
         raise
+
+
+if __name__ == "__main__":  # pragma: no cover
+    _run_cli()

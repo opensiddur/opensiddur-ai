@@ -122,7 +122,7 @@ def test_custom_handler():
         print(f"\nErrors: {result.errors}")
 
 
-def main():
+def main():  # pragma: no cover
     """Run all tests"""
     print("MediaWiki to XML Processor Test Suite")
     print("Based on 1917 JPS Wikisource Analysis")
@@ -143,5 +143,5 @@ def main():
         traceback.print_exc()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

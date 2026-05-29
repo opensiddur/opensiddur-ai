@@ -63,5 +63,5 @@ def main():
             print(f"  [{role}]: {message[:100]}{'...' if len(message) > 100 else ''}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

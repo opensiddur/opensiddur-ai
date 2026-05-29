@@ -3,11 +3,33 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:tei="http://www.tei-c.org/ns/1.0"
     xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
     exclude-result-prefixes="tei j">
 
   <xsl:output method="text" encoding="UTF-8" indent="no"/>
   
   <xsl:strip-space elements="*"/>
+
+  <xsl:variable name="xml-ns" select="'http://www.w3.org/XML/1998/namespace'"/>
+
+  <xsl:function name="j:in-scope-lang" as="xs:string">
+    <xsl:param name="node" as="node()"/>
+    <xsl:sequence select="string(($node/ancestor-or-self::*[@xml:lang][1]/@xml:lang)[1])"/>
+  </xsl:function>
+
+  <xsl:function name="j:bibtex-field-value" as="xs:string">
+    <xsl:param name="node" as="element()"/>
+    <xsl:variable name="lang" select="j:in-scope-lang($node)"/>
+    <xsl:variable name="v" select="normalize-space(string($node))"/>
+    <xsl:choose>
+      <xsl:when test="$lang = 'he' or starts-with($lang, 'he-')">
+        <xsl:sequence select="concat('\texthebrew{', $v, '}')"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:sequence select="$v"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:function>
 
   <!-- Root template -->
   <xsl:template match="/">
@@ -215,7 +237,7 @@
       <xsl:text>  </xsl:text>
       <xsl:value-of select="$field-name"/>
       <xsl:text> = {</xsl:text>
-      <xsl:value-of select="normalize-space(.)"/>
+      <xsl:value-of select="j:bibtex-field-value(.)"/>
       <xsl:text>},&#10;</xsl:text>
     </xsl:if>
   </xsl:template>

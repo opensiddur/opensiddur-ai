@@ -46,6 +46,13 @@ uv run python -m opensiddur.importer.jps1917.convert_wikisource \
   --project-dir ~/src/opensiddur-repos/opensiddur-projects/project/jps1917
 ```
 
+Example: download Miqra al pi ha-Masorah from Google Sheets into sourcetexts:
+
+```bash
+uv run python -m opensiddur.importer.miqra_al_pi_hamasorah.download \
+  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+```
+
 ## JLPTEI sources
 
 JLPTEI sources are compiled into the `project` directory.
