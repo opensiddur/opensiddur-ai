@@ -13,7 +13,10 @@ from urllib.parse import quote
 
 import mwparserfromhell
 
-from opensiddur.importer.util.mediawiki_processor import MediaWikiProcessor
+from opensiddur.importer.util.mediawiki_processor import (
+    ConversionResult,
+    MediaWikiProcessor,
+)
 
 MIQRA_NS = "urn:x-opensiddur:miqra:intermediate"
 MW_NS = "urn:x-opensiddur:mw:intermediate"
@@ -195,6 +198,33 @@ class MiqraWikiTextProcessor(MediaWikiProcessor):
         self.postprocessors = []
         self._register_template_handlers()
         self._register_tag_handlers()
+
+    def process_wikitext(self, wikitext: str) -> ConversionResult:
+        """Miqra uses recursive nested processing, not the JPS top-level loop."""
+        warnings: list[str] = []
+        errors: list[str] = []
+        metadata: dict = {}
+
+        text = wikitext or ""
+        for pre in self.preprocessors:
+            try:
+                text = pre(text)
+            except Exception as e:
+                errors.append(str(e))
+
+        try:
+            xml_content = self._process_nested_content(text)
+        except Exception as e:
+            xml_content = text
+            errors.append(str(e))
+
+        return ConversionResult(
+            xml_content=xml_content,
+            metadata=metadata,
+            warnings=warnings,
+            errors=errors,
+            wikilinks=self.wikilinks.copy(),
+        )
 
     def _register_tag_handlers(self) -> None:
         self.tag_handlers["noinclude"] = self._handle_strip_tag
