@@ -68,6 +68,36 @@ class TestMiqraWikitext(unittest.TestCase):
         frag = wikitext_to_intermediate_xml("word__word", column_c=True)
         self.assertIn("word word", frag)
 
+    def test_dechi_shows_first_parameter_only(self):
+        frag = wikitext_to_intermediate_xml(
+            "{{מ:דחי|חַ֭טָּאִים|חַ֭טָּאִ֭ים}}"
+        )
+        self.assertIn("חַ֭טָּאִים", frag)
+        self.assertNotIn("חַ֭טָּאִ֭ים", frag)
+        self.assertNotIn("{{מ:דחי", frag)
+
+    def test_tzinor_shows_first_parameter_only(self):
+        frag = wikitext_to_intermediate_xml(
+            "{{מ:צינור|בָטַחְתִּי֮|בָטַ֮חְתִּי֮}}"
+        )
+        self.assertIn("בָטַחְתִּי֮", frag)
+        self.assertNotIn("בָטַ֮חְתִּי֮", frag)
+        self.assertNotIn("{{מ:צינור", frag)
+
+    def test_galgal2_shows_first_parameter_only(self):
+        frag = wikitext_to_intermediate_xml("{{גלגל-2|אֵ֪ין|אֵ֪֪ין}}")
+        self.assertIn("אֵ֪ין", frag)
+        self.assertNotIn("אֵ֪֪ין", frag)
+        self.assertNotIn("{{גלגל-2", frag)
+
+    def test_yerah_ben_yomo2_shows_first_parameter_only(self):
+        frag = wikitext_to_intermediate_xml(
+            "{{ירח בן יומו-2|אַלְפַּ֪יִם|אַלְפַּ֪֪יִם}}"
+        )
+        self.assertIn("אַלְפַּ֪יִם", frag)
+        self.assertNotIn("אַלְפַּ֪֪יִם", frag)
+        self.assertNotIn("{{ירח בן יומו-2", frag)
+
     def test_all_templates_from_doc_have_handlers(self):
         """Every template name in templates.tsv examples is recognized."""
         from pathlib import Path

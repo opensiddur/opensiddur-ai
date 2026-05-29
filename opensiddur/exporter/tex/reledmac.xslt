@@ -729,7 +729,9 @@
         <!-- Ensure we're in horizontal mode before forcing a linebreak.
              This avoids \"There's no line here to end\" when lb occurs at the
              start of a paragraph/block. -->
-        <xsl:text>\leavevmode\\&#10;</xsl:text>
+        <!-- Add an empty brace group so a following `[` at the start of the next
+             line is not parsed as the optional length argument to `\\`. -->
+        <xsl:text>\leavevmode\\{}&#10;</xsl:text>
     </xsl:template>
 
     <!-- tei:anchor: linkage ids only; editorial notes are already inlined in the body. -->

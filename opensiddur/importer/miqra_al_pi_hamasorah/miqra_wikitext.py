@@ -31,8 +31,12 @@ _STRIP_TEMPLATES = frozenset(
         "מ:ספר חדש",
         "מ:רווח בתרי עשר",
         "רווח בתרי עשר",
+        "מ:רווח בתרי עשר בפסוק הראשון",
         "מ:רווח לספר בתהלים",
         "רווח לספר בתהלים",
+        "מ:רווח לספר בתהלים בפסוק הראשון",
+        "ניווט טעמים",
+        "שם הדף המלא",
         "מ:אין פרשה בתחילת פרק",
         'מ:אין פרשה בתחילת פרק בספרי אמ"ת',
         "מ:אין רווח של פרשה בתחילת פרשת השבוע",
@@ -235,7 +239,9 @@ class MiqraWikiTextProcessor(MediaWikiProcessor):
         h("מ:ירושלם", self._handle_yerushalem)
         h("מ:ירושלמה", self._handle_yerushalema)
         h("ירח בן יומו", self._handle_accent_yerah)
+        h("ירח בן יומו-2", self._handle_accent_with_word)
         h("גלגל", self._handle_accent_galgal)
+        h("גלגל-2", self._handle_accent_with_word)
         h("אתנח הפוך", self._handle_accent_etnah)
         h("מ:קמץ", self._handle_qamats)
         h("מ:טעם ומתג באות אחת", self._handle_taam_meteg)
@@ -252,6 +258,8 @@ class MiqraWikiTextProcessor(MediaWikiProcessor):
         h("מ:לגרמיה-2", self._handle_legarmeh)
         h("מ:פסק", self._handle_paseq)
         h("מ:מקף אפור", self._handle_grey_maqaf)
+        h("מ:דחי", self._handle_dechi)
+        h("מ:צינור", self._handle_tzinor)
 
         h("מ:הערה", self._handle_mam_note)
         h("עוגן בשורה", self._handle_line_anchor)
@@ -521,6 +529,10 @@ class MiqraWikiTextProcessor(MediaWikiProcessor):
     def _handle_accent_galgal(self, template) -> str:
         return '<miqra:accent type="galgal"/>'
 
+    def _handle_accent_with_word(self, template) -> str:
+        # Word param already includes the accent (galgal / yerah ben yomo).
+        return self._p(self._param(template, 1))
+
     def _handle_accent_etnah(self, template) -> str:
         return '<miqra:accent type="etnah-hafukh"/>'
 
@@ -561,6 +573,14 @@ class MiqraWikiTextProcessor(MediaWikiProcessor):
 
     def _handle_grey_maqaf(self, template) -> str:
         return '<miqra:maqaf rend="grey">־</miqra:maqaf>'
+
+    def _handle_dechi(self, template) -> str:
+        # Wikisource shows param 1; param 2 marks the dechi (offset accent) form.
+        return self._p(self._param(template, 1))
+
+    def _handle_tzinor(self, template) -> str:
+        # Wikisource shows param 1; param 2 marks the tzinor accent placement.
+        return self._p(self._param(template, 1))
 
     def _handle_mam_note(self, template) -> str:
         body = self._p(self._param(template, 1))

@@ -533,7 +533,7 @@ class TestInlineFormatting(unittest.TestCase):
           </tei:p></tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\leavevmode\\", out)
+        self.assertIn(r"\leavevmode\\{}", out)
 
 
 class TestStructuralElements(unittest.TestCase):
