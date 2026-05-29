@@ -798,11 +798,8 @@ def process_page(page_content: str) -> ConversionResult:
     return processor.process_wikitext(page_content)
 
 
-if __name__ == "__main__":
-    # Example usage
+def _demo_main() -> None:  # pragma: no cover
     processor = create_processor()
-    
-    # Example MediaWiki content with nested templates
     sample_wikitext = """
     {{verse|1|1|In the beginning God created the heaven and the earth.}}
 
@@ -811,16 +808,19 @@ if __name__ == "__main__":
     {{sc|Genesis}} {{c|Chapter 1}}
     {{larger|The Creation}}
     <ref name="gen1">This is a reference</ref>
-    
+
     See also [[Genesis]] and [[Creation myth]] for more information.
-    
+
     Nested example: {{sc|{{larger|Bold Large Text}}}}
     Complex nested: {{verse|1|3|{{sc|God}} said, {{larger|Let there be light}}}}
     """
-    
     result = processor.process_wikitext(sample_wikitext)
     print("XML Output:")
     print(result.xml_content)
     print("\nWarnings:", result.warnings)
     print("Errors:", result.errors)
     print("Wikilinks:", result.wikilinks)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    _demo_main()

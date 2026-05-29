@@ -414,7 +414,7 @@ def save_template_analysis(template_data: Dict, output_file: str = "template_ana
     print(f"Template analysis saved to {output_file}")
 
 
-if __name__ == "__main__": # pragma: no cover
+def _run_cli() -> None:  # pragma: no cover
     import argparse
 
     parser = argparse.ArgumentParser(description="Analyze JPS 1917 Wikisource MediaWiki templates and tags.")
@@ -427,27 +427,28 @@ if __name__ == "__main__": # pragma: no cover
     args = parser.parse_args()
     root = args.sourcetexts_root
 
-    # Example usage
     print("Starting MediaWiki template and tag analysis...")
-    
-    # Find all templates
-    print("\n" + "="*50)
+
+    print("\n" + "=" * 50)
     print("ANALYZING TEMPLATES")
-    print("="*50)
+    print("=" * 50)
     template_data = find_all_templates(sourcetexts_root=root)
     print_template_summary(template_data)
     save_template_analysis(template_data, "jps1917_template_analysis.json")
-    
-    # Find all tags
-    print("\n" + "="*50)
+
+    print("\n" + "=" * 50)
     print("ANALYZING TAGS")
-    print("="*50)
+    print("=" * 50)
     tag_data = find_all_tags(sourcetexts_root=root)
     print_tag_summary(tag_data)
     save_tag_analysis(tag_data, "jps1917_tag_analysis.json")
-    
-    print("\n" + "="*50)
+
+    print("\n" + "=" * 50)
     print("ANALYSIS COMPLETE!")
-    print("="*50)
+    print("=" * 50)
     print("Template analysis saved to: jps1917_template_analysis.json")
     print("Tag analysis saved to: jps1917_tag_analysis.json")
+
+
+if __name__ == "__main__":  # pragma: no cover
+    _run_cli()

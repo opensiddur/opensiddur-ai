@@ -171,9 +171,10 @@ def demo_interrupted_session():
         print(f"\n🧹 Cleaned up {checkpoint_file}")
 
 
-if __name__ == "__main__":
-    # Run the checkpointing demo
+def _run_cli() -> None:  # pragma: no cover
     demo_checkpointing()
-    
-    # Run the interrupted session demo
     demo_interrupted_session()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    _run_cli()
