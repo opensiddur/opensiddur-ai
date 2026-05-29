@@ -54,9 +54,6 @@ _STRIP_TEMPLATES = frozenset(
     }
 )
 
-_BOLD_ITALIC_RE = re.compile(r"'''''(.*?)'''''")
-_BOLD_RE = re.compile(r"'''(.*?)'''")
-_ITALIC_RE = re.compile(r"''(.*?)''")
 _ANY_HI_RE = re.compile(r"'''''(.*?)'''''|'''(.*?)'''|''(.*?)''")
 _TAG_OPEN_RE = re.compile(r"<(miqra|mw):([a-zA-Z0-9-]+)([^>]*?)(/?)>")
 _KETEG_START_RE = re.compile(r"<קטע\s+התחלה=([^/>]+)\s*/>", re.IGNORECASE)

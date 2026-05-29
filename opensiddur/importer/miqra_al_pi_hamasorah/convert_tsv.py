@@ -572,7 +572,6 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO)
     args = _build_arg_parser().parse_args(argv)
 
-    data_dir = miqra_al_pi_hamasorah_data_directory(args.sourcetexts_root)
     sheets_dir = miqra_al_pi_hamasorah_sheets_directory(args.sourcetexts_root)
     out_dir = args.project_dir if args.project_dir is not None else _default_project_directory()
 
