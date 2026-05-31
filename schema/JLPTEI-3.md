@@ -434,7 +434,7 @@ In Jewish prayer, what should be said can be governed by time, and particualar c
 Attributes used for conditions are represented in TEI as
 feature structures (under the `tei:fs` element). These 
 attributes are called "settings." Settings are encoded in
-standoff markup sections (`tei:standOff` with `type=settings`).
+setting-declaration sections, encoded with `j:declare`).
 
 The processing model defines certain constant-named feature structures. The subsequent sections will define those sections:
 
