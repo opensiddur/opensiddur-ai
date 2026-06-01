@@ -695,6 +695,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if context["command"] == _ProcessingCommand.SKIP:
             return []
 
+        if self._handle_settings_element(element):
+            self._update_processing_context_after(element)
+            return []
+
         # In marker mode, all structural blocks use start/end marker pairs
         if self.marker_stack is not None and element.tag in STRUCTURAL_BLOCKS:
             result = self._process_element_as_marker(
@@ -773,22 +777,23 @@ class ExternalCompilerProcessor(CompilerProcessor):
         self.root_language = self._get_in_scope_language(
             self.deepest_common_ancestor if self.deepest_common_ancestor is not None else root)
 
-        self.linear_data.processing_context.append(_ProcessingContext(
-            project=self.project,
-            file_name=self.file_name,
-            from_start=self.from_start,
-            to_end=self.to_end,
-            before_start=self.from_start is not None,
-            after_end=False,  # We haven't processed anything yet, so we're not after end
-            include_tail_after_end=False,
-            command=_ProcessingCommand.RECURSE,
-            inside_deepest_common_ancestor=False,
-        ))
+        with self._conditional_settings_checkpoint():
+            self.linear_data.processing_context.append(_ProcessingContext(
+                project=self.project,
+                file_name=self.file_name,
+                from_start=self.from_start,
+                to_end=self.to_end,
+                before_start=self.from_start is not None,
+                after_end=False,  # We haven't processed anything yet, so we're not after end
+                include_tail_after_end=False,
+                command=_ProcessingCommand.RECURSE,
+                inside_deepest_common_ancestor=False,
+            ))
 
-        processed = self._process_element(root, root)
+            processed = self._process_element(root, root)
 
-        # pop the processing context
-        self.linear_data.processing_context.pop()
+            # pop the processing context
+            self.linear_data.processing_context.pop()
 
         # When processing the full file (not a range transclusion), mark the file source on the root element
         # so that get_file_references() can find source files for metadata extraction

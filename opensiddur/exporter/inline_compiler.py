@@ -106,6 +106,10 @@ class InlineCompilerProcessor(CompilerProcessor):
         if context["command"] == _ProcessingCommand.SKIP:
             return text_element
 
+        if self._handle_settings_element(element):
+            self._update_processing_context_after(element)
+            return text_element
+
         # Check if this element itself is a transclusion
         transcluded = self._transclude(element, type_override='inline')
         if transcluded is not None:
@@ -192,21 +196,22 @@ class InlineCompilerProcessor(CompilerProcessor):
 
         self.root_language = self._get_in_scope_language(root)
 
-        self.linear_data.processing_context.append(_ProcessingContext(
-            project=self.project,
-            file_name=self.file_name,
-            from_start=self.from_start,
-            to_end=self.to_end,
-            before_start=self.from_start is not None,
-            after_end=False,  # We haven't processed anything yet, so we're not after end
-            include_tail_after_end=False,
-            command=_ProcessingCommand.RECURSE,
-            inside_deepest_common_ancestor=False,
-        ))
+        with self._conditional_settings_checkpoint():
+            self.linear_data.processing_context.append(_ProcessingContext(
+                project=self.project,
+                file_name=self.file_name,
+                from_start=self.from_start,
+                to_end=self.to_end,
+                before_start=self.from_start is not None,
+                after_end=False,  # We haven't processed anything yet, so we're not after end
+                include_tail_after_end=False,
+                command=_ProcessingCommand.RECURSE,
+                inside_deepest_common_ancestor=False,
+            ))
 
-        element = self._process_element(root, root)
+            element = self._process_element(root, root)
 
-        # pop the processing context
-        self.linear_data.processing_context.pop()
+            # pop the processing context
+            self.linear_data.processing_context.pop()
 
         return element
