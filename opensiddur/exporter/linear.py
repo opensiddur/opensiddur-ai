@@ -39,10 +39,12 @@ class NumericValue(BaseModel):
 
 
 class ConditionalSettingEntry(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     declare_id: str
     fs_type: str
     feature_name: str
-    value: DeclarationFeatureValue | UndefinedType
+    value: int | float | bool | str | NumericValue | UndefinedType
     source: Literal["init", "declared", "derived"]
     contributors: set[str] = Field(default_factory=set)
 
