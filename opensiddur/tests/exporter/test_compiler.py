@@ -1962,7 +1962,7 @@ class TestCompilerMain(unittest.TestCase):
     """Tests for compiler CLI main()."""
 
     @patch("opensiddur.exporter.external_compiler.ExternalCompilerProcessor")
-    @patch("opensiddur.exporter.compiler.load_default_settings")
+    @patch("opensiddur.exporter.settings.load_default_settings")
     @patch("opensiddur.exporter.compiler.reset_linear_data")
     def test_main_uses_project_directory(
         self,

@@ -434,7 +434,7 @@ In Jewish prayer, what should be said can be governed by time, and particualar c
 Attributes used for conditions are represented in TEI as
 feature structures (under the `tei:fs` element). These 
 attributes are called "settings." Settings are encoded in
-standoff markup sections (`tei:standOff` with `type=settings`).
+setting-declaration sections, encoded with `j:declare`).
 
 The processing model defines certain constant-named feature structures. The subsequent sections will define those sections:
 
@@ -442,7 +442,7 @@ Absolute time, if defined, is processed first.
 
 The current Gregorian date and time are defined in the following feature structures:
 ```xml
-<tei:fs name="opensiddur:gregorian-date">
+<tei:fs type="opensiddur:gregorian-date">
    <tei:f name="year">
       <tei:numeric value="{gregorian-year}"/>
    </tei:f>
@@ -460,7 +460,7 @@ The day is a positive integer that must produce be a valid date within the given
 
 The time of day is represented by:
 ```xml
-<tei:fs name="opensiddur:time">
+<tei:fs type="opensiddur:time">
    <tei:f name="hour">
       <tei:numeric value="{hour on 24 hour clock}"/>
    </tei:f>
@@ -479,7 +479,7 @@ The time of day is represented by:
 
 Given the secular date/time, the processing model calculates the Hebrew date and halachic time:
 ```xml
-<tei:fs name="opensiddur:hebrew-date">
+<tei:fs type="opensiddur:hebrew-date">
    <tei:f name="year">
       <tei:numeric value="{year on Hebrew calendar}"/>
    </tei:f>
@@ -498,7 +498,7 @@ They day may have any value for a valid day for the given month in the given yea
 
 Halachic time is defined in the following structure:
 ```xml
-<tei:fs name="opensiddur:hebrew-time">
+<tei:fs type="opensiddur:hebrew-time">
    <tei:f name="variable-hour">
       <tei:numeric value="{hour number}"/>
    </tei:f>
@@ -522,7 +522,7 @@ If both the secular date and the Hebrew date are set, the last setting prevails.
 
 In order to calculate the Hebrew date/time from the secular date/time, the location is also required. It is encoded in the following structure:
 ```xml
-<tei:fs name="opensiddur:location">
+<tei:fs type="opensiddur:location">
    <tei:f name="latitude">
       <tei:numeric value="{latitude}"/>
    </tei:f>
@@ -536,7 +536,7 @@ The `latitude` has values between `-90` (90 degrees south) and `90` (90 degrees 
 
 Given location, the Israel/diaspora binary can be derived:
 ```xml
-<tei:fs name="opensiddur:israel">
+<tei:fs type="opensiddur:israel">
    <tei:f name="is-israel">
       <tei:binary value=""/>
    </tei:f>
@@ -545,7 +545,7 @@ Given location, the Israel/diaspora binary can be derived:
 
 Given dates and times, the following values can then be derived:
 ```xml
-<tei:fs name="opensiddur:day-of-week">
+<tei:fs type="opensiddur:day-of-week">
    <tei:f name="secular-day">
       <tei:numeric value="{day}"/>
    </tei:f>
@@ -563,7 +563,7 @@ If the day cannot be determined because the time is between sunset and star-rise
 
 From the dates, times, and locations, the holiday calendar is calculated:
 ```xml
-<tei:fs name="opensiddur:holiday">
+<tei:fs type="opensiddur:holiday">
    <tei:f name="pesah">
       <tei:numeric value="{0-8}"/>
    </tei:f>
@@ -658,7 +658,7 @@ A `0` value indicates that it is definitely not that holiday. Any other value in
 
 Further derived values are also available and calculated from the above
 ```xml
-<tei:fs name="opensiddur:holiday-aggregate">
+<tei:fs type="opensiddur:holiday-aggregate">
    <tei:f name="shabbat">
       <tei:binary value=""/>
    </tei:f>
@@ -694,7 +694,7 @@ Further derived values are also available and calculated from the above
 
 The weekly parsha and special additions can also be calculated:
 ```xml
-<tei:fs name="opensiddur:torah-reading">
+<tei:fs type="opensiddur:torah-reading">
    <tei:f name="diaspora-parsha">
       <tei:string/>
    </tei:f>
@@ -731,7 +731,7 @@ The weekly parsha and special additions can also be calculated:
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)
 ```xml
-<tei:fs name="opensiddur:override">
+<tei:fs type="opensiddur:override">
    <tei:f name="omit-tahanun">
       <!-- if true, tahanun is omitted, even if the 
       day would otherwise have tahanun -->
@@ -755,7 +755,7 @@ are never set automatically (they default to the `false` value)
 
 The zman tefillah is also able to be calculated (though there may also be other settings required to determine how to calculate it):
 ```xml
-<tei:fs name="opensiddur:service-time">
+<tei:fs type="opensiddur:service-time">
    <tei:f name="shaharit">
       <tei:binary/>
    </tei:f>
@@ -779,7 +779,7 @@ The zman tefillah is also able to be calculated (though there may also be other 
 
 Similarly, a text may be associated with which service it represents. This value is inherent in the text and will not be automatically calculated:
 ```xml
-<tei:fs name="opensiddur:service">
+<tei:fs type="opensiddur:service">
    <tei:f name="shaharit">
       <tei:binary/>
    </tei:f>
@@ -827,7 +827,7 @@ Settings are declared in XML using the `j:declare` element. The part of the text
 <tei:text>
    ...
    <j:declare xml:id="setting_start">
-      <tei:fs name="some_setting" xml:id="setting_one">
+      <tei:fs type="some_setting" xml:id="setting_one">
          ...
       </tei:fs>
    </j:declare>
@@ -856,7 +856,7 @@ Conditions are specified inside the `j:conditional` element as feature structure
 <tei:text>
    ...
    <j:conditional xml:id="if_start">
-      <tei:fs name="x">
+      <tei:fs type="x">
          <tei:f name="y">
             <tei:binary value="true"/>
          </tei:f>

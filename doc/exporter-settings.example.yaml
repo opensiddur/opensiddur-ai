@@ -36,6 +36,24 @@ parallel:
   # Column order for parallel text display in printed output
   column_order: primary_first
 
+# Optional conditional setting declarations (processor init).
+# Keys are tei:fs @type values; nested keys are tei:f @name values.
+# Omit to leave conditional settings unset at compile start.
+declarations:
+  opensiddur:gregorian-date:
+    year: 2024
+    month: 10
+    day: 3
+  opensiddur:time:
+    hour: 10
+    minute: 30
+    second: 0
+  opensiddur:holiday:
+    rosh-hashana: 1
+    pesah: 0
+  opensiddur:override:
+    omit-tahanun: true
+
 # Output-format settings consumed by the TeX/PDF stage only.
 typography:
   hebrew_font: "Frank Ruehl CLM"

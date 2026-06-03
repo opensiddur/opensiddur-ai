@@ -4,17 +4,49 @@ Linear processing treats the entire hierarchy as a single pass,
 so the data are the same independent of depth.
 """
 from enum import StrEnum
-from typing import Annotated, Any, Optional, TypedDict
+from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# Literal values allowed in exporter settings YAML ``declarations`` (null → Undefined).
+DeclarationFeatureValue: TypeAlias = int | float | bool | str | None
 
 from opensiddur.exporter.cache import XMLCache
 
 
-class Setting(BaseModel):
+class UndefinedType:
+    """Sentinel for undefined / any-value feature semantics."""
+
+    _instance: "UndefinedType | None" = None
+
+    def __new__(cls) -> "UndefinedType":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "Undefined"
+
+
+Undefined = UndefinedType()
+
+
+class NumericValue(BaseModel):
+    """Parsed tei:numeric value, optionally with inclusive upper bound (@max)."""
+
+    value: int
+    max_value: int | None = None
+
+
+class ConditionalSettingEntry(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    declare_id: str
     fs_type: str
-    name: str
-    value: Any
+    feature_name: str
+    value: int | float | bool | str | NumericValue | UndefinedType
+    source: Literal["init", "declared", "derived"]
+    contributors: set[str] = Field(default_factory=set)
 
 
 class ParallelColumnOrder(StrEnum):
@@ -29,8 +61,10 @@ class LinearData(BaseModel):
 
     # parsed XML cache
     xml_cache: XMLCache = Field(default_factory=XMLCache)
-    # dictionary linking the starting point of the settings to changes at that point.
-    settings: list[tuple[str, Setting]] = Field(default_factory=list)
+    # scoped conditional setting stack (init, declared, derived entries)
+    conditional_settings: list[ConditionalSettingEntry] = Field(default_factory=list)
+    # contributor declare_id -> stack indices of derived entries that depend on it
+    derived_dependency_index: dict[str, set[int]] = Field(default_factory=dict)
     # project priority for URN resolution of texts
     project_priority: list[str] = Field(default_factory=list)
     # project priority for URN resolution of instructions

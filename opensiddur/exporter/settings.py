@@ -6,7 +6,14 @@ from typing import Optional
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 import yaml
 
-from opensiddur.exporter.linear import LinearData, ParallelColumnOrder, get_linear_data
+from opensiddur.exporter.linear import (
+    DeclarationFeatureValue,
+    LinearData,
+    ParallelColumnOrder,
+    get_linear_data,
+)
+from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 
@@ -102,6 +109,7 @@ class SettingsYaml(BaseModel):
     annotations: list[str] = Field(default_factory=list)
     parallel: Optional[ParallelConfig] = None
     typography: TypographyConfig = Field(default_factory=TypographyConfig)
+    declarations: dict[str, dict[str, DeclarationFeatureValue]] = Field(default_factory=dict)
 
     @field_validator("annotations")
     @classmethod
@@ -130,6 +138,9 @@ def load_settings(
     if settings.parallel:
         linear_data.parallel_projects = settings.parallel.projects
         linear_data.parallel_column_order = settings.parallel.column_order
+    if settings.declarations:
+        entries = yaml_to_declaration_entries(settings.declarations)
+        CompilerProcessor.load_init_settings(linear_data, entries)
     return linear_data
 
 

@@ -15,19 +15,31 @@ their instructions.
 """
 
 import argparse
+from contextlib import contextmanager
 from enum import Enum
 import hashlib
 from pathlib import Path
 import re
 import sys
-from typing import Literal, Optional, TypedDict
+from typing import Any, Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
 
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE
-from opensiddur.exporter.linear import LinearData, get_linear_data, reset_linear_data
+from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
+from opensiddur.exporter.linear import (
+    ConditionalSettingEntry,
+    LinearData,
+    get_linear_data,
+    reset_linear_data,
+)
+from opensiddur.exporter.conditional_settings import (
+    J_DECLARE,
+    J_END_DECLARE,
+    XML_ID,
+    parse_declare_element,
+)
 from opensiddur.exporter.refdb import ReferenceDatabase
-from opensiddur.exporter.settings import load_default_settings, load_settings
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
@@ -533,8 +545,160 @@ class CompilerProcessor:
         context['element_path'] = None
         return context
 
+    def _scoped_declare_id(self, xml_id: str, declare_element: ElementBase) -> str:
+        """Path-scoped declaration identity, parallel to output ID rewriting."""
+        return f"{xml_id}_{self._get_path_hash(declare_element)}"
+
+    def _find_declare_element_by_xml_id(self, xml_id: str) -> ElementBase | None:
+        for el in self.root_tree.iter(J_DECLARE):
+            if el.get(XML_ID) == xml_id:
+                return el
+        return None
+
+    def _rebuild_derived_dependency_index(self) -> None:
+        """Rebuild reverse index after conditional_settings stack mutation."""
+        self.linear_data.derived_dependency_index = {}
+        for i, entry in enumerate(self.linear_data.conditional_settings):
+            if entry.source == "derived":
+                for contributor in entry.contributors:
+                    self.linear_data.derived_dependency_index.setdefault(
+                        contributor, set()
+                    ).add(i)
+
+    def _register_derived_entry(self, entry: ConditionalSettingEntry) -> None:
+        """Push a derived entry and update the dependency index."""
+        self.linear_data.conditional_settings.append(entry)
+        idx = len(self.linear_data.conditional_settings) - 1
+        for contributor in entry.contributors:
+            self.linear_data.derived_dependency_index.setdefault(contributor, set()).add(idx)
+
+    def _remove_derived_entries_for_contributor(self, declare_id: str) -> list[int]:
+        """Remove derived entries that depend on declare_id."""
+        removed_indices = [
+            i
+            for i, entry in enumerate(self.linear_data.conditional_settings)
+            if entry.source == "derived" and declare_id in entry.contributors
+        ]
+        if not removed_indices:
+            return removed_indices
+        self.linear_data.conditional_settings = [
+            entry
+            for entry in self.linear_data.conditional_settings
+            if not (entry.source == "derived" and declare_id in entry.contributors)
+        ]
+        self._rebuild_derived_dependency_index()
+        return removed_indices
+
+    def _push_declare(self, declare_id: str, entries: list[ConditionalSettingEntry]) -> None:
+        """Push declared entries and trigger derived-settings recalculation."""
+        self.linear_data.conditional_settings.extend(entries)
+        recalculate_derived_settings(
+            self.linear_data,
+            trigger=SettingChangeTrigger.DECLARE,
+            declare_id=declare_id,
+        )
+
+    def _end_declare(self, declare_id: str) -> None:
+        """Remove declared entries for declare_id and invalidate dependent derivations."""
+        declared = [
+            e
+            for e in self.linear_data.conditional_settings
+            if e.source == "declared" and e.declare_id == declare_id
+        ]
+        if not declared:
+            raise ValueError(f"No declared settings found for declare_id={declare_id!r}")
+
+        self.linear_data.conditional_settings = [
+            e
+            for e in self.linear_data.conditional_settings
+            if not (e.source == "declared" and e.declare_id == declare_id)
+        ]
+        self._remove_derived_entries_for_contributor(declare_id)
+        recalculate_derived_settings(
+            self.linear_data,
+            trigger=SettingChangeTrigger.END_DECLARE,
+            declare_id=declare_id,
+        )
+
+    @staticmethod
+    def load_init_settings(
+        linear_data: LinearData,
+        entries: list[ConditionalSettingEntry],
+    ) -> None:
+        """Push YAML init entries onto linear_data (used before compile starts)."""
+        linear_data.conditional_settings.extend(entries)
+        recalculate_derived_settings(linear_data, trigger=SettingChangeTrigger.INIT)
+
+    def get_active_setting_entry(
+        self,
+        fs_type: str,
+        feature_name: str,
+    ) -> ConditionalSettingEntry | None:
+        """Return the winning stack entry for a feature (latest on stack)."""
+        for entry in reversed(self.linear_data.conditional_settings):
+            if entry.fs_type == fs_type and entry.feature_name == feature_name:
+                return entry
+        return None
+
+    def get_active_setting(self, fs_type: str, feature_name: str) -> Any | None:
+        """Return the active value for a feature, or None if not set."""
+        entry = self.get_active_setting_entry(fs_type, feature_name)
+        return entry.value if entry is not None else None
+
+    def get_active_fs_settings(self, fs_type: str) -> dict[str, Any]:
+        """Merged view of all features for an FS type."""
+        feature_names: set[str] = set()
+        for entry in self.linear_data.conditional_settings:
+            if entry.fs_type == fs_type:
+                feature_names.add(entry.feature_name)
+        return {
+            name: self.get_active_setting(fs_type, name)
+            for name in feature_names
+        }
+
+    @contextmanager
+    def _conditional_settings_checkpoint(self):
+        """Truncate conditional_settings to pre-process depth on exit."""
+        depth = len(self.linear_data.conditional_settings)
+        try:
+            yield
+        finally:
+            del self.linear_data.conditional_settings[depth:]
+            self._rebuild_derived_dependency_index()
+
+    def _handle_settings_element(self, element: ElementBase) -> bool:
+        """Process j:declare / j:endDeclare. Returns True if handled (strip from output)."""
+        if element.tag == J_DECLARE:
+            xml_id = element.get(XML_ID)
+            if not xml_id:
+                raise ValueError("j:declare requires an xml:id attribute")
+            scoped_id = self._scoped_declare_id(xml_id, element)
+            entries = parse_declare_element(element, scoped_id)
+            self._push_declare(scoped_id, entries)
+            return True
+
+        if element.tag == J_END_DECLARE:
+            target = element.get("target")
+            if not target or not target.startswith("#"):
+                raise ValueError("j:endDeclare requires a fragment target attribute (e.g. #id)")
+            bare_id = target[1:]
+            declare_el = self._find_declare_element_by_xml_id(bare_id)
+            if declare_el is None:
+                raise ValueError(
+                    f"j:endDeclare target {target!r} does not match a j:declare in this file"
+                )
+            scoped_id = self._scoped_declare_id(bare_id, declare_el)
+            self._end_declare(scoped_id)
+            return True
+
+        return False
+
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
         context = self._update_processing_context_before(element)
+
+        if self._handle_settings_element(element):
+            self._update_processing_context_after(element)
+            return None  # type: ignore[return-value]
         
         transcluded = self._transclude(element)
         if transcluded is not None:
@@ -553,6 +717,8 @@ class CompilerProcessor:
 
         for child in element:
             processed = self._process_element(child, root)
+            if processed is None:
+                continue
             if child.tail:
                 processed.tail = child.tail
             copied.append(processed)
@@ -579,23 +745,24 @@ class CompilerProcessor:
 
         self.root_language = self._get_in_scope_language(root)
 
-        # set up the processing context
-        self.linear_data.processing_context.append(_ProcessingContext(
-            project=self.project,
-            file_name=self.file_name,
-            from_start=None,
-            to_end=None,
-            before_start=False,
-            after_end=False,
-            command=_ProcessingCommand.COPY_AND_RECURSE,
-            inside_deepest_common_ancestor=False,
-            include_tail_after_end=False,
-        ))
+        with self._conditional_settings_checkpoint():
+            # set up the processing context
+            self.linear_data.processing_context.append(_ProcessingContext(
+                project=self.project,
+                file_name=self.file_name,
+                from_start=None,
+                to_end=None,
+                before_start=False,
+                after_end=False,
+                command=_ProcessingCommand.COPY_AND_RECURSE,
+                inside_deepest_common_ancestor=False,
+                include_tail_after_end=False,
+            ))
 
-        copied = self._process_element(root, root)
-        copied = self._mark_file_source(copied)
-        # pop the processing context
-        self.linear_data.processing_context.pop()
+            copied = self._process_element(root, root)
+            copied = self._mark_file_source(copied)
+            # pop the processing context
+            self.linear_data.processing_context.pop()
 
         return copied
 
@@ -613,6 +780,8 @@ def main(argv: list[str] | None = None):  # pragma: no cover
         help="Base directory containing project subdirectories (default: <repo>/project).",
     )
     args = parser.parse_args(argv)
+
+    from opensiddur.exporter.settings import load_default_settings, load_settings
 
     project_directory = args.project_directory.resolve()
     reset_linear_data()
