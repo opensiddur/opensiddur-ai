@@ -42,7 +42,7 @@ class ConditionalSettingEntry(BaseModel):
     declare_id: str
     fs_type: str
     feature_name: str
-    value: Any
+    value: DeclarationFeatureValue | UndefinedType
     source: Literal["init", "declared", "derived"]
     contributors: set[str] = Field(default_factory=set)
 
