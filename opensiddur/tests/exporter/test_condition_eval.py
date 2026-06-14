@@ -11,7 +11,6 @@ from opensiddur.exporter.condition_eval import (
     parse_condition_element,
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
-from opensiddur.exporter.linear import NumericValue, Undefined
 
 TEI = TEI_NS
 J = JLPTEI_NAMESPACE
@@ -80,6 +79,9 @@ class TestLeafComparison(unittest.TestCase):
             '<tei:fs type="t:fs"><tei:f name="n"><tei:numeric value="1" max="5"/></tei:f></tei:fs>'
         )
         node = parse_condition_element(el)
+        parsed = node.features[0].value
+        self.assertEqual(parsed.value, 1)
+        self.assertEqual(parsed.max_value, 5)
         for val in (1, 3, 5):
             proc = _mock_processor({("t:fs", "n"): val})
             self.assertEqual(evaluate_condition(node, proc), TriState.TRUE, val)
@@ -129,15 +131,6 @@ class TestLeafComparison(unittest.TestCase):
 
 
 class TestCombinators(unittest.TestCase):
-    def _combinator(self, op: str, inner: str) -> etree._Element:
-        tag = {"all": "all", "any": "any", "none": "none", "one": "one"}[op]
-        return _conditional_xml(
-            f'<j:{tag} xmlns:j="{J}">'
-            f'<tei:fs type="t"><tei:f name="a"><tei:binary value="true"/></tei:f></tei:fs>'
-            f'{inner}'
-            f'</j:{tag}>'
-        )
-
     def _leaf(self, name: str, value: str) -> str:
         return f'<tei:fs type="t"><tei:f name="{name}"><tei:binary value="{value}"/></tei:f></tei:fs>'
 

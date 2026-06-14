@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any, Protocol
 
 from lxml.etree import ElementBase
 
@@ -25,9 +25,6 @@ from opensiddur.exporter.conditional_settings import (
     TEI_VNOT,
 )
 from opensiddur.exporter.linear import NumericValue, Undefined
-
-if TYPE_CHECKING:
-    from opensiddur.exporter.compiler import CompilerProcessor
 
 
 class TriState(StrEnum):
@@ -179,14 +176,6 @@ def parse_condition_element(conditional_el: ElementBase) -> ConditionNode:
         op="ALL",
         children=tuple(_parse_condition_node(child) for child in children),
     )
-
-
-def extract_instruction_note(conditional_el: ElementBase) -> ElementBase | None:
-    """Return tei:note[@type='instruction'] child if present."""
-    for child in conditional_el:
-        if child.tag == TEI_NOTE and child.get("type") == "instruction":
-            return child
-    return None
 
 
 def _is_undefined(value: Any) -> bool:

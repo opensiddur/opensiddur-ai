@@ -768,7 +768,7 @@ class CompilerProcessor:
         return False, None
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
-        context = self._update_processing_context_before(element)
+        self._update_processing_context_before(element)
 
         if (
             self._should_skip_conditional_content()
