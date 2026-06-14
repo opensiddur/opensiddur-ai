@@ -9,6 +9,7 @@ from opensiddur.exporter.compiler import (
     _ProcessingContext,
     _AnnotationCommand,
 )
+from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
 from opensiddur.exporter.constants import PROCESSING_NAMESPACE
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import LinearData
@@ -106,8 +107,22 @@ class InlineCompilerProcessor(CompilerProcessor):
         if context["command"] == _ProcessingCommand.SKIP:
             return text_element
 
+        if (
+            self._should_skip_conditional_content()
+            and element.tag not in CONDITIONAL_CONTROL_TAGS
+        ):
+            self._update_processing_context_after(element)
+            return text_element
+
         if self._handle_settings_element(element):
             self._update_processing_context_after(element)
+            return text_element
+
+        handled, conditional_copy = self._handle_conditional_element(element)
+        if handled:
+            self._update_processing_context_after(element)
+            if conditional_copy is not None:
+                return self._rewrite_ids(conditional_copy)
             return text_element
 
         # Check if this element itself is a transclusion

@@ -25,7 +25,18 @@ TEI_VALT = f"{{{TEI_NS}}}vAlt"
 TEI_VNOT = f"{{{TEI_NS}}}vNot"
 J_DECLARE = f"{{{JLPTEI_NAMESPACE}}}declare"
 J_END_DECLARE = f"{{{JLPTEI_NAMESPACE}}}endDeclare"
+J_CONDITIONAL = f"{{{JLPTEI_NAMESPACE}}}conditional"
+J_END_CONDITIONAL = f"{{{JLPTEI_NAMESPACE}}}endConditional"
+J_ALL = f"{{{JLPTEI_NAMESPACE}}}all"
+J_ANY = f"{{{JLPTEI_NAMESPACE}}}any"
+J_NONE = f"{{{JLPTEI_NAMESPACE}}}none"
+J_ONE = f"{{{JLPTEI_NAMESPACE}}}one"
+TEI_NOTE = f"{{{TEI_NS}}}note"
 XML_ID = f"{{{XML_NS}}}id"
+
+CONDITIONAL_CONTROL_TAGS = frozenset(
+    {J_DECLARE, J_END_DECLARE, J_CONDITIONAL, J_END_CONDITIONAL}
+)
 
 
 def _parse_te_f_value(f_element: ElementBase) -> Any:

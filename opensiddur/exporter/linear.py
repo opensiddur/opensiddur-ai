@@ -49,6 +49,13 @@ class ConditionalSettingEntry(BaseModel):
     contributors: set[str] = Field(default_factory=set)
 
 
+class ConditionalScope(BaseModel):
+    """Open j:conditional scope and its evaluation result."""
+
+    scoped_id: str
+    result: str  # TriState value
+
+
 class ParallelColumnOrder(StrEnum):
     PRIMARY_FIRST = "primary_first"
     PRIMARY_LAST = "primary_last"
@@ -63,6 +70,8 @@ class LinearData(BaseModel):
     xml_cache: XMLCache = Field(default_factory=XMLCache)
     # scoped conditional setting stack (init, declared, derived entries)
     conditional_settings: list[ConditionalSettingEntry] = Field(default_factory=list)
+    # open j:conditional scopes (innermost last)
+    conditional_scope_stack: list[ConditionalScope] = Field(default_factory=list)
     # contributor declare_id -> stack indices of derived entries that depend on it
     derived_dependency_index: dict[str, set[int]] = Field(default_factory=dict)
     # project priority for URN resolution of texts

@@ -28,16 +28,25 @@ from lxml import etree
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.linear import (
+    ConditionalScope,
     ConditionalSettingEntry,
     LinearData,
     get_linear_data,
     reset_linear_data,
 )
 from opensiddur.exporter.conditional_settings import (
+    CONDITIONAL_CONTROL_TAGS,
+    J_CONDITIONAL,
     J_DECLARE,
+    J_END_CONDITIONAL,
     J_END_DECLARE,
     XML_ID,
     parse_declare_element,
+)
+from opensiddur.exporter.condition_eval import (
+    TriState,
+    evaluate_condition,
+    parse_condition_element,
 )
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
@@ -555,6 +564,34 @@ class CompilerProcessor:
                 return el
         return None
 
+    def _find_conditional_element_by_xml_id(self, xml_id: str) -> ElementBase | None:
+        for el in self.root_tree.iter(J_CONDITIONAL):
+            if el.get(XML_ID) == xml_id:
+                return el
+        return None
+
+    def _copy_element_subtree(self, element: ElementBase) -> ElementBase:
+        """Deep-copy an element subtree for retained conditional markers."""
+        return etree.fromstring(etree.tostring(element))
+
+    def _push_conditional_scope(self, scoped_id: str, result: TriState) -> None:
+        self.linear_data.conditional_scope_stack.append(
+            ConditionalScope(scoped_id=scoped_id, result=result.value)
+        )
+
+    def _pop_conditional_scope(self, scoped_id: str) -> ConditionalScope:
+        stack = self.linear_data.conditional_scope_stack
+        for i in range(len(stack) - 1, -1, -1):
+            if stack[i].scoped_id == scoped_id:
+                return stack.pop(i)
+        raise ValueError(f"No conditional scope found for scoped_id={scoped_id!r}")
+
+    def _should_skip_conditional_content(self) -> bool:
+        return any(
+            scope.result == TriState.FALSE.value
+            for scope in self.linear_data.conditional_scope_stack
+        )
+
     def _rebuild_derived_dependency_index(self) -> None:
         """Rebuild reverse index after conditional_settings stack mutation."""
         self.linear_data.derived_dependency_index = {}
@@ -658,12 +695,14 @@ class CompilerProcessor:
 
     @contextmanager
     def _conditional_settings_checkpoint(self):
-        """Truncate conditional_settings to pre-process depth on exit."""
-        depth = len(self.linear_data.conditional_settings)
+        """Truncate conditional_settings and scope stack to pre-process depth on exit."""
+        settings_depth = len(self.linear_data.conditional_settings)
+        scope_depth = len(self.linear_data.conditional_scope_stack)
         try:
             yield
         finally:
-            del self.linear_data.conditional_settings[depth:]
+            del self.linear_data.conditional_settings[settings_depth:]
+            del self.linear_data.conditional_scope_stack[scope_depth:]
             self._rebuild_derived_dependency_index()
 
     def _handle_settings_element(self, element: ElementBase) -> bool:
@@ -693,13 +732,62 @@ class CompilerProcessor:
 
         return False
 
+    def _handle_conditional_element(self, element: ElementBase) -> tuple[bool, ElementBase | None]:
+        """Process j:conditional / j:endConditional.
+
+        Returns (handled, result). result is None when stripped, or an element copy when retained.
+        """
+        if element.tag == J_CONDITIONAL:
+            xml_id = element.get(XML_ID)
+            if not xml_id:
+                raise ValueError("j:conditional requires an xml:id attribute")
+            scoped_id = self._scoped_declare_id(xml_id, element)
+            node = parse_condition_element(element)
+            result = evaluate_condition(node, self)
+            self._push_conditional_scope(scoped_id, result)
+            if result == TriState.UNDEFINED:
+                return True, self._copy_element_subtree(element)
+            return True, None
+
+        if element.tag == J_END_CONDITIONAL:
+            target = element.get("target")
+            if not target or not target.startswith("#"):
+                raise ValueError("j:endConditional requires a fragment target attribute (e.g. #id)")
+            bare_id = target[1:]
+            conditional_el = self._find_conditional_element_by_xml_id(bare_id)
+            if conditional_el is None:
+                raise ValueError(
+                    f"j:endConditional target {target!r} does not match a j:conditional in this file"
+                )
+            scoped_id = self._scoped_declare_id(bare_id, conditional_el)
+            scope = self._pop_conditional_scope(scoped_id)
+            if scope.result == TriState.UNDEFINED.value:
+                return True, self._copy_element_subtree(element)
+            return True, None
+
+        return False, None
+
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
-        context = self._update_processing_context_before(element)
+        self._update_processing_context_before(element)
+
+        if (
+            self._should_skip_conditional_content()
+            and element.tag not in CONDITIONAL_CONTROL_TAGS
+        ):
+            self._update_processing_context_after(element)
+            return None  # type: ignore[return-value]
 
         if self._handle_settings_element(element):
             self._update_processing_context_after(element)
             return None  # type: ignore[return-value]
-        
+
+        handled, conditional_copy = self._handle_conditional_element(element)
+        if handled:
+            self._update_processing_context_after(element)
+            if conditional_copy is not None:
+                return self._rewrite_ids(conditional_copy)
+            return None  # type: ignore[return-value]
+
         transcluded = self._transclude(element)
         if transcluded is not None:
             return transcluded

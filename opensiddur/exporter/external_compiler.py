@@ -11,6 +11,7 @@ from opensiddur.exporter.compiler import (
     _ProcessingContext,
     _AnnotationCommand,
 )
+from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
 from opensiddur.exporter.constants import (
     JLPTEI_NAMESPACE,
     PROCESSING_NAMESPACE,
@@ -695,8 +696,22 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if context["command"] == _ProcessingCommand.SKIP:
             return []
 
+        if (
+            self._should_skip_conditional_content()
+            and element.tag not in CONDITIONAL_CONTROL_TAGS
+        ):
+            self._update_processing_context_after(element)
+            return []
+
         if self._handle_settings_element(element):
             self._update_processing_context_after(element)
+            return []
+
+        handled, conditional_copy = self._handle_conditional_element(element)
+        if handled:
+            self._update_processing_context_after(element)
+            if conditional_copy is not None:
+                return [self._rewrite_ids(conditional_copy)]
             return []
 
         # In marker mode, all structural blocks use start/end marker pairs
