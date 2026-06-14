@@ -1,7 +1,6 @@
 """Unit tests for calendar compute adapters."""
 
 import unittest
-from datetime import date
 from unittest.mock import MagicMock, patch
 
 from pyluach import dates as pyluach_dates
@@ -34,16 +33,10 @@ from opensiddur.exporter.derivation_graph import DerivationSpec, topological_der
 from opensiddur.exporter.linear import NumericValue, get_linear_data, reset_linear_data
 
 
-class DictLookup:
-    def __init__(self, data: dict[tuple[str, str], object]):
-        self._data = data
-
-    def get(self, fs_type: str, feature_name: str):
-        return self._data.get((fs_type, feature_name))
-
-
 def _snapshot(data: dict[tuple[str, str], object]) -> SettingSnapshot:
-    return SettingSnapshot(DictLookup(data))
+    return SettingSnapshot(
+        get_setting=lambda fs_type, feature_name: data.get((fs_type, feature_name)),
+    )
 
 
 class TestSettingSnapshot(unittest.TestCase):

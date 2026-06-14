@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from typing import Any, Protocol
+from typing import Any
 
 import hdate
 from pyluach import dates as pyluach_dates
@@ -98,18 +99,14 @@ SERVICE_TIME_FEATURES = (
 )
 
 
-class SettingLookup(Protocol):
-    def get(self, fs_type: str, feature_name: str) -> Any | None: ...
-
-
 @dataclass(frozen=True)
 class SettingSnapshot:
     """Read-only view of active setting values."""
 
-    lookup: SettingLookup
+    get_setting: Callable[[str, str], Any | None]
 
     def get(self, fs_type: str, feature_name: str) -> Any | None:
-        return self.lookup.get(fs_type, feature_name)
+        return self.get_setting(fs_type, feature_name)
 
     def get_int(self, fs_type: str, feature_name: str) -> int | None:
         value = self.get(fs_type, feature_name)

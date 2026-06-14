@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 
 import yaml
-from lxml import etree
 
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.conditional_settings import (

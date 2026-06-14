@@ -150,15 +150,15 @@ def _apply_derivation_spec(
         )
 
 
-class _LinearSettingLookup:
-    def __init__(self, linear_data: LinearData) -> None:
-        self._linear_data = linear_data
-
-    def get(self, fs_type: str, feature_name: str) -> Any | None:
-        entry = get_active_setting_entry(self._linear_data, fs_type, feature_name)
-        if entry is None:
-            return None
-        return entry.value
+def _get_setting_from_linear_data(
+    linear_data: LinearData,
+    fs_type: str,
+    feature_name: str,
+) -> Any | None:
+    entry = get_active_setting_entry(linear_data, fs_type, feature_name)
+    if entry is None:
+        return None
+    return entry.value
 
 
 def recalculate_derived_settings(
@@ -173,7 +173,11 @@ def recalculate_derived_settings(
     if trigger == SettingChangeTrigger.INIT:
         _push_static_override_defaults(linear_data)
 
-    snapshot = SettingSnapshot(_LinearSettingLookup(linear_data))
+    snapshot = SettingSnapshot(
+        get_setting=lambda fs_type, feature_name: _get_setting_from_linear_data(
+            linear_data, fs_type, feature_name
+        ),
+    )
     for spec in topological_derivation_order():
         _apply_derivation_spec(linear_data, spec, snapshot)
 
