@@ -14,6 +14,7 @@ from opensiddur.exporter.linear import (
 )
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
+from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 
@@ -141,6 +142,8 @@ def load_settings(
     if settings.declarations:
         entries = yaml_to_declaration_entries(settings.declarations)
         CompilerProcessor.load_init_settings(linear_data, entries)
+    else:
+        recalculate_derived_settings(linear_data, trigger=SettingChangeTrigger.INIT)
     return linear_data
 
 
@@ -157,4 +160,5 @@ def load_default_settings(
     linear_data.project_priority = [project]
     linear_data.instruction_priority = [project]
     linear_data.annotation_projects = [project]
+    recalculate_derived_settings(linear_data, trigger=SettingChangeTrigger.INIT)
     return linear_data
