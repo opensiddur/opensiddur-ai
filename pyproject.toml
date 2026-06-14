@@ -45,6 +45,8 @@ dependencies = [
     "diff-match-patch>=20241021",
     "pydantic>=2.11.7",
     "openpyxl>=3.1.5",
+    "pyluach>=2.3.0",
+    "hdate>=1.2.1",
 ]
 
 [project.urls]

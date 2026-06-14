@@ -167,6 +167,33 @@ Scoped liturgical content lies between a `j:conditional` element and its matchin
 
 Evaluation uses tristate logic with truth tables from JLPTEI-3 (`condition_eval.py`). Undefined evaluation is compile-time “include all possibilities”: one linear output that includes the text, the reader instruction, and the conditional markers for downstream resolution.
 
+### Derived settings (feature defaulting)
+
+Many JLPTEI feature structures are **derived** from other settings (e.g. `opensiddur:hebrew-date` from `opensiddur:gregorian-date` and `opensiddur:location`; `opensiddur:holiday` from dates, times, and location). See `schema/JLPTEI-3.md` for the full derivation graph.
+
+Derived entries use `source="derived"` on the settings stack, with a `contributors` set recording the `declare_id` of each input feature’s winning entry. Derived entry IDs are deterministic: `__derived__:{fs_type}:{feature_name}`.
+
+**Explicit beats derived:** if the winning stack entry for a feature is `init` or `declared`, derivation for that feature is skipped (last explicit setting prevails).
+
+**Recalculation triggers:** `recalculate_derived_settings()` runs on YAML init (`SettingChangeTrigger.INIT`), each `j:declare` (`DECLARE`), and each `j:endDeclare` (`END_DECLARE`).
+
+**Scope rollback:** when a contributor declare scope ends, derived entries listing that `declare_id` in `contributors` are removed, then derivations are recomputed from the remaining stack (restored init or outer declares may supply inputs again).
+
+**Override defaults:** `opensiddur:override` features are never auto-calculated; on init they default to `false` unless explicitly declared.
+
+Note: `tei:default` in **conditions** means undefined/any-value for tristate evaluation — not derived feature defaulting.
+
+#### Three defaulting strategies (design comparison)
+
+| | **(1) Lazy at conditional** | **(2) Eager on declare** | **(3) Eager at init + update** |
+|---|---|---|---|
+| When derived values appear | First lookup during condition evaluation | Each INIT / DECLARE; removed/rebuilt on END_DECLARE | Same as (2), plus static defaults at INIT |
+| Spec alignment | Weak — JLPTEI-3 recalc at setting change point | **Strong** — matches spec and existing hooks | Strong; (3) is (2) + init-time static defaults |
+| Stack / contributor model | Ad-hoc cache + invalidation | **Reuses** `contributors` + `derived_dependency_index` | Same as (2) |
+| Correctness across document order | OK if cache invalidated on every declare | **Deterministic** before every element | Same as (2) |
+
+**Chosen approach:** (2) eager on declare/init/endDeclare, with the static-default slice of (3) for `opensiddur:override` at INIT. Implementation: `derived_settings.py`, `derivation_graph.py`, `calendar/`.
+
 ## Transclusion Processing
 
 ### Transclusion Types

@@ -206,8 +206,9 @@ class TestYamlDeclarations(unittest.TestCase):
             }, f)
         load_settings(path, project_directory=self.project_dir)
         proc = CompilerProcessor("proj-a", "minimal.xml")
-        self.assertEqual(len(proc.linear_data.conditional_settings), 2)
-        self.assertEqual(proc.linear_data.conditional_settings[0].source, "init")
+        init_entries = [e for e in proc.linear_data.conditional_settings if e.source == "init"]
+        self.assertEqual(len(init_entries), 2)
+        self.assertEqual(init_entries[0].source, "init")
         self.assertEqual(proc.get_active_setting("opensiddur:gregorian-date", "year"), 2024)
 
     def test_yaml_null_is_undefined(self):
