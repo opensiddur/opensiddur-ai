@@ -1,0 +1,129 @@
+This file provides guidance to coding agents when working with code in this repository.
+
+## Project Overview
+
+The project derives from 3 repositories:
+opensiddur-ai https://github.com/opensiddur/opensiddur-ai (this repository)
+sourcetexts https://github.com/opensiddur/sourcetexts (sources/ subdirectory)
+opensiddur-projects https://github.com/opensiddur/projects (project/ subdirectory)
+
+This repository has 3 parts: 
+(1) schema documentation for the Jewish Liturgy Project TEI extension (`JLPTEI-3.md`) and formal RelaxNG and Schematron schemas (schema/ subdirectory)
+(2) importers (opensiddur/importer/ subdirectory) that 
+ (a) download raw data and put them into the sources/ subdirectory and 
+ (b) convert the raw data into JLPTEI XML format and save them as projects (project/ subdirectory)
+(3) exporters (opensiddur/exporter/ subdirectory) that 
+ (a) compile JLPTEI projects containing multiple JLPTEI files and/or reference multiple projects into a compiled intermediate format and 
+ (b) export the intermediate format into finalized consumable forms (currently PDF via LuaLaTeX).
+
+Any specifications for agents to build code should be stored in the specs/ directory.
+
+## Commands
+
+**Run code:**
+```bash
+uv run python <script.py>
+```
+
+**Run all tests:**
+```bash
+uv run pytest
+```
+
+**Run a single test file:**
+```bash
+uv run pytest opensiddur/tests/exporter/test_compiler.py
+```
+
+**Run with coverage:**
+```bash
+uv run coverage run -m unittest discover -s opensiddur/tests -v
+uv run coverage report -m
+```
+
+**Install dependencies:**
+```bash
+uv sync --all-groups
+```
+
+**Compile JLPTEI schema** (requires podman):
+```bash
+bash scripts/build-schema.sh
+```
+
+**Validate a JLPTEI file** (requires `jing`: `apt install jing`):
+```bash
+uv run python -m opensiddur.importer.util.validation project/wlc/ruth.xml
+```
+
+## Architecture
+
+### Data Flow
+
+```
+sources/          →  importer/  →  project/       →  exporter/  →  PDF
+(raw source texts)   (→ JLPTEI)    (JLPTEI files)    (linear XML)
+```
+
+### Key Packages
+
+**`opensiddur/exporter/`** — Compiles JLPTEI to linear intermediate XML for export.
+
+- `compiler.py`, `external_compiler.py`, `inline_compiler.py`: Three processor classes handle the transclusion/annotation pipeline:
+  - `CompilerProcessor` — base, processes full documents
+  - `ExternalCompilerProcessor` — handles external transclusions (preserves element structure)
+  - `InlineCompilerProcessor` — handles inline transclusions (extracts text only)
+- `linear.py`: `LinearData` singleton (via `get_linear_data()`) holds shared processing state (XML cache, conditional settings stack, context stack, project priorities)
+- `conditional_settings.py`, `condition_eval.py`, `derived_settings.py`: evaluate `j:conditional` scopes and derive calendar-related settings from declared feature values
+- `calendar/compute.py`: computes Hebrew/Gregorian calendar, holiday, and Torah-reading feature values used by condition evaluation
+- `urn.py` / `refdb.py`: `UrnResolver` and `ReferenceDatabase` resolve `urn:x-opensiddur:` URIs to files via SQLite
+- `tex/latex.py`, `pdf/pdf.py`: LuaLaTeX/PDF output stages (driven by `tex/reledmac.xslt`; uses `reledmac` + `reledpar` for critical-edition apparatus and parallel-text alignment)
+
+The compiler uses a **processing context state machine** — see `specs/COMPILER_SPECIFICATION.md` for the full spec. Each context on the stack has a `command` field (`COPY_AND_RECURSE`, `COPY_ELEMENT_AND_RECURSE`, `RECURSE`, `SKIP`, `COPY_TEXT_AND_RECURSE`) controlling element handling.
+
+**`opensiddur/importer/`** — Converts source texts to JLPTEI, with LLM-powered encoding agents.
+
+- `agent/`: LangGraph state machine for multi-page text encoding. Uses DeepInfra as the LLM backend (config in `importer/agent/common.py`). API keys stored in `opensiddur/private/`.
+- `jps1917/`: JPS 1917 Bible translation from Wikisource (MediaWiki → JLPTEI via LLM)
+- `wlc/`: Westminster Leningrad Codex (structured data → JLPTEI via XSLT)
+- `miqra_al_pi_hamasorah/`: Miqra al pi ha-Masorah (TSV/Wikidata → JLPTEI via XSLT)
+
+**`opensiddur/common/`** — Saxon-based XSLT 3.0 processing (`xslt.py`), shared constants.
+
+### Schema
+
+`schema/jlptei.odd.xml` is the source ODD (One Document Does it all). `build-schema.sh` compiles it to RelaxNG (`jlptei.odd.xml.relaxng`), Schematron (`jlptei.odd.xml.schematron`), and a Schematron XSLT stylesheet (`jlptei.odd.xml.schematron.xslt`). These compiled artifacts are gitignored; run `bash scripts/build-schema.sh` before validating. Validation uses RelaxNG plus Schematron (via the compiled XSLT).
+
+`schema/JLPTEI-3.md` is prose authoring guidance. When it disagrees with `jlptei.odd.xml`, trust the ODD and run the validator.
+
+### JLPTEI Authoring
+
+**`j:` elements defined in the schema** (namespace `http://jewishliturgy.org/ns/jlptei/2`, prefix `j:`):
+- `j:transclude` — include content from another file; `target` required, optional `targetEnd`, `type` optional (`external`|`inline`, default `external`)
+- `j:divineName` — inline divine name for special downstream handling
+- `j:read` / `j:written` — kri/ktiv pair inside `tei:choice`
+- `j:declare` / `j:endDeclare` — scoped setting declarations; every `j:declare` must have `xml:id`, and matching `j:endDeclare` uses required `target`
+- `j:conditional` / `j:endConditional` — conditional text blocks; `j:conditional` must have `xml:id` when closed by `j:endConditional`, which uses required `target`
+- `j:all` / `j:any` / `j:none` / `j:one` — boolean operators for conditions
+
+Contributor credits are **not** a `j:` element. They belong in the TEI header as `tei:respStmt` entries with contributor URNs on `tei:name/@ref` (see `schema/JLPTEI-3.md`).
+
+**Content-model and Schematron rules** (violations produce cryptic jing errors):
+- `tei:TEI` must have `@xml:lang`
+- `tei:revisionDesc` is excluded from the module includes — omit it
+- `tei:head` must be a direct child of `tei:div`, never inside `tei:p`
+- `tei:milestone` is allowed inside `tei:p` (it belongs to `tei_model.global`)
+- `tei:standOff[@type]` only accepts `notes`, `settings`, or `conditions`
+- `tei:p[@type]` only accepts `open-1`, `closed-1`, or `open-3`
+- `tei:title[@type]` only accepts `main`, `sub`, `alt`, or `alt-sub`
+
+**URN/`corresp` scoping**: A `corresp` on a `tei:milestone` scopes from that milestone to the next same-unit milestone, or end of file. This is the basis for parallel-text alignment: two documents share an alignment segment when they carry identical `corresp` values on their milestones.
+
+**Project layout**: Every `project/<name>/` directory must have `index.xml` as its entry point. Individual text files refer back to the index via `tei:sourceDesc/tei:p/tei:ref` or a `tei:bibl/tei:ptr`.
+
+### Testing Conventions
+
+- Tests live in `opensiddur/tests/`, mirroring the package structure.
+- Write tests in `unittest` style.
+- Mock external calls (LLM APIs, file I/O where appropriate).
+- The CI runs `unittest discover`, but `uv run pytest` also works locally.
