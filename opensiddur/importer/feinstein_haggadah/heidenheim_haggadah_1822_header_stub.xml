@@ -1,0 +1,58 @@
+<tei:teiHeader xmlns:tei="http://www.tei-c.org/ns/1.0">
+  <tei:fileDesc>
+    <tei:titleStmt>
+      <tei:title type="main" xml:lang="he">הגדה לליל שימורים</tei:title>
+      <tei:title type="sub" xml:lang="he">סדר הגדה ליל שימורים עם תרגום אשכנזי</tei:title>
+      <tei:title type="alt" xml:lang="en">Haggadah le-Leil Shimurim</tei:title>
+      <tei:title type="alt" xml:lang="en">Seder ha-Haggadah for the Night of Vigil</tei:title>
+      <tei:respStmt>
+        <tei:resp key="edt">Edited and published by</tei:resp>
+        <tei:name>Meir Halevi (Wolf) Heidenheim</tei:name>
+      </tei:respStmt>
+      <tei:respStmt>
+        <tei:resp key="trc">Hebrew transcribed for the Open Siddur Project by</tei:resp>
+        <tei:name ref="urn:x-opensiddur:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:name>
+      </tei:respStmt>
+    </tei:titleStmt>
+    <tei:editionStmt>
+      <tei:edition>Open Siddur transcription (2009/2013), not a diplomatic facsimile of the 1822 Rödelheim print</tei:edition>
+    </tei:editionStmt>
+    <tei:publicationStmt>
+      <tei:distributor>
+        <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
+      </tei:distributor>
+      <tei:idno type="urn">urn:x-opensiddur:text:haggadah:haggadah@heidenheim_haggadah_1822</tei:idno>
+      <tei:availability status="free">
+        <tei:licence target="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International</tei:licence>
+      </tei:availability>
+    </tei:publicationStmt>
+    <tei:sourceDesc>
+      <tei:bibl>
+        <tei:title xml:lang="he">הגדה לליל שימורים</tei:title>
+        <tei:title type="alt">Haggadah le-Leil Shimurim</tei:title>
+        <tei:author>Meir Halevi (Wolf) Heidenheim</tei:author>
+        <tei:edition>First edition (Yaari 447)</tei:edition>
+        <tei:publisher>Wolf Heidenheim</tei:publisher>
+        <tei:pubPlace>Rödelheim</tei:pubPlace>
+        <tei:date when="1822">1822</tei:date>
+        <tei:idno type="Yaari">447</tei:idno>
+        <tei:note xml:lang="en">80 printed pages. German Ashkenazi translation in Hebrew characters; Roman-letter German edition published 1839 (Yaari 590).</tei:note>
+      </tei:bibl>
+      <tei:bibl>
+        <tei:title>Page-break reference facsimile</tei:title>
+        <tei:ref target="https://www.hebrewbooks.org/4909">HebrewBooks.org #4909</tei:ref>
+        <tei:note xml:lang="en">Physical page numbers on tei:pb milestones refer to this facsimile when present.</tei:note>
+      </tei:bibl>
+      <tei:bibl>
+        <tei:title>Transcription source</tei:title>
+        <tei:ref target="https://opensiddur.org/compilations/table-guides-and-haggadot/passover-seder/haggadah-for-pesah-an-english-translation/">Haggadah for Pesah, English translation by Dr. Eve Feinstein (2009)</tei:ref>
+        <tei:date when="2009">2009</tei:date>
+        <tei:date when="2013-03-17">Shared on Open Siddur 2013-03-17</tei:date>
+      </tei:bibl>
+      <tei:bibl>
+        <tei:title>Differences from the 1822 Heidenheim original</tei:title>
+        <tei:note type="editorial" xml:lang="en">(1) Biblical quotations in this edition were taken from the Westminster Leningrad Codex (WLC), not from the printed 1822 haggadah text. (2) The original edition&apos;s ritual instructions, partly in German (in Hebrew characters) and partly in Hebrew, are not transcribed in the Hebrew project; English instructions appear only in the separate Feinstein translation project. (3) Heidenheim&apos;s edition notes and commentary are omitted. (4) The Ashkenazi German translation that accompanied the original Hebrew is not included. (5) Typography and layout follow modern digital conventions; tei:pb milestones mark page breaks in the 1822 print when a reference PDF is available. (6) Pre-seder material (bedikat chametz, biur chametz, eruv tavshilin) follows the Open Siddur compilation and may differ in scope or placement from the 1822 book. (7) Vocalization and spelling follow the Open Siddur transcription, not 1822 printing conventions. Further wording and paragraphing differences may be documented during PDF alignment.</tei:note>
+      </tei:bibl>
+    </tei:sourceDesc>
+  </tei:fileDesc>
+</tei:teiHeader>

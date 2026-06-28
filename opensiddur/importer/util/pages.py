@@ -44,6 +44,37 @@ def miqra_al_pi_hamasorah_sheets_directory(sourcetexts_root: Path | None = None)
     return miqra_al_pi_hamasorah_data_directory(sourcetexts_root) / "sheets"
 
 
+def feinstein_haggadah_data_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Open Siddur Feinstein haggadah compilation dumps: <sourcetexts-root>/feinstein_haggadah_2009."""
+    root = (
+        sourcetexts_root.resolve()
+        if sourcetexts_root is not None
+        else default_sourcetexts_root()
+    )
+    return root / "feinstein_haggadah_2009"
+
+
+def heidenheim_haggadah_data_directory(sourcetexts_root: Path | None = None) -> Path:
+    """1822 Heidenheim reference facsimile: <sourcetexts-root>/heidenheim_haggadah_1822."""
+    root = (
+        sourcetexts_root.resolve()
+        if sourcetexts_root is not None
+        else default_sourcetexts_root()
+    )
+    return root / "heidenheim_haggadah_1822"
+
+
+def heidenheim_pdf_path(sourcetexts_root: Path | None = None) -> Path | None:
+    """Return the 1822 Heidenheim facsimile PDF if present."""
+    data_dir = heidenheim_haggadah_data_directory(sourcetexts_root)
+    for name in ("heidenheim_1822.pdf", "Hebrewbooks_org_21779.pdf"):
+        path = data_dir / name
+        if path.is_file():
+            return path
+    pdfs = sorted(data_dir.glob("*.pdf"))
+    return pdfs[0] if pdfs else None
+
+
 def get_page(page_number: str | int, sourcetexts_root: Path | None = None) -> Optional[Page]:
     """Return the wikitext of the given Page, or None if it does not exist."""
     page_num = int(page_number)

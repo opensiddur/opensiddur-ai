@@ -1,0 +1,346 @@
+"""Align OSP haggadah sections to 1822 Heidenheim printed page numbers."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import re
+import subprocess
+import sys
+import unicodedata
+from pathlib import Path
+
+from pypdf import PdfReader
+
+from opensiddur.importer.feinstein_haggadah.page_breaks import (
+    load_page_breaks,
+    page_breaks_path,
+    write_empty_page_breaks_template,
+)
+from opensiddur.importer.feinstein_haggadah.parse_compilation import (
+    build_section_contents,
+    load_compilation_json,
+    parse_rows,
+)
+from opensiddur.importer.feinstein_haggadah.sections import (
+    MAGID_SUBSECTION_PREFIXES,
+    NIRTZAH_SUBSECTION_PREFIXES,
+    document_order_slugs,
+)
+from opensiddur.importer.util.pages import (
+    default_sourcetexts_root,
+    feinstein_haggadah_data_directory,
+    heidenheim_pdf_path,
+)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Hebrew fragments that survive pdftotext on the 1822 facsimile.
+HEADER_ANCHORS: dict[str, list[str]] = {
+    "bedikat_chametz": ["בדיקתחמץ"],
+    "biur_chametz": ["ביעורחמץ"],
+    "eruv_tavshilin": ["עירוב"],
+    "kadesh": ["סדרקידוש"],
+    "urechatz": ["ורחץ"],
+    "karpas": ["כרפס"],
+    "yachatz": ["יחץ"],
+    "ha_lachma_anya": ["האלחמא", "לחמאעניא"],
+    "mah_nishtanah": ["מהנשתנה"],
+    "avadim_hayinu": ["עבדיםהיינו", "עבריםהיינו"],
+    "arba_banim": ["ארבעהבנים", "כנגדארבעה"],
+    "chacham": ["חכםמההוא"],
+    "rashaa": ["רשעמההוא"],
+    "tam": ["תםמההוא"],
+    "vehi_sheamda": ["והיאשעמדה"],
+    "arami_oved_avi": ["צאולמד"],
+    "rabban_gamliel": ["רבןגמליאל"],
+    "tzafun": ["אפיקומן", "צפון"],
+    "motzi_matzah": ["מוציאמצה"],
+    "maror": ["מרור"],
+    "korech": ["כורך"],
+    "shulchan_orech": ["שלחןעורך"],
+    "rachtzah": ["רחץ"],
+    "barech": ["ברך"],
+    "hallel": ["הלל"],
+    "chasal_siddur_pesach": ["חסלסידור"],
+    "it_happened_at_midnight": ["ויהיבחצי"],
+    "echad_mi_yodea": ["אחדמייודע"],
+    "chad_gadya": ["חדגדיא"],
+    "sefirat_haomer": ["ספירתהעומר"],
+    "elu_eser_makot": ["אלועשרמכות"],
+    "rabbi_yehuda_makot": ["יהודההיהנותן"],
+    "halelu_yah": ["הללויה"],
+    "lefikach": ["לפיכך"],
+    "you_shall_say_pesach": ["ואמרתם"],
+    "ki_lo_na_eh": ["כילונאה"],
+    "adir_hu": ["אדירהוא"],
+    "b_tzeis_yisrael": ["בצאתישראל"],
+    "rachtzah": ["רחץ"],
+}
+
+
+def _strip_marks(text: str) -> str:
+    return "".join(c for c in text if unicodedata.category(c) != "Mn")
+
+
+def _normalize_hebrew(text: str) -> str:
+    return re.sub(r"[^\u05d0-\u05ea]", "", _strip_marks(text))
+
+
+def _subseq_ratio(needle: str, haystack: str) -> float:
+    if not needle:
+        return 0.0
+    index = 0
+    matched = 0
+    for char in haystack:
+        if index < len(needle) and char == needle[index]:
+            matched += 1
+            index += 1
+    return matched / len(needle)
+
+
+def _pdftotext_pages(pdf_path: Path) -> list[str]:
+    output = subprocess.check_output(
+        ["pdftotext", "-layout", str(pdf_path), "-"],
+        text=True,
+        errors="replace",
+    )
+    pages = output.split("\f")
+    if pages and not pages[-1].strip():
+        pages = pages[:-1]
+    return pages
+
+
+def _printed_page_by_pdf_index(reader: PdfReader) -> list[int]:
+    """Map each PDF page index to the 1822 printed page number (HebrewBooks #4909)."""
+    result: list[int] = []
+    last = 10
+    for page in reader.pages:
+        text = page.extract_text() or ""
+        nums = [
+            int(match)
+            for match in re.findall(r"\b(\d{1,2})\b", text)
+            if 11 <= int(match) <= 80
+        ]
+        if nums:
+            last = nums[-1]
+        result.append(min(last, 80))
+    return result
+
+
+def _build_needles(
+    slugs: list[str],
+    contents: dict,
+) -> dict[str, list[str]]:
+    prefix_by_slug = dict(MAGID_SUBSECTION_PREFIXES + NIRTZAH_SUBSECTION_PREFIXES)
+    needles: dict[str, list[str]] = {}
+    for slug in slugs:
+        variants: set[str] = set(HEADER_ANCHORS.get(slug, []))
+        if slug in prefix_by_slug:
+            variants.add(_normalize_hebrew(prefix_by_slug[slug]))
+        section = contents.get(slug)
+        if section and section.hebrew_lines:
+            normalized = _normalize_hebrew("\n".join(section.hebrew_lines[:4]))
+            for length in (32, 24, 20, 16):
+                if len(normalized) >= length:
+                    variants.add(normalized[:length])
+        needles[slug] = [v for v in variants if len(v) >= 6]
+    return needles
+
+
+def _score_page(variants: list[str], page_text: str) -> float:
+    if not variants:
+        return 0.0
+    return max(_subseq_ratio(variant, page_text) for variant in variants)
+
+
+def _interpolate_missing(
+    aligned: dict[str, int],
+    slugs: list[str],
+) -> dict[str, int]:
+    """Fill gaps using nearest aligned neighbors in document order."""
+    result = dict(aligned)
+    for index, slug in enumerate(slugs):
+        if slug in result:
+            continue
+        prev_page: int | None = None
+        for prior in reversed(slugs[:index]):
+            if prior in result:
+                prev_page = result[prior]
+                break
+        next_page: int | None = None
+        for following in slugs[index + 1 :]:
+            if following in result:
+                next_page = result[following]
+                break
+        if prev_page is not None and next_page is not None:
+            result[slug] = min(prev_page, next_page)
+        elif prev_page is not None:
+            result[slug] = min(prev_page + 1, 80)
+        elif next_page is not None:
+            result[slug] = next_page
+    return result
+
+
+def _enforce_monotonic(mapping: dict[str, int], slugs: list[str]) -> dict[str, int]:
+    """Ensure page numbers never decrease in document order."""
+    last = 10
+    result: dict[str, int] = {}
+    for slug in slugs:
+        if slug not in mapping:
+            continue
+        page = min(max(mapping[slug], last), 80)
+        result[slug] = page
+        last = page
+    return result
+
+
+def _align_pass(
+    *,
+    slugs: list[str],
+    needles: dict[str, list[str]],
+    page_norm: list[str],
+    printed: list[int],
+    page_count: int,
+    start_pdf_index: int,
+    score_threshold: float,
+    anchor_threshold: float,
+    existing: dict[str, int] | None = None,
+) -> tuple[dict[str, int], int]:
+    aligned = dict(existing or {})
+    prev_pdf_index = start_pdf_index
+    for slug in slugs:
+        if slug in aligned:
+            continue
+        variants = needles.get(slug, [])
+        best_score = 0.0
+        best_index: int | None = None
+        for pdf_index in range(prev_pdf_index + 1, page_count):
+            score = _score_page(variants, page_norm[pdf_index])
+            if score > best_score:
+                best_score = score
+                best_index = pdf_index
+        threshold = anchor_threshold if slug in HEADER_ANCHORS else score_threshold
+        if best_index is not None and best_score >= threshold:
+            aligned[slug] = printed[best_index]
+            prev_pdf_index = best_index
+    return aligned, prev_pdf_index
+
+
+def align_page_breaks(
+    *,
+    sourcetexts_root: Path | None = None,
+    pdf_path: Path | None = None,
+    score_threshold: float = 0.72,
+    anchor_threshold: float = 0.55,
+) -> dict[str, int]:
+    """Return slug -> printed page number using the 1822 PDF facsimile."""
+    pdf = pdf_path or heidenheim_pdf_path(sourcetexts_root)
+    if pdf is None or not pdf.is_file():
+        raise FileNotFoundError(
+            "1822 Heidenheim PDF not found under heidenheim_haggadah_1822/"
+        )
+
+    json_path = feinstein_haggadah_data_directory(sourcetexts_root) / "compilation.json"
+    rows = parse_rows(load_compilation_json(json_path))
+    contents = build_section_contents(rows)
+    slugs = document_order_slugs()
+    needles = _build_needles(slugs, contents)
+
+    reader = PdfReader(str(pdf))
+    pdftotext_pages = _pdftotext_pages(pdf)
+    if len(pdftotext_pages) != len(reader.pages):
+        logger.warning(
+            "pdftotext page count (%d) != PDF page count (%d)",
+            len(pdftotext_pages),
+            len(reader.pages),
+        )
+    page_count = min(len(pdftotext_pages), len(reader.pages))
+    page_norm = [_normalize_hebrew(pdftotext_pages[i]) for i in range(page_count)]
+    printed = _printed_page_by_pdf_index(reader)[:page_count]
+
+    aligned, _ = _align_pass(
+        slugs=slugs,
+        needles=needles,
+        page_norm=page_norm,
+        printed=printed,
+        page_count=page_count,
+        start_pdf_index=-1,
+        score_threshold=score_threshold,
+        anchor_threshold=anchor_threshold,
+    )
+    filled = _interpolate_missing(aligned, slugs)
+    return _enforce_monotonic(filled, slugs)
+
+
+def write_page_breaks(
+    mapping: dict[str, int],
+    sourcetexts_root: Path | None = None,
+) -> Path:
+    path = page_breaks_path(sourcetexts_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "_comment": (
+            "Map section slug to physical page number in HebrewBooks #4909. "
+            "Generated by align_page_breaks.py from the 1822 PDF facsimile."
+        ),
+        **mapping,
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Align haggadah section slugs to 1822 Heidenheim printed page numbers "
+            "using the HebrewBooks PDF facsimile."
+        )
+    )
+    parser.add_argument(
+        "--sourcetexts-root",
+        type=Path,
+        default=default_sourcetexts_root(),
+    )
+    parser.add_argument(
+        "--pdf",
+        type=Path,
+        default=None,
+        help="Path to PDF (default: auto-detect under heidenheim_haggadah_1822/).",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print alignment without writing page_breaks.json.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_arg_parser().parse_args(argv)
+    mapping = align_page_breaks(
+        sourcetexts_root=args.sourcetexts_root,
+        pdf_path=args.pdf,
+    )
+    slugs = document_order_slugs()
+    logger.info("Aligned %d / %d sections", len(mapping), len(slugs))
+    for slug in slugs:
+        if slug in mapping:
+            print(f"{mapping[slug]:3d}  {slug}")
+
+    missing = [slug for slug in slugs if slug not in mapping]
+    if missing:
+        logger.warning("Unaligned sections (%d): %s", len(missing), ", ".join(missing))
+
+    if args.dry_run:
+        return 0
+
+    path = write_page_breaks(mapping, args.sourcetexts_root)
+    logger.info("Wrote %s", path)
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main())

@@ -93,6 +93,10 @@ spelling), the transliteration scheme is as follows:
 For poems that aren't part of a prayer service (including _piyyutim_ and _z'mirot_), 
 use the `poem` namespace. It uses the same transliteration rules as the `prayer` namespace above.
 
+Passover haggadah projects use a dedicated `haggadah` namespace for seder-specific sections,
+while reusing `prayer` for shared liturgy (kiddush, birkat hamazon) and `bible` for scriptural
+quotations. See [HAGGADAH_URN_SCHEME.md](../specs/HAGGADAH_URN_SCHEME.md) for the hybrid scheme.
+
 To add URNs to reference parts of poems and prayers that don't have natural line divisions or have alternative numbers of lines, use the transliterated first word (or phrase, if the word is ambiguous) as the name of the division. For example `urn:x-opensiddur:text:poem:yonah_matzah/hayom` for the stanza in the song `יונה מצאה` that begins `היום אשר נא כצאן`.
 
 ## URN scope
