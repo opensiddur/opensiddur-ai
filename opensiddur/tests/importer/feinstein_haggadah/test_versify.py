@@ -15,6 +15,7 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import verse_anchors
 from opensiddur.importer.feinstein_haggadah.versify import (
     BIBLICAL_SECTIONS,
     build_section,
+    load_printed_psalms,
     load_verse_anchors,
     read_wlc_chapter,
     section_texts,
@@ -178,22 +179,38 @@ class TestGeneratedPsalms(unittest.TestCase):
         for slug in BIBLICAL_SECTIONS:
             self.assertEqual(self._milestones(slug, "paragraph"), [], slug)
 
-    def test_psalms_cite_wlc_as_the_transcription_source(self) -> None:
+    def test_psalms_cite_wlc_only_where_wlc_is_the_source(self) -> None:
+        """The transcribed psalms cite the 1822 print; only Psalm 126 still cites WLC.
+
+        The seven psalms the print carries are transcribed from the facsimile, so naming WLC as
+        their text source would be a false provenance claim. See ``heidenheim_psalms_1822.json``.
+        """
+        printed = load_printed_psalms()
         for slug, chapter in BIBLICAL_SECTIONS.items():
             text = (PROJECT / f"{slug}.xml").read_text("utf-8")
-            self.assertIn(
-                'target="urn:x-opensiddur:text:bible:psalms@wlc"', text, slug
-            )
-            self.assertIn(
-                f'<tei:biblScope unit="chapter" from="{chapter}" to="{chapter}"/>',
-                text,
-                slug,
-            )
+            with self.subTest(slug=slug):
+                if slug in printed:
+                    self.assertNotIn(
+                        'target="urn:x-opensiddur:text:bible:psalms@wlc"', text
+                    )
+                    continue
+                self.assertIn('target="urn:x-opensiddur:text:bible:psalms@wlc"', text)
+                self.assertIn(
+                    f'<tei:biblScope unit="chapter" from="{chapter}" to="{chapter}"/>', text
+                )
 
     def test_text_is_unchanged_by_versification(self) -> None:
-        """Splicing milestones in must not disturb a single letter."""
+        """Splicing milestones in must not disturb a single letter.
+
+        Only applies where the anchor mechanism does the splicing. The transcribed psalms carry
+        their own verse divisions and deliberately depart from the compilation's wording, so
+        ``test_printed_psalms`` checks their letters against WLC instead.
+        """
+        printed = load_printed_psalms()
         texts = section_texts()
         for slug in BIBLICAL_SECTIONS:
+            if slug in printed:
+                continue
             tree = etree.parse(str(PROJECT / f"{slug}.xml"))
             div = tree.find(f".//{TEI}body/{TEI}div")
             rendered = "".join(

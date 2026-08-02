@@ -9,7 +9,21 @@ private/
 temp/
 temp.*
 
+# Local AI/IDE
+.vscode
+.cursor
+.claude
+
 # Coverage files
 .coverage
 coverage.xml
 htmlcov/
+
+# Local settings files
+settings/
+
+# Local output files
+out/
+
+# Generated db
+database/

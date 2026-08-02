@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from opensiddur.importer.feinstein_haggadah.sections import (
     TextBlock,
     urn_for_section,
 )
-from opensiddur.importer.feinstein_haggadah.versify import BiblicalSection
+from opensiddur.importer.feinstein_haggadah.versify import BiblicalSection, PrintedPsalm
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 
@@ -311,6 +312,45 @@ def section_body(
 </tei:body>"""
 
 
+def printed_verse_body(psalm: PrintedPsalm) -> str:
+    """Render the ``tei:body`` of a psalm transcribed from the 1822 print.
+
+    Same shape as :func:`section_body` produces for these sections — the div keeps its haggadah
+    ``@corresp`` for transclusion while the canonical biblical URNs sit on the milestones — but
+    the verse divisions come from the transcription itself, so nothing has to be matched against
+    the text. The verse fragments are emitted unescaped: they are checked-in markup, not source
+    text, and may contain only ``j:divineName`` and ``tei:pb``.
+    """
+    verses = dict(sorted(psalm.verses.items()))
+    first = min(verses)
+
+    def _verse(n: int) -> str:
+        return f'<tei:milestone unit="verse" n="{n}" corresp="{psalm.verse_urn(n)}"/>'
+
+    # Markers that precede the psalm's first word stand as siblings of the paragraph, matching
+    # what the anchor-driven path emits for a section-opening anchor. A folio opening the psalm
+    # comes first, so the page turn is marked before the chapter it begins.
+    leading = []
+    opening_pb = re.match(r"<tei:pb [^>]*/>", verses[first])
+    if opening_pb:
+        leading.append(opening_pb.group())
+        verses[first] = verses[first][opening_pb.end() :]
+    leading.append(
+        f'<tei:milestone unit="chapter" n="{psalm.chapter}" corresp="{psalm.chapter_urn()}"/>'
+    )
+    leading.append(_verse(first))
+
+    body = verses.pop(first) + "".join(
+        f" {_verse(n)}{text}" for n, text in verses.items()
+    )
+    prefix = "".join(f"    {markup}\n" for markup in leading)
+    return f"""<tei:body>
+  <tei:div corresp="{urn_for_section(psalm.section)}">
+{prefix}    <tei:p>{body}</tei:p>
+  </tei:div>
+</tei:body>"""
+
+
 def content_body(
     slug: str,
     section: SectionContent | None,
@@ -410,6 +450,10 @@ def transcription_bibl(section: BiblicalSection) -> str:
     The 1822 edition is still the source this document represents — it supplies the wording's
     place, its pagination and its page range — but the vocalized text was taken from the
     Westminster Leningrad Codex, and a reader collating against the facsimile needs to know that.
+
+    This is now true of ``psalm_126`` alone. The psalms the 1822 haggadah actually prints are
+    transcribed from the facsimile (see ``heidenheim_psalms_1822.json``) and cite only the print,
+    so ``convert_project`` does not emit this bibl for them.
     """
     return (
         "<tei:bibl>"

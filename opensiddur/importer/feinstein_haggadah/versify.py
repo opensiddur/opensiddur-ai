@@ -1,9 +1,14 @@
 """Verse milestones for the complete biblical units in the haggadah.
 
-Several sections of the haggadah are complete psalms, and their pointed text was taken from the
-Westminster Leningrad Codex rather than transcribed from the 1822 print. That makes their verse
-boundaries recoverable: align the section text against ``project/wlc/psalms.xml`` and record, for
-each verse, the words on either side of its opening.
+Several sections of the haggadah are complete psalms. For those transcribed from the 1822 print
+the transcription is already divided into verses — see :func:`load_printed_psalms` and
+``heidenheim_psalms_1822.json`` — and nothing here applies to them.
+
+The rest keep the Open Siddur compilation's wording, which is close enough to the Westminster
+Leningrad Codex that their verse boundaries are recoverable: align the section text against
+``project/wlc/psalms.xml`` and record, for each verse, the words on either side of its opening.
+``psalm_126`` is the only such section left, the 1822 print having no Shir haMaalot before
+Birkat haMazon.
 
 The recorded anchors are checked in as ``verse_anchors.json`` and resolved at conversion time by
 the same :func:`~opensiddur.importer.feinstein_haggadah.page_breaks.find_break_offset` the page
@@ -32,6 +37,7 @@ from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_off
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
 VERSE_ANCHORS_FILE = Path(__file__).parent / "verse_anchors.json"
+PRINTED_PSALMS_FILE = Path(__file__).parent / "heidenheim_psalms_1822.json"
 
 #: How many consonants to put on each side of a verse boundary. Long enough that the pair is
 #: unique within its psalm, short enough to stay readable.
@@ -82,6 +88,47 @@ def load_verse_anchors(path: Path | None = None) -> dict[str, BiblicalSection]:
             ],
         )
     return sections
+
+
+@dataclass(frozen=True)
+class PrintedPsalm:
+    """A psalm transcribed from the 1822 print, already divided into verses.
+
+    ``verses`` maps verse number to a trusted XML fragment: it is emitted without escaping, so it
+    may contain only ``j:divineName`` and ``tei:pb``. Because the transcription arrives already
+    versified, these sections need no anchor matching — neither for verses nor for page breaks.
+    """
+
+    section: str
+    book: str
+    chapter: int
+    verses: dict[int, str]
+
+    def chapter_urn(self) -> str:
+        return f"urn:x-opensiddur:text:bible:{self.book}/{self.chapter}"
+
+    def verse_urn(self, n: int) -> str:
+        return f"{self.chapter_urn()}/{n}"
+
+
+def load_printed_psalms(path: Path | None = None) -> dict[str, PrintedPsalm]:
+    """Load the diplomatic transcription of the psalms as the 1822 haggadah prints them.
+
+    Keyed by section slug. Sections listed here are transcribed from the facsimile and take
+    precedence over the Open Siddur compilation text; every other section, ``psalm_126`` included,
+    still comes from the compilation by way of :func:`load_verse_anchors`.
+    """
+    data = json.loads((path or PRINTED_PSALMS_FILE).read_text(encoding="utf-8"))
+    return {
+        section: PrintedPsalm(
+            section=section,
+            book=entry["book"],
+            chapter=entry["chapter"],
+            verses={int(n): text for n, text in entry["verses"].items()},
+        )
+        for section, entry in data.items()
+        if not section.startswith("_")
+    }
 
 
 def read_wlc_chapter(book_path: Path, chapter: int) -> list[tuple[int, str]]:
@@ -191,12 +238,25 @@ def section_texts() -> dict[str, str]:
 
 
 def regenerate(project_dir: Path, targets: dict[str, int]) -> list[BiblicalSection]:
+    """Recompute anchors for the sections that still take them.
+
+    Sections transcribed from the 1822 print are skipped, and their existing entries are carried
+    through untouched. Anchors are meaningless for them — the transcription is already versified —
+    and recomputing would corrupt the table, since the print writes the Divine Name as two letters
+    where the codex writes four and the consonant skeletons no longer align.
+    """
     wlc = project_dir / "wlc" / "psalms.xml"
     if not wlc.is_file():
         raise SystemExit(f"needs the WLC project to regenerate: {wlc} not found")
+    printed = load_printed_psalms()
+    existing = load_verse_anchors()
     texts = section_texts()
     sections = []
     for slug, chapter in targets.items():
+        if slug in printed:
+            if slug in existing:
+                sections.append(existing[slug])
+            continue
         if slug not in texts:
             raise SystemExit(f"no section {slug} in the compilation")
         sections.append(

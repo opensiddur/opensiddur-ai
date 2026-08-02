@@ -32,6 +32,7 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
     index_body,
     minimal_index_header,
     page_break_anchors,
+    printed_verse_body,
     read_header_stub,
     tei_document,
     transcription_bibl,
@@ -42,6 +43,8 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
 )
 from opensiddur.importer.feinstein_haggadah.versify import (
     BiblicalSection,
+    PrintedPsalm,
+    load_printed_psalms,
     load_verse_anchors,
 )
 from opensiddur.importer.util.pages import (
@@ -95,11 +98,19 @@ def convert_project(
     grouped: dict[str, list[PageBreak]] = {}
     ranges: dict[str, tuple[str, str]] = {}
     scripture: dict[str, BiblicalSection] = {}
+    printed: dict[str, PrintedPsalm] = {}
     if include_page_breaks:
         breaks = load_page_breaks()
         grouped = page_breaks_by_section(breaks)
         ranges = page_ranges(breaks, load_section_ranges())
         scripture = load_verse_anchors()
+        # Psalms transcribed from the 1822 print supersede the compilation text. They arrive
+        # already versified and with their page breaks in place, so they take neither kind of
+        # anchor; only psalm_126, which the print does not carry, still needs matching.
+        printed = load_printed_psalms()
+        scripture = {
+            slug: section for slug, section in scripture.items() if slug not in printed
+        }
 
     validate_header_stub(header_stub, lang=lang)
     main_header = read_header_stub(header_stub)
@@ -144,15 +155,18 @@ def convert_project(
     for slug in leaf_slugs():
         written.add(slug)
         section = contents.get(slug)
-        body = content_body(
-            slug,
-            section,
-            lang=lang,
-            anchors=_anchors(slug),
-            # A biblical section is numbered by chapter and verse; a generic paragraph
-            # milestone alongside would be a second, redundant citation scheme.
-            number_paragraphs=slug not in scripture,
-        )
+        if slug in printed:
+            body = printed_verse_body(printed[slug])
+        else:
+            body = content_body(
+                slug,
+                section,
+                lang=lang,
+                anchors=_anchors(slug),
+                # A biblical section is numbered by chapter and verse; a generic paragraph
+                # milestone alongside would be a second, redundant citation scheme.
+                number_paragraphs=slug not in scripture,
+            )
         xml = tei_document(_header(main_header, slug), body, lang=lang)
         validate_and_write(xml, slug, project_dir)
 

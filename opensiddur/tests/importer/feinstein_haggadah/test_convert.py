@@ -83,6 +83,10 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
             project_root = root / "project"
             convert_all(sourcetexts_root=sources, project_root=project_root)
 
+            self._assert_psalms_follow_the_1822_print(
+                project_root / "heidenheim_haggadah_1822"
+            )
+
             for project in ("heidenheim_haggadah_1822", "feinstein_haggadah_translation_2009"):
                 project_dir = project_root / project
                 self.assertTrue(project_dir.is_dir())
@@ -92,6 +96,22 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
                 for path in xml_files:
                     is_valid, errors = validate(path)
                     self.assertTrue(is_valid, f"{path.name}: {errors}")
+
+    def _assert_psalms_follow_the_1822_print(self, project_dir: Path) -> None:
+        """The psalms the print carries reach the project as transcribed, not as WLC."""
+        for slug in ("psalm_113", "psalm_115", "psalm_117", "psalm_136"):
+            written = (project_dir / f"{slug}.xml").read_text(encoding="utf-8")
+            with self.subTest(slug=slug):
+                self.assertIn("<j:divineName>יְיָ</j:divineName>", written)
+                self.assertNotIn("יְהֹוָה", written)
+                self.assertNotIn("יהוה", written)
+                # WLC cites itself as the text source; these no longer come from it.
+                self.assertNotIn("text:bible:psalms@wlc", written)
+
+        # Psalm 126 is not in the print and keeps the compilation's text and its WLC citation.
+        psalm_126 = (project_dir / "psalm_126.xml").read_text(encoding="utf-8")
+        self.assertIn("text:bible:psalms@wlc", psalm_126)
+        self.assertNotIn("<j:divineName>", psalm_126)
 
 
 if __name__ == "__main__":
