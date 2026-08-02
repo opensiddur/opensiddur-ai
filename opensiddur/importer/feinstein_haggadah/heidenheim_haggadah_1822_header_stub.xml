@@ -11,7 +11,7 @@
       </tei:respStmt>
       <tei:respStmt>
         <tei:resp key="trc">Hebrew transcribed for the Open Siddur Project by</tei:resp>
-        <tei:name ref="urn:x-opensiddur:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:name>
+        <tei:name ref="urn:x-opensiddur:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name>
       </tei:respStmt>
     </tei:titleStmt>
     <tei:editionStmt>
@@ -27,7 +27,7 @@
       </tei:availability>
     </tei:publicationStmt>
     <tei:sourceDesc>
-      <tei:bibl>
+      <tei:bibl xml:id="project_source_bibl">
         <tei:title xml:lang="he">הגדה לליל שימורים</tei:title>
         <tei:title type="alt">Haggadah le-Leil Shimurim</tei:title>
         <tei:author>Meir Halevi (Wolf) Heidenheim</tei:author>
@@ -36,12 +36,12 @@
         <tei:pubPlace>Rödelheim</tei:pubPlace>
         <tei:date when="1822">1822</tei:date>
         <tei:idno type="Yaari">447</tei:idno>
-        <tei:note xml:lang="en">80 printed pages. German Ashkenazi translation in Hebrew characters; Roman-letter German edition published 1839 (Yaari 590).</tei:note>
+        <tei:note xml:lang="en">Foliated 2–40; each folio number is printed twice, as a Hebrew numeral on the recto and an Arabic numeral on the verso. German Ashkenazi translation in Hebrew characters; Roman-letter German edition published 1839 (Yaari 590).</tei:note>
       </tei:bibl>
       <tei:bibl>
         <tei:title>Page-break reference facsimile</tei:title>
         <tei:ref target="https://www.hebrewbooks.org/4909">HebrewBooks.org #4909</tei:ref>
-        <tei:note xml:lang="en">Physical page numbers on tei:pb milestones refer to this facsimile when present.</tei:note>
+        <tei:note xml:lang="en">tei:pb milestones and tei:biblScope page ranges give the foliation of the 1822 edition itself (2r–40v), not the sequential page numbering this scan adds at the foot of each page. The facsimile is the witness against which every page break was verified.</tei:note>
       </tei:bibl>
       <tei:bibl>
         <tei:title>Transcription source</tei:title>
@@ -51,7 +51,7 @@
       </tei:bibl>
       <tei:bibl>
         <tei:title>Differences from the 1822 Heidenheim original</tei:title>
-        <tei:note type="editorial" xml:lang="en">(1) Biblical quotations in this edition were taken from the Westminster Leningrad Codex (WLC), not from the printed 1822 haggadah text. (2) The original edition&apos;s ritual instructions, partly in German (in Hebrew characters) and partly in Hebrew, are not transcribed in the Hebrew project; English instructions appear only in the separate Feinstein translation project. (3) Heidenheim&apos;s edition notes and commentary are omitted. (4) The Ashkenazi German translation that accompanied the original Hebrew is not included. (5) Typography and layout follow modern digital conventions; tei:pb milestones mark page breaks in the 1822 print when a reference PDF is available. (6) Pre-seder material (bedikat chametz, biur chametz, eruv tavshilin) follows the Open Siddur compilation and may differ in scope or placement from the 1822 book. (7) Vocalization and spelling follow the Open Siddur transcription, not 1822 printing conventions. Further wording and paragraphing differences may be documented during PDF alignment.</tei:note>
+        <tei:note type="editorial" xml:lang="en">(1) Biblical quotations in this edition were taken from the Westminster Leningrad Codex (WLC), not from the printed 1822 haggadah text. (2) The original edition&apos;s ritual instructions, partly in German (in Hebrew characters) and partly in Hebrew, are not transcribed in the Hebrew project; English instructions appear only in the separate Feinstein translation project. (3) Heidenheim&apos;s edition notes and commentary are omitted. (4) The Ashkenazi German translation that accompanied the original Hebrew is not included. (5) Typography and layout follow modern digital conventions. Every page of the original is marked by a tei:pb milestone, placed at the exact point the page turns and verified page by page against the facsimile; folio 4v is the one page with nothing transcribed on it, carrying only Heidenheim&apos;s preface to Magid, so its milestone stands at the start of the next transcribed section. (6) Pre-seder material (bedikat chametz, biur chametz, eruv tavshilin) follows the Open Siddur compilation and may differ in scope or placement from the 1822 book. (7) Vocalization and spelling follow the Open Siddur transcription, not 1822 printing conventions. (8) The order of the concluding sections follows the 1822 print rather than the Open Siddur compilation. On folio 38r the print reads: Ki Lo Na&apos;eh, לשנה הבאה בירושלים, the two fourth-cup blessings, then נרצה/Chasal Siddur Pesach — so the fourth-cup blessings are held back from Hallel to there, לשנה הבאה is separated from Chasal Siddur Pesach although the compilation runs them together, and Chasal Siddur Pesach follows rather than precedes the concluding piyyutim. Sefirat HaOmer stands between Adir Hu and Echad Mi Yodea (folio 39r). (9) Sections that are complete biblical units — Psalms 113 and 114 in Magid, 115, 116, 117, 118 and 136 in Hallel, and 126 in Barech — are separate documents carrying chapter and verse milestones with canonical biblical URNs, so they can be aligned with other witnesses. Their pointed text is the Westminster Leningrad Codex, as each records in its own tei:sourceDesc, and differs from the 1822 print in a handful of letters.</tei:note>
       </tei:bibl>
     </tei:sourceDesc>
   </tei:fileDesc>

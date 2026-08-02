@@ -10,14 +10,33 @@ from pathlib import Path
 from typing import Any, Literal
 
 from opensiddur.importer.feinstein_haggadah.sections import (
+    BARECH_SUBSECTION_PREFIXES,
     H3_SLUGS,
+    HALLEL_SUBSECTION_PREFIXES,
     INDEX_NODES,
     MAGID_SUBSECTION_PREFIXES,
     NIRTZAH_SUBSECTION_PREFIXES,
     SectionContent,
     TextBlock,
+    match_subsection_by_incipit,
     match_subsection_slug,
 )
+
+#: Subsection tables that apply only inside one h3 section. Scoping matters: the second-cup and
+#: fourth-cup בורא פרי הגפן blessings are word-for-word identical, and only their parent distinguishes
+#: them.
+SCOPED_SUBSECTION_PREFIXES: dict[str, list[tuple[str, str]]] = {
+    "hallel": HALLEL_SUBSECTION_PREFIXES,
+    "barech": BARECH_SUBSECTION_PREFIXES,
+}
+
+#: Subsections the compilation runs together with the passage before them in a single table cell, so
+#: that they have to be cut out mid-cell. Deliberately tiny: every other subsection begins its own
+#: cell, and scanning a whole prefix table line by line would slice rows that merely quote a verse
+#: another subsection also opens with.
+ROW_SPLIT_PREFIXES: list[tuple[str, str]] = [
+    ("לְשָּׁנָה הַבָּאָה בִּירוּשָׁלָיִם", "lshana_haba_ah"),
+]
 from opensiddur.importer.util.pages import feinstein_haggadah_data_directory
 
 _PARENTHETICAL = re.compile(r"\(([^)]*)\)")
@@ -152,6 +171,45 @@ def _append_body_row(section: SectionContent, row: CompilationRow) -> None:
         _append_english_segments(section, english, starts_paragraph=True)
 
 
+def _split_row_at_incipits(
+    row: CompilationRow,
+    prefixes: list[tuple[str, str]] = ROW_SPLIT_PREFIXES,
+) -> list[CompilationRow]:
+    """Split a row wherever a line after the first opens a new subsection.
+
+    Needed because the compilation runs חסל סדור פסח and לשנה הבאה בירושלים together in one cell,
+    while the print separates them by the two fourth-cup blessings. Hebrew and English lines
+    correspond one to one in such a cell; refuse to guess if they ever stop doing so.
+    """
+    hebrew_lines = _non_empty_lines(row.hebrew)
+    cuts = [
+        index
+        for index, line in enumerate(hebrew_lines)
+        if index and match_subsection_by_incipit(line, prefixes)
+    ]
+    if not cuts:
+        return [row]
+
+    english_lines = _non_empty_lines(row.english)
+    if english_lines and len(english_lines) != len(hebrew_lines):
+        raise ValueError(
+            f"cannot split a row with {len(hebrew_lines)} Hebrew and "
+            f"{len(english_lines)} English lines: {hebrew_lines[0][:40]!r}"
+        )
+
+    parts: list[CompilationRow] = []
+    for start, end in zip([0, *cuts], [*cuts, len(hebrew_lines)]):
+        parts.append(
+            CompilationRow(
+                hebrew="\n".join(hebrew_lines[start:end]),
+                english="\n".join(english_lines[start:end]) if english_lines else "",
+                h3_title=row.h3_title,
+                h3_boundary=row.h3_boundary and start == 0,
+            )
+        )
+    return parts
+
+
 def _resolve_slug(
     h3_parent: str | None,
     first_line: str,
@@ -185,13 +243,25 @@ def _get_section(contents: dict[str, SectionContent], slug: str) -> SectionConte
     return contents[slug]
 
 
+def _scoped_prefixes(h3_parent: str | None, nirtzah_mode: bool) -> list[tuple[str, str]]:
+    if nirtzah_mode:
+        return NIRTZAH_SUBSECTION_PREFIXES
+    if h3_parent in SCOPED_SUBSECTION_PREFIXES:
+        return SCOPED_SUBSECTION_PREFIXES[h3_parent]
+    if h3_parent == "magid":
+        return MAGID_SUBSECTION_PREFIXES
+    return []
+
+
 def build_section_contents(rows: list[CompilationRow]) -> dict[str, SectionContent]:
     contents: dict[str, SectionContent] = {}
     h3_parent: str | None = None
     current_slug: str | None = None
     nirtzah_mode = False
 
-    for row in rows:
+    expanded = [part for row in rows for part in _split_row_at_incipits(row)]
+
+    for row in expanded:
         if row.h3_title and row.h3_title in H3_SLUGS:
             h3_parent = H3_SLUGS[row.h3_title]
             if h3_parent in INDEX_NODES:
@@ -202,10 +272,22 @@ def build_section_contents(rows: list[CompilationRow]) -> dict[str, SectionConte
                 nirtzah_mode = False
 
         first_he = _first_line(row.hebrew)
-        resolved, nirtzah_mode = _resolve_slug(
-            h3_parent, first_he, nirtzah_mode=nirtzah_mode
+        resolved = match_subsection_by_incipit(
+            row.hebrew, _scoped_prefixes(h3_parent, nirtzah_mode)
         )
         if resolved:
+            nirtzah_mode = nirtzah_mode or bool(
+                match_subsection_slug(first_he, NIRTZAH_SUBSECTION_PREFIXES)
+            )
+        else:
+            resolved, nirtzah_mode = _resolve_slug(
+                h3_parent, first_he, nirtzah_mode=nirtzah_mode
+            )
+        if resolved:
+            if h3_parent in INDEX_NODES and resolved != h3_parent:
+                parent = _get_section(contents, h3_parent)
+                if parent.children_at is None:
+                    parent.children_at = len(parent.blocks)
             current_slug = resolved
 
         if not current_slug or not (row.hebrew.strip() or row.english.strip()):

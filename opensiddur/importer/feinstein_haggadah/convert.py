@@ -8,29 +8,45 @@ from pathlib import Path
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.importer.feinstein_haggadah.page_breaks import (
+    PageBreak,
     load_page_breaks,
-    write_empty_page_breaks_template,
+    load_section_ranges,
+    page_breaks_by_section,
 )
 from opensiddur.importer.feinstein_haggadah.parse_compilation import (
     build_section_contents,
     load_compilation_json,
     parse_rows,
 )
-from opensiddur.importer.feinstein_haggadah.sections import INDEX_CHILDREN, document_order_slugs, leaf_slugs
+from opensiddur.importer.feinstein_haggadah.sections import (
+    INDEX_CHILDREN,
+    INDEX_NODES,
+    document_order_slugs,
+    leaf_slugs,
+)
 from opensiddur.importer.feinstein_haggadah.tei_builder import (
+    InlineAnchor,
+    citation_bibl,
     content_body,
+    header_with_bibls,
     index_body,
     minimal_index_header,
+    page_break_anchors,
     read_header_stub,
     tei_document,
+    transcription_bibl,
     validate_and_write,
     validate_header_stub,
     validate_project_directory,
+    verse_anchors,
+)
+from opensiddur.importer.feinstein_haggadah.versify import (
+    BiblicalSection,
+    load_verse_anchors,
 )
 from opensiddur.importer.util.pages import (
     default_sourcetexts_root,
     feinstein_haggadah_data_directory,
-    heidenheim_pdf_path,
 )
 
 INDEX_TITLES: dict[str, str] = {
@@ -39,12 +55,27 @@ INDEX_TITLES: dict[str, str] = {
     "seder": "Seder",
     "magid": "Magid",
     "nirtzah": "Nirtzah",
+    "hallel": "Hallel",
+    "barech": "Barech",
 }
 
 
 def make_project_directory(project_dir: Path) -> Path:
     project_dir.mkdir(parents=True, exist_ok=True)
     return project_dir
+
+
+def prune_stale_files(project_dir: Path, written: set[str]) -> list[Path]:
+    """Delete generated files that this conversion no longer produces.
+
+    Sections get renamed and split, and a leftover file from an earlier run is not harmless: it
+    still validates, still carries the page breaks and URNs it was written with, and so quietly
+    duplicates them across the project.
+    """
+    stale = [path for path in sorted(project_dir.glob("*.xml")) if path.stem not in written]
+    for path in stale:
+        path.unlink()
+    return stale
 
 
 def convert_project(
@@ -60,64 +91,125 @@ def convert_project(
     compilation = load_compilation_json(json_path)
     rows = parse_rows(compilation)
     contents = build_section_contents(rows)
-    page_milestones: dict[str, int | None] = {}
+
+    grouped: dict[str, list[PageBreak]] = {}
+    ranges: dict[str, tuple[str, str]] = {}
+    scripture: dict[str, BiblicalSection] = {}
     if include_page_breaks:
-        page_milestones = _emit_page_breaks(load_page_breaks(sourcetexts_root))
+        breaks = load_page_breaks()
+        grouped = page_breaks_by_section(breaks)
+        ranges = page_ranges(breaks, load_section_ranges())
+        scripture = load_verse_anchors()
 
     validate_header_stub(header_stub, lang=lang)
     main_header = read_header_stub(header_stub)
 
+    def _anchors(slug: str) -> list[InlineAnchor]:
+        """Page breaks first, so a page opening a psalm is marked before its chapter."""
+        anchors = page_break_anchors(grouped.get(slug, []))
+        if slug in scripture:
+            anchors += verse_anchors(scripture[slug])
+        return anchors
+
+    def _header(header: str, slug: str) -> str:
+        bibls = []
+        if slug in ranges:
+            from_page, to_page = ranges[slug]
+            bibls.append(citation_bibl(project_id, from_page, to_page))
+        if slug in scripture:
+            bibls.append(transcription_bibl(scripture[slug]))
+        return header_with_bibls(header, bibls) if bibls else header
+
     for index_slug, children in INDEX_CHILDREN.items():
         section = contents.get(index_slug)
-        body = index_body(index_slug, children, section, lang=lang)
+        body = index_body(
+            index_slug, children, section, lang=lang, anchors=_anchors(index_slug)
+        )
         if index_slug == "index":
-            header = main_header
+            header = _header(main_header, index_slug)
         else:
+            from_page, to_page = ranges.get(index_slug, (None, None))
             header = minimal_index_header(
                 INDEX_TITLES.get(index_slug, index_slug),
                 project_id=project_id,
                 urn_suffix=index_slug,
                 lang=lang,
+                from_page=from_page,
+                to_page=to_page,
             )
         xml = tei_document(header, body, lang=lang)
         validate_and_write(xml, index_slug, project_dir)
 
+    written = set(INDEX_CHILDREN)
     for slug in leaf_slugs():
+        written.add(slug)
         section = contents.get(slug)
-        page_no = page_milestones.get(slug)
-        body = content_body(slug, section, lang=lang, page_number=page_no)
-        xml = tei_document(main_header, body, lang=lang)
+        body = content_body(
+            slug,
+            section,
+            lang=lang,
+            anchors=_anchors(slug),
+            # A biblical section is numbered by chapter and verse; a generic paragraph
+            # milestone alongside would be a second, redundant citation scheme.
+            number_paragraphs=slug not in scripture,
+        )
+        xml = tei_document(_header(main_header, slug), body, lang=lang)
         validate_and_write(xml, slug, project_dir)
 
+    prune_stale_files(project_dir, written)
     validate_project_directory(project_dir)
 
 
-def _emit_page_breaks(page_breaks: dict[str, int]) -> dict[str, int | None]:
-    """Return page numbers only where a new printed page begins."""
-    emitted: dict[str, int | None] = {}
-    previous: int | None = None
+def page_ranges(
+    breaks: list[PageBreak],
+    overrides: dict[str, tuple[str, str]] | None = None,
+) -> dict[str, tuple[str, str]]:
+    """Map every slug to the (first, last) page of the source it appears on.
+
+    Walking the leaves in document order, the page "in effect" carries forward: a section
+    with no page break of its own lies wholly within the page opened by an earlier section,
+    and a section whose first break is not at its start began on the preceding page.
+    Index nodes span their subtree. ``overrides`` supplies ranges for sections whose content
+    is not contiguous in the print, which the carry-forward walk cannot express.
+    """
+    grouped = page_breaks_by_section(breaks)
+    ranges: dict[str, tuple[str, str]] = {}
+    current: str | None = None
     for slug in document_order_slugs():
-        page = page_breaks.get(slug)
-        if page is not None and page != previous:
-            emitted[slug] = page
-            previous = page
+        entries = grouped.get(slug, [])
+        if entries and entries[0].at_section_start:
+            first = entries[0].page
+        elif current is not None:
+            first = current
         else:
-            emitted[slug] = None
-    return emitted
+            first = entries[0].page if entries else None
+        if entries:
+            current = entries[-1].page
+        if first is None or current is None:
+            raise ValueError(f"no page range could be determined for {slug}")
+        ranges[slug] = (overrides or {}).get(slug, (first, current))
+
+    def _span(node: str) -> tuple[str, str]:
+        spans = [
+            _span(child) if child in INDEX_NODES else ranges[child]
+            for child in INDEX_CHILDREN[node]
+        ]
+        # A content-bearing node's own text continues past its children, so its range must take
+        # in the walk's result for the node itself as well as its children's.
+        if node in ranges:
+            spans.append(ranges[node])
+        ranges[node] = (overrides or {}).get(node, (spans[0][0], spans[-1][1]))
+        return ranges[node]
+
+    _span("index")
+    return ranges
+
 
 def convert_all(
     *,
     sourcetexts_root: Path | None = None,
     project_root: Path | None = None,
 ) -> None:
-    write_empty_page_breaks_template(sourcetexts_root)
-    if not load_page_breaks(sourcetexts_root) and heidenheim_pdf_path(sourcetexts_root):
-        from opensiddur.importer.feinstein_haggadah.align_page_breaks import (
-            align_page_breaks,
-            write_page_breaks,
-        )
-
-        write_page_breaks(align_page_breaks(sourcetexts_root=sourcetexts_root), sourcetexts_root)
     root = project_root or PROJECT_DIRECTORY
 
     he_dir = make_project_directory(root / "heidenheim_haggadah_1822")

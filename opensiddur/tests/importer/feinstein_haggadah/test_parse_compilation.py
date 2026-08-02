@@ -1,12 +1,4 @@
-import json
-import tempfile
 import unittest
-from pathlib import Path
-
-from opensiddur.importer.feinstein_haggadah.page_breaks import (
-    load_page_breaks,
-    write_empty_page_breaks_template,
-)
 
 SAMPLE_HTML = """
 <table>
@@ -173,36 +165,6 @@ class TestTeiBuilder(unittest.TestCase):
         body = content_body("kadesh", section, lang="en")
         self.assertIn('<tei:note type="instruction">On Shabbat begin here.</tei:note>', body)
         self.assertNotIn("(On Shabbat begin here.)", body)
-
-
-class TestPageBreaks(unittest.TestCase):
-    def setUp(self) -> None:
-        self.tmp = tempfile.TemporaryDirectory()
-        self.sourcetexts_root = Path(self.tmp.name)
-
-    def tearDown(self) -> None:
-        self.tmp.cleanup()
-
-    def test_load_skips_comment_keys(self) -> None:
-        from opensiddur.importer.util.pages import heidenheim_haggadah_data_directory
-
-        data_dir = heidenheim_haggadah_data_directory(self.sourcetexts_root)
-        data_dir.mkdir(parents=True)
-        path = data_dir / "page_breaks.json"
-        path.write_text(
-            json.dumps({"_comment": "template", "kadesh": 12}),
-            encoding="utf-8",
-        )
-        breaks = load_page_breaks(self.sourcetexts_root)
-        self.assertEqual(breaks, {"kadesh": 12})
-
-    def test_write_empty_template(self) -> None:
-        from opensiddur.importer.util.pages import heidenheim_haggadah_data_directory
-
-        path = write_empty_page_breaks_template(self.sourcetexts_root)
-        self.assertTrue(path.is_file())
-        data = json.loads(path.read_text(encoding="utf-8"))
-        self.assertIn("_comment", data)
 
 
 if __name__ == "__main__":

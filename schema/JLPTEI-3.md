@@ -197,9 +197,9 @@ Every document has a TEI header with a standardized structure.
                 <tei:date>{PUBLICATION_OR_DOWNLOAD_DATE}</tei:date>
              </tei:bibl>
             <!-- each individual document will typically contain a citation with a pointer to the 
-            project bibliography -->
+            project bibliography, addressed by the index document's URN plus the xml:id fragment -->
             <tei:bibl>
-               <tei:ptr target="/{project}/index#project_source_bibl"/>
+               <tei:ptr target="{PROJECT_INDEX_URN}#project_source_bibl"/>
                <tei:biblScope unit="pages" from="{FROM_PAGE}" to="{TO_PAGE}"/>
             </tei:bibl>
          </tei:sourceDesc>
@@ -213,6 +213,13 @@ Every document has a TEI header with a standardized structure.
   * `alt` for an alternate version of the title (translation/transliterationn)
   * `alt-sub` for an alternate version of the subtitle (translation/transliteration)
 * `LANGUAGE` can be any ISO language code
+* `PROJECT_INDEX_URN` is the URN of the project's index document, as declared in its
+  `tei:publicationStmt/tei:idno[@type='urn']` — for example
+  `urn:x-opensiddur:text:haggadah:haggadah@heidenheim_haggadah_1822`. The `#project_source_bibl`
+  fragment addresses the `tei:bibl` of that name in the index document's `tei:sourceDesc`.
+* `FROM_PAGE` and `TO_PAGE` are page designations as they are printed in the source, not sequence
+  numbers in a scan. Where a source is foliated rather than paginated, use recto/verso designations
+  (`5r`, `5v`).
 
 | `RESPONSIBILITY_TYPE` | `RESPONSIBILITY_STRING` |
 |-----------------------|-------------------------|

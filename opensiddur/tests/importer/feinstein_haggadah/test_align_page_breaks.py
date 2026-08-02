@@ -10,8 +10,6 @@ from opensiddur.importer.feinstein_haggadah.align_page_breaks import (
     _normalize_hebrew,
     _subseq_ratio,
 )
-from opensiddur.importer.feinstein_haggadah.convert import _emit_page_breaks
-from opensiddur.importer.feinstein_haggadah.sections import document_order_slugs
 
 
 class TestAlignPageBreaksHelpers(unittest.TestCase):
@@ -32,14 +30,12 @@ class TestAlignPageBreaksHelpers(unittest.TestCase):
         result = _enforce_monotonic({"a": 11, "b": 10, "c": 12}, slugs)
         self.assertEqual(result, {"a": 11, "b": 11, "c": 12})
 
-    def test_emit_page_breaks_only_on_change(self) -> None:
-        slugs = document_order_slugs()[:4]
-        mapping = {slugs[0]: 11, slugs[1]: 12, slugs[2]: 12, slugs[3]: 15}
-        emitted = _emit_page_breaks(mapping)
-        self.assertEqual(emitted[slugs[0]], 11)
-        self.assertEqual(emitted[slugs[1]], 12)
-        self.assertIsNone(emitted[slugs[2]])
-        self.assertEqual(emitted[slugs[3]], 15)
+    def test_conversion_does_not_depend_on_this_module(self) -> None:
+        """The aligner is a draft tool; the converter must read the curated table only."""
+        source = Path(
+            "opensiddur/importer/feinstein_haggadah/convert.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("align_page_breaks", source)
 
 
 class TestAlignPageBreaksIntegration(unittest.TestCase):
