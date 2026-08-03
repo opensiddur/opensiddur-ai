@@ -120,28 +120,59 @@ class TestSingleStreamMapping(unittest.TestCase):
         # The fixture has one tei:p containing 3 verse milestones, so we expect
         # one verse-paragraph-level \\pstart/\\pend pair (not 1 per verse).
         #
-        # Note: chapter milestones may be emitted in their own skipnumbering pstart.
+        # The chapter milestone is not in a div[@type='book'], so it emits nothing
+        # and does not open a pstart of its own.
         self.assertEqual(out.count(r"\pstart \vno{"), 1)
-        self.assertEqual(out.count(r"\pend"), 2)
+        self.assertEqual(out.count(r"\pend"), 1)
 
-    def test_chapter_milestone_emits_eledsection(self):
+    def test_chapter_milestone_is_not_a_section(self):
+        """Chapter milestones must never become LaTeX sections: the book class would
+        auto-number them ("0.1") and the heading is unwanted in liturgical texts."""
         out = _transform(self.XML)
+        self.assertNotIn(r"\eledsection", out)
+        self.assertNotIn(r"\eledchapter", out)
+        self.assertNotIn(r"\eledsubsection", out)
+
+    def test_chapter_milestone_outside_a_book_renders_nothing(self):
+        out = _transform(self.XML)
+        # \chno is always *defined* in the preamble; assert it is never *used*.
+        body = out.split(r"\begin{document}", 1)[1]
+        self.assertNotIn(r"\chno", body)
+
+    def test_chapter_milestone_inside_a_book_emits_inline_number(self):
+        """In a Bible export the chapter exists only as a milestone, so it must stay
+        visible — as an inline marker, not a heading."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:p>
+                <tei:milestone unit="chapter" n="1"/>
+                <tei:milestone unit="verse" n="1"/>In the beginning.
+              </tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
         # Chapter numbers are forced LTR to avoid digit reversal in RTL contexts.
-        self.assertIn(r"\eledsection{{\textdir TLT\selectlanguage{english}1}}", out)
+        self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}1}}", out)
+        self.assertNotIn(r"\eledsection", out)
 
     def test_chapter_number_forces_ltr_digits_in_hebrew_context(self):
         """Digits inside Hebrew RTL contexts can render reversed unless forced LTR."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
           <tei:text><tei:body>
-            <tei:p>
-              <tei:milestone unit="chapter" n="12"/>
-              <tei:milestone unit="verse" n="1"/>טקסט
-            </tei:p>
+            <tei:div type="book">
+              <tei:p>
+                <tei:milestone unit="chapter" n="12"/>
+                <tei:milestone unit="verse" n="1"/>טקסט
+              </tei:p>
+            </tei:div>
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\eledsection{{\textdir TLT\selectlanguage{english}12}}", out)
+        self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}12}}", out)
 
     def test_verse_numbers_appear_as_superscripts(self):
         out = _transform(self.XML)
@@ -537,8 +568,8 @@ class TestInlineFormatting(unittest.TestCase):
 
 
 class TestStructuralElements(unittest.TestCase):
-    """tei:standOff and tei:pb should be skipped; head should produce a
-    sectioning command instead of inlining the title in the body."""
+    """tei:standOff and tei:pb should be skipped; head should produce a styled
+    heading macro instead of inlining the title in the body."""
 
     def test_standoff_notes_are_skipped(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -554,7 +585,7 @@ class TestStructuralElements(unittest.TestCase):
         self.assertIn("Body", out)
         self.assertNotIn("Should not appear", out)
 
-    def test_div_head_emits_sectioning(self):
+    def test_div_head_emits_heading_inside_its_own_pstart(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body>
@@ -565,11 +596,100 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        # Top-level body div with head → \eledchapter (LTR wrapper when not Hebrew)
+        # Top-level head → \OSheadA (LTR wrapper when not Hebrew), and the heading must
+        # sit alone in a skipnumbering pstart so it is a real, unnumbered heading.
         self.assertIn(
-            r"\eledchapter{{\textdir TLT\selectlanguage{english}Genesis}}",
+            "\\pstart \\skipnumbering\n"
+            r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}",
             out,
         )
+        self.assertNotIn(r"\eledchapter", out)
+        self.assertNotIn(r"\eledsubsection", out)
+
+    def test_div_head_emits_pdf_bookmark(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:head>Genesis</tei:head>
+              <tei:p>In the beginning.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\phantomsection\addcontentsline{toc}{section}"
+            r"{{\textdir TLT\selectlanguage{english}Genesis}}",
+            out,
+        )
+
+    def test_heading_level_counts_only_headed_ancestors(self):
+        """Transclusion interposes headless container divs, so heading level must follow
+        headed ancestors rather than raw nesting depth."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:div>
+                <tei:head>Outer</tei:head>
+                <tei:div>
+                  <tei:head>Inner</tei:head>
+                  <tei:p>Text.</tei:p>
+                </tei:div>
+              </tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        # Two headless container divs above "Outer" must not push it below level 1.
+        self.assertIn(r"\OSheadA{{\textdir TLT\selectlanguage{english}Outer}}", out)
+        self.assertIn(r"\OSheadB{{\textdir TLT\selectlanguage{english}Inner}}", out)
+        self.assertIn(r"\addcontentsline{toc}{subsection}", out)
+
+    def test_head_markup_is_rendered_not_flattened(self):
+        """A mixed-language title (JPS book heads look like this) must keep its Hebrew run
+        in a \\texthebrew wrapper — flattened into the surrounding LTR heading the Hebrew
+        renders reversed. The line break becomes a horizontal separator, since only the
+        first line of a heading carries the centering glue."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head><tei:foreign xml:lang="he">רות</tei:foreign><tei:lb/>RUTH</tei:head>
+              <tei:p>And it came to pass.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\OSheadA{{\textdir TLT\selectlanguage{english}"
+            r"\texthebrew{רות}\quad RUTH}}",
+            out,
+        )
+        # ...but a line break in body text is still a line break.
+        self.assertNotIn(r"\quad", out.split(r"\OSheadA", 1)[0])
+        # The bookmark still takes the flattened form: \addcontentsline builds a PDF
+        # string and cannot carry markup.
+        self.assertIn(
+            r"\addcontentsline{toc}{section}{{\textdir TLT\selectlanguage{english}רותRUTH}}",
+            out,
+        )
+
+    def test_notes_in_a_head_are_dropped(self):
+        """A heading sits outside the numbered line stream, so an apparatus entry cannot
+        be anchored in it."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:head>Genesis<tei:note>Should not appear</tei:note></tei:head>
+              <tei:p>Body</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertNotIn("Should not appear", out)
+        self.assertIn(r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}", out)
 
     def test_english_head_in_hebrew_document_uses_ltr_wrapper(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -583,7 +703,7 @@ class TestStructuralElements(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(
-            r"\eledchapter{{\textdir TLT\selectlanguage{english}Genesis}}",
+            r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}",
             out,
         )
 
@@ -598,9 +718,9 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\eledchapter{בראשית}", out)
+        self.assertIn(r"\OSheadA{בראשית}", out)
         self.assertNotIn(
-            r"\eledchapter{{\textdir TLT\selectlanguage{english}בראשית}}",
+            r"\OSheadA{{\textdir TLT\selectlanguage{english}בראשית}}",
             out,
         )
 
