@@ -10,6 +10,9 @@ from opensiddur.importer.feinstein_haggadah.convert import page_ranges
 from opensiddur.importer.feinstein_haggadah.page_breaks import (
     PageBreak,
     PageBreakError,
+    facsimile_page,
+    facsimile_url,
+    folio_at_facsimile_page,
     find_break_offset,
     load_page_breaks,
     load_section_ranges,
@@ -25,6 +28,7 @@ from opensiddur.importer.feinstein_haggadah.sections import (
 )
 from opensiddur.importer.feinstein_haggadah.tei_builder import (
     _paragraph_xml,
+    _pb,
     citation_bibl,
     content_body,
     header_with_page_scope,
@@ -34,6 +38,59 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
 from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_offsets
 
 ALL_FOLIOS = [f"{folio}{side}" for folio in range(2, 41) for side in ("r", "v")]
+
+
+class TestFacsimileMapping(unittest.TestCase):
+    """The folio-to-scan-page mapping behind tei:pb/@facs.
+
+    Every value below was read off Hebrewbooks_org_4909.pdf rather than derived, including
+    one in the middle of the book: the viewer clamps an out-of-range pgnum to the last page,
+    so an off-by-one mapping still resolves the final folio while everything before it is
+    wrong, and endpoints alone cannot catch that.
+    """
+
+    def test_maps_the_ends_of_the_range(self) -> None:
+        self.assertEqual(facsimile_page("2r"), 3)  # first page of text
+        self.assertEqual(facsimile_page("40v"), 80)  # last page of the scan
+
+    def test_verso_follows_its_recto(self) -> None:
+        self.assertEqual(facsimile_page("3r"), 5)
+        self.assertEqual(facsimile_page("3v"), 6)  # kadesh, checked in the viewer
+
+    def test_alternation_is_unbroken_across_the_whole_book(self) -> None:
+        pages = [facsimile_page(folio) for folio in ALL_FOLIOS]
+        self.assertEqual(pages, list(range(3, 3 + len(ALL_FOLIOS))))
+
+    def test_rejects_designations_it_cannot_map(self) -> None:
+        for bad in ("5", "v5", "5x", "", "5 r", "1r"):
+            with self.subTest(page=bad), self.assertRaises(ValueError):
+                facsimile_page(bad)
+
+    def test_page_break_exposes_its_scan_page(self) -> None:
+        self.assertEqual(PageBreak(page="3v", section="kadesh").facsimile_page, 6)
+
+    def test_url_deep_links_the_scan(self) -> None:
+        self.assertEqual(
+            facsimile_url("3v"),
+            "https://www.hebrewbooks.org/pdfpager.aspx?req=4909&pgnum=6",
+        )
+
+    def test_inverts_back_to_the_folio(self) -> None:
+        for folio in ALL_FOLIOS:
+            with self.subTest(folio=folio):
+                self.assertEqual(folio_at_facsimile_page(facsimile_page(folio)), folio)
+
+    def test_front_matter_and_overrun_carry_no_folio(self) -> None:
+        for page in (0, 1, 2, 81, 200):
+            with self.subTest(page=page), self.assertRaises(ValueError):
+                folio_at_facsimile_page(page)
+
+    def test_milestone_keeps_the_printed_foliation_and_adds_the_link(self) -> None:
+        self.assertEqual(
+            _pb("3v"),
+            '<tei:pb n="3v" ed="1822"'
+            ' facs="https://www.hebrewbooks.org/pdfpager.aspx?req=4909&amp;pgnum=6"/>',
+        )
 
 
 class TestNormalizeHebrew(unittest.TestCase):
@@ -280,7 +337,7 @@ class TestContentBody(unittest.TestCase):
             lang="he",
             anchors=page_break_anchors([PageBreak(page="3v", section="kadesh")]),
         )
-        self.assertRegex(body, r'<tei:div[^>]*>\s*<tei:pb n="3v" ed="1822"/>')
+        self.assertRegex(body, r"<tei:div[^>]*>\s*" + re.escape(_pb("3v")))
 
     def test_anchored_break_is_placed_in_the_text(self) -> None:
         body = content_body(
@@ -295,7 +352,7 @@ class TestContentBody(unittest.TestCase):
                 ]
             ),
         )
-        self.assertIn('אבגד <tei:pb n="4r" ed="1822"/>הוזח', body)
+        self.assertIn(f'אבגד {_pb("4r")}הוזח', body)
 
     def test_anchored_break_against_an_empty_section_is_an_error(self) -> None:
         with self.assertRaises(PageBreakError):
@@ -411,7 +468,7 @@ class TestGeneratedProject(unittest.TestCase):
         found: list[str] = []
         for path in self.PROJECT.glob("*.xml"):
             found.extend(
-                re.findall(r'<tei:pb n="([^"]+)" ed="1822"/>', path.read_text("utf-8"))
+                re.findall(r'<tei:pb n="([^"]+)" ed="1822" facs="[^"]+"/>', path.read_text("utf-8"))
             )
         self.assertEqual(sorted(found), sorted(ALL_FOLIOS))
 

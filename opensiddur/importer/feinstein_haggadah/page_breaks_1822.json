@@ -1,13 +1,13 @@
 {
   "_comment": [
     "Page breaks of the 1822 Rodelheim (Heidenheim) haggadah, hand-verified page by page",
-    "against the HebrewBooks #21779 facsimile.",
+    "against the HebrewBooks #4909 facsimile.",
     "",
     "'page' is the foliation printed in the top outer corner of the original: folios 2-40,",
     "each numbered twice, as a Hebrew numeral on the recto and an Arabic numeral on the verso.",
-    "It is NOT the 10-88 sequence the scan adds at the foot of each page.",
-    "In this scan, folio 2r is PDF page 4 and folio 40v is PDF page 81; the alternation is",
-    "regular throughout, so folio = (pdf_page - 4) // 2 + 2 and recto when (pdf_page - 4) is even.",
+    "It is NOT the 10-88 sequence the scan adds at the foot of each page, and it is not the",
+    "position of the page within the scan. For that mapping, and for the deep links carried",
+    "on tei:pb/@facs, see facsimile_page() and facsimile_url() in page_breaks.py.",
     "",
     "'before_text'/'after_text' are the words on either side of the turn, matched on the",
     "consonant skeleton so they may be written unpointed. Both null means the page opens at",

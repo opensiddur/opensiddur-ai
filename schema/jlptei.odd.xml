@@ -147,8 +147,8 @@
           <desc>Custom elements for the Open Siddur Jewish Liturgy Project TEI schema</desc>
         </moduleSpec>
         
-        <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/>
-      
+        <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/><classRef key="att.global.facs"/>
+
       <!-- Custom element specifications -->
       <elementSpec ident="transclude" ns="http://jewishliturgy.org/ns/jlptei/2" module="jlptei" mode="add">
         <desc>An element that includes content from another part of the document.</desc>

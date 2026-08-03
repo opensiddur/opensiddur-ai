@@ -40,7 +40,7 @@ class TestAlignPageBreaksHelpers(unittest.TestCase):
 
 class TestAlignPageBreaksIntegration(unittest.TestCase):
     def test_align_writes_json_when_pdf_present(self) -> None:
-        pdf_path = Path("sources/heidenheim_haggadah_1822/Hebrewbooks_org_21779.pdf")
+        pdf_path = Path("sources/heidenheim_haggadah_1822/Hebrewbooks_org_4909.pdf")
         if not pdf_path.is_file():
             self.skipTest("1822 PDF not available locally")
 
@@ -57,6 +57,9 @@ class TestAlignPageBreaksIntegration(unittest.TestCase):
             pdf_dest = root / "heidenheim_haggadah_1822" / "heidenheim_1822.pdf"
             pdf_dest.write_bytes(pdf_path.read_bytes())
 
+            from opensiddur.importer.feinstein_haggadah.page_breaks import (
+                folio_at_facsimile_page,
+            )
             from opensiddur.importer.feinstein_haggadah.align_page_breaks import (
                 align_page_breaks,
                 write_page_breaks,
@@ -64,8 +67,12 @@ class TestAlignPageBreaksIntegration(unittest.TestCase):
 
             mapping = align_page_breaks(sourcetexts_root=root, pdf_path=pdf_dest)
             self.assertGreaterEqual(len(mapping), 50)
-            self.assertEqual(mapping["bedikat_chametz"], 11)
             self.assertLess(mapping["ha_lachma_anya"], mapping["avadim_hayinu"])
+            # The opening sections are the ones the header anchors match cleanly, so the
+            # draft should agree with the curated table there. Later sections drift, which
+            # is why this is a first pass for hand verification and not the source of truth.
+            self.assertEqual(folio_at_facsimile_page(mapping["bedikat_chametz"]), "2r")
+            self.assertEqual(folio_at_facsimile_page(mapping["eruv_tavshilin"]), "3r")
 
             out = write_page_breaks(mapping, root)
             data = json.loads(out.read_text(encoding="utf-8"))

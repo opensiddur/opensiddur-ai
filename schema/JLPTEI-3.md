@@ -221,6 +221,21 @@ Every document has a TEI header with a standardized structure.
   numbers in a scan. Where a source is foliated rather than paginated, use recto/verso designations
   (`5r`, `5v`).
 
+The same rule governs `tei:pb/@n`: it holds the designation printed in the source, with `@ed`
+naming the edition it belongs to. To make a page break linkable in a digital edition, add `@facs`
+pointing at the corresponding page of a scan — do not repurpose `@n` for scan page numbers, and do
+not overload `@corresp`, which is reserved for alignment:
+
+```xml
+<tei:pb n="3v" ed="1822" facs="https://www.hebrewbooks.org/pdfpager.aspx?req=4909&amp;pgnum=6"/>
+```
+
+`@facs` is available on every element via `att.global.facs`. The TEI `transcr` module is not
+included in this schema, so `tei:facsimile`, `tei:surface` and `tei:graphic` are unavailable and
+`@facs` takes an absolute URL rather than a local pointer. Record the scan itself as a `tei:bibl`
+in `tei:sourceDesc`, and where the designation-to-scan-page mapping is computable, implement it
+once in the importer rather than repeating it.
+
 | `RESPONSIBILITY_TYPE` | `RESPONSIBILITY_STRING` |
 |-----------------------|-------------------------|
 | `ann`                 | annotator               |

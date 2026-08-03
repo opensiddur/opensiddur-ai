@@ -88,17 +88,42 @@ index files.
 
 ## Page breaks
 
-`tei:pb/@n` records physical page numbers from the 1822 Heidenheim print (HebrewBooks
-org #4909 facsimile). Page assignments are stored in
-`sources/heidenheim_haggadah_1822/page_breaks.json` and applied during conversion.
+`tei:pb/@n` records the foliation printed in the 1822 Heidenheim edition itself — folios
+`2r` through `40v`, each folio numbered once as a Hebrew numeral on the recto and once as
+an Arabic numeral on the verso. It is deliberately not the 10–88 sequence the HebrewBooks
+scan adds at the foot of each page, and not the index of the page within the scanned PDF.
 
-Generate or refresh alignments from the PDF facsimile:
+The curated table of breaks lives in
+`opensiddur/importer/feinstein_haggadah/page_breaks_1822.json`, which is the source of
+truth; each entry anchors a break to the words on either side of the turn rather than to a
+page number, and every one was verified by hand against the facsimile.
+`align_page_breaks` is a developer aid that produces a rough draft only — nothing in the
+conversion path imports it, and its output is not authoritative.
 
-```bash
-uv run python -m opensiddur.importer.feinstein_haggadah.align_page_breaks \
-  --sourcetexts-root sources
+```xml
+<tei:pb n="3v" ed="1822" facs="https://www.hebrewbooks.org/pdfpager.aspx?req=4909&amp;pgnum=6"/>
 ```
 
-The converter emits `tei:pb` only in the Hebrew (`heidenheim_haggadah_1822`) project,
-when a section begins on a new printed page. The English translation project has no
-1822 pagination and omits `tei:pb` milestones.
+`@facs` deep-links the same page in the facsimile, so `@n` stays citable as the printed
+foliation while the digital edition remains linkable. The mapping is exact and regular:
+`pgnum=1` is the title page, folio `2r` is `pgnum=3` where the text begins, and the
+recto/verso alternation runs unbroken to folio `40v` at `pgnum=80`, the last page of the
+scan. It is implemented by `facsimile_page()` and `facsimile_url()` in `page_breaks.py` —
+do not recompute it inline.
+
+The reference copy is `sources/heidenheim_haggadah_1822/Hebrewbooks_org_4909.pdf`, 80 pages,
+paginated identically to `pgnum`. Other copies of this scan circulate with a copyright page
+inserted as page 2 and so run one page ahead; checking a link against one of those makes a
+correct mapping look off by one.
+
+When verifying, check a page in the middle of the book, not only the ends. The viewer clamps
+an out-of-range `pgnum` to the last page, so an off-by-one mapping still resolves the final
+folio correctly while every page before it is wrong.
+
+The converter emits `tei:pb` only in the Hebrew (`heidenheim_haggadah_1822`) project. The
+English translation project has no 1822 pagination and omits `tei:pb` milestones.
+
+`@facs` reaches the schema through `<classRef key="att.global.facs"/>` in
+`schema/jlptei.odd.xml`; the TEI `transcr` module is *not* included, so `tei:facsimile`,
+`tei:surface` and `tei:graphic` remain unavailable and `@facs` always holds an absolute
+URL rather than a local pointer.

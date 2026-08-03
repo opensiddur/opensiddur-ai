@@ -11,6 +11,7 @@ from opensiddur.importer.feinstein_haggadah.page_breaks import (
     PageBreak,
     PageBreakError,
     find_break_offset,
+    pb_markup,
 )
 from opensiddur.importer.feinstein_haggadah.sections import (
     INDEX_CHILDREN,
@@ -22,17 +23,13 @@ from opensiddur.importer.feinstein_haggadah.versify import BiblicalSection, Prin
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 
-#: Edition designator carried on every tei:pb, distinguishing the 1822 foliation from the
-#: page numbering the HebrewBooks scan adds.
-PAGE_EDITION = "1822"
-
-
 def _xml_escape(text: str) -> str:
     return html.escape(text, quote=False)
 
 
-def _pb(page: str) -> str:
-    return f'<tei:pb n="{page}" ed="{PAGE_EDITION}"/>'
+#: A page break milestone. See :func:`page_breaks.pb_markup`, which is the single place
+#: ``tei:pb`` is serialised so the inline psalm transcriptions cannot drift from it.
+_pb = pb_markup
 
 
 def tei_document(

@@ -33,6 +33,7 @@ from pathlib import Path
 from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.importer.feinstein_haggadah.page_breaks import normalize_pb_markup
 from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_offsets
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
@@ -117,6 +118,10 @@ def load_printed_psalms(path: Path | None = None) -> dict[str, PrintedPsalm]:
     Keyed by section slug. Sections listed here are transcribed from the facsimile and take
     precedence over the Open Siddur compilation text; every other section, ``psalm_126`` included,
     still comes from the compilation by way of :func:`load_verse_anchors`.
+
+    The curated transcription records page breaks with ``@n`` alone; ``normalize_pb_markup``
+    rebuilds them so they carry the same ``@facs`` facsimile link as the page breaks the
+    converter inserts, without that computed URL having to live in the curated data.
     """
     data = json.loads((path or PRINTED_PSALMS_FILE).read_text(encoding="utf-8"))
     return {
@@ -124,7 +129,9 @@ def load_printed_psalms(path: Path | None = None) -> dict[str, PrintedPsalm]:
             section=section,
             book=entry["book"],
             chapter=entry["chapter"],
-            verses={int(n): text for n, text in entry["verses"].items()},
+            verses={
+                int(n): normalize_pb_markup(text) for n, text in entry["verses"].items()
+            },
         )
         for section, entry in data.items()
         if not section.startswith("_")

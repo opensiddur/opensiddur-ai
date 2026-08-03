@@ -5,22 +5,120 @@ running from folio 2 to folio 40. Each folio carries its number twice: as a Hebr
 on the recto and as an Arabic numeral on the verso. Recto is designated ``2r``, verso ``2v``.
 
 This is deliberately *not* the sequence number added at the foot of every page by the
-HebrewBooks scan (#21779), which runs 10-88 and is an artifact of the digitisation.
+HebrewBooks scan, which runs 10-88 and is an artifact of the digitisation, nor the page's
+position in the scan. For the latter see :func:`facsimile_page`, which converts a folio
+designation into a page of the scan so that :func:`facsimile_url` can link to it.
 
 The table is curated by hand against the facsimile; ``align_page_breaks`` is only a rough
 first pass and is not authoritative. See :func:`find_break_offset` for how a recorded break
 is located in the transcription.
+
+The facsimile is HebrewBooks #4909, ``sources/heidenheim_haggadah_1822/Hebrewbooks_org_4909.pdf``.
+Its pagination and the page viewer's ``pgnum`` agree: page 1 is the title page, folio 2r is
+page 3, and folio 40v is page 80, the last.
 """
 
 from __future__ import annotations
 
+import html
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_offsets
 
 PAGE_BREAKS_FILE = Path(__file__).parent / "page_breaks_1822.json"
+
+#: HebrewBooks catalogue id of the facsimile every page break was verified against.
+HEBREWBOOKS_SEFER_ID = 4909
+
+#: Anchor for the folio-to-scan-page mapping, counted the way the site's page viewer counts:
+#: pgnum 1 is the title page and folio 2r, where the text begins, is pgnum 3. The recto/verso
+#: alternation is regular from there through folio 40v, the scan's last page at pgnum 80.
+FACSIMILE_FIRST_FOLIO = 2
+FACSIMILE_FIRST_PAGE = 3
+
+_FOLIO_RE = re.compile(r"^([0-9]+)([rv])$")
+
+
+def facsimile_page(page: str) -> int:
+    """The page of the scan showing the folio side designated by ``page``.
+
+    This is both the page viewer's ``pgnum`` parameter and the page number of the downloaded
+    PDF, which are the same for ``Hebrewbooks_org_4909.pdf``. Beware that some copies of this
+    scan carry an inserted copyright page and so run one page ahead; checking a link against
+    such a copy makes a correct mapping look off by one.
+
+    ``page`` is a folio designation such as ``"5v"``. Raises :class:`ValueError` on anything
+    that is not one, rather than silently producing a page number that would link to the
+    wrong image.
+    """
+    match = _FOLIO_RE.match(page)
+    if match is None:
+        raise ValueError(f"not a folio designation: {page!r}")
+    folio = int(match.group(1))
+    if folio < FACSIMILE_FIRST_FOLIO:
+        raise ValueError(f"folio {folio} precedes the start of the facsimile mapping")
+    verso = match.group(2) == "v"
+    return FACSIMILE_FIRST_PAGE + 2 * (folio - FACSIMILE_FIRST_FOLIO) + int(verso)
+
+
+#: Last page of the scan, folio 40v. Pages 1-2 are the title page and its verso; the text
+#: runs from FACSIMILE_FIRST_PAGE to here.
+FACSIMILE_LAST_PAGE = 80
+
+
+def folio_at_facsimile_page(page: int) -> str:
+    """The folio designation shown on page ``page`` of the scan: the inverse of
+    :func:`facsimile_page`.
+
+    Raises :class:`ValueError` for the front matter and for anything past the end, which
+    carry no folio.
+    """
+    if not FACSIMILE_FIRST_PAGE <= page <= FACSIMILE_LAST_PAGE:
+        raise ValueError(f"scan page {page} is outside the foliated text")
+    offset = page - FACSIMILE_FIRST_PAGE
+    folio = FACSIMILE_FIRST_FOLIO + offset // 2
+    return f"{folio}{'v' if offset % 2 else 'r'}"
+
+
+def facsimile_url(page: str) -> str:
+    """A deep link to the facsimile page showing the folio side designated by ``page``."""
+    return (
+        f"https://www.hebrewbooks.org/pdfpager.aspx"
+        f"?req={HEBREWBOOKS_SEFER_ID}&pgnum={facsimile_page(page)}"
+    )
+
+
+#: Edition designator carried on every tei:pb, distinguishing the 1822 foliation from the
+#: page numbering the HebrewBooks scan adds.
+PAGE_EDITION = "1822"
+
+
+def pb_markup(page: str) -> str:
+    """Serialise one page break.
+
+    ``@n`` is the 1822 foliation and ``@facs`` links to the same page in the facsimile the
+    break was verified against, so the foliation stays citable while the digital edition
+    remains linkable. This is the only place a ``tei:pb`` is written; the psalm
+    transcriptions carry the markup inline and are normalised through
+    :func:`normalize_pb_markup` so they cannot drift from it.
+    """
+    url = html.escape(facsimile_url(page), quote=True)
+    return f'<tei:pb n="{page}" ed="{PAGE_EDITION}" facs="{url}"/>'
+
+
+_PB_RE = re.compile(r'<tei:pb\b[^>]*\bn="([^"]+)"[^>]*/>')
+
+
+def normalize_pb_markup(text: str) -> str:
+    """Rewrite every ``tei:pb`` in ``text`` into the canonical serialisation.
+
+    Hand-curated transcriptions record page breaks with ``@n`` alone; regenerating them here
+    keeps the computed ``@facs`` link out of the curated data.
+    """
+    return _PB_RE.sub(lambda match: pb_markup(match.group(1)), text)
 
 
 class PageBreakError(ValueError):
@@ -44,6 +142,11 @@ class PageBreak:
     @property
     def at_section_start(self) -> bool:
         return self.before_text is None and self.after_text is None
+
+    @property
+    def facsimile_page(self) -> int:
+        """The page of the scan this folio side appears on, as the viewer numbers it."""
+        return facsimile_page(self.page)
 
 
 def _load(path: Path | None = None) -> dict:

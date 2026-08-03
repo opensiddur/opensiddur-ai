@@ -67,7 +67,7 @@ def heidenheim_haggadah_data_directory(sourcetexts_root: Path | None = None) -> 
 def heidenheim_pdf_path(sourcetexts_root: Path | None = None) -> Path | None:
     """Return the 1822 Heidenheim facsimile PDF if present."""
     data_dir = heidenheim_haggadah_data_directory(sourcetexts_root)
-    for name in ("heidenheim_1822.pdf", "Hebrewbooks_org_21779.pdf"):
+    for name in ("heidenheim_1822.pdf", "Hebrewbooks_org_4909.pdf"):
         path = data_dir / name
         if path.is_file():
             return path

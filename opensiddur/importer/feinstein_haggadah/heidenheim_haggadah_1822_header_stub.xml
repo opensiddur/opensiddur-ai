@@ -38,10 +38,11 @@
         <tei:idno type="Yaari">447</tei:idno>
         <tei:note xml:lang="en">Foliated 2–40; each folio number is printed twice, as a Hebrew numeral on the recto and an Arabic numeral on the verso. German Ashkenazi translation in Hebrew characters; Roman-letter German edition published 1839 (Yaari 590).</tei:note>
       </tei:bibl>
-      <tei:bibl>
+      <tei:bibl xml:id="facsimile_bibl">
         <tei:title>Page-break reference facsimile</tei:title>
         <tei:ref target="https://www.hebrewbooks.org/4909">HebrewBooks.org #4909</tei:ref>
-        <tei:note xml:lang="en">tei:pb milestones and tei:biblScope page ranges give the foliation of the 1822 edition itself (2r–40v), not the sequential page numbering this scan adds at the foot of each page. The facsimile is the witness against which every page break was verified.</tei:note>
+        <tei:idno type="hebrewbooks">4909</tei:idno>
+        <tei:note xml:lang="en">tei:pb milestones and tei:biblScope page ranges give the foliation of the 1822 edition itself (2r–40v), not the sequential page numbering this scan adds at the foot of each page. The facsimile is the witness against which every page break was verified. Each tei:pb additionally carries a tei:pb/@facs deep link opening this scan at the page that milestone marks, so the foliation in @n stays citable while the digital edition remains linkable; the scan's first page is its title page, folio 2r is its third page where the text begins, and the recto/verso alternation is regular through folio 40v on its eightieth and last page.</tei:note>
       </tei:bibl>
       <tei:bibl>
         <tei:title>Transcription source</tei:title>

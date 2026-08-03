@@ -12,7 +12,7 @@ import re
 import unittest
 from pathlib import Path
 
-from opensiddur.importer.feinstein_haggadah.page_breaks import load_page_breaks
+from opensiddur.importer.feinstein_haggadah.page_breaks import load_page_breaks, pb_markup
 from opensiddur.importer.feinstein_haggadah.tei_builder import printed_verse_body
 from opensiddur.importer.feinstein_haggadah.versify import (
     BIBLICAL_SECTIONS,
@@ -105,7 +105,10 @@ class PrintedPsalmsTest(unittest.TestCase):
                     self.assertNotIn("הַלְלוּ־יָהּ", text)
 
     def test_only_divine_name_and_page_break_markup_is_used(self) -> None:
-        allowed = re.compile(r"</?j:divineName>|<tei:pb n=\"[0-9]+[rv]\" ed=\"1822\"/>")
+        allowed = re.compile(
+            r"</?j:divineName>|"
+            r'<tei:pb n="[0-9]+[rv]" ed="1822" facs="[^"]+"/>'
+        )
         for slug, psalm in self.psalms.items():
             for n, text in sorted(psalm.verses.items()):
                 with self.subTest(slug=slug, verse=n):
@@ -122,7 +125,7 @@ class PrintedPsalmsTest(unittest.TestCase):
             for page in pages:
                 with self.subTest(slug=slug, page=page):
                     self.assertEqual(
-                        body.count(f'<tei:pb n="{page}" ed="1822"/>'), 1
+                        body.count(pb_markup(page)), 1
                     )
 
 
@@ -152,20 +155,20 @@ class PrintedVerseBodyTest(unittest.TestCase):
     def test_a_folio_opening_a_psalm_is_marked_before_the_chapter(self) -> None:
         body = printed_verse_body(self.psalms["psalm_114"])
         self.assertLess(
-            body.index('<tei:pb n="25v" ed="1822"/>'),
+            body.index(pb_markup("25v")),
             body.index('<tei:milestone unit="chapter"'),
         )
 
     def test_markers_before_the_first_word_stand_outside_the_paragraph(self) -> None:
         body = printed_verse_body(self.psalms["psalm_114"])
         opening = body[: body.index("<tei:p>")]
-        self.assertIn('<tei:pb n="25v" ed="1822"/>', opening)
+        self.assertIn(pb_markup("25v"), opening)
         self.assertIn('<tei:milestone unit="chapter"', opening)
         self.assertIn('<tei:milestone unit="verse" n="1"', opening)
 
     def test_a_folio_turning_mid_verse_stays_where_it_falls(self) -> None:
         body = printed_verse_body(self.psalms["psalm_113"])
-        self.assertIn('עַל־כָּל־<tei:pb n="25r" ed="1822"/>גּוֹיִם', body)
+        self.assertIn(f'עַל־כָּל־{pb_markup("25r")}גּוֹיִם', body)
 
     def test_every_verse_appears_in_one_flat_paragraph(self) -> None:
         for slug, psalm in self.psalms.items():
