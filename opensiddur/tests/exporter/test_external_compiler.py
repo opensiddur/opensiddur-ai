@@ -1279,6 +1279,7 @@ def _linear_data_with_root_parallel(root: etree._Element):
         instruction_priority = ["primary"]
         parallel_projects = ["primary", "bad", "parallel"]
         parallel_column_order = 0
+        parallel_compilation_depth = 0
 
     return _LD()
 

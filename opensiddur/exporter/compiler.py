@@ -132,7 +132,15 @@ class CompilerProcessor:
         self._urn_resolver = UrnResolver(self._refdb)
 
         self.root_language = None
-        self._in_parallel_compilation = False
+
+    @property
+    def _in_parallel_compilation(self) -> bool:
+        """True while any parallel sub-compilation is in progress, at any depth.
+
+        Read from LinearData so it survives processor construction: nested processors are
+        built in several places and none of them would think to forward a per-instance flag.
+        """
+        return self.linear_data.parallel_compilation_depth > 0
 
     def _get_in_scope_language(self, element: ElementBase) -> Optional[str]:
         """ Get the xml:lang attribute from the element or its ancestors.

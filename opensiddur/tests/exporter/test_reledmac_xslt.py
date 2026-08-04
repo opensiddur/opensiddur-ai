@@ -256,6 +256,52 @@ class TestParallelMapping(unittest.TestCase):
         self.assertIn(r"\begin{Leftside}", out)
         self.assertIn(r"\begin{Rightside}", out)
 
+    def test_nested_transclude_parallels_are_grouped_into_one_pages_run(self):
+        """Wrapper expansion must recurse.
+
+        Parallel blocks end at every external transclusion, so a transcluded document that
+        itself transcludes nests p:transclude wrappers. A single-level expansion leaves the
+        inner wrapper in the flow, where it groups as 'inline' and splits the \\Pages run.
+        """
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:transclude target="urn:outer" type="external">
+              <p:parallel column-order="primary_first">
+                <p:parallelItem role="primary" xml:lang="he"><tei:p>אחד</tei:p></p:parallelItem>
+                <p:parallelItem role="parallel" xml:lang="en"><tei:p>One</tei:p></p:parallelItem>
+              </p:parallel>
+              <p:transclude target="urn:inner" type="external">
+                <p:parallel column-order="primary_first">
+                  <p:parallelItem role="primary" xml:lang="he"><tei:p>שנים</tei:p></p:parallelItem>
+                  <p:parallelItem role="parallel" xml:lang="en"><tei:p>Two</tei:p></p:parallelItem>
+                </p:parallel>
+              </p:transclude>
+              <p:parallel column-order="primary_first">
+                <p:parallelItem role="primary" xml:lang="he"><tei:p>שלשה</tei:p></p:parallelItem>
+                <p:parallelItem role="parallel" xml:lang="en"><tei:p>Three</tei:p></p:parallelItem>
+              </p:parallel>
+            </p:transclude>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertEqual(out.count(r"\begin{pages}"), 1,
+                         "all three blocks belong to a single \\Pages run")
+        self.assertIn("Two", out, "the nested transclusion's content must be typeset")
+
+    def test_english_column_not_wrapped_in_hebrew_env(self):
+        """The English stream must not inherit the Hebrew stream's RTL environment.
+
+        Regression for the reported symptom: nested parallels were flattened into the Hebrew
+        column by the mode="leaves" safety net, so Latin text rendered reversed.
+        """
+        out = _transform(self.XML, layout="pairs")
+        right = re.search(r"\\begin\{Rightside\}(.*?)\\end\{Rightside\}", out, re.DOTALL)
+        self.assertIsNotNone(right)
+        self.assertIn("In the beginning", right.group(1))
+        self.assertNotIn(r"\begin{hebrew}", right.group(1))
+
     def test_pairs_layout_uses_columns_typesetter(self):
         out = _transform(self.XML, layout="pairs")
         self.assertIn(r"\begin{pairs}", out)

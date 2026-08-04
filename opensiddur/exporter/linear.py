@@ -86,6 +86,11 @@ class LinearData(BaseModel):
     parallel_projects: list[str] = Field(default_factory=list)
     # column order for parallel text display
     parallel_column_order: ParallelColumnOrder = Field(default=ParallelColumnOrder.PRIMARY_FIRST)
+    # >0 while a parallel sub-compilation is in progress. Parallel blocks end at every external
+    # transclusion and never nest, so a sub-compilation must not re-trigger parallel processing.
+    # Ambient on LinearData rather than per-processor: nested processors are constructed in five
+    # places and a per-instance flag is silently dropped by all of them.
+    parallel_compilation_depth: int = 0
 
 _linear_data = LinearData()
 

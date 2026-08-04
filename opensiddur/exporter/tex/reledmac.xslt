@@ -273,13 +273,13 @@
         <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
         <!-- Expand p:transclude wrapper elements emitted by the compiler: the TeX stage
              should group and typeset the transcluded content, not the wrapper itself.
+             Expansion must recurse: parallel blocks end at every external transclusion, so a
+             transcluded document that itself transcludes nests wrappers arbitrarily deep. A
+             single-level expansion would leave an inner p:transclude in the flow, where
+             group-adjacent classifies it 'inline' and splits the surrounding \Pages run.
              Also ignore whitespace-only text nodes for grouping, otherwise pretty-printed
              XML will split runs of adjacent p:parallel blocks. -->
-        <xsl:variable name="flow" as="node()*"
-                      select="for $n in node()
-                              return if ($n/self::p:transclude or $n/self::p:transcludeInline)
-                                     then $n/node()
-                                     else $n"/>
+        <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
 
         <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
                             group-adjacent="if (self::p:parallel) then 'parallel' else 'inline'">
@@ -790,7 +790,11 @@
         <xsl:apply-templates select="node()" mode="leaves"/>
     </xsl:template>
 
-    <!-- p:parallel inside p:parallel cannot happen post-compile, but be defensive. -->
+    <!-- Safety net only. The compiler guarantees a p:parallel never has a p:parallel ancestor
+         (see the parallel invariants in specs/COMPILER_SPECIFICATION.md): parallel blocks end at
+         every external transclusion. If one ever slips through, flattening it into the enclosing
+         column is wrong but survivable â it renders the inner text in the outer column's
+         direction rather than aborting the build. -->
     <xsl:template match="p:parallel | p:parallelItem" mode="leaves">
         <xsl:apply-templates select="node()" mode="leaves"/>
     </xsl:template>
@@ -1071,6 +1075,16 @@
                 <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}', $escaped, '}')"/>
             </xsl:otherwise>
         </xsl:choose>
+    </xsl:function>
+
+    <!-- Recursively replace p:transclude / p:transcludeInline wrappers with their children.
+         The wrappers are display no-ops that carry provenance only. -->
+    <xsl:function name="f:flatten-transcludes" as="node()*">
+        <xsl:param name="nodes" as="node()*"/>
+        <xsl:sequence select="for $n in $nodes
+                              return if ($n/self::p:transclude or $n/self::p:transcludeInline)
+                                     then f:flatten-transcludes($n/node())
+                                     else $n"/>
     </xsl:function>
 
     <xsl:function name="f:escape-tex" as="xs:string">

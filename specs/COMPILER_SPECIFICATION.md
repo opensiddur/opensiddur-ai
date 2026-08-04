@@ -226,6 +226,57 @@ For external transclusions, the DCA is the lowest element containing both start 
 - Otherwise, walk up ancestor chain from start until end is found in descendants
 - DCA determines what structure to preserve around the transcluded range
 
+## Parallel Compilation
+
+When `parallel.projects` is configured, the compiler looks up matching content by `corresp` URN
+and emits `p:parallel` blocks, each holding exactly two `p:parallelItem` children
+(`@role="primary"` and `@role="parallel"`). The TeX stage feeds these to `reledpar`.
+
+### Invariants
+
+These hold at every depth of the compiled output. Violating them mis-renders the document
+rather than failing loudly, so they are asserted in the parallel test suites.
+
+1. **A `p:parallel` never has a `p:parallel` ancestor.** Parallel blocks do not nest.
+
+2. **A `p:parallelItem` never contains an external `p:transclude`.** A parallel block *ends* at
+   every external transclusion boundary. The content on either side of the boundary belongs to
+   separate blocks.
+
+3. **An external `p:transclude` may contain `p:parallel` blocks.** The wrapper is a display
+   no-op carrying provenance (`p:project` / `p:file_name`); the TeX stage flattens it away. The
+   hierarchy inside it is *independent of*, not nested within, any enclosing one — which is
+   precisely what makes (1) and (2) hold simultaneously.
+
+So the shape is a flat alternation at each level, recursively:
+
+```
+tei:body
+├── p:parallel                          ← primary/parallel items
+├── p:transclude[@type='external']      ← boundary; block ended
+│   ├── p:parallel
+│   ├── p:transclude[@type='external']  ← nested boundary; same rule applies
+│   │   └── p:parallel
+│   └── p:parallel
+└── p:parallel
+```
+
+### Enforcement
+
+Two mechanisms, both required:
+
+- `LinearData.parallel_compilation_depth` is incremented for the duration of any parallel
+  sub-compilation (`ExternalCompilerProcessor._parallel_sub_compilation`). While it is non-zero,
+  the parallel triggers in `CompilerProcessor._transclude` and `ExternalCompilerProcessor.process`
+  are suppressed, so nothing compiled underneath a parallel block opens one of its own. This is
+  ambient on `LinearData` rather than per-processor because nested processors are constructed in
+  several places, none of which would forward a per-instance flag.
+
+- `_assemble_parallel_streams` splits each flat stream at `p:transclude` before building any
+  row, and recurses into the boundary transclude with the same split. `make_rows` is therefore
+  the only producer of `p:parallel`, and only ever receives segments from which every
+  `p:transclude` has been removed — so invariants (1) and (2) hold by construction.
+
 ## Annotation Processing
 
 ### Annotation Types
