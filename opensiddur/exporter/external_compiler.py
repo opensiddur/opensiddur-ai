@@ -311,7 +311,16 @@ class ExternalCompilerProcessor(CompilerProcessor):
             parallel_el.append(pi_par)
             return parallel_el
 
-        def make_rows(prim_flat, par_flat):
+        def source_of(transclude_el, default_project, default_file):
+            """Provenance of a boundary transclude, falling back to the enclosing document."""
+            if transclude_el is None:
+                return default_project, default_file
+            return (
+                transclude_el.get(f"{{{p_ns}}}project") or default_project,
+                transclude_el.get(f"{{{p_ns}}}file_name") or default_file,
+            )
+
+        def make_rows(prim_flat, par_flat, prim_src, par_src):
             prim_sub = ExternalCompilerProcessor._split_at_milestones(prim_flat, ns_map)
             par_sub = ExternalCompilerProcessor._split_at_milestones(par_flat, ns_map)
 
@@ -344,12 +353,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     continue
                 rows.append(make_parallel(
                     column_order,
-                    make_item("primary", primary_lang, primary_project, primary_file, p_elems),
-                    make_item("parallel", parallel_lang, parallel_project, parallel_file, q_elems),
+                    make_item("primary", primary_lang, prim_src[0], prim_src[1], p_elems),
+                    make_item("parallel", parallel_lang, par_src[0], par_src[1], q_elems),
                 ))
             return rows
 
-        def assemble(prim_flat, par_flat):
+        def assemble(prim_flat, par_flat, prim_src, par_src):
             primary_segments, primary_transcludes = split_at_transcludes(prim_flat)
             parallel_segments, parallel_transcludes = split_at_transcludes(par_flat)
 
@@ -363,7 +372,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
             output = []
             for i in range(max_segments):
-                output.extend(make_rows(primary_segments[i], parallel_segments[i]))
+                output.extend(make_rows(
+                    primary_segments[i], parallel_segments[i], prim_src, par_src))
 
                 if i < max_transcludes:
                     prim_t = primary_transcludes[i] if i < len(primary_transcludes) else None
@@ -380,14 +390,22 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         # never contains a p:transclude and parallels never nest. The p:transclude
                         # wrapper itself is a display no-op, so the hierarchy it holds is
                         # independent of the enclosing one rather than nested inside it.
-                        for child in assemble(list(prim_t), list(par_t) if par_t is not None else []):
+                        # Items built from a transcluded document must be attributed to that
+                        # document, not to the enclosing one: latex.py::get_file_references reads
+                        # these attributes to build the licence, credits and bibliography.
+                        inner = assemble(
+                            list(prim_t), list(par_t) if par_t is not None else [],
+                            source_of(prim_t, *prim_src), source_of(par_t, *par_src))
+                        for child in inner:
                             combined.append(child)
 
                         output.append(combined)
 
             return output
 
-        return assemble(primary, parallel)
+        return assemble(
+            primary, parallel,
+            (primary_project, primary_file), (parallel_project, parallel_file))
 
     def _resolve_parallel_range(self, target: str, target_end: Optional[str], parallel_project: str):
         """Resolve a parallel URN to (project, file_name, from_start, to_end, include_tail).
