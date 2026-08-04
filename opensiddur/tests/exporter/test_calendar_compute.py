@@ -10,6 +10,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_HEBREW_DATE,
     FS_ISRAEL,
     FS_LOCATION,
+    FS_QUORUM,
     FS_TIME,
     SettingSnapshot,
     _map_hdate_holidays,
@@ -19,6 +20,7 @@ from opensiddur.exporter.calendar.compute import (
     compute_holiday,
     compute_holiday_aggregate,
     compute_israel,
+    compute_quorum,
     compute_service_time,
     compute_torah_reading,
 )
@@ -29,7 +31,11 @@ from opensiddur.exporter.derived_settings import (
     recalculate_derived_settings,
 )
 from opensiddur.exporter.compiler import CompilerProcessor
-from opensiddur.exporter.derivation_graph import DerivationSpec, topological_derivation_order
+from opensiddur.exporter.derivation_graph import (
+    DERIVATION_SPECS,
+    DerivationSpec,
+    topological_derivation_order,
+)
 from opensiddur.exporter.linear import NumericValue, get_linear_data, reset_linear_data
 
 
@@ -181,12 +187,30 @@ class TestComputeFunctions(unittest.TestCase):
             (FS_GREGORIAN, "day"): 12,
             (FS_LOCATION, "latitude"): 31.78,
             (FS_LOCATION, "longitude"): 35.22,
-            (FS_TIME, "hour"): 16,
-            (FS_TIME, "minute"): 0,
+            # Neila runs from plag hamincha (13:59) until nightfall, at which point Yom
+            # Kippur is over and the date has rolled to the next day. Zmanim are computed
+            # against a UTC-offset location, so the time is in that same frame.
+            (FS_TIME, "hour"): 14,
+            (FS_TIME, "minute"): 30,
             (FS_TIME, "second"): 0,
         })
         result = compute_service_time(snap)
         self.assertTrue(result["neila"])
+
+    def test_service_time_after_nightfall_is_the_next_day(self):
+        """Yom Kippur has ended by 16:00 in this frame, so there is no neila."""
+        snap = _snapshot({
+            (FS_GREGORIAN, "year"): 2024,
+            (FS_GREGORIAN, "month"): 10,
+            (FS_GREGORIAN, "day"): 12,
+            (FS_LOCATION, "latitude"): 31.78,
+            (FS_LOCATION, "longitude"): 35.22,
+            (FS_TIME, "hour"): 16,
+            (FS_TIME, "minute"): 0,
+            (FS_TIME, "second"): 0,
+        })
+        self.assertFalse(compute_service_time(snap)["neila"])
+        self.assertEqual(compute_holiday(snap)["yom-kippur"], 0)
 
     def test_torah_reading_special_shabbatot(self):
         snap = _snapshot({
@@ -329,7 +353,7 @@ class TestDerivedSettingsCleanup(unittest.TestCase):
 class TestDerivationGraph(unittest.TestCase):
     def test_topological_order_covers_all_specs(self):
         ordered = topological_derivation_order()
-        self.assertEqual(len(ordered), 8)
+        self.assertCountEqual(ordered, DERIVATION_SPECS)
 
     def test_circular_dependency_raises(self):
         cyclic = (
@@ -346,3 +370,85 @@ class TestDerivationGraph(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNightfallRollover(unittest.TestCase):
+    """The Hebrew day begins in the evening.
+
+    Zmanim are computed against a location with a zero UTC offset, so times are supplied in
+    that same frame throughout these tests: a New York seder at 8pm EDT is 00:00Z the
+    following day.
+    """
+
+    @staticmethod
+    def _snap(year, month, day, hour=None, lat=40.71, lon=-74.01):
+        data = {
+            (FS_GREGORIAN, "year"): year,
+            (FS_GREGORIAN, "month"): month,
+            (FS_GREGORIAN, "day"): day,
+            (FS_LOCATION, "latitude"): lat,
+            (FS_LOCATION, "longitude"): lon,
+        }
+        if hour is not None:
+            data[(FS_TIME, "hour")] = hour
+            data[(FS_TIME, "minute")] = 0
+        return _snapshot(data)
+
+    def test_no_rollover_without_a_time(self):
+        """A bare date cannot know whether it is yet evening, so it must not roll."""
+        snap = self._snap(2025, 4, 12)
+        self.assertEqual(compute_hebrew_date(snap), compute_hebrew_date(self._snap(2025, 4, 12, 10)))
+
+    def test_seder_nights_are_pesah_one_and_two(self):
+        self.assertEqual(compute_holiday(self._snap(2025, 4, 13, 0))["pesah"], 1)
+        self.assertEqual(compute_holiday(self._snap(2025, 4, 14, 0))["pesah"], 2)
+
+    def test_friday_evening_is_shabbat_and_saturday_evening_is_not(self):
+        jerusalem = {"lat": 31.78, "lon": 35.22}
+        friday_night = compute_holiday_aggregate(self._snap(2025, 4, 11, 17, **jerusalem))
+        saturday_night = compute_holiday_aggregate(self._snap(2025, 4, 12, 17, **jerusalem))
+        self.assertTrue(friday_night["shabbat"])
+        self.assertFalse(friday_night["motzaei-shabbat"])
+        self.assertFalse(saturday_night["shabbat"])
+        self.assertTrue(saturday_night["motzaei-shabbat"])
+
+    def test_hebrew_day_uses_pyluach_weekday_numbering(self):
+        """Saturday is 7. pyluach already numbers Sunday=1..Saturday=7."""
+        self.assertEqual(compute_day_of_week(self._snap(2024, 4, 20))["hebrew-day"], 7)
+
+
+class TestEruvTavshilin(unittest.TestCase):
+    @staticmethod
+    def _snap(year, month, day):
+        return _snapshot({
+            (FS_GREGORIAN, "year"): year,
+            (FS_GREGORIAN, "month"): month,
+            (FS_GREGORIAN, "day"): day,
+            (FS_LOCATION, "latitude"): 40.71,
+            (FS_LOCATION, "longitude"): -74.01,
+            (FS_TIME, "hour"): 10,
+            (FS_TIME, "minute"): 0,
+        })
+
+    def test_true_when_a_festival_runs_into_shabbat(self):
+        # Rosh Hashana 5785 fell on Thursday 3 and Friday 4 October 2024.
+        for day in (1, 2, 3, 4):
+            with self.subTest(day=day):
+                self.assertTrue(compute_holiday_aggregate(self._snap(2024, 10, day))["eruv-tavshilin"])
+
+    def test_false_once_shabbat_has_arrived(self):
+        self.assertFalse(compute_holiday_aggregate(self._snap(2024, 10, 5))["eruv-tavshilin"])
+
+    def test_false_when_no_festival_abuts_shabbat(self):
+        # Pesah 5785 began on a Sunday, so nothing runs into Shabbat.
+        self.assertFalse(compute_holiday_aggregate(self._snap(2025, 4, 10))["eruv-tavshilin"])
+
+
+class TestQuorumDerivation(unittest.TestCase):
+    def test_minyan_implies_zimmun(self):
+        self.assertEqual(compute_quorum(_snapshot({(FS_QUORUM, "minyan"): True})), {"zimmun": True})
+
+    def test_nothing_is_derived_without_a_minyan(self):
+        """Quorum features stay undefined so that unset conditions are retained, not dropped."""
+        self.assertIsNone(compute_quorum(_snapshot({})))
+        self.assertIsNone(compute_quorum(_snapshot({(FS_QUORUM, "minyan"): False})))

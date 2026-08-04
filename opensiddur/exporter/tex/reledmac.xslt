@@ -152,6 +152,20 @@
                can prematurely close reledmac's internal groups inside \edtext/\Bfootnote. -->
         <xsl:text>\newcommand{\instructionnote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
+        <!-- Conditional passages. Only markers whose condition could not be decided survive
+             compilation: a decided condition is resolved away, its text either kept outright
+             or dropped. So a marker in the output means "say this only if ...", and the
+             reader has to be able to see where that passage starts and stops. Inline runs
+             take brackets, standing in for the parentheses the sources print; whole
+             paragraphs take a short centred rule, since brackets around a block of text
+             several lines long do not read as a pair. -->
+        <xsl:text>\newcommand{\OSCondStartInline}{{\bfseries[}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondEndInline}{{\bfseries]}}&#10;</xsl:text>
+        <!-- A full-width box rather than \par-separated material: these rules sit inside
+             reledmac \pstart groups, where \par does not reliably break the line. -->
+        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \linewidth{\hss\rule{0.25\linewidth}{0.4pt}\hss}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondStartBlock}{\OSCondRule}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondEndBlock}{\OSCondRule}&#10;</xsl:text>
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
              sits in the interlinear band (not a letter-attached superscript). -->
         <xsl:text>\newcommand{\OSInterlinearNotemark}[1]{%&#10;</xsl:text>
@@ -704,6 +718,12 @@
         <xsl:sequence select="."/>
     </xsl:template>
 
+    <!-- Retained conditional markers must survive flattening to be rendered; see
+         \OSCondStartInline and friends in the preamble. -->
+    <xsl:template match="j:conditional | j:endConditional" mode="leaves">
+        <xsl:sequence select="."/>
+    </xsl:template>
+
     <xsl:template match="tei:pb" mode="leaves"/>
 
     <xsl:template match="tei:standOff" mode="leaves"/>
@@ -876,8 +896,53 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
+    <!-- A conditional whose condition was decided is resolved away by the compiler, so any
+         marker reaching here is one that could not be decided. Bracket it, so the passage it
+         governs is visibly set off from the text around it. Inside a paragraph that means
+         brackets; between paragraphs, a rule. -->
+    <xsl:template match="j:conditional" mode="emit">
+        <xsl:choose>
+            <xsl:when test="ancestor::tei:p or ancestor::tei:l">
+                <xsl:text>\OSCondStartInline{}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\OSCondStartBlock{}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+        <!-- The note, when there is one, explains the condition the reader must judge. -->
+        <xsl:apply-templates select="tei:note" mode="emit"/>
+    </xsl:template>
+
+    <xsl:template match="j:endConditional" mode="emit">
+        <xsl:choose>
+            <xsl:when test="ancestor::tei:p or ancestor::tei:l">
+                <xsl:text>\OSCondEndInline{}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\OSCondEndBlock{}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
     <xsl:template match="tei:choice" mode="emit">
         <xsl:choose>
+            <xsl:when test="j:option">
+                <!-- Alternate wordings: exactly one is read, but nothing here has chosen
+                     between them, so all are shown, the first plain and the rest bracketed
+                     as the 1822 print does. -->
+                <xsl:for-each select="j:option">
+                    <xsl:choose>
+                        <xsl:when test="position() = 1">
+                            <xsl:value-of select="f:escape-tex(string(.))"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text> (</xsl:text>
+                            <xsl:value-of select="f:escape-tex(string(.))"/>
+                            <xsl:text>)</xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+            </xsl:when>
             <xsl:when test="j:read and j:written">
                 <xsl:text>\textit{</xsl:text>
                 <xsl:value-of select="f:escape-tex(string(j:read))"/>

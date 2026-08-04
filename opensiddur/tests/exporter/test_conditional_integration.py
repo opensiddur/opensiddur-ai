@@ -198,5 +198,82 @@ class TestConditionalIntegration(unittest.TestCase):
         self.assertEqual(proc.linear_data.conditional_scope_stack, [])
 
 
+class TestInlineConditionalTails(unittest.TestCase):
+    """Text around a mid-paragraph conditional lives in the markers' tails.
+
+    The markers are stripped from the output, so unless their tails are carried over the
+    running text around them disappears — the words on either side of the conditional, not
+    just the conditional text itself.
+    """
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.base = Path(self.temp_dir.name)
+        self.project_dir = self.base / "test_project"
+        self.project_dir.mkdir(parents=True)
+        get_linear_data().xml_cache.base_path = self.base
+
+    def _compile_paragraph(self, declared: str) -> str:
+        """Compile 'before |conditional| after' with the setting declared as given."""
+        body = f'''
+            {declared}
+            <tei:p>before <j:conditional xml:id="c">
+                <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+            </j:conditional>conditional<j:endConditional target="#c"/> after</tei:p>
+        '''
+        path = self.project_dir / "inline.xml"
+        path.write_bytes(_text_xml(body))
+        proc = CompilerProcessor("test_project", "inline.xml")
+        return etree.tostring(proc.process(), encoding="unicode")
+
+    @staticmethod
+    def _declare(value: str) -> str:
+        return f'''<j:declare xml:id="d">
+            <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="{value}"/></tei:f></tei:fs>
+        </j:declare>'''
+
+    def test_true_keeps_surrounding_text_and_conditional_text(self):
+        out = self._compile_paragraph(self._declare("true"))
+        self.assertIn("before ", out)
+        self.assertIn("conditional", out)
+        self.assertIn(" after", out)
+
+    def test_false_drops_only_the_conditional_text(self):
+        out = self._compile_paragraph(self._declare("false"))
+        self.assertIn("before ", out)
+        self.assertIn(" after", out)
+        self.assertNotIn(">conditional", out)
+        self.assertNotIn("conditional<", out)
+
+    def test_undefined_retains_markers_and_all_text(self):
+        out = self._compile_paragraph("")
+        self.assertIn("before ", out)
+        self.assertIn("conditional", out)
+        self.assertIn(" after", out)
+        self.assertIn("conditional", out)
+        self.assertIn("endConditional", out)
+
+    def test_false_scope_spanning_paragraphs_keeps_text_after_the_end(self):
+        body = f'''
+            {self._declare("false")}
+            <tei:p>kept before</tei:p>
+            <j:conditional xml:id="c">
+                <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+            </j:conditional>
+            <tei:p>dropped</tei:p>
+            <j:endConditional target="#c"/>
+            <tei:p>kept after</tei:p>
+        '''
+        path = self.project_dir / "block.xml"
+        path.write_bytes(_text_xml(body))
+        proc = CompilerProcessor("test_project", "block.xml")
+        out = etree.tostring(proc.process(), encoding="unicode")
+        self.assertIn("kept before", out)
+        self.assertIn("kept after", out)
+        self.assertNotIn("dropped", out)
+
+
 if __name__ == "__main__":
     unittest.main()

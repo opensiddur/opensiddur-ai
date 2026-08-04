@@ -42,6 +42,21 @@ from opensiddur.importer.util.pages import feinstein_haggadah_data_directory
 _PARENTHETICAL = re.compile(r"\(([^)]*)\)")
 
 
+@dataclass(frozen=True)
+class Segment:
+    """One run of an English cell, classified by what the source's markup says it is.
+
+    ``governs``/``governed`` pair a rubric with the text it controls: they are set on the two
+    segments of a conditional passage, so that the builder can wrap exactly those in
+    ``j:conditional`` markers. A rubric with ``governs`` false merely instructs the reader.
+    """
+
+    kind: Literal["paragraph", "instruction"]
+    text: str
+    governs: bool = False
+    governed: bool = False
+
+
 @dataclass
 class CompilationRow:
     hebrew: str
@@ -50,8 +65,47 @@ class CompilationRow:
     h3_boundary: bool = False
 
 
+#: Private-use sentinels standing in for the boundaries of a ``<span class="instruction">``
+#: once the tags have been stripped. The class attribute is the only thing in the source that
+#: reliably separates a rubric from the text it governs, so it has to survive cleaning; see
+#: :func:`split_parenthetical_instructions`.
+RUBRIC_OPEN = ""
+RUBRIC_CLOSE = ""
+
+_INSTRUCTION_SPAN_OPEN = re.compile(r'<span[^>]*class="instruction"[^>]*>', re.IGNORECASE)
+_SPAN_TAG = re.compile(r"<(/?)span\b[^>]*>", re.IGNORECASE)
+
+
+def _mark_instruction_spans(raw: str) -> str:
+    """Replace each instruction span's tags with sentinels, leaving other spans alone.
+
+    A ``</span>`` closes whichever span is open, and the source nests spans, so the matching
+    close has to be found by tracking depth rather than by taking the next one.
+    """
+    out: list[str] = []
+    cursor = 0
+    while True:
+        opening = _INSTRUCTION_SPAN_OPEN.search(raw, cursor)
+        if opening is None:
+            out.append(raw[cursor:])
+            return "".join(out)
+        out.append(raw[cursor : opening.start()])
+        out.append(RUBRIC_OPEN)
+        depth = 1
+        position = opening.end()
+        while depth and (tag := _SPAN_TAG.search(raw, position)):
+            out.append(raw[position : tag.start()])
+            depth += -1 if tag.group(1) else 1
+            if depth:
+                out.append(tag.group())
+            position = tag.end()
+        out.append(RUBRIC_CLOSE)
+        cursor = position
+
+
 def _clean_html_cell(raw: str) -> str:
-    text = re.sub(r"<br\s*/?>", "\n", raw)
+    text = _mark_instruction_spans(raw)
+    text = re.sub(r"<br\s*/?>", "\n", text)
     text = re.sub(r"<[^>]+>", "", text)
     text = unescape(text)
     text = re.sub(r"\s*jQuery\([^)]*\)\.tooltip\(\{.*?\}\)\s*;?", "", text, flags=re.DOTALL)
@@ -117,26 +171,96 @@ def _is_section_heading_row(row: CompilationRow) -> bool:
     return True
 
 
+def _matching_paren(text: str, open_at: int) -> int | None:
+    """Index of the ``)`` closing the ``(`` at ``open_at``, or None if unbalanced.
+
+    Depth is tracked rather than taking the next ``)``, because rubrics contain parentheses of
+    their own — the source writes "…who did not eat (?!) they respond:" inside one.
+    """
+    depth = 0
+    for index in range(open_at, len(text)):
+        if text[index] == "(":
+            depth += 1
+        elif text[index] == ")":
+            depth -= 1
+            if depth == 0:
+                return index
+    return None
+
+
+def _strip_sentinels(text: str) -> str:
+    return text.replace(RUBRIC_OPEN, "").replace(RUBRIC_CLOSE, "").strip()
+
+
 def split_parenthetical_instructions(
     text: str,
-) -> list[tuple[Literal["paragraph", "instruction"], str]]:
-    """Split English text into liturgical paragraphs and parenthetical instructions."""
-    parts: list[tuple[Literal["paragraph", "instruction"], str]] = []
-    pos = 0
-    for match in _PARENTHETICAL.finditer(text):
-        before = text[pos : match.start()].strip()
-        if before:
-            parts.append(("paragraph", before))
-        instruction = match.group(1).strip()
-        if instruction:
-            parts.append(("instruction", instruction))
-        pos = match.end()
-    tail = text[pos:].strip()
-    if tail:
-        parts.append(("paragraph", tail))
-    if not parts and text.strip():
-        parts.append(("paragraph", text.strip()))
-    return parts
+) -> list[Segment]:
+    """Split English text into liturgical paragraphs, rubrics, and conditional passages.
+
+    The source marks rubrics with ``<span class="instruction">``, which :func:`_clean_html_cell`
+    has reduced to sentinels. Where the parentheses fall relative to that span is what says
+    whether a rubric merely instructs the reader or governs text that is conditional:
+
+    ``(On Shabbat begin here.)`` wholly inside the span
+        a plain rubric — the parentheses are the rubric's own punctuation.
+
+    ``(`` … span … text … ``)``, or ``(`` inside the span and ``)`` after it
+        a conditional: the span is the rubric and the remainder inside the parentheses is the
+        text it governs. The source is inconsistent about which side of the span's opening tag
+        the ``(`` falls on, so both shapes are accepted.
+
+    Text outside any parentheses is ordinary liturgical text.
+    """
+    segments: list[Segment] = []
+    cursor = 0
+
+    def emit_paragraph(raw: str) -> None:
+        cleaned = _strip_sentinels(raw)
+        if cleaned:
+            segments.append(Segment("paragraph", cleaned))
+
+    while (span_start := text.find(RUBRIC_OPEN, cursor)) != -1:
+        span_end = text.find(RUBRIC_CLOSE, span_start)
+        if span_end == -1:
+            break
+        rubric = text[span_start + len(RUBRIC_OPEN) : span_end]
+
+        # The '(' that opens this rubric's region: either immediately before the span, or the
+        # first character inside it.
+        before = text[cursor:span_start]
+        open_at = None
+        if before.rstrip().endswith("("):
+            open_at = cursor + before.rstrip().rindex("(")
+        elif rubric.lstrip().startswith("("):
+            open_at = span_start + len(RUBRIC_OPEN) + rubric.index("(")
+
+        close_at = _matching_paren(text, open_at) if open_at is not None else None
+
+        if close_at is not None and close_at > span_end:
+            emit_paragraph(text[cursor:open_at])
+            conditional_text = _strip_sentinels(text[span_end + len(RUBRIC_CLOSE) : close_at])
+            segments.append(
+                Segment("instruction", _strip_sentinels(rubric).lstrip("(").strip(),
+                        governs=bool(conditional_text))
+            )
+            if conditional_text:
+                segments.append(Segment("paragraph", conditional_text, governed=True))
+            cursor = close_at + 1
+            continue
+
+        # A plain rubric: the parentheses are the rubric's own punctuation. The source is
+        # inconsistent about which side of the span's tags they fall on — "(recite aloud:)"
+        # is written with the "(" outside the span and the ")" inside — so an opening bracket
+        # just before the span belongs to the rubric and must not be left in the text.
+        cut = open_at if open_at is not None and open_at < span_start else span_start
+        emit_paragraph(text[cursor:cut])
+        rubric_text = _strip_sentinels(rubric).strip("()").strip()
+        if rubric_text:
+            segments.append(Segment("instruction", rubric_text))
+        cursor = span_end + len(RUBRIC_CLOSE)
+
+    emit_paragraph(text[cursor:])
+    return segments
 
 
 def _append_english_segments(
@@ -146,11 +270,13 @@ def _append_english_segments(
     starts_paragraph: bool,
 ) -> None:
     first_in_row = starts_paragraph
-    for kind, segment in split_parenthetical_instructions(text):
+    for segment in split_parenthetical_instructions(text):
         block = TextBlock(
-            kind=kind,
-            english=segment,
+            kind=segment.kind,
+            english=segment.text,
             starts_paragraph=first_in_row,
+            governs=segment.governs,
+            governed=segment.governed,
         )
         first_in_row = False
         section.blocks.append(block)

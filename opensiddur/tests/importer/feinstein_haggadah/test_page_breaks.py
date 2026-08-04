@@ -325,29 +325,29 @@ class TestContentBody(unittest.TestCase):
         )
 
         return SectionContent(
-            slug="kadesh",
+            slug="karpas",
             blocks=[TextBlock(kind="paragraph", hebrew=text, starts_paragraph=True)],
             **kwargs,
         )
 
     def test_break_at_section_start_is_the_first_child_of_the_div(self) -> None:
         body = content_body(
-            "kadesh",
+            "karpas",
             self._section("אבגד"),
             lang="he",
-            anchors=page_break_anchors([PageBreak(page="3v", section="kadesh")]),
+            anchors=page_break_anchors([PageBreak(page="3v", section="karpas")]),
         )
         self.assertRegex(body, r"<tei:div[^>]*>\s*" + re.escape(_pb("3v")))
 
     def test_anchored_break_is_placed_in_the_text(self) -> None:
         body = content_body(
-            "kadesh",
+            "karpas",
             self._section("אבגד הוזח"),
             lang="he",
             anchors=page_break_anchors(
                 [
                     PageBreak(
-                        page="4r", section="kadesh", before_text="אבגד", after_text="הוזח"
+                        page="4r", section="karpas", before_text="אבגד", after_text="הוזח"
                     )
                 ]
             ),
@@ -372,24 +372,24 @@ class TestContentBody(unittest.TestCase):
     def test_failure_names_the_page_and_section(self) -> None:
         with self.assertRaises(PageBreakError) as caught:
             content_body(
-                "kadesh",
+                "karpas",
                 self._section("אבגד"),
                 lang="he",
                 anchors=page_break_anchors(
                     [
                         PageBreak(
-                            page="9v", section="kadesh", before_text="קץ", after_text="סוף"
+                            page="9v", section="karpas", before_text="קץ", after_text="סוף"
                         )
                     ]
                 ),
             )
         self.assertIn("9v", str(caught.exception))
-        self.assertIn("kadesh", str(caught.exception))
+        self.assertIn("karpas", str(caught.exception))
 
     def test_paragraph_milestones_can_be_suppressed(self) -> None:
         """A biblical section is numbered by chapter and verse, not by paragraph."""
         body = content_body(
-            "kadesh", self._section("אבגד"), lang="he", number_paragraphs=False
+            "karpas", self._section("אבגד"), lang="he", number_paragraphs=False
         )
         self.assertNotIn('unit="paragraph"', body)
 
@@ -404,7 +404,7 @@ class TestPositionalTransclusion(unittest.TestCase):
         )
 
         return SectionContent(
-            slug="barech",
+            slug="seder",
             blocks=[
                 TextBlock(kind="head", hebrew="בָּרֵךְ"),
                 TextBlock(kind="paragraph", hebrew="אחרי", starts_paragraph=True),
@@ -413,7 +413,7 @@ class TestPositionalTransclusion(unittest.TestCase):
         )
 
     def test_children_land_at_the_recorded_position(self) -> None:
-        body = index_body("barech", ["psalm_126"], self._section(1), lang="he")
+        body = index_body("seder", ["psalm_126"], self._section(1), lang="he")
         head = body.index("<tei:head>")
         transclude = body.index("<j:transclude")
         paragraph = body.index("אחרי")
@@ -421,7 +421,7 @@ class TestPositionalTransclusion(unittest.TestCase):
         self.assertLess(transclude, paragraph)
 
     def test_children_default_to_the_end(self) -> None:
-        body = index_body("barech", ["psalm_126"], self._section(None), lang="he")
+        body = index_body("seder", ["psalm_126"], self._section(None), lang="he")
         self.assertLess(body.index("אחרי"), body.index("<j:transclude"))
 
     def test_index_node_without_content_still_transcludes(self) -> None:
@@ -490,15 +490,15 @@ class TestLoading(unittest.TestCase):
                     {
                         "_comment": "ignored",
                         "pages": [
-                            {"page": "2r", "section": "kadesh"},
+                            {"page": "2r", "section": "karpas"},
                             {
                                 "page": "2v",
-                                "section": "kadesh",
+                                "section": "karpas",
                                 "before_text": "א",
                                 "after_text": "ב",
                             },
                         ],
-                        "section_ranges": {"kadesh": {"from": "2r", "to": "2v"}},
+                        "section_ranges": {"karpas": {"from": "2r", "to": "2v"}},
                     }
                 ),
                 encoding="utf-8",
@@ -507,7 +507,7 @@ class TestLoading(unittest.TestCase):
             self.assertEqual([entry.page for entry in breaks], ["2r", "2v"])
             self.assertTrue(breaks[0].at_section_start)
             self.assertFalse(breaks[1].at_section_start)
-            self.assertEqual(load_section_ranges(path), {"kadesh": ("2r", "2v")})
+            self.assertEqual(load_section_ranges(path), {"karpas": ("2r", "2v")})
 
     def test_grouping_preserves_book_order(self) -> None:
         grouped = page_breaks_by_section(load_page_breaks())

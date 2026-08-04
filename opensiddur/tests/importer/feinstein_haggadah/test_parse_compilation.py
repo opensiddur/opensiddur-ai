@@ -89,6 +89,7 @@ class TestParseCompilation(unittest.TestCase):
 
     def test_english_instructions_become_notes(self) -> None:
         from opensiddur.importer.feinstein_haggadah.parse_compilation import (
+            _clean_html_cell,
             build_section_contents,
             load_compilation_json,
             parse_rows,
@@ -96,17 +97,80 @@ class TestParseCompilation(unittest.TestCase):
         )
 
         parts = split_parenthetical_instructions(
-            "(On Shabbat begin here.) (Recite quietly:) And there was evening"
+            _clean_html_cell(
+                '<span class="instruction">(On Shabbat begin here.)</span>'
+                '<span class="instruction">(Recite quietly:)</span> And there was evening'
+            )
         )
-        self.assertEqual(parts[0], ("instruction", "On Shabbat begin here."))
-        self.assertEqual(parts[1], ("instruction", "Recite quietly:"))
-        self.assertEqual(parts[2][0], "paragraph")
+        self.assertEqual([(p.kind, p.text) for p in parts[:2]], [
+            ("instruction", "On Shabbat begin here."),
+            ("instruction", "Recite quietly:"),
+        ])
+        self.assertEqual(parts[2].kind, "paragraph")
+        self.assertFalse(any(p.governs or p.governed for p in parts))
 
         contents = build_section_contents(parse_rows(load_compilation_json()))
         kadesh = contents["kadesh"]
         instructions = [b for b in kadesh.blocks if b.kind == "instruction"]
         self.assertTrue(instructions)
         self.assertIn("Shabbat", instructions[0].english)
+
+
+class TestConditionalSegmentation(unittest.TestCase):
+    """Where the parentheses fall relative to a rubric's span says whether it governs text.
+
+    See ``parse_compilation.split_parenthetical_instructions``.
+    """
+
+    def _split(self, raw: str):
+        from opensiddur.importer.feinstein_haggadah.parse_compilation import (
+            _clean_html_cell,
+            split_parenthetical_instructions,
+        )
+
+        return split_parenthetical_instructions(_clean_html_cell(raw))
+
+    def test_paren_inside_the_span_is_a_plain_rubric(self) -> None:
+        (segment,) = self._split('<span class="instruction">(On Shabbat begin here.)</span>')
+        self.assertEqual((segment.kind, segment.text), ("instruction", "On Shabbat begin here."))
+        self.assertFalse(segment.governs)
+
+    def test_paren_around_the_span_governs_the_text_that_follows(self) -> None:
+        rubric, text = self._split(
+            '(<span class="instruction">on Shabbat say:</span> Sabbaths for rest and)'
+        )
+        self.assertEqual((rubric.text, rubric.governs), ("on Shabbat say:", True))
+        self.assertEqual((text.text, text.governed), ("Sabbaths for rest and", True))
+
+    def test_paren_straddling_the_span_governs_too(self) -> None:
+        rubric, text = self._split('<span class="instruction">(some add:</span> to Pharaoh)')
+        self.assertEqual((rubric.text, rubric.governs), ("some add:", True))
+        self.assertEqual((text.text, text.governed), ("to Pharaoh", True))
+
+    def test_rubric_keeps_its_own_nested_parentheses(self) -> None:
+        """The source writes '(?!)' inside this rubric; a non-nesting scan truncates it."""
+        rubric, text = self._split(
+            '(<span class="instruction">Alternately, if people are present who did not'
+            ' eat (?!) they respond:</span> May His name be blessed.)'
+        )
+        self.assertEqual(
+            rubric.text,
+            "Alternately, if people are present who did not eat (?!) they respond:",
+        )
+        self.assertEqual(text.text, "May His name be blessed.")
+
+    def test_parentheses_without_a_span_stay_inline(self) -> None:
+        """A translator's gloss is not a rubric, and reads as parenthetical text."""
+        (segment,) = self._split("You defeated the prince of Harosheth (Sisera) with the stars")
+        self.assertEqual(segment.kind, "paragraph")
+        self.assertIn("(Sisera)", segment.text)
+
+    def test_nested_spans_close_at_the_right_tag(self) -> None:
+        rubric, text = self._split(
+            '(<span class="instruction">say <span class="x">now</span>:</span> the words)'
+        )
+        self.assertEqual((rubric.text, rubric.governs), ("say now:", True))
+        self.assertEqual(text.text, "the words")
 
 
 class TestTeiBuilder(unittest.TestCase):
@@ -128,7 +192,7 @@ class TestTeiBuilder(unittest.TestCase):
         from opensiddur.importer.feinstein_haggadah.tei_builder import content_body
 
         section = SectionContent(
-            slug="kadesh",
+            slug="karpas",
             blocks=[
                 TextBlock(kind="head", hebrew="קַדֵּשׁ"),
                 TextBlock(
@@ -138,8 +202,8 @@ class TestTeiBuilder(unittest.TestCase):
                 ),
             ],
         )
-        body = content_body("kadesh", section, lang="he")
-        self.assertIn('<tei:milestone unit="paragraph" n="1" corresp="urn:x-opensiddur:text:haggadah:kadesh/1"/>', body)
+        body = content_body("karpas", section, lang="he")
+        self.assertIn('<tei:milestone unit="paragraph" n="1" corresp="urn:x-opensiddur:text:haggadah:karpas/1"/>', body)
         self.assertIn("<tei:head>קַדֵּשׁ</tei:head>", body)
 
     def test_content_body_emits_instruction_notes(self) -> None:
@@ -147,7 +211,7 @@ class TestTeiBuilder(unittest.TestCase):
         from opensiddur.importer.feinstein_haggadah.tei_builder import content_body
 
         section = SectionContent(
-            slug="kadesh",
+            slug="karpas",
             blocks=[
                 TextBlock(kind="head", english="Sanctification of the Day"),
                 TextBlock(
@@ -162,7 +226,7 @@ class TestTeiBuilder(unittest.TestCase):
                 ),
             ],
         )
-        body = content_body("kadesh", section, lang="en")
+        body = content_body("karpas", section, lang="en")
         self.assertIn('<tei:note type="instruction">On Shabbat begin here.</tei:note>', body)
         self.assertNotIn("(On Shabbat begin here.)", body)
 

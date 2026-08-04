@@ -41,7 +41,10 @@ class TestJlpteiOddConstraints(unittest.TestCase):
             "//tei:elementSpec[@ident='p']//tei:attDef[@ident='type']//tei:valItem/@ident",
             namespaces=self.ns,
         )
-        self.assertEqual(set(vals), {"open-1", "closed-1", "open-3"})
+        self.assertEqual(
+            set(vals),
+            {"open-1", "open-2", "open-3", "closed-1", "closed-2", "closed-3"},
+        )
 
     def test_divine_name_exists_and_is_agent_like(self):
         divine = self.tree.xpath(

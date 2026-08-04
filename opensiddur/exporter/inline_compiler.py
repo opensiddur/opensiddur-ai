@@ -192,7 +192,9 @@ class InlineCompilerProcessor(CompilerProcessor):
             if (
                 context["command"] == _ProcessingCommand.COPY_TEXT_AND_RECURSE
                 or context["include_tail_after_end"]):
-                if child.tail:
+                # A child skipped by a false conditional scope takes its tail with it: that
+                # tail is conditional text. See _carry_dropped_tail.
+                if child.tail and not self._should_skip_conditional_content():
                     if previous_child is not None:
                         previous_child.tail = (previous_child.tail or "") + " " + child.tail
                     else:

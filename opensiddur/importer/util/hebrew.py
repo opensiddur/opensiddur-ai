@@ -37,3 +37,28 @@ def normalize_with_offsets(text: str) -> tuple[str, list[int]]:
             normalized.append(char)
             offsets.append(index)
     return "".join(normalized), offsets
+
+
+def normalize_latin(text: str) -> str:
+    """Reduce Latin-script text to letters and digits, lowercased.
+
+    The counterpart of :func:`normalize_hebrew` for the English translation: dropping spacing,
+    punctuation and case makes an anchor insensitive to the typographic quotes, line breaks
+    and stray spacing the scraped source is full of.
+    """
+    return "".join(c for c in text.casefold() if c.isalnum())
+
+
+def normalize_latin_with_offsets(text: str) -> tuple[str, list[int]]:
+    """:func:`normalize_latin`, with the map from normalized index -> original index."""
+    normalized: list[str] = []
+    offsets: list[int] = []
+    for index, char in enumerate(text):
+        folded = char.casefold()
+        if not folded.isalnum():
+            continue
+        # Case folding can expand one character into several ("ß" -> "ss"); each of them maps
+        # back to the same source index, keeping offsets parallel to normalized.
+        normalized.append(folded)
+        offsets.extend([index] * len(folded))
+    return "".join(normalized), offsets

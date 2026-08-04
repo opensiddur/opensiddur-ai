@@ -53,6 +53,14 @@ declarations:
     pesah: 0
   opensiddur:override:
     omit-tahanun: true
+  # Who is present. Unset means undefined, which keeps conditional passages together with
+  # the instruction saying when to read them. Setting minyan true derives zimmun true.
+  opensiddur:quorum:
+    minyan: true
+    present-not-eaten: false
+  # Textual variants are selected by URN; see the URN section of schema/JLPTEI-3.md.
+  opensiddur:variant:
+    urn:x-opensiddur:condition:haggadah:magid/lefikach/shira_chadasha: true
 
 # Output-format settings consumed by the TeX/PDF stage only.
 typography:

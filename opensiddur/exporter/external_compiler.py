@@ -754,13 +754,17 @@ class ExternalCompilerProcessor(CompilerProcessor):
             if (
                 context["command"] == _ProcessingCommand.COPY_AND_RECURSE
                 or context["include_tail_after_end"]):
-                if child.tail and child_result:
-                    # Only copy tail if we're not after the end marker
-                    if context["include_tail_after_end"] or not context['after_end']:
+                # Only copy tail if we're not after the end marker
+                if child.tail and (context["include_tail_after_end"] or not context['after_end']):
+                    if child_result:
                         if child_result[-1].tail is None:
                             child_result[-1].tail = child.tail
                         else:
                             child_result[-1].tail += child.tail
+                    else:
+                        # A stripped j:conditional and friends leave no output, but the text
+                        # around them is document text. See _carry_dropped_tail.
+                        self._carry_dropped_tail(append_to, child)
 
         if annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):

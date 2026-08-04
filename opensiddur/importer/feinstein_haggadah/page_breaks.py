@@ -26,7 +26,12 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_offsets
+from opensiddur.importer.util.hebrew import (
+    normalize_hebrew,
+    normalize_latin,
+    normalize_latin_with_offsets,
+    normalize_with_offsets,
+)
 
 PAGE_BREAKS_FILE = Path(__file__).parent / "page_breaks_1822.json"
 
@@ -188,21 +193,33 @@ def page_breaks_by_section(
     return grouped
 
 
-def find_break_offset(text: str, before_text: str, after_text: str) -> int:
+def find_break_offset(
+    text: str,
+    before_text: str,
+    after_text: str,
+    *,
+    lang: str = "he",
+) -> int:
     """Return the offset in ``text`` where ``before_text`` ends and ``after_text`` begins.
 
-    Matching is on the consonant skeleton, so the recorded anchors may be written without
-    vowels or cantillation and need not reproduce the transcription's punctuation.
+    Matching is on the consonant skeleton for Hebrew and on letters and digits alone for the
+    English translation, so the recorded anchors may be written without vowels or cantillation
+    and need not reproduce the transcription's punctuation, casing or line breaks.
 
     Raises :class:`PageBreakError` rather than guessing: a break that cannot be pinned to
     exactly one position means the curated table and the text have diverged, and that must
     stop the conversion instead of silently landing in the wrong place.
     """
-    normalized, offsets = normalize_with_offsets(text)
-    before = normalize_hebrew(before_text)
-    after = normalize_hebrew(after_text)
+    if lang == "he":
+        normalized, offsets = normalize_with_offsets(text)
+        before, after = normalize_hebrew(before_text), normalize_hebrew(after_text)
+        script = "Hebrew letters"
+    else:
+        normalized, offsets = normalize_latin_with_offsets(text)
+        before, after = normalize_latin(before_text), normalize_latin(after_text)
+        script = "letters or digits"
     if not before or not after:
-        raise PageBreakError("before_text and after_text must each contain Hebrew letters")
+        raise PageBreakError(f"before_text and after_text must each contain {script}")
 
     needle = before + after
     first = normalized.find(needle)

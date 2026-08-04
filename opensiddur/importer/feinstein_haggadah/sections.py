@@ -205,6 +205,11 @@ class TextBlock:
     hebrew: str = ""
     english: str = ""
     starts_paragraph: bool = False
+    #: Set on the two blocks of a conditional passage the source marked as such: ``governs`` on
+    #: the rubric, ``governed`` on the text it controls. See
+    #: ``parse_compilation.split_parenthetical_instructions``.
+    governs: bool = False
+    governed: bool = False
 
 
 @dataclass

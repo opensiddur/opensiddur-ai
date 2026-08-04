@@ -567,6 +567,108 @@ class TestInlineFormatting(unittest.TestCase):
         self.assertIn(r"\leavevmode\\{}", out)
 
 
+class TestConditionalRendering(unittest.TestCase):
+    """Only a conditional whose condition could not be decided reaches this stage.
+
+    A decided condition is resolved away by the compiler, so a marker in the input means
+    "say this only if ...", and the passage it governs has to be visibly delimited or the
+    reader cannot tell how far it runs.
+    """
+
+    CONDITION = (
+        '<tei:fs type="opensiddur:holiday-aggregate">'
+        '<tei:f name="shabbat"><tei:binary value="true"/></tei:f>'
+        "</tei:fs>"
+    )
+
+    @staticmethod
+    def _document_body(tex: str) -> str:
+        """Just the typeset material: the preamble always defines every macro."""
+        return tex.split(r"\begin{document}", 1)[1]
+
+    def _transform_body(self, body: str) -> str:
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>"""
+        )
+
+    def test_inline_conditional_is_bracketed(self):
+        out = self._transform_body(
+            f"""<tei:p><tei:milestone unit="verse" n="1"/>before <j:conditional
+              xml:id="c">{self.CONDITION}</j:conditional>conditional<j:endConditional
+              target="#c"/> after</tei:p>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartInline{}", body)
+        self.assertIn(r"\OSCondEndInline{}", body)
+        self.assertNotIn(r"\OSCondStartBlock", body)
+        for word in ("before", "conditional", "after"):
+            with self.subTest(word):
+                self.assertIn(word, body)
+
+    def test_block_conditional_gets_rules(self):
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">{self.CONDITION}</j:conditional>
+              <tei:p><tei:milestone unit="verse" n="1"/>conditional paragraph</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartBlock{}", body)
+        self.assertIn(r"\OSCondEndBlock{}", body)
+        self.assertNotIn(r"\OSCondStartInline", body)
+
+    def test_conditional_note_is_emitted(self):
+        """The note explains the condition the reader has to judge for themselves."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">
+                <tei:note type="instruction">On Shabbat add:</tei:note>{self.CONDITION}
+              </j:conditional>
+              <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        self.assertIn("On Shabbat add:", out)
+
+    def test_conditional_macros_are_defined(self):
+        out = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>x</tei:p>"""
+        )
+        for macro in (
+            r"\newcommand{\OSCondStartInline}",
+            r"\newcommand{\OSCondEndInline}",
+            r"\newcommand{\OSCondStartBlock}",
+            r"\newcommand{\OSCondEndBlock}",
+        ):
+            with self.subTest(macro):
+                self.assertIn(macro, out)
+
+
+class TestOptionRendering(unittest.TestCase):
+    """Alternate wordings: nothing here has chosen between them, so all are shown."""
+
+    def test_all_options_are_rendered(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>
+            <tei:choice>
+              <j:option xml:lang="he">first</j:option>
+              <j:option xml:lang="yi">second</j:option>
+            </tei:choice>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn("first", out)
+        self.assertIn("(second)", out)
+
+
 class TestStructuralElements(unittest.TestCase):
     """tei:standOff and tei:pb should be skipped; head should produce a styled
     heading macro instead of inlining the title in the body."""

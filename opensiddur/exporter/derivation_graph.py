@@ -14,6 +14,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_HOLIDAY_AGG,
     FS_ISRAEL,
     FS_LOCATION,
+    FS_QUORUM,
     FS_SERVICE_TIME,
     FS_TIME,
     FS_TORAH,
@@ -25,6 +26,7 @@ from opensiddur.exporter.calendar.compute import (
     compute_holiday,
     compute_holiday_aggregate,
     compute_israel,
+    compute_quorum,
     compute_service_time,
     compute_torah_reading,
 )
@@ -113,6 +115,11 @@ DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
         fs_type=FS_SERVICE_TIME,
         required_inputs=_gregorian_inputs() | _location_inputs() | _time_inputs(),
         compute=compute_service_time,
+    ),
+    DerivationSpec(
+        fs_type=FS_QUORUM,
+        required_inputs=frozenset({(FS_QUORUM, "minyan")}),
+        compute=compute_quorum,
     ),
 )
 

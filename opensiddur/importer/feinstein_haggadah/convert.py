@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.importer.feinstein_haggadah.conditionals import (
+    CONDITIONALS,
+    ConditionalError,
+)
 from opensiddur.importer.feinstein_haggadah.page_breaks import (
     PageBreak,
     load_page_breaks,
@@ -171,7 +176,38 @@ def convert_project(
         validate_and_write(xml, slug, project_dir)
 
     prune_stale_files(project_dir, written)
+    verify_conditionals(project_dir, lang=lang)
     validate_project_directory(project_dir)
+
+
+def verify_conditionals(project_dir: Path, *, lang: str) -> None:
+    """Check that every curated conditional reached the output, balanced.
+
+    An anchor that no longer matches already stops the conversion, but an entry scoped to a
+    paragraph or a transclusion that has been renumbered or renamed would simply never be
+    emitted. Silently losing a condition is the failure worth guarding against: the text still
+    reads correctly, so nothing else would notice.
+    """
+    emitted: set[str] = set()
+    for path in sorted(project_dir.glob("*.xml")):
+        content = path.read_text(encoding="utf-8")
+        opened = set(re.findall(r'<j:conditional xml:id="cond_([^"]+)"', content))
+        closed = set(re.findall(r'<j:endConditional target="#cond_([^"]+)"', content))
+        if opened != closed:
+            raise ConditionalError(
+                f"{path.name}: conditionals opened but not closed, or the reverse: "
+                f"{sorted(opened ^ closed)}"
+            )
+        emitted |= opened
+
+    expected = {
+        entry.cond_id for entry in CONDITIONALS if entry.scope_for(lang) is not None
+    }
+    missing = expected - emitted
+    if missing:
+        raise ConditionalError(
+            f"conditionals in the table never reached the {lang} output: {sorted(missing)}"
+        )
 
 
 def page_ranges(

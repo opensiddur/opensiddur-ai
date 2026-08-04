@@ -4,9 +4,22 @@ from __future__ import annotations
 
 import html
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
+from opensiddur.importer.feinstein_haggadah.conditionals import (
+    Alternate,
+    Conditional,
+    ConditionalError,
+    Inline,
+    Paragraphs,
+    Transclusion,
+    condition_for_rubric,
+    alternate_for,
+    condition_markup,
+    conditionals_for,
+)
 from opensiddur.importer.feinstein_haggadah.page_breaks import (
     PageBreak,
     PageBreakError,
@@ -20,6 +33,7 @@ from opensiddur.importer.feinstein_haggadah.sections import (
     urn_for_section,
 )
 from opensiddur.importer.feinstein_haggadah.versify import BiblicalSection, PrintedPsalm
+from opensiddur.importer.util.hebrew import normalize_hebrew
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 
@@ -60,23 +74,84 @@ def _paragraph_spans(text: str) -> list[tuple[int, int]]:
     return spans
 
 
-def _splice(text: str, insertions: list[tuple[int, str]]) -> str:
+def _splice(text: str, insertions: list[tuple[int, str] | tuple[int, str, int]]) -> str:
     """Escape ``text`` and splice markup in at the given offsets.
 
     Escaping is applied per fragment so that the offsets, which index the unescaped
     string, stay meaningful.
+
+    An insertion may carry a third element, the number of source characters it consumes. A
+    conditional marker replacing a parenthesis consumes the bracket it stands for, so the
+    brackets do not survive alongside the markup that now expresses them.
     """
     out: list[str] = []
     cursor = 0
-    for offset, markup in sorted(insertions):
+    for insertion in sorted(insertions):
+        offset, markup = insertion[0], insertion[1]
+        consumes = insertion[2] if len(insertion) > 2 else 0
         out.append(_xml_escape(text[cursor:offset]))
         out.append(markup)
-        cursor = offset
+        cursor = offset + consumes
     out.append(_xml_escape(text[cursor:]))
     return "".join(out).replace("\n", " ")
 
 
-def _paragraph_xml(text: str, breaks: list[tuple[int, str]] | None = None) -> str:
+def conditional_markers(
+    entry: Conditional,
+    *,
+    lang: str,
+) -> tuple[str, str]:
+    """The opening and closing markup for one conditional.
+
+    The opening marker carries the condition and, where the sources give none of their own, an
+    editorial note explaining when the passage applies. That note sits on the ``j:conditional``
+    rather than inside its scope, so it is shown only when the condition cannot be decided.
+    """
+    note = entry.note_for(lang)
+    note_markup = (
+        f'<tei:note type="instruction">{_xml_escape(note)}</tei:note>' if note else ""
+    )
+    opening = (
+        f'<j:conditional xml:id="cond_{entry.cond_id}">'
+        f"{note_markup}{condition_markup(entry.condition)}"
+        "</j:conditional>"
+    )
+    return opening, f'<j:endConditional target="#cond_{entry.cond_id}"/>'
+
+
+def _alternate_xml(alternate: Alternate, text: str, slug: str) -> str:
+    """Render a paragraph the source gives in two wordings as a ``tei:choice`` of options.
+
+    Both wordings must be found in the source paragraph, so that a change in the text cannot
+    leave a hand-written option silently standing in for wording that is no longer there.
+    """
+    for _, option in alternate.options:
+        if normalize_hebrew(option) not in normalize_hebrew(text):
+            raise ConditionalError(
+                f"alternate wording {option!r} for {slug} paragraph "
+                f"{alternate.paragraph} is not in the source text"
+            )
+    options = "".join(
+        f'<j:option xml:lang="{lang}">{_xml_escape(option)}</j:option>'
+        for lang, option in alternate.options
+    )
+    return f"<tei:p><tei:choice>{options}</tei:choice></tei:p>"
+
+
+def _rubric_markup(entry: Conditional, lang: str) -> str:
+    """A rubric to place inside the scope, where the source supplies none.
+
+    ``schema/JLPTEI-3.md`` requires an instruction that tells the reader a text is conditional
+    to sit inside the text it controls, so this is emitted after the opening marker.
+    """
+    rubric = entry.rubric_for(lang)
+    return f'<tei:note type="instruction">{_xml_escape(rubric)}</tei:note>' if rubric else ""
+
+
+def _paragraph_xml(
+    text: str,
+    breaks: list[tuple[int, str] | tuple[int, str, int]] | None = None,
+) -> str:
     """Render ``text`` as tei:p elements, placing page breaks at the given offsets.
 
     ``tei:pb`` belongs to ``tei_model.global`` and so is valid inside ``tei:p``: a page
@@ -92,15 +167,17 @@ def _paragraph_xml(text: str, breaks: list[tuple[int, str]] | None = None) -> st
     if not spans and text.strip():
         spans = [(0, len(text))]
 
-    assigned: dict[int, list[tuple[int, str]]] = {}
+    assigned: dict[int, list[tuple[int, str, int]]] = {}
     trailing: list[str] = []
-    for offset, markup in breaks:
+    for entry in breaks:
+        offset, markup = entry[0], entry[1]
+        consumes = entry[2] if len(entry) > 2 else 0
         index = next((i for i, (_, end) in enumerate(spans) if offset < end), None)
         if index is None:
             trailing.append(markup)
             continue
         start, _ = spans[index]
-        assigned.setdefault(index, []).append((max(0, offset - start), markup))
+        assigned.setdefault(index, []).append((max(0, offset - start), markup, consumes))
 
     parts = [
         f"<tei:p>{_splice(text[start:end], assigned.get(index, []))}</tei:p>"
@@ -129,6 +206,9 @@ class InlineAnchor:
     label: str
     before_text: str | None = None
     after_text: str | None = None
+    #: A bracket the anchor stands in place of. The anchor is moved onto that bracket and
+    #: swallows it, since the markup now expresses what the bracket meant.
+    replaces_bracket: str | None = None
 
     @property
     def at_section_start(self) -> bool:
@@ -183,8 +263,10 @@ def _resolve_insertions(
     slug: str,
     texts: list[str],
     anchors: list[InlineAnchor],
-) -> dict[int, list[tuple[int, str]]]:
-    """Map each anchored insertion to (block index -> [(offset, markup)]).
+    *,
+    lang: str = "he",
+) -> dict[int, list[tuple[int, str, int]]]:
+    """Map each anchored insertion to (block index -> [(offset, markup, consumes)]).
 
     The section's blocks are matched as one continuous run of text, so an anchor is found
     even when it falls exactly on a boundary between two blocks.
@@ -199,15 +281,145 @@ def _resolve_insertions(
         starts.append(position)
         position += len(text)
 
-    resolved: dict[int, list[tuple[int, str]]] = {}
+    resolved: dict[int, list[tuple[int, str, int]]] = {}
     for anchor in anchors:
         try:
-            offset = find_break_offset(joined, anchor.before_text or "", anchor.after_text or "")
+            offset = find_break_offset(
+                joined, anchor.before_text or "", anchor.after_text or "", lang=lang
+            )
         except PageBreakError as error:
             raise PageBreakError(f"{anchor.label} in section {slug}: {error}") from error
+        consumes = 0
+        if anchor.replaces_bracket:
+            offset, consumes = _bracket_offset(
+                joined, offset, anchor.replaces_bracket, anchor.label, slug
+            )
         index = max(i for i, start in enumerate(starts) if start <= offset)
-        resolved.setdefault(index, []).append((offset - starts[index], anchor.markup))
+        resolved.setdefault(index, []).append(
+            (offset - starts[index], anchor.markup, consumes)
+        )
     return resolved
+
+
+def _bracket_offset(
+    text: str,
+    offset: int,
+    bracket: str,
+    label: str,
+    slug: str,
+) -> tuple[int, int]:
+    """Move an anchor back onto the bracket it stands in place of.
+
+    Matching ignores punctuation, so an anchor between two words lands on the first character
+    of the word that follows — past the bracket, not on it. The marker belongs where the
+    bracket is, and takes it with it.
+
+    Whitespace and bidi format characters are skipped on the way back: the Hebrew source
+    places a right-to-left mark after a closing bracket to keep the punctuation rendering on
+    the correct side.
+    """
+    index = offset - 1
+    while index >= 0 and (text[index].isspace() or unicodedata.category(text[index]) == "Cf"):
+        index -= 1
+    if index < 0 or text[index] != bracket:
+        raise ConditionalError(
+            f"{label} in section {slug}: expected {bracket!r} immediately before the "
+            f"anchored point, found {text[max(0, offset - 12):offset]!r}"
+        )
+    return index, 1
+
+
+def inline_conditional_anchors(
+    slug: str,
+    entries: list[Conditional],
+    *,
+    lang: str,
+) -> list[InlineAnchor]:
+    """Marker anchors for the conditionals of ``slug`` that fall inside a paragraph.
+
+    Each contributes two anchors, one per marker. Both are located by the words on either side
+    exactly as a page break is, and each swallows the bracket it replaces.
+    """
+    anchors: list[InlineAnchor] = []
+    for entry in entries:
+        scope = entry.scope_for(lang)
+        if not isinstance(scope, Inline):
+            continue
+        opening, closing = conditional_markers(entry, lang=lang)
+        anchors.append(
+            InlineAnchor(
+                markup=opening + _rubric_markup(entry, lang),
+                label=f"conditional {entry.cond_id} (start)",
+                before_text=scope.before_text,
+                after_text=scope.after_text,
+                replaces_bracket="(" if scope.bracketed else None,
+            )
+        )
+        anchors.append(
+            InlineAnchor(
+                markup=closing,
+                label=f"conditional {entry.cond_id} (end)",
+                before_text=scope.end_before_text,
+                after_text=scope.end_after_text,
+                replaces_bracket=")" if scope.bracketed else None,
+            )
+        )
+    return anchors
+
+
+def _source_marked_ids(
+    entries: list[Conditional],
+    *,
+    lang: str,
+) -> dict[str, list[str]]:
+    """Table ids for the conditionals this language's source marks with its own rubrics.
+
+    Such an entry declares no scope for the language, because the source already says where the
+    passage begins and ends. It still needs its identity from the table: both projects must
+    name the same passage by the same ``xml:id`` or the two cannot be aligned. Entries are
+    queued per condition and consumed in document order, which is the order the table lists
+    them in and the order the source prints them.
+    """
+    queues: dict[str, list[str]] = {}
+    for entry in entries:
+        if entry.scope_for(lang) is None:
+            queues.setdefault(condition_markup(entry.condition), []).append(entry.cond_id)
+    return queues
+
+
+def _paragraph_conditionals(
+    entries: list[Conditional],
+    *,
+    lang: str,
+) -> tuple[dict[int, list[Conditional]], dict[int, list[Conditional]]]:
+    """Conditionals opening before, and closing after, each numbered paragraph."""
+    opens: dict[int, list[Conditional]] = {}
+    closes: dict[int, list[Conditional]] = {}
+    for entry in entries:
+        scope = entry.scope_for(lang)
+        if not isinstance(scope, Paragraphs):
+            continue
+        opens.setdefault(scope.first, []).append(entry)
+        closes.setdefault(scope.through, []).append(entry)
+    return opens, closes
+
+
+def _bracketed_paragraphs(entries: list[Conditional], *, lang: str) -> set[int]:
+    """Paragraph numbers the source wraps in brackets that the markers now replace."""
+    return {
+        number
+        for entry in entries
+        if isinstance(scope := entry.scope_for(lang), Paragraphs) and scope.bracketed
+        for number in range(scope.first, scope.through + 1)
+    }
+
+
+def _unbracket(text: str) -> str:
+    """Drop the brackets around a wholly parenthesised paragraph."""
+    stripped = text.strip()
+    if stripped.startswith("(") and stripped.endswith(")"):
+        return stripped[1:-1].strip()
+    return text
 
 
 def _render_blocks(
@@ -219,11 +431,17 @@ def _render_blocks(
     children_markup: str = "",
     children_at: int | None = None,
     number_paragraphs: bool = True,
+    entries: list[Conditional] | None = None,
 ) -> str:
     parts: list[str] = []
     paragraph_number = 0
     texts = _block_texts(blocks, lang=lang)
-    resolved = _resolve_insertions(slug, texts, anchors or [])
+    resolved = _resolve_insertions(slug, texts, anchors or [], lang=lang)
+    entries = entries or []
+    opens, closes = _paragraph_conditionals(entries, lang=lang)
+    source_marked = _source_marked_ids(entries, lang=lang)
+    bracketed = _bracketed_paragraphs(entries, lang=lang)
+    pending_close: list[str] = []
     if children_at is None and children_markup:
         children_at = len(blocks)
     for index, (block, text) in enumerate(zip(blocks, texts)):
@@ -235,23 +453,86 @@ def _render_blocks(
                 parts.append(f"<tei:head>{_splice(text, block_breaks)}</tei:head>")
             continue
         if not text:
-            parts.extend(markup for _, markup in sorted(block_breaks))
+            parts.extend(markup for _, markup, _consumes in sorted(block_breaks))
             continue
         if block.starts_paragraph and number_paragraphs:
+            # A paragraph-scoped conditional closes before the milestone of the paragraph
+            # after its range, so that the marker pair brackets whole paragraphs.
+            parts.extend(pending_close)
+            pending_close = []
             paragraph_number += 1
+            for entry in opens.get(paragraph_number, []):
+                opening, closing = conditional_markers(entry, lang=lang)
+                parts.append(opening)
+                rubric = _rubric_markup(entry, lang)
+                if rubric:
+                    parts.append(rubric)
+            for entry in closes.get(paragraph_number, []):
+                pending_close.insert(0, conditional_markers(entry, lang=lang)[1])
             urn = urn_for_section(slug, paragraph=paragraph_number)
             parts.append(
                 f'<tei:milestone unit="paragraph" n="{paragraph_number}" corresp="{urn}"/>'
             )
         if block.kind == "instruction":
-            parts.append(
-                f'<tei:note type="instruction">{_splice(text, block_breaks)}</tei:note>'
-            )
+            note = f'<tei:note type="instruction">{_splice(text, block_breaks)}</tei:note>'
+            if block.governs:
+                # The source marked this rubric as governing the text that follows it. The
+                # rubric goes inside the scope: JLPTEI-3.md requires an instruction that tells
+                # the reader a text is conditional to sit inside the text it controls.
+                condition = condition_for_rubric(block.english, slug)
+                queue = source_marked.get(condition)
+                if not queue:
+                    raise ConditionalError(
+                        f"section {slug}: the source marks a conditional with rubric "
+                        f"{block.english!r}, but the table has no entry for that condition "
+                        f"left to name it. Both projects must name a passage alike."
+                    )
+                cond_id = queue.pop(0)
+                parts.append(
+                    f'<j:conditional xml:id="cond_{cond_id}">{condition}</j:conditional>'
+                )
+                parts.append(note)
+                pending_close.insert(0, f'<j:endConditional target="#cond_{cond_id}"/>')
+                continue
+            parts.append(note)
             continue
-        parts.append(_paragraph_xml(text, block_breaks))
+        alternate = alternate_for(slug, lang, paragraph_number)
+        if alternate is not None:
+            parts.append(_alternate_xml(alternate, text, slug))
+        elif paragraph_number in bracketed and not block_breaks:
+            parts.append(_paragraph_xml(_unbracket(text)))
+        else:
+            parts.append(_paragraph_xml(text, block_breaks))
+        if block.governed:
+            parts.extend(pending_close)
+            pending_close = []
+    parts.extend(pending_close)
     if children_markup and children_at is not None and children_at >= len(blocks):
         parts.append(children_markup)
     return "\n".join(parts)
+
+
+def _transclusion_markup(
+    child: str,
+    entries: list[Conditional],
+    *,
+    lang: str,
+) -> str:
+    """A child's transclusion, wrapped in conditional markers if its inclusion is conditional.
+
+    A whole section is either transcluded or it is not, so a section-wide condition belongs
+    here rather than inside the child, which remains an unconditional document of its own.
+    """
+    transclude = f'<j:transclude type="external" target="{urn_for_section(child)}"/>'
+    for entry in entries:
+        scope = entry.scope_for(lang)
+        if isinstance(scope, Transclusion) and scope.child_slug == child:
+            opening, closing = conditional_markers(entry, lang=lang)
+            rubric = _rubric_markup(entry, lang)
+            return f"{opening}\n{rubric}\n{transclude}\n{closing}" if rubric else (
+                f"{opening}\n{transclude}\n{closing}"
+            )
+    return transclude
 
 
 def section_body(
@@ -270,7 +551,8 @@ def section_body(
     Birkat HaMazon transcludes Psalm 126 and then continues for another thirty paragraphs.
     """
     urn = urn_for_section(slug)
-    anchors = anchors or []
+    entries = conditionals_for(slug)
+    anchors = (anchors or []) + inline_conditional_anchors(slug, entries, lang=lang)
     opening = [anchor for anchor in anchors if anchor.at_section_start]
     anchored = [anchor for anchor in anchors if not anchor.at_section_start]
     leading = "".join(f"    {anchor.markup}\n" for anchor in opening)
@@ -279,8 +561,7 @@ def section_body(
         return f"    {rendered.replace(chr(10), chr(10) + '    ')}\n" if rendered else ""
 
     transcludes = "\n".join(
-        f'<j:transclude type="external" target="{urn_for_section(child)}"/>'
-        for child in child_slugs or []
+        _transclusion_markup(child, entries, lang=lang) for child in child_slugs or []
     )
 
     if section and section.blocks:
@@ -293,6 +574,7 @@ def section_body(
                 children_markup=transcludes,
                 children_at=section.children_at,
                 number_paragraphs=number_paragraphs,
+                entries=entries,
             )
         )
     else:
