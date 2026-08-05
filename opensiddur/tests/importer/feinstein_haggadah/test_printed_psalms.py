@@ -20,6 +20,7 @@ from opensiddur.importer.feinstein_haggadah.versify import (
     read_wlc_chapter,
 )
 from opensiddur.importer.util.hebrew import normalize_hebrew
+from opensiddur.tests.importer.feinstein_haggadah import support
 
 WLC_PSALMS = Path("project/wlc/psalms.xml")
 
@@ -66,8 +67,7 @@ class PrintedPsalmsTest(unittest.TestCase):
 
     def test_consonants_match_the_leningrad_codex(self) -> None:
         """Every verse's consonantal skeleton equals WLC's, once the Name is mapped back."""
-        if not WLC_PSALMS.exists():  # pragma: no cover - project/ is a symlinked checkout
-            self.skipTest(f"{WLC_PSALMS} not available")
+        support.require_path(WLC_PSALMS, "WLC project not generated")
         for slug, psalm in self.psalms.items():
             wlc = dict(read_wlc_chapter(WLC_PSALMS, psalm.chapter))
             self.assertEqual(sorted(wlc), sorted(psalm.verses), f"{slug} verse set")

@@ -1,9 +1,7 @@
-import json
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 from opensiddur.importer.feinstein_haggadah.convert import convert_all
 from opensiddur.importer.feinstein_haggadah.parse_compilation import _clean_html_cell
@@ -13,6 +11,7 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
     validate_project_directory,
 )
 from opensiddur.importer.util.validation import validate
+from opensiddur.tests.importer.feinstein_haggadah import support
 
 SAMPLE_HTML = """
 <table>
@@ -69,9 +68,9 @@ class TestTeiBuilderValidation(unittest.TestCase):
 
 class TestConvertProducesValidJlptei(unittest.TestCase):
     def test_convert_all_writes_valid_project_files(self) -> None:
-        compilation_path = Path("sources/feinstein_haggadah_2009/compilation.json")
-        if not compilation_path.is_file():
-            self.skipTest("compilation.json not available locally")
+        compilation_path = support.require_path(
+            support.compilation_path(), "haggadah compilation not checked out"
+        )
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

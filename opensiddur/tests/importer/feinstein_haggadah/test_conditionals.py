@@ -1,7 +1,16 @@
-"""Tests for the haggadah's conditional passages."""
+"""Tests for the haggadah's conditional passages.
+
+Split in two. Most of this file tests how a scope is *rendered* — where the markers land
+relative to the text, the rubric and the transclusion they apply to — and so builds its own
+input and patches its own entries in, running everywhere. ``TestAgainstTheSource`` at the end
+tests that the curated tables still *match* the real compilation, which needs the sourcetexts
+checkout and skips without it.
+"""
 
 import re
 import unittest
+from contextlib import contextmanager
+from unittest.mock import patch
 
 from opensiddur.importer.feinstein_haggadah.conditionals import (
     ALTERNATES,
@@ -18,11 +27,6 @@ from opensiddur.importer.feinstein_haggadah.conditionals import (
     condition_for_rubric,
     variant_urn,
 )
-from opensiddur.importer.feinstein_haggadah.parse_compilation import (
-    build_section_contents,
-    load_compilation_json,
-    parse_rows,
-)
 from opensiddur.importer.feinstein_haggadah.sections import (
     SectionContent,
     TextBlock,
@@ -34,10 +38,7 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
     tei_document,
 )
 from opensiddur.importer.util.validation import validate
-
-
-def _sections():
-    return build_section_contents(parse_rows(load_compilation_json()))
+from opensiddur.tests.importer.feinstein_haggadah import support
 
 
 def _strip_conditions(xml: str) -> str:
@@ -46,6 +47,32 @@ def _strip_conditions(xml: str) -> str:
     xml = re.sub(r'<j:conditional xml:id="cond_([^"]+)">\s*</j:conditional>', r"[\1[", xml)
     xml = re.sub(r'<j:endConditional target="#cond_([^"]+)"/>', r"]\1]", xml)
     return xml
+
+
+def _section(*paragraphs: str, lang: str = "he", slug: str = "kadesh") -> SectionContent:
+    """A section of plain numbered paragraphs, with nothing else in it."""
+    field = "hebrew" if lang == "he" else "english"
+    return SectionContent(
+        slug=slug,
+        blocks=[
+            TextBlock(kind="paragraph", starts_paragraph=True, **{field: text})
+            for text in paragraphs
+        ],
+    )
+
+
+@contextmanager
+def _entries(*conditionals: Conditional, alternate: Alternate | None = None):
+    """Render as though the curated tables held exactly these entries.
+
+    ``section_body`` reaches the tables through ``conditionals_for``/``alternate_for``, which
+    it imports into its own namespace, so patching there decouples every emission test from
+    what the real haggadah happens to contain.
+    """
+    module = "opensiddur.importer.feinstein_haggadah.tei_builder"
+    with patch(f"{module}.conditionals_for", return_value=list(conditionals)):
+        with patch(f"{module}.alternate_for", return_value=alternate):
+            yield
 
 
 class TestConditionTable(unittest.TestCase):
@@ -122,124 +149,192 @@ class TestRubricConditions(unittest.TestCase):
             condition_for_rubric("some add:", "kadesh")
         self.assertIn("VARIANT_RUBRIC_SECTIONS", str(caught.exception))
 
-    def test_every_governing_rubric_in_the_source_is_known(self):
-        """The conversion must not meet a conditional it cannot name."""
-        for slug, section in _sections().items():
-            for block in section.blocks:
-                if block.governs:
-                    with self.subTest(slug=slug, rubric=block.english):
-                        condition_for_rubric(block.english, slug)
-
     def test_variant_rubric_sections_resolve(self):
         for slug in VARIANT_RUBRIC_SECTIONS:
             with self.subTest(slug):
                 self.assertIn("opensiddur:variant", condition_for_rubric("some add:", slug))
 
-    def test_rubric_table_has_no_unreachable_entries(self):
-        """A rubric no longer in the source is a table entry that has gone stale."""
-        seen = {
-            block.english.strip()
-            for section in _sections().values()
-            for block in section.blocks
-            if block.governs
-        }
-        self.assertEqual(set(RUBRIC_CONDITIONS) - seen, set())
-
 
 class TestEmission(unittest.TestCase):
-    """Each scope kind places its markers where it should."""
+    """Each scope kind places its markers where it should.
 
-    def _body(self, slug: str, lang: str) -> str:
-        return _strip_conditions(section_body(slug, _sections().get(slug), lang=lang))
+    Every case here supplies its own text and its own entry: what is under test is where the
+    markers land relative to the text, which is independent of which real passage carries it.
+    """
+
+    def _render(self, slug, section, *conditionals, lang="he", **kwargs):
+        with _entries(*conditionals):
+            return _strip_conditions(section_body(slug, section, lang=lang, **kwargs))
 
     def test_inline_scope_replaces_the_brackets(self):
-        body = self._body("lefikach", "he")
-        self.assertIn("[lefikach_shira_chadasha[שִׁירָה חֲדָשָׁה]lefikach_shira_chadasha]", body)
-        self.assertNotIn("(שִׁירָה חֲדָשָׁה)", body)
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל"),
+        )
+        body = self._render("kadesh", _section("אָלֶף (בֵּית) גִּימֶל"), entry)
+        self.assertIn("[inline[בֵּית]inline]", body)
+        self.assertNotIn("(בֵּית)", body)
 
     def test_inline_scope_keeps_the_text_around_it(self):
-        body = self._body("kadesh", "he")
-        self.assertIn("וְנֹּאמַר", self._body("lefikach", "he"))
-        self.assertIn("בְּאַהֲבָה", body)
-        self.assertIn("מוֹעֲדִים לְשִׁמְחָה", body)
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל"),
+        )
+        body = self._render("kadesh", _section("אָלֶף (בֵּית) גִּימֶל"), entry)
+        self.assertIn("אָלֶף", body)
+        self.assertIn("גִּימֶל", body)
+
+    def test_unbracketed_inline_scope_keeps_the_words_it_wraps(self):
+        """Where the source never bracketed the run, no character may be swallowed."""
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל", bracketed=False),
+        )
+        body = self._render("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
+        self.assertIn("[inline[בֵּית", body)
+        # A bracketed scope eats the bracket on each side; with no brackets to eat, every
+        # letter of the paragraph must survive.
+        text = re.search(r"<tei:p>(.*?)</tei:p>", body, re.DOTALL).group(1)
+        self.assertEqual(re.sub(r"\[[a-z_]+\[|\][a-z_]+\]", "", text), "אָלֶף בֵּית גִּימֶל")
 
     def test_paragraph_scope_brackets_whole_paragraphs(self):
-        body = self._body("kadesh", "he")
-        opening = body.index("[kadesh_vayechulu[")
-        closing = body.index("]kadesh_vayechulu]")
-        between = body[opening:closing]
+        entry = Conditional(
+            slug="kadesh", cond_id="para", condition="shabbat", scope_he=Paragraphs(1)
+        )
+        body = self._render("kadesh", _section("אָלֶף", "בֵּית", "גִּימֶל"), entry)
+        between = body[body.index("[para["):body.index("]para]")]
         self.assertIn('unit="paragraph" n="1"', between)
         self.assertNotIn('unit="paragraph" n="2"', between)
 
     def test_paragraph_range_covers_every_paragraph_in_it(self):
-        body = self._body("barech", "he")
-        between = body[body.index("[barech_zimmun["):body.index("]barech_zimmun]")]
+        entry = Conditional(
+            slug="barech", cond_id="range", condition="zimmun", scope_he=Paragraphs(1, 6)
+        )
+        section = _section(*(f"פִּסְקָה {n}" for n in range(1, 8)), slug="barech")
+        body = self._render("barech", section, entry)
+        between = body[body.index("[range["):body.index("]range]")]
         for number in range(1, 7):
             with self.subTest(paragraph=number):
                 self.assertIn(f'unit="paragraph" n="{number}"', between)
         self.assertNotIn('unit="paragraph" n="7"', between)
 
     def test_transclusion_scope_wraps_only_its_own_child(self):
-        body = _strip_conditions(
-            section_body(
-                "nirtzah",
-                _sections().get("nirtzah"),
-                lang="he",
-                child_slugs=["it_happened_at_midnight", "ki_lo_na_eh"],
-            )
+        entry = Conditional(
+            slug="nirtzah",
+            cond_id="child",
+            condition="first_night",
+            scope_he=Transclusion("it_happened_at_midnight"),
         )
-        between = body[
-            body.index("[nirtzah_first_night["):body.index("]nirtzah_first_night]")
-        ]
+        body = self._render(
+            "nirtzah",
+            None,
+            entry,
+            child_slugs=["it_happened_at_midnight", "ki_lo_na_eh"],
+        )
+        between = body[body.index("[child["):body.index("]child]")]
         self.assertIn("it_happened_at_midnight", between)
         self.assertNotIn("ki_lo_na_eh", between)
 
     def test_a_rubric_sits_inside_the_scope(self):
         """JLPTEI-3.md: a conditional-reading instruction goes inside the text it controls."""
-        body = self._body("kadesh", "he")
-        between = body[body.index("[kadesh_vayechulu["):body.index("]kadesh_vayechulu]")]
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="para",
+            condition="shabbat",
+            scope_he=Paragraphs(1),
+            rubric_he="בשבת מתחילין כאן",
+        )
+        body = self._render("kadesh", _section("אָלֶף", "בֵּית"), entry)
+        between = body[body.index("[para["):body.index("]para]")]
         self.assertIn('<tei:note type="instruction">בשבת מתחילין כאן</tei:note>', between)
 
     def test_an_editorial_note_sits_on_the_conditional_itself(self):
         """Shown only when the condition cannot be decided, unlike a source rubric."""
-        body = section_body(
-            "pre_seder",
-            _sections().get("pre_seder"),
-            lang="en",
-            child_slugs=["eruv_tavshilin"],
+        entry = Conditional(
+            slug="pre_seder",
+            cond_id="note",
+            condition="eruv_tavshilin",
+            scope_en=Transclusion("eruv_tavshilin"),
+            note_en="Said when the festival falls on a Friday.",
         )
+        with _entries(entry):
+            body = section_body(
+                "pre_seder", None, lang="en", child_slugs=["eruv_tavshilin"]
+            )
         marker = re.search(
-            r'<j:conditional xml:id="cond_pre_seder_eruv_tavshilin">(.*?)</j:conditional>',
-            body,
-            re.DOTALL,
+            r'<j:conditional xml:id="cond_note">(.*?)</j:conditional>', body, re.DOTALL
         )
         self.assertIsNotNone(marker)
         self.assertIn('<tei:note type="instruction">', marker.group(1))
+        # The note is the conditional's own, not part of the text it controls.
+        self.assertNotIn("<tei:note", body[marker.end():])
 
-    def test_markers_are_balanced_in_every_section(self):
-        sections = _sections()
-        for lang in ("he", "en"):
-            for slug in sorted({entry.slug for entry in CONDITIONALS}):
-                with self.subTest(lang=lang, slug=slug):
-                    body = section_body(
-                        slug,
-                        sections.get(slug),
-                        lang=lang,
-                        child_slugs=[
-                            scope.child_slug
-                            for entry in CONDITIONALS
-                            if entry.slug == slug
-                            and isinstance(scope := entry.scope_for(lang), Transclusion)
-                        ],
-                    )
+    def test_markers_are_balanced_for_every_scope_kind(self):
+        cases = {
+            "paragraphs": (
+                Conditional(
+                    slug="kadesh",
+                    cond_id="p",
+                    condition="shabbat",
+                    scope_he=Paragraphs(1),
+                    scope_en=Paragraphs(1),
+                ),
+                {},
+            ),
+            "inline": (
+                Conditional(
+                    slug="kadesh",
+                    cond_id="i",
+                    condition="shabbat",
+                    scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל"),
+                    scope_en=Inline("alpha", "beta", "beta", "gamma"),
+                ),
+                {},
+            ),
+            "transclusion": (
+                Conditional(
+                    slug="kadesh",
+                    cond_id="t",
+                    condition="shabbat",
+                    scope_he=Transclusion("karpas"),
+                    scope_en=Transclusion("karpas"),
+                ),
+                {"child_slugs": ["karpas"]},
+            ),
+        }
+        texts = {"he": "אָלֶף (בֵּית) גִּימֶל", "en": "alpha (beta) gamma"}
+        for name, (entry, kwargs) in cases.items():
+            for lang in ("he", "en"):
+                with self.subTest(scope=name, lang=lang):
+                    section = _section(texts[lang], "שֵׁנִי" if lang == "he" else "second",
+                                       lang=lang)
+                    with _entries(entry):
+                        body = section_body(
+                            "kadesh", section, lang=lang, **kwargs
+                        )
                     opened = re.findall(r'<j:conditional xml:id="cond_([^"]+)"', body)
                     closed = re.findall(r'<j:endConditional target="#cond_([^"]+)"', body)
                     self.assertCountEqual(opened, closed)
+                    self.assertEqual(opened, [entry.cond_id])
 
 
 class TestAlternates(unittest.TestCase):
     def test_alternate_becomes_a_choice_of_options(self):
-        body = section_body("barech", _sections().get("barech"), lang="he")
+        alternate = Alternate(
+            slug="barech",
+            lang="he",
+            paragraph=1,
+            options=(("he", "הב לן ונברך"), ("yi", "רבותי וויר וואָללן בענטשן")),
+        )
+        section = _section("הב לן ונברך (רבותי וויר וואָללן בענטשן)", slug="barech")
+        with _entries(alternate=alternate):
+            body = section_body("barech", section, lang="he")
         choice = re.search(r"<tei:choice>.*?</tei:choice>", body, re.DOTALL)
         self.assertIsNotNone(choice)
         self.assertEqual(choice.group().count("<j:option"), 2)
@@ -256,34 +351,6 @@ class TestAlternates(unittest.TestCase):
         with self.assertRaises(ConditionalError) as caught:
             _alternate_xml(alternate, "הב לן ונברך", "barech")
         self.assertIn("not in the source text", str(caught.exception))
-
-    def test_every_alternate_names_a_real_section(self):
-        sections = _sections()
-        for entry in ALTERNATES:
-            with self.subTest(entry.slug):
-                self.assertIn(entry.slug, sections)
-
-
-class TestAnchorsResolve(unittest.TestCase):
-    """Every curated anchor must still match. A source rewording must fail, not go quiet."""
-
-    def test_every_scope_resolves_against_the_source(self):
-        sections = _sections()
-        for lang in ("he", "en"):
-            for slug in sorted({entry.slug for entry in CONDITIONALS}):
-                with self.subTest(lang=lang, slug=slug):
-                    section_body(slug, sections.get(slug), lang=lang)
-
-    def test_an_unmatched_anchor_raises(self):
-        section = SectionContent(
-            slug="lefikach",
-            blocks=[
-                TextBlock(kind="paragraph", hebrew="אין כאן שום דבר", starts_paragraph=True)
-            ],
-        )
-        with self.assertRaises(Exception) as caught:
-            section_body("lefikach", section, lang="he")
-        self.assertIn("lefikach_shira_chadasha", str(caught.exception))
 
 
 class TestScopeKinds(unittest.TestCase):
@@ -305,6 +372,83 @@ class TestScopeKinds(unittest.TestCase):
         )
         self.assertEqual(entry.scope_for("he"), Paragraphs(1))
         self.assertEqual(entry.scope_for("en"), Paragraphs(2))
+
+
+class TestUnmatchedAnchor(unittest.TestCase):
+    def test_an_unmatched_anchor_raises(self):
+        """A source rewording must fail the conversion, not go quiet."""
+        entry = Conditional(
+            slug="lefikach",
+            cond_id="lefikach_shira_chadasha",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל"),
+        )
+        section = _section("אין כאן שום דבר", slug="lefikach")
+        with _entries(entry):
+            with self.assertRaises(Exception) as caught:
+                section_body("lefikach", section, lang="he")
+        self.assertIn("lefikach_shira_chadasha", str(caught.exception))
+
+
+class TestAgainstTheSource(unittest.TestCase):
+    """The curated tables must still match the real compilation.
+
+    Unlike everything above, these read the sourcetexts checkout: their subject is the curated
+    data, not the code. They skip where it is not present; ``convert.py`` fails the conversion
+    on the same conditions.
+    """
+
+    def setUp(self) -> None:
+        self.sections = support.compilation_sections()
+
+    def test_every_governing_rubric_in_the_source_is_known(self):
+        """The conversion must not meet a conditional it cannot name."""
+        for slug, section in self.sections.items():
+            for block in section.blocks:
+                if block.governs:
+                    with self.subTest(slug=slug, rubric=block.english):
+                        condition_for_rubric(block.english, slug)
+
+    def test_rubric_table_has_no_unreachable_entries(self):
+        """A rubric no longer in the source is a table entry that has gone stale."""
+        seen = {
+            block.english.strip()
+            for section in self.sections.values()
+            for block in section.blocks
+            if block.governs
+        }
+        self.assertEqual(set(RUBRIC_CONDITIONS) - seen, set())
+
+    def test_every_alternate_names_a_real_section(self):
+        for entry in ALTERNATES:
+            with self.subTest(entry.slug):
+                self.assertIn(entry.slug, self.sections)
+
+    def test_every_scope_resolves_against_the_source(self):
+        """Every curated anchor must still match, in both projects."""
+        for lang in ("he", "en"):
+            for slug in sorted({entry.slug for entry in CONDITIONALS}):
+                with self.subTest(lang=lang, slug=slug):
+                    section_body(slug, self.sections.get(slug), lang=lang)
+
+    def test_markers_are_balanced_in_every_section(self):
+        for lang in ("he", "en"):
+            for slug in sorted({entry.slug for entry in CONDITIONALS}):
+                with self.subTest(lang=lang, slug=slug):
+                    body = section_body(
+                        slug,
+                        self.sections.get(slug),
+                        lang=lang,
+                        child_slugs=[
+                            scope.child_slug
+                            for entry in CONDITIONALS
+                            if entry.slug == slug
+                            and isinstance(scope := entry.scope_for(lang), Transclusion)
+                        ],
+                    )
+                    opened = re.findall(r'<j:conditional xml:id="cond_([^"]+)"', body)
+                    closed = re.findall(r'<j:endConditional target="#cond_([^"]+)"', body)
+                    self.assertCountEqual(opened, closed)
 
 
 if __name__ == "__main__":

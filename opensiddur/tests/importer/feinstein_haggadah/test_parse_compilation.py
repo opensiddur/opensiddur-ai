@@ -35,6 +35,38 @@ HALLEL_NIRTZAH_HTML = """
 """
 
 
+#: A section heading followed by a subsection that opens mid-section with no h3 of its own.
+#: The subsection is recognised by its incipit, and its first line is running text, not a head.
+SUBSECTION_INCIPIT_HTML = """
+<table>
+<tr>
+<td><div class="liturgy">מַגִּיד<br /></div></td>
+<td><div class="english"><h3>Discussing the Exodus</h3></div></td>
+</tr>
+<tr>
+<td><div class="liturgy">מַצָּה זוּ שֶׁאָנוּ אוֹכְלִים</div></td>
+<td><div class="english"><p>This matzah that we eat</p></div></td>
+</tr>
+</table>
+"""
+
+#: A rubric the source marks with an instruction span, which must become a tei:note rather
+#: than stay in the running text.
+INSTRUCTION_HTML = """
+<table>
+<tr>
+<td><div class="liturgy">קַדֵּשׁ<br /></div></td>
+<td><div class="english"><h3>Sanctification of the Day</h3></div></td>
+</tr>
+<tr>
+<td><div class="liturgy">וַֽיְהִי־עֶ֥רֶב</div></td>
+<td><div class="english"><span class="instruction">(On Shabbat begin here.)</span>
+<p>And there was evening</p></div></td>
+</tr>
+</table>
+"""
+
+
 class TestParseCompilation(unittest.TestCase):
     def test_parse_rows_extracts_h3_and_content(self) -> None:
         from opensiddur.importer.feinstein_haggadah.parse_compilation import (
@@ -74,24 +106,28 @@ class TestParseCompilation(unittest.TestCase):
         self.assertTrue(chasal.blocks[0].hebrew.startswith("חֲסַל סִדּוּר פֶּסַח"))
 
     def test_subsection_incipit_is_not_head(self) -> None:
+        """A subsection recognised by its incipit opens with text, not with a heading.
+
+        Only a row carrying its own h3 supplies a head; an incipit match splits the section
+        but the matched line is the subsection's first paragraph.
+        """
         from opensiddur.importer.feinstein_haggadah.parse_compilation import (
             build_section_contents,
             parse_rows,
-            load_compilation_json,
         )
 
-        contents = build_section_contents(parse_rows(load_compilation_json()))
+        contents = build_section_contents(parse_rows({"content": SUBSECTION_INCIPIT_HTML}))
         matzah = contents["matzah_zu"]
         self.assertEqual(matzah.blocks[0].kind, "paragraph")
         self.assertIn("מַצָּה זוּ", matzah.blocks[0].hebrew)
-        vanitzak = contents["vanitzak_hashem"]
-        self.assertFalse(any(block.kind == "head" for block in vanitzak.blocks))
+        self.assertFalse(any(block.kind == "head" for block in matzah.blocks))
+        # The parent keeps its own h3-supplied head and does not swallow the subsection.
+        self.assertEqual(contents["magid"].blocks[0].kind, "head")
 
     def test_english_instructions_become_notes(self) -> None:
         from opensiddur.importer.feinstein_haggadah.parse_compilation import (
             _clean_html_cell,
             build_section_contents,
-            load_compilation_json,
             parse_rows,
             split_parenthetical_instructions,
         )
@@ -109,11 +145,15 @@ class TestParseCompilation(unittest.TestCase):
         self.assertEqual(parts[2].kind, "paragraph")
         self.assertFalse(any(p.governs or p.governed for p in parts))
 
-        contents = build_section_contents(parse_rows(load_compilation_json()))
+        contents = build_section_contents(parse_rows({"content": INSTRUCTION_HTML}))
         kadesh = contents["kadesh"]
         instructions = [b for b in kadesh.blocks if b.kind == "instruction"]
         self.assertTrue(instructions)
         self.assertIn("Shabbat", instructions[0].english)
+        # The rubric leaves the running text; it must not be repeated there.
+        paragraphs = [b for b in kadesh.blocks if b.kind == "paragraph"]
+        self.assertTrue(paragraphs)
+        self.assertNotIn("On Shabbat", " ".join(b.english for b in paragraphs))
 
 
 class TestConditionalSegmentation(unittest.TestCase):

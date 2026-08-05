@@ -2,7 +2,6 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 from opensiddur.importer.feinstein_haggadah.align_page_breaks import (
     _enforce_monotonic,
@@ -10,6 +9,8 @@ from opensiddur.importer.feinstein_haggadah.align_page_breaks import (
     _normalize_hebrew,
     _subseq_ratio,
 )
+from opensiddur.importer.util.pages import heidenheim_pdf_path
+from opensiddur.tests.importer.feinstein_haggadah import support
 
 
 class TestAlignPageBreaksHelpers(unittest.TestCase):
@@ -40,18 +41,19 @@ class TestAlignPageBreaksHelpers(unittest.TestCase):
 
 class TestAlignPageBreaksIntegration(unittest.TestCase):
     def test_align_writes_json_when_pdf_present(self) -> None:
-        pdf_path = Path("sources/heidenheim_haggadah_1822/Hebrewbooks_org_4909.pdf")
-        if not pdf_path.is_file():
-            self.skipTest("1822 PDF not available locally")
+        pdf_path = heidenheim_pdf_path()
+        if pdf_path is None:
+            raise unittest.SkipTest("1822 facsimile PDF not checked out")
+        compilation = support.require_path(
+            support.compilation_path(), "haggadah compilation not checked out"
+        )
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "feinstein_haggadah_2009").mkdir()
             (root / "heidenheim_haggadah_1822").mkdir()
             (root / "feinstein_haggadah_2009" / "compilation.json").write_text(
-                Path("sources/feinstein_haggadah_2009/compilation.json").read_text(
-                    encoding="utf-8"
-                ),
+                compilation.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
             pdf_dest = root / "heidenheim_haggadah_1822" / "heidenheim_1822.pdf"

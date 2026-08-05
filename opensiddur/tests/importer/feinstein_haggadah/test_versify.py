@@ -6,10 +6,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.importer.feinstein_haggadah.page_breaks import (
-    PageBreakError,
-    find_break_offset,
-)
+from opensiddur.importer.feinstein_haggadah.page_breaks import find_break_offset
 from opensiddur.importer.feinstein_haggadah.sections import document_order_slugs
 from opensiddur.importer.feinstein_haggadah.tei_builder import verse_anchors
 from opensiddur.importer.feinstein_haggadah.versify import (
@@ -18,10 +15,10 @@ from opensiddur.importer.feinstein_haggadah.versify import (
     load_printed_psalms,
     load_verse_anchors,
     read_wlc_chapter,
-    section_texts,
     verse_offsets,
 )
 from opensiddur.importer.util.hebrew import normalize_hebrew
+from opensiddur.tests.importer.feinstein_haggadah import support
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
 WLC_PSALMS = Path("project/wlc/psalms.xml")
@@ -32,9 +29,15 @@ VERSE_COUNTS = {113: 9, 114: 8, 115: 18, 116: 19, 117: 2, 118: 29, 126: 6, 136: 
 
 
 class TestCuratedVerseAnchors(unittest.TestCase):
+    """Checks on the curated table alone.
+
+    ``verse_anchors.json`` is committed inside the package, so none of this needs the
+    sourcetexts checkout. Whether the anchors still *match* the source is
+    ``TestAnchorsAgainstTheSource`` below.
+    """
+
     def setUp(self) -> None:
         self.sections = load_verse_anchors()
-        self.texts = section_texts()
 
     def test_covers_every_complete_biblical_unit(self) -> None:
         self.assertEqual(set(self.sections), set(BIBLICAL_SECTIONS))
@@ -62,6 +65,18 @@ class TestCuratedVerseAnchors(unittest.TestCase):
         for slug, section in self.sections.items():
             opening = [verse.n for verse in section.verses if verse.at_section_start]
             self.assertEqual(opening, [1], slug)
+
+
+class TestAnchorsAgainstTheSource(unittest.TestCase):
+    """The curated anchors must still match the compilation they were read off.
+
+    Needs the sourcetexts checkout; skips without it. A source rewording fails the conversion
+    in ``convert.py`` on the same conditions.
+    """
+
+    def setUp(self) -> None:
+        self.sections = load_verse_anchors()
+        self.texts = support.compilation_section_texts()
 
     def test_every_anchor_resolves_to_one_place(self) -> None:
         for slug, section in self.sections.items():
@@ -112,8 +127,7 @@ class TestVerseOffsets(unittest.TestCase):
 
 class TestWlcReader(unittest.TestCase):
     def setUp(self) -> None:
-        if not WLC_PSALMS.is_file():
-            self.skipTest("WLC project not present")
+        support.require_path(WLC_PSALMS, "WLC project not generated")
 
     def test_reads_masoretic_verse_counts(self) -> None:
         for chapter, count in VERSE_COUNTS.items():
@@ -148,8 +162,8 @@ class TestGeneratedPsalms(unittest.TestCase):
     """Checks against the committed project, skipped when it is not present."""
 
     def setUp(self) -> None:
-        if not PROJECT.is_dir() or not WLC_PSALMS.is_file():
-            self.skipTest("projects not generated")
+        support.require_path(PROJECT, "haggadah project not generated")
+        support.require_path(WLC_PSALMS, "WLC project not generated")
 
     def _milestones(self, slug: str, unit: str) -> list[tuple[str, str]]:
         tree = etree.parse(str(PROJECT / f"{slug}.xml"))
@@ -207,7 +221,7 @@ class TestGeneratedPsalms(unittest.TestCase):
         ``test_printed_psalms`` checks their letters against WLC instead.
         """
         printed = load_printed_psalms()
-        texts = section_texts()
+        texts = support.compilation_section_texts()
         for slug in BIBLICAL_SECTIONS:
             if slug in printed:
                 continue
@@ -225,8 +239,7 @@ class TestGeneratedPsalms(unittest.TestCase):
     def test_barech_keeps_its_english_instructions_interleaved(self) -> None:
         """The regression a trailing-content hack would have caused in the translation."""
         english = Path("project/feinstein_haggadah_translation_2009/barech.xml")
-        if not english.is_file():
-            self.skipTest("translation project not generated")
+        support.require_path(english, "translation project not generated")
         body = english.read_text("utf-8")
         body = body[body.index("<tei:body>") :]
         kinds = re.findall(r"<tei:(note|p)\b", body)
