@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 from typing import Any, Optional
 import urllib
@@ -15,6 +16,8 @@ from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.common.constants import PROJECT_DIRECTORY
+
+logger = logging.getLogger(__name__)
 
 MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
 
@@ -510,7 +513,7 @@ def process_mediawiki(
 
     content = ""
     for page in range(start_page, end_page + 1):
-        print(f"Processing page {page}")
+        logger.info("Processing page %s", page)
         page_obj = get_page(page, sourcetexts_root)
         if page_obj is None:
             raise FileNotFoundError(
@@ -537,7 +540,7 @@ def validate_and_write_tei_file(
         project_dir.resolve() if project_dir is not None else _default_project_directory()
     )
     out_path = directory / f"{file_name}.xml"
-    print(f"Writing {out_path}")
+    logger.info("Writing %s", out_path)
     pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
     is_valid, errors = validate(pretty_xml)
     if not is_valid:
@@ -670,4 +673,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
 
 
 if __name__ == "__main__":  # pragma: no cover
+    # Only the CLI turns the progress log on. Tests call these functions directly, so under
+    # the test runner the records go nowhere.
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()
