@@ -1,10 +1,13 @@
 import argparse
+import logging
 import os
 import sys
 from pathlib import Path
 
 from opensiddur.common.xslt import xslt_transform
 from opensiddur.importer.util.validation import validate
+
+logger = logging.getLogger(__name__)
 
 
 def _repo_root() -> Path:
@@ -77,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     for book in os.listdir(wlc_directory / "Books"):
         if book not in ["TanachHeader.xml", "TanachIndex.xml"] and not book.endswith(".DH.xml"):
-            print(f"Transforming {book}")
+            logger.info("Transforming %s", book)
             xslt_transform(
                 xslt_directory / "transform_book.xslt",
                 wlc_directory / "Books" / book,
@@ -86,12 +89,16 @@ def main(argv: list[str] | None = None) -> int:
 
     for book in os.listdir(project_directory):
         if book.endswith(".xml"):
-            print(f"Validating {book}")
+            logger.info("Validating %s", book)
             is_valid, errors = validate(project_directory / book)
             if not is_valid:
-                print(f"Errors in {book}: {errors}")
+                logger.error("Errors in %s: %s", book, errors)
     return 0
 
 
 if __name__ == "__main__":  # pragma: no cover
+    # Only the CLI turns the progress log on. Tests call main() directly, so under the test
+    # runner the records go nowhere and a passing test cannot print a line that reads like a
+    # validation failure.
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     sys.exit(main())

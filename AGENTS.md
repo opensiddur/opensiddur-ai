@@ -56,6 +56,31 @@ bash scripts/build-schema.sh
 uv run python -m opensiddur.importer.util.validation project/wlc/ruth.xml
 ```
 
+**Download Feinstein/Heidenheim haggadah sources** (OSP compilation + HebrewBooks PDF):
+```bash
+uv run python -m opensiddur.importer.feinstein_haggadah.download \
+  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+```
+
+**Align page breaks** from the 1822 PDF facsimile (writes `page_breaks.json`):
+```bash
+uv run python -m opensiddur.importer.feinstein_haggadah.align_page_breaks \
+  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+```
+
+**Convert haggadah sources to JLPTEI projects** (each output file is validated against RelaxNG + Schematron before write):
+```bash
+uv run python -m opensiddur.importer.feinstein_haggadah.convert \
+  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
+  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project
+```
+
+**Sync reference database** after adding or updating projects:
+```bash
+uv run python -m opensiddur.exporter.refdb \
+  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project
+```
+
 ## Architecture
 
 ### Data Flow

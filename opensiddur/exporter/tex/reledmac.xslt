@@ -74,17 +74,20 @@
 
         <!-- Hebrew font: try the requested one, with fallbacks for systems that don't have it.
              HarfBuzz shaping handles Hebrew vowels/cantillation correctly. -->
+        <!-- The Hebrew faces we ship against (Frank Ruehl CLM, Ezra SIL, SBL Hebrew) have
+             no bold companion, so \bfseries would silently do nothing and headings would
+             be indistinguishable from body text. BoldFont={*},AutoFakeBold synthesizes one. -->
         <xsl:text>\IfFontExistsTF{</xsl:text><xsl:value-of select="$hebrew-font"/><xsl:text>}{&#10;</xsl:text>
-        <xsl:text>  \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew]{</xsl:text>
+        <xsl:text>  \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{</xsl:text>
         <xsl:value-of select="$hebrew-font"/><xsl:text>}&#10;</xsl:text>
         <xsl:text>}{&#10;</xsl:text>
         <xsl:text>  \IfFontExistsTF{Ezra SIL}{&#10;</xsl:text>
-        <xsl:text>    \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew]{Ezra SIL}&#10;</xsl:text>
+        <xsl:text>    \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{Ezra SIL}&#10;</xsl:text>
         <xsl:text>  }{&#10;</xsl:text>
         <xsl:text>    \IfFontExistsTF{SBL Hebrew}{&#10;</xsl:text>
-        <xsl:text>      \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew]{SBL Hebrew}&#10;</xsl:text>
+        <xsl:text>      \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{SBL Hebrew}&#10;</xsl:text>
         <xsl:text>    }{&#10;</xsl:text>
-        <xsl:text>      \newfontfamily\hebrewfont[Script=Hebrew]{FreeSerif}&#10;</xsl:text>
+        <xsl:text>      \newfontfamily\hebrewfont[Script=Hebrew,BoldFont={*},AutoFakeBold=2]{FreeSerif}&#10;</xsl:text>
         <xsl:text>    }&#10;</xsl:text>
         <xsl:text>  }&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
@@ -116,6 +119,30 @@
         <!-- Verse numbers rendered as superscripts at the start of each verse.
              Force LTR for digits even inside Hebrew RTL contexts. -->
         <xsl:text>\newcommand{\vno}[1]{\textsuperscript{{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+        <!-- Chapter number, inline at the start of a chapter. Only emitted inside
+             tei:div[@type='book'] (Bible exports), where the chapter exists solely as a
+             milestone and would otherwise be invisible. -->
+        <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+
+        <!-- Section headings (tei:head).
+             reledmac's \eledchapter/\eledsection/\eledsubsection are deliberately NOT used:
+             they typeset their argument as ordinary inline text and defer the real heading
+             to a later pass via an aux file keyed on the enclosing \pstart number, which is
+             fragile and drags in book-class section numbering. These macros are plain
+             paragraph content inside a \pstart \skipnumbering, so they are unnumbered,
+             single-pass and fully under our control.
+
+             Centering uses symmetric \hfill inside the line rather than
+             {\centering ...\par} or a \parbox. reledmac captures numbered text one
+             \par-delimited line at a time, so a \par inside a group escapes that capture —
+             under reledpar's \Columns the heading then lands outside its column. A
+             \parbox is \par-free but sizes itself from \linewidth, which is wider than a
+             reledpar column and overflows it. reledmac sets every line to the current
+             measure, so balanced fill glue centers correctly in single-text and in either
+             reledpar column alike. -->
+        <xsl:text>\newcommand{\OSheadA}[1]{\mbox{}\hfill{\normalfont\LARGE\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSheadB}[1]{\mbox{}\hfill{\normalfont\Large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSheadC}[1]{\mbox{}\hfill{\normalfont\large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
 
         <!-- Notes styling.
              - All notes must force direction/language using the xml:lang-derived wrappers
@@ -125,6 +152,20 @@
                can prematurely close reledmac's internal groups inside \edtext/\Bfootnote. -->
         <xsl:text>\newcommand{\instructionnote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
+        <!-- Conditional passages. Only markers whose condition could not be decided survive
+             compilation: a decided condition is resolved away, its text either kept outright
+             or dropped. So a marker in the output means "say this only if ...", and the
+             reader has to be able to see where that passage starts and stops. Inline runs
+             take brackets, standing in for the parentheses the sources print; whole
+             paragraphs take a short centred rule, since brackets around a block of text
+             several lines long do not read as a pair. -->
+        <xsl:text>\newcommand{\OSCondStartInline}{{\bfseries[}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondEndInline}{{\bfseries]}}&#10;</xsl:text>
+        <!-- A full-width box rather than \par-separated material: these rules sit inside
+             reledmac \pstart groups, where \par does not reliably break the line. -->
+        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \linewidth{\hss\rule{0.25\linewidth}{0.4pt}\hss}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondStartBlock}{\OSCondRule}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondEndBlock}{\OSCondRule}&#10;</xsl:text>
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
              sits in the interlinear band (not a letter-attached superscript). -->
         <xsl:text>\newcommand{\OSInterlinearNotemark}[1]{%&#10;</xsl:text>
@@ -232,13 +273,13 @@
         <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
         <!-- Expand p:transclude wrapper elements emitted by the compiler: the TeX stage
              should group and typeset the transcluded content, not the wrapper itself.
+             Expansion must recurse: parallel blocks end at every external transclusion, so a
+             transcluded document that itself transcludes nests wrappers arbitrarily deep. A
+             single-level expansion would leave an inner p:transclude in the flow, where
+             group-adjacent classifies it 'inline' and splits the surrounding \Pages run.
              Also ignore whitespace-only text nodes for grouping, otherwise pretty-printed
              XML will split runs of adjacent p:parallel blocks. -->
-        <xsl:variable name="flow" as="node()*"
-                      select="for $n in node()
-                              return if ($n/self::p:transclude or $n/self::p:transcludeInline)
-                                     then $n/node()
-                                     else $n"/>
+        <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
 
         <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
                             group-adjacent="if (self::p:parallel) then 'parallel' else 'inline'">
@@ -429,14 +470,17 @@
                         </xsl:next-iteration>
                     </xsl:when>
                     <xsl:when test="self::tei:milestone[@unit='chapter']">
+                        <!-- A chapter milestone is not a heading. Inside a Bible book the
+                             chapter has no other representation, so mark it inline; elsewhere
+                             (e.g. a psalm quoted in a liturgical text) the surrounding
+                             tei:head already names the section and a chapter number would be
+                             noise, so render nothing. -->
                         <xsl:choose>
-                            <xsl:when test="$single-pstart">
-                                <!-- In single-pstart mode, keep one continuous pstart open for
-                                     the entire block; emit chapter headings as paragraph breaks. -->
+                            <xsl:when test="ancestor::tei:div[@type='book']">
                                 <xsl:if test="not($in-pstart)">
                                     <xsl:text>\pstart </xsl:text>
                                 </xsl:if>
-                                <xsl:text>\par&#10;\eledsection{</xsl:text>
+                                <xsl:text>\chno{</xsl:text>
                                 <xsl:choose>
                                     <xsl:when test="matches(string(@n), '^[0-9]+$')">
                                         <!-- Force LTR digits in Hebrew RTL contexts -->
@@ -448,35 +492,14 @@
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
                                     </xsl:otherwise>
                                 </xsl:choose>
-                                <xsl:text>}\par&#10;</xsl:text>
+                                <xsl:text>}</xsl:text>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="true()"/>
                                 </xsl:next-iteration>
                             </xsl:when>
                             <xsl:otherwise>
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <!-- reledmac sectioning can behave poorly if a section heading is emitted
-                                     "between" \pstart blocks. Wrap the heading in its own skipped paragraph
-                                     so the section boundary is anchored in the numbered stream without
-                                     consuming a numbered line of text. -->
-                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
-                                <xsl:text>\eledsection{</xsl:text>
-                                <xsl:choose>
-                                    <xsl:when test="matches(string(@n), '^[0-9]+$')">
-                                        <!-- Force LTR digits in Hebrew RTL contexts -->
-                                        <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
-                                        <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                        <xsl:text>}</xsl:text>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                                <xsl:text>}&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="false()"/>
+                                    <xsl:with-param name="in-pstart" select="$in-pstart"/>
                                 </xsl:next-iteration>
                             </xsl:otherwise>
                         </xsl:choose>
@@ -534,27 +557,44 @@
                             <xsl:with-param name="in-pstart" select="false()"/>
                         </xsl:next-iteration>
                     </xsl:when>
-                    <xsl:when test="self::f:eledpart">
-                        <xsl:if test="$in-pstart">
-                            <xsl:text>\pend&#10;</xsl:text>
-                        </xsl:if>
-                        <xsl:text>\eledchapter{</xsl:text>
-                        <xsl:value-of select="f:format-section-title(string(@title), string(@xml:lang))"/>
-                        <xsl:text>}&#10;</xsl:text>
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="false()"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::f:eledsubsection">
-                        <xsl:if test="$in-pstart">
-                            <xsl:text>\pend&#10;</xsl:text>
-                        </xsl:if>
-                        <xsl:text>\eledsubsection{</xsl:text>
-                        <xsl:value-of select="f:format-section-title(string(@title), string(@xml:lang))"/>
-                        <xsl:text>}&#10;</xsl:text>
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="false()"/>
-                        </xsl:next-iteration>
+                    <xsl:when test="self::f:head">
+                        <xsl:choose>
+                            <xsl:when test="$single-pstart">
+                                <!-- reledpar pairs the two sides by \pstart count. Closing and
+                                     reopening here would desync the columns whenever only one
+                                     side carries a head, so stay inside the open pstart. -->
+                                <xsl:choose>
+                                    <xsl:when test="$in-pstart">
+                                        <!-- End the paragraph the heading interrupts. When the
+                                             pstart was only just opened there is nothing to end,
+                                             and a leading \par would leave an empty first
+                                             paragraph that throws off the column layout. -->
+                                        <xsl:text>\par&#10;</xsl:text>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                        <xsl:text>\pstart </xsl:text>
+                                    </xsl:otherwise>
+                                </xsl:choose>
+                                <xsl:call-template name="heading"/>
+                                <xsl:text>\par&#10;</xsl:text>
+                                <xsl:next-iteration>
+                                    <xsl:with-param name="in-pstart" select="true()"/>
+                                </xsl:next-iteration>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:if test="$in-pstart">
+                                    <xsl:text>\pend&#10;</xsl:text>
+                                </xsl:if>
+                                <!-- The heading gets its own paragraph in the numbered stream,
+                                     excluded from line numbering. -->
+                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
+                                <xsl:call-template name="heading"/>
+                                <xsl:text>&#10;\pend&#10;</xsl:text>
+                                <xsl:next-iteration>
+                                    <xsl:with-param name="in-pstart" select="false()"/>
+                                </xsl:next-iteration>
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </xsl:when>
                     <xsl:when test="self::f:para-break">
                         <!-- Paragraph boundary: end current pstart, but don't open a new
@@ -626,13 +666,43 @@
         </xsl:if>
     </xsl:template>
 
+    <!-- Render one f:head sentinel (the context node) as a heading macro plus its PDF
+         outline entry. Caller is responsible for the surrounding \pstart/\pend. -->
+    <xsl:template name="heading">
+        <xsl:variable name="lang" select="string(@xml:lang)"/>
+        <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
+        <xsl:text>\OShead</xsl:text>
+        <xsl:value-of select="f:heading-suffix(xs:integer(@level))"/>
+        <xsl:text>{</xsl:text>
+        <!-- Hebrew titles stay in the stream direction; other languages need an explicit
+             LTR wrapper so Latin text is not reversed in RTL blocks. Runs marked
+             tei:foreign[@xml:lang='he'] inside such a title get their own \texthebrew
+             wrapper from mode="emit". -->
+        <xsl:if test="not($is-hebrew)">
+            <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+        </xsl:if>
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:if test="not($is-hebrew)">
+            <xsl:text>}</xsl:text>
+        </xsl:if>
+        <xsl:text>}</xsl:text>
+        <!-- PDF outline entry. No \tableofcontents is emitted, so the .toc drives
+             hyperref's bookmarks only. It takes the flattened @title: \addcontentsline
+             builds a PDF string, which cannot carry markup. -->
+        <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
+        <xsl:value-of select="f:heading-toc-level(xs:integer(@level))"/>
+        <xsl:text>}{</xsl:text>
+        <xsl:value-of select="f:format-section-title(string(@title), $lang)"/>
+        <xsl:text>}</xsl:text>
+    </xsl:template>
+
     <!-- ====================================================================
          Pass 1 (mode="leaves"): walk the tree, emit a flat sequence of
          leaf-like nodes in document order. Inline formatting elements are
          emitted whole (with text content); block elements are transparent.
          Paragraph boundaries become f:para-break sentinels so we can close
-         pstart between paragraphs. Top-level body divs with heads emit
-         f:eledpart sentinels; nested divs with heads emit f:eledsubsection.
+         pstart between paragraphs. A div with a head emits an f:head sentinel
+         carrying the title, its language and its heading level.
          ==================================================================== -->
 
     <xsl:template match="text()" mode="leaves">
@@ -648,32 +718,45 @@
         <xsl:sequence select="."/>
     </xsl:template>
 
+    <!-- Retained conditional markers must survive flattening to be rendered; see
+         \OSCondStartInline and friends in the preamble. -->
+    <xsl:template match="j:conditional | j:endConditional" mode="leaves">
+        <xsl:sequence select="."/>
+    </xsl:template>
+
     <xsl:template match="tei:pb" mode="leaves"/>
 
     <xsl:template match="tei:standOff" mode="leaves"/>
 
     <!-- Internal sentinels produced by this stylesheet must survive flattening. -->
-    <xsl:template match="f:para-break | f:block-break | f:eledpart | f:eledsubsection" mode="leaves">
+    <xsl:template match="f:para-break | f:block-break | f:head" mode="leaves">
         <xsl:sequence select="."/>
     </xsl:template>
 
-    <xsl:template match="tei:body/tei:div" mode="leaves">
+    <!-- Heading level is the count of *headed* div ancestors, not of all div ancestors:
+         transclusion interposes an arbitrary number of headless container divs (in the
+         compiled haggadah, index.xml's div wraps seder.xml's div wraps each section), so
+         raw nesting depth does not correspond to logical heading level. -->
+    <xsl:template match="tei:div" mode="leaves">
         <xsl:if test="tei:head">
             <xsl:variable name="head" select="tei:head[1]"/>
-            <xsl:element name="f:eledpart" namespace="urn:opensiddur:reledmac">
-                <xsl:attribute name="title" select="normalize-space(string-join($head//text(), ''))"/>
+            <xsl:element name="f:head" namespace="urn:opensiddur:reledmac">
+                <!-- @title is the flattened plain-text form, used only for the PDF
+                     bookmark (\addcontentsline takes no markup). -->
+                <xsl:attribute name="title"
+                               select="normalize-space(string-join(
+                                   $head//text()[not(ancestor::tei:note)], ''))"/>
                 <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
-            </xsl:element>
-        </xsl:if>
-        <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
-    </xsl:template>
-
-    <xsl:template match="tei:div" mode="leaves" priority="-1">
-        <xsl:if test="tei:head">
-            <xsl:variable name="head" select="tei:head[1]"/>
-            <xsl:element name="f:eledsubsection" namespace="urn:opensiddur:reledmac">
-                <xsl:attribute name="title" select="normalize-space(string-join($head//text(), ''))"/>
-                <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
+                <xsl:attribute name="level"
+                               select="min((count(ancestor::tei:div[tei:head]) + 1, 3))"/>
+                <!-- The head's own content is carried through so it can be rendered in
+                     mode="emit" rather than flattened: a title like
+                     <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
+                     wrapped in \texthebrew (otherwise it renders reversed inside the
+                     surrounding LTR heading) and its line break preserved.
+                     Notes are dropped: an apparatus entry cannot be anchored in a
+                     heading, which sits outside the numbered line stream. -->
+                <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
             </xsl:element>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
@@ -707,7 +790,11 @@
         <xsl:apply-templates select="node()" mode="leaves"/>
     </xsl:template>
 
-    <!-- p:parallel inside p:parallel cannot happen post-compile, but be defensive. -->
+    <!-- Safety net only. The compiler guarantees a p:parallel never has a p:parallel ancestor
+         (see the parallel invariants in specs/COMPILER_SPECIFICATION.md): parallel blocks end at
+         every external transclusion. If one ever slips through, flattening it into the enclosing
+         column is wrong but survivable â it renders the inner text in the outer column's
+         direction rather than aborting the build. -->
     <xsl:template match="p:parallel | p:parallelItem" mode="leaves">
         <xsl:apply-templates select="node()" mode="leaves"/>
     </xsl:template>
@@ -723,6 +810,14 @@
 
     <xsl:template match="text()" mode="emit">
         <xsl:value-of select="f:escape-tex(.)"/>
+    </xsl:template>
+
+    <!-- Headings are centered with symmetric fill glue, which only exists on the first
+         line of the box; a \\ would leave the remainder flush-left. Titles that mark a
+         break between a Hebrew and a Latin form (JPS book heads do this) read fine as one
+         centered line, so separate the runs horizontally instead. -->
+    <xsl:template match="tei:lb[ancestor::f:head]" mode="emit" priority="20">
+        <xsl:text>\quad </xsl:text>
     </xsl:template>
 
     <xsl:template match="tei:lb" mode="emit">
@@ -805,8 +900,53 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
+    <!-- A conditional whose condition was decided is resolved away by the compiler, so any
+         marker reaching here is one that could not be decided. Bracket it, so the passage it
+         governs is visibly set off from the text around it. Inside a paragraph that means
+         brackets; between paragraphs, a rule. -->
+    <xsl:template match="j:conditional" mode="emit">
+        <xsl:choose>
+            <xsl:when test="ancestor::tei:p or ancestor::tei:l">
+                <xsl:text>\OSCondStartInline{}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\OSCondStartBlock{}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+        <!-- The note, when there is one, explains the condition the reader must judge. -->
+        <xsl:apply-templates select="tei:note" mode="emit"/>
+    </xsl:template>
+
+    <xsl:template match="j:endConditional" mode="emit">
+        <xsl:choose>
+            <xsl:when test="ancestor::tei:p or ancestor::tei:l">
+                <xsl:text>\OSCondEndInline{}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\OSCondEndBlock{}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
     <xsl:template match="tei:choice" mode="emit">
         <xsl:choose>
+            <xsl:when test="j:option">
+                <!-- Alternate wordings: exactly one is read, but nothing here has chosen
+                     between them, so all are shown, the first plain and the rest bracketed
+                     as the 1822 print does. -->
+                <xsl:for-each select="j:option">
+                    <xsl:choose>
+                        <xsl:when test="position() = 1">
+                            <xsl:value-of select="f:escape-tex(string(.))"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text> (</xsl:text>
+                            <xsl:value-of select="f:escape-tex(string(.))"/>
+                            <xsl:text>)</xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+            </xsl:when>
             <xsl:when test="j:read and j:written">
                 <xsl:text>\textit{</xsl:text>
                 <xsl:value-of select="f:escape-tex(string(j:read))"/>
@@ -899,7 +1039,19 @@
         <xsl:sequence select="count($ctx/preceding::tei:note[not(@type='instruction') and not(ancestor::tei:standOff)])"/>
     </xsl:function>
 
-    <!-- Language for tei:head used in \eledchapter/\eledsubsection titles. -->
+    <!-- Heading level (1-3) to the \OSheadA/B/C macro suffix. -->
+    <xsl:function name="f:heading-suffix" as="xs:string">
+        <xsl:param name="level" as="xs:integer"/>
+        <xsl:sequence select="('A', 'B', 'C')[min((max(($level, 1)), 3))]"/>
+    </xsl:function>
+
+    <!-- Heading level (1-3) to the \addcontentsline level driving hyperref bookmarks. -->
+    <xsl:function name="f:heading-toc-level" as="xs:string">
+        <xsl:param name="level" as="xs:integer"/>
+        <xsl:sequence select="('section', 'subsection', 'subsubsection')[min((max(($level, 1)), 3))]"/>
+    </xsl:function>
+
+    <!-- Language for the tei:head used in \OSheadA/B/C titles. -->
     <xsl:function name="f:section-title-lang" as="xs:string">
         <xsl:param name="head" as="element(tei:head)"/>
         <xsl:sequence select="string((
@@ -923,6 +1075,16 @@
                 <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}', $escaped, '}')"/>
             </xsl:otherwise>
         </xsl:choose>
+    </xsl:function>
+
+    <!-- Recursively replace p:transclude / p:transcludeInline wrappers with their children.
+         The wrappers are display no-ops that carry provenance only. -->
+    <xsl:function name="f:flatten-transcludes" as="node()*">
+        <xsl:param name="nodes" as="node()*"/>
+        <xsl:sequence select="for $n in $nodes
+                              return if ($n/self::p:transclude or $n/self::p:transcludeInline)
+                                     then f:flatten-transcludes($n/node())
+                                     else $n"/>
     </xsl:function>
 
     <xsl:function name="f:escape-tex" as="xs:string">

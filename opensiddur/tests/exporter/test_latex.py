@@ -257,6 +257,88 @@ class TestExtractSources(unittest.TestCase):
         preamble, _ = extract_sources([doc])
         self.assertIn(r"title = {\texthebrew{מקרא על פי המסורה}}", preamble)
 
+    def test_bibtex_leaves_latin_fields_unwrapped_under_hebrew_lang(self):
+        """Latin content inheriting xml:lang="he" must not get \\texthebrew.
+
+        The wrapper sets \\textdir TRT, which renders Latin text reversed.
+        """
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Page-break reference facsimile</tei:title>
+              <tei:edition>First edition (Yaari 447)</tei:edition>
+              <tei:publisher>Wolf Heidenheim</tei:publisher>
+              <tei:author>Meir Halevi Heidenheim</tei:author>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertNotIn(r"\texthebrew", preamble)
+        self.assertIn("title = {Page-break reference facsimile}", preamble)
+        self.assertIn("edition = {First edition (Yaari 447)}", preamble)
+        self.assertIn("publisher = {Wolf Heidenheim}", preamble)
+        self.assertIn("author = {Meir Halevi Heidenheim}", preamble)
+
+    def test_bibtex_wraps_hebrew_runs_inside_english_text(self):
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Notes</tei:title>
+              <tei:note xml:lang="en">The print reads לשנה הבאה בירושלים then נרצה.</tei:note>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn(r"\texthebrew{לשנה הבאה בירושלים}", preamble)
+        self.assertIn(r"\texthebrew{נרצה}", preamble)
+        self.assertIn("The print reads ", preamble)
+
+    def test_bibtex_escapes_tex_special_characters(self):
+        """Unescaped specials abort the LaTeX run at \\printbibliography.
+
+        Project slugs carry underscores, which TeX reads as math subscripts:
+        "Missing $ inserted" with no PDF produced.
+        """
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Published as heidenheim_haggadah_1822</tei:title>
+              <tei:note xml:lang="en">100% of A &amp; B; #3; a~b; x^2; cost $5</tei:note>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn(r"title = {Published as heidenheim\_haggadah\_1822}", preamble)
+        self.assertIn(r"100\% of A \& B", preamble)
+        self.assertIn(r"\#3", preamble)
+        self.assertIn(r"a\textasciitilde{}b", preamble)
+        self.assertIn(r"x\textasciicircum{}2", preamble)
+        self.assertIn(r"cost \$5", preamble)
+
+    def test_bibtex_escape_does_not_touch_its_own_wrapper_braces(self):
+        """The \\texthebrew wrapper and escape output must not be re-escaped."""
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl><tei:title xml:lang="he">הגדה</tei:title></tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn(r"title = {\texthebrew{הגדה}}", preamble)
+        self.assertNotIn(r"\textbackslash", preamble)
+        self.assertNotIn(r"\{\}", preamble)
+
 
 class TestGetFileReferences(unittest.TestCase):
 

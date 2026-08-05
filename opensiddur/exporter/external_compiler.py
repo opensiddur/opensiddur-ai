@@ -86,8 +86,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         to_end: Optional[str] = None,
         include_tail_after_end: bool = False,
         linear_data: Optional[LinearData] = None,
-        reference_database: Optional[ReferenceDatabase] = None,
-        _in_parallel_compilation: bool = False):
+        reference_database: Optional[ReferenceDatabase] = None):
         """ Process the given file/project.
         Only start from the given start and end, inclusive.
         Start and end must be in the same file.
@@ -98,7 +97,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
             include_tail_after_end: whether to include the tail after the end element
             linear_data: the linear data
             reference_database: the reference database
-            _in_parallel_compilation: if True, suppress nested parallel triggers
         """
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
 
@@ -109,7 +107,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         self.deepest_common_ancestor, self.start_element, self.end_element, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end, include_tail_after_end)
 
-        self._in_parallel_compilation = _in_parallel_compilation
         # None = marker mode off; [] = marker mode active
         self.marker_stack: list[tuple[str, ElementBase]] | None = None
 
@@ -314,7 +311,16 @@ class ExternalCompilerProcessor(CompilerProcessor):
             parallel_el.append(pi_par)
             return parallel_el
 
-        def make_rows(prim_flat, par_flat):
+        def source_of(transclude_el, default_project, default_file):
+            """Provenance of a boundary transclude, falling back to the enclosing document."""
+            if transclude_el is None:
+                return default_project, default_file
+            return (
+                transclude_el.get(f"{{{p_ns}}}project") or default_project,
+                transclude_el.get(f"{{{p_ns}}}file_name") or default_file,
+            )
+
+        def make_rows(prim_flat, par_flat, prim_src, par_src):
             prim_sub = ExternalCompilerProcessor._split_at_milestones(prim_flat, ns_map)
             par_sub = ExternalCompilerProcessor._split_at_milestones(par_flat, ns_map)
 
@@ -347,42 +353,59 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     continue
                 rows.append(make_parallel(
                     column_order,
-                    make_item("primary", primary_lang, primary_project, primary_file, p_elems),
-                    make_item("parallel", parallel_lang, parallel_project, parallel_file, q_elems),
+                    make_item("primary", primary_lang, prim_src[0], prim_src[1], p_elems),
+                    make_item("parallel", parallel_lang, par_src[0], par_src[1], q_elems),
                 ))
             return rows
 
-        primary_segments, primary_transcludes = split_at_transcludes(primary)
-        parallel_segments, parallel_transcludes = split_at_transcludes(parallel)
+        def assemble(prim_flat, par_flat, prim_src, par_src):
+            primary_segments, primary_transcludes = split_at_transcludes(prim_flat)
+            parallel_segments, parallel_transcludes = split_at_transcludes(par_flat)
 
-        max_segments = max(len(primary_segments), len(parallel_segments))
-        while len(primary_segments) < max_segments:
-            primary_segments.append([])
-        while len(parallel_segments) < max_segments:
-            parallel_segments.append([])
+            max_segments = max(len(primary_segments), len(parallel_segments))
+            while len(primary_segments) < max_segments:
+                primary_segments.append([])
+            while len(parallel_segments) < max_segments:
+                parallel_segments.append([])
 
-        max_transcludes = max(len(primary_transcludes), len(parallel_transcludes))
+            max_transcludes = max(len(primary_transcludes), len(parallel_transcludes))
 
-        output = []
-        for i in range(max_segments):
-            output.extend(make_rows(primary_segments[i], parallel_segments[i]))
+            output = []
+            for i in range(max_segments):
+                output.extend(make_rows(
+                    primary_segments[i], parallel_segments[i], prim_src, par_src))
 
-            if i < max_transcludes:
-                prim_t = primary_transcludes[i] if i < len(primary_transcludes) else None
-                par_t = parallel_transcludes[i] if i < len(parallel_transcludes) else None
+                if i < max_transcludes:
+                    prim_t = primary_transcludes[i] if i < len(primary_transcludes) else None
+                    par_t = parallel_transcludes[i] if i < len(parallel_transcludes) else None
 
-                if prim_t is not None:
-                    combined = etree.Element(f"{{{p_ns}}}transclude", nsmap=ns_map)
-                    for key, val in prim_t.attrib.items():
-                        combined.set(key, val)
+                    if prim_t is not None:
+                        combined = etree.Element(f"{{{p_ns}}}transclude", nsmap=ns_map)
+                        for key, val in prim_t.attrib.items():
+                            combined.set(key, val)
 
-                    inner_rows = make_rows(list(prim_t), list(par_t) if par_t is not None else [])
-                    for row in inner_rows:
-                        combined.append(row)
+                        # Recurse: the parallel block ends at *every* external transclusion, at
+                        # every depth. Going through assemble() rather than make_rows() means any
+                        # transclude among these children is hoisted out too, so a p:parallelItem
+                        # never contains a p:transclude and parallels never nest. The p:transclude
+                        # wrapper itself is a display no-op, so the hierarchy it holds is
+                        # independent of the enclosing one rather than nested inside it.
+                        # Items built from a transcluded document must be attributed to that
+                        # document, not to the enclosing one: latex.py::get_file_references reads
+                        # these attributes to build the licence, credits and bibliography.
+                        inner = assemble(
+                            list(prim_t), list(par_t) if par_t is not None else [],
+                            source_of(prim_t, *prim_src), source_of(par_t, *par_src))
+                        for child in inner:
+                            combined.append(child)
 
-                    output.append(combined)
+                        output.append(combined)
 
-        return output
+            return output
+
+        return assemble(
+            primary, parallel,
+            (primary_project, primary_file), (parallel_project, parallel_file))
 
     def _resolve_parallel_range(self, target: str, target_end: Optional[str], parallel_project: str):
         """Resolve a parallel URN to (project, file_name, from_start, to_end, include_tail).
@@ -446,48 +469,47 @@ class ExternalCompilerProcessor(CompilerProcessor):
         primary_end = transclude_range.end.end_element_path or transclude_range.end.element_path
         include_tail = transclude_range.end.end_includes_tail
 
-        primary_proc = ExternalCompilerProcessor(
-            primary_project, primary_file,
-            from_start=primary_start,
-            to_end=primary_end,
-            include_tail_after_end=include_tail,
-            linear_data=self.linear_data,
-            reference_database=self._refdb,
-            _in_parallel_compilation=True)
-        primary_proc.marker_stack = []
-        primary_result = primary_proc.process()
+        with self._parallel_sub_compilation():
+            primary_proc = ExternalCompilerProcessor(
+                primary_project, primary_file,
+                from_start=primary_start,
+                to_end=primary_end,
+                include_tail_after_end=include_tail,
+                linear_data=self.linear_data,
+                reference_database=self._refdb)
+            primary_proc.marker_stack = []
+            primary_result = primary_proc.process()
 
-        parallel_result = None
-        parallel_project = None
-        parallel_file = None
-        parallel_proc = None
+            parallel_result = None
+            parallel_project = None
+            parallel_file = None
+            parallel_proc = None
 
-        for proj in self.linear_data.parallel_projects:
-            # Never parallelize a project against itself; doing so duplicates streams and
-            # can introduce duplicate xml:id values (e.g., anchors) into the assembled output.
-            if proj == primary_project:
-                continue
-            resolved = self._resolve_parallel_range(target, target_end, proj)
-            if resolved is None:
-                continue
-            p_project, p_file, p_start, p_end, p_tail = resolved
-            try:
-                with self._parallel_priority(p_project):
-                    parallel_proc = ExternalCompilerProcessor(
-                        p_project, p_file,
-                        from_start=p_start,
-                        to_end=p_end,
-                        include_tail_after_end=p_tail,
-                        linear_data=self.linear_data,
-                        reference_database=self._refdb,
-                        _in_parallel_compilation=True)
-                    parallel_proc.marker_stack = []
-                    parallel_result = parallel_proc.process()
-                parallel_project = p_project
-                parallel_file = p_file
-                break
-            except Exception:
-                continue
+            for proj in self.linear_data.parallel_projects:
+                # Never parallelize a project against itself; doing so duplicates streams and
+                # can introduce duplicate xml:id values (e.g., anchors) into the assembled output.
+                if proj == primary_project:
+                    continue
+                resolved = self._resolve_parallel_range(target, target_end, proj)
+                if resolved is None:
+                    continue
+                p_project, p_file, p_start, p_end, p_tail = resolved
+                try:
+                    with self._parallel_priority(p_project):
+                        parallel_proc = ExternalCompilerProcessor(
+                            p_project, p_file,
+                            from_start=p_start,
+                            to_end=p_end,
+                            include_tail_after_end=p_tail,
+                            linear_data=self.linear_data,
+                            reference_database=self._refdb)
+                        parallel_proc.marker_stack = []
+                        parallel_result = parallel_proc.process()
+                    parallel_project = p_project
+                    parallel_file = p_file
+                    break
+                except Exception:
+                    continue
 
         if parallel_result is None:
             return None
@@ -519,6 +541,19 @@ class ExternalCompilerProcessor(CompilerProcessor):
         return processing_element
 
     @contextmanager
+    def _parallel_sub_compilation(self):
+        """Suppress nested parallel triggers for the duration of a sub-compilation.
+
+        Parallel blocks end at every external transclusion and never nest, so nothing compiled
+        underneath a parallel sub-compilation may open a parallel block of its own.
+        """
+        self.linear_data.parallel_compilation_depth += 1
+        try:
+            yield
+        finally:
+            self.linear_data.parallel_compilation_depth -= 1
+
+    @contextmanager
     def _parallel_priority(self, parallel_project: str):
         """Temporarily set project_priority and instruction_priority to [parallel_project]."""
         saved_priority = self.linear_data.project_priority
@@ -533,36 +568,35 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
     def _process_parallel_root(self) -> list[ElementBase]:
         """Compile this file in parallel mode, replacing tei:body with p:parallel content."""
-        primary_proc = ExternalCompilerProcessor(
-            self.project, self.file_name,
-            linear_data=self.linear_data,
-            reference_database=self._refdb,
-            _in_parallel_compilation=True)
-        primary_proc.marker_stack = []
-        primary_result = primary_proc.process()
+        with self._parallel_sub_compilation():
+            primary_proc = ExternalCompilerProcessor(
+                self.project, self.file_name,
+                linear_data=self.linear_data,
+                reference_database=self._refdb)
+            primary_proc.marker_stack = []
+            primary_result = primary_proc.process()
 
-        parallel_result = None
-        parallel_project = None
-        parallel_file = self.file_name
-        parallel_proc = None
+            parallel_result = None
+            parallel_project = None
+            parallel_file = self.file_name
+            parallel_proc = None
 
-        for proj in self.linear_data.parallel_projects:
-            # Never parallelize a project against itself.
-            if proj == self.project:
-                continue
-            try:
-                with self._parallel_priority(proj):
-                    parallel_proc = ExternalCompilerProcessor(
-                        proj, self.file_name,
-                        linear_data=self.linear_data,
-                        reference_database=self._refdb,
-                        _in_parallel_compilation=True)
-                    parallel_proc.marker_stack = []
-                    parallel_result = parallel_proc.process()
-                parallel_project = proj
-                break
-            except Exception:
-                continue
+            for proj in self.linear_data.parallel_projects:
+                # Never parallelize a project against itself.
+                if proj == self.project:
+                    continue
+                try:
+                    with self._parallel_priority(proj):
+                        parallel_proc = ExternalCompilerProcessor(
+                            proj, self.file_name,
+                            linear_data=self.linear_data,
+                            reference_database=self._refdb)
+                        parallel_proc.marker_stack = []
+                        parallel_result = parallel_proc.process()
+                    parallel_project = proj
+                    break
+                except Exception:
+                    continue
 
         if parallel_result is None:
             return primary_result
@@ -754,13 +788,17 @@ class ExternalCompilerProcessor(CompilerProcessor):
             if (
                 context["command"] == _ProcessingCommand.COPY_AND_RECURSE
                 or context["include_tail_after_end"]):
-                if child.tail and child_result:
-                    # Only copy tail if we're not after the end marker
-                    if context["include_tail_after_end"] or not context['after_end']:
+                # Only copy tail if we're not after the end marker
+                if child.tail and (context["include_tail_after_end"] or not context['after_end']):
+                    if child_result:
                         if child_result[-1].tail is None:
                             child_result[-1].tail = child.tail
                         else:
                             child_result[-1].tail += child.tail
+                    else:
+                        # A stripped j:conditional and friends leave no output, but the text
+                        # around them is document text. See _carry_dropped_tail.
+                        self._carry_dropped_tail(append_to, child)
 
         if annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
@@ -815,7 +853,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if self.from_start is None and processed:
             self._mark_file_source(processed[0])
 
-        if is_root:
+        # Only the outermost compilation reconstructs. A parallel sub-compilation also sees an
+        # empty processing context, so `is_root` alone would reconstruct its raw marker stream
+        # before assembly.
+        if is_root and self.linear_data.parallel_compilation_depth == 0:
             _reconstruct_if_needed(processed)
 
         return processed

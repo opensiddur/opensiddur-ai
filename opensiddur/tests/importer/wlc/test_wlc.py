@@ -202,13 +202,12 @@ class TestWLCMain(unittest.TestCase):
         
         # Set up mock paths
         mock_project_dir = Path('/mock/project/wlc')
-        mock_source_dir = Path('/mock/sources/wlc')
         mock_sourcetexts_root = Path('/mock/sources')
         mock_xslt_dir = Path('/mock/opensiddur/importer/wlc')
-        
+
         mock_make_project_directory.return_value = mock_project_dir
         mock_get_xslt_dir.return_value = mock_xslt_dir
-        
+
         # Mock os.listdir
         source_books = ['Genesis.xml']
         project_files = ['index.xml', 'genesis.xml']
@@ -220,16 +219,23 @@ class TestWLCMain(unittest.TestCase):
             (False, ['Error: Invalid XML structure'])  # genesis.xml has errors
         ]
         
-        # Run main - should not raise an exception
-        result = main(
-            [
-                "--project-dir",
-                str(mock_project_dir),
-                "--sourcetexts-root",
-                str(mock_sourcetexts_root),
-            ]
-        )
-        
+        # Run main - should not raise an exception. The failure is reported on the module
+        # logger, so assertLogs both checks that it is reported and keeps the record from
+        # reaching the last-resort handler, where it would read as a failure of this test.
+        with self.assertLogs("opensiddur.importer.wlc.wlc", level="ERROR") as logs:
+            result = main(
+                [
+                    "--project-dir",
+                    str(mock_project_dir),
+                    "--sourcetexts-root",
+                    str(mock_sourcetexts_root),
+                ]
+            )
+
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("genesis.xml", logs.output[0])
+        self.assertIn("Invalid XML structure", logs.output[0])
+
         # Should still return 0 even with validation errors
         self.assertEqual(result, 0)
         

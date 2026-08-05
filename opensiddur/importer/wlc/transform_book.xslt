@@ -151,16 +151,30 @@
         </xsl:if>
     </xsl:template>
 
+    <!-- Length of the run of consecutive $name siblings that begins at $start.
+         A run of n markers (e.g. פפפ) becomes type="open-n"/"closed-n"; the
+         schema's closed value list stops at 3, which is as many as the
+         traditional notation uses. -->
+    <xsl:function name="jx:run-length" as="xs:integer">
+        <xsl:param name="start" as="element()"/>
+        <xsl:variable name="stop" as="element()?"
+            select="$start/following-sibling::*[not(node-name(.) = node-name($start))][1]"/>
+        <xsl:variable name="run" as="element()*"
+            select="$start/following-sibling::*[node-name(.) = node-name($start)]
+                [empty($stop) or . &lt;&lt; $stop]"/>
+        <xsl:sequence select="min((count($run) + 1, 3))"/>
+    </xsl:function>
+
     <xsl:template match="pe">
         <jx:p type="open">
-            <xsl:value-of select="count(following-sibling::pe) + 1"/>
+            <xsl:value-of select="jx:run-length(.)"/>
         </jx:p>
     </xsl:template>
     <xsl:template match="pe[preceding-sibling::*[1]/self::pe]"/>
 
     <xsl:template match="samekh">
-        <jx:p type="close">
-            <xsl:value-of select="count(preceding-sibling::samekh) + 1"/>
+        <jx:p type="closed">
+            <xsl:value-of select="jx:run-length(.)"/>
         </jx:p>
     </xsl:template>
     <xsl:template match="samekh[preceding-sibling::*[1]/self::samekh]"/>

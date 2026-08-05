@@ -68,6 +68,29 @@ class TestBuildParallelUrn(unittest.TestCase):
 
 # ── _assemble_parallel_streams ──────────────────────────────────────────────
 
+def assert_parallel_invariants(test, elements):
+    """The two compiled-output invariants (specs/COMPILER_SPECIFICATION.md, Parallel Compilation).
+
+    1. a p:parallel never has a p:parallel ancestor
+    2. a p:parallelItem never contains an external p:transclude
+    """
+    for el in elements:
+        for par in el.iter(f"{{{P_NS}}}parallel"):
+            ancestors = [a.tag for a in par.iterancestors()]
+            test.assertNotIn(
+                f"{{{P_NS}}}parallel", ancestors,
+                "p:parallel must never have a p:parallel ancestor")
+        for item in el.iter(f"{{{P_NS}}}parallelItem"):
+            nested = [
+                t for t in item.iter(f"{{{P_NS}}}transclude")
+                if t.get("type") in (None, "external")
+            ]
+            test.assertEqual(
+                nested, [],
+                "p:parallelItem must not contain an external p:transclude; "
+                "the parallel block ends at that boundary")
+
+
 class TestAssembleParallelStreams(unittest.TestCase):
 
     def setUp(self):
@@ -78,11 +101,12 @@ class TestAssembleParallelStreams(unittest.TestCase):
         el.text = text
         return el
 
-    def _transclude(self, target="urn:test@orig"):
+    def _transclude(self, target="urn:test@orig", *children):
         el = etree.Element(f"{{{P_NS}}}transclude", nsmap=self.ns)
         el.set("target", target)
-        child = self._div("inner")
-        el.append(child)
+        el.set("type", "external")
+        for child in (children or (self._div("inner"),)):
+            el.append(child)
         return el
 
     def _assemble(self, prim, par, column_order="primary_first"):
@@ -134,6 +158,76 @@ class TestAssembleParallelStreams(unittest.TestCase):
         self.assertEqual(inner_items[0].get("role"), "primary")
         self.assertEqual(inner_items[1].get("role"), "parallel")
 
+    def test_nested_transclude_is_hoisted_not_embedded(self):
+        """A transclude inside a transclude ends the inner block too, at every depth.
+
+        Regression: the boundary rebuild used to call make_rows directly, so a nested
+        p:transclude landed as a direct child of a p:parallelItem and its parallels ended up
+        nested inside the outer ones.
+        """
+        prim_inner = self._transclude("urn:inner@orig", self._div("deep"))
+        par_inner = self._transclude("urn:inner@trans", self._div("deep-par"))
+        prim_outer = self._transclude(
+            "urn:outer@orig", self._div("a"), prim_inner, self._div("b"))
+        par_outer = self._transclude(
+            "urn:outer@trans", self._div("pa"), par_inner, self._div("pb"))
+
+        result = self._assemble([prim_outer], [par_outer])
+
+        assert_parallel_invariants(self, result)
+        outer = result[0]
+        self.assertEqual(outer.tag, f"{{{P_NS}}}transclude")
+        self.assertEqual(
+            [etree.QName(c).localname for c in outer],
+            ["parallel", "transclude", "parallel"])
+        inner = list(outer)[1]
+        self.assertTrue(all(c.tag == f"{{{P_NS}}}parallel" for c in inner))
+
+    def test_three_level_nesting_keeps_invariants(self):
+        prim = self._transclude("urn:1@o", self._transclude(
+            "urn:2@o", self._transclude("urn:3@o", self._div("deep"))))
+        par = self._transclude("urn:1@t", self._transclude(
+            "urn:2@t", self._transclude("urn:3@t", self._div("deep-par"))))
+
+        result = self._assemble([prim], [par])
+
+        assert_parallel_invariants(self, result)
+        depth = len(result[0].findall(f".//{{{P_NS}}}transclude")) + 1
+        self.assertEqual(depth, 3)
+
+    def test_nested_transclude_only_in_primary(self):
+        """An inner transclude with no parallel counterpart still yields a well-formed row."""
+        prim = self._transclude(
+            "urn:outer@orig", self._div("a"), self._transclude("urn:inner@orig"))
+        par = self._transclude("urn:outer@trans", self._div("pa"))
+
+        result = self._assemble([prim], [par])
+
+        assert_parallel_invariants(self, result)
+        for par_el in result[0].iter(f"{{{P_NS}}}parallel"):
+            self.assertEqual(len(list(par_el)), 2)
+
+    def test_milestone_alignment_survives_inside_nested_transclude(self):
+        def _ms(corresp):
+            el = etree.Element(f"{{{TEI_NS}}}milestone", nsmap=self.ns)
+            el.set("corresp", corresp)
+            el.set("unit", "verse")
+            return el
+
+        prim = self._transclude(
+            "urn:o@orig", _ms("urn:v:1"), self._div("v1"), _ms("urn:v:2"), self._div("v2"))
+        par = self._transclude(
+            "urn:o@trans", _ms("urn:v:1"), self._div("t1"), _ms("urn:v:2"), self._div("t2"))
+
+        result = self._assemble([prim], [par])
+
+        assert_parallel_invariants(self, result)
+        rows = list(result[0].iter(f"{{{P_NS}}}parallel"))
+        self.assertGreaterEqual(len(rows), 2)
+        for row in rows:
+            items = list(row)
+            self.assertEqual([i.get("role") for i in items], ["primary", "parallel"])
+
     def test_mismatched_transclude_counts(self):
         t1 = self._transclude()
         prim = [self._div("a"), t1, self._div("b")]  # 1 transclude
@@ -162,11 +256,13 @@ class _ProcessorBase(unittest.TestCase):
         self.linear_data = get_linear_data()
         self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
 
-    def _make_processor(self, _in_parallel_compilation=False):
+    def _make_processor(self, in_parallel_compilation=False):
+        # Suppression is ambient on LinearData, not a processor kwarg, so that nested
+        # processors inherit it.
+        self.linear_data.parallel_compilation_depth = 1 if in_parallel_compilation else 0
         return ExternalCompilerProcessor(
             self.project, "index.xml",
             linear_data=self.linear_data,
-            _in_parallel_compilation=_in_parallel_compilation,
         )
 
 
@@ -440,23 +536,23 @@ class TestProcessElementAsMarker(_ProcessorBase):
         self.assertEqual(len(div_ends), 1)
 
 
-# ── _in_parallel_compilation flag ───────────────────────────────────────────
+# ── parallel-compilation suppression ────────────────────────────────────────
 
 class TestParallelCompilationFlag(_ProcessorBase):
 
     def test_in_parallel_compilation_suppresses_root_trigger(self):
-        """_in_parallel_compilation=True means process() skips _process_parallel_root."""
+        """A non-zero parallel_compilation_depth means process() skips _process_parallel_root."""
         self.linear_data.parallel_projects = ["some-proj"]
-        proc = self._make_processor(_in_parallel_compilation=True)
+        proc = self._make_processor(in_parallel_compilation=True)
 
         with patch.object(proc, "_process_parallel_root") as mock_root:
             proc.process()
             mock_root.assert_not_called()
 
     def test_in_parallel_compilation_false_triggers_root(self):
-        """Without the flag, parallel_projects causes _process_parallel_root to be called."""
+        """At depth 0, parallel_projects causes _process_parallel_root to be called."""
         self.linear_data.parallel_projects = ["some-proj"]
-        proc = self._make_processor(_in_parallel_compilation=False)
+        proc = self._make_processor(in_parallel_compilation=False)
 
         with patch.object(proc, "_process_parallel_root", return_value=[]) as mock_root:
             proc.process()
@@ -464,7 +560,7 @@ class TestParallelCompilationFlag(_ProcessorBase):
 
     def test_structural_elements_always_get_markers_in_marker_mode(self):
         """In marker mode, all structural elements get start/end marker pairs."""
-        proc = self._make_processor(_in_parallel_compilation=True)
+        proc = self._make_processor(in_parallel_compilation=True)
         proc.marker_stack = []
         self.linear_data.parallel_projects = ["par-proj"]
 
@@ -472,6 +568,49 @@ class TestParallelCompilationFlag(_ProcessorBase):
 
         result_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
         self.assertIn(":start=", result_xml)
+
+
+class TestParallelCompilationDepth(_ProcessorBase):
+    """Suppression must be ambient, so processors constructed anywhere inherit it."""
+
+    def test_nested_processor_inherits_suppression(self):
+        """A processor built without any parallel kwarg still sees the ambient depth.
+
+        Regression: the old per-instance flag was dropped by every nested construction site,
+        so a sub-compilation's own transclusions re-triggered parallel processing.
+        """
+        self.linear_data.parallel_compilation_depth = 0
+        outer = self._make_processor()
+        self.assertFalse(outer._in_parallel_compilation)
+
+        with outer._parallel_sub_compilation():
+            self.assertTrue(outer._in_parallel_compilation)
+            nested = ExternalCompilerProcessor(
+                self.project, "index.xml", linear_data=self.linear_data)
+            self.assertTrue(
+                nested._in_parallel_compilation,
+                "a nested processor must inherit parallel suppression")
+
+        self.assertFalse(outer._in_parallel_compilation)
+
+    def test_depth_is_restored_when_sub_compilation_raises(self):
+        """_process_parallel_root swallows sub-compilation errors; depth must not leak."""
+        proc = self._make_processor()
+        self.assertEqual(self.linear_data.parallel_compilation_depth, 0)
+
+        with self.assertRaises(RuntimeError):
+            with proc._parallel_sub_compilation():
+                raise RuntimeError("boom")
+
+        self.assertEqual(self.linear_data.parallel_compilation_depth, 0)
+
+    def test_depth_nests(self):
+        proc = self._make_processor()
+        with proc._parallel_sub_compilation():
+            with proc._parallel_sub_compilation():
+                self.assertEqual(self.linear_data.parallel_compilation_depth, 2)
+            self.assertEqual(self.linear_data.parallel_compilation_depth, 1)
+        self.assertEqual(self.linear_data.parallel_compilation_depth, 0)
 
 
 if __name__ == "__main__":

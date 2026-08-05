@@ -41,6 +41,16 @@ URNs (Universal Resource Names) are a form of URI (universal resource identifie
 
 An element's  urn is stored in the TEI-global `@corresp` attribute.
 
+`condition` URNs name a condition that cannot be calculated — in practice a textual variant,
+a wording some communities add and others do not. They are used as the feature names of the
+`opensiddur:variant` feature structure (see [Setting attribute values](#setting-attribute-values)).
+The path mirrors the text URN of the passage that varies, with the variant's name appended, and
+carries **no** project identifier, because a variant belongs to the text rather than to any one
+edition of it:
+```urn
+urn:x-opensiddur:condition:haggadah:magid/lefikach/shira_chadasha
+```
+
 An example complete Biblical URN is:
 ```urn
 urn:x-opensiddur:text:bible:genesis/1/1@wlc
@@ -92,6 +102,10 @@ spelling), the transliteration scheme is as follows:
 
 For poems that aren't part of a prayer service (including _piyyutim_ and _z'mirot_), 
 use the `poem` namespace. It uses the same transliteration rules as the `prayer` namespace above.
+
+Passover haggadah projects use a dedicated `haggadah` namespace for seder-specific sections,
+while reusing `prayer` for shared liturgy (kiddush, birkat hamazon) and `bible` for scriptural
+quotations. See [HAGGADAH_URN_SCHEME.md](../specs/HAGGADAH_URN_SCHEME.md) for the hybrid scheme.
 
 To add URNs to reference parts of poems and prayers that don't have natural line divisions or have alternative numbers of lines, use the transliterated first word (or phrase, if the word is ambiguous) as the name of the division. For example `urn:x-opensiddur:text:poem:yonah_matzah/hayom` for the stanza in the song `יונה מצאה` that begins `היום אשר נא כצאן`.
 
@@ -193,9 +207,9 @@ Every document has a TEI header with a standardized structure.
                 <tei:date>{PUBLICATION_OR_DOWNLOAD_DATE}</tei:date>
              </tei:bibl>
             <!-- each individual document will typically contain a citation with a pointer to the 
-            project bibliography -->
+            project bibliography, addressed by the index document's URN plus the xml:id fragment -->
             <tei:bibl>
-               <tei:ptr target="/{project}/index#project_source_bibl"/>
+               <tei:ptr target="{PROJECT_INDEX_URN}#project_source_bibl"/>
                <tei:biblScope unit="pages" from="{FROM_PAGE}" to="{TO_PAGE}"/>
             </tei:bibl>
          </tei:sourceDesc>
@@ -209,6 +223,28 @@ Every document has a TEI header with a standardized structure.
   * `alt` for an alternate version of the title (translation/transliterationn)
   * `alt-sub` for an alternate version of the subtitle (translation/transliteration)
 * `LANGUAGE` can be any ISO language code
+* `PROJECT_INDEX_URN` is the URN of the project's index document, as declared in its
+  `tei:publicationStmt/tei:idno[@type='urn']` — for example
+  `urn:x-opensiddur:text:haggadah:haggadah@heidenheim_haggadah_1822`. The `#project_source_bibl`
+  fragment addresses the `tei:bibl` of that name in the index document's `tei:sourceDesc`.
+* `FROM_PAGE` and `TO_PAGE` are page designations as they are printed in the source, not sequence
+  numbers in a scan. Where a source is foliated rather than paginated, use recto/verso designations
+  (`5r`, `5v`).
+
+The same rule governs `tei:pb/@n`: it holds the designation printed in the source, with `@ed`
+naming the edition it belongs to. To make a page break linkable in a digital edition, add `@facs`
+pointing at the corresponding page of a scan — do not repurpose `@n` for scan page numbers, and do
+not overload `@corresp`, which is reserved for alignment:
+
+```xml
+<tei:pb n="3v" ed="1822" facs="https://www.hebrewbooks.org/pdfpager.aspx?req=4909&amp;pgnum=6"/>
+```
+
+`@facs` is available on every element via `att.global.facs`. The TEI `transcr` module is not
+included in this schema, so `tei:facsimile`, `tei:surface` and `tei:graphic` are unavailable and
+`@facs` takes an absolute URL rather than a local pointer. Record the scan itself as a `tei:bibl`
+in `tei:sourceDesc`, and where the designation-to-scan-page mapping is computable, implement it
+once in the importer rather than repeating it.
 
 | `RESPONSIBILITY_TYPE` | `RESPONSIBILITY_STRING` |
 |-----------------------|-------------------------|
@@ -275,7 +311,9 @@ All Biblical books are divided into verses, with major chapter divisions. In add
 within biblical books, such as parshiot, which are divided into aliyot. Chapters and verses are also part of the
 biblical canonical reference system.
 
-In a sefer Torah or other book, paragraph divisions are naturally present. Paragraphs may have a `type` attribute with the values `open-1` (parsha petukha, `פ`), `closed-1` (parsha setumah, `ס`), or `open-3` (petukha, `פפפ`) to indicate what type of division is in the book.
+In a sefer Torah or other book, paragraph divisions are naturally present. Paragraphs may have a `type` attribute of
+the form `open-n` (parsha petukha) or `closed-n` (parsha setumah), where `n` is the number of markers written in the
+source: `open-1` (`פ`), `open-2` (`פפ`), `open-3` (`פפפ`), `closed-1` (`ס`), `closed-2` (`סס`), `closed-3` (`ססס`).
 
 The `פ` or `ס` character should be omitted for the open and closed parashiot, even if it appears in the original 
 source. A renderer may render the characters.
@@ -320,6 +358,21 @@ To indicate a _kri/ktiv_ (read/written) section, use:
 ```
 When there is a _kri_ without a corresponding _ktiv_, use `tei:choice` with an empty `j:written`.
 When there is a _ktiv_ without a corresponding _kri_, use `tei:choice` with an empty `j:read`.
+
+To indicate alternate wordings of the same text, exactly one of which is read, use `j:option`
+inside a `tei:choice`. Use `xml:lang` where the alternates differ in language, and `corresp` to
+carry a URN by which a setting may select one:
+```xml
+<tei:choice>
+   <j:option xml:lang="he">הב לן ונברך</j:option>
+   <j:option xml:lang="yi">רבותי וויר וואָללן בענטשן</j:option>
+</tei:choice>
+```
+A `tei:choice` containing `j:option` must contain at least two of them, and must not mix them
+with `j:read`/`j:written`. Note the distinction from a condition: `j:conditional` governs text
+that is either said or omitted, whereas alternates are always said — the question is only which
+wording. Text that some communities add and others omit is a condition, not an alternate; see
+[Conditional text](#conditional-text).
 
 Haftarot are a special case of Biblical material. They are from the works of the prophets (or writings) but are 
 discontinuous. Each parshah's hatarah may additionally have multiple options, depending on custom, and internal 
@@ -662,6 +715,16 @@ Further derived values are also available and calculated from the above
    <tei:f name="shabbat">
       <tei:binary value=""/>
    </tei:f>
+   <tei:f name="motzaei-shabbat">
+      <!-- Saturday evening: the civil day is still Saturday, but the Hebrew day has
+      already moved on. This is when havdalah is said. -->
+      <tei:binary value=""/>
+   </tei:f>
+   <tei:f name="eruv-tavshilin">
+      <!-- true when a festival within the next few days runs straight into Shabbat,
+      so that an eruv tavshilin must be prepared -->
+      <tei:binary value=""/>
+   </tei:f>
    <tei:f name="yom-tov">
       <tei:binary value=""/>
    </tei:f>
@@ -750,6 +813,54 @@ are never set automatically (they default to the `false` value)
       <tei:binary/>
    </tei:f>
    
+</tei:fs>
+```
+
+Who is present is not calculable either, and is declared the same way. Unlike the
+overrides above, these have **no default**: left unset they are `undefined`, so a text
+compiled without knowing who will be there keeps the conditional passage together with the
+instruction that says when to read it, rather than silently dropping it.
+```xml
+<tei:fs type="opensiddur:quorum">
+   <tei:f name="zimmun">
+      <!-- three or more have eaten together -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="minyan">
+      <!-- ten or more are present. A minyan implies a zimmun: setting minyan true
+      derives zimmun true, unless zimmun is itself explicitly set. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="present-not-eaten">
+      <!-- people are present who did not eat -->
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+
+Nor is whose home one is in:
+```xml
+<tei:fs type="opensiddur:household">
+   <tei:f name="at-fathers-home">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="at-mothers-home">
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+
+Textual variants — wordings some communities add and others do not — are selected by
+`opensiddur:variant`. Its feature set is open: a feature's **name is the URN of the variant
+it selects**, in the `urn:x-opensiddur:condition:` namespace, mirroring the text URN of the
+passage that varies and carrying no project identifier. A variant belongs to the text rather
+than to the edition printing it, so two sources offering the same variant name the same URN
+and one setting selects it in both.
+```xml
+<tei:fs type="opensiddur:variant">
+   <tei:f name="urn:x-opensiddur:condition:haggadah:magid/lefikach/shira_chadasha">
+      <tei:binary value="true"/>
+   </tei:f>
 </tei:fs>
 ```
 

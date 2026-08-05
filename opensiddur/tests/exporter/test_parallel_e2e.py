@@ -252,16 +252,16 @@ class TestMarkerStructureE2E(_E2EBase):
             self.assertIn("column-order", p.attrib)
 
 
-# ── _in_parallel_compilation suppression end-to-end ─────────────────────────
+# ── parallel-compilation suppression end-to-end ─────────────────────────────
 
 class TestInParallelCompilationE2E(_E2EBase):
 
     def test_in_parallel_mode_produces_no_parallel_elements(self):
-        """When _in_parallel_compilation=True, no p:parallel is produced."""
+        """Inside a parallel sub-compilation, no p:parallel is produced."""
+        self.linear_data.parallel_compilation_depth = 1
         proc = ExternalCompilerProcessor(
             self.PRIMARY_PROJECT, "index.xml",
-            linear_data=self.linear_data,
-            _in_parallel_compilation=True)
+            linear_data=self.linear_data)
         proc.marker_stack = []  # enable marker mode
 
         with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range):
@@ -272,10 +272,10 @@ class TestInParallelCompilationE2E(_E2EBase):
 
     def test_in_parallel_mode_still_produces_markers(self):
         """Even without p:parallel, marker elements should appear when marker_stack is set."""
+        self.linear_data.parallel_compilation_depth = 1
         proc = ExternalCompilerProcessor(
             self.PRIMARY_PROJECT, "index.xml",
-            linear_data=self.linear_data,
-            _in_parallel_compilation=True)
+            linear_data=self.linear_data)
         proc.marker_stack = []
 
         with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range):
@@ -433,6 +433,69 @@ class TestThreeWayTransclusionE2E(_E2EBase):
         for tc in transcludes:
             parallels = tc.findall(f"{{{P_NS}}}parallel")
             self.assertGreater(len(parallels), 0, "p:transclude should contain p:parallel")
+
+    def test_transclusion_does_not_nest_parallels(self):
+        """The compiled output must satisfy both parallel invariants end to end.
+
+        See specs/COMPILER_SPECIFICATION.md, Parallel Compilation.
+        """
+        proc = ExternalCompilerProcessor(
+            self.PRIMARY_PROJECT, "index.xml",
+            linear_data=self.linear_data)
+
+        with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range_3way):
+            with patch.object(UrnResolver, "prioritize_range", side_effect=self._mock_prioritize_range):
+                result = proc.process()
+
+        result_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
+        root = etree.fromstring(f"<root>{result_xml}</root>")
+
+        for par in root.iter(f"{{{P_NS}}}parallel"):
+            self.assertNotIn(
+                f"{{{P_NS}}}parallel", [a.tag for a in par.iterancestors()],
+                "p:parallel must never have a p:parallel ancestor")
+        for item in root.iter(f"{{{P_NS}}}parallelItem"):
+            nested = [
+                t for t in item.iter(f"{{{P_NS}}}transclude")
+                if t.get("type") in (None, "external")
+            ]
+            self.assertEqual(
+                nested, [],
+                "p:parallelItem must not contain an external p:transclude")
+
+    def test_translation_does_not_leak_into_the_primary_column(self):
+        """Shape assertions alone would miss the user-visible symptom.
+
+        When the block failed to end at the transclusion, the translation was flattened into
+        the primary column and rendered in that column's direction (reversed Latin).
+
+        This fixture's mock does not resolve the parallel side of b.xml, so the inner parallel
+        item is empty here and the positive "translation reaches its own column" case cannot be
+        asserted — that is checked against the real projects instead. The leak assertion is
+        still meaningful and is the one that fails when the invariant breaks.
+        """
+        proc = ExternalCompilerProcessor(
+            self.PRIMARY_PROJECT, "index.xml",
+            linear_data=self.linear_data)
+
+        with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range_3way):
+            with patch.object(UrnResolver, "prioritize_range", side_effect=self._mock_prioritize_range):
+                result = proc.process()
+
+        result_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
+        root = etree.fromstring(f"<root>{result_xml}</root>")
+
+        primary_text = " ".join(
+            "".join(i.itertext())
+            for i in root.findall(f".//{{{P_NS}}}parallelItem[@role='primary']"))
+        parallel_text = " ".join(
+            "".join(i.itertext())
+            for i in root.findall(f".//{{{P_NS}}}parallelItem[@role='parallel']"))
+
+        self.assertIn("B Hebrew verse 1", primary_text)
+        self.assertNotIn("English verse", primary_text,
+                         "translation must not leak into the primary column")
+        self.assertIn("English verse", parallel_text)
 
 
 if __name__ == "__main__":

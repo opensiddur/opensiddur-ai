@@ -277,7 +277,8 @@ def doc_needs_marker_reconstruction(root: etree.ElementBase) -> bool:
 def reconstruct_markered_document(root: etree.ElementBase) -> None:
     pid_state: defaultdict[str, dict[str, Any]] = defaultdict(dict)
 
-    for parallel in root.iter():
+    # Snapshot before iterating: reconstruct_parallel_item mutates the tree underneath us.
+    for parallel in list(root.iter()):
         if parallel.tag != _PARALLEL:
             continue
         for pi in parallel:

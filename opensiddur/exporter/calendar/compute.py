@@ -26,6 +26,9 @@ FS_HOLIDAY = "opensiddur:holiday"
 FS_HOLIDAY_AGG = "opensiddur:holiday-aggregate"
 FS_TORAH = "opensiddur:torah-reading"
 FS_SERVICE_TIME = "opensiddur:service-time"
+FS_QUORUM = "opensiddur:quorum"
+FS_HOUSEHOLD = "opensiddur:household"
+FS_VARIANT = "opensiddur:variant"
 
 # Israel approximate bounding box (lat/lon).
 _ISRAEL_LAT = (29.5, 33.5)
@@ -179,10 +182,39 @@ def _pyluach_from_gregorian(gdate: date) -> pyluach_dates.GregorianDate:
     return pyluach_dates.GregorianDate(gdate.year, gdate.month, gdate.day)
 
 
+def _effective_gregorian_date(snapshot: SettingSnapshot) -> date | None:
+    """The civil date whose Hebrew equivalent is current, accounting for nightfall.
+
+    The Hebrew day begins in the evening, so from nightfall onward the current Hebrew date is
+    that of the *following* civil day. Everything derived from the Hebrew calendar — the date
+    itself, the day of the week, the holiday — must be computed from this date rather than the
+    civil one, or an evening service is dated to the day that has just ended. The seder is the
+    plain case: it begins after nightfall on 14 Nisan, and belongs to 15 Nisan.
+
+    The boundary is tzet hakochavim rather than sunset. Between sunset and nightfall it is
+    doubtful which day it is; that window is reported separately as ``bayn-hashmashot`` and is
+    left on the day that is ending rather than being silently rolled forward.
+
+    Rolling requires both a location and a time of day, since neither nightfall nor "is it yet
+    evening" is otherwise knowable. Without them the civil date is returned unchanged, so
+    callers that supply only a date behave exactly as before.
+    """
+    gdate = snapshot.gregorian_date()
+    if gdate is None:
+        return None
+    loc = snapshot.location()
+    tod = snapshot.time_of_day()
+    if loc is None or tod is None:
+        return gdate
+    nightfall = hdate.Zmanim(gdate, location=loc).tset_hakohavim.local
+    aware = datetime.combine(gdate, tod).replace(tzinfo=nightfall.tzinfo)
+    return gdate + timedelta(days=1) if aware >= nightfall else gdate
+
+
 def _hebrew_from_snapshot(snapshot: SettingSnapshot) -> pyluach_dates.HebrewDate | None:
     gdate = snapshot.gregorian_date()
     if gdate is not None and snapshot.location() is not None:
-        return _pyluach_from_gregorian(gdate).to_heb()
+        return _pyluach_from_gregorian(_effective_gregorian_date(snapshot)).to_heb()
     year = snapshot.get_int(FS_HEBREW_DATE, "year")
     month = snapshot.get_int(FS_HEBREW_DATE, "month")
     day = snapshot.get_int(FS_HEBREW_DATE, "day")
@@ -208,7 +240,7 @@ def compute_hebrew_date(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     if gdate is None or snapshot.location() is None:
         return None
-    heb = _pyluach_from_gregorian(gdate).to_heb()
+    heb = _pyluach_from_gregorian(_effective_gregorian_date(snapshot)).to_heb()
     return {"year": heb.year, "month": heb.month, "day": heb.day}
 
 
@@ -256,21 +288,22 @@ def compute_day_of_week(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     if gdate is None:
         return None
+    # secular-day stays on the civil weekday while hebrew-day follows the Hebrew date, which
+    # has already rolled over at sunset. The divergence between the two is what identifies
+    # Saturday night: civil Saturday, Hebrew Sunday. See motzaei-shabbat below.
     result: dict[str, Any] = {"secular-day": _jlptei_weekday(gdate.weekday())}
     loc = snapshot.location()
     dt = _datetime_from_snapshot(snapshot)
     heb = _hebrew_from_snapshot(snapshot)
     if heb is not None:
-        hebrew_day = _jlptei_weekday(
-            pyluach_dates.HebrewDate(heb.year, heb.month, heb.day).to_greg().weekday()
-        )
+        # pyluach numbers weekdays Sunday=1..Saturday=7 already, which is the JLPTEI
+        # numbering; _jlptei_weekday is for Python's Monday=0 dates and must not be applied.
+        hebrew_day = pyluach_dates.HebrewDate(heb.year, heb.month, heb.day).weekday()
         bayn = False
         if loc is not None and dt is not None and snapshot.time_of_day() is not None:
             z = hdate.Zmanim(gdate, location=loc)
             aware_dt = dt.replace(tzinfo=z.shkia.local.tzinfo)
             bayn = z.shkia.local < aware_dt < z.tset_hakohavim.local
-            if bayn:
-                hebrew_day = _jlptei_weekday((gdate + timedelta(days=1)).weekday())
         result["hebrew-day"] = hebrew_day
         result["bayn-hashmashot"] = bayn
     return result
@@ -362,7 +395,7 @@ def _map_hdate_holidays(
 
 
 def compute_holiday(snapshot: SettingSnapshot) -> dict[str, Any] | None:
-    gdate = snapshot.gregorian_date()
+    gdate = _effective_gregorian_date(snapshot)
     heb = _hebrew_from_snapshot(snapshot)
     if gdate is None or heb is None:
         return None
@@ -377,7 +410,14 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
     heb = _hebrew_from_snapshot(snapshot)
     if holidays is None or dow is None:
         return None
-    is_shabbat = dow.get("hebrew-day") == 7 or dow.get("secular-day") == 7
+    # The Hebrew day is authoritative: it has rolled over at sunset, so Friday evening is
+    # already Shabbat and Saturday evening is no longer. Where no rollover is possible (no
+    # location or no time) hebrew-day equals secular-day, so this is unchanged for callers
+    # that supply a bare date.
+    is_shabbat = dow.get("hebrew-day") == 7
+    # Saturday night: the civil day is still Saturday but the Hebrew day has moved on. This
+    # is when havdalah is said — in the haggadah, the yaknehaz paragraph of the kiddush.
+    motzaei_shabbat = dow.get("secular-day") == 7 and dow.get("hebrew-day") != 7
     yom_tov = any(
         holidays.get(k, 0) > 0
         for k in (
@@ -393,6 +433,7 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
     )
     return {
         "shabbat": is_shabbat,
+        "motzaei-shabbat": motzaei_shabbat,
         "yom-tov": yom_tov,
         "chol-hamoed": chol_hamoed,
         "regalim": regalim,
@@ -400,9 +441,35 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
         "high-holidays": holidays.get("rosh-hashana", 0) > 0 or holidays.get("yom-kippur", 0) > 0,
         "aseret-ymei-tshuva": aseret,
         "minor-fast": any(holidays.get(k, 0) > 0 for k in ("tzom-gedalia", "asara-btevet", "taanit-esther", "tisha-bav")),
+        "eruv-tavshilin": _needs_eruv_tavshilin(snapshot),
         "day-before-holiday": False,
         "day-after-holiday": False,
     }
+
+
+def _needs_eruv_tavshilin(snapshot: SettingSnapshot) -> bool:
+    """Whether an eruv tavshilin is called for in the coming days.
+
+    Cooking on a festival is permitted only for that festival, so when one runs straight into
+    Shabbat an eruv tavshilin must be prepared beforehand to allow cooking for Shabbat. That is
+    the case exactly when a yom tov within the next few days is immediately followed by
+    Shabbat — for Pesah, when the first days fall on Thursday and Friday.
+
+    True from the eve of the festival onward rather than only on the day the eruv is made, so
+    that a haggadah compiled for the seder still carries the passage.
+    """
+    gdate = _effective_gregorian_date(snapshot)
+    if gdate is None:
+        return False
+    diaspora = snapshot.is_diaspora()
+    for offset in range(0, 4):
+        day = gdate + timedelta(days=offset)
+        if _jlptei_weekday(day.weekday()) != 6:  # a yom tov that is itself Friday
+            continue
+        if not hdate.HDateInfo(day, diaspora=diaspora).is_yom_tov:
+            continue
+        return True
+    return False
 
 
 def _parsha_slug(name: str) -> str:
@@ -457,3 +524,17 @@ def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "neila": holidays.get("yom-kippur", 0) > 0 and aware_dt >= z.plag_hamincha.local,
         "slihot": z.alot_hashachar.local <= aware_dt < z.netz_hachama.local,
     }
+
+
+def compute_quorum(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """Derive what a quorum implies about the smaller quorums it contains.
+
+    Ten adults are also three, so a minyan entails a zimmun. Nothing is derived in the other
+    direction, and nothing is derived when minyan is unset: quorum features must stay
+    undefined by default, so that a haggadah compiled without knowing who will be present
+    keeps both the passage and the rubric explaining when to say it.
+    """
+    minyan = snapshot.get_bool(FS_QUORUM, "minyan")
+    if minyan is not True:
+        return None
+    return {"zimmun": True}

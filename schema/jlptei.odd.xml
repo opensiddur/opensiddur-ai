@@ -130,7 +130,7 @@
         <moduleRef key="header" include="teiHeader fileDesc titleStmt publicationStmt sourceDesc licence availability distributor edition editionStmt idno"/>
         
         <!-- required core elements (p and title for use in titleStmt) -->
-        <moduleRef key="core" include="p title cb choice corr date divGen foreign gb head lb milestone note pb ptr ref reg abbr author bibl editor email emph hi item l label lg list name publisher pubPlace resp respStmt series"/>
+        <moduleRef key="core" include="p title cb choice corr date divGen foreign gb head lb milestone note pb ptr ref reg abbr author bibl biblScope editor email emph hi item l label lg list name publisher pubPlace resp respStmt series"/>
         
         <!-- required textstructure elements (TEI, text, and body) -->
         <moduleRef key="textstructure" include="TEI text body div front back"/>
@@ -147,8 +147,8 @@
           <desc>Custom elements for the Open Siddur Jewish Liturgy Project TEI schema</desc>
         </moduleSpec>
         
-        <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/>
-      
+        <moduleRef key="linking" include="ab anchor link seg standOff linkGrp"/><moduleRef key="analysis" include="c pc w"/><moduleRef key="msdescription" include="incipit"/><classRef key="att.anchoring"/><classRef key="model.standOffPart"/><moduleRef key="tagdocs" include="code"/><moduleRef key="gaiji" include="g"/><moduleRef key="textcrit" include="lem"/><classRef key="att.global.facs"/>
+
       <!-- Custom element specifications -->
       <elementSpec ident="transclude" ns="http://jewishliturgy.org/ns/jlptei/2" module="jlptei" mode="add">
         <desc>An element that includes content from another part of the document.</desc>
@@ -201,9 +201,24 @@
           <attDef ident="type" mode="add">
             <desc>Characterizes the element in some sense, using any convenient classification scheme or typology.</desc>
             <valList type="closed">
-              <valItem ident="open-1"/>
-              <valItem ident="closed-1"/>
-              <valItem ident="open-3"/>
+              <valItem ident="open-1">
+                <desc>parsha petukha, marked <mentioned>פ</mentioned></desc>
+              </valItem>
+              <valItem ident="open-2">
+                <desc>parsha petukha, marked <mentioned>פפ</mentioned></desc>
+              </valItem>
+              <valItem ident="open-3">
+                <desc>parsha petukha, marked <mentioned>פפפ</mentioned></desc>
+              </valItem>
+              <valItem ident="closed-1">
+                <desc>parsha setumah, marked <mentioned>ס</mentioned></desc>
+              </valItem>
+              <valItem ident="closed-2">
+                <desc>parsha setumah, marked <mentioned>סס</mentioned></desc>
+              </valItem>
+              <valItem ident="closed-3">
+                <desc>parsha setumah, marked <mentioned>ססס</mentioned></desc>
+              </valItem>
             </valList>
           </attDef>
         </attList>
@@ -262,9 +277,44 @@
         </classes>
         <content>
           <macroRef key="macro.paraContent"/>
-        </content>  
+        </content>
       </elementSpec>
-      
+
+      <!-- Alternate wordings: one of several readings is chosen, rather than text being
+           added or omitted (which is what j:conditional expresses). -->
+      <elementSpec ident="option" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+        <desc>One of several alternate wordings of the same text, exactly one of which is
+          read. Appears within a &lt;choice&gt; element alongside one or more other
+          &lt;option&gt; elements. Use <att>xml:lang</att> when the options differ in language,
+          and <att>corresp</att> to carry a URN by which a setting may select an option.
+          Contrast <gi>conditional</gi>, which governs text that is either said or omitted.</desc>
+        <classes>
+          <memberOf key="att.global"/>
+          <memberOf key="model.choicePart"/>
+        </classes>
+        <content>
+          <macroRef key="macro.paraContent"/>
+        </content>
+        <constraintSpec ident="option-constraints" scheme="schematron">
+          <desc>
+            Schematron rules to ensure <gi>option</gi> is used as a set of mutually exclusive
+            alternates, and is not mixed with the kri/ktiv vocabulary.
+          </desc>
+          <constraint>
+            <sch:rule context="j:option" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:assert test="count(../j:option) &gt;= 2">
+                A <gi>choice</gi> containing <gi>option</gi> must contain at least two of them:
+                an alternate is a choice between readings.
+              </sch:assert>
+              <sch:assert test="not(../j:read) and not(../j:written)">
+                <gi>option</gi> must not appear beside <gi>read</gi> or <gi>written</gi>:
+                alternate wordings and kri/ktiv pairs are different things.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+      </elementSpec>
+
     <elementSpec ident="declare" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
       <desc>
         Associates a set of conditional attribute declarations with a range of text. 
@@ -273,11 +323,10 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
+        <memberOf key="model.global"/>
       </classes>
       <content>
-        <oneOrMore>
-          <elementRef key="model.featureVal.complex"/>
-        </oneOrMore>
+        <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
       </content>
     </elementSpec>
 
@@ -288,7 +337,7 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
-        <memberOf key="att.pointing"/>
+        <memberOf key="model.global"/>
       </classes>
       <attList>
         <attDef ident="target" usage="req">
@@ -320,15 +369,27 @@
             <sch:assert test="starts-with(@target, '#')">
               The target attribute must be a fragment identifier (start with '#').
             </sch:assert>
-            <sch:assert test="//j:declare[@xml:id=substring(@target, 2)]">
+            <sch:assert test="//j:declare[@xml:id = substring(current()/@target, 2)]">
               The target attribute must point to a <gi>declare</gi> element in the same file.
             </sch:assert>
-            <sch:assert test="preceding::j:declare[@xml:id = substring(@target, 2)]">
+            <sch:assert test="preceding::j:declare[@xml:id = substring(current()/@target, 2)]">
               The targeted <gi>declare</gi> element must precede the <gi>endDeclare</gi> element in document order.
             </sch:assert>
           </sch:rule>
         </constraint>
       </constraintSpec>
+    </elementSpec>
+
+    <!-- Feature names carry condition URNs for textual variants (see JLPTEI-3.md),
+         which are not XML names. -->
+    <elementSpec ident="f" module="iso-fs" mode="change">
+      <attList>
+        <attDef ident="name" mode="change">
+          <datatype>
+            <dataRef key="teidata.text"/>
+          </datatype>
+        </attDef>
+      </attList>
     </elementSpec>
 
     <elementSpec ident="conditional" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
@@ -337,17 +398,27 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
+        <memberOf key="model.global"/>
       </classes>
       <content>
         <sequence>
-          <optional>
-            <elementRef key="note" ns="http://www.tei-c.org/ns/1.0"/>
-          </optional>
-          <oneOrMore>
-            <classRef key="model.featureVal.complex"/>
-          </oneOrMore>
+          <elementRef key="note" minOccurs="0"/>
+          <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
         </sequence>
       </content>
+      <constraintSpec ident="conditional-id-constraints" scheme="schematron">
+        <desc>
+          Schematron rule to ensure a <gi>conditional</gi> can be closed by an
+          <gi>endConditional</gi>, which references it by <att>xml:id</att>.
+        </desc>
+        <constraint>
+          <sch:rule context="j:conditional" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+            <sch:assert test="@xml:id">
+              Every <gi>conditional</gi> element must have an xml:id attribute.
+            </sch:assert>
+          </sch:rule>
+        </constraint>
+      </constraintSpec>
     </elementSpec>
 
     <elementSpec ident="endConditional" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
@@ -356,7 +427,7 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
-        <memberOf key="att.pointing"/>
+        <memberOf key="model.global"/>
       </classes>
       <attList>
         <attDef ident="target" usage="req">
@@ -383,10 +454,10 @@
             <sch:assert test="starts-with(@target, '#')">
               The target attribute must be a fragment identifier (start with '#').
             </sch:assert>
-            <sch:assert test="//j:conditional[@xml:id=substring(@target, 2)]">
+            <sch:assert test="//j:conditional[@xml:id = substring(current()/@target, 2)]">
               The target attribute must point to a <gi>conditional</gi> element in the same file.
             </sch:assert>
-            <sch:assert test="preceding::j:conditional[@xml:id = substring(@target, 2)]">
+            <sch:assert test="preceding::j:conditional[@xml:id = substring(current()/@target, 2)]">
               The referenced <gi>conditional</gi> element must precede the <gi>endConditional</gi> element.
             </sch:assert>
           </sch:rule>
@@ -402,11 +473,10 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
+        <memberOf key="model.featureVal.complex"/>
       </classes>
       <content>
-        <oneOrMore>
-          <classRef key="model.featureVal.complex"/>
-        </oneOrMore>
+        <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
       </content>
     </elementSpec>
 
@@ -416,11 +486,10 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
+        <memberOf key="model.featureVal.complex"/>
       </classes>
       <content>
-        <oneOrMore>
-          <classRef key="model.featureVal.complex"/>
-        </oneOrMore>
+        <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
       </content>
     </elementSpec>
 
@@ -430,11 +499,10 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
+        <memberOf key="model.featureVal.complex"/>
       </classes>
       <content>
-        <oneOrMore>
-          <classRef key="model.featureVal.complex"/>
-        </oneOrMore>
+        <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
       </content>
     </elementSpec>
 
@@ -444,11 +512,10 @@
       </desc>
       <classes>
         <memberOf key="att.global"/>
+        <memberOf key="model.featureVal.complex"/>
       </classes>
       <content>
-        <oneOrMore>
-          <classRef key="model.featureVal.complex"/>
-        </oneOrMore>
+        <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
       </content>
     </elementSpec>
 

@@ -132,7 +132,15 @@ class CompilerProcessor:
         self._urn_resolver = UrnResolver(self._refdb)
 
         self.root_language = None
-        self._in_parallel_compilation = False
+
+    @property
+    def _in_parallel_compilation(self) -> bool:
+        """True while any parallel sub-compilation is in progress, at any depth.
+
+        Read from LinearData so it survives processor construction: nested processors are
+        built in several places and none of them would think to forward a per-instance flag.
+        """
+        return self.linear_data.parallel_compilation_depth > 0
 
     def _get_in_scope_language(self, element: ElementBase) -> Optional[str]:
         """ Get the xml:lang attribute from the element or its ancestors.
@@ -571,8 +579,14 @@ class CompilerProcessor:
         return None
 
     def _copy_element_subtree(self, element: ElementBase) -> ElementBase:
-        """Deep-copy an element subtree for retained conditional markers."""
-        return etree.fromstring(etree.tostring(element))
+        """Deep-copy an element subtree for retained conditional markers.
+
+        The tail is excluded: it is the text following the marker in its parent, not part of
+        the marker. Serialising it would put content after the root element, which cannot be
+        parsed back as a document — which is what a retained mid-paragraph marker would do.
+        The caller re-attaches the tail.
+        """
+        return etree.fromstring(etree.tostring(element, with_tail=False))
 
     def _push_conditional_scope(self, scoped_id: str, result: TriState) -> None:
         self.linear_data.conditional_scope_stack.append(
@@ -591,6 +605,30 @@ class CompilerProcessor:
             scope.result == TriState.FALSE.value
             for scope in self.linear_data.conditional_scope_stack
         )
+
+    def _carry_dropped_tail(self, append_to: ElementBase | list[ElementBase], child: ElementBase) -> None:
+        """Carry the tail of a child that produced no output into the result.
+
+        A conditional control element is stripped from the output, but the text around it is
+        ordinary document text and must survive — mid-paragraph, that tail *is* the running
+        text. Text inside a false conditional scope must not survive: it is the conditional
+        text itself.
+
+        Both cases reduce to one test, as long as it is made *after* the child has been
+        processed: a ``j:conditional`` that just opened a false scope leaves that scope on the
+        stack and so loses the text following it, while the ``j:endConditional`` that closes
+        one has already popped it and so keeps the text following it.
+        """
+        if not child.tail or self._should_skip_conditional_content():
+            return
+        if isinstance(append_to, list):
+            if append_to:
+                append_to[-1].tail = (append_to[-1].tail or "") + child.tail
+            return
+        if len(append_to):
+            append_to[-1].tail = (append_to[-1].tail or "") + child.tail
+        else:
+            append_to.text = (append_to.text or "") + child.tail
 
     def _rebuild_derived_dependency_index(self) -> None:
         """Rebuild reverse index after conditional_settings stack mutation."""
@@ -806,6 +844,7 @@ class CompilerProcessor:
         for child in element:
             processed = self._process_element(child, root)
             if processed is None:
+                self._carry_dropped_tail(copied, child)
                 continue
             if child.tail:
                 processed.tail = child.tail

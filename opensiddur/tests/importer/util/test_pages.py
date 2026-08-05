@@ -2,7 +2,13 @@ import unittest
 from unittest.mock import patch, mock_open, MagicMock
 from pathlib import Path
 
-from opensiddur.importer.util.pages import get_page, get_credits, jps1917_text_directory
+from opensiddur.importer.util.pages import (
+    feinstein_haggadah_data_directory,
+    get_page,
+    get_credits,
+    heidenheim_haggadah_data_directory,
+    jps1917_text_directory,
+)
 from opensiddur.importer.util.constants import Page
 
 
@@ -185,7 +191,6 @@ class TestGetCredits(unittest.TestCase):
 
 
 class TestPageNumberFormatting(unittest.TestCase):
-    """Test that page numbers are formatted correctly in filenames"""
     
     @patch('builtins.open', new_callable=mock_open, read_data='test')
     def test_single_digit_page_number(self, mock_file):
@@ -218,6 +223,22 @@ class TestPageNumberFormatting(unittest.TestCase):
         
         actual_call = str(mock_file.call_args[0][0])
         self.assertTrue(actual_call.endswith('5678.txt'))
+
+
+class TestHaggadahDataDirectories(unittest.TestCase):
+    def test_feinstein_haggadah_data_directory(self) -> None:
+        root = Path("/tmp/sourcetexts")
+        self.assertEqual(
+            feinstein_haggadah_data_directory(root),
+            root / "feinstein_haggadah_2009",
+        )
+
+    def test_heidenheim_haggadah_data_directory(self) -> None:
+        root = Path("/tmp/sourcetexts")
+        self.assertEqual(
+            heidenheim_haggadah_data_directory(root),
+            root / "heidenheim_haggadah_1822",
+        )
 
 
 if __name__ == '__main__':
