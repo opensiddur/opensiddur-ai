@@ -82,6 +82,9 @@ HEADER_ANCHORS: dict[str, list[str]] = {
     "maror": ["מרור"],
     "korech": ["כורך"],
     "shulchan_orech": ["שלחןעורך"],
+    # The two hand-washings are told apart by the vav alone: the first is headed ורחץ above
+    # under its standard name urechatz, the second רחץ here. Neither fragment may be given to
+    # both, or _subseq_ratio cannot choose between them.
     "rachtzah": ["רחץ"],
     "barech": ["ברך"],
     "hallel": ["הלל"],
@@ -98,7 +101,6 @@ HEADER_ANCHORS: dict[str, list[str]] = {
     "ki_lo_na_eh": ["כילונאה"],
     "adir_hu": ["אדירהוא"],
     "psalm_114": ["בצאתישראל"],
-    "rachtzah": ["רחץ"],
 }
 
 

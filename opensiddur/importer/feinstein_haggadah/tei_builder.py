@@ -27,7 +27,6 @@ from opensiddur.importer.feinstein_haggadah.page_breaks import (
     pb_markup,
 )
 from opensiddur.importer.feinstein_haggadah.sections import (
-    INDEX_CHILDREN,
     SectionContent,
     TextBlock,
     urn_for_section,

@@ -21,6 +21,7 @@ from opensiddur.importer.feinstein_haggadah.sections import (
     match_subsection_by_incipit,
     match_subsection_slug,
 )
+from opensiddur.importer.util.pages import feinstein_haggadah_data_directory
 
 #: Subsection tables that apply only inside one h3 section. Scoping matters: the second-cup and
 #: fourth-cup בורא פרי הגפן blessings are word-for-word identical, and only their parent distinguishes
@@ -37,9 +38,6 @@ SCOPED_SUBSECTION_PREFIXES: dict[str, list[tuple[str, str]]] = {
 ROW_SPLIT_PREFIXES: list[tuple[str, str]] = [
     ("לְשָּׁנָה הַבָּאָה בִּירוּשָׁלָיִם", "lshana_haba_ah"),
 ]
-from opensiddur.importer.util.pages import feinstein_haggadah_data_directory
-
-_PARENTHETICAL = re.compile(r"\(([^)]*)\)")
 
 
 @dataclass(frozen=True)
