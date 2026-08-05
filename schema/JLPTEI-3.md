@@ -530,6 +530,10 @@ The time of day is represented by:
 * `minute` may take values between 0 and 59.
 * `second` may take values between 0 and 59.
 
+The time is a local wall clock reading at the place given by `opensiddur:location`, not UTC. A
+seder beginning at 8:30 PM in New York is written `hour` 20, `minute` 30, together with the
+New York coordinates. The `opensiddur:location` structure below determines the time zone.
+
 Given the secular date/time, the processing model calculates the Hebrew date and halachic time:
 ```xml
 <tei:fs type="opensiddur:hebrew-date">
@@ -582,10 +586,19 @@ In order to calculate the Hebrew date/time from the secular date/time, the locat
    <tei:f name="longitude">
       <tei:numeric value="{longitude}"/>
    </tei:f>
+   <tei:f name="timezone">
+      <tei:symbol value="{IANA time zone name}"/>
+   </tei:f>
 </tei:fs>
 ```
 
 The `latitude` has values between `-90` (90 degrees south) and `90` (90 degrees north) and `longitude` between `-180` (180 degrees west) and `180` (180 degrees east).
+
+The `timezone` is an IANA time zone name, such as `America/New_York` or `Asia/Jerusalem`. It is
+the zone in which `opensiddur:time` is read. It need not be given: when it is absent it is
+derived from the latitude and longitude, and a declared value overrides the derived one. That
+override is what an author near a time zone border, or one who wants a time stated in UTC,
+should reach for.
 
 Given location, the Israel/diaspora binary can be derived:
 ```xml

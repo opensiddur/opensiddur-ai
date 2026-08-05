@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import hdate
+import tzfpy
 from pyluach import dates as pyluach_dates
 from pyluach import parshios
 
@@ -102,6 +104,22 @@ SERVICE_TIME_FEATURES = (
 )
 
 
+def _timezone_name_at(latitude: float, longitude: float) -> str | None:
+    """The IANA zone name covering a coordinate, or None if there is none."""
+    # tzfpy takes longitude first, the reverse of the order used everywhere else here.
+    return tzfpy.get_tz(longitude, latitude)
+
+
+def _zone_from_name(name: str | None) -> tzinfo | None:
+    """Resolve an IANA zone name, or None if it is absent or unknown to the system."""
+    if not name:
+        return None
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        return None
+
+
 @dataclass(frozen=True)
 class SettingSnapshot:
     """Read-only view of active setting values."""
@@ -122,6 +140,18 @@ class SettingSnapshot:
         if isinstance(value, float):
             return int(value)
         return int(value)
+
+    def get_float(self, fs_type: str, feature_name: str) -> float | None:
+        """Coordinates, which reach the stack as a NumericValue when declared in JLPTEI."""
+        value = self.get(fs_type, feature_name)
+        if value is None:
+            return None
+        if isinstance(value, NumericValue):
+            return float(value.value)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
     def get_bool(self, fs_type: str, feature_name: str) -> bool | None:
         value = self.get(fs_type, feature_name)
@@ -153,12 +183,35 @@ class SettingSnapshot:
         except ValueError:
             return None
 
+    def timezone(self) -> tzinfo:
+        """The zone in which ``opensiddur:time`` is to be read.
+
+        An explicitly declared ``timezone`` wins; otherwise the zone is looked up from the
+        coordinates, so a document that gives only latitude and longitude still gets local wall
+        clock time. UTC is the last resort, for a document with no location at all.
+
+        The lookup lives here rather than only in the derivation graph because the compute
+        functions are also called directly, without a settings stack behind them.
+        """
+        name = self.get(FS_LOCATION, "timezone")
+        if isinstance(name, str) and name:
+            zone = _zone_from_name(name)
+            if zone is not None:
+                return zone
+        lat = self.get_float(FS_LOCATION, "latitude")
+        lon = self.get_float(FS_LOCATION, "longitude")
+        if lat is not None and lon is not None:
+            zone = _zone_from_name(_timezone_name_at(lat, lon))
+            if zone is not None:
+                return zone
+        return timezone.utc
+
     def location(self) -> hdate.Location | None:
-        lat = self.get(FS_LOCATION, "latitude")
-        lon = self.get(FS_LOCATION, "longitude")
+        lat = self.get_float(FS_LOCATION, "latitude")
+        lon = self.get_float(FS_LOCATION, "longitude")
         if lat is None or lon is None:
             return None
-        return hdate.Location("", float(lat), float(lon), "UTC", 0)
+        return hdate.Location("", lat, lon, self.timezone(), 0)
 
     def is_diaspora(self) -> bool:
         is_israel = self.get_bool(FS_ISRAEL, "is-israel")
@@ -207,8 +260,7 @@ def _effective_gregorian_date(snapshot: SettingSnapshot) -> date | None:
     if loc is None or tod is None:
         return gdate
     nightfall = hdate.Zmanim(gdate, location=loc).tset_hakohavim.local
-    aware = datetime.combine(gdate, tod).replace(tzinfo=nightfall.tzinfo)
-    return gdate + timedelta(days=1) if aware >= nightfall else gdate
+    return gdate + timedelta(days=1) if _datetime_from_snapshot(snapshot) >= nightfall else gdate
 
 
 def _hebrew_from_snapshot(snapshot: SettingSnapshot) -> pyluach_dates.HebrewDate | None:
@@ -227,13 +279,20 @@ def _hebrew_from_snapshot(snapshot: SettingSnapshot) -> pyluach_dates.HebrewDate
 
 
 def _datetime_from_snapshot(snapshot: SettingSnapshot) -> datetime | None:
+    """The author-supplied moment, as an instant.
+
+    ``opensiddur:time`` is a wall clock reading at ``opensiddur:location``, so it is the zone of
+    that location that turns it into an instant comparable with the zmanim. This is the only
+    place that conversion happens; combining with a ``ZoneInfo`` resolves the offset for the
+    date in question, so a date on either side of a daylight saving transition is handled.
+    """
     gdate = snapshot.gregorian_date()
     if gdate is None:
         return None
     tod = snapshot.time_of_day()
     if tod is None:
-        return datetime.combine(gdate, time(12, 0))
-    return datetime.combine(gdate, tod)
+        tod = time(12, 0)
+    return datetime.combine(gdate, tod, tzinfo=snapshot.timezone())
 
 
 def compute_hebrew_date(snapshot: SettingSnapshot) -> dict[str, Any] | None:
@@ -247,13 +306,12 @@ def compute_hebrew_date(snapshot: SettingSnapshot) -> dict[str, Any] | None:
 def compute_hebrew_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     loc = snapshot.location()
-    dt = _datetime_from_snapshot(snapshot)
-    if gdate is None or loc is None or dt is None:
+    aware_dt = _datetime_from_snapshot(snapshot)
+    if gdate is None or loc is None or aware_dt is None:
         return None
     z = hdate.Zmanim(gdate, location=loc)
     sunrise = z.netz_hachama.local
     sunset = z.shkia.local
-    aware_dt = dt.replace(tzinfo=sunrise.tzinfo)
     if aware_dt < sunrise:
         variable_hour = 0
         elapsed = (aware_dt - (sunrise - timedelta(days=1))).total_seconds()
@@ -273,15 +331,33 @@ def compute_hebrew_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
 
 
 def compute_israel(snapshot: SettingSnapshot) -> dict[str, Any] | None:
-    lat = snapshot.get(FS_LOCATION, "latitude")
-    lon = snapshot.get(FS_LOCATION, "longitude")
+    lat = snapshot.get_float(FS_LOCATION, "latitude")
+    lon = snapshot.get_float(FS_LOCATION, "longitude")
     if lat is None or lon is None:
         return None
     is_israel = (
-        _ISRAEL_LAT[0] <= float(lat) <= _ISRAEL_LAT[1]
-        and _ISRAEL_LON[0] <= float(lon) <= _ISRAEL_LON[1]
+        _ISRAEL_LAT[0] <= lat <= _ISRAEL_LAT[1]
+        and _ISRAEL_LON[0] <= lon <= _ISRAEL_LON[1]
     )
     return {"is-israel": is_israel}
+
+
+def compute_location(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """Derive the time zone from the coordinates.
+
+    Only the zone is derived; latitude and longitude are the author's to state. Deriving it
+    means a document that gives coordinates alone still reads ``opensiddur:time`` as local wall
+    clock time, and an author who declares ``timezone`` explicitly overrides this by the usual
+    explicit-beats-derived rule.
+    """
+    lat = snapshot.get_float(FS_LOCATION, "latitude")
+    lon = snapshot.get_float(FS_LOCATION, "longitude")
+    if lat is None or lon is None:
+        return None
+    name = _timezone_name_at(lat, lon)
+    if name is None:
+        return None
+    return {"timezone": name}
 
 
 def compute_day_of_week(snapshot: SettingSnapshot) -> dict[str, Any] | None:
@@ -302,8 +378,7 @@ def compute_day_of_week(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         bayn = False
         if loc is not None and dt is not None and snapshot.time_of_day() is not None:
             z = hdate.Zmanim(gdate, location=loc)
-            aware_dt = dt.replace(tzinfo=z.shkia.local.tzinfo)
-            bayn = z.shkia.local < aware_dt < z.tset_hakohavim.local
+            bayn = z.shkia.local < dt < z.tset_hakohavim.local
         result["hebrew-day"] = hebrew_day
         result["bayn-hashmashot"] = bayn
     return result
@@ -506,11 +581,10 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
 def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     loc = snapshot.location()
-    dt = _datetime_from_snapshot(snapshot)
-    if gdate is None or loc is None or dt is None or snapshot.time_of_day() is None:
+    aware_dt = _datetime_from_snapshot(snapshot)
+    if gdate is None or loc is None or aware_dt is None or snapshot.time_of_day() is None:
         return None
     z = hdate.Zmanim(gdate, location=loc)
-    aware_dt = dt.replace(tzinfo=z.alot_hashachar.local.tzinfo)
     holidays = compute_holiday(snapshot) or {}
     dow = compute_day_of_week(snapshot) or {}
     is_shabbat = dow.get("hebrew-day") == 7

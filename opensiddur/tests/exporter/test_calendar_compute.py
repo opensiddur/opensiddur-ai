@@ -1,6 +1,7 @@
 """Unit tests for calendar compute adapters."""
 
 import unittest
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from pyluach import dates as pyluach_dates
@@ -13,6 +14,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_QUORUM,
     FS_TIME,
     SettingSnapshot,
+    _datetime_from_snapshot,
     _map_hdate_holidays,
     compute_day_of_week,
     compute_hebrew_date,
@@ -20,6 +22,7 @@ from opensiddur.exporter.calendar.compute import (
     compute_holiday,
     compute_holiday_aggregate,
     compute_israel,
+    compute_location,
     compute_quorum,
     compute_service_time,
     compute_torah_reading,
@@ -187,10 +190,10 @@ class TestComputeFunctions(unittest.TestCase):
             (FS_GREGORIAN, "day"): 12,
             (FS_LOCATION, "latitude"): 31.78,
             (FS_LOCATION, "longitude"): 35.22,
-            # Neila runs from plag hamincha (13:59) until nightfall, at which point Yom
-            # Kippur is over and the date has rolled to the next day. Zmanim are computed
-            # against a UTC-offset location, so the time is in that same frame.
-            (FS_TIME, "hour"): 14,
+            # Neila runs from plag hamincha (16:59 in Jerusalem this day) until nightfall
+            # (18:28), at which point Yom Kippur is over and the date has rolled to the next
+            # day. Times are local to opensiddur:location.
+            (FS_TIME, "hour"): 17,
             (FS_TIME, "minute"): 30,
             (FS_TIME, "second"): 0,
         })
@@ -198,14 +201,14 @@ class TestComputeFunctions(unittest.TestCase):
         self.assertTrue(result["neila"])
 
     def test_service_time_after_nightfall_is_the_next_day(self):
-        """Yom Kippur has ended by 16:00 in this frame, so there is no neila."""
+        """Nightfall in Jerusalem is 18:28, so by 19:00 Yom Kippur is over and there is no neila."""
         snap = _snapshot({
             (FS_GREGORIAN, "year"): 2024,
             (FS_GREGORIAN, "month"): 10,
             (FS_GREGORIAN, "day"): 12,
             (FS_LOCATION, "latitude"): 31.78,
             (FS_LOCATION, "longitude"): 35.22,
-            (FS_TIME, "hour"): 16,
+            (FS_TIME, "hour"): 19,
             (FS_TIME, "minute"): 0,
             (FS_TIME, "second"): 0,
         })
@@ -375,9 +378,8 @@ if __name__ == "__main__":
 class TestNightfallRollover(unittest.TestCase):
     """The Hebrew day begins in the evening.
 
-    Zmanim are computed against a location with a zero UTC offset, so times are supplied in
-    that same frame throughout these tests: a New York seder at 8pm EDT is 00:00Z the
-    following day.
+    Times throughout these tests are local wall clock readings at the location given, which is
+    New York unless stated otherwise: a New York seder at 8:30pm is simply hour 20, minute 30.
     """
 
     @staticmethod
@@ -400,13 +402,15 @@ class TestNightfallRollover(unittest.TestCase):
         self.assertEqual(compute_hebrew_date(snap), compute_hebrew_date(self._snap(2025, 4, 12, 10)))
 
     def test_seder_nights_are_pesah_one_and_two(self):
-        self.assertEqual(compute_holiday(self._snap(2025, 4, 13, 0))["pesah"], 1)
-        self.assertEqual(compute_holiday(self._snap(2025, 4, 14, 0))["pesah"], 2)
+        """The seders begin after nightfall on the evenings of 12 and 13 April 2025."""
+        self.assertEqual(compute_holiday(self._snap(2025, 4, 12, 21))["pesah"], 1)
+        self.assertEqual(compute_holiday(self._snap(2025, 4, 13, 21))["pesah"], 2)
 
     def test_friday_evening_is_shabbat_and_saturday_evening_is_not(self):
+        # Nightfall in Jerusalem on these dates is 19:21 and 19:23 local.
         jerusalem = {"lat": 31.78, "lon": 35.22}
-        friday_night = compute_holiday_aggregate(self._snap(2025, 4, 11, 17, **jerusalem))
-        saturday_night = compute_holiday_aggregate(self._snap(2025, 4, 12, 17, **jerusalem))
+        friday_night = compute_holiday_aggregate(self._snap(2025, 4, 11, 20, **jerusalem))
+        saturday_night = compute_holiday_aggregate(self._snap(2025, 4, 12, 20, **jerusalem))
         self.assertTrue(friday_night["shabbat"])
         self.assertFalse(friday_night["motzaei-shabbat"])
         self.assertFalse(saturday_night["shabbat"])
@@ -415,6 +419,74 @@ class TestNightfallRollover(unittest.TestCase):
     def test_hebrew_day_uses_pyluach_weekday_numbering(self):
         """Saturday is 7. pyluach already numbers Sunday=1..Saturday=7."""
         self.assertEqual(compute_day_of_week(self._snap(2024, 4, 20))["hebrew-day"], 7)
+
+
+class TestLocalTime(unittest.TestCase):
+    """opensiddur:time is a wall clock reading at opensiddur:location, not UTC."""
+
+    @staticmethod
+    def _snap(overrides=None):
+        """A New York seder, 8:30pm on 1 April 2026 — the case reported in the issue."""
+        data = {
+            (FS_GREGORIAN, "year"): 2026,
+            (FS_GREGORIAN, "month"): 4,
+            (FS_GREGORIAN, "day"): 1,
+            (FS_TIME, "hour"): 20,
+            (FS_TIME, "minute"): 30,
+            (FS_LOCATION, "latitude"): 40.71,
+            (FS_LOCATION, "longitude"): -74.01,
+        }
+        data.update(overrides or {})
+        return _snapshot(data)
+
+    _JERUSALEM = {(FS_LOCATION, "latitude"): 31.78, (FS_LOCATION, "longitude"): 35.22}
+
+    def test_new_york_seder_at_half_past_eight_is_pesah(self):
+        """The reported case: nightfall in New York is 19:36, so 20:30 is already 15 Nisan.
+
+        Read as UTC this is 20:30Z against a 23:36Z nightfall, and the day does not roll.
+        """
+        snap = self._snap()
+        self.assertEqual(compute_hebrew_date(snap), {"year": 5786, "month": 1, "day": 15})
+        self.assertEqual(compute_holiday(snap)["pesah"], 1)
+
+    def test_explicit_timezone_overrides_the_coordinates(self):
+        snap = self._snap({(FS_LOCATION, "timezone"): "UTC"})
+        self.assertEqual(compute_hebrew_date(snap), {"year": 5786, "month": 1, "day": 14})
+        self.assertEqual(compute_holiday(snap)["pesah"], 0)
+
+    def test_unknown_timezone_name_falls_back_to_the_coordinates(self):
+        snap = self._snap({(FS_LOCATION, "timezone"): "Mars/Olympus_Mons"})
+        self.assertEqual(str(snap.timezone()), "America/New_York")
+
+    def test_coordinates_declared_in_jlptei_arrive_as_numeric_values(self):
+        """A j:declare puts NumericValue on the stack where YAML puts a plain number."""
+        snap = self._snap({
+            (FS_LOCATION, "latitude"): NumericValue(value=41),
+            (FS_LOCATION, "longitude"): NumericValue(value=-74),
+        })
+        self.assertEqual(str(snap.timezone()), "America/New_York")
+        self.assertEqual(snap.location().latitude, 41.0)
+        self.assertEqual(compute_israel(snap), {"is-israel": False})
+
+    def test_timezone_is_utc_without_a_location(self):
+        snap = _snapshot({(FS_GREGORIAN, "year"): 2026})
+        self.assertEqual(snap.timezone().utcoffset(None), timedelta(0))
+
+    def test_compute_location_derives_the_zone_from_the_coordinates(self):
+        # Longitude is negative here, so a swapped argument order would not land in New York.
+        self.assertEqual(compute_location(self._snap()), {"timezone": "America/New_York"})
+        self.assertEqual(compute_location(self._snap(self._JERUSALEM)), {"timezone": "Asia/Jerusalem"})
+        tel_aviv = self._snap({(FS_LOCATION, "latitude"): 32.08, (FS_LOCATION, "longitude"): 34.78})
+        self.assertEqual(compute_location(tel_aviv), {"timezone": "Asia/Jerusalem"})
+        self.assertIsNone(compute_location(_snapshot({})))
+
+    def test_daylight_saving_is_honoured(self):
+        """The same wall clock reading is a different instant either side of a transition."""
+        summer = self._snap(self._JERUSALEM | {(FS_GREGORIAN, "month"): 7})
+        winter = self._snap(self._JERUSALEM | {(FS_GREGORIAN, "month"): 1})
+        self.assertEqual(_datetime_from_snapshot(summer).utcoffset(), timedelta(hours=3))
+        self.assertEqual(_datetime_from_snapshot(winter).utcoffset(), timedelta(hours=2))
 
 
 class TestEruvTavshilin(unittest.TestCase):
