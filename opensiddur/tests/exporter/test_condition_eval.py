@@ -12,7 +12,7 @@ from opensiddur.exporter.condition_eval import (
     parse_condition_element,
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
-from opensiddur.exporter.linear import Undefined
+from opensiddur.exporter.linear import NumericValue, Undefined
 
 TEI = TEI_NS
 J = JLPTEI_NAMESPACE
@@ -177,6 +177,52 @@ class TestLeafComparison(unittest.TestCase):
         node = parse_condition_element(el)
         proc = _mock_processor({("t:fs", "n"): "3"})
         self.assertEqual(evaluate_condition(node, proc), TriState.FALSE)
+
+    def test_numeric_fractional_value(self):
+        el = _conditional_xml(
+            '<tei:fs type="t:fs"><tei:f name="lat"><tei:numeric value="40.71"/></tei:f></tei:fs>'
+        )
+        node = parse_condition_element(el)
+        self.assertEqual(node.features[0].value.value, 40.71)
+        proc = _mock_processor({("t:fs", "lat"): 40.71})
+        self.assertEqual(evaluate_condition(node, proc), TriState.TRUE)
+        proc = _mock_processor({("t:fs", "lat"): 40.0})
+        self.assertEqual(evaluate_condition(node, proc), TriState.FALSE)
+
+    def test_numeric_fractional_range(self):
+        el = _conditional_xml(
+            '<tei:fs type="t:fs">'
+            '<tei:f name="lat"><tei:numeric value="-0.5" max="1.5"/></tei:f></tei:fs>'
+        )
+        node = parse_condition_element(el)
+        for val in (-0.5, 0, 1.25, 1.5):
+            proc = _mock_processor({("t:fs", "lat"): val})
+            self.assertEqual(evaluate_condition(node, proc), TriState.TRUE, val)
+        proc = _mock_processor({("t:fs", "lat"): 1.75})
+        self.assertEqual(evaluate_condition(node, proc), TriState.FALSE)
+
+    def test_integer_condition_matches_float_active(self):
+        """Integer-valued features keep matching when declared as 1.0."""
+        el = _conditional_xml(
+            '<tei:fs type="t:fs"><tei:f name="n"><tei:numeric value="1"/></tei:f></tei:fs>'
+        )
+        node = parse_condition_element(el)
+        proc = _mock_processor({("t:fs", "n"): 1.0})
+        self.assertEqual(evaluate_condition(node, proc), TriState.TRUE)
+
+    def test_active_numeric_value_is_unwrapped(self):
+        """A j:declare puts a NumericValue on the stack where YAML puts a plain number."""
+        el = _conditional_xml(
+            '<tei:fs type="t:fs"><tei:f name="lat"><tei:numeric value="40.71"/></tei:f></tei:fs>'
+        )
+        node = parse_condition_element(el)
+        proc = _mock_processor({("t:fs", "lat"): NumericValue(value=40.71)})
+        self.assertEqual(evaluate_condition(node, proc), TriState.TRUE)
+        proc = _mock_processor({("t:fs", "lat"): NumericValue(value=41)})
+        self.assertEqual(evaluate_condition(node, proc), TriState.FALSE)
+
+    def test_numeric_value_equality_across_int_and_float(self):
+        self.assertEqual(NumericValue(value=1), NumericValue(value=1.0))
 
     def test_vnot_with_undefined_inner(self):
         el = _conditional_xml(

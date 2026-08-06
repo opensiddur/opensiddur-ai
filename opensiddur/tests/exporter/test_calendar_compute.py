@@ -59,6 +59,10 @@ class TestSettingSnapshot(unittest.TestCase):
         self.assertEqual(snap.get_int(FS_GREGORIAN, "month"), 1)
         self.assertEqual(snap.get_int(FS_GREGORIAN, "day"), 3)
 
+    def test_get_int_narrows_a_fractional_numeric_value(self):
+        snap = _snapshot({(FS_GREGORIAN, "day"): NumericValue(value=3.7)})
+        self.assertEqual(snap.get_int(FS_GREGORIAN, "day"), 3)
+
     def test_invalid_gregorian_and_time(self):
         snap = _snapshot({
             (FS_GREGORIAN, "year"): 2024,
@@ -468,6 +472,16 @@ class TestLocalTime(unittest.TestCase):
         self.assertEqual(str(snap.timezone()), "America/New_York")
         self.assertEqual(snap.location().latitude, 41.0)
         self.assertEqual(compute_israel(snap), {"is-israel": False})
+
+    def test_fractional_coordinates_declared_in_jlptei(self):
+        """Whole degrees are not precise enough: 111 km can cross the Israel boundary."""
+        snap = self._snap({
+            (FS_LOCATION, "latitude"): NumericValue(value=31.78),
+            (FS_LOCATION, "longitude"): NumericValue(value=35.22),
+        })
+        self.assertEqual(snap.location().latitude, 31.78)
+        self.assertEqual(str(snap.timezone()), "Asia/Jerusalem")
+        self.assertEqual(compute_israel(snap), {"is-israel": True})
 
     def test_timezone_is_utc_without_a_location(self):
         snap = _snapshot({(FS_GREGORIAN, "year"): 2026})

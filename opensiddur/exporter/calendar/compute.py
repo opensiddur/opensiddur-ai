@@ -134,7 +134,7 @@ class SettingSnapshot:
         if value is None:
             return None
         if isinstance(value, NumericValue):
-            return value.value
+            return int(value.value)
         if isinstance(value, bool):
             return int(value)
         if isinstance(value, float):
