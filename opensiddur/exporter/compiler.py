@@ -25,7 +25,7 @@ from typing import Any, Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
 
-from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE
+from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, is_element_node
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.linear import (
     ConditionalScope,
@@ -806,6 +806,11 @@ class CompilerProcessor:
         return False, None
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
+        # Comments and processing instructions carry no JLPTEI meaning and cannot be rebuilt from
+        # their tag. Drop them before the processing context sees them; the caller carries the tail.
+        if not is_element_node(element):
+            return None  # type: ignore[return-value]
+
         self._update_processing_context_before(element)
 
         if (

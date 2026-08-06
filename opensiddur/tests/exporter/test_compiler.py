@@ -1184,6 +1184,119 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
         self.assertEqual(root_lang, 'en', "Root element should have xml:lang='en'")
 
 
+class TestCompilerProcessorCommentsAndPIs(unittest.TestCase):
+    """Comments and processing instructions must be dropped, not crash the compiler (#41)."""
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_project_dir = Path(self.temp_dir.name) / "test_project"
+        self.test_project_dir.mkdir(parents=True)
+        get_linear_data().xml_cache.base_path = Path(self.temp_dir.name)
+
+    def _compile(self, file_name: str, content: bytes):
+        file_path = self.test_project_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return CompilerProcessor("test_project", file_name).process()
+
+    def test_comment_between_siblings_is_dropped(self):
+        """A comment between elements compiles and does not reach the output."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:p>First</tei:p>
+        <!-- an editorial remark -->
+        <tei:p>Second</tei:p>
+    </tei:text>
+</root>'''
+
+        result = self._compile("comment_siblings.xml", xml_content)
+        result_str = etree.tostring(result, encoding='unicode')
+
+        self.assertNotIn('<!--', result_str)
+        self.assertNotIn('an editorial remark', result_str)
+        self.assertIn('First', result_str)
+        self.assertIn('Second', result_str)
+
+    def test_comment_tail_text_is_preserved(self):
+        """The text following a dropped comment is document text and must survive."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:p>a<!-- why -->b</tei:p></tei:text>
+</root>'''
+
+        result = self._compile("comment_tail.xml", xml_content)
+        paragraphs = result.findall(f'.//{{{"http://www.tei-c.org/ns/1.0"}}}p')
+
+        self.assertEqual(len(paragraphs), 1)
+        self.assertEqual(''.join(paragraphs[0].itertext()), 'ab')
+
+    def test_comment_tail_after_element_child_is_preserved(self):
+        """A comment following a child element hands its tail to that child."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:p><tei:hi>emphasis</tei:hi><!-- why --> trailing</tei:p></tei:text>
+</root>'''
+
+        result = self._compile("comment_tail_after_child.xml", xml_content)
+        paragraphs = result.findall(f'.//{{{"http://www.tei-c.org/ns/1.0"}}}p')
+
+        self.assertEqual(len(paragraphs), 1)
+        self.assertEqual(''.join(paragraphs[0].itertext()), 'emphasis trailing')
+
+    def test_comment_as_only_child(self):
+        """An element whose only child is a comment survives as an empty element."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:p><!-- nothing but a comment --></tei:p></tei:text>
+</root>'''
+
+        result = self._compile("comment_only_child.xml", xml_content)
+        paragraphs = result.findall(f'.//{{{"http://www.tei-c.org/ns/1.0"}}}p')
+
+        self.assertEqual(len(paragraphs), 1)
+        self.assertEqual(len(paragraphs[0]), 0)
+        self.assertNotIn('nothing but a comment', etree.tostring(result, encoding='unicode'))
+
+    def test_processing_instruction_is_dropped(self):
+        """A PI takes the same code path as a comment: etree.PI as its tag."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text>
+        <tei:p>First</tei:p>
+        <?some-target some data?>
+        <tei:p>Second</tei:p>
+    </tei:text>
+</root>'''
+
+        result = self._compile("pi.xml", xml_content)
+        result_str = etree.tostring(result, encoding='unicode')
+
+        self.assertNotIn('some-target', result_str)
+        self.assertIn('First', result_str)
+        self.assertIn('Second', result_str)
+
+    def test_comment_inside_conditional_definition(self):
+        """A comment among the condition children is not parsed as a condition."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <tei:text>
+        <j:declare xml:id="d">
+            <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+        </j:declare>
+        <j:conditional xml:id="c">
+            <!-- included only when x is true -->
+            <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+        </j:conditional>
+        <tei:p>included</tei:p>
+        <j:endConditional target="#c"/>
+        <j:endDeclare target="#d"/>
+    </tei:text>
+</root>'''
+
+        result = self._compile("comment_in_conditional.xml", xml_content)
+        result_str = etree.tostring(result, encoding='unicode')
+
+        self.assertIn('included', result_str)
+        self.assertNotIn('<!--', result_str)
+
+
 class TestCompilerProcessorIdRewriting(unittest.TestCase):
     """Test ID rewriting functionality in CompilerProcessor."""
 

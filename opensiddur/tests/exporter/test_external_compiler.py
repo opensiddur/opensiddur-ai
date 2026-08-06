@@ -1265,6 +1265,56 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         # Should not include the chapter 2 text
         self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
 
+    def test_comment_between_range_siblings_is_dropped(self):
+        """A comment inside a compiled range is dropped and its tail kept (#41)."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p corresp="urn:start">First paragraph</tei:p> Tail after start
+        <!-- an editorial remark --> Tail after comment
+        <tei:p corresp="urn:end">Last paragraph</tei:p>
+    </tei:div>
+</root>'''
+
+        project, file_name = self._create_test_file("comment_range.xml", xml_content)
+
+        start_path = self._get_element_path(xml_content, "urn:start")
+        end_path = self._get_element_path(xml_content, "urn:end")
+        result = ExternalCompilerProcessor(project, file_name, start_path, end_path).process()
+
+        self.assertEqual(len(result), 2)
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+        self.assertNotIn('<!--', result_str)
+        self.assertNotIn('an editorial remark', result_str)
+
+        # Both the tail of the start element and the tail of the dropped comment are document text
+        self.assertIn("Tail after start", result[0].tail)
+        self.assertIn("Tail after comment", result[0].tail)
+
+    def test_comment_after_end_element_does_not_disturb_tail_handling(self):
+        """Visiting a comment must not reset the state machine's include_tail_after_end."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p corresp="urn:start">First paragraph</tei:p> Tail after start
+        <tei:p corresp="urn:end">Last paragraph</tei:p> Tail after end
+        <!-- an editorial remark -->
+        <tei:p>After end (excluded)</tei:p>
+    </tei:div>
+</root>'''
+
+        project, file_name = self._create_test_file("comment_after_end.xml", xml_content)
+
+        start_path = self._get_element_path(xml_content, "urn:start")
+        end_path = self._get_element_path(xml_content, "urn:end")
+        processor = ExternalCompilerProcessor(
+            project, file_name, start_path, end_path, include_tail_after_end=True)
+        result = processor.process()
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("Tail after end", result[1].tail)
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+        self.assertNotIn('an editorial remark', result_str)
+        self.assertNotIn("After end (excluded)", result_str)
+
 
 def _linear_data_with_root_parallel(root: etree._Element):
     class _XmlCache:

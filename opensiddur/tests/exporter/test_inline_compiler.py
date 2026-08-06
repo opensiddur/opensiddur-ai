@@ -1055,6 +1055,29 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Should not include the chapter 2 text
         self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
 
+    def test_comment_contributes_no_text_and_keeps_its_tail(self):
+        """A comment is dropped; the text following it stays in the inline text (#41)."""
+        xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:div>
+        <tei:p corresp="urn:start">First<!-- an editorial remark --> paragraph</tei:p>
+        <tei:p corresp="urn:end">Last paragraph</tei:p>
+    </tei:div>
+</root>'''
+
+        project, file_name = self._create_test_file("comment_inline.xml", xml_content)
+
+        start_path = self._get_element_path(xml_content, "urn:start")
+        end_path = self._get_element_path(xml_content, "urn:end")
+        processor = InlineCompilerProcessor(
+            project, file_name, start_path, end_path, linear_data=self.linear_data)
+        result = processor.process()
+
+        result_str = etree.tostring(result, encoding='unicode')
+        self.assertNotIn('an editorial remark', result_str)
+        self.assertIn('First', result.text)
+        self.assertIn('paragraph', result.text)
+        self.assertIn('Last paragraph', result.text)
+
 
 class TestInlineCompilerProcessorAnnotations(unittest.TestCase):
     """Test annotation inclusion functionality in InlineCompilerProcessor."""
