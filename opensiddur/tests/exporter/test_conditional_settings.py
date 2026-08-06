@@ -61,6 +61,24 @@ class TestParseConditionalSettings(unittest.TestCase):
         entries = self._parse_fs('<tei:f name="n"><tei:numeric value="1" max="5"/></tei:f>')
         self.assertEqual(entries[0].value.max_value, 5)
 
+    def test_numeric_fractional(self):
+        """Coordinates are not whole degrees: @value must survive as a float (issue #39)."""
+        entries = self._parse_fs(
+            '<tei:f name="latitude"><tei:numeric value="40.71"/></tei:f>'
+            '<tei:f name="longitude"><tei:numeric value="-74.01"/></tei:f>'
+        )
+        self.assertEqual(entries[0].value.value, 40.71)
+        self.assertEqual(entries[1].value.value, -74.01)
+
+    def test_numeric_fractional_with_max(self):
+        entries = self._parse_fs('<tei:f name="n"><tei:numeric value="0.5" max="2.5"/></tei:f>')
+        self.assertEqual(entries[0].value.value, 0.5)
+        self.assertEqual(entries[0].value.max_value, 2.5)
+
+    def test_numeric_integer_stays_int(self):
+        entries = self._parse_fs('<tei:f name="n"><tei:numeric value="8"/></tei:f>')
+        self.assertIsInstance(entries[0].value.value, int)
+
     def test_string(self):
         entries = self._parse_fs('<tei:f name="label"><tei:string>hello</tei:string></tei:f>')
         self.assertEqual(entries[0].value, "hello")

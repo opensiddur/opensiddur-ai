@@ -10,6 +10,7 @@ from opensiddur.exporter.linear import (
     DeclarationFeatureValue,
     NumericValue,
     Undefined,
+    parse_numeric_literal,
 )
 
 INIT_DECLARE_ID = "__init__"
@@ -46,9 +47,12 @@ def _parse_te_f_value(f_element: ElementBase) -> Any:
             raw = child.get("value")
             if raw is None:
                 raise ValueError(f"tei:numeric missing @value in {f_element.get('name')!r}")
-            numeric = NumericValue(value=int(raw))
+            numeric = NumericValue(value=parse_numeric_literal(raw))
             if child.get("max") is not None:
-                numeric = NumericValue(value=int(raw), max_value=int(child.get("max")))
+                numeric = NumericValue(
+                    value=parse_numeric_literal(raw),
+                    max_value=parse_numeric_literal(child.get("max")),
+                )
             return numeric
         if child.tag == TEI_BINARY:
             raw = child.get("value", "")

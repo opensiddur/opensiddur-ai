@@ -31,11 +31,19 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 
+def parse_numeric_literal(raw: str) -> int | float:
+    """Parse a tei:numeric @value / @max literal (teidata.numeric allows decimals)."""
+    try:
+        return int(raw)
+    except ValueError:
+        return float(raw)
+
+
 class NumericValue(BaseModel):
     """Parsed tei:numeric value, optionally with inclusive upper bound (@max)."""
 
-    value: int
-    max_value: int | None = None
+    value: int | float
+    max_value: int | float | None = None
 
 
 class ConditionalSettingEntry(BaseModel):

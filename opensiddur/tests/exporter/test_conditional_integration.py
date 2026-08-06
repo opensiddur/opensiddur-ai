@@ -65,6 +65,61 @@ class TestConditionalIntegration(unittest.TestCase):
         self.assertNotIn("conditional", out)
         self.assertNotIn("endConditional", out)
 
+    def test_fractional_coordinates_declare_and_derive(self):
+        """Coordinates are not whole degrees; the parser must accept a fractional @value."""
+        fn = self._write(
+            "coords.xml",
+            '''
+            <j:declare xml:id="d">
+                <tei:fs type="opensiddur:location">
+                    <tei:f name="latitude"><tei:numeric value="40.71"/></tei:f>
+                    <tei:f name="longitude"><tei:numeric value="-74.01"/></tei:f>
+                </tei:fs>
+            </j:declare>
+            <j:conditional xml:id="c">
+                <tei:fs type="opensiddur:israel">
+                    <tei:f name="is-israel"><tei:binary value="false"/></tei:f>
+                </tei:fs>
+            </j:conditional>
+            <tei:p>diaspora</tei:p>
+            <j:endConditional target="#c"/>
+            <j:conditional xml:id="c2">
+                <tei:fs type="opensiddur:location">
+                    <tei:f name="latitude"><tei:numeric value="40.71"/></tei:f>
+                </tei:fs>
+            </j:conditional>
+            <tei:p>new-york</tei:p>
+            <j:endConditional target="#c2"/>
+            <j:endDeclare target="#d"/>
+            ''',
+        )
+        out = self._compile(fn)
+        self.assertIn("diaspora", out)
+        self.assertIn("new-york", out)
+
+    def test_fractional_coordinates_place_a_location_in_israel(self):
+        """One degree of latitude can move a location across the Israel/diaspora boundary."""
+        fn = self._write(
+            "jerusalem.xml",
+            '''
+            <j:declare xml:id="d">
+                <tei:fs type="opensiddur:location">
+                    <tei:f name="latitude"><tei:numeric value="31.78"/></tei:f>
+                    <tei:f name="longitude"><tei:numeric value="35.22"/></tei:f>
+                </tei:fs>
+            </j:declare>
+            <j:conditional xml:id="c">
+                <tei:fs type="opensiddur:israel">
+                    <tei:f name="is-israel"><tei:binary value="true"/></tei:f>
+                </tei:fs>
+            </j:conditional>
+            <tei:p>israel</tei:p>
+            <j:endConditional target="#c"/>
+            <j:endDeclare target="#d"/>
+            ''',
+        )
+        self.assertIn("israel", self._compile(fn))
+
     def test_false_excludes_content_strips_markers(self):
         fn = self._write(
             "false.xml",

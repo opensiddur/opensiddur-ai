@@ -24,7 +24,7 @@ from opensiddur.exporter.conditional_settings import (
     TEI_VALT,
     TEI_VNOT,
 )
-from opensiddur.exporter.linear import NumericValue, Undefined
+from opensiddur.exporter.linear import NumericValue, Undefined, parse_numeric_literal
 
 
 class TriState(StrEnum):
@@ -74,9 +74,12 @@ def _parse_condition_f_value(f_element: ElementBase) -> Any:
             raw = child.get("value")
             if raw is None:
                 raise ValueError(f"tei:numeric missing @value in {f_element.get('name')!r}")
-            numeric = NumericValue(value=int(raw))
+            numeric = NumericValue(value=parse_numeric_literal(raw))
             if child.get("max") is not None:
-                numeric = NumericValue(value=int(raw), max_value=int(child.get("max")))
+                numeric = NumericValue(
+                    value=parse_numeric_literal(raw),
+                    max_value=parse_numeric_literal(child.get("max")),
+                )
             return numeric
         if child.tag == TEI_BINARY:
             raw = child.get("value", "")
@@ -106,9 +109,12 @@ def _parse_condition_value_element(el: ElementBase) -> Any:
         raw = el.get("value")
         if raw is None:
             raise ValueError("tei:numeric missing @value")
-        numeric = NumericValue(value=int(raw))
+        numeric = NumericValue(value=parse_numeric_literal(raw))
         if el.get("max") is not None:
-            numeric = NumericValue(value=int(raw), max_value=int(el.get("max")))
+            numeric = NumericValue(
+                value=parse_numeric_literal(raw),
+                max_value=parse_numeric_literal(el.get("max")),
+            )
         return numeric
     if el.tag == TEI_BINARY:
         return el.get("value", "") == "true"
@@ -197,14 +203,15 @@ def _single_value_match(active: Any, condition: Any) -> TriState:
         results = [_single_value_match(active, alt) for alt in condition]
         return _combine_any(results)
     if isinstance(condition, NumericValue):
-        if not isinstance(active, (int, float)):
+        # A declared value reaches the stack as a NumericValue; YAML puts a plain number there.
+        active_number = active.value if isinstance(active, NumericValue) else active
+        if not isinstance(active_number, (int, float)):
             return TriState.FALSE
-        active_int = int(active)
         if condition.max_value is not None:
-            if condition.value <= active_int <= condition.max_value:
+            if condition.value <= active_number <= condition.max_value:
                 return TriState.TRUE
             return TriState.FALSE
-        return TriState.TRUE if active_int == condition.value else TriState.FALSE
+        return TriState.TRUE if active_number == condition.value else TriState.FALSE
     return TriState.TRUE if active == condition else TriState.FALSE
 
 
