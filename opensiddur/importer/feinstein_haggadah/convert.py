@@ -71,6 +71,44 @@ INDEX_TITLES: dict[str, str] = {
 }
 
 
+def index_header(
+    header: str,
+    *,
+    project_id: str,
+    ranges: dict[str, tuple[str, str]],
+) -> str:
+    """The project index's header: the full bibliography, plus the project's page scope.
+
+    The index is the one document that holds the source citations in full; see
+    :func:`document_header` for every other document.
+    """
+    from_page, to_page = ranges.get("index", (None, None))
+    if not (from_page and to_page):
+        return header
+    return header_with_bibls(header, [citation_bibl(project_id, from_page, to_page)])
+
+
+def document_header(
+    header: str,
+    slug: str,
+    *,
+    project_id: str,
+    ranges: dict[str, tuple[str, str]],
+    scripture: dict[str, BiblicalSection],
+) -> str:
+    """A non-index document's header: the index's bibliography cited by pointer.
+
+    Per ``schema/JLPTEI-3.md`` the full citations belong to the project header alone.
+    Copying them into each document would duplicate the ``xml:id``s they are addressed by
+    across a hundred files, and make correcting any of them a whole-project rewrite.
+    """
+    from_page, to_page = ranges.get(slug, (None, None))
+    bibls = [project_citation_bibl(project_id, from_page=from_page, to_page=to_page)]
+    if slug in scripture:
+        bibls.append(transcription_bibl(scripture[slug]))
+    return header_with_only_bibls(header, bibls)
+
+
 def make_project_directory(project_dir: Path) -> Path:
     project_dir.mkdir(parents=True, exist_ok=True)
     return project_dir
@@ -134,25 +172,10 @@ def convert_project(
             anchors += verse_anchors(scripture[slug])
         return anchors
 
-    def _index_header(header: str) -> str:
-        """The project index keeps the full bibliography and adds its own page scope."""
-        from_page, to_page = ranges.get("index", (None, None))
-        if not (from_page and to_page):
-            return header
-        return header_with_bibls(header, [citation_bibl(project_id, from_page, to_page)])
-
     def _header(header: str, slug: str) -> str:
-        """Every document other than the index cites the index's bibliography by pointer.
-
-        Per ``schema/JLPTEI-3.md`` the full citations belong to the project header alone.
-        Copying them into each document would duplicate the ``xml:id``s they are addressed
-        by across a hundred files, and make correcting any of them a whole-project rewrite.
-        """
-        from_page, to_page = ranges.get(slug, (None, None))
-        bibls = [project_citation_bibl(project_id, from_page=from_page, to_page=to_page)]
-        if slug in scripture:
-            bibls.append(transcription_bibl(scripture[slug]))
-        return header_with_only_bibls(header, bibls)
+        return document_header(
+            header, slug, project_id=project_id, ranges=ranges, scripture=scripture
+        )
 
     for index_slug, children in INDEX_CHILDREN.items():
         section = contents.get(index_slug)
@@ -160,7 +183,7 @@ def convert_project(
             index_slug, children, section, lang=lang, anchors=_anchors(index_slug)
         )
         if index_slug == "index":
-            header = _index_header(main_header)
+            header = index_header(main_header, project_id=project_id, ranges=ranges)
         else:
             from_page, to_page = ranges.get(index_slug, (None, None))
             header = minimal_index_header(

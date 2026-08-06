@@ -3,14 +3,22 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from opensiddur.importer.feinstein_haggadah.convert import convert_all
+from opensiddur.importer.feinstein_haggadah.convert import (
+    convert_all,
+    document_header,
+    index_header,
+)
 from opensiddur.importer.feinstein_haggadah.parse_compilation import _clean_html_cell
 from opensiddur.importer.feinstein_haggadah.tei_builder import (
+    header_with_only_bibls,
+    minimal_index_header,
+    project_citation_bibl,
     read_front_stub,
     tei_document,
     validate_and_write,
     validate_project_directory,
 )
+from opensiddur.importer.feinstein_haggadah.versify import BiblicalSection
 from opensiddur.importer.util.validation import validate
 from opensiddur.tests.importer.feinstein_haggadah import support
 
@@ -139,6 +147,122 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
         psalm_126 = (project_dir / "psalm_126.xml").read_text(encoding="utf-8")
         self.assertIn("text:bible:psalms@wlc", psalm_126)
         self.assertNotIn("<j:divineName>", psalm_126)
+
+
+PROJECT_HEADER = """<tei:teiHeader xmlns:tei="http://www.tei-c.org/ns/1.0">
+  <tei:fileDesc>
+    <tei:titleStmt>
+      <tei:title>Test</tei:title>
+      <tei:respStmt><tei:resp key="trc">Transcribed by</tei:resp><tei:name>A Contributor</tei:name></tei:respStmt>
+    </tei:titleStmt>
+    <tei:publicationStmt>
+      <tei:distributor><tei:ref target="http://opensiddur.org">OSP</tei:ref></tei:distributor>
+      <tei:availability status="free"><tei:licence target="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</tei:licence></tei:availability>
+    </tei:publicationStmt>
+    <tei:sourceDesc>
+      <tei:bibl xml:id="project_source_bibl"><tei:title>The printed source</tei:title></tei:bibl>
+      <tei:bibl xml:id="facsimile_bibl"><tei:title>The facsimile</tei:title></tei:bibl>
+    </tei:sourceDesc>
+  </tei:fileDesc>
+</tei:teiHeader>"""
+
+
+class TestDocumentHeaders(unittest.TestCase):
+    """schema/JLPTEI-3.md: the full source citations belong to the project index; every
+    other document cites them by pointer."""
+
+    def test_index_header_keeps_the_bibliography_and_adds_its_page_scope(self) -> None:
+        header = index_header(
+            PROJECT_HEADER, project_id="p", ranges={"index": ("2r", "40v")}
+        )
+        self.assertIn('xml:id="project_source_bibl"', header)
+        self.assertIn('xml:id="facsimile_bibl"', header)
+        self.assertIn('<tei:biblScope unit="pages" from="2r" to="40v"/>', header)
+
+    def test_index_header_without_a_page_range_is_left_alone(self) -> None:
+        self.assertEqual(
+            index_header(PROJECT_HEADER, project_id="p", ranges={}), PROJECT_HEADER
+        )
+
+    def test_document_header_replaces_the_bibliography_with_a_pointer(self) -> None:
+        header = document_header(
+            PROJECT_HEADER,
+            "kadesh",
+            project_id="p",
+            ranges={"kadesh": ("3v", "4r")},
+            scripture={},
+        )
+        self.assertIn(
+            '<tei:ptr target="urn:x-opensiddur:text:haggadah:'
+            'haggadah@p#project_source_bibl"/>',
+            header,
+        )
+        self.assertIn('<tei:biblScope unit="pages" from="3v" to="4r"/>', header)
+        # The citations themselves, and the xml:ids addressing them, stay in the index.
+        self.assertNotIn('xml:id="project_source_bibl"', header)
+        self.assertNotIn('xml:id="facsimile_bibl"', header)
+        self.assertNotIn("The facsimile", header)
+        # Only sourceDesc collapses; responsibility and licence belong to every document.
+        self.assertIn("<tei:respStmt>", header)
+        self.assertIn("<tei:licence", header)
+
+    def test_document_header_without_a_page_range_still_cites_the_project(self) -> None:
+        """A project with no page breaks — the 2009 translation — has no ranges at all."""
+        header = document_header(
+            PROJECT_HEADER, "kadesh", project_id="p", ranges={}, scripture={}
+        )
+        self.assertIn(
+            '<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@p"/>', header
+        )
+        self.assertNotIn("biblScope", header)
+
+    def test_document_header_adds_the_wlc_bibl_for_a_scripture_section(self) -> None:
+        header = document_header(
+            PROJECT_HEADER,
+            "psalm_126",
+            project_id="p",
+            ranges={"psalm_126": ("27r", "27r")},
+            scripture={
+                "psalm_126": BiblicalSection(
+                    section="psalm_126", book="psalms", chapter=126, verses=[]
+                )
+            },
+        )
+        self.assertIn('<tei:ptr target="urn:x-opensiddur:text:bible:psalms@wlc"/>', header)
+        self.assertIn('<tei:biblScope unit="chapter" from="126" to="126"/>', header)
+
+    def test_minimal_index_header_cites_the_project_by_pointer(self) -> None:
+        """Sub-indices (pre_seder, seder, magid…) get a header of their own rather than a
+        copy of the project's, and cite the bibliography the same way a leaf does."""
+        header = minimal_index_header(
+            "Magid", project_id="p", urn_suffix="magid", from_page="5r", to_page="9v"
+        )
+        self.assertIn('<tei:title type="main" xml:lang="he">Magid</tei:title>', header)
+        self.assertIn(
+            '<tei:idno type="urn">urn:x-opensiddur:text:haggadah:magid@p</tei:idno>', header
+        )
+        self.assertIn('<tei:biblScope unit="pages" from="5r" to="9v"/>', header)
+        self.assertNotIn('xml:id="project_source_bibl"', header)
+
+    def test_minimal_index_header_without_pages_omits_the_scope(self) -> None:
+        header = minimal_index_header("Seder", project_id="p", urn_suffix="seder")
+        self.assertIn(
+            '<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@p"/>', header
+        )
+        self.assertNotIn("biblScope", header)
+
+    def test_header_with_only_bibls_rejects_a_header_without_a_source_desc(self) -> None:
+        with self.assertRaises(ValueError):
+            header_with_only_bibls("<tei:teiHeader/>", ["<tei:bibl/>"])
+
+    def test_project_citation_bibl_scopes_to_pages_when_they_are_known(self) -> None:
+        self.assertIn(
+            '<tei:biblScope unit="pages" from="1r" to="2v"/>',
+            project_citation_bibl("p", from_page="1r", to_page="2v"),
+        )
+        self.assertNotIn("biblScope", project_citation_bibl("p"))
+        # A half-known range is not a range.
+        self.assertNotIn("biblScope", project_citation_bibl("p", from_page="1r"))
 
 
 class TestTitlePage(unittest.TestCase):
