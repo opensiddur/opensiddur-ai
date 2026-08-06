@@ -873,5 +873,149 @@ class TestStructuralElements(unittest.TestCase):
         )
 
 
+class TestFrontMatter(unittest.TestCase):
+    """``tei:front`` is set before the body, with title pages on pages of their own
+    outside the reledmac line numbering and the rest as ordinary text."""
+
+    TITLE_PAGE_XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+      <tei:text>
+        <tei:front>
+          <tei:pb n="i"/>
+          <tei:titlePage>
+            <tei:docTitle>
+              <tei:titlePart type="main">THE HOLY SCRIPTURES</tei:titlePart>
+              <tei:titlePart type="sub">ACCORDING TO THE MASORETIC TEXT</tei:titlePart>
+              <tei:titlePart type="alt" xml:lang="he">תורה נביאים וכתובים</tei:titlePart>
+            </tei:docTitle>
+            <tei:byline><tei:docAuthor>Max L. Margolis</tei:docAuthor></tei:byline>
+            <tei:docEdition>Third Impression</tei:docEdition>
+            <tei:docImprint>
+              <tei:pubPlace>PHILADELPHIA</tei:pubPlace>
+              <tei:publisher>THE JEWISH PUBLICATION SOCIETY OF AMERICA</tei:publisher>
+              <tei:docDate>5677-1917</tei:docDate>
+            </tei:docImprint>
+          </tei:titlePage>
+          <tei:head>PREFACE</tei:head>
+          <tei:p>The sacred task of translating.</tei:p>
+        </tei:front>
+        <tei:body><tei:p>In the beginning.</tei:p></tei:body>
+      </tei:text>
+    </tei:TEI>"""
+
+    def test_front_matter_is_set_before_the_body(self):
+        out = _transform(self.TITLE_PAGE_XML)
+        self.assertLess(out.index("The sacred task"), out.index("In the beginning."))
+
+    def test_front_matter_switches_page_numbering(self):
+        """book-class front matter is numbered in roman and the body restarts at 1."""
+        out = _transform(self.TITLE_PAGE_XML)
+        self.assertLess(out.index(r"\frontmatter"), out.index(r"\mainmatter"))
+        self.assertLess(out.index(r"\mainmatter"), out.index("In the beginning."))
+
+    def test_title_page_is_its_own_page(self):
+        out = _transform(self.TITLE_PAGE_XML)
+        self.assertIn(r"\begin{titlepage}", out)
+        self.assertIn(r"\end{titlepage}", out)
+
+    def test_title_page_carries_no_line_numbering(self):
+        """reledmac numbering inside a titlepage would number a transcribed page of
+        the source as if it were edited text."""
+        out = _transform(self.TITLE_PAGE_XML)
+        page = out.split(r"\begin{titlepage}", 1)[1].split(r"\end{titlepage}", 1)[0]
+        self.assertNotIn(r"\beginnumbering", page)
+        self.assertNotIn(r"\pstart", page)
+
+    def test_title_page_parts_use_their_own_macros(self):
+        out = _transform(self.TITLE_PAGE_XML)
+        self.assertIn(r"\OSTitleMain{THE HOLY SCRIPTURES}", out)
+        self.assertIn(r"\OSTitleSub{ACCORDING TO THE MASORETIC TEXT}", out)
+        # A Hebrew line on a Latin title page needs \texthebrew, or it renders reversed.
+        self.assertIn(r"\OSTitleAlt{\texthebrew{תורה נביאים וכתובים}}", out)
+        self.assertIn(r"\OSByline{Max L. Margolis}", out)
+        self.assertIn(r"\OSDocEdition{Third Impression}", out)
+        self.assertIn(r"\OSImprintLine{PHILADELPHIA}", out)
+        self.assertIn(r"\OSImprintLine{5677-1917}", out)
+
+    def test_prose_front_matter_is_a_numbered_stream(self):
+        out = _transform(self.TITLE_PAGE_XML)
+        front = out.split(r"\end{titlepage}", 1)[1].split(r"\mainmatter", 1)[0]
+        self.assertIn(r"\beginnumbering", front)
+        self.assertIn(r"\OSheadA{", front)
+
+    def test_hebrew_title_page_is_wrapped_for_direction(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text>
+            <tei:front>
+              <tei:titlePage>
+                <tei:docTitle>
+                  <tei:titlePart type="main">ההגדה לליל שמורים</tei:titlePart>
+                </tei:docTitle>
+                <tei:docImprint xml:lang="de">
+                  <tei:pubPlace>Roedelheim,</tei:pubPlace>
+                </tei:docImprint>
+              </tei:titlePage>
+            </tei:front>
+            <tei:body><tei:p>טקסט</tei:p></tei:body>
+          </tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        page = out.split(r"\begin{titlepage}", 1)[1].split(r"\end{titlepage}", 1)[0]
+        self.assertIn(r"\begin{hebrew}", page)
+        # The Hebrew title needs no wrapper; the German imprint on the same page does,
+        # or its Latin text would be laid out right to left.
+        self.assertIn(r"\OSTitleMain{ההגדה לליל שמורים}", page)
+        self.assertIn(
+            r"\OSImprintLine{{\textdir TLT\selectlanguage{english}Roedelheim,}}", page
+        )
+
+    def test_imprint_parts_stay_inline_in_a_running_imprint(self):
+        """A publisher named mid-sentence must not be broken onto a line of its own."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text>
+            <tei:front>
+              <tei:titlePage type="copyright">
+                <tei:docImprint>Copyright, 1917, By <tei:publisher>The Jewish Publication Society of America</tei:publisher></tei:docImprint>
+              </tei:titlePage>
+            </tei:front>
+            <tei:body><tei:p>In the beginning.</tei:p></tei:body>
+          </tei:text>
+        </tei:TEI>"""
+        # \OSImprintLine is always *defined* in the preamble; assert it is never *used*.
+        body = _transform(xml).split(r"\begin{document}", 1)[1]
+        self.assertIn(
+            r"\OSDocImprint{Copyright, 1917, By The Jewish Publication Society of America}",
+            body,
+        )
+        self.assertNotIn(r"\OSImprintLine", body)
+
+    def test_document_without_front_matter_is_unchanged(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body><tei:p>In the beginning.</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertNotIn(r"\frontmatter", out)
+        self.assertNotIn(r"\mainmatter", out)
+        self.assertNotIn(r"\begin{titlepage}", out)
+
+    def test_title_page_in_the_body_is_not_flattened_into_the_text(self):
+        """The leaves pass must never pull title page parts into a numbered stream."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:titlePage><tei:docTitle><tei:titlePart>Stray</tei:titlePart></tei:docTitle></tei:titlePage>
+              <tei:p>In the beginning.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        body = out.split(r"\begin{document}", 1)[1]
+        self.assertNotIn("Stray", body)
+
+
 if __name__ == "__main__":
     unittest.main()

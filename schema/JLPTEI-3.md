@@ -405,6 +405,62 @@ contradict each other (Do not include `small` and `large` on the same text).
 
 Larger inline units (words, multiple words) with special rendering are indicated with the `tei:hi` element with a `rend` attribute.
 
+#### Front matter
+
+Material that precedes the main text — a title page, a preface, a translator's note — goes in `tei:front`, a
+sibling of `tei:body` inside `tei:text`. In a project, front matter belongs on the project's `index.xml`, because
+that is the entry point the exporter compiles.
+
+Front matter that is running prose is encoded like any other text, with `tei:div`, `tei:head` and `tei:p`.
+
+##### Title pages
+
+A title page is encoded with `tei:titlePage`. It transcribes what the book itself prints on its title leaf. This is
+not the same information as the header: `tei:teiHeader` describes the Open Siddur edition and its provenance, while
+`tei:titlePage` is a transcription of a page of the source. Where a book prints no title page, no `tei:titlePage`
+is encoded — one is not invented from the header.
+
+The following elements are available inside `tei:titlePage`:
+
+* `tei:docTitle` — the title as printed, containing one or more `tei:titlePart`. `tei:titlePart/@type` may be
+  `main`, `sub`, `alt`, `short` or `desc`. (Note that this is a different list from `tei:title/@type` in the
+  header, which is restricted to `main`, `sub`, `alt` and `alt-sub`.)
+* `tei:byline` — the statement of responsibility as printed, which may contain `tei:docAuthor`.
+* `tei:docEdition` — the edition statement as printed.
+* `tei:docImprint` — the imprint, which may contain `tei:pubPlace`, `tei:publisher` and `tei:docDate`.
+* `tei:epigraph` — a quotation printed on the title page. It contains block content (`tei:p`, `tei:lg`).
+* `tei:imprimatur` — a formal statement of authorization to print. It contains inline content only, not `tei:p`.
+
+A title leaf is normally unfoliated or numbered separately from the body, so it is marked with its own `tei:pb`
+before the `tei:titlePage`. Where the verso of the title leaf also carries printed matter (a copyright statement,
+an impression statement, a printer's name), it is encoded as a second `tei:titlePage` after its own `tei:pb`.
+
+Example, from the JPS 1917 translation:
+
+```xml
+<tei:front>
+   <tei:pb n="i"/>
+   <tei:titlePage>
+      <tei:docTitle>
+         <tei:titlePart type="alt" xml:lang="he">תורה נביאים וכתובים</tei:titlePart>
+         <tei:titlePart type="main">THE HOLY SCRIPTURES</tei:titlePart>
+         <tei:titlePart type="sub">ACCORDING TO THE MASORETIC TEXT</tei:titlePart>
+      </tei:docTitle>
+      <tei:docImprint>
+         <tei:pubPlace>PHILADELPHIA</tei:pubPlace>
+         <tei:publisher>THE JEWISH PUBLICATION SOCIETY OF AMERICA</tei:publisher>
+         <tei:docDate>5677–1917</tei:docDate>
+      </tei:docImprint>
+   </tei:titlePage>
+   <tei:pb n="iii"/>
+   <tei:head>PREFACE</tei:head>
+   <tei:p>...</tei:p>
+</tei:front>
+```
+
+In digital editions, a `tei:titlePage` is set on a page of its own, centered, outside the line numbering that
+applies to the body. Other front matter is set as ordinary text before the body.
+
 #### Secondary hierarchy
 ##### Anchors
 

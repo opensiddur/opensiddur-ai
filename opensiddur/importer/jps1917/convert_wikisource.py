@@ -1,5 +1,6 @@
 import argparse
 import logging
+import re
 from pathlib import Path
 from typing import Any, Optional
 import urllib
@@ -470,6 +471,52 @@ def header(
 </tei:teiHeader>
 """
 
+# Transcription of the title leaf of the printed 1917 edition: Wikisource page 7 (recto,
+# the title page proper) and page 8 (verso, the copyright statement). Both are short and
+# entirely deterministic, so they are transcribed here rather than run through the LLM
+# encoding agent along with the preface (which starts at page 9). The foliation is the
+# printed book's own — the preface that follows opens at page iii.
+TITLE_PAGE = """<tei:pb n="i"/>
+    <tei:titlePage>
+        <tei:docTitle>
+            <tei:titlePart type="alt" xml:lang="he">תורה נביאים וכתובים</tei:titlePart>
+            <tei:titlePart type="main">THE HOLY SCRIPTURES</tei:titlePart>
+            <tei:titlePart type="sub">ACCORDING TO THE MASORETIC TEXT</tei:titlePart>
+            <tei:titlePart type="sub">A NEW TRANSLATION</tei:titlePart>
+            <tei:titlePart type="sub">WITH THE AID OF PREVIOUS VERSIONS AND WITH<tei:lb/>CONSTANT CONSULTATION OF JEWISH AUTHORITIES</tei:titlePart>
+        </tei:docTitle>
+        <tei:docImprint>
+            <tei:pubPlace>PHILADELPHIA</tei:pubPlace>
+            <tei:publisher>THE JEWISH PUBLICATION SOCIETY OF AMERICA</tei:publisher>
+            <tei:docDate>5677–1917</tei:docDate>
+        </tei:docImprint>
+    </tei:titlePage>
+    <tei:pb n="ii"/>
+    <tei:titlePage type="copyright">
+        <tei:docImprint>Copyright, 1917,<tei:lb/>By <tei:publisher>The Jewish Publication Society of America</tei:publisher><tei:lb/><tei:hi rend="italic">All rights reserved</tei:hi></tei:docImprint>
+        <tei:docEdition>Third Impression, August, 1919</tei:docEdition>
+        <tei:docImprint>The Lakeside Press, Chicago</tei:docImprint>
+    </tei:titlePage>
+    """
+
+_FRONT_OPEN_TAG = re.compile(r"<tei:front\b[^>]*>")
+
+
+def prepend_to_front(front_xml: str, fragment: str) -> str:
+    """Insert ``fragment`` as the first content of a ``tei:front`` element.
+
+    ``front_xml`` is the serialized ``<tei:front>...</tei:front>`` produced by the
+    MediaWiki-to-TEI transform (which carries its own namespace declarations), or the
+    empty string when there is no front matter yet.
+    """
+    if not front_xml.strip():
+        return f"<tei:front>\n    {fragment}</tei:front>"
+    match = _FRONT_OPEN_TAG.search(front_xml)
+    if match is None:
+        raise ValueError("front matter does not start with a tei:front element")
+    return front_xml[: match.end()] + "\n    " + fragment + front_xml[match.end():]
+
+
 def tei_file(
     header: str,
     default_lang: str = "en",
@@ -611,6 +658,12 @@ def index_file(
         )
     else:
         xml_dict = {}
+
+    # Only the top-level index stands for the book as a whole, so only it carries the
+    # printed title page. The sub-indices (the_law, the_prophets, the_writings) are
+    # structural and have no front matter of their own.
+    if idx.file_name == "index":
+        xml_dict["front"] = prepend_to_front(xml_dict.get("front", ""), TITLE_PAGE)
 
     transclusion_str = "\n".join([
         f"""<j:transclude target="urn:x-opensiddur:text:bible:{book.file_name}"/>"""
