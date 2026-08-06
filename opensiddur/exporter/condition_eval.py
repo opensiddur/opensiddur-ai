@@ -24,6 +24,7 @@ from opensiddur.exporter.conditional_settings import (
     TEI_VALT,
     TEI_VNOT,
 )
+from opensiddur.exporter.constants import is_element_node
 from opensiddur.exporter.linear import NumericValue, Undefined, parse_numeric_literal
 
 
@@ -167,8 +168,11 @@ def _parse_condition_node(element: ElementBase) -> ConditionNode:
 
 
 def _condition_children(conditional_el: ElementBase) -> list[ElementBase]:
-    """Return condition AST source children (exclude tei:note)."""
-    return [child for child in conditional_el if child.tag != TEI_NOTE]
+    """Return condition AST source children (exclude tei:note, comments and PIs)."""
+    return [
+        child for child in conditional_el
+        if is_element_node(child) and child.tag != TEI_NOTE
+    ]
 
 
 def parse_condition_element(conditional_el: ElementBase) -> ConditionNode:

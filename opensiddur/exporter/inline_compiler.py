@@ -10,7 +10,7 @@ from opensiddur.exporter.compiler import (
     _AnnotationCommand,
 )
 from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE
+from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import ReferenceDatabase
@@ -99,6 +99,13 @@ class InlineCompilerProcessor(CompilerProcessor):
         """
         Process the given element and return the text content.
         """
+        if not is_element_node(element):
+            # A comment or processing instruction contributes no text. Return the empty wrapper
+            # without touching the processing context; the caller carries the tail.
+            empty = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transcludeInline", nsmap=self.ns_map)
+            empty.text = ""
+            return empty
+
         context = self._update_processing_context_before(element)
 
         text_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transcludeInline", nsmap=self.ns_map)

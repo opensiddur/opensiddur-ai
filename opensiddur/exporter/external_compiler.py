@@ -18,6 +18,7 @@ from opensiddur.exporter.constants import (
     STRUCTURAL_BLOCKS,
     TEI_NS,
     XML_NS,
+    is_element_node,
 )
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import ReferenceDatabase
@@ -169,9 +170,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
             else:
                 child_result = self._process_element(child, root)
                 result.extend(child_result)
-                if child.tail and child_result:
-                    last = child_result[-1]
-                    last.tail = (last.tail or '') + child.tail
+                if child.tail:
+                    if child_result:
+                        last = child_result[-1]
+                        last.tail = (last.tail or '') + child.tail
+                    else:
+                        # A child that compiles to nothing (a comment, a stripped j:conditional)
+                        # still leaves its tail behind as document text.
+                        self._carry_dropped_tail(result, child)
 
         self.marker_stack.pop()
 
@@ -723,6 +729,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
         """
         Process the given element and return the list of processed elements.
         """
+        # Comments and processing instructions are dropped before the processing context sees
+        # them: a visit would reset include_tail_after_end and lose the end element's tail.
+        if not is_element_node(element):
+            return []
+
         context = self._update_processing_context_before(element)
 
         processed = []

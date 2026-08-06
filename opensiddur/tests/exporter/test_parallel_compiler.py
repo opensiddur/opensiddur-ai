@@ -535,6 +535,23 @@ class TestProcessElementAsMarker(_ProcessorBase):
         self.assertEqual(len(div_starts), 1)
         self.assertEqual(len(div_ends), 1)
 
+    def test_comment_child_is_dropped_and_its_tail_kept(self):
+        """A comment in marker mode is dropped; the text after it is document text (#41)."""
+        proc = self._make_processor()
+        proc.marker_stack = []
+        self._push_context(proc)
+        try:
+            tei_p = etree.fromstring(
+                b'<tei:p xmlns:tei="http://www.tei-c.org/ns/1.0">'
+                b'text<!-- an editorial remark --> after comment</tei:p>')
+            result = proc._process_element_as_marker(tei_p)
+        finally:
+            self._pop_context(proc)
+
+        serialized = ''.join(etree.tostring(el, encoding='unicode') for el in result)
+        self.assertNotIn('an editorial remark', serialized)
+        self.assertIn(' after comment', ''.join(el.tail or '' for el in result))
+
 
 # ── parallel-compilation suppression ────────────────────────────────────────
 
