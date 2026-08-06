@@ -7,6 +7,7 @@ from pathlib import Path
 from opensiddur.importer.jps1917.convert_wikisource import (
     get_credits_pages, header, tei_file, process_mediawiki, validate_and_write_tei_file,
     book_file, index_file, Book, Index, mediawiki_xml_to_tei, main, make_project_directory,
+    TITLE_PAGE, prepend_to_front,
 )
 from opensiddur.importer.util.validation import validate_with_start, validate
 
@@ -1781,6 +1782,90 @@ class TestConvertWikisourceMain(unittest.TestCase):
       self.assertEqual(call.args[2], mock_project_dir)
       self.assertEqual(call.kwargs.get("project_dir"), None)
       self.assertEqual(call.args[1], mock_sourcetexts_root)
+
+
+class TestTitlePage(unittest.TestCase):
+    """The printed title leaf (Wikisource pages 7-8) is transcribed onto the project
+    index, ahead of the preface the encoding agent produces from page 9 onwards."""
+
+    def test_prepend_to_front_inserts_inside_existing_front(self):
+        front = '<tei:front xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:p>Preface</tei:p></tei:front>'
+        result = prepend_to_front(front, "<tei:pb n='i'/>")
+        self.assertTrue(result.startswith('<tei:front xmlns:tei='))
+        self.assertLess(result.index("<tei:pb"), result.index("<tei:p>Preface"))
+        self.assertTrue(result.endswith("</tei:front>"))
+
+    def test_prepend_to_front_creates_front_when_there_is_none(self):
+        result = prepend_to_front("", "<tei:pb n='i'/>")
+        self.assertIn("<tei:front>", result)
+        self.assertIn("<tei:pb n='i'/>", result)
+        self.assertIn("</tei:front>", result)
+
+    def test_prepend_to_front_rejects_a_non_front_fragment(self):
+        with self.assertRaises(ValueError):
+            prepend_to_front("<tei:body/>", "<tei:pb n='i'/>")
+
+    def test_title_page_transcribes_the_printed_leaf(self):
+        self.assertIn('<tei:titlePart type="main">THE HOLY SCRIPTURES</tei:titlePart>', TITLE_PAGE)
+        self.assertIn("תורה נביאים וכתובים", TITLE_PAGE)
+        self.assertIn("<tei:pubPlace>PHILADELPHIA</tei:pubPlace>", TITLE_PAGE)
+        # The copyright verso is its own page and its own title page.
+        self.assertEqual(TITLE_PAGE.count("<tei:titlePage"), 2)
+        self.assertIn('<tei:pb n="i"/>', TITLE_PAGE)
+        self.assertIn('<tei:pb n="ii"/>', TITLE_PAGE)
+
+    @patch('opensiddur.importer.jps1917.convert_wikisource.validate_and_write_tei_file')
+    @patch('opensiddur.importer.jps1917.convert_wikisource.tei_file')
+    @patch('opensiddur.importer.jps1917.convert_wikisource.process_mediawiki')
+    @patch('opensiddur.importer.jps1917.convert_wikisource.header')
+    @patch('opensiddur.importer.jps1917.convert_wikisource.get_credits_pages')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_top_level_index_carries_the_title_page(
+        self, mock_file, mock_get_credits, mock_header, mock_process_mediawiki,
+        mock_tei_file, mock_validate_write,
+    ):
+        mock_get_credits.return_value = []
+        mock_header.return_value = "<tei:teiHeader/>"
+        mock_process_mediawiki.return_value = {
+            "front": '<tei:front xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:p>Preface</tei:p></tei:front>',
+            "body": "",
+            "standOff": "",
+        }
+        mock_tei_file.return_value = "<tei:TEI/>"
+
+        index_file(Index(
+            index_title_en="The Holy Scriptures",
+            index_title_he="תורה נביאים וכתובים",
+            file_name="index",
+            transclusions=[],
+            start_page=9,
+            end_page=18,
+        ))
+
+        front = mock_tei_file.call_args[1]["front"]
+        self.assertIn("<tei:titlePage>", front)
+        self.assertLess(front.index("<tei:titlePage>"), front.index("<tei:p>Preface"))
+
+    @patch('opensiddur.importer.jps1917.convert_wikisource.validate_and_write_tei_file')
+    @patch('opensiddur.importer.jps1917.convert_wikisource.tei_file')
+    @patch('opensiddur.importer.jps1917.convert_wikisource.header')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_sub_index_carries_no_title_page(
+        self, mock_file, mock_header, mock_tei_file, mock_validate_write,
+    ):
+        """the_law/the_prophets/the_writings are structural; only the book as a whole
+        has a printed title page."""
+        mock_header.return_value = "<tei:teiHeader/>"
+        mock_tei_file.return_value = "<tei:TEI/>"
+
+        index_file(Index(
+            index_title_en="The Law",
+            index_title_he="תורה",
+            file_name="the_law",
+            transclusions=[],
+        ))
+
+        self.assertNotIn("front", mock_tei_file.call_args[1])
 
 
 if __name__ == '__main__':

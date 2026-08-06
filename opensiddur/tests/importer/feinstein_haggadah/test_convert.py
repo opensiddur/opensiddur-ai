@@ -6,6 +6,7 @@ from pathlib import Path
 from opensiddur.importer.feinstein_haggadah.convert import convert_all
 from opensiddur.importer.feinstein_haggadah.parse_compilation import _clean_html_cell
 from opensiddur.importer.feinstein_haggadah.tei_builder import (
+    read_front_stub,
     tei_document,
     validate_and_write,
     validate_project_directory,
@@ -85,6 +86,9 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
             self._assert_psalms_follow_the_1822_print(
                 project_root / "heidenheim_haggadah_1822"
             )
+            self._assert_only_the_index_holds_the_bibliography(
+                project_root / "heidenheim_haggadah_1822"
+            )
 
             for project in ("heidenheim_haggadah_1822", "feinstein_haggadah_translation_2009"):
                 project_dir = project_root / project
@@ -95,6 +99,30 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
                 for path in xml_files:
                     is_valid, errors = validate(path)
                     self.assertTrue(is_valid, f"{path.name}: {errors}")
+
+    def _assert_only_the_index_holds_the_bibliography(self, project_dir: Path) -> None:
+        """schema/JLPTEI-3.md: the full source citations live in the project index; every
+        other document cites them by pointer. An xml:id repeated across files would also
+        make the pointer's fragment ambiguous."""
+        holders = [
+            path.name
+            for path in sorted(project_dir.glob("*.xml"))
+            if 'xml:id="project_source_bibl"' in path.read_text(encoding="utf-8")
+        ]
+        self.assertEqual(holders, ["index.xml"])
+
+        kadesh = (project_dir / "kadesh.xml").read_text(encoding="utf-8")
+        self.assertIn(
+            '<tei:ptr target="urn:x-opensiddur:text:haggadah:'
+            'haggadah@heidenheim_haggadah_1822#project_source_bibl"/>',
+            kadesh,
+        )
+        # The pointer replaces the bibliography; it does not sit alongside a copy of it.
+        self.assertNotIn("HebrewBooks.org #4909", kadesh)
+        self.assertNotIn("Differences from the 1822 Heidenheim original", kadesh)
+        # Responsibility and licence stay on every document — only sourceDesc collapses.
+        self.assertIn("<tei:respStmt>", kadesh)
+        self.assertIn("<tei:licence", kadesh)
 
     def _assert_psalms_follow_the_1822_print(self, project_dir: Path) -> None:
         """The psalms the print carries reach the project as transcribed, not as WLC."""
@@ -111,6 +139,53 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
         psalm_126 = (project_dir / "psalm_126.xml").read_text(encoding="utf-8")
         self.assertIn("text:bible:psalms@wlc", psalm_126)
         self.assertNotIn("<j:divineName>", psalm_126)
+
+
+class TestTitlePage(unittest.TestCase):
+    HEADER = """<tei:teiHeader xmlns:tei="http://www.tei-c.org/ns/1.0">
+  <tei:fileDesc>
+    <tei:titleStmt><tei:title>Test</tei:title></tei:titleStmt>
+    <tei:publicationStmt><tei:distributor><tei:ref target="http://opensiddur.org">OSP</tei:ref></tei:distributor></tei:publicationStmt>
+    <tei:sourceDesc><tei:bibl><tei:title>Test</tei:title></tei:bibl></tei:sourceDesc>
+  </tei:fileDesc>
+</tei:teiHeader>"""
+
+    def test_tei_document_places_front_before_body(self) -> None:
+        document = tei_document(
+            self.HEADER,
+            "<tei:body><tei:div><tei:p>ok</tei:p></tei:div></tei:body>",
+            lang="he",
+            front_xml='<tei:front xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:pb n="1r"/></tei:front>',
+        )
+        self.assertLess(document.index("<tei:front"), document.index("<tei:body>"))
+        is_valid, errors = validate(document)
+        self.assertTrue(is_valid, errors)
+
+    def test_tei_document_without_front_emits_none(self) -> None:
+        document = tei_document(
+            self.HEADER,
+            "<tei:body><tei:div><tei:p>ok</tei:p></tei:div></tei:body>",
+            lang="he",
+        )
+        self.assertNotIn("<tei:front", document)
+
+    def test_1822_title_page_stub_is_valid_and_transcribes_the_leaf(self) -> None:
+        stub = read_front_stub("heidenheim_haggadah_1822_title_page.xml")
+        self.assertIn("<tei:titlePage>", stub)
+        self.assertIn("ההגדה לליל שמורים", stub)
+        self.assertIn("רעדלהיים", stub)
+        self.assertIn("Roedelheim,", stub)
+        # The title leaf precedes the 1822 foliation, which starts at 2r.
+        self.assertIn('<tei:pb n="1r"', stub)
+
+        document = tei_document(
+            self.HEADER,
+            "<tei:body><tei:div><tei:p>ok</tei:p></tei:div></tei:body>",
+            lang="he",
+            front_xml=stub,
+        )
+        is_valid, errors = validate(document)
+        self.assertTrue(is_valid, errors)
 
 
 if __name__ == "__main__":

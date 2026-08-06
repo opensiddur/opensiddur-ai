@@ -1,0 +1,32 @@
+<!--
+  The transcribed title page of the 1822 Rödelheim print, spliced into the project index by
+  convert.py. The rationale that belongs with the published data - the unfoliated title leaf,
+  and the engraved signature after מאתי that is not transcribed - is recorded in the
+  "Differences from the 1822 Heidenheim original" note in the header stub, so it reaches
+  readers of the project rather than only readers of this file.
+
+  Note that nothing below the tei:front element may carry an XML comment: the exporter's
+  compiler is an lxml identity transform over elements and fails on comment nodes.
+-->
+<tei:front xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+  <tei:pb n="1r" ed="1822" facs="https://www.hebrewbooks.org/pdfpager.aspx?req=4909&amp;pgnum=1"/>
+  <tei:titlePage>
+    <tei:docTitle>
+      <tei:titlePart type="desc">סדר</tei:titlePart>
+      <tei:titlePart type="main">ההגדה לליל שמורים</tei:titlePart>
+      <tei:titlePart type="sub">מפורש במאמר אפיקומין</tei:titlePart>
+      <tei:titlePart type="sub">למורינו ורבינו הגאון הגדול הרשב״ץ זצ״ל.</tei:titlePart>
+    </tei:docTitle>
+    <tei:docEdition>מדויק היטיב ומסודר יפה<tei:lb/>ומתורגם אשכנזית</tei:docEdition>
+    <tei:byline>מאתי</tei:byline>
+    <tei:docImprint>
+      <tei:pubPlace>רעדלהיים</tei:pubPlace>
+      <tei:docDate when="1822">שנת תקפ״ב לפ״ק.</tei:docDate>
+    </tei:docImprint>
+    <tei:docImprint xml:lang="de">
+      <tei:pubPlace>Roedelheim,</tei:pubPlace>
+      <tei:publisher>verlegt u. gedruckt in der privilegirten Buchdruckerey<tei:lb/>von W. Heidenheim</tei:publisher>
+      <tei:docDate when="1822">1822.</tei:docDate>
+    </tei:docImprint>
+  </tei:titlePage>
+</tei:front>

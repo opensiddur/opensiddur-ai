@@ -141,6 +141,8 @@ Contributor credits are **not** a `j:` element. They belong in the TEI header as
 - `tei:standOff[@type]` only accepts `notes`, `settings`, or `conditions`
 - `tei:p[@type]` only accepts `open-1`, `closed-1`, or `open-3`
 - `tei:title[@type]` only accepts `main`, `sub`, `alt`, or `alt-sub`
+- `tei:titlePage` goes in `tei:front`; `tei:titlePart[@type]` is a *different*, open list (`main`, `sub`, `alt`, `short`, `desc`) from `tei:title[@type]`
+- `tei:imprimatur` takes inline content only — a `tei:p` inside it is invalid (`tei:epigraph` does take `tei:p`)
 
 **URN/`corresp` scoping**: A `corresp` on a `tei:milestone` scopes from that milestone to the next same-unit milestone, or end of file. This is the basis for parallel-text alignment: two documents share an alignment segment when they carry identical `corresp` values on their milestones.
 

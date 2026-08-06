@@ -34,12 +34,15 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
     citation_bibl,
     content_body,
     header_with_bibls,
+    header_with_only_bibls,
     index_body,
     minimal_index_header,
+    read_front_stub,
     page_break_anchors,
     printed_verse_body,
     read_header_stub,
     tei_document,
+    project_citation_bibl,
     transcription_bibl,
     validate_and_write,
     validate_header_stub,
@@ -94,6 +97,7 @@ def convert_project(
     sourcetexts_root: Path | None,
     project_dir: Path,
     include_page_breaks: bool = False,
+    title_page_stub: str | None = None,
 ) -> None:
     json_path = feinstein_haggadah_data_directory(sourcetexts_root) / "compilation.json"
     compilation = load_compilation_json(json_path)
@@ -119,6 +123,9 @@ def convert_project(
 
     validate_header_stub(header_stub, lang=lang)
     main_header = read_header_stub(header_stub)
+    # The title page belongs to the book as a whole, so it goes on the project index and
+    # nowhere else. A project with no printed title page simply has no stub.
+    title_page = read_front_stub(title_page_stub) if title_page_stub else ""
 
     def _anchors(slug: str) -> list[InlineAnchor]:
         """Page breaks first, so a page opening a psalm is marked before its chapter."""
@@ -127,14 +134,25 @@ def convert_project(
             anchors += verse_anchors(scripture[slug])
         return anchors
 
+    def _index_header(header: str) -> str:
+        """The project index keeps the full bibliography and adds its own page scope."""
+        from_page, to_page = ranges.get("index", (None, None))
+        if not (from_page and to_page):
+            return header
+        return header_with_bibls(header, [citation_bibl(project_id, from_page, to_page)])
+
     def _header(header: str, slug: str) -> str:
-        bibls = []
-        if slug in ranges:
-            from_page, to_page = ranges[slug]
-            bibls.append(citation_bibl(project_id, from_page, to_page))
+        """Every document other than the index cites the index's bibliography by pointer.
+
+        Per ``schema/JLPTEI-3.md`` the full citations belong to the project header alone.
+        Copying them into each document would duplicate the ``xml:id``s they are addressed
+        by across a hundred files, and make correcting any of them a whole-project rewrite.
+        """
+        from_page, to_page = ranges.get(slug, (None, None))
+        bibls = [project_citation_bibl(project_id, from_page=from_page, to_page=to_page)]
         if slug in scripture:
             bibls.append(transcription_bibl(scripture[slug]))
-        return header_with_bibls(header, bibls) if bibls else header
+        return header_with_only_bibls(header, bibls)
 
     for index_slug, children in INDEX_CHILDREN.items():
         section = contents.get(index_slug)
@@ -142,7 +160,7 @@ def convert_project(
             index_slug, children, section, lang=lang, anchors=_anchors(index_slug)
         )
         if index_slug == "index":
-            header = _header(main_header, index_slug)
+            header = _index_header(main_header)
         else:
             from_page, to_page = ranges.get(index_slug, (None, None))
             header = minimal_index_header(
@@ -153,7 +171,8 @@ def convert_project(
                 from_page=from_page,
                 to_page=to_page,
             )
-        xml = tei_document(header, body, lang=lang)
+        front = title_page if index_slug == "index" else ""
+        xml = tei_document(header, body, lang=lang, front_xml=front)
         validate_and_write(xml, index_slug, project_dir)
 
     written = set(INDEX_CHILDREN)
@@ -270,6 +289,7 @@ def convert_all(
         sourcetexts_root=sourcetexts_root,
         project_dir=he_dir,
         include_page_breaks=True,
+        title_page_stub="heidenheim_haggadah_1822_title_page.xml",
     )
 
     en_dir = make_project_directory(root / "feinstein_haggadah_translation_2009")

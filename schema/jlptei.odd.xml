@@ -132,8 +132,9 @@
         <!-- required core elements (p and title for use in titleStmt) -->
         <moduleRef key="core" include="p title cb choice corr date divGen foreign gb head lb milestone note pb ptr ref reg abbr author bibl biblScope editor email emph hi item l label lg list name publisher pubPlace resp respStmt series"/>
         
-        <!-- required textstructure elements (TEI, text, and body) -->
-        <moduleRef key="textstructure" include="TEI text body div front back"/>
+        <!-- required textstructure elements (TEI, text, and body), plus the title page
+             elements used in front matter -->
+        <moduleRef key="textstructure" include="TEI text body div front back titlePage docTitle titlePart byline docAuthor docEdition docImprint docDate imprimatur epigraph"/>
         
         <!-- required module tei instantiates lots of classes used for further expansion of this odd -->
         <moduleRef key="tei"/>

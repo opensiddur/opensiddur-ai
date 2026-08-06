@@ -144,6 +144,23 @@
         <xsl:text>\newcommand{\OSheadB}[1]{\mbox{}\hfill{\normalfont\Large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSheadC}[1]{\mbox{}\hfill{\normalfont\large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
 
+        <!-- Title page (tei:titlePage).
+             Unlike \OSheadA/B/C, these are never emitted inside a reledmac \pstart — a
+             title page is set outside all numbering — so an ordinary {\centering ...\par}
+             is safe here and gives real centred paragraphs with line breaking.
+             Sizes are the defaults for a printed title leaf: the main title dominates,
+             subtitle and byline step down from it, the imprint sits at the foot. -->
+        <xsl:text>\newcommand{\OSTitleMain}[1]{{\centering\normalfont\Huge\bfseries #1\par}\vspace{1.5ex}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSTitleSub}[1]{\vspace{1.5ex}{\centering\normalfont\Large #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSTitleAlt}[1]{{\centering\normalfont\large #1\par}\vspace{1ex}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSByline}[1]{\vspace{3ex}{\centering\normalfont\large #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSDocEdition}[1]{\vspace{2ex}{\centering\normalfont\normalsize #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSDocImprint}[1]{\vspace{4ex}{\centering\normalfont\normalsize #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSImprintLine}[1]{{\centering #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSEpigraph}[1]{\vspace{2ex}{\centering\normalfont\small\itshape #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSImprimatur}[1]{\vspace{2ex}{\centering\normalfont\small\itshape #1\par}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSTitlePageBlock}[1]{{\centering\normalfont\normalsize #1\par}}&#10;</xsl:text>
+
         <!-- Notes styling.
              - All notes must force direction/language using the xml:lang-derived wrappers
                emitted by note-content (\texthebrew{...} / \textenglish{...}).
@@ -260,7 +277,61 @@
     <xsl:template match="tei:teiHeader"/>
 
     <xsl:template match="tei:text">
+        <!-- \frontmatter/\mainmatter are book-class page-numbering switches (roman for the
+             front matter, restarting at arabic for the body). Emit them only when there is
+             front matter to number, so a document without one is unaffected. -->
+        <xsl:if test="tei:front">
+            <xsl:text>\frontmatter&#10;</xsl:text>
+            <xsl:apply-templates select="tei:front"/>
+            <xsl:text>\mainmatter&#10;</xsl:text>
+        </xsl:if>
         <xsl:apply-templates select="tei:body"/>
+    </xsl:template>
+
+    <!-- ====================================================================
+         Front matter: title pages are set on their own pages outside all
+         numbering; everything else is ordinary text run through the same
+         numbered stream the body uses.
+         ==================================================================== -->
+
+    <xsl:template match="tei:front">
+        <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
+        <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
+
+        <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
+                            group-adjacent="if (self::tei:titlePage) then 'titlePage' else 'prose'">
+            <xsl:choose>
+                <xsl:when test="current-grouping-key() = 'titlePage'">
+                    <xsl:apply-templates select="current-group()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:call-template name="numbered-stream">
+                        <xsl:with-param name="nodes" select="current-group()"/>
+                        <xsl:with-param name="lang" select="$root-lang"/>
+                        <xsl:with-param name="align-verses" select="false()"/>
+                    </xsl:call-template>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:for-each-group>
+    </xsl:template>
+
+    <!-- A title page is a transcription of a printed page, not part of the edited text:
+         it gets its own page and no line numbers, so it is emitted directly rather than
+         through numbered-stream. -->
+    <xsl:template match="tei:titlePage">
+        <xsl:variable name="is-hebrew" select="f:is-hebrew-lang(f:in-scope-lang(.))"/>
+
+        <xsl:text>\begin{titlepage}&#10;</xsl:text>
+        <xsl:if test="$is-hebrew">
+            <xsl:text>\begin{hebrew}&#10;</xsl:text>
+        </xsl:if>
+        <xsl:text>\null\vfill&#10;</xsl:text>
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:text>&#10;\vfill&#10;</xsl:text>
+        <xsl:if test="$is-hebrew">
+            <xsl:text>\end{hebrew}&#10;</xsl:text>
+        </xsl:if>
+        <xsl:text>\end{titlepage}&#10;</xsl:text>
     </xsl:template>
 
     <!-- ====================================================================
@@ -728,6 +799,11 @@
 
     <xsl:template match="tei:standOff" mode="leaves"/>
 
+    <!-- A title page is never part of a numbered stream. tei:front handles it directly;
+         should one turn up inside the body, the match="*" fallback would otherwise
+         flatten its parts into running text. -->
+    <xsl:template match="tei:titlePage" mode="leaves"/>
+
     <!-- Internal sentinels produced by this stylesheet must survive flattening. -->
     <xsl:template match="f:para-break | f:block-break | f:head" mode="leaves">
         <xsl:sequence select="."/>
@@ -739,27 +815,45 @@
          raw nesting depth does not correspond to logical heading level. -->
     <xsl:template match="tei:div" mode="leaves">
         <xsl:if test="tei:head">
-            <xsl:variable name="head" select="tei:head[1]"/>
-            <xsl:element name="f:head" namespace="urn:opensiddur:reledmac">
-                <!-- @title is the flattened plain-text form, used only for the PDF
-                     bookmark (\addcontentsline takes no markup). -->
-                <xsl:attribute name="title"
-                               select="normalize-space(string-join(
-                                   $head//text()[not(ancestor::tei:note)], ''))"/>
-                <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
-                <xsl:attribute name="level"
-                               select="min((count(ancestor::tei:div[tei:head]) + 1, 3))"/>
-                <!-- The head's own content is carried through so it can be rendered in
-                     mode="emit" rather than flattened: a title like
-                     <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
-                     wrapped in \texthebrew (otherwise it renders reversed inside the
-                     surrounding LTR heading) and its line break preserved.
-                     Notes are dropped: an apparatus entry cannot be anchored in a
-                     heading, which sits outside the numbered line stream. -->
-                <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
-            </xsl:element>
+            <xsl:call-template name="head-sentinel">
+                <xsl:with-param name="head" select="tei:head[1]"/>
+                <xsl:with-param name="level"
+                                select="min((count(ancestor::tei:div[tei:head]) + 1, 3))"/>
+            </xsl:call-template>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
+    </xsl:template>
+
+    <!-- A tei:head outside a tei:div — front matter titles a section without dividing it,
+         as in "PREFACE" at the head of tei:front. Without this it would fall through to the
+         match="*" fallback and its text would run straight into the following paragraph. -->
+    <xsl:template match="tei:head[not(parent::tei:div)]" mode="leaves">
+        <xsl:call-template name="head-sentinel">
+            <xsl:with-param name="head" select="."/>
+            <xsl:with-param name="level" select="1"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="head-sentinel">
+        <xsl:param name="head" as="element(tei:head)"/>
+        <xsl:param name="level" as="xs:integer"/>
+        <xsl:element name="f:head" namespace="urn:opensiddur:reledmac">
+            <!-- @title is the flattened plain-text form, used only for the PDF
+                 bookmark (\addcontentsline takes no markup). -->
+            <xsl:attribute name="title"
+                           select="normalize-space(string-join(
+                               $head//text()[not(ancestor::tei:note)], ''))"/>
+            <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
+            <xsl:attribute name="level" select="$level"/>
+            <!-- The head's own content is carried through so it can be rendered in
+                 mode="emit" rather than flattened: a title like
+                 <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
+                 wrapped in \texthebrew (otherwise it renders reversed inside the
+                 surrounding LTR heading) and its line break preserved.
+                 Notes are dropped: an apparatus entry cannot be anchored in a
+                 heading, which sits outside the numbered line stream. -->
+            <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="tei:p | tei:ab" mode="leaves">
@@ -891,6 +985,154 @@
         <xsl:apply-templates mode="emit"/>
         <xsl:text>}</xsl:text>
     </xsl:template>
+
+    <!-- ====================================================================
+         Title page parts (mode="emit").
+         Each part is wrapped in its own \OS* macro so all title page styling
+         lives in the preamble. Direction is handled once per part, the same
+         way the `heading` template handles it: Hebrew stays in the stream
+         direction, anything else gets an explicit LTR wrapper so Latin text
+         is not reversed on a Hebrew title page.
+         ==================================================================== -->
+
+    <xsl:template name="title-page-part">
+        <xsl:param name="macro" as="xs:string"/>
+        <xsl:variable name="page-hebrew"
+                      select="f:is-hebrew-lang(f:in-scope-lang(ancestor::tei:titlePage[1]))"/>
+        <xsl:variable name="part-hebrew" select="f:is-hebrew-lang(f:in-scope-lang(.))"/>
+        <!-- Only wrap when the part runs against the direction of the page it sits on: an
+             English part on an English page needs nothing. Both directions matter — a
+             Hebrew line on a Latin title page renders reversed without \texthebrew, and
+             Latin text on a Hebrew one renders reversed without an explicit LTR group. -->
+        <xsl:variable name="needs-ltr" select="$page-hebrew and not($part-hebrew)"/>
+        <xsl:variable name="needs-rtl" select="$part-hebrew and not($page-hebrew)"/>
+        <xsl:text>\</xsl:text>
+        <xsl:value-of select="$macro"/>
+        <xsl:text>{</xsl:text>
+        <xsl:if test="$needs-ltr">
+            <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+        </xsl:if>
+        <xsl:if test="$needs-rtl">
+            <xsl:text>\texthebrew{</xsl:text>
+        </xsl:if>
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:if test="$needs-ltr or $needs-rtl">
+            <xsl:text>}</xsl:text>
+        </xsl:if>
+        <xsl:text>}&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- tei:docTitle is a container; its tei:titlePart children carry the styling. -->
+    <xsl:template match="tei:docTitle" mode="emit">
+        <xsl:apply-templates select="node()" mode="emit"/>
+    </xsl:template>
+
+    <xsl:template match="tei:titlePart[@type = ('sub', 'desc')]" mode="emit" priority="10">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSTitleSub'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="tei:titlePart[@type = ('alt', 'short')]" mode="emit" priority="10">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSTitleAlt'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <!-- @type='main' and untyped titleParts both read as the title proper. -->
+    <xsl:template match="tei:titlePart" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSTitleMain'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="tei:byline" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSByline'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <!-- Inside a byline the wrapper already supplied the styling; standing alone,
+         a docAuthor is the byline. -->
+    <xsl:template match="tei:docAuthor[parent::tei:byline]" mode="emit" priority="10">
+        <xsl:apply-templates select="node()" mode="emit"/>
+    </xsl:template>
+
+    <xsl:template match="tei:docAuthor" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSByline'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="tei:docEdition" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSDocEdition'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <!-- An imprint listing place, publisher and date as elements is a container: each part
+         sets its own line and supplies its own direction wrapper, so wrapping the container
+         too would only nest a redundant \textdir group around them. An imprint written as a
+         running phrase ("Copyright, 1917, By The Jewish Publication Society of America") is
+         styled as one block instead, and its parts stay inline — see f:is-imprint-list. -->
+    <xsl:template match="tei:docImprint[f:is-imprint-list(.)]" mode="emit" priority="10">
+        <xsl:text>\OSDocImprint{</xsl:text>
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:text>}&#10;</xsl:text>
+    </xsl:template>
+
+    <xsl:template match="tei:docImprint" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSDocImprint'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <!-- Each imprint element prints on its own line, but only where the imprint is a list of
+         them; breaking the line at a publisher named mid-sentence would split the sentence. -->
+    <xsl:template match="tei:pubPlace[f:is-imprint-list(..)] |
+                         tei:publisher[f:is-imprint-list(..)] |
+                         tei:docDate[f:is-imprint-list(..)]" mode="emit" priority="10">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSImprintLine'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="tei:epigraph" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSEpigraph'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="tei:imprimatur" mode="emit">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSImprimatur'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <!-- Block content elsewhere on a title page (a loose paragraph, an epigraph's
+         paragraphs) still needs to break as a paragraph rather than run on. -->
+    <xsl:template match="tei:p[ancestor::tei:titlePage] |
+                         tei:ab[ancestor::tei:titlePage] |
+                         tei:lg[ancestor::tei:titlePage]" mode="emit" priority="10">
+        <xsl:call-template name="title-page-part">
+            <xsl:with-param name="macro" select="'OSTitlePageBlock'"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template match="tei:l[ancestor::tei:titlePage]" mode="emit" priority="10">
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:text>\\&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- A page break inside front matter records the source foliation only; the
+         typeset page breaks are produced by the titlepage environment itself. -->
+    <xsl:template match="tei:pb[ancestor::tei:titlePage]" mode="emit"/>
+
+    <!-- Every title page part already ends its own paragraph, so the pretty-printing
+         whitespace between them would only add stray blank lines (= \par) and
+         unwanted vertical space. -->
+    <xsl:template match="text()[not(normalize-space(.))][ancestor::tei:titlePage]"
+                  mode="emit" priority="10"/>
 
     <xsl:template match="tei:ref[@target]" mode="emit">
         <xsl:text>\href{</xsl:text>
@@ -1049,6 +1291,31 @@
     <xsl:function name="f:heading-toc-level" as="xs:string">
         <xsl:param name="level" as="xs:integer"/>
         <xsl:sequence select="('section', 'subsection', 'subsubsection')[min((max(($level, 1)), 3))]"/>
+    </xsl:function>
+
+    <!-- Nearest xml:lang in scope for any element, falling back to the document language. -->
+    <xsl:function name="f:in-scope-lang" as="xs:string">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:sequence select="string((
+            $node/ancestor-or-self::*[@xml:lang][1]/@xml:lang,
+            $node/root()/tei:TEI/@xml:lang,
+            ''
+        )[1])"/>
+    </xsl:function>
+
+    <!-- True when a tei:docImprint sets its parts out as a list — place, publisher and date
+         each on a line of its own — rather than running them into a sentence. The test is
+         that the imprint carries imprint-part elements and no prose of its own. -->
+    <xsl:function name="f:is-imprint-list" as="xs:boolean">
+        <xsl:param name="imprint" as="node()?"/>
+        <xsl:sequence select="exists($imprint/self::tei:docImprint)
+            and exists($imprint/(tei:pubPlace | tei:publisher | tei:docDate))
+            and not($imprint/text()[normalize-space(.)])"/>
+    </xsl:function>
+
+    <xsl:function name="f:is-hebrew-lang" as="xs:boolean">
+        <xsl:param name="lang" as="xs:string"/>
+        <xsl:sequence select="$lang = 'he' or starts-with($lang, 'he-')"/>
     </xsl:function>
 
     <!-- Language for the tei:head used in \OSheadA/B/C titles. -->

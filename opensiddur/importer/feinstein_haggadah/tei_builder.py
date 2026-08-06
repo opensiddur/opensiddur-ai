@@ -50,11 +50,13 @@ def tei_document(
     body_xml: str,
     *,
     lang: str,
+    front_xml: str = "",
 ) -> str:
+    front = f"{front_xml}\n" if front_xml else ""
     return f"""<tei:TEI xml:lang="{lang}" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
 {header_xml}
 <tei:text>
-{body_xml}
+{front}{body_xml}
 </tei:text>
 </tei:TEI>
 """
@@ -707,6 +709,20 @@ def read_header_stub(stub_name: str) -> str:
     return stub_path.read_text(encoding="utf-8").strip()
 
 
+_LEADING_COMMENT_RE = re.compile(r"\A(?:\s*<!--.*?-->)+\s*", re.DOTALL)
+
+
+def read_front_stub(stub_name: str) -> str:
+    """Read a curated ``tei:front`` fragment (a transcribed title page).
+
+    Same contract as :func:`read_header_stub`: the stub is a standalone, namespace-declaring
+    fragment spliced into a document by :func:`tei_document`. Leading comments are notes to
+    whoever maintains the stub and are dropped — the compiler is an lxml identity transform
+    over elements and raises on a comment node, so no comment may reach the project data.
+    """
+    return _LEADING_COMMENT_RE.sub("", read_header_stub(stub_name)).strip()
+
+
 def citation_bibl(project_id: str, from_page: str, to_page: str) -> str:
     """A per-document citation pointing at the project bibliography, scoped to its pages.
 
@@ -752,6 +768,43 @@ def header_with_bibls(header_xml: str, bibls: list[str]) -> str:
     return header_xml.replace(closing, "".join(bibls) + closing, 1)
 
 
+def project_citation_bibl(
+    project_id: str,
+    *,
+    from_page: str | None = None,
+    to_page: str | None = None,
+) -> str:
+    """This document's whole ``sourceDesc`` when it is not the project index: a pointer to
+    the index's bibliography, scoped to the pages this document occupies where they are
+    known."""
+    if from_page and to_page:
+        return citation_bibl(project_id, from_page, to_page)
+    return (
+        "<tei:bibl>"
+        f'<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@{project_id}"/>'
+        "</tei:bibl>"
+    )
+
+
+_SOURCE_DESC_RE = re.compile(
+    r"<tei:sourceDesc\b[^>]*>.*?</tei:sourceDesc>", re.DOTALL
+)
+
+
+def header_with_only_bibls(header_xml: str, bibls: list[str]) -> str:
+    """Replace a header's ``sourceDesc`` with ``bibls``.
+
+    Per ``schema/JLPTEI-3.md``, the full bibliographic citations of a project's sources live
+    in the project index alone; every other document cites them by pointer. Appending to the
+    project header (:func:`header_with_bibls`) would copy those citations — and the
+    ``xml:id``s they are addressed by — into each of the hundred-odd files that share it.
+    """
+    if not _SOURCE_DESC_RE.search(header_xml):
+        raise ValueError("header has no tei:sourceDesc to replace")
+    replacement = "<tei:sourceDesc>" + "".join(bibls) + "</tei:sourceDesc>"
+    return _SOURCE_DESC_RE.sub(lambda _: replacement, header_xml, count=1)
+
+
 def header_with_page_scope(
     header_xml: str,
     *,
@@ -772,14 +825,7 @@ def minimal_index_header(
     from_page: str | None = None,
     to_page: str | None = None,
 ) -> str:
-    if from_page and to_page:
-        bibl = citation_bibl(project_id, from_page, to_page)
-    else:
-        bibl = (
-            "<tei:bibl>"
-            f'<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@{project_id}"/>'
-            "</tei:bibl>"
-        )
+    bibl = project_citation_bibl(project_id, from_page=from_page, to_page=to_page)
     return f"""<tei:teiHeader xmlns:tei="http://www.tei-c.org/ns/1.0">
   <tei:fileDesc>
     <tei:titleStmt>
