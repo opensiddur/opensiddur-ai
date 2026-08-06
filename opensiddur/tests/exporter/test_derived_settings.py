@@ -255,6 +255,40 @@ class TestGoldenCalendarDates(unittest.TestCase):
         entry = get_active_setting_entry(self.linear_data, "opensiddur:holiday-aggregate", "shabbat")
         self.assertTrue(entry.value)
 
+    def test_timezone_is_derived_from_the_coordinates(self):
+        self._load({
+            "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+        })
+        entry = get_active_setting_entry(self.linear_data, "opensiddur:location", "timezone")
+        self.assertEqual(entry.value, "America/New_York")
+        self.assertEqual(entry.source, "derived")
+
+    def test_declared_timezone_beats_the_derived_one(self):
+        self._load({
+            "opensiddur:location": {
+                "latitude": 40.71,
+                "longitude": -74.01,
+                "timezone": "UTC",
+            },
+        })
+        entry = get_active_setting_entry(self.linear_data, "opensiddur:location", "timezone")
+        self.assertEqual(entry.value, "UTC")
+        self.assertNotEqual(entry.source, "derived")
+
+    def test_local_evening_rolls_the_hebrew_date_over(self):
+        """The reported case: a New York seder at 8:30pm on 1 April 2026 is 15 Nisan."""
+        self._load({
+            "opensiddur:gregorian-date": {"year": 2026, "month": 4, "day": 1},
+            "opensiddur:time": {"hour": 20, "minute": 30},
+            "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+        })
+        self.assertEqual(
+            get_active_setting_entry(self.linear_data, "opensiddur:hebrew-date", "day").value, 15
+        )
+        self.assertEqual(
+            get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah").value, 1
+        )
+
     def test_torah_reading_parsha(self):
         self._load({
             "opensiddur:gregorian-date": {"year": 2024, "month": 10, "day": 3},

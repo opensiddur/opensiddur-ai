@@ -26,6 +26,7 @@ from opensiddur.exporter.calendar.compute import (
     compute_holiday,
     compute_holiday_aggregate,
     compute_israel,
+    compute_location,
     compute_quorum,
     compute_service_time,
     compute_torah_reading,
@@ -66,6 +67,12 @@ def _time_inputs() -> frozenset[FeatureRef]:
 
 
 DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
+    # First, so that the derived time zone is on the stack before anything reads a location.
+    DerivationSpec(
+        fs_type=FS_LOCATION,
+        required_inputs=_location_inputs(),
+        compute=compute_location,
+    ),
     DerivationSpec(
         fs_type=FS_ISRAEL,
         required_inputs=_location_inputs(),

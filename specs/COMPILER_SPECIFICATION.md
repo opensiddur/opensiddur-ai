@@ -171,6 +171,8 @@ Evaluation uses tristate logic with truth tables from JLPTEI-3 (`condition_eval.
 
 Many JLPTEI feature structures are **derived** from other settings (e.g. `opensiddur:hebrew-date` from `opensiddur:gregorian-date` and `opensiddur:location`; `opensiddur:holiday` from dates, times, and location). See `schema/JLPTEI-3.md` for the full derivation graph.
 
+A feature structure may also derive one of its own features: `opensiddur:location/timezone` is derived from the latitude and longitude of the same structure. `opensiddur:time` is read as a wall clock reading in that zone.
+
 Derived entries use `source="derived"` on the settings stack, with a `contributors` set recording the `declare_id` of each input feature’s winning entry. Derived entry IDs are deterministic: `__derived__:{fs_type}:{feature_name}`.
 
 **Explicit beats derived:** if the winning stack entry for a feature is `init` or `declared`, derivation for that feature is skipped (last explicit setting prevails).
