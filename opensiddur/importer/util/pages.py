@@ -29,6 +29,16 @@ def jps1917_credits_directory(sourcetexts_root: Path | None = None) -> Path:
     return jps1917_data_directory(sourcetexts_root) / "credits"
 
 
+def hebcal_leyning_data_directory(sourcetexts_root: Path | None = None) -> Path:
+    """hebcal leyning raw data: <sourcetexts-root>/hebcal_leyning."""
+    root = (
+        sourcetexts_root.resolve()
+        if sourcetexts_root is not None
+        else default_sourcetexts_root()
+    )
+    return root / "hebcal_leyning"
+
+
 def miqra_al_pi_hamasorah_data_directory(sourcetexts_root: Path | None = None) -> Path:
     """Miqra al pi ha-Masorah raw dumps: <sourcetexts-root>/miqra_al_pi_hamasorah."""
     root = (
