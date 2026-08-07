@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Shared table of the 54 weekly parshiyot (`opensiddur/importer/util/parshiyot.py`), mapping any
+  source's spelling of a parshah name to a canonical Hebrew name and a URN slug.
+
 ### Fixed
 - Miqra al pi ha-Masorah importer: the `{{מ:כפול}}` template, which carries a verse in both
   cantillations (ta'am elyon and ta'am tachton), was discarded by the stylesheet, emitting the
@@ -16,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Miqra al pi ha-Masorah importer: a row whose text contained a parashah break lost both its
   text and its verse milestone, dropping 54 verses across the project — among them Exodus 20:13,
   Deuteronomy 5:17, and most of the Shirat haYam and Ha'azinu shirah.
+- JPS 1917 importer: the 22 acrostic stanza headings of Psalm 119 are no longer emitted as
+  `tei:milestone[@unit='parsha']`; they become `@unit='acrostic'` and carry no URN.
+- JPS 1917 importer: parsha URNs are transliterated path segments
+  (`…/ki_teitzei`) instead of raw Hebrew with literal spaces, and `@n` carries the canonical
+  name (`לך־לך`, not `לךלך`).
+- JPS 1917 importer: the opening parshah of each book of the Torah, which has no running head in
+  the source, is now emitted. All 54 parshiyot are present.
+- JPS 1917 importer: each generated file declares its own document URN instead of all 44 sharing
+  `urn:x-opensiddur:text:bible:tanakh@jps1917`.
 
 ## [0.1.0] - 2026-05-26
 
