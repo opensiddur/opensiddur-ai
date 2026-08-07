@@ -26,6 +26,19 @@
     </xsl:choose>
   </xsl:function>
 
+  <!-- True when a מ:כפול carries nothing but a parashah break in each of its strands, i.e. the
+       two readings agree on where the break falls and differ only in whether it lands mid-verse. -->
+  <xsl:function name="miqra:parashah-only" as="xs:boolean">
+    <xsl:param name="dual" as="element(miqra:dual-accent)"/>
+    <xsl:sequence select="
+      exists($dual/miqra:strand/miqra:parashah)
+      and (every $n in $dual/miqra:strand/node() satisfies (
+        $n instance of element(miqra:parashah)
+        or ($n instance of text() and normalize-space($n) = '')
+      ))
+    "/>
+  </xsl:function>
+
   <xsl:function name="miqra:has-verse-ref" as="xs:boolean">
     <xsl:param name="chapter" as="xs:string"/>
     <xsl:param name="verse" as="xs:string"/>
@@ -79,23 +92,47 @@
   <xsl:template match="miqra:row" mode="flatten">
     <!-- Column C: only parashah markers structure paragraphs; // line breaks are cosmetic. -->
     <xsl:apply-templates select="miqra:nav/miqra:parashah" mode="flatten"/>
+    <!-- The row's own identity, bound before any grouping: inside xsl:for-each-group the
+         context item is a member of the group, not the row. -->
+    <xsl:variable name="chapter" select="string(@chapter)"/>
+    <xsl:variable name="verse" select="string(@verse)"/>
+    <xsl:variable name="fileName" select="string(ancestor::miqra:book/@fileName)"/>
+    <xsl:variable name="text-nodes" as="node()*">
+      <xsl:apply-templates select="miqra:text/node()" mode="hoist"/>
+    </xsl:variable>
     <xsl:choose>
-      <xsl:when test="miqra:text/miqra:parashah">
-        <xsl:for-each-group select="miqra:text/node()" group-starting-with="miqra:parashah">
+      <xsl:when test="$text-nodes[self::miqra:parashah]">
+        <xsl:for-each-group select="$text-nodes" group-starting-with="miqra:parashah">
           <xsl:apply-templates select="current-group()[self::miqra:parashah]" mode="flatten"/>
-          <xsl:if test="current-group()[not(self::miqra:parashah)]">
-            <miqra:verse chapter="{@chapter}" verse="{@verse}" fileName="{ancestor::miqra:book/@fileName}">
-              <xsl:copy-of select="current-group()[not(self::miqra:parashah)]/node()[not(self::miqra:note)]"/>
+          <xsl:variable name="content"
+                        select="current-group()[not(self::miqra:parashah)][not(self::miqra:note)]"/>
+          <xsl:if test="exists($content)">
+            <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}">
+              <xsl:copy-of select="$content"/>
             </miqra:verse>
           </xsl:if>
         </xsl:for-each-group>
       </xsl:when>
       <xsl:otherwise>
-        <miqra:verse chapter="{@chapter}" verse="{@verse}" fileName="{ancestor::miqra:book/@fileName}">
-          <xsl:copy-of select="miqra:text/node()[not(self::miqra:note)]"/>
+        <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}">
+          <xsl:copy-of select="$text-nodes[not(self::miqra:note)]"/>
         </miqra:verse>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+
+  <!-- Lift parashah breaks out of מ:כפול so the paragraph grouping above can see them. -->
+  <xsl:mode name="hoist" on-no-match="shallow-copy"/>
+
+  <xsl:template match="miqra:dual-accent[miqra:parashah-only(.)]" mode="hoist">
+    <!-- Keep the apparatus anchors from the merged text, which is not itself rendered. -->
+    <xsl:for-each select="miqra:merged//miqra:variant[@noteId]">
+      <miqra:anchor xml:id="{@noteId}-ref"/>
+    </xsl:for-each>
+    <xsl:copy-of select="miqra:merged//miqra:anchor"/>
+    <!-- Both readings break in the same place; keep the ta'am tachton marker, which is the
+         reading MAM's own verse division follows. -->
+    <xsl:copy-of select="miqra:strand[@role = 'א']/miqra:parashah"/>
   </xsl:template>
 
   <xsl:template match="miqra:parashah" mode="flatten">
@@ -268,7 +305,42 @@
     </tei:seg>
   </xsl:template>
 
-  <xsl:template match="miqra:line-anchor | miqra:segment | miqra:good-ending | miqra:dual-trope-link | miqra:dual-accent | miqra:strand" mode="inline"/>
+  <!-- Dual cantillation (מ:כפול): the two readings are alternate wordings of the same text,
+       exactly one of which is read, which is what j:option is for. templates.tsv documents the
+       strand labels: א is ta'am tachton (פשוטה at Gen 35:22), ב is ta'am elyon (מדרשית).
+       The corresp URNs are fixed rather than per-passage, so one setting picks the reading
+       everywhere it occurs. Parashah-only spans never reach here; see mode="hoist". -->
+  <xsl:template match="miqra:dual-accent" mode="inline">
+    <xsl:apply-templates select="miqra:merged" mode="inline"/>
+    <tei:choice>
+      <j:option corresp="urn:x-opensiddur:condition:bible:taam-tachton">
+        <xsl:apply-templates select="miqra:strand[@role = 'א']/node()" mode="inline"/>
+      </j:option>
+      <j:option corresp="urn:x-opensiddur:condition:bible:taam-elyon">
+        <xsl:apply-templates select="miqra:strand[@role = 'ב']/node()" mode="inline"/>
+      </j:option>
+    </tei:choice>
+  </xsl:template>
+
+  <!-- The merged doubly-accented text is not rendered — the strands carry it — but the
+       manuscript apparatus hangs off it, so its anchors must still exist in the body. -->
+  <xsl:template match="miqra:merged" mode="inline">
+    <xsl:apply-templates select=".//miqra:variant[@noteId] | .//miqra:anchor" mode="anchor-only"/>
+  </xsl:template>
+
+  <xsl:template match="miqra:variant[@noteId]" mode="anchor-only">
+    <tei:seg xml:id="{@noteId}-ref"/>
+  </xsl:template>
+
+  <xsl:template match="miqra:anchor" mode="anchor-only">
+    <tei:seg>
+      <xsl:copy-of select="@xml:id"/>
+    </tei:seg>
+  </xsl:template>
+
+  <!-- A strand is only ever reached through miqra:dual-accent, which selects its children
+       directly; the empty rule keeps a stray one from leaking text through the built-in rule. -->
+  <xsl:template match="miqra:line-anchor | miqra:segment | miqra:good-ending | miqra:dual-trope-link | miqra:strand" mode="inline"/>
 
   <xsl:template match="miqra:parashah" mode="block"/>
   <xsl:template match="miqra:parashah" mode="inline"/>
