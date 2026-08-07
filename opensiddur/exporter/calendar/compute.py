@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import hdate
 import tzfpy
 from pyluach import dates as pyluach_dates
+from pyluach import hebrewcal
 from pyluach import parshios
 
 from opensiddur.exporter.linear import NumericValue
@@ -84,15 +85,30 @@ AGGREGATE_FEATURES = (
 TORAH_FEATURES = (
     "diaspora-parsha",
     "israel-parsha",
+    "triennial-year",
     "shabbat-shuva",
     "shabbat-shira",
     "shabbat-shkalim",
     "shabbat-zachor",
+    "shabbat-parah",
     "shabbat-hahodesh",
     "shabbat-hagadol",
     "shabbat-hazon",
     "shabbat-nahamu",
+    "shabbat-rosh-hodesh",
+    "shabbat-mahar-hodesh",
 )
+
+# Hebrew month numbers as pyluach counts them: 1 = Nisan through 12 = Adar, with Adar I as 12
+# and Adar II as 13 in a leap year.
+_NISAN = 1
+_AV = 5
+_TISHREI = 7
+_ADAR = 12
+_ADAR_II = 13
+
+# The modern triennial cycle as reckoned by the CJLS, whose first year was 5756.
+_TRIENNIAL_EPOCH_YEAR = 5756
 
 SERVICE_TIME_FEATURES = (
     "shaharit",
@@ -551,6 +567,36 @@ def _parsha_slug(name: str) -> str:
     return name.lower().replace(" ", "-").replace(",", "")
 
 
+def _adar_of_purim(year: int) -> int:
+    """The Adar in which Purim falls: Adar II in a leap year, Adar otherwise."""
+    return _ADAR_II if hebrewcal.Year(year).leap else _ADAR
+
+
+def _containing_shabbat(heb: pyluach_dates.HebrewDate) -> pyluach_dates.HebrewDate:
+    """The Shabbat of `heb`'s week — itself if it is Shabbat, else the one that follows.
+
+    The Torah reading belongs to a week, not to a day: pyluach reckons the parshah the same
+    way (Sunday through Shabbat), so a document compiled on a Thursday selects the reading of
+    the coming Shabbat rather than none at all.
+    """
+    # pyluach weekdays run Sunday = 1 through Shabbat = 7.
+    return heb.add(days=7 - heb.weekday())
+
+
+def _shabbat_on_or_before(heb: pyluach_dates.HebrewDate) -> pyluach_dates.HebrewDate:
+    """The latest Shabbat that is not after `heb`."""
+    return heb.subtract(days=heb.weekday() % 7)
+
+
+def _triennial_year(heb: pyluach_dates.HebrewDate) -> int:
+    """Which of the three years of the modern triennial cycle `heb` falls in (1, 2 or 3).
+
+    The reading year turns over at Simhat Torah rather than at Rosh Hashanah, but both fall in
+    Tishrei, so the Hebrew year identifies the cycle year for every Shabbat that has a reading.
+    """
+    return ((heb.year - _TRIENNIAL_EPOCH_YEAR) % 3) + 1
+
+
 def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     if gdate is None:
@@ -558,23 +604,49 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     g = _pyluach_from_gregorian(gdate)
     diaspora = parshios.getparsha_string(g, israel=False) or ""
     israel = parshios.getparsha_string(g, israel=True) or ""
+
+    shabbat = _containing_shabbat(g.to_heb())
+    year = shabbat.year
+    adar = _adar_of_purim(year)
+    rosh_hodesh_adar = pyluach_dates.HebrewDate(year, adar, 1)
+    rosh_hodesh_nisan = pyluach_dates.HebrewDate(year, _NISAN, 1)
+    hahodesh = _shabbat_on_or_before(rosh_hodesh_nisan)
+    tisha_bav = _shabbat_on_or_before(pyluach_dates.HebrewDate(year, _AV, 9))
+    tomorrow = shabbat.add(days=1)
+
     result: dict[str, Any] = {
         "diaspora-parsha": _parsha_slug(diaspora),
         "israel-parsha": _parsha_slug(israel),
+        "triennial-year": _triennial_year(shabbat),
+        # Between Rosh Hashanah and Yom Kippur. Anchoring on 9 Tishrei rather than on a range
+        # keeps the case where Erev Yom Kippur is itself Shabbat.
+        "shabbat-shuva": shabbat == _shabbat_on_or_before(
+            pyluach_dates.HebrewDate(year, _TISHREI, 9)
+        ),
+        # Shirat ha-Yam is in Beshalach, so this one really is defined by the parshah.
+        "shabbat-shira": _parsha_slug(diaspora) == "beshalach",
+        # The four parshiyot. Each is the Shabbat on or before a fixed date, except Parah,
+        # which is simply the Shabbat before ha-Hodesh.
+        "shabbat-shkalim": shabbat == _shabbat_on_or_before(rosh_hodesh_adar),
+        "shabbat-zachor": shabbat == _shabbat_on_or_before(
+            pyluach_dates.HebrewDate(year, adar, 13)
+        ),
+        "shabbat-parah": shabbat == hahodesh.subtract(days=7),
+        "shabbat-hahodesh": shabbat == hahodesh,
+        # Erev Pesah falling on Shabbat is itself Shabbat ha-Gadol.
+        "shabbat-hagadol": shabbat == _shabbat_on_or_before(
+            pyluach_dates.HebrewDate(year, _NISAN, 14)
+        ),
+        # When 9 Av is Shabbat the fast is deferred, but the haftarah of Hazon is read that day.
+        "shabbat-hazon": shabbat == tisha_bav,
+        "shabbat-nahamu": shabbat == tisha_bav.add(days=7),
+        # Rosh Hodesh and Mahar Hodesh each carry their own haftarah.
+        "shabbat-rosh-hodesh": shabbat.day in (1, 30),
+        "shabbat-mahar-hodesh": tomorrow.day in (1, 30),
     }
     for feature in TORAH_FEATURES:
         if feature not in result:
             result[feature] = False
-    # Special Shabbatot detection via parsha names (simplified).
-    lower = diaspora.lower()
-    result["shabbat-shuva"] = "haazinu" in lower and gdate.month == 9
-    result["shabbat-shira"] = "beshalach" in lower
-    result["shabbat-shkalim"] = "shekalim" in lower
-    result["shabbat-zachor"] = "zachor" in lower or "zachor" in lower
-    result["shabbat-hahodesh"] = "hachodesh" in lower or "hahodesh" in lower
-    result["shabbat-hagadol"] = "hagadol" in lower
-    result["shabbat-hazon"] = "hazon" in lower
-    result["shabbat-nahamu"] = "nahamu" in lower or "vaetchanan" in lower
     return result
 
 
