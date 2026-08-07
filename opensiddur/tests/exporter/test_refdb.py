@@ -1024,6 +1024,127 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         self.assertEqual(element_tags, {"{http://www.tei-c.org/ns/1.0}ptr", "{http://www.tei-c.org/ns/1.0}note"})
 
 
+class TestMilestoneScoping(unittest.TestCase):
+    """Test that a milestone's URN scope ends at the right following milestone.
+
+    A milestone scopes to the next milestone of the same unit, or of a unit that contains it.
+    Reading divisions overlap on purpose, so they must not terminate each other.
+    """
+
+    TEI = "http://www.tei-c.org/ns/1.0"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.db = ReferenceDatabase(Path(self.temp_dir.name) / 'test_urn.db')
+        self.addCleanup(self.db.close)
+
+    def _document(self, *milestones: tuple[str, str, str]) -> list[ElementBase]:
+        """Build a doc of `(unit, n, corresp)` milestones separated by text-bearing segs.
+
+        Returns the milestone elements in document order.
+        """
+        root = etree.Element(f"{{{self.TEI}}}TEI")
+        text = etree.SubElement(root, f"{{{self.TEI}}}text")
+        body = etree.SubElement(text, f"{{{self.TEI}}}body")
+        created = []
+        for index, (unit, n, corresp) in enumerate(milestones):
+            milestone = etree.SubElement(body, f"{{{self.TEI}}}milestone")
+            if unit is not None:
+                milestone.set("unit", unit)
+            milestone.set("n", n)
+            milestone.set("corresp", corresp)
+            created.append(milestone)
+            seg = etree.SubElement(body, f"{{{self.TEI}}}seg")
+            seg.set("{http://www.w3.org/XML/1998/namespace}id", f"seg{index}")
+            seg.text = f"text {index}"
+        return created
+
+    def _scope_end(self, milestone: ElementBase) -> str:
+        end_path, _ = self.db._find_end_of_mapping(milestone)
+        return end_path
+
+    def test_verse_ends_at_next_verse(self):
+        verse1, _verse2 = self._document(
+            ("verse", "1", "urn:x-opensiddur:text:bible:genesis/1/1"),
+            ("verse", "2", "urn:x-opensiddur:text:bible:genesis/1/2"),
+        )
+        self.assertTrue(self._scope_end(verse1).endswith("seg[1]"))
+
+    def test_verse_ends_at_next_chapter(self):
+        """A chapter contains verses, so it closes the last verse of the previous chapter.
+
+        Without this, a range ending on a chapter boundary would swallow the following
+        chapter milestone and render a spurious chapter number.
+        """
+        verse, _chapter = self._document(
+            ("verse", "31", "urn:x-opensiddur:text:bible:genesis/1/31"),
+            ("chapter", "2", "urn:x-opensiddur:text:bible:genesis/2"),
+        )
+        self.assertTrue(self._scope_end(verse).endswith("seg[1]"))
+
+    def test_chapter_does_not_end_at_verse(self):
+        """Containment is one-directional: a verse must not close the chapter holding it."""
+        chapter, _verse, _next_chapter = self._document(
+            ("chapter", "1", "urn:x-opensiddur:text:bible:genesis/1"),
+            ("verse", "1", "urn:x-opensiddur:text:bible:genesis/1/1"),
+            ("chapter", "2", "urn:x-opensiddur:text:bible:genesis/2"),
+        )
+        # Ends just before chapter 2, i.e. after the second seg, not the first.
+        self.assertTrue(self._scope_end(chapter).endswith("seg[2]"))
+
+    def test_maftir_does_not_end_the_seventh_aliyah(self):
+        """Maftir re-reads the close of aliyah 7; it opens inside it rather than ending it."""
+        aliyah7, _maftir, _parsha = self._document(
+            ("aliyah.annual", "7", "urn:x-opensiddur:text:bible:parsha/bereshit/aliyah/7"),
+            ("maftir.annual", "maftir", "urn:x-opensiddur:text:bible:parsha/bereshit/maftir"),
+            ("parsha.annual", "noach", "urn:x-opensiddur:text:bible:parsha/noach"),
+        )
+        # Runs past the maftir milestone to the end of the parsha.
+        self.assertTrue(self._scope_end(aliyah7).endswith("seg[2]"))
+
+    def test_overlapping_reading_schemes_do_not_terminate_each_other(self):
+        """Weekday and triennial aliyot subdivide/cut across the annual ones."""
+        annual1, _weekday2, _triennial1, _annual2 = self._document(
+            ("aliyah.annual", "1", "urn:x-opensiddur:text:bible:parsha/bereshit/aliyah/1"),
+            ("aliyah.weekday", "2", "urn:x-opensiddur:text:bible:parsha/bereshit/weekday/2"),
+            ("aliyah.triennial", "1", "urn:x-opensiddur:text:bible:parsha/bereshit/triennial/1/1"),
+            ("aliyah.annual", "2", "urn:x-opensiddur:text:bible:parsha/bereshit/aliyah/2"),
+        )
+        self.assertTrue(self._scope_end(annual1).endswith("seg[3]"))
+
+    def test_parsha_ends_an_aliyah(self):
+        """Aliyot do not cross parsha boundaries."""
+        aliyah7, _parsha = self._document(
+            ("aliyah.annual", "7", "urn:x-opensiddur:text:bible:parsha/bereshit/aliyah/7"),
+            ("parsha.annual", "noach", "urn:x-opensiddur:text:bible:parsha/noach"),
+        )
+        self.assertTrue(self._scope_end(aliyah7).endswith("seg[1]"))
+
+    def test_falls_back_to_urn_depth_without_units(self):
+        """Milestones with no @unit keep the original URN-depth heuristic."""
+        verse, _chapter = self._document(
+            (None, "1", "urn:x-opensiddur:text:prayer:ashrei/1/1"),
+            (None, "2", "urn:x-opensiddur:text:prayer:ashrei/2"),
+        )
+        self.assertTrue(self._scope_end(verse).endswith("seg[1]"))
+
+    def test_unknown_unit_falls_back_to_urn_depth(self):
+        """A unit absent from the containment table still terminates by URN depth."""
+        first, _second = self._document(
+            ("stanza", "1", "urn:x-opensiddur:text:poem:example/1"),
+            ("stanza", "2", "urn:x-opensiddur:text:poem:example/2"),
+        )
+        self.assertTrue(self._scope_end(first).endswith("seg[1]"))
+
+    def test_scope_runs_to_end_of_file_when_nothing_terminates(self):
+        only, = self._document(
+            ("aliyah.annual", "1", "urn:x-opensiddur:text:bible:parsha/bereshit/aliyah/1"),
+        )
+        # A lone seg carries no positional predicate in the lxml path.
+        self.assertTrue(self._scope_end(only).endswith("seg"))
+
+
 class TestReferenceDatabaseContextManager(unittest.TestCase):
     """Test Reference Database context manager functionality."""
 

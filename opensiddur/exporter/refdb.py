@@ -13,6 +13,30 @@ from opensiddur.common.constants import PROJECT_DIRECTORY, INDEX_DB_DIRECTORY
 
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 
+# Which milestone units contain which others.
+#
+# A milestone's URN scopes from the milestone to the next milestone of the *same* unit
+# (schema/JLPTEI-3.md, "URN scope"), or to the next milestone of a unit that *contains* it,
+# since no division crosses the boundary of a division that contains it. A verse therefore
+# ends at the next verse or at the next chapter, but a chapter does not end at the next verse.
+#
+# Reading divisions deliberately overlap and so are absent from each other's containment sets:
+# maftir re-reads the close of the seventh aliyah, weekday aliyot subdivide the Shabbat ones,
+# and triennial breaks cut across the annual ones. Each is contained only by the parsha.
+UNIT_CONTAINED_BY: dict[str, frozenset[str]] = {
+    "verse": frozenset({"chapter"}),
+    "chapter": frozenset(),
+    "parsha": frozenset(),
+    "parsha.annual": frozenset(),
+    "aliyah.annual": frozenset({"parsha.annual"}),
+    "aliyah.weekday": frozenset({"parsha.annual"}),
+    "aliyah.triennial": frozenset({"parsha.annual"}),
+    "maftir.annual": frozenset({"parsha.annual"}),
+    "aliyah.festival": frozenset(),
+    "maftir.festival": frozenset(),
+}
+
+
 class UrnMapping(BaseModel):
     project: str
     file_name: str
@@ -216,11 +240,30 @@ class ReferenceDatabase:
         ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail))
         self.conn.commit()
 
+    @staticmethod
+    def _milestone_terminates(element: ElementBase, following: ElementBase) -> bool:
+        """Whether `following` ends the scope opened by the milestone `element`.
+
+        Scope ends at the next milestone of the same unit, or of a unit that contains it
+        (`UNIT_CONTAINED_BY`). When either milestone carries no `@unit`, or carries one that
+        is not in the containment table, fall back to comparing the number of path components
+        in the URN — the original heuristic, kept so that unit-less documents keep working.
+        """
+        unit = element.get('unit')
+        following_unit = following.get('unit')
+
+        if unit and following_unit and unit in UNIT_CONTAINED_BY and following_unit in UNIT_CONTAINED_BY:
+            return following_unit == unit or following_unit in UNIT_CONTAINED_BY[unit]
+
+        num_dividers = element.get('corresp', '').split(':')[-1].count('/')
+        following_dividers = following.get('corresp', '').split(':')[-1].count('/')
+        return following_dividers <= num_dividers
+
     def _find_end_of_mapping(self, element: ElementBase) -> tuple[str, bool]:
         """Find the end element path and tail-inclusion flag for a URN mapping.
 
-        For milestone elements, finds the element just before the next same-level milestone.
-        For non-milestones, the element itself is the end.
+        For milestone elements, finds the element just before the next milestone that ends
+        this one's scope. For non-milestones, the element itself is the end.
 
         Returns:
             (end_element_path, include_tail)
@@ -230,16 +273,11 @@ class ReferenceDatabase:
 
         is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
         if is_milestone:
-            corresp = element.get('corresp', '')
-            last_part = corresp.split(':')[-1]
-            num_dividers = last_part.count('/')
             following_milestones = element.xpath(
                 './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
             actual_end = None
             for milestone in following_milestones:
-                following_corresp = milestone.attrib.get('corresp', '')
-                following_last_part = following_corresp.split(':')[-1]
-                if following_last_part.count('/') <= num_dividers:
+                if self._milestone_terminates(element, milestone):
                     preceding = milestone.xpath('./preceding::*[1]')
                     if preceding:
                         actual_end = preceding[0]
