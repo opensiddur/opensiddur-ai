@@ -166,10 +166,20 @@ class CompilerProcessor:
                     (context.get('element_path') or "")
                 )
             else:
-                # For the current context include project/file but not element_path —
-                # element_path varies per element and would break ID-rewriting consistency.
-                # When a specific element is needed it is appended separately below.
-                context_path_element = context['project'] + '/' + context['file_name']
+                # For the current context include project/file and the bounds of the range
+                # being transcluded, but not element_path — element_path is reset per element
+                # as it is processed and would break ID-rewriting consistency, since an
+                # xml:id and a target pointing at it must hash alike. The range bounds are
+                # fixed for the whole transclusion, so they are safe, and they are what
+                # distinguishes two ranges of the same file transcluded into one document:
+                # without them a humash pulling eleven ranges out of genesis.xml gives every
+                # copy of an anchor the same rewritten id.
+                context_path_element = (
+                    context['project'] + '/' +
+                    context['file_name'] + '@' +
+                    (context.get('from_start') or "") + '-' +
+                    (context.get('to_end') or "")
+                )
             context_path_elements.append(context_path_element)
         if element is not None:
             element_path = element.getroottree().getpath(element)

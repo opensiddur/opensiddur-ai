@@ -30,11 +30,19 @@ UNIT_CONTAINED_BY: dict[str, frozenset[str]] = {
     "parsha.annual": frozenset(),
     "aliyah.annual": frozenset({"parsha.annual"}),
     "aliyah.weekday": frozenset({"parsha.annual"}),
-    "aliyah.triennial": frozenset({"parsha.annual"}),
     "maftir.annual": frozenset({"parsha.annual"}),
     "aliyah.festival": frozenset(),
     "maftir.festival": frozenset(),
 }
+
+# Each year of the triennial cycle divides the same parshah differently, and consecutive years
+# deliberately overlap — in Beshalach, year 1's fifth aliyah and year 2's first are the same
+# verses — so every year is its own unit-space rather than all three sharing one.
+UNIT_CONTAINED_BY.update({
+    f"{unit}.{year}": frozenset({"parsha.annual"})
+    for unit in ("aliyah.triennial", "maftir.triennial")
+    for year in (1, 2, 3)
+})
 
 
 class UrnMapping(BaseModel):

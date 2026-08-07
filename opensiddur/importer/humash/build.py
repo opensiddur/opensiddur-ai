@@ -439,7 +439,7 @@ def index_file(extra_urns: list[str]) -> tuple[str, str]:
     <tei:sourceDesc>
       <tei:bibl xml:id="source_mam">
         <tei:title>Miqra al pi ha-Masorah</tei:title>
-        <tei:ptr target="{URN_PREFIX}:tanakh@miqra_al_pi_hamasorah"/>
+        <tei:ptr target="{URN_PREFIX}:index@miqra_al_pi_hamasorah"/>
         <tei:note>Source of the weekly parshah, aliyah and maftir divisions.</tei:note>
       </tei:bibl>
       <tei:bibl xml:id="source_hebcal">

@@ -1,0 +1,58 @@
+---
+# Example settings for compiling the humash.
+#
+# The humash holds no text of its own: every reading is transcluded by URN, and the targets
+# carry no project suffix, so these priorities decide which edition supplies the words.
+
+priority:
+  # Miqra al pi ha-Masorah first: the aliyah and maftir divisions were taken from MAM, so its
+  # verse numbering is the one the ranges are stated in. Put wlc first instead and the four
+  # chapters the editions divide differently — Exodus 20, Numbers 10, Numbers 25 and
+  # Deuteronomy 5 — will need opensiddur:verse-numbering set to match; see below.
+  transclusion:
+    - miqra_al_pi_hamasorah
+    - wlc
+    - jps1917
+  instructions:
+    - humash
+    - miqra_al_pi_hamasorah
+
+annotations:
+  - miqra_al_pi_hamasorah
+
+# Hebrew against the JPS 1917 English. Drop this block for a Hebrew-only volume.
+parallel:
+  projects:
+    - miqra_al_pi_hamasorah
+    - jps1917
+  column_order: primary_first
+
+declarations:
+  # Which edition's verse division the transclusion ranges are stated in. Leaving this unset
+  # uses MAM's, which is the default the humash is generated for. Set one of leningrad or
+  # common — and match priority.transclusion to it — to read the four divergent chapters as
+  # wlc or as the common printed editions divide them.
+  opensiddur:verse-numbering:
+    masorah: true
+
+  # Which rite's haftarot to print. Leaving the group out entirely keeps *every* variant,
+  # each under a heading naming whose custom it is, which is usually what a printed volume
+  # wants. Several may be true at once.
+  opensiddur:rite:
+    ashkenaz: true
+
+  # The megillot and the festival readings are conditioned on the occasion. Declaring a date
+  # derives opensiddur:holiday and opensiddur:torah-reading from it, so a volume compiled for
+  # one day carries only that day's readings. Omit the date to keep them all.
+  #
+  # opensiddur:gregorian-date:
+  #   year: 2025
+  #   month: 3
+  #   day: 1
+
+typography:
+  hebrew_font: "Frank Ruehl CLM"
+  latin_font: "Linux Libertine O"
+  layout: pairs
+  paper: letterpaper
+  fontsize: "11pt"
