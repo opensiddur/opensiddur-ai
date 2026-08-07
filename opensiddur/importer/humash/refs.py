@@ -22,7 +22,16 @@ UNIT_PARSHA = "parsha.annual"
 UNIT_ALIYAH = "aliyah.annual"
 UNIT_WEEKDAY = "aliyah.weekday"
 UNIT_MAFTIR = "maftir.annual"
+# Each year of the triennial cycle is its own division of the same text, and consecutive
+# years deliberately overlap — in Beshalach, year 1's fifth aliyah and year 2's first are the
+# same verses — so each year needs a unit-space of its own.
 UNIT_TRIENNIAL = "aliyah.triennial"
+UNIT_TRIENNIAL_MAFTIR = "maftir.triennial"
+
+
+def triennial_unit(year: int, maftir: bool = False) -> str:
+    base = UNIT_TRIENNIAL_MAFTIR if maftir else UNIT_TRIENNIAL
+    return f"{base}.{year}"
 
 # The five books, in order, as MAM names them in Hebrew.
 TORAH_BOOKS: tuple[tuple[str, str, str], ...] = (
@@ -34,10 +43,87 @@ TORAH_BOOKS: tuple[tuple[str, str, str], ...] = (
     ("דברים", "deuteronomy", "Deuteronomy"),
 )
 
+# The prophetic books the haftarot draw on, plus the five megillot. hebcal names them the way
+# the left column does; the projects file them under the slug in the right.
+OTHER_BOOKS: tuple[tuple[str, str], ...] = (
+    ("Joshua", "joshua"),
+    ("Judges", "judges"),
+    ("I Samuel", "samuel_1"),
+    ("II Samuel", "samuel_2"),
+    ("I Kings", "kings_1"),
+    ("II Kings", "kings_2"),
+    ("Isaiah", "isaiah"),
+    ("Jeremiah", "jeremiah"),
+    ("Ezekiel", "ezekiel"),
+    ("Hosea", "hosea"),
+    ("Joel", "joel"),
+    ("Amos", "amos"),
+    ("Obadiah", "obadiah"),
+    ("Jonah", "jonah"),
+    ("Micah", "micah"),
+    ("Nachum", "nahum"),
+    ("Habakkuk", "habakkuk"),
+    ("Zephaniah", "zephaniah"),
+    ("Haggai", "haggai"),
+    ("Zechariah", "zechariah"),
+    ("Malachi", "malachi"),
+    ("Song of Songs", "song_of_songs"),
+    ("Ruth", "ruth"),
+    ("Lamentations", "lamentations"),
+    ("Ecclesiastes", "ecclesiastes"),
+    ("Esther", "esther"),
+)
+
+# The five megillot, each with the occasion it is read on and its Hebrew title. The occasion
+# names are features of the existing opensiddur:holiday feature structure.
+MEGILLOT: tuple[tuple[str, str, str], ...] = (
+    # (book slug, Hebrew title, opensiddur:holiday feature)
+    ("song_of_songs", "שִׁיר הַשִּׁירִים", "pesah"),
+    ("ruth", "רוּת", "shavuot"),
+    ("lamentations", "אֵיכָה", "tisha-bav"),
+    ("ecclesiastes", "קֹהֶלֶת", "sukkot"),
+    ("esther", "אֶסְתֵּר", "purim"),
+)
+
 HEBREW_BOOK_TO_SLUG = {hebrew: slug for hebrew, slug, _ in TORAH_BOOKS}
 SLUG_TO_HEBREW_BOOK = {slug: hebrew for hebrew, slug, _ in TORAH_BOOKS}
 SLUG_TO_HEBCAL_BOOK = {slug: english for _, slug, english in TORAH_BOOKS}
 HEBCAL_BOOK_TO_SLUG = {english: slug for _, slug, english in TORAH_BOOKS}
+HEBCAL_BOOK_TO_SLUG.update(dict(OTHER_BOOKS))
+
+# hebcal numbers the Torah books 1-5 in the festival readings.
+BOOK_NUMBER_TO_SLUG = {number: slug for number, (_, slug, _) in enumerate(TORAH_BOOKS, start=1)}
+
+
+# Verse numbering conventions, and the project that follows each.
+#
+# Four Torah chapters are divided into verses differently by different editions, because the
+# Decalogue and a few other passages can be grouped by the upper cantillation (ta'am elyon) or
+# the lower (ta'am tachton). The humash therefore emits a variant range per numbering, under
+# conditional control; see model.py. MAM's division is the default, since the aliyah
+# boundaries come from MAM.
+NUMBERING_MASORAH = "masorah"       # Miqra al pi ha-Masorah
+NUMBERING_LENINGRAD = "leningrad"   # Westminster Leningrad Codex
+NUMBERING_COMMON = "common"         # common printed editions, which hebcal and jps1917 follow
+
+NUMBERINGS = (NUMBERING_MASORAH, NUMBERING_LENINGRAD, NUMBERING_COMMON)
+DEFAULT_NUMBERING = NUMBERING_MASORAH
+
+NUMBERING_PROJECT = {
+    NUMBERING_MASORAH: "miqra_al_pi_hamasorah",
+    NUMBERING_LENINGRAD: "wlc",
+    NUMBERING_COMMON: "jps1917",
+}
+
+# Chapters whose verse count depends on the numbering. Everywhere else the three agree, so
+# hebcal's counts are used directly. Verified against each edition's own source rather than
+# against the generated projects: miqra_al_pi_hamasorah's Numbers 10 is short two verses in
+# the project but not in MAM itself, and encoding that would bake a defect into the humash.
+DIVERGENT_CHAPTER_VERSES: dict[tuple[str, int], dict[str, int]] = {
+    ("exodus", 20): {NUMBERING_MASORAH: 22, NUMBERING_LENINGRAD: 26, NUMBERING_COMMON: 23},
+    ("numbers", 25): {NUMBERING_MASORAH: 18, NUMBERING_LENINGRAD: 19, NUMBERING_COMMON: 19},
+    ("deuteronomy", 5): {NUMBERING_MASORAH: 29, NUMBERING_LENINGRAD: 33, NUMBERING_COMMON: 30},
+}
 
 
 @dataclass(frozen=True, order=True)
@@ -77,42 +163,33 @@ class ReadingSpan:
     end: VerseRef
     # Free text from the source noting that other traditions divide differently.
     note: str | None = None
+    # Which edition's verse division the references are stated in. It matters only in the
+    # four chapters of DIVERGENT_CHAPTER_VERSES: MAM supplies the weekly aliyot in its own
+    # numbering, while everything taken from hebcal follows the common printed editions.
+    numbering: str = "masorah"
+
+    @property
+    def book(self) -> str:
+        """The book this span lies in. Both ends are always in the same one."""
+        return self.start.book
+
+    @property
+    def crosses_divergent_chapter(self) -> bool:
+        """Whether either end lies in a chapter the editions divide differently.
+
+        Only these spans need a per-numbering variant; everywhere else one range serves
+        every edition.
+        """
+        return any(
+            (ref.book, ref.chapter) in DIVERGENT_CHAPTER_VERSES
+            for ref in (self.start, self.end)
+        )
 
     def __post_init__(self):
         if self.start.book != self.end.book:
             raise ValueError(f"{self.unit} {self.label} crosses books: {self.start}-{self.end}")
         if self.end < self.start:
             raise ValueError(f"{self.unit} {self.label} ends before it starts: {self.start}-{self.end}")
-
-
-# Verse numbering conventions, and the project that follows each.
-#
-# Four Torah chapters are divided into verses differently by different editions, because the
-# Decalogue and a few other passages can be grouped by the upper cantillation (ta'am elyon) or
-# the lower (ta'am tachton). The humash therefore emits a variant range per numbering, under
-# conditional control; see model.py. MAM's division is the default, since the aliyah
-# boundaries come from MAM.
-NUMBERING_MASORAH = "masorah"       # Miqra al pi ha-Masorah
-NUMBERING_LENINGRAD = "leningrad"   # Westminster Leningrad Codex
-NUMBERING_COMMON = "common"         # common printed editions, which hebcal and jps1917 follow
-
-NUMBERINGS = (NUMBERING_MASORAH, NUMBERING_LENINGRAD, NUMBERING_COMMON)
-DEFAULT_NUMBERING = NUMBERING_MASORAH
-
-NUMBERING_PROJECT = {
-    NUMBERING_MASORAH: "miqra_al_pi_hamasorah",
-    NUMBERING_LENINGRAD: "wlc",
-    NUMBERING_COMMON: "jps1917",
-}
-
-# Chapters whose verse count depends on the numbering. Everywhere else the three agree, so
-# hebcal's counts are used directly. Verified against the three projects' own milestones.
-DIVERGENT_CHAPTER_VERSES: dict[tuple[str, int], dict[str, int]] = {
-    ("exodus", 20): {NUMBERING_MASORAH: 22, NUMBERING_LENINGRAD: 26, NUMBERING_COMMON: 23},
-    ("numbers", 10): {NUMBERING_MASORAH: 34, NUMBERING_LENINGRAD: 36, NUMBERING_COMMON: 36},
-    ("numbers", 25): {NUMBERING_MASORAH: 18, NUMBERING_LENINGRAD: 19, NUMBERING_COMMON: 19},
-    ("deuteronomy", 5): {NUMBERING_MASORAH: 29, NUMBERING_LENINGRAD: 33, NUMBERING_COMMON: 30},
-}
 
 
 @functools.cache
