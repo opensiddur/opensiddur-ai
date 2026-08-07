@@ -933,6 +933,34 @@ and one setting selects it in both.
 </tei:fs>
 ```
 
+Passages that differ by rite — most commonly the haftarah read for a given parshah, but also
+some aliyah divisions — are selected by `opensiddur:rite`:
+```xml
+<tei:fs type="opensiddur:rite">
+   <tei:f name="ashkenaz">
+      <tei:binary value="true"/>
+   </tei:f>
+   <tei:f name="teimani_baladi">
+      <tei:binary value="true"/>
+   </tei:f>
+</tei:fs>
+```
+
+Each rite is its **own binary feature**, not a value of one enumerated feature, and **any
+number of them may be true at once**. A comparative edition that sets both `ashkenaz` and
+`teimani_baladi`, as above, gets both variants. Encode each variant as its own `tei:div` with
+a `tei:head` naming the custom, wrapped in a `j:conditional` on that rite's feature alone, so
+the variants evaluate independently of one another.
+
+Leaving `opensiddur:rite` unset is meaningful and is the right default for a printed volume:
+an undefined feature evaluates to undefined rather than to false, so every variant is kept
+together with the heading that says whose custom it is. This is unlike `opensiddur:override`,
+where undefined is equivalent to false.
+
+The feature set is open — a rite that is not listed below is still valid. Known rite names:
+`ashkenaz`, `sepharad`, `edot_hamizrach`, `teimani_baladi`, `teimani_shami`, `italiani`,
+`romaniote`, `nusach_ari`.
+
 The zman tefillah is also able to be calculated (though there may also be other settings required to determine how to calculate it):
 ```xml
 <tei:fs type="opensiddur:service-time">
