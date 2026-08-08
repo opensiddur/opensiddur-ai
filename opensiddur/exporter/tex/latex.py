@@ -105,6 +105,10 @@ def group_licenses(licenses: dict[Path, LicenseRecord]) -> list[LicenseRecord]:
 
 def licenses_to_tex(licenses: list[LicenseRecord]) -> str:
     """Convert a list of LicenseRecord objects into a LaTeX section."""
+    if not licenses:
+        # An itemize with no items is a LaTeX error, and a Legal section listing nothing
+        # would be misleading anyway. Matches credits_to_tex, which already guards.
+        return ""
     items = "\n".join(
         f"\\item {license.name} (\\url{{{license.url}}})" for license in licenses
     )

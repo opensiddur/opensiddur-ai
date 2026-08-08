@@ -123,6 +123,13 @@
              tei:div[@type='book'] (Bible exports), where the chapter exists solely as a
              milestone and would otherwise be invisible. -->
         <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+        <!-- Aliyah and maftir markers, inline at the verse the reading division begins on.
+             Deliberately inline rather than a break: the maftir opens *inside* the seventh
+             aliyah rather than after it, and the weekday and triennial divisions cut across
+             the Shabbat ones, so a marker that ended a paragraph would assert a break that is
+             not there. Staying inline also keeps \pstart counts identical on both sides of a
+             reledpar pairing, which a block-level marker would desynchronise. -->
+        <xsl:text>\newcommand{\OSaliyah}[1]{{\bfseries[#1]}\,}&#10;</xsl:text>
 
         <!-- Section headings (tei:head).
              reledmac's \eledchapter/\eledsection/\eledsubsection are deliberately NOT used:
@@ -602,6 +609,31 @@
                                 </xsl:next-iteration>
                             </xsl:otherwise>
                         </xsl:choose>
+                    </xsl:when>
+                    <xsl:when test="self::tei:milestone[
+                            starts-with(@unit, 'aliyah') or starts-with(@unit, 'maftir')]">
+                        <!-- Aliyah, maftir, weekday and triennial markers, inline at the
+                             verse the division begins on. See \OSaliyah in the preamble for
+                             why these are inline and not breaks. -->
+                        <xsl:if test="not($in-pstart)">
+                            <xsl:text>\pstart </xsl:text>
+                        </xsl:if>
+                        <xsl:text>\OSaliyah{</xsl:text>
+                        <xsl:value-of select="f:escape-tex(string(@n))"/>
+                        <xsl:text>}</xsl:text>
+                        <xsl:next-iteration>
+                            <xsl:with-param name="in-pstart" select="true()"/>
+                        </xsl:next-iteration>
+                    </xsl:when>
+                    <xsl:when test="self::tei:milestone[starts-with(@unit, 'parsha.')]">
+                        <!-- A qualified parsha unit (parsha.annual) comes from the humash,
+                             where every parshah is a tei:div with a tei:head carrying its
+                             name. Rendering the milestone too would print the name twice, so
+                             it is left to the heading. The unqualified @unit='parsha' below
+                             is the wlc/jps1917 case, where there is no such heading. -->
+                        <xsl:next-iteration>
+                            <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                        </xsl:next-iteration>
                     </xsl:when>
                     <xsl:when test="self::tei:milestone[@unit='parsha']">
                         <!-- Parsha boundary: emit as a B-series footnote anchored

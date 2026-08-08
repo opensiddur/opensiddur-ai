@@ -1019,3 +1019,100 @@ class TestFrontMatter(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReadingDivisions(unittest.TestCase):
+    """Aliyah, maftir and parshah markers, as the humash emits them.
+
+    These divisions overlap on purpose, so their markers are inline rather than breaks: a
+    maftir opens inside the seventh aliyah, and a marker that ended a paragraph would assert
+    a break that is not there — besides desynchronising a reledpar pairing, which counts
+    \\pstart markers on each side.
+    """
+
+    @staticmethod
+    def _body(tex: str) -> str:
+        return tex.split(r"\begin{document}", 1)[1]
+
+    def _transform_body(self, body: str, **params) -> str:
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>""",
+            **params,
+        )
+
+    def test_aliyah_marker_is_emitted_inline(self):
+        out = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>text one
+               <tei:milestone unit="aliyah.annual" n="שני"/>text two</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"\OSaliyah{", body)
+        for word in ("text one", "text two"):
+            with self.subTest(word):
+                self.assertIn(word, body)
+
+    def test_maftir_and_weekday_and_triennial_all_get_markers(self):
+        for unit in ("maftir.annual", "aliyah.weekday", "aliyah.triennial.2"):
+            with self.subTest(unit=unit):
+                out = self._transform_body(
+                    f"""<tei:p><tei:milestone unit="verse" n="1"/>text
+                        <tei:milestone unit="{unit}" n="X"/>more</tei:p>"""
+                )
+                self.assertIn(r"\OSaliyah{X}", self._body(out))
+
+    def test_a_marker_does_not_break_the_paragraph(self):
+        """The maftir begins inside the seventh aliyah, so it must not close its pstart."""
+        out = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>before
+               <tei:milestone unit="maftir.annual" n="מפטיר"/>after</tei:p>"""
+        )
+        body = self._body(out)
+        marker = body.index(r"\OSaliyah{")
+        # No paragraph is closed and reopened around the marker.
+        self.assertNotIn(r"\pend", body[max(0, marker - 120):marker])
+
+    def test_markers_keep_pstart_counts_equal_for_parallel_text(self):
+        """reledpar pairs columns by \\pstart count, so a marker on one side only must not
+        add or remove one."""
+        without = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>a</tei:p>"""
+        )
+        with_marker = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/><tei:milestone
+               unit="aliyah.annual" n="ראשון"/>a</tei:p>"""
+        )
+        self.assertEqual(
+            self._body(without).count(r"\pstart"), self._body(with_marker).count(r"\pstart")
+        )
+        self.assertEqual(
+            self._body(without).count(r"\pend"), self._body(with_marker).count(r"\pend")
+        )
+
+    def test_a_qualified_parsha_unit_is_left_to_the_heading(self):
+        """The humash gives every parshah a tei:head, so printing the milestone too would
+        name it twice."""
+        out = self._transform_body(
+            """<tei:div><tei:head>בראשית</tei:head>
+               <tei:p><tei:milestone unit="verse" n="1"/><tei:milestone
+                 unit="parsha.annual" n="בראשית"/>text</tei:p></tei:div>"""
+        )
+        body = self._body(out)
+        self.assertNotIn("Parsha:", body)
+        self.assertIn("text", body)
+
+    def test_an_unqualified_parsha_unit_still_gets_its_footnote(self):
+        """wlc and jps1917 mark parshiyot inside a book with no heading of their own."""
+        out = self._transform_body(
+            """<tei:div type="book"><tei:head>Genesis</tei:head>
+               <tei:p><tei:milestone unit="verse" n="1"/>text
+               <tei:milestone unit="parsha" n="נח"/>more</tei:p></tei:div>"""
+        )
+        self.assertIn("Parsha:", self._body(out))
+
+    def test_the_aliyah_macro_is_defined_in_the_preamble(self):
+        out = self._transform_body("""<tei:p>text</tei:p>""")
+        self.assertIn(r"\newcommand{\OSaliyah}", out.split(r"\begin{document}", 1)[0])

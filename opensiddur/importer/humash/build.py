@@ -109,6 +109,11 @@ def _document(header: str, body: str, lang: str = "he") -> str:
     )
 
 
+# Cycle years, as the marker names them. Latin or digits here would be reversed when set in
+# the surrounding right-to-left text, which is how "1.maftir" comes out as "ritfam.1".
+TRIENNIAL_YEARS = {1: "א׳", 2: "ב׳", 3: "ג׳"}
+
+
 def _milestone(span: ReadingSpan, urn_base: str) -> str:
     """The marker that opens a reading division. Its scope runs to the next of the same unit."""
     label = span.label
@@ -119,6 +124,13 @@ def _milestone(span: ReadingSpan, urn_base: str) -> str:
         title = WEEKDAY_TITLES.get(label, label)
     elif span.unit == UNIT_MAFTIR:
         title = ALIYAH_TITLES["maftir"]
+    elif span.unit.startswith("aliyah.triennial") or span.unit.startswith("maftir.triennial"):
+        # Labels arrive as "<year>.<aliyah>", e.g. "2.7" or "1.maftir".
+        year, _, aliyah = label.partition(".")
+        title = (
+            f"{TRIENNIAL_YEARS.get(int(year), year)} "
+            f"{ALIYAH_TITLES.get(aliyah, aliyah)}"
+        )
     else:
         title = label
     urn = f"{urn_base}/{span.unit.replace('.', '_')}/{slugify_reading_name(label)}"
