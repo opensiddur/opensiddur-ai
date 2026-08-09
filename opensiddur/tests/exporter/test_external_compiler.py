@@ -977,11 +977,12 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         processor = ExternalCompilerProcessor(project, file_name, target_path, target_path)
         result = processor.process()
 
-        # Should return a list (may include content after the target due to implementation details)
+        # Regression (haftarah-length bug): a single-point range must not spill into
+        # whatever follows the target in the source document.
         self.assertIsInstance(result, list)
-        self.assertGreaterEqual(len(result), 1)
+        self.assertEqual(len(result), 1)
 
-        # First element should be the target div with all its children
+        # The element should be the target div with all its children
         self.assertEqual(result[0].tag, "{http://www.tei-c.org/ns/1.0}div")
         # xml:id should be rewritten with hash
         xml_id = result[0].get("{http://www.w3.org/XML/1998/namespace}id")
@@ -996,10 +997,48 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertEqual(children[1].text, "Nested paragraph 2")
         self.assertIn("Nested tail 2", children[1].tail)
 
-        # Verify excluded content
-        result_str = etree.tostring(result[0], encoding='unicode')
+        # Verify excluded content, across the whole result (not just the first element)
+        result_str = "".join(etree.tostring(el, encoding='unicode') for el in result)
         self.assertNotIn("Before (excluded)", result_str)
         self.assertNotIn("After (excluded)", result_str)
+
+    def test_single_verse_milestone_range_does_not_spill_into_rest_of_document(self):
+        """Regression: a single-point (x-x) milestone range (e.g. joshua/6/27-6/27) must
+        stop at that milestone rather than running to the end of the source file, as it
+        did for the Ashkenaz/Sepharad Pesach I haftarah (Joshua 6:27)."""
+        xml_content = '''<tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:div>
+        Text before verse 27
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/6/26"/>
+        Verse 26 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/6/27"/>
+        Verse 27 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/7/1"/>
+        Chapter 7 verse 1 text
+        <tei:milestone type="verse" corresp="urn:x-opensiddur:text:bible:book/24/33"/>
+        Last verse of the book
+    </tei:div>
+</tei:text>'''
+
+        project, file_name = self._create_test_file("book.xml", xml_content.encode('utf-8'))
+
+        root = etree.fromstring(xml_content.encode('utf-8'))
+        tree = root.getroottree()
+        milestone_elem = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/6/27']")[0]
+        target_path = tree.getpath(milestone_elem)
+
+        # A single-point range: from_start and to_end are the same element.
+        processor = ExternalCompilerProcessor(project, file_name, target_path, target_path)
+        result = processor.process()
+
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:book/6/27"', result_str)
+        self.assertNotIn("Verse 26 text", result_str)
+        self.assertNotIn("Chapter 7 verse 1 text", result_str)
+        self.assertNotIn("Last verse of the book", result_str)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/7/1"', result_str)
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/24/33"', result_str)
 
     def test_hierarchy_crossing_end_is_descendant_of_start(self):
         """Test ExternalCompilerProcessor when end is a descendant of start."""
