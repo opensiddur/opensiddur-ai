@@ -189,10 +189,11 @@ class TestHaftarahFile(unittest.TestCase):
         _, document = build.haftarah_file(slug, self.ANNUAL, triennial_passages)
         return etree.fromstring(document.encode("utf-8"))
 
-    def _cycle_years(self, conditional) -> list[str]:
-        """The cycle years a conditional tests for, in order."""
+    def _features(self, conditional) -> list[str]:
+        """The reading-cycle features a conditional tests for, in order."""
         return [
-            numeric.get("value") for numeric in conditional.iter(f"{TEI}numeric")
+            f.get("name") for f in conditional.iter(f"{TEI}f")
+            if f.getparent().get("type") == "opensiddur:reading-cycle"
         ]
 
     def test_a_parshah_with_no_triennial_haftarah_is_unconditioned(self):
@@ -226,21 +227,38 @@ class TestHaftarahFile(unittest.TestCase):
         """Two tests would be undefined where one is false, and undefined keeps the text."""
         tree = self._tree("bereshit", {1: _passage("isaiah", (42, 5), (42, 21))})
         conditional = tree.findall(f".//{J}conditional")[-1]
+        self.assertEqual(self._features(conditional), ["triennial-year-1"])
         self.assertEqual(
-            [(f.getparent().get("type"), f.get("name")) for f in conditional.iter(f"{TEI}f")],
-            [("opensiddur:reading-cycle", "triennial-year")],
+            [b.get("value") for b in conditional.iter(f"{TEI}binary")], ["true"]
         )
-        self.assertEqual(self._cycle_years(conditional), ["1"])
 
-    def test_the_annual_reading_gives_way_only_to_the_years_that_exist(self):
-        """Tazria is read alone in years 1 and 2 only, and keeps its annual haftarah in year 3."""
+    def test_a_year_is_selected_independently_of_the_others(self):
+        """A volume for a whole cycle turns on all three, so they cannot be one year number."""
+        tree = self._tree("bereshit", {
+            year: _passage("isaiah", (40, year), (40, year)) for year in (1, 2, 3)
+        })
+        triennial = tree.findall(f".//{J}conditional")[1:]
+        self.assertEqual(
+            [self._features(c) for c in triennial],
+            [["triennial-year-1"], ["triennial-year-2"], ["triennial-year-3"]],
+        )
+
+    def test_the_annual_reading_stands_in_for_the_years_that_have_none(self):
+        """Tazria is read alone in years 1 and 2 only, so year 3 falls back to the annual."""
         tree = self._tree("tazria", {
             1: _passage("isaiah", (46, 3), (46, 13)),
             2: _passage("jeremiah", (30, 1), (30, 9)),
         })
         annual = tree.findall(f".//{J}conditional")[0]
-        self.assertEqual(annual.find(f"{J}none").tag, f"{J}none")
-        self.assertEqual(self._cycle_years(annual), ["1", "2"])
+        self.assertEqual(annual.find(f"{J}any").tag, f"{J}any")
+        self.assertEqual(self._features(annual), ["annual", "triennial-year-3"])
+
+    def test_a_parshah_with_every_year_yields_the_annual_only_to_the_annual_feature(self):
+        tree = self._tree("bereshit", {
+            year: _passage("isaiah", (40, year), (40, year)) for year in (1, 2, 3)
+        })
+        annual = tree.findall(f".//{J}conditional")[0]
+        self.assertEqual(self._features(annual), ["annual"])
 
     def test_every_conditional_is_closed(self):
         tree = self._tree("bereshit", {

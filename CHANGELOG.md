@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source's spelling of a parshah name to a canonical Hebrew name and a URN slug.
 - The humash emits the triennial haftarot: 150 readings over 51 parshiyot, each a headed
   alternative to the annual haftarah of its week rather than an addition to it.
-- `opensiddur:reading-cycle`, the feature structure by which a volume says it reads the
-  triennial cycle and which year of it. `opensiddur:torah-reading` gains `triennial-year`,
-  the cycle year of the declared date.
+- `opensiddur:reading-cycle`, the feature structure by which a volume says which haftarot it
+  carries: `annual`, and one binary per year of the triennial cycle, so that a volume may be
+  for one Shabbat or for a whole three-year cycle. `opensiddur:torah-reading` gains
+  `triennial-year`, the cycle year of the declared date.
 
 ### Fixed
 - `readings.triennial_haftarot` was read but never called, and dropped the 36 readings hebcal

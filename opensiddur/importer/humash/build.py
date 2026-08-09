@@ -238,24 +238,29 @@ def _pattern_conditional(pair_slug: str, patterns: list[str], content: str) -> s
     )
 
 
-# Which year of the triennial cycle the volume reads. It answers zero unless the volume both
-# declares the triennial cycle and settles a year — normally by declaring a date, since the
-# cycle year of a date alone cannot select a reading: an annual volume's date has one too. See
-# exporter/calendar/compute.py.
+# Which readings the volume carries: `annual`, and one feature per year of the triennial cycle.
+# All are false by default but `annual`, and several may be true at once, so one volume may be
+# for a single Shabbat and another for a whole cycle. See exporter/calendar/compute.py.
 CYCLE_FS = "opensiddur:reading-cycle"
-TRIENNIAL_YEAR_FEATURE = "triennial-year"
+ANNUAL_FEATURE = "annual"
+CYCLE_YEARS = tuple(TRIENNIAL_YEARS)
 
 
-def _triennial_year_condition(year: int) -> str:
-    """The test for a volume reading year `year` of the triennial cycle.
+def _cycle_condition(feature: str) -> str:
+    """The test for one reading-cycle feature being true.
 
-    One feature and not two, so that the answer is decisive: ``j:all`` over a false test and an
-    undefined one is undefined, which would keep the reading rather than drop it.
+    Always a single feature, so that the answer is decisive. ``j:all`` over a false test and an
+    undefined one is undefined per the truth tables, and undefined keeps the text it guards —
+    which for readings that are alternatives to one another would print several at once.
     """
     return (
-        f'<tei:fs type="{CYCLE_FS}"><tei:f name="{TRIENNIAL_YEAR_FEATURE}">'
-        f'<tei:numeric value="{year}"/></tei:f></tei:fs>'
+        f'<tei:fs type="{CYCLE_FS}"><tei:f name="{feature}">'
+        f'<tei:binary value="true"/></tei:f></tei:fs>'
     )
+
+
+def _triennial_year_feature(year: int) -> str:
+    return f"triennial-year-{year}"
 
 
 def _default_numbering_conditional(content: str) -> str:
@@ -508,16 +513,15 @@ def haftarah_file(
     have none — hebcal records a single reading per cycle year — so each is one headed division
     conditioned on the volume reading that year of the cycle.
 
-    The four are alternatives for the same Shabbat, so the annual one is dropped exactly when a
-    triennial one takes its place: the test is ``j:none`` over the years actually recorded for
-    this parshah. Tazria, Achrei Mot and Behar have years 1 and 2 only, being read alone only
-    in those years, and in year 3 of a triennial cycle they keep the annual haftarah; a parshah
-    with no triennial reading at all keeps it unconditionally, as do the pairs, which have no
-    triennial haftarah of their own.
+    They are alternatives for the same Shabbat, so the annual reading is kept when the volume
+    asks for it and also whenever the volume's cycle year has nothing to put in its place.
+    Tazria, Achrei Mot and Behar are read alone only in years 1 and 2 and so have no reading
+    for year 3; a parshah with no triennial reading at all is unconditional, as are the pairs,
+    which have no triennial haftarah of their own.
 
     This is the one place the humash decides rather than keeping every variant. A volume that
-    declares no cycle year gets the annual reading, not all four: they are the same Shabbat's,
-    and a volume printing four haftarot for one week would be wrong however it was headed.
+    asks for nothing gets the annual reading, not all four: they belong to one week, and
+    printing four haftarot for it would be wrong however they were headed.
     """
     urn_base = f"{URN_PREFIX}:haftarah/{slug}"
     hebrew = SLUG_TO_HEBREW.get(slug, slug)
@@ -539,10 +543,16 @@ def haftarah_file(
     years = sorted(triennial_passages or {})
     inner = "".join(annual)
     if years:
+        # The annual reading also stands in for the cycle years this parshah has none of, so a
+        # triennial volume is never left with no haftarah at all for the week.
+        missing = [year for year in CYCLE_YEARS if year not in years]
         identifier = _condition_id("annual_haftarah")
-        alternatives = "".join(_triennial_year_condition(year) for year in years)
+        alternatives = "".join(
+            _cycle_condition(feature) for feature in
+            [ANNUAL_FEATURE, *(_triennial_year_feature(year) for year in missing)]
+        )
         inner = (
-            f'<j:conditional xml:id="{identifier}"><j:none>{alternatives}</j:none>'
+            f'<j:conditional xml:id="{identifier}"><j:any>{alternatives}</j:any>'
             f"</j:conditional>{inner}"
             f'<j:endConditional target="#{identifier}"/>'
         )
@@ -556,7 +566,7 @@ def haftarah_file(
         )
         inner += (
             f'<j:conditional xml:id="{identifier}">'
-            f"{_triennial_year_condition(year)}</j:conditional>"
+            f"{_cycle_condition(_triennial_year_feature(year))}</j:conditional>"
             f"{division}"
             f'<j:endConditional target="#{identifier}"/>'
         )

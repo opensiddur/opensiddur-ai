@@ -926,20 +926,40 @@ settles — every date falls in some year of the triennial cycle, including the 
 that reads annually is compiled for. It is declared:
 ```xml
 <tei:fs type="opensiddur:reading-cycle">
-   <tei:f name="triennial">
-      <!-- true if this volume reads the modern triennial cycle. Defaults to false. -->
+   <tei:f name="annual">
+      <!-- true if this volume carries the annual haftarah of each week. Defaults to true. -->
       <tei:binary/>
    </tei:f>
-   <tei:f name="triennial-year">
-      <!-- Which year of the cycle this volume is for, 1 to 3, or 0 for none. Derived from
-      opensiddur:torah-reading/triennial-year when triennial is true and a date is declared,
-      and 0 otherwise, so that an annual volume compiled for a date selects nothing here. May
-      also be declared directly, by a volume that reads triennially but is not for one
-      particular Shabbat. -->
-      <tei:numeric/>
+   <tei:f name="triennial">
+      <!-- true if this volume reads the modern triennial cycle. Defaults to false. This is
+      the opt-in that gives a declared date meaning here; on its own it selects nothing. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year-1">
+      <!-- true if this volume carries the first year's triennial readings. Defaults to false.
+      Derived, along with its siblings and with annual, from
+      opensiddur:torah-reading/triennial-year when triennial is true and a date is declared. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year-2">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year-3">
+      <tei:binary/>
    </tei:f>
 </tei:fs>
 ```
+
+One binary per year rather than a single year number, because several may be true at once, the
+way several rites may be. A volume for one Shabbat has one year; a volume covering a whole
+three-year cycle turns on all three, which a year number could not express:
+
+| volume | declares | carries |
+| --- | --- | --- |
+| annual | nothing | the annual haftarah |
+| one Shabbat | `triennial` and a date | that cycle year's |
+| a whole cycle | the three year features, `annual` false | all three years' |
+| complete reference | the three year features | all four |
 
 Unlike most features these take a value rather than staying `undefined`, because the readings
 they select are alternatives to one another. The annual haftarah of a parshah and its three
@@ -950,14 +970,16 @@ the annual reading. The humash conditions its haftarot this way:
 ```xml
 <j:conditional xml:id="triennial_haftarah_1">
    <tei:fs type="opensiddur:reading-cycle">
-      <tei:f name="triennial-year"><tei:numeric value="1"/></tei:f>
+      <tei:f name="triennial-year-1"><tei:binary value="true"/></tei:f>
    </tei:fs>
 </j:conditional>
 ```
 
-One feature and not two: `j:all` over a false test and an undefined one is `undefined` rather
-than false, per the truth tables below, so a condition that has to be decisive must turn on a
-single feature that always has a value.
+Always one feature per test: `j:all` over a false test and an undefined one is `undefined`
+rather than false, per the truth tables below, so a condition that has to be decisive must turn
+on a single feature that always has a value. Where a reading covers several cases — the humash's
+annual haftarah stands in for the cycle years a parshah has no reading for — the tests are
+combined with `j:any`, which does answer true as soon as one of them is true.
 
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)
