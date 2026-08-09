@@ -5,6 +5,9 @@ import tempfile
 import os
 from pathlib import Path
 
+from lxml import etree
+
+from opensiddur.exporter.constants import TEI_NS
 from opensiddur.importer.jps1917.convert_wikisource import (
     get_credits_pages, header, tei_file, process_mediawiki, validate_and_write_tei_file,
     book_file, index_file, Book, Index, mediawiki_xml_to_tei, main, make_project_directory,
@@ -1564,15 +1567,18 @@ class TestMediawikiXmlToTei(unittest.TestCase):
             xslt_params={"parsha_names": self.parsha_names, **(params or {})},
         )
 
-        # Simple test XML that focuses on basic functionality
+        # Simple test XML that focuses on basic functionality. Verse text is a *sibling*
+        # of the verse marker, which is the shape the real intermediate XML has: the verse
+        # template emits milestones only and never recurses into the element, so text
+        # written inside it would silently vanish and leave the fixture textless.
         self.simple_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <mediawikis xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
     <mediawiki>
         <noinclude><c>1</c></noinclude>
         <c><larger>Chapter 1</larger></c>
         <dropinitial>1</dropinitial>
-        <verse chapter="1" verse="1">In the beginning God created the heaven and the earth.</verse>
-        <verse chapter="1" verse="2">And the earth was without form, and void.</verse>
+        <verse chapter="1" verse="1"/>In the beginning God created the heaven and the earth.
+        <verse chapter="1" verse="2"/>And the earth was without form, and void.
         <c><lang>ויצא</lang></c>
         <br>List item 1</br>
         <br>List item 2</br>
@@ -1582,7 +1588,7 @@ class TestMediawikiXmlToTei(unittest.TestCase):
         <noinclude><c>2</c></noinclude>
         <c><larger>Chapter 2</larger></c>
         <dropinitial>2</dropinitial>
-        <verse chapter="2" verse="1">Thus the heavens and the earth were finished.</verse>
+        <verse chapter="2" verse="1"/>Thus the heavens and the earth were finished.
     </mediawiki>
 </mediawikis>"""
         
@@ -1676,8 +1682,10 @@ class TestMediawikiXmlToTei(unittest.TestCase):
             {"book_name": "genesis"}
         )
         main_output = outputs[""]
-        # Test chapter milestones
-        self.assertIn('<tei:milestone unit="chapter" n="1"', main_output)
+        # Test chapter milestones. Matched without the element name: a chapter milestone
+        # standing between paragraphs is not wrapped in a tei:p, so with no enclosing
+        # wrapper div to carry the namespace it is serialized with its own declaration.
+        self.assertIn('unit="chapter" n="1"', main_output)
         # Note: Chapter 2 milestone is in the second page, so it might not be in the same output
         
         # Test verse milestones
@@ -1877,6 +1885,41 @@ class TestParshaMilestones(unittest.TestCase):
             output,
         )
         self.assertLess(output.index("</tei:head>"), output.index('unit="parsha"'))
+        self.assertEqual("div", self._parent_tag(output, 'unit="parsha"'))
+
+    def test_a_milestone_alone_is_not_wrapped_in_a_paragraph(self):
+        """A milestone standing alone marks a boundary between paragraphs — it is not
+        paragraph content, and the division it opens contains the chapter and verse
+        milestones that follow. The tei:p the running heads used to produce also hid the
+        boundary from the PDF exporter, which only rendered milestones inside a pstart."""
+        output = self._transform_names(["ויצא"])
+        self.assertNotIn("<tei:p><tei:milestone", output)
+        self.assertEqual("div", self._parent_tag(output, 'unit="parsha"'))
+
+    def test_an_acrostic_milestone_alone_is_not_wrapped_either(self):
+        output = self.transform(
+            self._wrap("<c><lang>א</lang> ALEPH.</c><p/>Happy are they that are upright"),
+            {"book_name": "psalms", "wrapper_div_type": "book"},
+        )[""]
+        self.assertEqual("div", self._parent_tag(output, 'unit="acrostic"'))
+
+    def test_text_beside_a_milestone_is_still_a_paragraph(self):
+        """The unwrapping must key on "nothing but milestones", not on "contains a
+        milestone" — verse milestones live inside the paragraphs they number."""
+        output = self._transform_names(["ויצא"])
+        root = etree.fromstring(output.encode("utf-8"))
+        paragraphs = root.xpath("//tei:p", namespaces={"tei": TEI_NS})
+        self.assertEqual(1, len(paragraphs))
+        self.assertEqual("text", paragraphs[0].text.strip())
+
+    @staticmethod
+    def _parent_tag(output, needle):
+        """Local name of the element containing the first match of `needle`."""
+        root = etree.fromstring(output.encode("utf-8"))
+        attr, value = re.match(r'(\w+)="([^"]*)"', needle).groups()
+        found = root.xpath(f"//tei:milestone[@{attr}=$v]",
+                           namespaces={"tei": TEI_NS}, v=value)[0]
+        return etree.QName(found.getparent()).localname
 
     def test_no_opening_parsha_outside_the_torah(self):
         output = self.transform(
