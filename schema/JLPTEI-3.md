@@ -846,6 +846,9 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="israel-parsha">
       <tei:string/>
    </tei:f>
+   <tei:f name="triennial-year">
+      <tei:numeric value="1"/>
+   </tei:f>
    <tei:f name="shabbat-shuva">
       <tei:binary/>
    </tei:f>
@@ -856,6 +859,9 @@ The weekly parsha and special additions can also be calculated:
       <tei:binary/>
    </tei:f>
    <tei:f name="shabbat-zachor">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="shabbat-parah">
       <tei:binary/>
    </tei:f>
    <tei:f name="shabbat-hahodesh">
@@ -870,8 +876,28 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="shabbat-nahamu">
       <tei:binary/>
    </tei:f>
+   <tei:f name="shabbat-rosh-hodesh">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="shabbat-mahar-hodesh">
+      <tei:binary/>
+   </tei:f>
 </tei:fs>
 ```
+
+The reading belongs to a week rather than to a day, so a document compiled on any day from
+Sunday onward selects the reading of that week's Shabbat.
+
+Every `shabbat-` feature except `shabbat-shira` is defined by the Hebrew date — each is the
+Shabbat on or before a fixed date — not by which parshah falls that week. `shabbat-shira` is
+the exception, since Shirat ha-Yam is in Beshalach. More than one may be true at once: in
+5785, 1 Adar falls on Shabbat and is both `shabbat-shkalim` and `shabbat-rosh-hodesh`.
+
+`triennial-year` is `1`, `2` or `3`, counting the modern triennial cycle from 5756. The cycle
+turns over at Simhat Torah rather than at Rosh Hashanah, so the Shabbatot of early Tishrei —
+Shabbat Shuva among them — still report the outgoing year. A single turnover date serves both
+rites: Simhat Torah is 22 Tishrei in Israel and 23 in the diaspora, but no Shabbat carrying a
+weekly parshah ever falls between the two.
 
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)
