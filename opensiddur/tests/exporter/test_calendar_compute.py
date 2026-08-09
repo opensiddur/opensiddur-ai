@@ -5,6 +5,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from pyluach import dates as pyluach_dates
+from pyluach import parshios
 
 from opensiddur.exporter.calendar.compute import (
     FS_GREGORIAN,
@@ -648,3 +649,42 @@ class TestSpecialShabbatot(unittest.TestCase):
         self.assertEqual(self._reading(2024, 11, 2)["triennial-year"], 3)  # 5785
         self.assertEqual(self._reading(2025, 11, 1)["triennial-year"], 1)  # 5786
         self.assertEqual(self._reading(2026, 11, 7)["triennial-year"], 2)  # 5787
+
+    def test_triennial_year_turns_over_at_simhat_torah(self):
+        """Early Tishrei still reads the outgoing cycle, though the Hebrew year has advanced."""
+        # 5785 is cycle year 3, but its first Shabbatot belong to 5784's cycle year 2.
+        self.assertEqual(self._reading(2024, 10, 5)["triennial-year"], 2)   # 3 Tishrei, Shuva
+        self.assertEqual(self._reading(2024, 10, 12)["triennial-year"], 2)  # 10 Tishrei
+        self.assertEqual(self._reading(2024, 10, 19)["triennial-year"], 2)  # 17 Tishrei
+        # 24 Tishrei: the first Shabbat past Simhat Torah, which reads Bereshit.
+        self.assertEqual(self._reading(2024, 10, 26)["triennial-year"], 3)
+
+    def test_triennial_year_is_continuous_across_every_turnover(self):
+        """Sweep Shabbatot with a parshah and assert the cycle advances once per year, in order.
+
+        A turnover keyed to the Hebrew year rather than to Simhat Torah puts the step three
+        weeks early, which this catches as a cycle year changing on a Shabbat that reads a
+        parshah belonging to the outgoing year.
+        """
+        previous = None
+        day = pyluach_dates.HebrewDate(5784, 7, 1).to_pydate()
+        end = pyluach_dates.HebrewDate(5795, 7, 1).to_pydate()
+        transitions = 0
+        while day < end:
+            if day.weekday() == 5:  # Saturday
+                g = pyluach_dates.GregorianDate(day.year, day.month, day.day)
+                # Festival Shabbatot have no weekly parshah and so select no triennial reading.
+                if parshios.getparsha_string(g, israel=False):
+                    reading = self._reading(day.year, day.month, day.day)
+                    current = reading["triennial-year"]
+                    self.assertIn(current, (1, 2, 3))
+                    if previous is not None and current != previous:
+                        with self.subTest(date=day.isoformat()):
+                            # Bereshit is the first parshah of a cycle year, and the step is +1.
+                            # pyluach transliterates it "Bereishis".
+                            self.assertEqual(current, (previous % 3) + 1)
+                            self.assertEqual(reading["diaspora-parsha"], "bereishis")
+                        transitions += 1
+                    previous = current
+            day += timedelta(days=1)
+        self.assertEqual(transitions, 11)

@@ -893,7 +893,11 @@ Shabbat on or before a fixed date — not by which parshah falls that week. `sha
 the exception, since Shirat ha-Yam is in Beshalach. More than one may be true at once: in
 5785, 1 Adar falls on Shabbat and is both `shabbat-shkalim` and `shabbat-rosh-hodesh`.
 
-`triennial-year` is `1`, `2` or `3`, counting the modern triennial cycle from 5756.
+`triennial-year` is `1`, `2` or `3`, counting the modern triennial cycle from 5756. The cycle
+turns over at Simhat Torah rather than at Rosh Hashanah, so the Shabbatot of early Tishrei —
+Shabbat Shuva among them — still report the outgoing year. A single turnover date serves both
+rites: Simhat Torah is 22 Tishrei in Israel and 23 in the diaspora, but no Shabbat carrying a
+weekly parshah ever falls between the two.
 
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)

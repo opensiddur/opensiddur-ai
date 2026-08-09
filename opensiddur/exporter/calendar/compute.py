@@ -107,8 +107,10 @@ _TISHREI = 7
 _ADAR = 12
 _ADAR_II = 13
 
-# The modern triennial cycle as reckoned by the CJLS, whose first year was 5756.
+# The modern triennial cycle as reckoned by the CJLS, whose first year was 5756. The cycle
+# turns over on Simhat Torah; see _triennial_year for why the Israel date serves both rites.
 _TRIENNIAL_EPOCH_YEAR = 5756
+_SIMHAT_TORAH_DAY = 22
 
 SERVICE_TIME_FEATURES = (
     "shaharit",
@@ -591,10 +593,21 @@ def _shabbat_on_or_before(heb: pyluach_dates.HebrewDate) -> pyluach_dates.Hebrew
 def _triennial_year(heb: pyluach_dates.HebrewDate) -> int:
     """Which of the three years of the modern triennial cycle `heb` falls in (1, 2 or 3).
 
-    The reading year turns over at Simhat Torah rather than at Rosh Hashanah, but both fall in
-    Tishrei, so the Hebrew year identifies the cycle year for every Shabbat that has a reading.
+    The reading year turns over at Simhat Torah, not at Rosh Hashanah, so the Shabbatot of
+    early Tishrei — Shabbat Shuva above all, which reads an ordinary parshah — still belong to
+    the outgoing cycle year.
+
+    Simhat Torah is 22 Tishrei in Israel and 23 in the diaspora, but a single turnover on the
+    22nd serves both. The two reckonings can disagree only on 22 Tishrei itself, and lo ADU
+    rosh forces that day to share Rosh Hashanah's weekday while barring the 23rd from ever
+    being Shabbat. So no Shabbat carrying a weekly reading falls in the disputed window: over
+    5756-5855 the reckonings differ on 29 Shabbatot, every one of them 22 Tishrei, where the
+    festival reading is selected and no parshah is read.
     """
-    return ((heb.year - _TRIENNIAL_EPOCH_YEAR) % 3) + 1
+    year = heb.year
+    if heb.month == _TISHREI and heb.day < _SIMHAT_TORAH_DAY:
+        year -= 1
+    return ((year - _TRIENNIAL_EPOCH_YEAR) % 3) + 1
 
 
 def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
