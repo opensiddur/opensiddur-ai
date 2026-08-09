@@ -1,5 +1,6 @@
+import re
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import ANY, patch, MagicMock, mock_open
 import tempfile
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ from opensiddur.importer.jps1917.convert_wikisource import (
     book_file, index_file, Book, Index, mediawiki_xml_to_tei, main, make_project_directory,
     TITLE_PAGE, prepend_to_front,
 )
+from opensiddur.importer.util.parshiyot import skeleton_map_json
 from opensiddur.importer.util.validation import validate_with_start, validate
 
 
@@ -1140,6 +1142,7 @@ class TestBookFile(unittest.TestCase):
         mock_header.assert_called_once_with(
             book_name_he="בראשית",
             book_name_en="Genesis",
+            entrypoint="genesis",
             transcription_credits=["Credit1", "Credit2"]
         )
         
@@ -1150,6 +1153,8 @@ class TestBookFile(unittest.TestCase):
             wrapper_div_type="book",
             book_name="genesis",
             is_section=False,
+            parsha_names=ANY,
+            first_parsha="",
         )
         
         # Verify tei_file was called with correct parameters
@@ -1160,9 +1165,6 @@ class TestBookFile(unittest.TestCase):
             standOff=""
         )
         
-        # Verify temp file was written
-        mock_file.assert_called_once_with("temp.tei.xml", "w")
-        mock_file().write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>")
         
         # Verify validate_and_write_tei_file was called
         mock_validate_write.assert_called_once_with("<tei:TEI>Complete TEI content</tei:TEI>", "genesis", None)
@@ -1209,6 +1211,8 @@ class TestBookFile(unittest.TestCase):
             wrapper_div_type="book",
             book_name="genesis_ch1",
             is_section=True,
+            parsha_names=ANY,
+            first_parsha="",
         )
         
         # Verify return value
@@ -1316,6 +1320,7 @@ class TestIndexFile(unittest.TestCase):
             book_name_en="The Torah",
             book_sub_he="חמישה חומשי תורה",
             book_sub_en="Five Books of Moses",
+            entrypoint="torah",
             transcription_credits=["Index transcriber"]
         )
         
@@ -1325,6 +1330,7 @@ class TestIndexFile(unittest.TestCase):
             sourcetexts_root=None,
             wrapper_div_type="",
             book_name="",
+            parsha_names=ANY,
         )
         
         # Verify tei_file was called with correct body containing transclusions
@@ -1342,9 +1348,6 @@ class TestIndexFile(unittest.TestCase):
         self.assertIn('<tei:head>The Torah</tei:head>', body_content)
         self.assertIn('<j:transclude target="urn:x-opensiddur:text:bible:genesis"/>', body_content)
         self.assertIn('<j:transclude target="urn:x-opensiddur:text:bible:exodus"/>', body_content)
-        
-        # Verify temp file was written (multiple times due to recursion)
-        self.assertGreater(mock_file.call_count, 0)
         
         # Verify validate_and_write_tei_file was called for the index
         mock_validate_write.assert_any_call("<tei:TEI>Complete index TEI</tei:TEI>", "torah", None)
@@ -1384,6 +1387,7 @@ class TestIndexFile(unittest.TestCase):
             book_name_en="Bible Index",
             book_sub_he=None,
             book_sub_en=None,
+            entrypoint="bible_index",
             transcription_credits=None
         )
         
@@ -1552,8 +1556,14 @@ class TestMediawikiXmlToTei(unittest.TestCase):
         from opensiddur.common.xslt import xslt_transform_string
         
         self.xslt_path = MEDIAWIKI_TO_TEI_XSLT
-        self.transform = lambda xml, params=None: xslt_transform_string(self.xslt_path, xml, multiple_results=True, xslt_params=params)
-        
+        # The stylesheet resolves parshah names against this table and terminates on a name it
+        # does not know, so every transformation gets it unless a test overrides it.
+        self.parsha_names = skeleton_map_json()
+        self.transform = lambda xml, params=None: xslt_transform_string(
+            self.xslt_path, xml, multiple_results=True,
+            xslt_params={"parsha_names": self.parsha_names, **(params or {})},
+        )
+
         # Simple test XML that focuses on basic functionality
         self.simple_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <mediawikis xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
@@ -1563,7 +1573,7 @@ class TestMediawikiXmlToTei(unittest.TestCase):
         <dropinitial>1</dropinitial>
         <verse chapter="1" verse="1">In the beginning God created the heaven and the earth.</verse>
         <verse chapter="1" verse="2">And the earth was without form, and void.</verse>
-        <c><lang>Parashat Bereshit</lang></c>
+        <c><lang>ויצא</lang></c>
         <br>List item 1</br>
         <br>List item 2</br>
         <br>List item 3</br>
@@ -1601,7 +1611,8 @@ class TestMediawikiXmlToTei(unittest.TestCase):
     def test_mediawiki_xml_to_tei_basic_transformation(self):
         """Test basic MediaWiki to TEI transformation."""
         # Test the wrapper function
-        result = mediawiki_xml_to_tei(self.simple_xml)
+        result = mediawiki_xml_to_tei(
+            self.simple_xml, {"parsha_names": self.parsha_names})
         self.assertIn("front", result)
         self.assertIn("body", result)
         self.assertIn("standOff", result)
@@ -1673,9 +1684,13 @@ class TestMediawikiXmlToTei(unittest.TestCase):
         self.assertIn('unit="verse" n="1"', main_output)
         self.assertIn('unit="verse" n="2"', main_output)
         
-        # Test parsha milestone
-        self.assertIn('unit="parsha" n="Parashat Bereshit"', main_output)
-    
+        # Test parsha milestone: the canonical name and the transliterated URN path segment
+        # both come from the parshah table, not from the way the source spells the name.
+        self.assertIn(
+            'unit="parsha" n="ויצא" corresp="urn:x-opensiddur:text:bible:genesis/vayetzei"',
+            main_output,
+        )
+
     def test_mediawiki_xml_to_tei_lists(self):
         """Test transformation of br elements to lists."""
         outputs = self.transform(self.simple_xml)
@@ -1751,6 +1766,124 @@ class TestMediawikiXmlToTei(unittest.TestCase):
         self.assertIn('Existing TEI Head', main_output)
         self.assertIn('Existing TEI paragraph', main_output)
         # Note: The note element might not be in the main output due to XSLT processing
+
+
+class TestParshaMilestones(unittest.TestCase):
+    """A centered Hebrew word is a parshah running head; a centered Hebrew letter followed by
+    its printed Latin name is a Psalm 119 acrostic stanza heading. The two look alike in the
+    source and were both emitted as unit="parsha" until they collided."""
+
+    def setUp(self):
+        from opensiddur.importer.jps1917.convert_wikisource import MEDIAWIKI_TO_TEI_XSLT
+        from opensiddur.common.xslt import xslt_transform_string
+
+        self.parsha_names = skeleton_map_json()
+        self.transform = lambda xml, params=None: xslt_transform_string(
+            MEDIAWIKI_TO_TEI_XSLT, xml, multiple_results=True,
+            xslt_params={"parsha_names": self.parsha_names, **(params or {})},
+        )
+
+    def _wrap(self, content):
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+<mediawikis xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+    <mediawiki>
+        <noinclude><c>1</c></noinclude>
+        {content}
+    </mediawiki>
+</mediawikis>"""
+
+    def _transform_names(self, names, book_name="genesis", params=None):
+        content = "".join(f"<c><lang>{name}</lang></c><p/>text" for name in names)
+        # wrapper_div_type keeps the TEI namespace declaration on the enclosing div rather
+        # than repeating it on every element, so assertions can match whole milestones.
+        return self.transform(
+            self._wrap(content),
+            {"book_name": book_name, "wrapper_div_type": "book", **(params or {})},
+        )[""]
+
+    def test_running_head_becomes_a_parsha_milestone(self):
+        output = self._transform_names(["ויצא"])
+        self.assertIn(
+            '<tei:milestone unit="parsha" n="ויצא" '
+            'corresp="urn:x-opensiddur:text:bible:genesis/vayetzei"/>',
+            output,
+        )
+
+    def test_source_spellings_are_canonicalized(self):
+        # Exactly the @n values the importer used to emit, straight from the 1917 scans.
+        cases = {
+            "לךלך": ('n="לך־לך"', "genesis/lech_lecha"),
+            "נח": ('n="נֹח"', "genesis/noach"),
+            "תולדות": ('n="תולדֹת"', "genesis/toldot"),
+        }
+        for written, (expected_n, expected_path) in cases.items():
+            with self.subTest(written=written):
+                output = self._transform_names([written])
+                self.assertIn(expected_n, output)
+                self.assertIn(f'corresp="urn:x-opensiddur:text:bible:{expected_path}"', output)
+
+    def test_urn_path_segments_are_transliterated(self):
+        # JLPTEI-3.md requires transliterated path segments with _ for spaces; the names below
+        # produced raw Hebrew URNs with literal spaces.
+        output = self._transform_names(["כי תצא", "וזאת הברכה"], book_name="deuteronomy")
+        self.assertIn('corresp="urn:x-opensiddur:text:bible:deuteronomy/ki_teitzei"', output)
+        self.assertIn(
+            'corresp="urn:x-opensiddur:text:bible:deuteronomy/vezot_haberakhah"', output)
+        for corresp in re.findall(r'unit="parsha"[^/]*corresp="([^"]*)"', output):
+            self.assertNotRegex(corresp, r"[֐-׿]")
+            self.assertNotIn(" ", corresp)
+
+    def test_acrostic_stanza_is_not_a_parsha(self):
+        # {{c|{{lang|he|א}} ALEPH.}} — the Latin name printed beside the letter is what
+        # distinguishes a Psalm 119 stanza heading from a parshah running head.
+        output = self.transform(
+            self._wrap("<c><lang>א</lang> ALEPH.</c><p/>Happy are they that are upright"),
+            {"book_name": "psalms", "wrapper_div_type": "book"},
+        )[""]
+        self.assertIn('<tei:milestone unit="acrostic" n="א"/>', output)
+        self.assertNotIn('unit="parsha"', output)
+        self.assertNotIn("corresp", output.split('unit="acrostic"')[1])
+
+    def test_acrostic_stanza_does_not_become_a_head(self):
+        # A tei:head here would make the multiple-head grouping split Psalms into a
+        # sub-book div per stanza.
+        output = self.transform(
+            self._wrap(
+                "<c><larger>Psalm 119</larger></c>"
+                "<c><lang>א</lang> ALEPH.</c><p/>one"
+                "<c><lang>ב</lang> BETH.</c><p/>two"
+            ),
+            {"book_name": "psalms", "wrapper_div_type": "book"},
+        )[""]
+        self.assertEqual(2, output.count('unit="acrostic"'))
+        self.assertEqual(1, output.count("<tei:head>"))
+        self.assertEqual(1, output.count('type="book"'))
+
+    def test_unknown_name_terminates(self):
+        # Rather than inventing a parshah, which is how the acrostic letters became parshiyot.
+        with self.assertRaises(Exception):
+            self._transform_names(["שלום"])
+
+    def test_book_opening_parsha_is_emitted_after_the_head(self):
+        # The first parshah of each book of the Torah has no running head in the source, so it
+        # is supplied by the Book table instead.
+        output = self.transform(
+            self._wrap("<c><larger>GENESIS</larger></c><p/>In the beginning"),
+            {"book_name": "genesis", "wrapper_div_type": "book", "first_parsha": "בראשית"},
+        )[""]
+        self.assertIn(
+            '<tei:milestone unit="parsha" n="בראשית" '
+            'corresp="urn:x-opensiddur:text:bible:genesis/bereshit"/>',
+            output,
+        )
+        self.assertLess(output.index("</tei:head>"), output.index('unit="parsha"'))
+
+    def test_no_opening_parsha_outside_the_torah(self):
+        output = self.transform(
+            self._wrap("<c><larger>JOSHUA</larger></c><p/>Now it came to pass"),
+            {"book_name": "joshua", "wrapper_div_type": "book", "first_parsha": ""},
+        )[""]
+        self.assertNotIn('unit="parsha"', output)
 
 
 class TestMakeProjectDirectory(unittest.TestCase):

@@ -3,6 +3,7 @@
     xmlns:tei="http://www.tei-c.org/ns/1.0"
     xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:f="urn:opensiddur:jps1917"
     exclude-result-prefixes="#all">
 
     <xsl:output method="xml" omit-xml-declaration="yes"/>
@@ -16,7 +17,57 @@
 
     <!-- is the book section-delimited? -->
     <xsl:param name="is_section" as="xs:boolean?"/>
-    
+
+    <!-- The parshah name table, as JSON, keyed by consonant skeleton. Produced by
+    opensiddur.importer.util.parshiyot.skeleton_map_json(); each entry is
+    {"n": canonical Hebrew name, "slug": URN path segment}. Passed as a string because
+    xslt_transform_string can only marshal atomic values. -->
+    <xsl:param name="parsha_names" as="xs:string?"/>
+
+    <!-- The Hebrew name of the parshah a book opens with, for the five books of the Torah.
+    Their opening parshiyot have no running head in the source — the book title heading
+    occupies that slot — so they have to be supplied rather than read off the page. -->
+    <xsl:param name="first_parsha" as="xs:string?"/>
+
+    <xsl:variable name="parshiyot" as="map(*)"
+        select="if ($parsha_names) then parse-json($parsha_names) else map{}"/>
+
+    <!-- Reduce a parshah name to its bare consonant skeleton, so that the way a source
+    happens to spell it — pointed or not, maqaf written as a maqaf, a space, or nothing —
+    does not affect the lookup. Mirrors
+    opensiddur.importer.util.hebrew.normalize_hebrew: everything outside the Hebrew letter
+    range goes, which covers combining marks as well as separators. -->
+    <xsl:function name="f:parsha-skeleton" as="xs:string">
+        <xsl:param name="name" as="xs:string"/>
+        <xsl:sequence select="replace($name, '[^&#x05D0;-&#x05EA;]', '')"/>
+    </xsl:function>
+
+    <!-- The table entry for a parshah named in Hebrew. Terminates rather than guessing:
+    a name the table does not know is either a typo or, as with the Psalm 119 acrostic,
+    markup that is not a parshah at all. -->
+    <xsl:function name="f:parsha" as="map(*)">
+        <xsl:param name="name" as="xs:string"/>
+        <xsl:variable name="entry" select="$parshiyot(f:parsha-skeleton($name))"/>
+        <xsl:if test="empty($entry)">
+            <xsl:message terminate="yes">
+                <xsl:text>Unknown parshah name: </xsl:text>
+                <xsl:value-of select="$name"/>
+                <xsl:text> (skeleton: </xsl:text>
+                <xsl:value-of select="f:parsha-skeleton($name)"/>
+                <xsl:text>) in book </xsl:text>
+                <xsl:value-of select="$book_name"/>
+            </xsl:message>
+        </xsl:if>
+        <xsl:sequence select="$entry"/>
+    </xsl:function>
+
+    <xsl:function name="f:parsha-milestone" as="element(tei:milestone)">
+        <xsl:param name="name" as="xs:string"/>
+        <xsl:variable name="entry" select="f:parsha($name)"/>
+        <tei:milestone unit="parsha" n="{$entry?n}"
+            corresp="urn:x-opensiddur:text:bible:{$book_name}/{$entry?slug}"/>
+    </xsl:function>
+
     <!-- Identity template: copy everything by default -->
     <xsl:template match="text()">
         <xsl:copy/>
@@ -120,7 +171,26 @@
                                 <xsl:attribute name="n" select="$book_name"/>
                                 <xsl:attribute name="corresp" select="concat('urn:x-opensiddur:text:bible:', $book_name)"/>
                             </xsl:if>
-                            <xsl:copy-of select="$wrapped-content"/>
+                            <xsl:choose>
+                                <xsl:when test="$first_parsha">
+                                    <!-- The book's opening parshah, which the source does not
+                                    mark, goes after the title heading and before the text, in
+                                    a tei:p of its own like every parshah milestone the running
+                                    heads produce. -->
+                                    <xsl:variable name="head"
+                                        select="$wrapped-content/self::tei:head[1]"/>
+                                    <xsl:copy-of select="
+                                        $wrapped-content[exists($head) and (. &lt;&lt; $head or . is $head)]"/>
+                                    <tei:p>
+                                        <xsl:sequence select="f:parsha-milestone($first_parsha)"/>
+                                    </tei:p>
+                                    <xsl:copy-of select="
+                                        $wrapped-content[empty($head) or . &gt;&gt; $head]"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:copy-of select="$wrapped-content"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
                         </tei:div>
                     </xsl:otherwise>
                 </xsl:choose>
@@ -187,10 +257,20 @@
         </xsl:message>
     </xsl:template>
 
-    <xsl:template match="c[lang]">
-        <xsl:variable name="parsha" select="normalize-space(lang)"/>
-        <tei:milestone unit="parsha" n="{$parsha}" 
-            corresp="urn:x-opensiddur:text:bible:{$book_name}/{$parsha}"/>
+    <!-- A centered Hebrew word on its own is a parshah running head:
+    {{c|{{lang|he|ויצא}}}} -->
+    <xsl:template match="c[lang][not(text()[normalize-space()])]">
+        <xsl:sequence select="f:parsha-milestone(normalize-space(lang))"/>
+    </xsl:template>
+
+    <!-- A centered Hebrew letter followed by its printed Latin name is an acrostic stanza
+    heading in Psalm 119: {{c|{{lang|he|א}} ALEPH.}}. These are not parshiyot — they were
+    emitted as unit="parsha" until they collided with the real ones — and they are not
+    addressable text divisions, so they take no corresp. They must not become tei:head
+    either: the multiple-head grouping in the mediawikis template would split Psalms into
+    a sub-book div per stanza. -->
+    <xsl:template match="c[lang][text()[normalize-space()]]">
+        <tei:milestone unit="acrostic" n="{normalize-space(lang)}"/>
     </xsl:template>
 
     <!-- double height row = double-line break - it's a paragraph... -->
