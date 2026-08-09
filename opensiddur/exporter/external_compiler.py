@@ -780,13 +780,20 @@ class ExternalCompilerProcessor(CompilerProcessor):
             self._update_processing_context_after(element)
             return result
 
-        transcluded = self._transclude(element)
-        if transcluded is not None:
-            return [transcluded]
+        # Before the range's start, a transclusion or annotation must not be resolved at
+        # all: resolving it here would leak content that RECURSE is meant to suppress
+        # entirely (see #53), and would raise on an unresolvable target that will never
+        # actually appear in the output.
+        if context["command"] != _ProcessingCommand.RECURSE:
+            transcluded = self._transclude(element)
+            if transcluded is not None:
+                return [transcluded]
 
-        annotations, annotation_command = self._annotate(element, root)
-        if annotation_command == _AnnotationCommand.REPLACE:
-            return [annotations[0]]
+            annotations, annotation_command = self._annotate(element, root)
+            if annotation_command == _AnnotationCommand.REPLACE:
+                return [annotations[0]]
+        else:
+            annotations, annotation_command = [], _AnnotationCommand.NONE
 
         if context["command"] == _ProcessingCommand.RECURSE:
             append_to = processed

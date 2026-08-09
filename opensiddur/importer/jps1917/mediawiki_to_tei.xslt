@@ -363,14 +363,31 @@
 
 
     <xsl:template match="__link__">
-        <!-- parse out the book, chapter, and verse -->
-        <xsl:variable name="title" select="substring-after(@title, '/')"/>
-        <xsl:variable name="book" select="replace(lower-case(substring-before($title, '#')), ' ', '_')"/>
+        <!-- parse out the book, chapter, and verse. @title may name a page
+        (book/chapter:verse), be a same-page anchor with no page (#chapter:verse,
+        used for footnote cross-references within the book being converted), or
+        name a page with no anchor (a table-of-contents link). -->
+        <xsl:variable name="has-page" select="contains(@title, '/')"/>
+        <xsl:variable name="has-anchor" select="contains(@title, '#')"/>
+        <xsl:variable name="page-title" select="if ($has-page) then substring-after(@title, '/') else ()"/>
+        <xsl:variable name="anchor" select="if ($has-anchor) then substring-after(@title, '#') else ()"/>
+
+        <!-- a same-page anchor names no book, so fall back to the book being converted -->
+        <xsl:variable name="raw-book" select="
+            if (not($has-page)) then $book_name
+            else if ($has-anchor) then substring-before($page-title, '#')
+            else $page-title"/>
+        <xsl:variable name="book" select="replace(lower-case($raw-book), ' ', '_')"/>
         <xsl:variable name="book-1" select="replace($book, '^i_(.*)', '$1_1')"/>
         <xsl:variable name="book-2" select="replace($book-1, '^ii_(.*)', '$1_2')"/>
-        <xsl:variable name="chapter" select="substring-before(substring-after($title, '#'), ':')"/>
-        <xsl:variable name="verse" select="substring-after(substring-after($title, '#'), ':')"/>
-        <tei:ref target="urn:x-opensiddur:text:bible:{$book-2}/{$chapter}/{$verse}">
+
+        <xsl:variable name="target" select="
+            if ($has-anchor) then
+                concat('urn:x-opensiddur:text:bible:', $book-2, '/',
+                    substring-before($anchor, ':'), '/', substring-after($anchor, ':'))
+            else
+                concat('urn:x-opensiddur:text:bible:', $book-2)"/>
+        <tei:ref target="{$target}">
             <xsl:apply-templates select="node()"/>
         </tei:ref>
     </xsl:template>
