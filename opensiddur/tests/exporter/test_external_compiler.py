@@ -10,7 +10,7 @@ from lxml import etree
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
-from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
+from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping, find_end_of_mapping
 from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
 
 TEI_NS = "http://www.tei-c.org/ns/1.0"
@@ -93,41 +93,6 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         for el in out:
             all_notes.extend(el.findall(f".//{{{TEI_NS}}}note"))
         self.assertTrue(all_notes)
-
-    def _get_milestone_end_path(self, milestone_elem: etree._Element) -> tuple[str, bool]:
-        """Compute the end element path for a milestone element.
-
-        Finds the preceding-sibling of the next same-or-higher-level milestone,
-        or the last sibling if no next milestone exists.
-
-        Returns:
-            (end_element_path, include_tail_after_end)
-        """
-        ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
-        tree = milestone_elem.getroottree()
-        corresp = milestone_elem.get('corresp', '')
-        last_part = corresp.split(':')[-1]
-        num_dividers = last_part.count('/')
-
-        following_milestones = milestone_elem.xpath(
-            './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
-
-        for ms in following_milestones:
-            following_corresp = ms.get('corresp', '')
-            following_last_part = following_corresp.split(':')[-1]
-            if following_last_part.count('/') <= num_dividers:
-                # Use preceding-sibling of this milestone as the end element
-                prev_sib = ms.xpath('./preceding-sibling::*[1]')
-                if prev_sib:
-                    return tree.getpath(prev_sib[0]), True
-                break
-
-        # No next milestone or no preceding sibling: use the last following sibling
-        siblings = milestone_elem.xpath('./following-sibling::*[last()]')
-        if siblings:
-            return tree.getpath(siblings[-1]), True
-        # Fallback: end is the milestone itself
-        return tree.getpath(milestone_elem), False
 
     def test_siblings_identity_transform(self):
         """Test that ExternalCompilerProcessor acts as identity transform for siblings."""
@@ -1067,7 +1032,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         ext_tree = ext_root.getroottree()
         milestone_elem = ext_root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/3']")[0]
         from_start = ext_tree.getpath(milestone_elem)
-        end_element_path, include_tail = self._get_milestone_end_path(milestone_elem)
+        end_element_path, include_tail = find_end_of_mapping(milestone_elem)
 
         # Process with ExternalCompilerProcessor
         processor = ExternalCompilerProcessor(ext_project, ext_file, from_start, end_element_path, include_tail_after_end=include_tail)
@@ -1150,7 +1115,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         ext_tree = ext_root.getroottree()
         milestone_elem = ext_root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/3']")[0]
         from_start = ext_tree.getpath(milestone_elem)
-        end_element_path, include_tail = self._get_milestone_end_path(milestone_elem)
+        end_element_path, include_tail = find_end_of_mapping(milestone_elem)
 
         # Process with ExternalCompilerProcessor
         processor = ExternalCompilerProcessor(ext_project, ext_file, from_start, end_element_path, include_tail_after_end=include_tail)
@@ -1227,7 +1192,7 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         ext_tree = ext_root.getroottree()
         milestone_elem = ext_root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/3']")[0]
         from_start = ext_tree.getpath(milestone_elem)
-        end_element_path, include_tail = self._get_milestone_end_path(milestone_elem)
+        end_element_path, include_tail = find_end_of_mapping(milestone_elem)
 
         # Process with ExternalCompilerProcessor
         processor = ExternalCompilerProcessor(ext_project, ext_file, from_start, end_element_path, include_tail_after_end=include_tail)
@@ -1264,6 +1229,107 @@ class TestExternalCompilerProcessor(unittest.TestCase):
                         "Should not include the next chapter")
         # Should not include the chapter 2 text
         self.assertNotIn("Chapter 2 text", result_str, "Should not include the chapter 2 text")
+
+    # A source shaped like the bible projects: verse milestones are leaves inside several
+    # tei:p under one tei:div, and the paragraph breaks do not line up with the range.
+    # The start and the end therefore have different parents, so the deepest common
+    # ancestor is the tei:div rather than the start element itself.
+    MULTI_PARAGRAPH_SOURCE = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/1/1"/> Verse 1 1 text
+                    <tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/> Verse 1 2 text</tei:p>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/> Verse 1 3 text</tei:p>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/2/1"/> Verse 2 1 text
+                    <tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/2/2"/> Verse 2 2 text</tei:p>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/2/3"/> Verse 2 3 text</tei:p>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/3/1"/> Verse 3 1 text</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+
+    def test_range_does_not_emit_milestones_from_before_the_range(self):
+        """A range starting mid-file must not leave empty shells of what precedes it (#51)."""
+        xml_bytes = self.MULTI_PARAGRAPH_SOURCE.encode('utf-8')
+        project, file_name = self._create_test_file("multi_paragraph.xml", xml_bytes)
+
+        root = etree.fromstring(xml_bytes)
+        tree = root.getroottree()
+        start_milestone = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/2/1']")[0]
+        end_milestone = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/2/3']")[0]
+        from_start = tree.getpath(start_milestone)
+        end_path, include_tail = find_end_of_mapping(end_milestone)
+
+        processor = ExternalCompilerProcessor(
+            project, file_name, from_start, end_path, include_tail_after_end=include_tail)
+        result = processor.process()
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+
+        # The whole range, and only the range
+        for verse in ("Verse 2 1 text", "Verse 2 2 text", "Verse 2 3 text"):
+            self.assertIn(verse, result_str, f"Should include {verse}")
+        for verse in ("Verse 1 1 text", "Verse 1 2 text", "Verse 1 3 text", "Verse 3 1 text"):
+            self.assertNotIn(verse, result_str, f"Should not include {verse}")
+
+        # No milestone from outside the range, not even an empty one
+        for urn in ("book/1/1", "book/1/2", "book/1/3", "book/3/1"):
+            self.assertNotIn(f'corresp="urn:x-opensiddur:text:bible:{urn}"', result_str,
+                             f"Should not include a milestone for {urn}")
+        for urn in ("book/2/1", "book/2/2", "book/2/3"):
+            self.assertIn(f'corresp="urn:x-opensiddur:text:bible:{urn}"', result_str,
+                          f"Should include the milestone for {urn}")
+
+        milestones = [m for elem in result for m in elem.iter(f"{{{TEI_NS}}}milestone")]
+        self.assertEqual(len(milestones), 3, "Exactly the three in-range milestones")
+
+        # The two paragraphs the range touches, and no empty shells of the ones before it
+        paragraphs = [p for elem in result for p in elem.iter(f"{{{TEI_NS}}}p")]
+        self.assertEqual(len(paragraphs), 2, "Only the paragraphs the range actually covers")
+        for paragraph in paragraphs:
+            self.assertTrue(len(paragraph) or (paragraph.text or "").strip(),
+                            "No empty paragraph shells")
+
+    def test_range_keeps_declarations_made_before_the_start(self):
+        """A j:declare preceding the range inside the DCA is still in scope in the range."""
+        xml_bytes = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:text>
+        <tei:body>
+            <tei:div>
+                <j:declare xml:id="d">
+                    <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+                </j:declare>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/1/1"/> Verse 1 text</tei:p>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/1/2"/> Verse 2 text
+                    <j:conditional xml:id="c">
+                        <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+                    </j:conditional> conditional text <j:endConditional target="#c"/></tei:p>
+                <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:book/1/3"/> Verse 3 text</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+    <j:endDeclare target="#d"/>
+</tei:TEI>'''.encode('utf-8')
+        project, file_name = self._create_test_file("declare_before_range.xml", xml_bytes)
+
+        root = etree.fromstring(xml_bytes)
+        tree = root.getroottree()
+        start_milestone = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/2']")[0]
+        from_start = tree.getpath(start_milestone)
+        end_path, include_tail = find_end_of_mapping(start_milestone)
+
+        processor = ExternalCompilerProcessor(
+            project, file_name, from_start, end_path, include_tail_after_end=include_tail)
+        result = processor.process()
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+
+        # The declaration is what makes the condition true. Elements before the start are
+        # traversed rather than skipped precisely so this still resolves.
+        self.assertIn("conditional text", result_str)
+        self.assertIn("Verse 2 text", result_str)
+        self.assertNotIn("Verse 1 text", result_str)
+        self.assertNotIn("Verse 3 text", result_str)
 
     def test_comment_between_range_siblings_is_dropped(self):
         """A comment inside a compiled range is dropped and its tail kept (#41)."""

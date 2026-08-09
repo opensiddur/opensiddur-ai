@@ -13,6 +13,57 @@ from opensiddur.common.constants import PROJECT_DIRECTORY, INDEX_DB_DIRECTORY
 
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 
+
+def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
+    """Find the end element path and tail-inclusion flag for a URN mapping.
+
+    For milestone elements, finds the element just before the next same-level milestone.
+    For non-milestones, the element itself is the end.
+
+    "Just before" is the nearest preceding sibling of the next milestone, or -- when the
+    next milestone is the first element in its parent -- the nearest preceding sibling of
+    the closest ancestor that has one. The end element is always the node whose *tail* is
+    the last text before the next milestone, which is what `include_tail` then picks up.
+    Taking the deepest preceding element instead (`preceding::*[1]`) would land inside a
+    subtree and drop the text between that subtree's close and the milestone.
+
+    Returns:
+        (end_element_path, include_tail)
+    """
+    ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    include_tail = False
+
+    is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
+    if is_milestone:
+        corresp = element.get('corresp', '')
+        last_part = corresp.split(':')[-1]
+        num_dividers = last_part.count('/')
+        following_milestones = element.xpath(
+            './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
+        actual_end = None
+        for milestone in following_milestones:
+            following_corresp = milestone.attrib.get('corresp', '')
+            following_last_part = following_corresp.split(':')[-1]
+            if following_last_part.count('/') <= num_dividers:
+                node = milestone
+                while node is not None:
+                    preceding = node.xpath('./preceding-sibling::*[1]')
+                    if preceding:
+                        actual_end = preceding[0]
+                        break
+                    node = node.getparent()
+                include_tail = True
+                break
+        if actual_end is None:
+            siblings = element.xpath('./following-sibling::*[last()]|self::*')
+            actual_end = siblings[-1]
+            include_tail = True
+        return actual_end.getroottree().getpath(actual_end), include_tail
+    else:
+        end_path = element.getroottree().getpath(element)
+        return end_path, include_tail
+
+
 class UrnMapping(BaseModel):
     project: str
     file_name: str
@@ -204,7 +255,7 @@ class ReferenceDatabase:
         if not urn:
             return
         element_path = element.getroottree().getpath(element)
-        end_element_path, end_includes_tail = self._find_end_of_mapping(element)
+        end_element_path, end_includes_tail = find_end_of_mapping(element)
         element_tag = element.tag
         element_type = element.get('type')
         cursor.execute('''
@@ -215,44 +266,6 @@ class ReferenceDatabase:
                 updated_at = CURRENT_TIMESTAMP
         ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail))
         self.conn.commit()
-
-    def _find_end_of_mapping(self, element: ElementBase) -> tuple[str, bool]:
-        """Find the end element path and tail-inclusion flag for a URN mapping.
-
-        For milestone elements, finds the element just before the next same-level milestone.
-        For non-milestones, the element itself is the end.
-
-        Returns:
-            (end_element_path, include_tail)
-        """
-        ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
-        include_tail = False
-
-        is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
-        if is_milestone:
-            corresp = element.get('corresp', '')
-            last_part = corresp.split(':')[-1]
-            num_dividers = last_part.count('/')
-            following_milestones = element.xpath(
-                './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
-            actual_end = None
-            for milestone in following_milestones:
-                following_corresp = milestone.attrib.get('corresp', '')
-                following_last_part = following_corresp.split(':')[-1]
-                if following_last_part.count('/') <= num_dividers:
-                    preceding = milestone.xpath('./preceding::*[1]')
-                    if preceding:
-                        actual_end = preceding[0]
-                    include_tail = True
-                    break
-            if actual_end is None:
-                siblings = element.xpath('./following-sibling::*[last()]|self::*')
-                actual_end = siblings[-1]
-                include_tail = True
-            return actual_end.getroottree().getpath(actual_end), include_tail
-        else:
-            end_path = element.getroottree().getpath(element)
-            return end_path, include_tail
 
     def add_reference(self, project: str, file_name: str, element: ElementBase):
         """ Add a reference to the database.

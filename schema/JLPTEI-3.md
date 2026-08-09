@@ -374,6 +374,19 @@ that is either said or omitted, whereas alternates are always said — the quest
 wording. Text that some communities add and others omit is a condition, not an alternate; see
 [Conditional text](#conditional-text).
 
+A passage that the masorah carries with both cantillations — the Decalogue in Exodus 20 and
+Deuteronomy 5, and Genesis 35:22 — is an alternate of this kind: the words are the same and only
+the accentuation differs, so the two readings are `j:option`s selected by a fixed pair of URNs
+rather than by a per-passage one, since one setting chooses the reading wherever it occurs:
+```xml
+<tei:choice>
+   <j:option corresp="urn:x-opensiddur:condition:bible:taam-tachton">לֹ֥א תִרְצָ֖ח</j:option>
+   <j:option corresp="urn:x-opensiddur:condition:bible:taam-elyon">לֹ֖א תִּרְצָֽח׃</j:option>
+</tei:choice>
+```
+Where the two readings differ over whether a parashah break falls mid-verse, only the ta'am
+tachton placement is encoded: a break is block structure and cannot live inside a `tei:choice`.
+
 Haftarot are a special case of Biblical material. They are from the works of the prophets (or writings) but are 
 discontinuous. Each parshah's hatarah may additionally have multiple options, depending on custom, and internal 
 discontinuities, sometimes even bridging multiple books. The recommended way to encode haftarot is as a separate
