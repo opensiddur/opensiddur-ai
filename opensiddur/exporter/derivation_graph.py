@@ -15,6 +15,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_ISRAEL,
     FS_LOCATION,
     FS_QUORUM,
+    FS_READING_CYCLE,
     FS_SERVICE_TIME,
     FS_TIME,
     FS_TORAH,
@@ -28,6 +29,7 @@ from opensiddur.exporter.calendar.compute import (
     compute_israel,
     compute_location,
     compute_quorum,
+    compute_reading_cycle,
     compute_service_time,
     compute_torah_reading,
 )
@@ -122,6 +124,12 @@ DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
         fs_type=FS_SERVICE_TIME,
         required_inputs=_gregorian_inputs() | _location_inputs() | _time_inputs(),
         compute=compute_service_time,
+    ),
+    # After the Torah reading, whose cycle year it draws on when the volume reads triennially.
+    DerivationSpec(
+        fs_type=FS_READING_CYCLE,
+        required_inputs=frozenset({(FS_READING_CYCLE, "triennial"), (FS_TORAH, "triennial-year")}),
+        compute=compute_reading_cycle,
     ),
     DerivationSpec(
         fs_type=FS_QUORUM,

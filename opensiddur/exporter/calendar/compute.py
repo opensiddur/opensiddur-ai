@@ -27,6 +27,7 @@ FS_DAY_OF_WEEK = "opensiddur:day-of-week"
 FS_HOLIDAY = "opensiddur:holiday"
 FS_HOLIDAY_AGG = "opensiddur:holiday-aggregate"
 FS_TORAH = "opensiddur:torah-reading"
+FS_READING_CYCLE = "opensiddur:reading-cycle"
 FS_SERVICE_TIME = "opensiddur:service-time"
 FS_QUORUM = "opensiddur:quorum"
 FS_HOUSEHOLD = "opensiddur:household"
@@ -103,6 +104,7 @@ TRIENNIAL_PATTERN_FEATURES = tuple(
 TORAH_FEATURES = (
     "diaspora-parsha",
     "israel-parsha",
+    "triennial-year",
     *TRIENNIAL_PATTERN_FEATURES,
     "shabbat-shuva",
     "shabbat-shira",
@@ -113,6 +115,23 @@ TORAH_FEATURES = (
     "shabbat-hazon",
     "shabbat-nahamu",
 )
+
+# Which cycle of readings the volume follows.
+#
+# Whether to read triennially is a choice a volume makes and not something a date settles:
+# every date falls in some year of the triennial cycle, including the dates an annual volume is
+# compiled for. So `triennial` is never derived and is false unless declared, and the year is
+# NO_TRIENNIAL_YEAR until a triennial volume names a date to take it from.
+#
+# Both need a value rather than staying undefined, unlike most features: the annual haftarah
+# and the three triennial ones are alternatives for one Shabbat, and an undefined condition
+# keeps its text, so leaving these open would print all four. See importer/humash/build.py.
+NO_TRIENNIAL_YEAR = 0
+
+READING_CYCLE_DEFAULTS: dict[str, Any] = {
+    "triennial": False,
+    "triennial-year": NO_TRIENNIAL_YEAR,
+}
 
 SERVICE_TIME_FEATURES = (
     "shaharit",
@@ -571,6 +590,15 @@ def _parsha_slug(name: str) -> str:
     return name.lower().replace(" ", "-").replace(",", "")
 
 
+def _triennial_year(hebrew_year: int) -> int:
+    """Which of the three years of the modern triennial cycle a Hebrew year is (1, 2 or 3).
+
+    The reading year turns over at Simhat Torah rather than at Rosh Hashanah, but both fall in
+    Tishrei, so the Hebrew year identifies the cycle year for every Shabbat that has a reading.
+    """
+    return ((hebrew_year - _TRIENNIAL_EPOCH_YEAR) % 3) + 1
+
+
 def _triennial_cycle_patterns(hebrew_year: int, israel: bool) -> dict[str, str]:
     """For each pair, whether it was read [T]ogether or [S]eparately in each year of the cycle.
 
@@ -607,6 +635,7 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     result: dict[str, Any] = {
         "diaspora-parsha": _parsha_slug(diaspora),
         "israel-parsha": _parsha_slug(israel),
+        "triennial-year": _triennial_year(g.to_heb().year),
     }
     patterns = _triennial_cycle_patterns(
         g.to_heb().year, israel=not snapshot.is_diaspora()
@@ -649,6 +678,19 @@ def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "neila": holidays.get("yom-kippur", 0) > 0 and aware_dt >= z.plag_hamincha.local,
         "slihot": z.alot_hashachar.local <= aware_dt < z.netz_hachama.local,
     }
+
+
+def compute_reading_cycle(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """Which year of the triennial cycle the volume reads, once it has said it reads one.
+
+    The cycle year of the date is on ``opensiddur:torah-reading`` whatever cycle the volume
+    follows, so it cannot select a reading on its own; this is where the volume's choice and
+    the date meet. An annual volume keeps NO_TRIENNIAL_YEAR however its date falls.
+    """
+    if snapshot.get_bool(FS_READING_CYCLE, "triennial") is not True:
+        return {"triennial-year": NO_TRIENNIAL_YEAR}
+    year = snapshot.get_int(FS_TORAH, "triennial-year")
+    return {"triennial-year": NO_TRIENNIAL_YEAR if year is None else year}
 
 
 def compute_quorum(snapshot: SettingSnapshot) -> dict[str, Any] | None:

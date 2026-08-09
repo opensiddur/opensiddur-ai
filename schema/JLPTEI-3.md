@@ -846,6 +846,10 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="israel-parsha">
       <tei:string/>
    </tei:f>
+   <!-- Which of the three years of the modern triennial cycle the date falls in. -->
+   <tei:f name="triennial-year">
+      <tei:numeric/>
+   </tei:f>
    <!-- One per pair of parshiyot that is sometimes read combined; see below. -->
    <tei:f name="triennial-pattern-vayakhel-pekudei">
       <tei:string/>
@@ -916,6 +920,44 @@ The value is reckoned for the diaspora or for Israel according to `opensiddur:is
 the two diverge whenever a festival falling on Shabbat puts them a week apart. No separate
 test on `opensiddur:israel` is needed alongside the pattern: a pattern that can only arise in
 Israel selects an Israel division on its own.
+
+Which cycle of readings a volume follows is a choice it makes rather than something the date
+settles — every date falls in some year of the triennial cycle, including the dates a volume
+that reads annually is compiled for. It is declared:
+```xml
+<tei:fs type="opensiddur:reading-cycle">
+   <tei:f name="triennial">
+      <!-- true if this volume reads the modern triennial cycle. Defaults to false. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year">
+      <!-- Which year of the cycle this volume is for, 1 to 3, or 0 for none. Derived from
+      opensiddur:torah-reading/triennial-year when triennial is true and a date is declared,
+      and 0 otherwise, so that an annual volume compiled for a date selects nothing here. May
+      also be declared directly, by a volume that reads triennially but is not for one
+      particular Shabbat. -->
+      <tei:numeric/>
+   </tei:f>
+</tei:fs>
+```
+
+Unlike most features these take a value rather than staying `undefined`, because the readings
+they select are alternatives to one another. The annual haftarah of a parshah and its three
+triennial ones are all read on the same Shabbat, and an undefined condition keeps its text, so
+an open feature here would print four haftarot for one week. A volume that says nothing gets
+the annual reading. The humash conditions its haftarot this way:
+
+```xml
+<j:conditional xml:id="triennial_haftarah_1">
+   <tei:fs type="opensiddur:reading-cycle">
+      <tei:f name="triennial-year"><tei:numeric value="1"/></tei:f>
+   </tei:fs>
+</j:conditional>
+```
+
+One feature and not two: `j:all` over a false test and an undefined one is `undefined` rather
+than false, per the truth tables below, so a condition that has to be decisive must turn on a
+single feature that always has a value.
 
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)
