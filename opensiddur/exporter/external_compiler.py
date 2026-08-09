@@ -108,6 +108,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         self.deepest_common_ancestor, self.start_element, self.end_element, self.include_tail_after_end = self._get_deepest_common_ancestor(from_start, to_end, include_tail_after_end)
 
+        # The only elements that are copied before the start is reached are the start's own
+        # ancestors, to rebuild the structure it sits in. Held on self so the proxies stay alive.
+        self.start_ancestors = (
+            frozenset(self.start_element.iterancestors()) if self.start_element is not None else frozenset()
+        )
+
         # None = marker mode off; [] = marker mode active
         self.marker_stack: list[tuple[str, ElementBase]] | None = None
 
@@ -668,7 +674,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
         #      check if this element is the start
         #       if yes, set before_start to False and return COPY_AND_RECURSE,
         #       else
-        #           before start? COPY_ELEMENT_AND_RECURSE
+        #           before start? an ancestor of the start: COPY_ELEMENT_AND_RECURSE
+        #                         anything else: RECURSE
         #           after start? COPY_AND_RECURSE
         #    after end, SKIP
 
@@ -692,7 +699,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 context['inside_deepest_common_ancestor'] = True
                 context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
                 return context
-            elif context['inside_deepest_common_ancestor']:
+            elif context['inside_deepest_common_ancestor'] and element in self.start_ancestors:
+                # Skeleton copies exist to rebuild the start element's ancestor chain, and
+                # nothing else. Copying every element that merely precedes the start left an
+                # empty shell of each one -- including verse milestones, which then printed
+                # spurious verse numbers and broke parallel alignment (#51).
                 context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
                 return context
             else:

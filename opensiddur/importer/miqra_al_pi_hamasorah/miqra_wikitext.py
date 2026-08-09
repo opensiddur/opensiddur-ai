@@ -630,14 +630,23 @@ class MiqraWikiTextProcessor(MediaWikiProcessor):
         return f"<miqra:dual-trope-link>{target}</miqra:dual-trope-link>"
 
     def _handle_dual_accent(self, template) -> str:
-        dual = self._p(self._named_param(template, "כפול"))
+        """A span carried with both cantillations, and its two singly-accented strands.
+
+        ``כפול`` is the merged, doubly-accented text as the codices write it; it carries the
+        manuscript apparatus, so it must be an element rather than an attribute value, where
+        the nested ``{{נוסח}}`` notes would be escaped away. The strands keep the source's own
+        ``א``/``ב`` labels; ``templates.tsv`` documents which cantillation each names, and the
+        stylesheet applies that mapping.
+        """
+        merged = self._p(self._named_param(template, "כפול"))
         a = self._p(self._named_param(template, "א"))
         b = self._p(self._named_param(template, "ב"))
         return (
-            f'<miqra:dual-accent dual="{_xml_escape(dual)}">'
-            f"<miqra:strand role=\"א\">{a}</miqra:strand>"
-            f"<miqra:strand role=\"ב\">{b}</miqra:strand>"
-            f"</miqra:dual-accent>"
+            "<miqra:dual-accent>"
+            f"<miqra:merged>{merged}</miqra:merged>"
+            f'<miqra:strand role="א">{a}</miqra:strand>'
+            f'<miqra:strand role="ב">{b}</miqra:strand>'
+            "</miqra:dual-accent>"
         )
 
     def _handle_note_link(self, template) -> str:

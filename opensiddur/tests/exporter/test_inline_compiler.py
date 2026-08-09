@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 from lxml import etree
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
-from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
+from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping, find_end_of_mapping
 from opensiddur.exporter.urn import ResolvedUrn
 
 PROCESSING_NAMESPACE = 'http://jewishliturgy.org/ns/processing'
@@ -65,41 +65,6 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         if not elements:
             raise ValueError(f"Element with identifier '{identifier}' not found in XML")
         return tree.getpath(elements[0])
-
-    def _get_milestone_end_path(self, milestone_elem: etree._Element) -> tuple[str, bool]:
-        """Compute the end element path for a milestone element.
-
-        Finds the preceding-sibling of the next same-or-higher-level milestone,
-        or the last sibling if no next milestone exists.
-
-        Returns:
-            (end_element_path, include_tail_after_end)
-        """
-        ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
-        tree = milestone_elem.getroottree()
-        corresp = milestone_elem.get('corresp', '')
-        last_part = corresp.split(':')[-1]
-        num_dividers = last_part.count('/')
-
-        following_milestones = milestone_elem.xpath(
-            './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
-
-        for ms in following_milestones:
-            following_corresp = ms.get('corresp', '')
-            following_last_part = following_corresp.split(':')[-1]
-            if following_last_part.count('/') <= num_dividers:
-                # Use preceding-sibling of this milestone as the end element
-                prev_sib = ms.xpath('./preceding-sibling::*[1]')
-                if prev_sib:
-                    return tree.getpath(prev_sib[0]), True
-                break
-
-        # No next milestone or no preceding sibling: use the last following sibling
-        siblings = milestone_elem.xpath('./following-sibling::*[last()]')
-        if siblings:
-            return tree.getpath(siblings[-1]), True
-        # Fallback: end is the milestone itself
-        return tree.getpath(milestone_elem), False
 
     def test_start_and_end_are_siblings(self):
         """Test when start and end are sibling elements at the same level."""
@@ -835,7 +800,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         ext_tree = ext_root.getroottree()
         milestone_elem = ext_root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/3']")[0]
         from_start = ext_tree.getpath(milestone_elem)
-        end_element_path, include_tail = self._get_milestone_end_path(milestone_elem)
+        end_element_path, include_tail = find_end_of_mapping(milestone_elem)
 
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
@@ -931,7 +896,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         ext_tree = ext_root.getroottree()
         milestone_elem = ext_root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/3']")[0]
         from_start = ext_tree.getpath(milestone_elem)
-        end_element_path, include_tail = self._get_milestone_end_path(milestone_elem)
+        end_element_path, include_tail = find_end_of_mapping(milestone_elem)
 
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
@@ -1023,7 +988,7 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         ext_tree = ext_root.getroottree()
         milestone_elem = ext_root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/1/3']")[0]
         from_start = ext_tree.getpath(milestone_elem)
-        end_element_path, include_tail = self._get_milestone_end_path(milestone_elem)
+        end_element_path, include_tail = find_end_of_mapping(milestone_elem)
 
         # Process with InlineCompilerProcessor with mocked parse_xml
         with patch.object(self.linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):

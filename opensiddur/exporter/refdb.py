@@ -75,6 +75,71 @@ def containing_units(unit: str | None) -> frozenset[str] | None:
     return None
 
 
+def milestone_terminates(element: ElementBase, following: ElementBase) -> bool:
+    """Whether `following` ends the scope opened by the milestone `element`.
+
+    Scope ends at the next milestone of the same unit, or of a unit that contains it
+    (`containing_units`). When either milestone carries no `@unit`, or carries one that
+    is not in the containment table, fall back to comparing the number of path components
+    in the URN -- the original heuristic, kept so that unit-less documents keep working.
+    """
+    unit = element.get('unit')
+    following_unit = following.get('unit')
+    containers = containing_units(unit)
+
+    if containers is not None and containing_units(following_unit) is not None:
+        return following_unit == unit or following_unit in containers
+
+    num_dividers = element.get('corresp', '').split(':')[-1].count('/')
+    following_dividers = following.get('corresp', '').split(':')[-1].count('/')
+    return following_dividers <= num_dividers
+
+
+def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
+    """Find the end element path and tail-inclusion flag for a URN mapping.
+
+    For milestone elements, finds the element just before the next milestone that ends
+    this one's scope. For non-milestones, the element itself is the end.
+
+    "Just before" is the nearest preceding sibling of the next milestone, or -- when the
+    next milestone is the first element in its parent -- the nearest preceding sibling of
+    the closest ancestor that has one. The end element is always the node whose *tail* is
+    the last text before the next milestone, which is what `include_tail` then picks up.
+    Taking the deepest preceding element instead (`preceding::*[1]`) would land inside a
+    subtree and drop the text between that subtree's close and the milestone.
+
+    Returns:
+        (end_element_path, include_tail)
+    """
+    ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    include_tail = False
+
+    is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
+    if is_milestone:
+        following_milestones = element.xpath(
+            './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
+        actual_end = None
+        for milestone in following_milestones:
+            if milestone_terminates(element, milestone):
+                node = milestone
+                while node is not None:
+                    preceding = node.xpath('./preceding-sibling::*[1]')
+                    if preceding:
+                        actual_end = preceding[0]
+                        break
+                    node = node.getparent()
+                include_tail = True
+                break
+        if actual_end is None:
+            siblings = element.xpath('./following-sibling::*[last()]|self::*')
+            actual_end = siblings[-1]
+            include_tail = True
+        return actual_end.getroottree().getpath(actual_end), include_tail
+    else:
+        end_path = element.getroottree().getpath(element)
+        return end_path, include_tail
+
+
 class UrnMapping(BaseModel):
     project: str
     file_name: str
@@ -266,7 +331,7 @@ class ReferenceDatabase:
         if not urn:
             return
         element_path = element.getroottree().getpath(element)
-        end_element_path, end_includes_tail = self._find_end_of_mapping(element)
+        end_element_path, end_includes_tail = find_end_of_mapping(element)
         element_tag = element.tag
         element_type = element.get('type')
         cursor.execute('''
@@ -277,59 +342,6 @@ class ReferenceDatabase:
                 updated_at = CURRENT_TIMESTAMP
         ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail))
         self.conn.commit()
-
-    @staticmethod
-    def _milestone_terminates(element: ElementBase, following: ElementBase) -> bool:
-        """Whether `following` ends the scope opened by the milestone `element`.
-
-        Scope ends at the next milestone of the same unit, or of a unit that contains it
-        (`containing_units`). When either milestone carries no `@unit`, or carries one that
-        is not in the containment table, fall back to comparing the number of path components
-        in the URN — the original heuristic, kept so that unit-less documents keep working.
-        """
-        unit = element.get('unit')
-        following_unit = following.get('unit')
-        containers = containing_units(unit)
-
-        if containers is not None and containing_units(following_unit) is not None:
-            return following_unit == unit or following_unit in containers
-
-        num_dividers = element.get('corresp', '').split(':')[-1].count('/')
-        following_dividers = following.get('corresp', '').split(':')[-1].count('/')
-        return following_dividers <= num_dividers
-
-    def _find_end_of_mapping(self, element: ElementBase) -> tuple[str, bool]:
-        """Find the end element path and tail-inclusion flag for a URN mapping.
-
-        For milestone elements, finds the element just before the next milestone that ends
-        this one's scope. For non-milestones, the element itself is the end.
-
-        Returns:
-            (end_element_path, include_tail)
-        """
-        ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
-        include_tail = False
-
-        is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
-        if is_milestone:
-            following_milestones = element.xpath(
-                './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
-            actual_end = None
-            for milestone in following_milestones:
-                if self._milestone_terminates(element, milestone):
-                    preceding = milestone.xpath('./preceding::*[1]')
-                    if preceding:
-                        actual_end = preceding[0]
-                    include_tail = True
-                    break
-            if actual_end is None:
-                siblings = element.xpath('./following-sibling::*[last()]|self::*')
-                actual_end = siblings[-1]
-                include_tail = True
-            return actual_end.getroottree().getpath(actual_end), include_tail
-        else:
-            end_path = element.getroottree().getpath(element)
-            return end_path, include_tail
 
     def add_reference(self, project: str, file_name: str, element: ElementBase):
         """ Add a reference to the database.

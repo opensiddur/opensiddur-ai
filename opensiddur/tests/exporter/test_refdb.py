@@ -7,7 +7,7 @@ import time
 import os
 from lxml import etree
 from lxml.etree import ElementBase
-from opensiddur.exporter.refdb import ReferenceDatabase, UrnMapping, Reference
+from opensiddur.exporter.refdb import ReferenceDatabase, UrnMapping, Reference, find_end_of_mapping
 
 
 class TestReferenceDatabaseBasics(unittest.TestCase):
@@ -1061,7 +1061,7 @@ class TestMilestoneScoping(unittest.TestCase):
         return created
 
     def _scope_end(self, milestone: ElementBase) -> str:
-        end_path, _ = self.db._find_end_of_mapping(milestone)
+        end_path, _ = find_end_of_mapping(milestone)
         return end_path
 
     def test_verse_ends_at_next_verse(self):
@@ -1197,6 +1197,94 @@ class TestReferenceDatabaseContextManager(unittest.TestCase):
                 self.assertEqual(len(results), 1)
             
             # Connection should be closed after context
+
+
+class TestFindEndOfMapping(unittest.TestCase):
+    """Test the end-of-range computation that backs milestone-scoped URNs."""
+
+    def _end_of(self, xml: str, corresp: str) -> tuple[str, bool]:
+        """Return (end path, include_tail) for the element carrying `corresp`."""
+        root = etree.fromstring(xml.encode('utf-8'))
+        element = root.xpath(f"//*[@corresp='{corresp}']")[0]
+        return find_end_of_mapping(element)
+
+    def test_non_milestone_ends_at_itself(self):
+        """A non-milestone URN scopes to its own element and excludes its tail."""
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div corresp="urn:a"><tei:p>text</tei:p></tei:div></tei:body></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:a")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div")
+        self.assertFalse(include_tail)
+
+    def test_ends_at_preceding_sibling_of_next_milestone(self):
+        """A milestone scopes up to the element just before the next same-level one."""
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div>
+        <tei:milestone unit="verse" corresp="urn:book/1/1"/> one
+        <tei:seg>segment</tei:seg> more
+        <tei:milestone unit="verse" corresp="urn:book/1/2"/> two
+    </tei:div></tei:body></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:book/1/1")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:seg")
+        self.assertTrue(include_tail)
+
+    def test_ends_at_the_element_whose_tail_is_the_last_text(self):
+        """The end is the preceding sibling itself, never a node nested inside it.
+
+        Ending at the deepest preceding element would drop the text between that
+        element's close and the next milestone -- here, ' more'.
+        """
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div>
+        <tei:milestone unit="verse" corresp="urn:book/1/1"/> one
+        <tei:choice><tei:abbr>abbr</tei:abbr><tei:expan>expansion</tei:expan></tei:choice> more
+        <tei:milestone unit="verse" corresp="urn:book/1/2"/> two
+    </tei:div></tei:body></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:book/1/1")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:choice")
+        self.assertTrue(include_tail)
+
+    def test_next_milestone_in_another_parent_ends_at_that_parents_predecessor(self):
+        """When the next milestone opens a paragraph, the range ends with the previous one."""
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div>
+        <tei:p><tei:milestone unit="verse" corresp="urn:book/1/1"/> one</tei:p>
+        <tei:p><tei:milestone unit="verse" corresp="urn:book/1/2"/> two</tei:p>
+        <tei:p><tei:milestone unit="verse" corresp="urn:book/1/3"/> three</tei:p>
+    </tei:div></tei:body></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:book/1/2")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:p[2]")
+        self.assertTrue(include_tail)
+
+    def test_higher_level_milestone_ends_the_range(self):
+        """A chapter milestone terminates a verse range."""
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div>
+        <tei:milestone unit="verse" corresp="urn:book/1/1"/> one
+        <tei:seg>segment</tei:seg> more
+        <tei:milestone unit="chapter" corresp="urn:book/2"/> next chapter
+    </tei:div></tei:body></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:book/1/1")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:seg")
+        self.assertTrue(include_tail)
+
+    def test_no_following_milestone_ends_at_the_last_sibling(self):
+        """The last milestone in a file scopes to the end of its parent."""
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div>
+        <tei:milestone unit="verse" corresp="urn:book/1/1"/> one
+        <tei:seg>segment</tei:seg>
+        <tei:p>last</tei:p>
+    </tei:div></tei:body></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:book/1/1")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:p")
+        self.assertTrue(include_tail)
 
 
 if __name__ == '__main__':

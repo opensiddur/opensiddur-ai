@@ -13,6 +13,7 @@ from opensiddur.importer.util.pages import (
     get_page,
 )
 from opensiddur.importer.jps1917.mediawiki_processor import create_processor
+from opensiddur.importer.util.parshiyot import skeleton_map_json
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 from opensiddur.common.xslt import xslt_transform_string
@@ -48,6 +49,10 @@ class Book(BaseModel):
     start_page: int
     end_page: int
     is_section: Optional[bool] = False
+    # The parshah a book of the Torah opens with. The source marks parshiyot with a centered
+    # running head, but the first one of each book has none — the book's title heading is
+    # printed in its place — so it has to be declared here.
+    first_parsha: Optional[str] = None
 
 class Index(BaseModel):
     index_title_en: str
@@ -81,6 +86,7 @@ JPS_1917 = [
                         book_name_en = "Genesis", 
                         book_name_he = "בראשית", 
                         file_name = "genesis", 
+                        first_parsha = "בראשית", 
                         start_page = 3+PAGE_OFFSET, 
                         end_page = 64+PAGE_OFFSET
                     ),
@@ -88,6 +94,7 @@ JPS_1917 = [
                         book_name_en = "Exodus", 
                         book_name_he = "שמות", 
                         file_name = "exodus", 
+                        first_parsha = "שמות", 
                         start_page = 65+PAGE_OFFSET, 
                         end_page = 117+PAGE_OFFSET
                     ),
@@ -95,6 +102,7 @@ JPS_1917 = [
                         book_name_en = "Leviticus", 
                         book_name_he = "ויקרא", 
                         file_name = "leviticus", 
+                        first_parsha = "ויקרא", 
                         start_page = 118+PAGE_OFFSET, 
                         end_page = 156+PAGE_OFFSET
                     ),
@@ -102,6 +110,7 @@ JPS_1917 = [
                         book_name_en = "Numbers", 
                         book_name_he = "במדבר", 
                         file_name = "numbers", 
+                        first_parsha = "במדבר", 
                         start_page = 157+PAGE_OFFSET, 
                         end_page = 211+PAGE_OFFSET
                     ),
@@ -109,6 +118,7 @@ JPS_1917 = [
                         book_name_en = "Deuteronomy", 
                         book_name_he = "דברים", 
                         file_name = "deuteronomy", 
+                        first_parsha = "דברים", 
                         start_page = 212+PAGE_OFFSET, 
                         end_page = 258+PAGE_OFFSET
                     ),
@@ -606,6 +616,7 @@ def book_file(
     header_content = header(
         book_name_he = book.book_name_he,
         book_name_en = book.book_name_en,
+        entrypoint = book.file_name,
         transcription_credits = transcription_credits,
     )
     xml_dict = process_mediawiki(
@@ -616,14 +627,14 @@ def book_file(
         wrapper_div_type="book",
         book_name=book.file_name,
         is_section=book.is_section,
+        parsha_names=skeleton_map_json(),
+        first_parsha=book.first_parsha or "",
     )
-    
+
     tei_content = tei_file(
         header = header_content,
         **xml_dict,
     )
-    with open("temp.tei.xml", "w") as f:
-        f.write(tei_content)
     validate_and_write_tei_file(tei_content, book.file_name, project_dir)
 
     return tei_content
@@ -640,11 +651,16 @@ def index_file(
         )
     else:
         transcription_credits = None
+    # The top-level index stands for the whole Tanakh, so it keeps the tanakh URN; the
+    # sub-indices name themselves. Either way the document URN matches the body div below,
+    # so no two files in the project claim the same one.
+    entrypoint = "tanakh" if idx.file_name == "index" else idx.file_name
     header_content = header(
         book_name_he = idx.index_title_he,
         book_name_en = idx.index_title_en,
         book_sub_he = idx.index_sub_he,
         book_sub_en = idx.index_sub_en,
+        entrypoint = entrypoint,
         transcription_credits = transcription_credits,
     )
     if idx.start_page is not None and idx.end_page is not None:
@@ -655,6 +671,7 @@ def index_file(
             sourcetexts_root=sourcetexts_root,
             wrapper_div_type="",
             book_name="",
+            parsha_names=skeleton_map_json(),
         )
     else:
         xml_dict = {}
@@ -670,7 +687,7 @@ def index_file(
         for book in idx.transclusions
     ])
     index_body = f"""<tei:body>
-    <tei:div corresp="urn:x-opensiddur:text:bible:{idx.file_name}">
+    <tei:div corresp="urn:x-opensiddur:text:bible:{entrypoint}">
         <tei:head>{idx.index_title_en}</tei:head>
         {transclusion_str}
     </tei:div>
@@ -682,8 +699,6 @@ def index_file(
         header = header_content,
         **xml_dict,
     )
-    with open("temp.tei.xml", "w") as f:
-        f.write(tei_content)
     validate_and_write_tei_file(tei_content, idx.file_name, project_dir)
 
     for transclusion in idx.transclusions:
