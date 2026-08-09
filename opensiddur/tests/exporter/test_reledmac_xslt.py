@@ -814,8 +814,10 @@ class TestStructuralElements(unittest.TestCase):
             r"\texthebrew{רות}\quad RUTH}}",
             out,
         )
-        # ...but a line break in body text is still a line break.
-        self.assertNotIn(r"\quad", out.split(r"\OSheadA", 1)[0])
+        # ...but a line break in body text is still a line break. Scoped to the typeset
+        # material: the preamble defines macros that legitimately use \quad themselves.
+        body = out.split(r"\begin{document}", 1)[1]
+        self.assertNotIn(r"\quad", body.split(r"\OSheadA", 1)[0])
         # The bookmark still takes the flattened form: \addcontentsline builds a PDF
         # string and cannot carry markup.
         self.assertIn(
@@ -1017,6 +1019,85 @@ class TestFrontMatter(unittest.TestCase):
         self.assertNotIn("Stray", body)
 
 
+class TestParshaMilestones(unittest.TestCase):
+    """A parsha is a division containing the chapters and verses that follow it, so its
+    milestone legitimately sits between paragraphs rather than inside one. It used to be
+    rendered only when a \\pstart happened to be open, which meant every boundary in the
+    JPS 1917 Torah — all of them between paragraphs — was silently dropped."""
+
+    def _transform_book(self, body: str) -> str:
+        """A div[@type='book'], which is what makes chapter milestones render too."""
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+              <tei:text><tei:body>
+                <tei:div type="book">{body}</tei:div>
+              </tei:body></tei:text>
+            </tei:TEI>"""
+        )
+
+    @staticmethod
+    def _document_body(tex: str) -> str:
+        """Just the typeset material: the preamble always defines every macro."""
+        return tex.split(r"\begin{document}", 1)[1]
+
+    BETWEEN_PARAGRAPHS = """
+        <tei:p><tei:milestone unit="verse" n="8"/>But Noah found grace.</tei:p>
+        <tei:milestone unit="parsha" n="Noach"/>
+        <tei:p><tei:milestone unit="verse" n="9"/>These are the generations.</tei:p>"""
+
+    def test_a_milestone_between_paragraphs_is_rendered(self):
+        body = self._document_body(self._transform_book(self.BETWEEN_PARAGRAPHS))
+        self.assertIn(r"\OSParsha{Noach}", body)
+
+    def test_a_milestone_inside_a_paragraph_is_still_rendered(self):
+        """The shape that happened to work before must keep working."""
+        body = self._document_body(self._transform_book(
+            """<tei:p><tei:milestone unit="verse" n="8"/>But Noah found grace.</tei:p>
+               <tei:p><tei:milestone unit="verse" n="9"/><tei:milestone unit="parsha"
+                 n="Noach"/>These are the generations.</tei:p>"""
+        ))
+        self.assertIn(r"\OSParsha{Noach}", body)
+
+    def test_a_milestone_before_the_first_paragraph_is_rendered(self):
+        body = self._document_body(self._transform_book(
+            """<tei:head>GENESIS</tei:head>
+               <tei:milestone unit="parsha" n="Bereshit"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>In the beginning.</tei:p>"""
+        ))
+        self.assertIn(r"\OSParsha{Bereshit}", body)
+
+    def test_the_name_runs_in_with_the_verse_it_opens(self):
+        """The pstart opened for the boundary is the one the following verse uses, so the
+        name shares a line with the parsha's first verse instead of standing alone."""
+        body = self._document_body(self._transform_book(self.BETWEEN_PARAGRAPHS))
+        after = body.split(r"\OSParsha{Noach}", 1)[1]
+        block = after.split(r"\pend", 1)[0]
+        self.assertIn(r"\vno{9}", block)
+        self.assertNotIn(r"\pstart", block)
+
+    def test_a_boundary_is_announced_only_once(self):
+        """The B-series footnote this used to emit alongside would repeat the name on the
+        same page. The apparatus form is available by \\renewcommand instead."""
+        body = self._document_body(self._transform_book(self.BETWEEN_PARAGRAPHS))
+        self.assertNotIn(r"\Bfootnote", body)
+        self.assertEqual(1, body.count("Noach"))
+
+    def test_the_parsha_macro_is_defined_in_the_preamble(self):
+        out = self._transform_book(self.BETWEEN_PARAGRAPHS)
+        preamble = out.split(r"\begin{document}", 1)[0]
+        self.assertIn(r"\newcommand{\OSParsha}", preamble)
+
+    def test_a_hebrew_name_gets_a_direction_wrapper(self):
+        """Parsha names are Hebrew in an otherwise LTR stream and would render reversed."""
+        body = self._document_body(self._transform_book(
+            """<tei:p><tei:milestone unit="verse" n="8"/>But Noah found grace.</tei:p>
+               <tei:milestone unit="parsha" n="נֹח"/>
+               <tei:p><tei:milestone unit="verse" n="9"/>These are the generations.</tei:p>"""
+        ))
+        self.assertIn("\\OSParsha{\\texthebrew{נֹח}}", body)
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -1104,14 +1185,14 @@ class TestReadingDivisions(unittest.TestCase):
         self.assertNotIn("Parsha:", body)
         self.assertIn("text", body)
 
-    def test_an_unqualified_parsha_unit_still_gets_its_footnote(self):
+    def test_an_unqualified_parsha_unit_still_gets_its_name_rendered(self):
         """wlc and jps1917 mark parshiyot inside a book with no heading of their own."""
         out = self._transform_body(
             """<tei:div type="book"><tei:head>Genesis</tei:head>
                <tei:p><tei:milestone unit="verse" n="1"/>text
                <tei:milestone unit="parsha" n="נח"/>more</tei:p></tei:div>"""
         )
-        self.assertIn("Parsha:", self._body(out))
+        self.assertIn("\\OSParsha{\\texthebrew{נח}}", self._body(out))
 
     def test_the_aliyah_macro_is_defined_in_the_preamble(self):
         out = self._transform_body("""<tei:p>text</tei:p>""")

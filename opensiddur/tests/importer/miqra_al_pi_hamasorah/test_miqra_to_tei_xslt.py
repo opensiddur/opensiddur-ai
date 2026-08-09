@@ -31,11 +31,17 @@ def _book(*rows: str) -> str:
     )
 
 
-def _row(verse: str, text: str, chapter: str = "20") -> str:
+def _row(
+    verse: str,
+    text: str,
+    chapter: str = "20",
+    nav: str = "",
+    scaffold: str = "",
+) -> str:
     return (
         f'<miqra:row source="s" pageKey="p" rowId="{verse}"'
         f' chapter="{chapter}" verse="{verse}">'
-        "<miqra:nav/><miqra:scaffold/>"
+        f"<miqra:nav>{nav}</miqra:nav><miqra:scaffold>{scaffold}</miqra:scaffold>"
         f"<miqra:text>{text}</miqra:text>"
         "</miqra:row>"
     )
@@ -66,6 +72,13 @@ def _verse_text(body: etree._Element, chapter: str, verse: str) -> str:
         if collecting and node.tail:
             collected.append(node.tail)
     return re.sub(r"\s+", " ", "".join(collected)).strip()
+
+
+def _anchor_ids(element: etree._Element) -> list[str]:
+    return [
+        seg.get(f"{{http://www.w3.org/XML/1998/namespace}}id")
+        for seg in element.findall(f".//{{{TEI_NS}}}seg")
+    ]
 
 
 class TestDualAccent(unittest.TestCase):
@@ -162,6 +175,105 @@ class TestMidVerseParashah(unittest.TestCase):
     def test_plain_verse_is_unaffected(self):
         body, _ = _transform(_row("14", "CCC"))
         self.assertEqual("CCC", _verse_text(body, "20", "14"))
+
+
+class TestNavAndScaffoldNotes(unittest.TestCase):
+    """Notes from columns C (nav) and D (scaffold) reach the standOff, so the anchors they
+    target have to exist in the body — the columns themselves are never rendered."""
+
+    def assertNoDanglingTargets(self, body, stand_off):
+        ids = set(body.xpath("//*/@xml:id"))
+        dangling = [
+            n.get("target")
+            for n in (stand_off if stand_off is not None else [])
+            if n.get("target", "").lstrip("#") not in ids
+        ]
+        self.assertEqual([], dangling)
+
+    def test_nav_variant_wrapping_a_break_keeps_the_break_and_anchors_the_note(self):
+        """{{נוסח}} around a parashah break records another witness's reading; the break is
+        still MAM's own, so it opens a paragraph and the note anchors at its head."""
+        nav = (
+            '<miqra:variant noteId="n1">'
+            '<miqra:display><miqra:parashah type="close"/></miqra:display>'
+            "</miqra:variant>"
+            '<miqra:note xml:id="n1">ל=פרשה פתוחה</miqra:note>'
+        )
+        body, stand_off = _transform(_row("1", "AAA"), _row("2", "BBB", nav=nav))
+        paragraphs = body.findall(f"{{{TEI_NS}}}div/{{{TEI_NS}}}p")
+        self.assertEqual(2, len(paragraphs))
+        self.assertEqual("closed-1", paragraphs[1].get("type"))
+        self.assertEqual(
+            "n1-ref",
+            paragraphs[1][0].get(f"{{http://www.w3.org/XML/1998/namespace}}id"),
+        )
+        self.assertNoDanglingTargets(body, stand_off)
+
+    def test_a_wrapped_break_structures_the_text_like_a_bare_one(self):
+        """Regression: the nav lift used to select miqra:nav/miqra:parashah only, so every
+        break the source wrapped in {{נוסח}} was dropped from the body."""
+        bare = '<miqra:parashah type="open"/>'
+        wrapped = (
+            '<miqra:variant noteId="n1">'
+            f"<miqra:display>{bare}</miqra:display>"
+            "</miqra:variant>"
+            '<miqra:note xml:id="n1">ל=פרשה סתומה</miqra:note>'
+        )
+        expected, _ = _transform(_row("1", "AAA"), _row("2", "BBB", nav=bare))
+        actual, _ = _transform(_row("1", "AAA"), _row("2", "BBB", nav=wrapped))
+        self.assertEqual(
+            [(p.tag, p.get("type")) for p in expected.iter(f"{{{TEI_NS}}}p")],
+            [(p.tag, p.get("type")) for p in actual.iter(f"{{{TEI_NS}}}p")],
+        )
+        self.assertEqual(_verse_text(expected, "20", "2"), _verse_text(actual, "20", "2"))
+
+    def test_nav_note_without_a_break_anchors_at_the_verse(self):
+        """MAM prints no break here — the note only reports that another witness has one —
+        so there is nothing in the body to anchor to but the verse itself."""
+        nav = (
+            '<miqra:variant noteId="n2"><miqra:display/></miqra:variant>'
+            '<miqra:note xml:id="n2">ל=פרשה סתומה</miqra:note>'
+        )
+        body, stand_off = _transform(_row("2", "BBB", nav=nav))
+        paragraphs = body.findall(f"{{{TEI_NS}}}div/{{{TEI_NS}}}p")
+        self.assertEqual(1, len(paragraphs))
+        self.assertIn("n2-ref", _anchor_ids(paragraphs[0]))
+        self.assertEqual("BBB", _verse_text(body, "20", "2"))
+        self.assertNoDanglingTargets(body, stand_off)
+
+    def test_scaffold_note_anchors_at_the_verse(self):
+        """Column D notes annotate the row's seder/aliyah marker, which is scaffolding for
+        the verse rather than a point inside it."""
+        scaffold = (
+            '<miqra:variant noteId="n3"><miqra:display/></miqra:variant>'
+            '<miqra:note xml:id="n3">תחילת סדר מצויינת כאן</miqra:note>'
+        )
+        body, stand_off = _transform(_row("2", "BBB", scaffold=scaffold))
+        self.assertIn("n3-ref", _anchor_ids(body))
+        self.assertEqual("BBB", _verse_text(body, "20", "2"))
+        self.assertNoDanglingTargets(body, stand_off)
+
+    def test_mam_note_anchor_in_nav_is_lifted(self):
+        """{{מ:הערה}} mints its own anchor next to the note; in column C that anchor was
+        discarded with the column."""
+        nav = (
+            '<miqra:anchor xml:id="n4-ref"/>'
+            '<miqra:note xml:id="n4">הערה</miqra:note>'
+        )
+        body, stand_off = _transform(_row("2", "BBB", nav=nav))
+        self.assertIn("n4-ref", _anchor_ids(body))
+        self.assertNoDanglingTargets(body, stand_off)
+
+    def test_column_c_text_is_still_not_rendered(self):
+        """Anchoring the notes must not leak the navigation column into the text."""
+        nav = (
+            "ניווט"
+            '<miqra:variant noteId="n5"><miqra:display/></miqra:variant>'
+            '<miqra:note xml:id="n5">הערה</miqra:note>'
+        )
+        body, _ = _transform(_row("2", "BBB", nav=nav))
+        self.assertEqual("BBB", _verse_text(body, "20", "2"))
+        self.assertNotIn("הערה", "".join(body.itertext()))
 
 
 if __name__ == "__main__":

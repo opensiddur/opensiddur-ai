@@ -125,6 +125,17 @@
                         <!-- ab can't appear in p and is already a block -->
                         <xsl:apply-templates select="current-group()" mode="copy"/>
                     </xsl:when>
+                    <xsl:when test="
+                        not(current-group()[not(self::p)]
+                            [self::text()[normalize-space(.)] or (self::* and not(self::tei:milestone))])">
+                        <!-- Nothing here but milestones: a parshah running head, a Psalm
+                        119 acrostic letter or an asterisk dinkus. A milestone standing
+                        alone is not paragraph content — it marks a boundary between
+                        paragraphs, and the division it opens contains the chapter and
+                        verse milestones that follow — so leave it as a child of the
+                        enclosing div rather than inventing a paragraph for it. -->
+                        <xsl:apply-templates select="current-group()" mode="copy"/>
+                    </xsl:when>
                     <xsl:otherwise>
                         <tei:p>
                             <xsl:apply-templates select="current-group()" mode="copy"/>
@@ -174,16 +185,14 @@
                             <xsl:choose>
                                 <xsl:when test="$first_parsha">
                                     <!-- The book's opening parshah, which the source does not
-                                    mark, goes after the title heading and before the text, in
-                                    a tei:p of its own like every parshah milestone the running
+                                    mark, goes after the title heading and before the text, as
+                                    a child of the div like every parshah milestone the running
                                     heads produce. -->
                                     <xsl:variable name="head"
                                         select="$wrapped-content/self::tei:head[1]"/>
                                     <xsl:copy-of select="
                                         $wrapped-content[exists($head) and (. &lt;&lt; $head or . is $head)]"/>
-                                    <tei:p>
-                                        <xsl:sequence select="f:parsha-milestone($first_parsha)"/>
-                                    </tei:p>
+                                    <xsl:sequence select="f:parsha-milestone($first_parsha)"/>
                                     <xsl:copy-of select="
                                         $wrapped-content[empty($head) or . &gt;&gt; $head]"/>
                                 </xsl:when>

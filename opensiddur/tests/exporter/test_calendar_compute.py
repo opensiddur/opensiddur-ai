@@ -5,6 +5,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from pyluach import dates as pyluach_dates
+from pyluach import parshios
 
 from opensiddur.exporter.calendar.compute import (
     FS_GREGORIAN,
@@ -228,6 +229,8 @@ class TestComputeFunctions(unittest.TestCase):
         result = compute_torah_reading(snap)
         self.assertIn("diaspora-parsha", result)
         self.assertIn("shabbat-shuva", result)
+        # 18 Elul: an ordinary Shabbat, so no special reading is selected.
+        self.assertFalse(result["shabbat-shuva"])
 
     def test_triennial_pattern_describes_the_whole_cycle(self):
         """One character per year of the cycle: T where the pair was read together, S apart."""
@@ -566,3 +569,150 @@ class TestQuorumDerivation(unittest.TestCase):
         """Quorum features stay undefined so that unset conditions are retained, not dropped."""
         self.assertIsNone(compute_quorum(_snapshot({})))
         self.assertIsNone(compute_quorum(_snapshot({(FS_QUORUM, "minyan"): False})))
+
+
+class TestSpecialShabbatot(unittest.TestCase):
+    """The special Shabbatot that select a Torah reading or haftarah of their own.
+
+    Each is defined by the Hebrew date, not by which parshah happens to be read that week, so
+    they are computed as "the Shabbat on or before <fixed date>" rather than matched by name.
+    """
+
+    def _reading(self, year: int, month: int, day: int) -> dict:
+        return compute_torah_reading(_snapshot({
+            (FS_GREGORIAN, "year"): year,
+            (FS_GREGORIAN, "month"): month,
+            (FS_GREGORIAN, "day"): day,
+        }))
+
+    def _assert_only(self, gregorian: tuple[int, int, int], *expected: str):
+        """Assert exactly `expected` special-Shabbat flags are set on that date."""
+        result = self._reading(*gregorian)
+        actual = {
+            name for name, value in result.items()
+            if name.startswith("shabbat-") and value is True
+        }
+        self.assertEqual(actual, set(expected))
+
+    def test_four_parshiyot_in_a_leap_year(self):
+        """5784 is a leap year, so these hang off Adar II rather than Adar."""
+        self._assert_only((2024, 3, 9), "shabbat-shkalim", "shabbat-mahar-hodesh")
+        self._assert_only((2024, 3, 23), "shabbat-zachor")
+        self._assert_only((2024, 3, 30), "shabbat-parah")
+        self._assert_only((2024, 4, 6), "shabbat-hahodesh")
+
+    def test_four_parshiyot_in_an_ordinary_year(self):
+        """5785 is not a leap year, so the same readings hang off Adar."""
+        # 1 Adar: Rosh Hodesh Adar is itself Shabbat, so it is also Shabbat Shekalim.
+        self._assert_only((2025, 3, 1), "shabbat-shkalim", "shabbat-rosh-hodesh")
+        # 8 Adar: Purim falls on the Friday, so Zachor is the Shabbat six days before.
+        self._assert_only((2025, 3, 8), "shabbat-zachor")
+        self._assert_only((2025, 3, 22), "shabbat-parah")
+        # 29 Adar, the last Shabbat before 1 Nisan — which is therefore also Mahar Hodesh.
+        self._assert_only((2025, 3, 29), "shabbat-hahodesh", "shabbat-mahar-hodesh")
+
+    def test_shabbat_hagadol_shuva_hazon_and_nahamu(self):
+        self._assert_only((2024, 4, 20), "shabbat-hagadol")
+        self._assert_only((2024, 10, 5), "shabbat-shuva")
+        self._assert_only((2024, 8, 10), "shabbat-hazon")
+        self._assert_only((2024, 8, 17), "shabbat-nahamu")
+
+    def test_erev_pesah_on_shabbat_is_shabbat_hagadol(self):
+        """In 5785 Erev Pesah is itself Shabbat; ha-Gadol is that day, not the week before."""
+        self._assert_only((2025, 4, 12), "shabbat-hagadol")
+        self.assertFalse(self._reading(2025, 4, 5)["shabbat-hagadol"])
+
+    def test_shabbat_shira_is_defined_by_the_parshah(self):
+        """Shirat ha-Yam is in Beshalach, so this one really does follow the reading."""
+        self._assert_only((2024, 1, 27), "shabbat-shira")
+        self.assertEqual(self._reading(2024, 1, 27)["diaspora-parsha"], "beshalach")
+
+    def test_shekalim_is_not_matched_by_parshah_name(self):
+        """No parshah is called Shekalim; matching on the name left this permanently false."""
+        self.assertTrue(self._reading(2024, 3, 9)["shabbat-shkalim"])
+        self.assertNotIn("shekalim", self._reading(2024, 3, 9)["diaspora-parsha"])
+
+    def test_a_weekday_selects_the_coming_shabbat(self):
+        """A volume compiled midweek must still choose that week's reading."""
+        for day in range(1, 7):  # Mon 2024-04-01 through Shabbat ha-Hodesh on the 6th
+            with self.subTest(day=day):
+                self.assertTrue(self._reading(2024, 4, day)["shabbat-hahodesh"])
+        # The following Sunday belongs to the next week and so to the next reading.
+        self.assertFalse(self._reading(2024, 4, 7)["shabbat-hahodesh"])
+
+    def test_each_special_shabbat_occurs_once_a_year(self):
+        """Sweep whole Hebrew years, leap and ordinary, and count the Shabbatot."""
+        names = (
+            "shabbat-shkalim", "shabbat-zachor", "shabbat-parah", "shabbat-hahodesh",
+            "shabbat-hagadol", "shabbat-hazon", "shabbat-nahamu", "shabbat-shuva",
+            "shabbat-shira",
+        )
+        for hebrew_year in (5784, 5785, 5786, 5787):
+            counts = {name: 0 for name in names}
+            day = pyluach_dates.HebrewDate(hebrew_year, 7, 1).to_pydate()
+            end = pyluach_dates.HebrewDate(hebrew_year + 1, 7, 1).to_pydate()
+            while day < end:
+                if day.weekday() == 5:  # Saturday
+                    result = self._reading(day.year, day.month, day.day)
+                    for name in names:
+                        counts[name] += bool(result[name])
+                day += timedelta(days=1)
+            for name in names:
+                with self.subTest(hebrew_year=hebrew_year, feature=name):
+                    self.assertEqual(counts[name], 1)
+
+    def test_rosh_hodesh_and_mahar_hodesh(self):
+        """Both carry their own haftarah, and Mahar Hodesh looks at the following day."""
+        rosh_hodesh = self._reading(2025, 3, 1)  # 1 Adar 5785, a Shabbat
+        self.assertTrue(rosh_hodesh["shabbat-rosh-hodesh"])
+        self.assertFalse(rosh_hodesh["shabbat-mahar-hodesh"])
+        # 29 Adar I 5784: Rosh Hodesh Adar II falls the next day.
+        mahar_hodesh = self._reading(2024, 3, 9)
+        self.assertTrue(mahar_hodesh["shabbat-mahar-hodesh"])
+        self.assertFalse(mahar_hodesh["shabbat-rosh-hodesh"])
+
+    def test_triennial_year_cycles_one_to_three(self):
+        """The cycle is anchored on 5756, the first year of the modern triennial reading."""
+        self.assertEqual(self._reading(2023, 11, 4)["triennial-year"], 2)  # 5784
+        self.assertEqual(self._reading(2024, 11, 2)["triennial-year"], 3)  # 5785
+        self.assertEqual(self._reading(2025, 11, 1)["triennial-year"], 1)  # 5786
+        self.assertEqual(self._reading(2026, 11, 7)["triennial-year"], 2)  # 5787
+
+    def test_triennial_year_turns_over_at_simhat_torah(self):
+        """Early Tishrei still reads the outgoing cycle, though the Hebrew year has advanced."""
+        # 5785 is cycle year 3, but its first Shabbatot belong to 5784's cycle year 2.
+        self.assertEqual(self._reading(2024, 10, 5)["triennial-year"], 2)   # 3 Tishrei, Shuva
+        self.assertEqual(self._reading(2024, 10, 12)["triennial-year"], 2)  # 10 Tishrei
+        self.assertEqual(self._reading(2024, 10, 19)["triennial-year"], 2)  # 17 Tishrei
+        # 24 Tishrei: the first Shabbat past Simhat Torah, which reads Bereshit.
+        self.assertEqual(self._reading(2024, 10, 26)["triennial-year"], 3)
+
+    def test_triennial_year_is_continuous_across_every_turnover(self):
+        """Sweep Shabbatot with a parshah and assert the cycle advances once per year, in order.
+
+        A turnover keyed to the Hebrew year rather than to Simhat Torah puts the step three
+        weeks early, which this catches as a cycle year changing on a Shabbat that reads a
+        parshah belonging to the outgoing year.
+        """
+        previous = None
+        day = pyluach_dates.HebrewDate(5784, 7, 1).to_pydate()
+        end = pyluach_dates.HebrewDate(5795, 7, 1).to_pydate()
+        transitions = 0
+        while day < end:
+            if day.weekday() == 5:  # Saturday
+                g = pyluach_dates.GregorianDate(day.year, day.month, day.day)
+                # Festival Shabbatot have no weekly parshah and so select no triennial reading.
+                if parshios.getparsha_string(g, israel=False):
+                    reading = self._reading(day.year, day.month, day.day)
+                    current = reading["triennial-year"]
+                    self.assertIn(current, (1, 2, 3))
+                    if previous is not None and current != previous:
+                        with self.subTest(date=day.isoformat()):
+                            # Bereshit is the first parshah of a cycle year, and the step is +1.
+                            # pyluach transliterates it "Bereishis".
+                            self.assertEqual(current, (previous % 3) + 1)
+                            self.assertEqual(reading["diaspora-parsha"], "bereishis")
+                        transitions += 1
+                    previous = current
+            day += timedelta(days=1)
+        self.assertEqual(transitions, 11)

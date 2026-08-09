@@ -846,9 +846,8 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="israel-parsha">
       <tei:string/>
    </tei:f>
-   <!-- Which of the three years of the modern triennial cycle the date falls in. -->
    <tei:f name="triennial-year">
-      <tei:numeric/>
+      <tei:numeric value="1"/>
    </tei:f>
    <!-- One per pair of parshiyot that is sometimes read combined; see below. -->
    <tei:f name="triennial-pattern-vayakhel-pekudei">
@@ -881,6 +880,9 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="shabbat-zachor">
       <tei:binary/>
    </tei:f>
+   <tei:f name="shabbat-parah">
+      <tei:binary/>
+   </tei:f>
    <tei:f name="shabbat-hahodesh">
       <tei:binary/>
    </tei:f>
@@ -893,8 +895,28 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="shabbat-nahamu">
       <tei:binary/>
    </tei:f>
+   <tei:f name="shabbat-rosh-hodesh">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="shabbat-mahar-hodesh">
+      <tei:binary/>
+   </tei:f>
 </tei:fs>
 ```
+
+The reading belongs to a week rather than to a day, so a document compiled on any day from
+Sunday onward selects the reading of that week's Shabbat.
+
+Every `shabbat-` feature except `shabbat-shira` is defined by the Hebrew date — each is the
+Shabbat on or before a fixed date — not by which parshah falls that week. `shabbat-shira` is
+the exception, since Shirat ha-Yam is in Beshalach. More than one may be true at once: in
+5785, 1 Adar falls on Shabbat and is both `shabbat-shkalim` and `shabbat-rosh-hodesh`.
+
+`triennial-year` is `1`, `2` or `3`, counting the modern triennial cycle from 5756. The cycle
+turns over at Simhat Torah rather than at Rosh Hashanah, so the Shabbatot of early Tishrei —
+Shabbat Shuva among them — still report the outgoing year. A single turnover date serves both
+rites: Simhat Torah is 22 Tishrei in Israel and 23 in the diaspora, but no Shabbat carrying a
+weekly parshah ever falls between the two.
 
 Each `triennial-pattern-` feature describes the three-year triennial cycle the date falls in,
 not the date itself: one character per year of the cycle, `T` where that pair of parshiyot was
@@ -1053,6 +1075,34 @@ and one setting selects it in both.
    </tei:f>
 </tei:fs>
 ```
+
+Passages that differ by rite — most commonly the haftarah read for a given parshah, but also
+some aliyah divisions — are selected by `opensiddur:rite`:
+```xml
+<tei:fs type="opensiddur:rite">
+   <tei:f name="ashkenaz">
+      <tei:binary value="true"/>
+   </tei:f>
+   <tei:f name="teimani_baladi">
+      <tei:binary value="true"/>
+   </tei:f>
+</tei:fs>
+```
+
+Each rite is its **own binary feature**, not a value of one enumerated feature, and **any
+number of them may be true at once**. A comparative edition that sets both `ashkenaz` and
+`teimani_baladi`, as above, gets both variants. Encode each variant as its own `tei:div` with
+a `tei:head` naming the custom, wrapped in a `j:conditional` on that rite's feature alone, so
+the variants evaluate independently of one another.
+
+Leaving `opensiddur:rite` unset is meaningful and is the right default for a printed volume:
+an undefined feature evaluates to undefined rather than to false, so every variant is kept
+together with the heading that says whose custom it is. This is unlike `opensiddur:override`,
+where undefined is equivalent to false.
+
+The feature set is open — a rite that is not listed below is still valid. Known rite names:
+`ashkenaz`, `sepharad`, `edot_hamizrach`, `teimani_baladi`, `teimani_shami`, `italiani`,
+`romaniote`, `nusach_ari`.
 
 The zman tefillah is also able to be calculated (though there may also be other settings required to determine how to calculate it):
 ```xml

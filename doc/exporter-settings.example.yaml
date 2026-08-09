@@ -61,6 +61,14 @@ declarations:
   # Textual variants are selected by URN; see the URN section of schema/JLPTEI-3.md.
   opensiddur:variant:
     urn:x-opensiddur:condition:haggadah:magid/lefikach/shira_chadasha: true
+  # Rite, for passages that differ by custom (most often the haftarah). Each rite is its own
+  # binary, so several may be true at once and every selected variant is kept. Omitting this
+  # group entirely leaves rite undefined, which keeps *all* variants along with the headings
+  # naming whose custom they are — usually what a printed volume wants. The list is open;
+  # see schema/JLPTEI-3.md for the known names.
+  opensiddur:rite:
+    ashkenaz: true
+    teimani_baladi: true
 
 # Output-format settings consumed by the TeX/PDF stage only.
 typography:
