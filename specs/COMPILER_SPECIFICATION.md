@@ -43,7 +43,6 @@ _ProcessingContext = {
     before_start: bool,              # True if before start element in range
     after_end: bool,                 # True if after end element in range
     include_tail_after_end: bool,    # Include tail text after end element
-    exclusive_end: bool,              # End is exclusive (before milestone)
     inside_deepest_common_ancestor: bool,  # Inside DCA for external transclusions
     command: _ProcessingCommand      # Current processing command
 }
@@ -78,8 +77,14 @@ The `command` field determines how an element is processed:
 
 State machine tracks position relative to transclusion range:
 
-1. **Before Start**: `before_start=True`, `command=RECURSE` (skip content)
+1. **Before Start**: `before_start=True`, `command=RECURSE` (traverse, emit nothing)
    - When reaching deepest common ancestor: `inside_deepest_common_ancestor=True`, `command=COPY_ELEMENT_AND_RECURSE`
+   - Inside the DCA, an **ancestor of the start element**: `command=COPY_ELEMENT_AND_RECURSE`
+   - Inside the DCA, anything else: `command=RECURSE`. Skeleton copies exist only to
+     rebuild the structure the start element sits in; copying every element that merely
+     precedes the start leaves empty shells of them in the output (#51). `RECURSE` rather
+     than `SKIP` so that `j:declare` / `j:conditional` scopes opened before the range are
+     still evaluated.
    - When reaching start element: `before_start=False`, `command=COPY_AND_RECURSE`
 
 2. **Between Start and End**: `before_start=False`, `after_end=False`, `command=COPY_AND_RECURSE`
@@ -325,7 +330,12 @@ Elements are marked with their source file when processing context changes:
 When end URN is a milestone, the actual end is exclusive:
 
 - Find next milestone at same or higher level
-- If found: end before that milestone
+- If found: end at the nearest preceding sibling of that milestone, or -- when the
+  milestone is the first element in its parent -- the nearest preceding sibling of its
+  closest ancestor that has one. The end element is always the node whose *tail* is the
+  last text before the milestone, so `include_tail_after_end` picks that text up. Ending
+  at the deepest preceding element instead would land inside a subtree and drop the text
+  between that subtree's close and the milestone.
 - If not found: include all siblings up to last sibling
 
 ### Tail Text Handling
@@ -373,6 +383,10 @@ The compiled output:
     | Yes
     v
 [inside_deepest_common_ancestor=True, command=COPY_ELEMENT_AND_RECURSE]
+    |
+    | (inside the DCA: ancestors of the start element are copied as empty
+    |  skeletons; everything else before the start is traversed but not emitted)
+    |
     |
     | (continue traversal)
     |
