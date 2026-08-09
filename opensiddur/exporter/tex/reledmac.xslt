@@ -123,6 +123,25 @@
              tei:div[@type='book'] (Bible exports), where the chapter exists solely as a
              milestone and would otherwise be invisible. -->
         <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+        <!-- Parsha name, run-in at the head of the text the parsha opens. A parsha is a
+             division containing the chapters and verses that follow it, so it is marked
+             once, here, and deliberately not doubled with an apparatus entry: a page
+             carrying a boundary would otherwise announce it twice.
+
+             Callers who want a different treatment redefine the macro through the
+             additional-preamble parameter — the emitted \OSParsha{name} is the only thing
+             this stylesheet produces for a boundary. For an apparatus entry instead of a
+             visible header:
+
+               \renewcommand{\OSParsha}[1]{\leavevmode{\OSRTLfalse%
+                 \edtext{\mbox{}}{\Bfootnote{Parsha: #1}}}}
+
+             (an empty-lemma \edtext{} is fragile in bidi/RTL contexts and can make
+             reledmac drop surrounding text or corrupt its .1 aux file, hence the explicit
+             zero-width \mbox{} lemma), or to suppress the boundary entirely:
+
+               \renewcommand{\OSParsha}[1]{} -->
+        <xsl:text>\newcommand{\OSParsha}[1]{{\normalfont\large\bfseries #1}\quad}&#10;</xsl:text>
 
         <!-- Section headings (tei:head).
              reledmac's \eledchapter/\eledsection/\eledsubsection are deliberately NOT used:
@@ -604,19 +623,37 @@
                         </xsl:choose>
                     </xsl:when>
                     <xsl:when test="self::tei:milestone[@unit='parsha']">
-                        <!-- Parsha boundary: emit as a B-series footnote anchored
-                             to the current verse. Only meaningful inside a pstart. -->
-                        <xsl:if test="$in-pstart">
-                            <!-- Empty-lemma \edtext{} is fragile in bidi/RTL contexts and
-                                 can cause reledmac to drop surrounding text or corrupt
-                                 its .1 aux file. Use an explicit zero-width box lemma
-                                 to keep the argument structure stable. -->
-                            <xsl:text>\leavevmode{\OSRTLfalse\edtext{\mbox{}}{\Bfootnote{Parsha: </xsl:text>
-                            <xsl:value-of select="f:escape-tex(string(@n))"/>
-                            <xsl:text>}}}</xsl:text>
+                        <!-- Parsha boundary: a division that contains the chapters and
+                             verses following it, so it legitimately sits *between*
+                             paragraphs. Open a pstart when none is open, the way the
+                             chapter and verse branches do — a boundary outside a pstart
+                             would otherwise be silently dropped. Leaving in-pstart true
+                             is what makes the name run in: the following paragraph's
+                             chapter/verse milestones join this pstart rather than opening
+                             their own, so the name shares a line with the parsha's first
+                             verse. -->
+                        <xsl:if test="not($in-pstart)">
+                            <xsl:text>\pstart </xsl:text>
                         </xsl:if>
+                        <xsl:text>\OSParsha{</xsl:text>
+                        <xsl:choose>
+                            <!-- Parsha names are Hebrew in an otherwise LTR stream (the
+                                 JPS 1917 translation), so give them the same direction
+                                 wrapper tei:foreign[@xml:lang='he'] gets. Wrapping here
+                                 rather than inside the macro keeps it in place for a
+                                 caller's \renewcommand. -->
+                            <xsl:when test="matches(string(@n), '\p{IsHebrew}')">
+                                <xsl:text>\texthebrew{</xsl:text>
+                                <xsl:value-of select="f:escape-tex(string(@n))"/>
+                                <xsl:text>}</xsl:text>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:value-of select="f:escape-tex(string(@n))"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                        <xsl:text>}</xsl:text>
                         <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                            <xsl:with-param name="in-pstart" select="true()"/>
                         </xsl:next-iteration>
                     </xsl:when>
                     <xsl:when test="self::tei:milestone[@rend='****']">
