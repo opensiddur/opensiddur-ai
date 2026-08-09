@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Miqra al pi ha-Masorah importer: the `{{מ:כפול}}` template, which carries a verse in both
+  cantillations (ta'am elyon and ta'am tachton), was discarded by the stylesheet, emitting the
+  Ten Commandments as empty verses in Exodus 20 and Deuteronomy 5. The two readings now become a
+  `tei:choice` of `j:option`, each carrying a `corresp` URN by which a setting selects one, and
+  the manuscript apparatus attached to the merged doubly-accented text is preserved.
+- Miqra al pi ha-Masorah importer: a row whose text contained a parashah break lost both its
+  text and its verse milestone, dropping 54 verses across the project — among them Exodus 20:13,
+  Deuteronomy 5:17, and most of the Shirat haYam and Ha'azinu shirah.
+
 ## [0.1.0] - 2026-05-26
 
 Initial public release.

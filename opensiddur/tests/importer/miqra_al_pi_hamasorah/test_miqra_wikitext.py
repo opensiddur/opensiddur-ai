@@ -316,9 +316,20 @@ class TestMiqraWikitext(unittest.TestCase):
             "{{מ:כפול|כפול=ד|א=א|ב=ב}}"
         )
         self.assertIn("<miqra:dual-trope-link>target</miqra:dual-trope-link>", frag)
-        self.assertIn('<miqra:dual-accent dual="ד">', frag)
-        self.assertIn('role="א"', frag)
-        self.assertIn('role="ב"', frag)
+        self.assertIn("<miqra:dual-accent>", frag)
+        self.assertIn("<miqra:merged>ד</miqra:merged>", frag)
+        self.assertIn('<miqra:strand role="א">א</miqra:strand>', frag)
+        self.assertIn('<miqra:strand role="ב">ב</miqra:strand>', frag)
+
+    def test_dual_accent_keeps_apparatus_of_merged_text(self):
+        """The manuscript apparatus hangs off the merged doubly-accented reading, so
+        ``כפול`` must be an element: in an attribute the note markup would be escaped away."""
+        frag = wikitext_to_intermediate_xml(
+            "{{מ:כפול|כפול={{נוסח|דד|2=הערת כתבי־היד}}|א=א|ב=ב}}"
+        )
+        self.assertIn("<miqra:note", frag)
+        self.assertIn("הערת כתבי־היד", frag)
+        self.assertNotIn("&lt;miqra:note", frag)
 
     def test_emphasis_and_footnote_mark(self):
         frag = wikitext_to_intermediate_xml("{{מודגש|חשוב}}{{ש}}")
