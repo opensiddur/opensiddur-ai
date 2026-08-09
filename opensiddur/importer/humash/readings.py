@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import functools
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -29,9 +30,12 @@ from opensiddur.importer.humash.refs import (
     triennial_unit,
     ReadingSpan,
     VerseRef,
+    hebcal_ref_half,
     parse_hebcal_ref,
 )
 from opensiddur.importer.util.pages import hebcal_leyning_data_directory
+
+logger = logging.getLogger(__name__)
 
 # The rites hebcal distinguishes. "haft" is what it gives without qualification, which is the
 # Ashkenazi reading; "seph" is the Sephardi one. Other rites are not in this data.
@@ -103,8 +107,39 @@ def _haftarah_spans(raw, unit: str = "haftarah") -> list[ReadingSpan]:
             end=parse_hebcal_ref(book, part["e"]),
             note=part.get("note"),
             numbering=NUMBERING_COMMON,
+            start_half=hebcal_ref_half(part["b"]),
+            end_half=hebcal_ref_half(part["e"]),
         ))
     return spans
+
+
+def _without_anchor_verses(key: str, spans: list[ReadingSpan]) -> list[ReadingSpan]:
+    """The spans actually read, dropping any that an earlier span already covers.
+
+    Eight of the triennial haftarot end with a piece inside one already listed — Nasso
+    year 1 is Joshua 6:5-14 and then 6:12, Emor year 3 is Nachum 2:1-3 and then 2:2b-3a. That
+    is the verse the pairing with the parshah turns on, recorded beside the reading rather than
+    appended to it: taking it as a continuation would read those verses a second time.
+
+    A piece that merely runs backwards is left alone. The haftarot really do that — Mishpatim
+    reads Jeremiah 34:12-22 and then 33:25-26 — and only containment marks an anchor.
+    """
+    kept: list[ReadingSpan] = []
+    for span in spans:
+        anchor = any(
+            earlier.book == span.book
+            and earlier.start <= span.start
+            and span.end <= earlier.end
+            for earlier in kept
+        )
+        if anchor:
+            logger.debug(
+                "%s: %s-%s lies inside an earlier span, so it is the verse the pairing turns "
+                "on rather than part of the reading", key, span.start, span.end,
+            )
+            continue
+        kept.append(span)
+    return kept
 
 
 def _repeated_span(key: str, spans: list[ReadingSpan]) -> ReadingSpan | None:
@@ -301,7 +336,23 @@ def triennial_patterns(sourcetexts_root: Path | None = None) -> dict[str, dict[s
 
 
 def triennial_haftarot(sourcetexts_root: Path | None = None) -> dict[str, dict[int, Passage]]:
-    """The triennial haftarah of each parshah, by slug then cycle year."""
+    """The triennial haftarah of each parshah, by slug then cycle year.
+
+    These are alternatives to the annual haftarah, not additions to it, and unlike the Torah
+    divisions they are keyed by plain cycle year: the reading follows the year alone, so none
+    of the variation machinery of ``triennial`` applies.
+
+    Coverage is not uniform, and the caller has to allow for it.
+
+    * Only 51 parshiyot have any. Devarim and Vaetchanan always fall on Shabbat Hazon and
+      Shabbat Nahamu, whose haftarot are fixed, and Vezot Haberakhah is read on Simhat Torah;
+      those three keep their annual haftarah in every year.
+    * Tazria, Achrei Mot and Behar carry years 1 and 2 only, being read alone only in those
+      years, and the pairs have no triennial haftarah of their own — so on a year a pair is
+      read together the annual haftarah of that week stands.
+    * ``Tish'a B'Av`` is in the file but is not a parshah, and is dropped here with everything
+      else the parshah table does not name.
+    """
     data = _load("triennial-haft.json", sourcetexts_root)
     result: dict[str, dict[int, Passage]] = {}
     for name, entry in data.items():
@@ -310,12 +361,18 @@ def triennial_haftarot(sourcetexts_root: Path | None = None) -> dict[str, dict[i
             continue
         years: dict[int, Passage] = {}
         for year_key, value in entry.items():
-            if not year_key.isdigit() or not isinstance(value, dict) or "k" not in value:
+            # A year is one reading object, or a list of them where the reading is
+            # discontinuous — Toldot's third year is Judges 3:15-27 and then 3:30. The
+            # mnemonic hebcal notes against each piece rides along on the span.
+            parts = value if isinstance(value, list) else [value]
+            if not year_key.isdigit() or not parts or not all(
+                isinstance(part, dict) and "k" in part for part in parts
+            ):
                 continue
+            passage_key = f"{name}:triennial:{year_key}"
             years[int(year_key)] = Passage(
-                key=f"{name}:triennial:{year_key}",
-                spans=_haftarah_spans(value),
-                note=value.get("note"),
+                key=passage_key,
+                spans=_without_anchor_verses(passage_key, _haftarah_spans(value)),
             )
         if years:
             result[slug] = years

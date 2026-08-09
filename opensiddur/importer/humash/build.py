@@ -190,6 +190,10 @@ def _transclude(target: str) -> str:
     return f'<j:transclude type="external" target="{target}"/>'
 
 
+def _instruction(text: str) -> str:
+    return f'<tei:note type="instruction" xml:lang="he">{_escape(text)}</tei:note>'
+
+
 _CONDITION_INDEX = {"value": 0}
 
 
@@ -232,6 +236,31 @@ def _pattern_conditional(pair_slug: str, patterns: list[str], content: str) -> s
         f"{content}"
         f'<j:endConditional target="#{identifier}"/>'
     )
+
+
+# Which readings the volume carries: `annual`, and one feature per year of the triennial cycle.
+# All are false by default but `annual`, and several may be true at once, so one volume may be
+# for a single Shabbat and another for a whole cycle. See exporter/calendar/compute.py.
+CYCLE_FS = "opensiddur:reading-cycle"
+ANNUAL_FEATURE = "annual"
+CYCLE_YEARS = tuple(TRIENNIAL_YEARS)
+
+
+def _cycle_condition(feature: str) -> str:
+    """The test for one reading-cycle feature being true.
+
+    Always a single feature, so that the answer is decisive. ``j:all`` over a false test and an
+    undefined one is undefined per the truth tables, and undefined keeps the text it guards —
+    which for readings that are alternatives to one another would print several at once.
+    """
+    return (
+        f'<tei:fs type="{CYCLE_FS}"><tei:f name="{feature}">'
+        f'<tei:binary value="true"/></tei:f></tei:fs>'
+    )
+
+
+def _triennial_year_feature(year: int) -> str:
+    return f"triennial-year-{year}"
 
 
 def _default_numbering_conditional(content: str) -> str:
@@ -278,9 +307,7 @@ def _segment_xml(
             if condition is not None else marker
         )
     if segment.duplicate:
-        parts.append(
-            f'<tei:note type="instruction" xml:lang="he">{_escape("חוזרים על הפסוק")}</tei:note>'
-        )
+        parts.append(_instruction("חוזרים על הפסוק"))
     parts.append(_transclude(segment.start.range_urn(segment.end)))
     return "".join(parts)
 
@@ -444,44 +471,109 @@ def pair_file(
     )
 
 
+# hebcal states a few boundaries inside a verse — Emor's third year names Nachum 2:2b-2:3a —
+# and a URN reaches no further than a whole verse. Every such reference in the data today is on
+# an anchor verse that readings.triennial_haftarot drops, so nothing emits these yet; they are
+# here because the alternative, if hebcal moves one into a span that is read, is to silently
+# read half a verse too much.
+HALF_VERSE_START_INSTRUCTION = "מתחילים מאמצע הפסוק"
+HALF_VERSE_END_INSTRUCTION = "מסיימים באמצע הפסוק"
+
+
 def _passage_xml(passage: Passage, urn_base: str) -> str:
     """A haftarah or megillah: its spans in order, then any repeated closing verse."""
     parts: list[str] = []
     for span in passage.spans:
+        if span.start_half == "b":
+            parts.append(_instruction(HALF_VERSE_START_INSTRUCTION))
         parts.append(_transclude(span.start.range_urn(span.end)))
+        if span.end_half == "a":
+            parts.append(_instruction(HALF_VERSE_END_INSTRUCTION))
     if passage.repeated is not None:
-        parts.append(
-            f'<tei:note type="instruction" xml:lang="he">'
-            f"{_escape(REPEATED_VERSE_INSTRUCTION)}</tei:note>"
-        )
+        parts.append(_instruction(REPEATED_VERSE_INSTRUCTION))
         parts.append(_transclude(
             passage.repeated.start.range_urn(passage.repeated.end)
         ))
     return "".join(parts)
 
 
-def haftarah_file(slug: str, passages: list[Passage]) -> tuple[str, str]:
-    """The haftarah of one parshah, with a division per rite where the rites differ."""
+# The heading over a triennial haftarah. Unlike the triennial Torah divisions, which are
+# markers in the margin of the annual text, these are whole alternative readings.
+TRIENNIAL_HAFTARAH_TITLE = "מַחֲזוֹר תְּלַת־שְׁנָתִי, שָׁנָה {year}"
+
+
+def haftarah_file(
+    slug: str,
+    passages: list[Passage],
+    triennial_passages: dict[int, Passage] | None = None,
+) -> tuple[str, str]:
+    """The haftarah of one parshah: the annual reading, and the triennial ones as alternatives.
+
+    The annual haftarah has a division per rite where the rites differ. The triennial readings
+    have none — hebcal records a single reading per cycle year — so each is one headed division
+    conditioned on the volume reading that year of the cycle.
+
+    They are alternatives for the same Shabbat, so the annual reading is kept when the volume
+    asks for it and also whenever the volume's cycle year has nothing to put in its place.
+    Tazria, Achrei Mot and Behar are read alone only in years 1 and 2 and so have no reading
+    for year 3; a parshah with no triennial reading at all is unconditional, as are the pairs,
+    which have no triennial haftarah of their own.
+
+    This is the one place the humash decides rather than keeping every variant. A volume that
+    asks for nothing gets the annual reading, not all four: they belong to one week, and
+    printing four haftarot for it would be wrong however they were headed.
+    """
     urn_base = f"{URN_PREFIX}:haftarah/{slug}"
     hebrew = SLUG_TO_HEBREW.get(slug, slug)
     title = f"הַפְטָרַת {hebrew}"
 
-    inner: list[str] = []
+    annual: list[str] = []
     for passage in passages:
         content = _passage_xml(passage, urn_base)
         if passage.rite is None:
-            inner.append(content)
+            annual.append(content)
             continue
         variant = (
             f'<tei:div corresp="{urn_base}/{passage.rite}" n="{passage.rite}">'
             f"<tei:head>{_escape(passage.title or passage.rite)}</tei:head>"
             f"{content}</tei:div>"
         )
-        inner.append(_conditional("opensiddur:rite", passage.rite, variant, "rite"))
+        annual.append(_conditional("opensiddur:rite", passage.rite, variant, "rite"))
+
+    years = sorted(triennial_passages or {})
+    inner = "".join(annual)
+    if years:
+        # The annual reading also stands in for the cycle years this parshah has none of, so a
+        # triennial volume is never left with no haftarah at all for the week.
+        missing = [year for year in CYCLE_YEARS if year not in years]
+        identifier = _condition_id("annual_haftarah")
+        alternatives = "".join(
+            _cycle_condition(feature) for feature in
+            [ANNUAL_FEATURE, *(_triennial_year_feature(year) for year in missing)]
+        )
+        inner = (
+            f'<j:conditional xml:id="{identifier}"><j:any>{alternatives}</j:any>'
+            f"</j:conditional>{inner}"
+            f'<j:endConditional target="#{identifier}"/>'
+        )
+    for year in years:
+        identifier = _condition_id("triennial_haftarah")
+        year_title = TRIENNIAL_HAFTARAH_TITLE.format(year=TRIENNIAL_YEARS.get(year, year))
+        division = (
+            f'<tei:div corresp="{urn_base}/triennial/{year}" n="triennial_{year}">'
+            f"<tei:head>{_escape(year_title)}</tei:head>"
+            f"{_passage_xml(triennial_passages[year], urn_base)}</tei:div>"
+        )
+        inner += (
+            f'<j:conditional xml:id="{identifier}">'
+            f"{_cycle_condition(_triennial_year_feature(year))}</j:conditional>"
+            f"{division}"
+            f'<j:endConditional target="#{identifier}"/>'
+        )
 
     body = (
         f'<tei:div corresp="{urn_base}" n="haftarah_{slug}">'
-        f"<tei:head>{_escape(title)}</tei:head>{''.join(inner)}</tei:div>"
+        f"<tei:head>{_escape(title)}</tei:head>{inner}</tei:div>"
     )
     header = _header(title, f"Haftarah for {slug.replace('_', ' ').title()}", f"haftarah/{slug}")
     return f"haftarat_{slug}", _document(header, body)
@@ -497,10 +589,7 @@ def megillah_file(book: str, hebrew: str, holiday: str) -> tuple[str, str]:
     if repeat is not None:
         chapter, verse = repeat
         ref = VerseRef(book, chapter, verse)
-        parts.append(
-            f'<tei:note type="instruction" xml:lang="he">'
-            f"{_escape(REPEATED_VERSE_INSTRUCTION)}</tei:note>"
-        )
+        parts.append(_instruction(REPEATED_VERSE_INSTRUCTION))
         parts.append(_transclude(ref.range_urn(ref)))
 
     content = (
@@ -638,6 +727,7 @@ def build(
 
     parshiyot, pairs = parse_readings(sourcetexts_root)
     all_haftarot = haftarot(sourcetexts_root)
+    all_triennial_haftarot = triennial_haftarot(sourcetexts_root)
     all_triennial = triennial(sourcetexts_root)
     all_patterns = triennial_patterns(sourcetexts_root)
     festivals = festival_readings(sourcetexts_root)
@@ -665,8 +755,19 @@ def build(
 
     extra_urns: list[str] = []
     for slug, passages in sorted(all_haftarot.items()):
-        documents.append(haftarah_file(slug, passages))
+        documents.append(
+            haftarah_file(slug, passages, all_triennial_haftarot.get(slug, {}))
+        )
         extra_urns.append(f"{URN_PREFIX}:haftarah/{slug}")
+
+    unplaced = sorted(set(all_triennial_haftarot) - set(all_haftarot))
+    if unplaced:
+        # Nothing to hang them off: a parshah with a triennial haftarah but no annual one would
+        # have no file of its own, so say so rather than dropping it silently.
+        logger.warning(
+            "No haftarah file for %s, so their triennial haftarot were not emitted",
+            ", ".join(unplaced),
+        )
     for book, hebrew, holiday in MEGILLOT:
         documents.append(megillah_file(book, hebrew, holiday))
         extra_urns.append(f"{URN_PREFIX}:megillah/{book}")

@@ -58,6 +58,36 @@ declarations:
   #   month: 3
   #   day: 1
 
+  # Which haftarot this volume carries. Leaving the group out reads annually, which is the one
+  # place the humash decides rather than keeping every variant: 51 parshiyot have a haftarah of
+  # their own for each year of the triennial cycle, and those are alternatives to the annual
+  # haftarah of the same Shabbat rather than additions to it, so a volume that kept them all
+  # would print four haftarot for one week.
+  #
+  # For one Shabbat, set triennial true and declare a date above — that settles which of the
+  # three years is read, and drops the annual haftarah:
+  #
+  # opensiddur:reading-cycle:
+  #   triennial: true
+  #
+  # For a volume covering a whole three-year cycle, name the years instead. Each is its own
+  # setting, so any combination is possible; keep annual as well to print all four.
+  #
+  # opensiddur:reading-cycle:
+  #   annual: false
+  #   triennial-year-1: true
+  #   triennial-year-2: true
+  #   triennial-year-3: true
+  #
+  # Either way the parshiyot with no triennial haftarah keep their annual one — Devarim,
+  # Vaetchanan and Vezot Haberakhah, which never have one; the pairs, which have none of their
+  # own; and Tazria, Achrei Mot and Behar in year 3, when they are read with their partner. So
+  # no week is ever left without a haftarah, whichever years are chosen.
+  #
+  # The triennial *Torah* divisions do not go through this: they are markers over the annual
+  # text rather than a separate reading, so every year's are always present, marked with the
+  # cycle year in the margin.
+
 typography:
   hebrew_font: "Frank Ruehl CLM"
   latin_font: "Linux Libertine O"

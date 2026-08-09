@@ -10,8 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Shared table of the 54 weekly parshiyot (`opensiddur/importer/util/parshiyot.py`), mapping any
   source's spelling of a parshah name to a canonical Hebrew name and a URN slug.
+- The humash emits the triennial haftarot: 150 readings over 51 parshiyot, each a headed
+  alternative to the annual haftarah of its week rather than an addition to it.
+- `opensiddur:reading-cycle`, the feature structure by which a volume says which haftarot it
+  carries: `annual`, and one binary per year of the triennial cycle, so that a volume may be
+  for one Shabbat or for a whole three-year cycle. `opensiddur:torah-reading` gains
+  `triennial-year`, the cycle year of the declared date.
 
 ### Fixed
+- `readings.triennial_haftarot` was read but never called, and dropped the 36 readings hebcal
+  records as a list of pieces. A piece lying inside one already listed is the verse the pairing
+  with the parshah turns on, and is no longer taken for a continuation of the reading.
+- `parse_hebcal_ref` no longer raises on a boundary stated inside a verse, such as the
+  Nachum 2:2b-2:3a of Emor's third year.
 - Miqra al pi ha-Masorah importer: the `{{מ:כפול}}` template, which carries a verse in both
   cantillations (ta'am elyon and ta'am tachton), was discarded by the stylesheet, emitting the
   Ten Commandments as empty verses in Exodus 20 and Deuteronomy 5. The two readings now become a

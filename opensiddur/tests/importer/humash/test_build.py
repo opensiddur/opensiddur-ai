@@ -12,6 +12,7 @@ from lxml import etree
 
 from opensiddur.importer.humash import build
 from opensiddur.importer.humash.aliyot import CombinedParsha, Parsha
+from opensiddur.importer.humash.readings import Passage
 from opensiddur.importer.humash.refs import (
     UNIT_ALIYAH,
     UNIT_ALIYAH_COMBINED,
@@ -22,6 +23,7 @@ from opensiddur.importer.humash.refs import (
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
 J = "{http://jewishliturgy.org/ns/jlptei/2}"
+XML = "{http://www.w3.org/XML/1998/namespace}"
 
 PAIR = "tazria_metzora"
 PATTERNS = {"TTS": "A", "TST": "B", "STT": "C"}
@@ -166,6 +168,122 @@ class TestPairFile(unittest.TestCase):
         self.assertEqual(ranges[-1][1], (15, 17))
         for earlier, later in zip(ranges, ranges[1:]):
             self.assertGreater(later[0], earlier[1], "the text is emitted more than once")
+
+
+def _passage(book: str, start, end, **kwargs) -> Passage:
+    return Passage(
+        key="test",
+        spans=[ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef(book, *start), end=VerseRef(book, *end), **kwargs,
+        )],
+    )
+
+
+class TestHaftarahFile(unittest.TestCase):
+    """The annual haftarah and the triennial ones are alternatives for the same Shabbat."""
+
+    ANNUAL = [_passage("isaiah", (42, 5), (43, 10))]
+
+    def _tree(self, slug: str, triennial_passages=None):
+        _, document = build.haftarah_file(slug, self.ANNUAL, triennial_passages)
+        return etree.fromstring(document.encode("utf-8"))
+
+    def _features(self, conditional) -> list[str]:
+        """The reading-cycle features a conditional tests for, in order."""
+        return [
+            f.get("name") for f in conditional.iter(f"{TEI}f")
+            if f.getparent().get("type") == "opensiddur:reading-cycle"
+        ]
+
+    def test_a_parshah_with_no_triennial_haftarah_is_unconditioned(self):
+        """Devarim, Vaetchanan and Vezot Haberakhah keep the annual reading in every year."""
+        tree = self._tree("devarim")
+        self.assertEqual(tree.findall(f".//{J}conditional"), [])
+
+    def test_each_year_becomes_a_headed_division_of_its_own(self):
+        tree = self._tree("bereshit", {
+            1: _passage("isaiah", (42, 5), (42, 21)),
+            2: _passage("isaiah", (40, 25), (40, 31)),
+            3: _passage("kings_2", (2, 1), (2, 13)),
+        })
+        divisions = [
+            div for div in tree.iter(f"{TEI}div")
+            if (div.get("n") or "").startswith("triennial_")
+        ]
+        self.assertEqual(
+            [div.get("corresp") for div in divisions],
+            [f"urn:x-opensiddur:text:bible:haftarah/bereshit/triennial/{year}"
+             for year in (1, 2, 3)],
+        )
+        self.assertEqual(
+            [div.find(f"{J}transclude").get("target") for div in divisions],
+            ["urn:x-opensiddur:text:bible:isaiah/42/5-42/21",
+             "urn:x-opensiddur:text:bible:isaiah/40/25-40/31",
+             "urn:x-opensiddur:text:bible:kings_2/2/1-2/13"],
+        )
+
+    def test_a_triennial_reading_turns_on_one_decisive_feature(self):
+        """Two tests would be undefined where one is false, and undefined keeps the text."""
+        tree = self._tree("bereshit", {1: _passage("isaiah", (42, 5), (42, 21))})
+        conditional = tree.findall(f".//{J}conditional")[-1]
+        self.assertEqual(self._features(conditional), ["triennial-year-1"])
+        self.assertEqual(
+            [b.get("value") for b in conditional.iter(f"{TEI}binary")], ["true"]
+        )
+
+    def test_a_year_is_selected_independently_of_the_others(self):
+        """A volume for a whole cycle turns on all three, so they cannot be one year number."""
+        tree = self._tree("bereshit", {
+            year: _passage("isaiah", (40, year), (40, year)) for year in (1, 2, 3)
+        })
+        triennial = tree.findall(f".//{J}conditional")[1:]
+        self.assertEqual(
+            [self._features(c) for c in triennial],
+            [["triennial-year-1"], ["triennial-year-2"], ["triennial-year-3"]],
+        )
+
+    def test_the_annual_reading_stands_in_for_the_years_that_have_none(self):
+        """Tazria is read alone in years 1 and 2 only, so year 3 falls back to the annual."""
+        tree = self._tree("tazria", {
+            1: _passage("isaiah", (46, 3), (46, 13)),
+            2: _passage("jeremiah", (30, 1), (30, 9)),
+        })
+        annual = tree.findall(f".//{J}conditional")[0]
+        self.assertEqual(annual.find(f"{J}any").tag, f"{J}any")
+        self.assertEqual(self._features(annual), ["annual", "triennial-year-3"])
+
+    def test_a_parshah_with_every_year_yields_the_annual_only_to_the_annual_feature(self):
+        tree = self._tree("bereshit", {
+            year: _passage("isaiah", (40, year), (40, year)) for year in (1, 2, 3)
+        })
+        annual = tree.findall(f".//{J}conditional")[0]
+        self.assertEqual(self._features(annual), ["annual"])
+
+    def test_every_conditional_is_closed(self):
+        tree = self._tree("bereshit", {
+            year: _passage("isaiah", (40, year), (40, year)) for year in (1, 2, 3)
+        })
+        opened = [c.get(f"{XML}id") for c in tree.findall(f".//{J}conditional")]
+        closed = [
+            c.get("target").lstrip("#") for c in tree.findall(f".//{J}endConditional")
+        ]
+        self.assertEqual(len(opened), 4)  # the annual one, and one per year
+        self.assertEqual(sorted(opened), sorted(closed))
+
+    def test_a_boundary_inside_a_verse_reads_the_whole_verse_and_says_where_to_stop(self):
+        tree = self._tree("emor", {
+            3: _passage("nahum", (2, 2), (2, 3), start_half="b", end_half="a"),
+        })
+        division = tree.findall(f".//{TEI}div[@n='triennial_3']")[0]
+        self.assertEqual(
+            [child.tag for child in division][1:],
+            [f"{TEI}note", f"{J}transclude", f"{TEI}note"],
+        )
+        self.assertEqual(
+            division.find(f"{J}transclude").get("target"),
+            "urn:x-opensiddur:text:bible:nahum/2/2-2/3",
+        )
 
 
 class TestBookFile(unittest.TestCase):

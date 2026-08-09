@@ -75,6 +75,107 @@ class TestDerivedSettingsFramework(unittest.TestCase):
         self.assertTrue(entry.value)
         self.assertEqual(entry.source, "init")
 
+    CYCLE = "opensiddur:reading-cycle"
+
+    def _cycle(self) -> dict[str, object]:
+        """Which readings the volume carries, as a plain dict."""
+        return {
+            feature: get_active_setting_entry(self.linear_data, self.CYCLE, feature).value
+            for feature in
+            ("annual", "triennial-year-1", "triennial-year-2", "triennial-year-3")
+        }
+
+    def test_reading_cycle_defaults_to_the_annual_reading_alone(self):
+        """These cannot be left undefined the way opensiddur:rite is.
+
+        The annual haftarah and the three triennial ones are read on the same Shabbat, and an
+        undefined condition keeps its text, so an open feature here would print all four.
+        """
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
+        self.assertEqual(self._cycle(), {
+            "annual": True,
+            "triennial-year-1": False,
+            "triennial-year-2": False,
+            "triennial-year-3": False,
+        })
+
+    def test_a_date_alone_selects_no_triennial_year(self):
+        """Every date falls in some year of the cycle, including an annual volume's."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2026, "month": 1, "day": 3},
+            }),
+        )
+        self.assertEqual(self._cycle()["annual"], True)
+        self.assertEqual(self._cycle()["triennial-year-1"], False)
+
+    def test_a_triennial_volume_takes_its_year_from_the_date(self):
+        """5788 is the third year of the cycle, and the annual reading gives way to it."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2028, "month": 1, "day": 8},
+                "opensiddur:reading-cycle": {"triennial": True},
+            }),
+        )
+        self.assertEqual(self._cycle(), {
+            "annual": False,
+            "triennial-year-1": False,
+            "triennial-year-2": False,
+            "triennial-year-3": True,
+        })
+
+    def test_a_volume_for_a_whole_cycle_keeps_all_three_years(self):
+        """A printed humash covering a cycle turns on every year; a date would allow only one."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:reading-cycle": {
+                    "annual": False,
+                    "triennial-year-1": True,
+                    "triennial-year-2": True,
+                    "triennial-year-3": True,
+                },
+            }),
+        )
+        self.assertEqual(self._cycle(), {
+            "annual": False,
+            "triennial-year-1": True,
+            "triennial-year-2": True,
+            "triennial-year-3": True,
+        })
+
+    def test_a_declared_year_wins_over_the_date(self):
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2026, "month": 1, "day": 3},
+                "opensiddur:reading-cycle": {"triennial": True, "triennial-year-2": True},
+            }),
+        )
+        self.assertEqual(self._cycle()["triennial-year-2"], True)
+
+    def test_triennial_year_is_derived_from_the_date(self):
+        """The cycle is counted from 5756, so 5786 opens one and 5788 closes it."""
+        for gregorian, expected in (((2026, 1, 3), 1), ((2028, 1, 8), 3)):
+            with self.subTest(date=gregorian):
+                reset_linear_data()
+                linear_data = get_linear_data()
+                year, month, day = gregorian
+                CompilerProcessor.load_init_settings(
+                    linear_data,
+                    yaml_to_declaration_entries({
+                        "opensiddur:gregorian-date": {
+                            "year": year, "month": month, "day": day
+                        },
+                    }),
+                )
+                entry = get_active_setting_entry(
+                    linear_data, "opensiddur:torah-reading", "triennial-year"
+                )
+                self.assertEqual(entry.value, expected)
+
     def test_secular_day_from_gregorian_init(self):
         CompilerProcessor.load_init_settings(
             self.linear_data,

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import functools
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -200,6 +201,12 @@ class ReadingSpan:
     # for the two parshiyot of a pair, which share a file but keep their own URN spaces:
     # without it their identically numbered aliyot would both be .../vayakhel_pekudei/1.
     owner: str | None = None
+    # Where the span really begins or ends, when that is inside a verse rather than at its
+    # edge: "b" on `start_half` means it begins at the second half of `start`, and "a" on
+    # `end_half` that it ends at the first half of `end`. The whole verse is transcluded either
+    # way — a URN addresses no less than a verse — and the reading says where to stop.
+    start_half: str | None = None
+    end_half: str | None = None
 
     @property
     def book(self) -> str:
@@ -277,7 +284,27 @@ def previous_verse(
     )
 
 
+# hebcal writes a boundary that falls inside a verse as a letter after the verse number: the
+# triennial haftarah of Emor in year 3 runs from Nachum 2:2b to 2:3a, the second half of one
+# verse to the first half of the next. Three references in the data are of this form.
+_HEBCAL_REF = re.compile(r"\s*(\d+)\s*:\s*(\d+)\s*([ab]?)\s*\Z")
+
+
 def parse_hebcal_ref(book: str, spec: str) -> VerseRef:
-    """Parse hebcal's ``"chapter:verse"`` form against an opensiddur book slug."""
-    chapter, _, verse = spec.partition(":")
-    return VerseRef(book, int(chapter), int(verse))
+    """Parse hebcal's ``"chapter:verse"`` form against an opensiddur book slug.
+
+    A half-verse marker is read as the whole verse containing it, since a URN addresses whole
+    verses; ``hebcal_ref_half`` recovers which half was meant so the reading can say so.
+    """
+    match = _HEBCAL_REF.match(spec)
+    if match is None:
+        raise ValueError(f"Unparseable hebcal reference {spec!r} in {book}")
+    return VerseRef(book, int(match.group(1)), int(match.group(2)))
+
+
+def hebcal_ref_half(spec: str) -> str | None:
+    """Which half of the verse a reference names — ``"a"``, ``"b"``, or None for the whole."""
+    match = _HEBCAL_REF.match(spec)
+    if match is None:
+        raise ValueError(f"Unparseable hebcal reference {spec!r}")
+    return match.group(3) or None
