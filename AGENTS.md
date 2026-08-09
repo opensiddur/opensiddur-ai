@@ -20,6 +20,15 @@ Any specifications for agents to build code should be stored in the specs/ direc
 
 ## Commands
 
+**Set up a fresh checkout or worktree** — run both before trusting a test run:
+```bash
+uv sync --all-groups
+bash scripts/build-schema.sh
+```
+The compiled schema artifacts are gitignored, so a new worktree has none. Without them
+~47 validation tests fail in a way that looks like a real regression rather than missing
+setup.
+
 **Run code:**
 ```bash
 uv run python <script.py>
@@ -154,3 +163,5 @@ Contributor credits are **not** a `j:` element. They belong in the TEI header as
 - Write tests in `unittest` style.
 - Mock external calls (LLM APIs, file I/O where appropriate).
 - The CI runs `unittest discover`, but `uv run pytest` also works locally.
+- A pile of validation failures in a new worktree usually means the schema has not been
+  compiled yet — see the setup step at the top of Commands.
