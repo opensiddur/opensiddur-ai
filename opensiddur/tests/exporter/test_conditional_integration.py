@@ -330,5 +330,90 @@ class TestInlineConditionalTails(unittest.TestCase):
         self.assertNotIn("dropped", out)
 
 
+class TestRiteConditions(unittest.TestCase):
+    """The opensiddur:rite feature structure, as used by haftarah rite variants.
+
+    Rites are one independently settable binary feature each rather than a single
+    enumerated value, so that a comparative edition can select several at once and get
+    every selected variant. See schema/JLPTEI-3.md, "Rite".
+    """
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.base = Path(self.temp_dir.name)
+        self.project_dir = self.base / "test_project"
+        self.project_dir.mkdir(parents=True)
+        get_linear_data().xml_cache.base_path = self.base
+
+    def _variant(self, rite: str, heading: str, text: str) -> str:
+        return f'''
+            <j:conditional xml:id="rite_{rite}">
+                <tei:fs type="opensiddur:rite">
+                    <tei:f name="{rite}"><tei:binary value="true"/></tei:f>
+                </tei:fs>
+            </j:conditional>
+            <tei:div><tei:head>{heading}</tei:head><tei:p>{text}</tei:p></tei:div>
+            <j:endConditional target="#rite_{rite}"/>
+        '''
+
+    def _compile_with_rites(self, **rites: bool) -> str:
+        """Write a haftarah with three rite variants and compile it under the given rites."""
+        body = (
+            self._variant("ashkenaz", "מנהג אשכנז", "ashkenazi haftarah")
+            + self._variant("sepharad", "מנהג ספרד", "sephardi haftarah")
+            + self._variant("teimani_baladi", "מנהג תימן בלדי", "teimani haftarah")
+        )
+        path = self.project_dir / "haftarah.xml"
+        path.write_bytes(_text_xml(body))
+        if rites:
+            CompilerProcessor.load_init_settings(
+                get_linear_data(),
+                yaml_to_declaration_entries({"opensiddur:rite": dict(rites)}),
+            )
+        return etree.tostring(
+            CompilerProcessor("test_project", "haftarah.xml").process(), encoding="unicode"
+        )
+
+    def test_unset_rite_keeps_every_variant_with_its_heading(self):
+        """The default for a printed humash: no rite chosen, so all variants stay.
+
+        An undefined feature evaluates to UNDEFINED rather than false, which keeps the
+        passage together with the heading that says whose custom it is.
+        """
+        out = self._compile_with_rites()
+        for text in ("ashkenazi haftarah", "sephardi haftarah", "teimani haftarah"):
+            self.assertIn(text, out)
+        for heading in ("מנהג אשכנז", "מנהג ספרד", "מנהג תימן בלדי"):
+            self.assertIn(heading, out)
+
+    def test_single_rite_selects_only_that_variant(self):
+        out = self._compile_with_rites(ashkenaz=True, sepharad=False, teimani_baladi=False)
+        self.assertIn("ashkenazi haftarah", out)
+        self.assertNotIn("sephardi haftarah", out)
+        self.assertNotIn("teimani haftarah", out)
+
+    def test_two_rites_true_at_once_keep_both_variants(self):
+        """The reason rites are per-rite binaries: a comparative edition wants several."""
+        out = self._compile_with_rites(ashkenaz=True, sepharad=False, teimani_baladi=True)
+        self.assertIn("ashkenazi haftarah", out)
+        self.assertIn("teimani haftarah", out)
+        self.assertNotIn("sephardi haftarah", out)
+
+    def test_unlisted_rite_name_is_accepted(self):
+        """The rite list is open: a rite absent from the documented set still works."""
+        path = self.project_dir / "romaniote.xml"
+        path.write_bytes(_text_xml(self._variant("romaniote", "מנהג רומניוט", "romaniote haftarah")))
+        CompilerProcessor.load_init_settings(
+            get_linear_data(),
+            yaml_to_declaration_entries({"opensiddur:rite": {"romaniote": True}}),
+        )
+        out = etree.tostring(
+            CompilerProcessor("test_project", "romaniote.xml").process(), encoding="unicode"
+        )
+        self.assertIn("romaniote haftarah", out)
+
+
 if __name__ == "__main__":
     unittest.main()
