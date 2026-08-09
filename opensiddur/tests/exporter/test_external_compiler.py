@@ -819,6 +819,144 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertIn("Start element", full_result)
         self.assertIn("End element", full_result)
 
+    def test_marker_mode_transclusion_before_start_is_not_emitted(self):
+        """Regression (#63): same leak as #53, but in the marker-mode child loop.
+
+        A j:transclude preceding the range's start, as a direct child of a STRUCTURAL_BLOCKS
+        element compiled in marker mode, must not be resolved, emitted, or bracketed with
+        p:suspend/p:resume.
+        """
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0"
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>Main document text
+        <jlp:transclude target="#pre-fragment" type="external"/> Tail after pre-transclude (excluded)
+        <tei:p xml:id="start">Start element</tei:p> Tail after start
+        <jlp:transclude target="#fragment-start"
+                        targetEnd="#fragment-end"
+                        type="external"/> Tail after transclusion
+        <tei:p xml:id="end">End element</tei:p>
+    </tei:div>
+</root>'''
+
+        external_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>External document text
+        <tei:p xml:id="pre-fragment">PRE-START LEAKED CONTENT</tei:p>
+        <tei:p xml:id="fragment-start" type="fragment" n="1">Transcluded start</tei:p>
+        <tei:p xml:id="fragment-end" type="fragment" n="3">Transcluded end</tei:p>
+    </tei:div>
+</root>'''
+
+        project, file_name = self._create_test_file("main.xml", main_xml_content)
+
+        external_tree = etree.fromstring(external_xml_content)
+        linear_data = get_linear_data()
+        original_parse_xml = linear_data.xml_cache.parse_xml
+
+        def mock_parse_xml(*args, **kwargs):
+            if len(args) == 1 and hasattr(args[0], '__fspath__'):
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree
+                return mock_tree
+            elif len(args) == 2 and args[0] == 'external_project':
+                mock_tree = MagicMock()
+                mock_tree.getroot.return_value = external_tree
+                return mock_tree
+            else:
+                return original_parse_xml(*args, **kwargs)
+
+        ext_tree_root = etree.fromstring(external_xml_content)
+        ext_tree_obj = ext_tree_root.getroottree()
+        xml_ns = 'http://www.w3.org/XML/1998/namespace'
+
+        def ext_path(xml_id: str) -> str:
+            elem = ext_tree_root.xpath(f"//*[@xml:id='{xml_id}']", namespaces={'xml': xml_ns})[0]
+            return ext_tree_obj.getpath(elem)
+
+        resolve_range_calls = []
+
+        def mock_resolve_range(urn_range):
+            resolve_range_calls.append(urn_range)
+            if urn_range == "#pre-fragment":
+                return [ResolvedUrn(urn=urn_range, project="external_project",
+                                     file_name="external.xml", element_path=ext_path("pre-fragment"))]
+            elif urn_range == "#fragment-start":
+                return [ResolvedUrn(urn=urn_range, project="external_project",
+                                     file_name="external.xml", element_path=ext_path("fragment-start"))]
+            elif urn_range == "#fragment-end":
+                return [ResolvedUrn(urn=urn_range, project="external_project",
+                                     file_name="external.xml", element_path=ext_path("fragment-end"))]
+            return []
+
+        def mock_prioritize_range(urns, priority_list, return_all=False):
+            if urns and len(urns) > 0:
+                return urns[0]
+            return None
+
+        def mock_get_path_from_urn(resolved_urn):
+            return Path(self.temp_dir.name) / "external_project" / "external.xml"
+
+        start_path = self._get_element_path(main_xml_content, "#start")
+        end_path = self._get_element_path(main_xml_content, "#end")
+
+        with patch.object(linear_data.xml_cache, 'parse_xml', side_effect=mock_parse_xml):
+            with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+                with patch('opensiddur.exporter.compiler.UrnResolver.prioritize_range', side_effect=mock_prioritize_range):
+                    with patch('opensiddur.exporter.compiler.UrnResolver.get_path_from_urn', side_effect=mock_get_path_from_urn):
+                        processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
+                        processor.marker_stack = []
+                        result = processor.process()
+
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+
+        # The pre-start transclusion must not have leaked into the output...
+        self.assertNotIn("PRE-START LEAKED CONTENT", full_result)
+        # ...and must never have been resolved at all (not just resolved-then-discarded).
+        self.assertNotIn("#pre-fragment", resolve_range_calls)
+        # ...and must not have emitted suspend/resume brackets for a transclusion that
+        # was never actually opened: the only transclusion in range is the in-range one,
+        # so exactly one suspend/resume pair (for a single-deep marker_stack) is expected.
+        self.assertEqual(full_result.count("suspend"), 1)
+        self.assertEqual(full_result.count("resume"), 1)
+
+        # The in-range transclusion is still resolved normally, with its brackets intact
+        # (positive control: the fix must not disturb legitimate marker-mode behavior).
+        self.assertIn("Transcluded start", full_result)
+        self.assertIn("Transcluded end", full_result)
+
+    def test_marker_mode_unresolvable_transclusion_before_start_is_ignored(self):
+        """Regression (#63): an unresolvable target on a pre-start transclusion must not raise
+        in marker mode either."""
+        main_xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0"
+                                     xmlns:jlp="http://jewishliturgy.org/ns/jlptei/2"
+                                     xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <tei:div>Main document text
+        <jlp:transclude target="#does-not-exist" type="external"/> Tail after pre-transclude (excluded)
+        <tei:p xml:id="start">Start element</tei:p> Tail after start
+        <tei:p xml:id="end">End element</tei:p>
+    </tei:div>
+</root>'''
+
+        project, file_name = self._create_test_file("main.xml", main_xml_content)
+
+        def mock_resolve_range(urn_range):
+            # Unresolvable: no project defines this target.
+            return []
+
+        start_path = self._get_element_path(main_xml_content, "#start")
+        end_path = self._get_element_path(main_xml_content, "#end")
+
+        with patch('opensiddur.exporter.compiler.UrnResolver.resolve_range', side_effect=mock_resolve_range):
+            processor = ExternalCompilerProcessor(project, file_name, start_path, end_path)
+            processor.marker_stack = []
+            result = processor.process()
+
+        result_strs = [etree.tostring(elem, encoding='unicode') for elem in result]
+        full_result = ''.join(result_strs)
+        self.assertIn("Start element", full_result)
+        self.assertIn("End element", full_result)
+
     def test_hierarchy_crossing_start_equals_end(self):
         """Test ExternalCompilerProcessor when start equals end (single element)."""
         xml_content = b'''<root xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">

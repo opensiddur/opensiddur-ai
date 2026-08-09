@@ -153,6 +153,21 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 and child.get('type', 'external') == 'external'
             )
             if is_external_transclude:
+                child_context = self._update_processing_context_before(child)
+
+                if child_context["command"] == _ProcessingCommand.SKIP:
+                    # After the range's end: _process_element would return [] here too,
+                    # without calling _update_processing_context_after (see its SKIP branch).
+                    continue
+
+                if child_context["command"] == _ProcessingCommand.RECURSE:
+                    # Before the range's start (#63, same root cause as #53): don't resolve
+                    # the transclusion or emit suspend/resume brackets for it at all.
+                    if child.tail:
+                        self._carry_dropped_tail(result, child)
+                    self._update_processing_context_after(child)
+                    continue
+
                 # Suspend: LIFO, no pop
                 for sid, selem in reversed(self.marker_stack):
                     suspend = etree.Element(selem.tag, nsmap=self.ns_map)
@@ -173,6 +188,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
                 if child.tail and result:
                     result[-1].tail = (result[-1].tail or '') + child.tail
+
+                self._update_processing_context_after(child)
             else:
                 child_result = self._process_element(child, root)
                 result.extend(child_result)
