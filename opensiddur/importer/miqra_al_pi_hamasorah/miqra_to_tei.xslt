@@ -90,14 +90,30 @@
 
   <!-- Flatten each TSV row into nav markers + verse runs. -->
   <xsl:template match="miqra:row" mode="flatten">
-    <!-- Column C: only parashah markers structure paragraphs; // line breaks are cosmetic. -->
-    <xsl:apply-templates select="miqra:nav/miqra:parashah" mode="flatten"/>
+    <!-- Column C: only parashah markers structure paragraphs; // line breaks are cosmetic.
+         A break the source wrapped in {{נוסח}} — because another witness reads it
+         differently — is still MAM's own break and must reach the body. -->
+    <xsl:apply-templates
+        select="miqra:nav/(miqra:parashah | miqra:variant[miqra:display/miqra:parashah])"
+        mode="flatten"/>
     <!-- The row's own identity, bound before any grouping: inside xsl:for-each-group the
          context item is a member of the group, not the row. -->
     <xsl:variable name="chapter" select="string(@chapter)"/>
     <xsl:variable name="verse" select="string(@verse)"/>
     <xsl:variable name="fileName" select="string(ancestor::miqra:book/@fileName)"/>
+    <!-- The rest of the column C/D notes annotate the row — a break another witness has
+         but MAM does not, a seder marker, a free {{מ:הערה}} — rather than a point in the
+         verse, so they anchor at the head of the verse. Without this the standOff note
+         survives and its target does not resolve. -->
+    <xsl:variable name="row-anchors" as="element()*">
+      <xsl:for-each select="
+        (miqra:nav | miqra:scaffold)/miqra:variant[@noteId][not(miqra:display/miqra:parashah)]">
+        <miqra:anchor xml:id="{@noteId}-ref"/>
+      </xsl:for-each>
+      <xsl:copy-of select="(miqra:nav | miqra:scaffold)//miqra:anchor"/>
+    </xsl:variable>
     <xsl:variable name="text-nodes" as="node()*">
+      <xsl:sequence select="$row-anchors"/>
       <xsl:apply-templates select="miqra:text/node()" mode="hoist"/>
     </xsl:variable>
     <xsl:choose>
@@ -137,6 +153,15 @@
 
   <xsl:template match="miqra:parashah" mode="flatten">
     <xsl:copy-of select="."/>
+  </xsl:template>
+
+  <!-- The anchor follows the break so it becomes the first member of the new group, which
+       puts it at the head of the paragraph the break opens. -->
+  <xsl:template match="miqra:variant[miqra:display/miqra:parashah]" mode="flatten">
+    <xsl:copy-of select="miqra:display/miqra:parashah"/>
+    <xsl:if test="@noteId">
+      <miqra:anchor xml:id="{@noteId}-ref"/>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="miqra:lb" mode="flatten">
@@ -300,6 +325,14 @@
 
   <xsl:template match="miqra:anchor" mode="inline">
     <!-- Use tei:seg instead of tei:anchor because annotations get inserted as children. -->
+    <tei:seg>
+      <xsl:copy-of select="@xml:id"/>
+    </tei:seg>
+  </xsl:template>
+
+  <!-- An anchor lifted out of column C sits beside the parashah breaks, not inside a verse,
+       so it reaches mode="block"; without this rule the built-in one would discard it. -->
+  <xsl:template match="miqra:anchor" mode="block">
     <tei:seg>
       <xsl:copy-of select="@xml:id"/>
     </tei:seg>
