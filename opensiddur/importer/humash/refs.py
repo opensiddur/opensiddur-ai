@@ -22,16 +22,45 @@ UNIT_PARSHA = "parsha.annual"
 UNIT_ALIYAH = "aliyah.annual"
 UNIT_WEEKDAY = "aliyah.weekday"
 UNIT_MAFTIR = "maftir.annual"
+
+# The divisions of a week on which two parshiyot are read together. They are a separate
+# division of the same text, not a subdivision of either single: the fourth aliyah of the
+# combined Vayakhel-Pekudei is Exodus 38:1-39:1, which runs straight through the point where
+# Pekudei begins. So they are contained by parsha.combined and not by parsha.annual, which
+# would cut them at that boundary.
+UNIT_PARSHA_COMBINED = "parsha.combined"
+UNIT_ALIYAH_COMBINED = "aliyah.combined"
+UNIT_WEEKDAY_COMBINED = "aliyah.weekday.combined"
+UNIT_MAFTIR_COMBINED = "maftir.combined"
+
 # Each year of the triennial cycle is its own division of the same text, and consecutive
 # years deliberately overlap — in Beshalach, year 1's fifth aliyah and year 2's first are the
 # same verses — so each year needs a unit-space of its own.
 UNIT_TRIENNIAL = "aliyah.triennial"
 UNIT_TRIENNIAL_MAFTIR = "maftir.triennial"
 
+# The variation of a parshah that is sometimes read combined: how it divides depends on
+# whether it was read alone or with its partner in each year of the cycle, so its unit-space
+# carries the variation as well as the year. See readings.triennial.
+VARIATION_COMBINED = "combined"
 
-def triennial_unit(year: int, maftir: bool = False) -> str:
+
+def triennial_unit(
+    year: int,
+    maftir: bool = False,
+    variation: str | None = None,
+    owner: str | None = None,
+) -> str:
+    """The unit-space of one year of one triennial division.
+
+    A parshah that shares a file with its partner names itself as the owner, because the two
+    divide the same file and may cover the same verses: in the cycle hebcal calls IL3, Behar
+    read alone in year 2 is Leviticus 25:39-26:46, which runs well into Bechukotai. Sharing a
+    unit-space would cut one of them short at the other's first marker.
+    """
     base = UNIT_TRIENNIAL_MAFTIR if maftir else UNIT_TRIENNIAL
-    return f"{base}.{year}"
+    parts = [base, owner, variation, str(year)]
+    return ".".join(part for part in parts if part)
 
 # The five books, in order, as MAM names them in Hebrew.
 TORAH_BOOKS: tuple[tuple[str, str, str], ...] = (
@@ -167,6 +196,10 @@ class ReadingSpan:
     # four chapters of DIVERGENT_CHAPTER_VERSES: MAM supplies the weekly aliyot in its own
     # numbering, while everything taken from hebcal follows the common printed editions.
     numbering: str = "masorah"
+    # The reading this span's URN hangs off, where that is not the file it is emitted in. Set
+    # for the two parshiyot of a pair, which share a file but keep their own URN spaces:
+    # without it their identically numbered aliyot would both be .../vayakhel_pekudei/1.
+    owner: str | None = None
 
     @property
     def book(self) -> str:

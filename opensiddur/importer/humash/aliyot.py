@@ -15,8 +15,12 @@ The parameters are:
 ב2   the weekday honour — כהן, לוי, ישראל, or ע"כ ישראל
 ב3   מפטיר
 ג0   the parshah name when this week is combined with the next, e.g. ויקהל–פקודי
-ג1/ג3 the Shabbat aliyah or maftir of that combined reading
+ג1/ג2/ג3 the Shabbat aliyah, weekday honour or maftir of that combined reading
 ==== ================================================================================
+
+The ``ג`` parameters are a second, independent division of the same text: the combined
+reading's fourth aliyah runs through the point where the second parshah begins, so it is read
+into its own unit-spaces rather than as a subdivision of either single.
 
 Ends are not marked and must be inferred, separately within each unit-space, from the next
 start in that same space — which is why the maftir, whose start falls inside the seventh
@@ -33,13 +37,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from opensiddur.importer.miqra_al_pi_hamasorah.convert_tsv import _hebrew_numeral_to_int
-from opensiddur.importer.humash.names import slug_for_hebrew
+from opensiddur.importer.humash.names import (
+    PAIR_MEMBERS,
+    slug_for_combined_hebrew,
+    slug_for_hebrew,
+)
 from opensiddur.importer.humash.refs import (
     HEBREW_BOOK_TO_SLUG,
     UNIT_ALIYAH,
+    UNIT_ALIYAH_COMBINED,
     UNIT_MAFTIR,
+    UNIT_MAFTIR_COMBINED,
     UNIT_PARSHA,
+    UNIT_PARSHA_COMBINED,
     UNIT_WEEKDAY,
+    UNIT_WEEKDAY_COMBINED,
     ReadingSpan,
     VerseRef,
     chapters_in_book,
@@ -82,6 +94,48 @@ class Parsha:
 
     def spans_in(self, unit: str) -> list[ReadingSpan]:
         return [span for span in self.spans if span.unit == unit]
+
+
+@dataclass
+class CombinedParsha:
+    """A pair read together on one Shabbat, with the divisions of that combined reading.
+
+    It covers exactly the two singles' text end to end; those keep their own divisions, which
+    are what is read on a year the pair is read apart.
+    """
+
+    slug: str
+    hebrew_name: str
+    book: str
+    members: tuple[str, str]
+    start: VerseRef
+    end: VerseRef
+    spans: list[ReadingSpan] = field(default_factory=list)
+
+    @property
+    def parsha_span(self) -> ReadingSpan:
+        return ReadingSpan(UNIT_PARSHA_COMBINED, self.slug, self.start, self.end)
+
+    def spans_in(self, unit: str) -> list[ReadingSpan]:
+        return [span for span in self.spans if span.unit == unit]
+
+
+@dataclass(frozen=True)
+class _Division:
+    """One of the two divisions a marker may carry: the single reading or the combined one."""
+
+    aliyah_key: str
+    weekday_key: str
+    maftir_key: str
+    aliyah_unit: str
+    weekday_unit: str
+    maftir_unit: str
+
+
+SINGLE_DIVISION = _Division("ב1", "ב2", "ב3", UNIT_ALIYAH, UNIT_WEEKDAY, UNIT_MAFTIR)
+COMBINED_DIVISION = _Division(
+    "ג1", "ג2", "ג3", UNIT_ALIYAH_COMBINED, UNIT_WEEKDAY_COMBINED, UNIT_MAFTIR_COMBINED
+)
 
 
 @dataclass
@@ -165,7 +219,22 @@ def _close_spans(
 
 def parse_parshiyot(sourcetexts_root: Path | None = None) -> list[Parsha]:
     """Build the 54 weekly parshiyot, each with its aliyot, weekday aliyot and maftir."""
+    return parse_readings(sourcetexts_root)[0]
+
+
+def parse_readings(
+    sourcetexts_root: Path | None = None,
+) -> tuple[list[Parsha], list[CombinedParsha]]:
+    """The 54 weekly parshiyot and the seven combined readings, from one pass over the TSV."""
     markers = read_markers(sourcetexts_root)
+    parshiyot = _parse_parshiyot(markers, sourcetexts_root)
+    return parshiyot, _parse_combined(markers, parshiyot, sourcetexts_root)
+
+
+def _parse_parshiyot(
+    markers: list[_Marker],
+    sourcetexts_root: Path | None = None,
+) -> list[Parsha]:
 
     # Group markers by parshah, in the order the parshiyot appear.
     parshiyot: list[Parsha] = []
@@ -193,13 +262,56 @@ def parse_parshiyot(sourcetexts_root: Path | None = None) -> list[Parsha]:
             parsha.end = _end_of_book(parsha.book, sourcetexts_root)
 
     for parsha in parshiyot:
-        parsha.spans = _spans_for(grouped[parsha.slug], parsha, sourcetexts_root)
+        parsha.spans = _spans_for(
+            grouped[parsha.slug], parsha.end, SINGLE_DIVISION, sourcetexts_root
+        )
     return parshiyot
+
+
+def _parse_combined(
+    markers: list[_Marker],
+    parshiyot: list[Parsha],
+    sourcetexts_root: Path | None = None,
+) -> list[CombinedParsha]:
+    """Build the combined readings out of the ``ג`` parameters of the same markers.
+
+    The pair's extent is taken from its two members rather than from the markers, so that it
+    ends where the second parshah ends even though the last marker falls before that.
+    """
+    by_slug = {parsha.slug: parsha for parsha in parshiyot}
+    grouped: dict[str, list[_Marker]] = {}
+    order: list[str] = []
+    for marker in markers:
+        name = marker.params.get("ג0")
+        if not name:
+            continue
+        slug = slug_for_combined_hebrew(name)
+        if slug not in grouped:
+            grouped[slug] = []
+            order.append(slug)
+        grouped[slug].append(marker)
+
+    combined: list[CombinedParsha] = []
+    for slug in order:
+        first_slug, second_slug = PAIR_MEMBERS[slug]
+        first, second = by_slug[first_slug], by_slug[second_slug]
+        pair = CombinedParsha(
+            slug=slug,
+            hebrew_name=grouped[slug][0].params["ג0"],
+            book=first.book,
+            members=(first_slug, second_slug),
+            start=first.start,
+            end=second.end,
+        )
+        pair.spans = _spans_for(grouped[slug], pair.end, COMBINED_DIVISION, sourcetexts_root)
+        combined.append(pair)
+    return combined
 
 
 def _spans_for(
     markers: list[_Marker],
-    parsha: Parsha,
+    reading_end: VerseRef,
+    division: _Division,
     sourcetexts_root: Path | None,
 ) -> list[ReadingSpan]:
     """Close each unit-space's markers into spans independently of the others."""
@@ -210,26 +322,26 @@ def _spans_for(
 
     for marker in markers:
         params = marker.params
-        aliyah = params.get("ב1")
+        aliyah = params.get(division.aliyah_key)
         if aliyah in ALIYAH_NUMBER:
             aliyah_starts.append((ALIYAH_NUMBER[aliyah], marker.ref, None))
-        honour = params.get("ב2")
+        honour = params.get(division.weekday_key)
         if honour in WEEKDAY_NUMBER:
             weekday_starts.append((WEEKDAY_NUMBER[honour], marker.ref, None))
         elif honour == WEEKDAY_END:
             # "Thus far Yisrael" marks where the weekday reading stops, so the last weekday
-            # aliyah ends at the preceding verse rather than running on to the parshah's end.
+            # aliyah ends at the preceding verse rather than running on to the reading's end.
             weekday_end = previous_verse(marker.ref, sourcetexts_root)
-        if params.get("ב3") == MAFTIR:
+        if params.get(division.maftir_key) == MAFTIR:
             maftir_start = marker.ref
 
-    spans = _close_spans(aliyah_starts, UNIT_ALIYAH, parsha.end, sourcetexts_root)
+    spans = _close_spans(aliyah_starts, division.aliyah_unit, reading_end, sourcetexts_root)
     spans += _close_spans(
-        weekday_starts, UNIT_WEEKDAY, weekday_end or parsha.end, sourcetexts_root
+        weekday_starts, division.weekday_unit, weekday_end or reading_end, sourcetexts_root
     )
     if maftir_start is not None:
-        # The maftir runs to the end of the parshah, overlapping the seventh aliyah.
+        # The maftir runs to the end of the reading, overlapping the seventh aliyah.
         spans.append(
-            ReadingSpan(UNIT_MAFTIR, MAFTIR, maftir_start, parsha.end)
+            ReadingSpan(division.maftir_unit, MAFTIR, maftir_start, reading_end)
         )
     return spans

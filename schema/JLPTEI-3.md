@@ -833,6 +833,25 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="israel-parsha">
       <tei:string/>
    </tei:f>
+   <!-- One per pair of parshiyot that is sometimes read combined; see below. -->
+   <tei:f name="triennial-pattern-vayakhel-pekudei">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-tazria-metzora">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-achrei-mot-kedoshim">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-behar-bechukotai">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-chukat-balak">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-matot-masei">
+      <tei:string/>
+   </tei:f>
    <tei:f name="shabbat-shuva">
       <tei:binary/>
    </tei:f>
@@ -859,6 +878,31 @@ The weekly parsha and special additions can also be calculated:
    </tei:f>
 </tei:fs>
 ```
+
+Each `triennial-pattern-` feature describes the three-year triennial cycle the date falls in,
+not the date itself: one character per year of the cycle, `T` where that pair of parshiyot was
+read together and `S` where the two were read apart. `TSS` therefore means the pair was
+combined in the first year of the cycle and separate in the second and third.
+
+Six pairs have one, because the triennial division of a parshah that is sometimes doubled
+depends on how the pair fell across the whole cycle rather than on the cycle year alone. A
+text that divides differently per pattern conditions each division on the patterns it belongs
+to, as the humash does:
+
+```xml
+<j:conditional xml:id="triennial_1">
+   <j:any>
+      <tei:fs type="opensiddur:torah-reading">
+         <tei:f name="triennial-pattern-vayakhel-pekudei"><tei:string>TSS</tei:string></tei:f>
+      </tei:fs>
+   </j:any>
+</j:conditional>
+```
+
+The value is reckoned for the diaspora or for Israel according to `opensiddur:israel`, since
+the two diverge whenever a festival falling on Shabbat puts them a week apart. No separate
+test on `opensiddur:israel` is needed alongside the pattern: a pattern that can only arise in
+Israel selects an Israel division on its own.
 
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)

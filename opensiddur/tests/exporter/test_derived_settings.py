@@ -5,8 +5,14 @@ import unittest
 from pathlib import Path
 
 import yaml
+from lxml import etree
 
 from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.condition_eval import (
+    TriState,
+    evaluate_condition,
+    parse_condition_element,
+)
 from opensiddur.exporter.conditional_settings import (
     INIT_DECLARE_ID,
     yaml_to_declaration_entries,
@@ -287,6 +293,39 @@ class TestGoldenCalendarDates(unittest.TestCase):
         )
         self.assertEqual(
             get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah").value, 1
+        )
+
+    def test_a_triennial_variation_condition_selects_on_the_declared_date(self):
+        """The condition the humash puts on the twelve doubled parshiyot, end to end.
+
+        A parshah that is sometimes read with its partner divides differently depending on how
+        the pair fell across the cycle, so each division is conditioned on the patterns that
+        select it. With a date declared, only the live one survives.
+        """
+        def condition(*patterns: str):
+            alternatives = "".join(
+                f'<tei:fs type="opensiddur:torah-reading">'
+                f'<tei:f name="triennial-pattern-vayakhel-pekudei">'
+                f"<tei:string>{pattern}</tei:string></tei:f></tei:fs>"
+                for pattern in patterns
+            )
+            element = etree.fromstring(
+                f'<j:conditional xmlns:j="{J}" xmlns:tei="{TEI}" xml:id="c">'
+                f"<j:any>{alternatives}</j:any></j:conditional>".encode()
+            )
+            return parse_condition_element(element)
+
+        processor = CompilerProcessor.__new__(CompilerProcessor)
+        processor.linear_data = self.linear_data
+
+        # Undeclared, every variation is kept, the way an undeclared rite keeps every rite.
+        self.assertEqual(evaluate_condition(condition("TSS"), processor), TriState.UNDEFINED)
+
+        # 5786 opens a cycle in which the pair falls together, apart, together.
+        self._load({"opensiddur:gregorian-date": {"year": 2025, "month": 11, "day": 1}})
+        self.assertEqual(evaluate_condition(condition("TST"), processor), TriState.TRUE)
+        self.assertEqual(
+            evaluate_condition(condition("TSS", "SSS"), processor), TriState.FALSE
         )
 
     def test_torah_reading_parsha(self):

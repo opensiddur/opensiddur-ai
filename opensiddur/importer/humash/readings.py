@@ -13,13 +13,19 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from opensiddur.importer.humash.names import HEBCAL_TO_SLUG, slugify_reading_name
+from opensiddur.importer.humash.names import (
+    HEBCAL_TO_SLUG,
+    PAIR_FOR_MEMBER,
+    PAIR_MEMBERS,
+    slugify_reading_name,
+)
 from opensiddur.importer.humash.refs import (
     BOOK_NUMBER_TO_SLUG,
     NUMBERING_COMMON,
     HEBCAL_BOOK_TO_SLUG,
     UNIT_ALIYAH,
     UNIT_MAFTIR,
+    VARIATION_COMBINED,
     triennial_unit,
     ReadingSpan,
     VerseRef,
@@ -184,43 +190,113 @@ def festival_readings(sourcetexts_root: Path | None = None) -> dict[str, dict]:
     return result
 
 
-def triennial(sourcetexts_root: Path | None = None) -> dict[str, dict[int, list[ReadingSpan]]]:
-    """The modern triennial division of each parshah, by slug then cycle year (1-3)."""
+def _division_spans(
+    aliyot: dict,
+    book: str,
+    year: int,
+    variation: str | None,
+    owner: str | None,
+) -> list[ReadingSpan]:
+    """One year's aliyot, as spans of the unit-space that year and variation own."""
+    spans: list[ReadingSpan] = []
+    for label, value in (aliyot or {}).items():
+        if not isinstance(value, list) or len(value) < 2:
+            continue
+        maftir = label == "M"
+        name = "maftir" if maftir else label
+        # The maftir re-reads the close of that year's seventh aliyah, so like the annual
+        # maftir it needs a unit-space of its own or it would cut the aliyah short; and each
+        # cycle year needs one because the years overlap each other.
+        spans.append(ReadingSpan(
+            unit=triennial_unit(year, maftir=maftir, variation=variation, owner=owner),
+            label=f"{year}.{name}" if variation is None else f"{variation}.{year}.{name}",
+            start=parse_hebcal_ref(book, value[0]),
+            end=parse_hebcal_ref(book, value[1]),
+            numbering=NUMBERING_COMMON,
+            owner=owner,
+        ))
+    return spans
+
+
+def triennial(
+    sourcetexts_root: Path | None = None,
+) -> dict[str, dict[tuple[str | None, int], list[ReadingSpan]]]:
+    """The modern triennial division of each reading, by slug then (variation, cycle year).
+
+    Most parshiyot hold the three years under "years" and have no variation, so their key is
+    ``(None, year)``. The twelve that may be read combined with their partner divide
+    differently depending on whether they were read alone in each year of the cycle, and hold
+    a "variations" object keyed ``"<variation>.<year>"`` — ``"C.2"`` is year 2 of variation C.
+    Which variation a cycle uses follows from its combine/separate pattern; see
+    ``triennial_patterns``. A variation may be an alias for another, written as a string
+    rather than an object, and is followed here so that every key yields real aliyot.
+
+    The seven combined readings are keyed by the pair's own slug, with variation
+    ``VARIATION_COMBINED``: they are what is read on a year the pair is read together.
+    """
     data = _load("triennial.json", sourcetexts_root)
-    result: dict[str, dict[int, list[ReadingSpan]]] = {}
+    result: dict[str, dict[tuple[str | None, int], list[ReadingSpan]]] = {}
     for name, entry in data.items():
         slug = HEBCAL_TO_SLUG.get(name)
         if slug is None:
             continue
         book = BOOK_NUMBER_TO_SLUG[entry["book"]]
-        years: dict[int, list[ReadingSpan]] = {}
-        # Most entries hold the three years under "years". Those whose division depends on
-        # whether the parshah is read alone or combined that year use "variations" instead,
-        # keyed either "Y.n" — the same fixed three years — or by a year-pattern name such as
-        # "C.2", which cannot be reduced to a cycle year and is skipped.
-        divisions = entry.get("years") or entry.get("variations") or {}
-        for year_key, aliyot in divisions.items():
+        combined = slug in PAIR_MEMBERS
+        # A parshah with a partner shares that pair's file, so its variations carry its slug.
+        # The combined reading and the 42 that stand alone own their file and do not.
+        owner = slug if slug in PAIR_FOR_MEMBER else None
+        divisions: dict[tuple[str | None, int], list[ReadingSpan]] = {}
+
+        for year_key, aliyot in (entry.get("years") or {}).items():
             if not year_key.startswith("Y.") or not isinstance(aliyot, dict):
                 continue
             year = int(year_key.split(".", 1)[1])
-            spans: list[ReadingSpan] = []
-            for label, value in (aliyot or {}).items():
-                if not isinstance(value, list) or len(value) < 2:
-                    continue
-                # The maftir re-reads the close of that year's seventh aliyah, so like the
-                # annual maftir it needs a unit-space of its own or it would cut the aliyah
-                # short; and each cycle year needs one because the years overlap each other.
-                spans.append(ReadingSpan(
-                    unit=triennial_unit(year, maftir=label == "M"),
-                    label=f"{year}.{'maftir' if label == 'M' else label}",
-                    start=parse_hebcal_ref(book, value[0]),
-                    end=parse_hebcal_ref(book, value[1]),
-                    numbering=NUMBERING_COMMON,
-                ))
+            variation = VARIATION_COMBINED if combined else None
+            spans = _division_spans(aliyot, book, year, variation, owner)
             if spans:
-                years[year] = spans
-        if years:
-            result[slug] = years
+                divisions[(variation, year)] = spans
+
+        variations = entry.get("variations") or {}
+        for variation_key, aliyot in variations.items():
+            # An alias names another variation whose division is identical.
+            while isinstance(aliyot, str):
+                aliyot = variations.get(aliyot)
+            if not isinstance(aliyot, dict):
+                continue
+            variation, _, year_part = variation_key.rpartition(".")
+            if not year_part.isdigit():
+                continue
+            year = int(year_part)
+            # "Y" is hebcal's name for "no variation": the fixed three years.
+            variation = None if variation == "Y" else variation
+            spans = _division_spans(aliyot, book, year, variation, owner)
+            if spans:
+                divisions[(variation, year)] = spans
+
+        if divisions:
+            result[slug] = divisions
+    return result
+
+
+def triennial_patterns(sourcetexts_root: Path | None = None) -> dict[str, dict[str, str]]:
+    """Which variation each combine/separate pattern selects, by pair slug.
+
+    The pattern is one character per year of the cycle — ``T`` where the pair was read
+    together that year, ``S`` where apart — so ``{"TSS": "C"}`` says that a cycle which read
+    the pair together only in its first year divides the two singles as variation C. The
+    patterns that resolve to an Israel variation are disjoint from the diaspora ones, so the
+    pattern alone identifies the variation and no separate Israel test is needed.
+    """
+    data = _load("triennial.json", sourcetexts_root)
+    result: dict[str, dict[str, str]] = {}
+    for name, entry in data.items():
+        slug = HEBCAL_TO_SLUG.get(name)
+        # Lech-Lecha is hyphenated but is one parshah, so the pair table decides, not the name.
+        if slug not in PAIR_MEMBERS:
+            continue
+        patterns = entry.get("patterns")
+        if patterns:
+            result[slug] = dict(patterns)
     return result
 
 

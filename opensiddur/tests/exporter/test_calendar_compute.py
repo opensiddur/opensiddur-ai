@@ -229,6 +229,34 @@ class TestComputeFunctions(unittest.TestCase):
         self.assertIn("diaspora-parsha", result)
         self.assertIn("shabbat-shuva", result)
 
+    def test_triennial_pattern_describes_the_whole_cycle(self):
+        """One character per year of the cycle: T where the pair was read together, S apart."""
+        snap = _snapshot({
+            (FS_GREGORIAN, "year"): 2025,
+            (FS_GREGORIAN, "month"): 11,
+            (FS_GREGORIAN, "day"): 1,
+        })
+        result = compute_torah_reading(snap)
+        # 5786 opens a cycle. Vayakhel and Pekudei are read together in its first and third
+        # years and apart in its second, so only that year's variation of each is read.
+        self.assertEqual(result["triennial-pattern-vayakhel-pekudei"], "TST")
+        # A pair that always falls together over a cycle needs no variation at all.
+        self.assertEqual(result["triennial-pattern-matot-masei"], "TTT")
+        self.assertEqual(len(result["triennial-pattern-behar-bechukotai"]), 3)
+
+    def test_triennial_pattern_follows_the_israel_reckoning(self):
+        """Israel and the diaspora fall a week apart after a festival on Shabbat."""
+        date = {
+            (FS_GREGORIAN, "year"): 2025,
+            (FS_GREGORIAN, "month"): 11,
+            (FS_GREGORIAN, "day"): 1,
+        }
+        diaspora = compute_torah_reading(_snapshot({**date, (FS_ISRAEL, "is-israel"): False}))
+        israel = compute_torah_reading(_snapshot({**date, (FS_ISRAEL, "is-israel"): True}))
+        self.assertEqual(diaspora["triennial-pattern-chukat-balak"], "TTS")
+        # Chukat and Balak are never combined in Israel.
+        self.assertEqual(israel["triennial-pattern-chukat-balak"], "SSS")
+
     def test_holiday_multiday_pesach_and_sukkot(self):
         pesach_ii = _snapshot({
             (FS_GREGORIAN, "year"): 2024,

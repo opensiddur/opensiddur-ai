@@ -44,6 +44,36 @@ UNIT_CONTAINED_BY.update({
     for year in (1, 2, 3)
 })
 
+# Two parshiyot that are sometimes read together share a file, and the reading of the combined
+# week is a division of the pair rather than of either single: the fourth aliyah of the
+# combined Vayakhel-Pekudei runs through the point where Pekudei begins. So it is scoped by
+# the pair and not by parsha.annual, which would cut it there.
+UNIT_CONTAINED_BY.update({
+    "parsha.combined": frozenset(),
+    "aliyah.combined": frozenset({"parsha.combined"}),
+    "aliyah.weekday.combined": frozenset({"parsha.combined"}),
+    "maftir.combined": frozenset({"parsha.combined"}),
+})
+
+_TRIENNIAL_PREFIXES = ("aliyah.triennial.", "maftir.triennial.")
+
+
+def containing_units(unit: str | None) -> frozenset[str] | None:
+    """Which units end `unit`'s scope, or None if the unit is not one this table knows.
+
+    Inside a pair's file a triennial unit-space names the parshah it belongs to and, where the
+    division depends on how the pair fell that cycle, the variation — `aliyah.triennial.
+    behar.IL3.2`. Those are open-ended, so they are matched by shape rather than listed: any
+    triennial unit that names more than a cycle year belongs to a pair's file and is scoped by
+    the pair, since such a division may cross from one of the two parshiyot into the other.
+    """
+    known = UNIT_CONTAINED_BY.get(unit)
+    if known is not None or unit is None:
+        return known
+    if unit.startswith(_TRIENNIAL_PREFIXES):
+        return frozenset({"parsha.combined"})
+    return None
+
 
 class UrnMapping(BaseModel):
     project: str
@@ -253,15 +283,16 @@ class ReferenceDatabase:
         """Whether `following` ends the scope opened by the milestone `element`.
 
         Scope ends at the next milestone of the same unit, or of a unit that contains it
-        (`UNIT_CONTAINED_BY`). When either milestone carries no `@unit`, or carries one that
+        (`containing_units`). When either milestone carries no `@unit`, or carries one that
         is not in the containment table, fall back to comparing the number of path components
         in the URN — the original heuristic, kept so that unit-less documents keep working.
         """
         unit = element.get('unit')
         following_unit = following.get('unit')
+        containers = containing_units(unit)
 
-        if unit and following_unit and unit in UNIT_CONTAINED_BY and following_unit in UNIT_CONTAINED_BY:
-            return following_unit == unit or following_unit in UNIT_CONTAINED_BY[unit]
+        if containers is not None and containing_units(following_unit) is not None:
+            return following_unit == unit or following_unit in containers
 
         num_dividers = element.get('corresp', '').split(':')[-1].count('/')
         following_dividers = following.get('corresp', '').split(':')[-1].count('/')

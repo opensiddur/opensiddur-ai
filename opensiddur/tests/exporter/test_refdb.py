@@ -1121,6 +1121,38 @@ class TestMilestoneScoping(unittest.TestCase):
         )
         self.assertTrue(self._scope_end(aliyah7).endswith("seg[1]"))
 
+    def test_a_combined_aliyah_crosses_the_parsha_it_runs_into(self):
+        """Two parshiyot read together divide as one reading, across the boundary between them."""
+        combined1, _second_parsha, _combined2 = self._document(
+            ("aliyah.combined", "4",
+             "urn:x-opensiddur:text:bible:parsha/vayakhel_pekudei/aliyah_combined/4"),
+            ("parsha.annual", "pekudei", "urn:x-opensiddur:text:bible:parsha/pekudei"),
+            ("aliyah.combined", "5",
+             "urn:x-opensiddur:text:bible:parsha/vayakhel_pekudei/aliyah_combined/5"),
+        )
+        # Runs past where Pekudei begins, to the next combined aliyah.
+        self.assertTrue(self._scope_end(combined1).endswith("seg[2]"))
+
+    def test_a_combined_reading_ends_the_divisions_it_contains(self):
+        combined_aliyah, _pair = self._document(
+            ("aliyah.combined", "7",
+             "urn:x-opensiddur:text:bible:parsha/vayakhel_pekudei/aliyah_combined/7"),
+            ("parsha.combined", "chukat_balak",
+             "urn:x-opensiddur:text:bible:parsha/chukat_balak"),
+        )
+        self.assertTrue(self._scope_end(combined_aliyah).endswith("seg[1]"))
+
+    def test_a_triennial_variation_is_scoped_by_the_pair_not_by_either_parshah(self):
+        """Behar read alone in one cycle runs into Bechukotai, so the pair is what ends it."""
+        variation, _second_parsha, _pair = self._document(
+            ("aliyah.triennial.behar.IL3.2", "IL3.2.7",
+             "urn:x-opensiddur:text:bible:parsha/behar/aliyah_triennial_behar_IL3_2/il3.2.7"),
+            ("parsha.annual", "bechukotai", "urn:x-opensiddur:text:bible:parsha/bechukotai"),
+            ("parsha.combined", "behar_bechukotai",
+             "urn:x-opensiddur:text:bible:parsha/behar_bechukotai"),
+        )
+        self.assertTrue(self._scope_end(variation).endswith("seg[2]"))
+
     def test_falls_back_to_urn_depth_without_units(self):
         """Milestones with no @unit keep the original URN-depth heuristic."""
         verse, _chapter = self._document(

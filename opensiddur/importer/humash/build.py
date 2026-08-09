@@ -15,12 +15,17 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from opensiddur.importer.feinstein_haggadah.tei_builder import validate_and_write
 from opensiddur.importer.humash import model
-from opensiddur.importer.humash.aliyot import Parsha, parse_parshiyot
-from opensiddur.importer.humash.names import SLUG_TO_HEBREW, slugify_reading_name
+from opensiddur.importer.humash.aliyot import CombinedParsha, Parsha, parse_readings
+from opensiddur.importer.humash.names import (
+    PAIR_FOR_MEMBER,
+    SLUG_TO_HEBREW,
+    slugify_reading_name,
+)
 from opensiddur.importer.humash.readings import (
     REPEATED_VERSE_INSTRUCTION,
     Passage,
@@ -28,6 +33,7 @@ from opensiddur.importer.humash.readings import (
     haftarot,
     triennial,
     triennial_haftarot,
+    triennial_patterns,
 )
 from opensiddur.importer.humash.refs import (
     DEFAULT_NUMBERING,
@@ -37,10 +43,15 @@ from opensiddur.importer.humash.refs import (
     SLUG_TO_HEBREW_BOOK,
     TORAH_BOOKS,
     UNIT_ALIYAH,
+    UNIT_ALIYAH_COMBINED,
     UNIT_MAFTIR,
+    UNIT_MAFTIR_COMBINED,
     UNIT_PARSHA,
+    UNIT_PARSHA_COMBINED,
     UNIT_TRIENNIAL,
     UNIT_WEEKDAY,
+    UNIT_WEEKDAY_COMBINED,
+    VARIATION_COMBINED,
     ReadingSpan,
     VerseRef,
 )
@@ -59,6 +70,9 @@ UNIT_TITLES = {
     UNIT_WEEKDAY: "עליית חול",
     UNIT_MAFTIR: "מפטיר",
     UNIT_TRIENNIAL: "מחזור תלת־שנתי",
+    UNIT_ALIYAH_COMBINED: "עלייה (מחוברות)",
+    UNIT_WEEKDAY_COMBINED: "עליית חול (מחוברות)",
+    UNIT_MAFTIR_COMBINED: "מפטיר (מחוברות)",
 }
 
 ALIYAH_TITLES = {
@@ -113,27 +127,60 @@ def _document(header: str, body: str, lang: str = "he") -> str:
 # the surrounding right-to-left text, which is how "1.maftir" comes out as "ritfam.1".
 TRIENNIAL_YEARS = {1: "א׳", 2: "ב׳", 3: "ג׳"}
 
+# What the margin says of a division that belongs to the pair read together, so that it is not
+# mistaken for the same-numbered aliyah of either single, which is beside it in the same file.
+COMBINED_SUFFIX = "מְחֻבָּרוֹת"
+
+
+def _triennial_title(label: str) -> str:
+    """The margin text of a triennial marker.
+
+    Labels are "<year>.<aliyah>", or "<variation>.<year>.<aliyah>" for a parshah that is
+    sometimes read combined. A variation letter is dropped: only one variation is ever read in
+    a given cycle, so naming it would say nothing to a reader of the volume it survives in.
+    The combined reading is called out, because it sits beside the singles in the same file.
+    """
+    parts = label.split(".")
+    variation = parts[0] if len(parts) == 3 else None
+    year, aliyah = parts[-2], parts[-1]
+    title = f"{TRIENNIAL_YEARS.get(int(year), year)} {ALIYAH_TITLES.get(aliyah, aliyah)}"
+    if variation == VARIATION_COMBINED:
+        return f"{title} ({COMBINED_SUFFIX})"
+    return title
+
+
+def _milestone_title(span: ReadingSpan) -> str:
+    label = span.label
+    if span.unit == UNIT_ALIYAH:
+        return ALIYAH_TITLES.get(label, label)
+    if span.unit == UNIT_WEEKDAY:
+        return WEEKDAY_TITLES.get(label, label)
+    if span.unit == UNIT_MAFTIR:
+        return ALIYAH_TITLES["maftir"]
+    if span.unit in (UNIT_PARSHA, UNIT_PARSHA_COMBINED):
+        return SLUG_TO_HEBREW.get(label, label)
+    if span.unit == UNIT_ALIYAH_COMBINED:
+        return f"{ALIYAH_TITLES.get(label, label)} ({COMBINED_SUFFIX})"
+    if span.unit == UNIT_WEEKDAY_COMBINED:
+        return f"{WEEKDAY_TITLES.get(label, label)} ({COMBINED_SUFFIX})"
+    if span.unit == UNIT_MAFTIR_COMBINED:
+        return f"{ALIYAH_TITLES['maftir']} ({COMBINED_SUFFIX})"
+    if span.unit.startswith("aliyah.triennial") or span.unit.startswith("maftir.triennial"):
+        # Labels arrive as "<year>.<aliyah>" or "<variation>.<year>.<aliyah>".
+        return _triennial_title(label)
+    return label
+
 
 def _milestone(span: ReadingSpan, urn_base: str) -> str:
     """The marker that opens a reading division. Its scope runs to the next of the same unit."""
-    label = span.label
-    title = ""
-    if span.unit == UNIT_ALIYAH:
-        title = ALIYAH_TITLES.get(label, label)
-    elif span.unit == UNIT_WEEKDAY:
-        title = WEEKDAY_TITLES.get(label, label)
-    elif span.unit == UNIT_MAFTIR:
-        title = ALIYAH_TITLES["maftir"]
-    elif span.unit.startswith("aliyah.triennial") or span.unit.startswith("maftir.triennial"):
-        # Labels arrive as "<year>.<aliyah>", e.g. "2.7" or "1.maftir".
-        year, _, aliyah = label.partition(".")
-        title = (
-            f"{TRIENNIAL_YEARS.get(int(year), year)} "
-            f"{ALIYAH_TITLES.get(aliyah, aliyah)}"
-        )
+    title = _milestone_title(span)
+    if span.unit in (UNIT_PARSHA, UNIT_PARSHA_COMBINED):
+        # A parshah's own URN, not one below the file's: inside a combined file the marker for
+        # each single is what makes urn:...:parsha/<slug> resolve to that single's text.
+        urn = f"{URN_PREFIX}:parsha/{span.label}"
     else:
-        title = label
-    urn = f"{urn_base}/{span.unit.replace('.', '_')}/{slugify_reading_name(label)}"
+        base = f"{URN_PREFIX}:parsha/{span.owner}" if span.owner else urn_base
+        urn = f"{base}/{span.unit.replace('.', '_')}/{slugify_reading_name(span.label)}"
     return (
         f'<tei:milestone unit="{span.unit}" n="{_escape(title)}" corresp="{urn}"/>'
     )
@@ -163,6 +210,30 @@ def _conditional(feature_type: str, feature: str, content: str, prefix: str) -> 
     )
 
 
+TRIENNIAL_PATTERN_FEATURE = "triennial-pattern-{pair}"
+
+
+def _pattern_conditional(pair_slug: str, patterns: list[str], content: str) -> str:
+    """Wrap `content` so it survives only in a cycle with one of these combine/separate patterns.
+
+    ``opensiddur:torah-reading`` carries one pattern feature per pair, derived from the date.
+    With no date declared the feature is undefined and every variation is kept, the way
+    leaving ``opensiddur:rite`` unset keeps every rite's haftarah.
+    """
+    identifier = _condition_id("triennial")
+    feature = TRIENNIAL_PATTERN_FEATURE.format(pair=pair_slug.replace("_", "-"))
+    alternatives = "".join(
+        f'<tei:fs type="opensiddur:torah-reading"><tei:f name="{feature}">'
+        f"<tei:string>{pattern}</tei:string></tei:f></tei:fs>"
+        for pattern in sorted(patterns)
+    )
+    return (
+        f'<j:conditional xml:id="{identifier}"><j:any>{alternatives}</j:any></j:conditional>'
+        f"{content}"
+        f'<j:endConditional target="#{identifier}"/>'
+    )
+
+
 def _default_numbering_conditional(content: str) -> str:
     """Wrap `content` so it is used unless another numbering is explicitly selected.
 
@@ -183,13 +254,29 @@ def _default_numbering_conditional(content: str) -> str:
     )
 
 
+Conditions = dict[str, tuple[str, list[str]]]
+
+
 def _segment_xml(
     segment: model.Segment,
     urn_base: str,
     sourcetexts_root: Path | None,
+    conditions: Conditions | None = None,
 ) -> str:
-    """Milestones opening at this segment, then the text itself."""
-    parts = [_milestone(span, urn_base) for span in segment.opening]
+    """Milestones opening at this segment, then the text itself.
+
+    `conditions` maps a unit-space to the pair and patterns its markers depend on. Each marker
+    is wrapped on its own rather than the whole division at once, since the markers of a
+    division are spread through the text they divide.
+    """
+    parts: list[str] = []
+    for span in segment.opening:
+        marker = _milestone(span, urn_base)
+        condition = (conditions or {}).get(span.unit)
+        parts.append(
+            _pattern_conditional(condition[0], condition[1], marker)
+            if condition is not None else marker
+        )
     if segment.duplicate:
         parts.append(
             f'<tei:note type="instruction" xml:lang="he">{_escape("חוזרים על הפסוק")}</tei:note>'
@@ -204,6 +291,7 @@ def _numbered_variants(
     end: VerseRef,
     urn_base: str,
     sourcetexts_root: Path | None,
+    conditions: Conditions | None = None,
 ) -> str:
     """Emit one variant of a reading per verse numbering, under conditional control.
 
@@ -216,7 +304,9 @@ def _numbered_variants(
             _restated(spans, numbering), start, end, sourcetexts_root, numbering,
             allow_duplication=False,
         )
-        content = "".join(_segment_xml(s, urn_base, sourcetexts_root) for s in segments)
+        content = "".join(
+            _segment_xml(s, urn_base, sourcetexts_root, conditions) for s in segments
+        )
         if numbering == DEFAULT_NUMBERING:
             parts.append(_default_numbering_conditional(content))
         else:
@@ -242,51 +332,116 @@ def _restated(spans: list[ReadingSpan], numbering: str) -> list[ReadingSpan]:
             end = VerseRef(end.book, end.chapter, counts[numbering])
         restated.append(ReadingSpan(
             unit=span.unit, label=span.label, start=span.start, end=end,
-            note=span.note, numbering=numbering,
+            note=span.note, numbering=numbering, owner=span.owner,
         ))
     return restated
 
 
-def parsha_file(
-    parsha: Parsha,
-    triennial_spans: dict[int, list[ReadingSpan]],
-    sourcetexts_root: Path | None = None,
+TriennialDivisions = dict[tuple[str | None, int], list[ReadingSpan]]
+
+
+def _reading_document(
+    slug: str,
+    hebrew: str,
+    spans: list[ReadingSpan],
+    start: VerseRef,
+    end: VerseRef,
+    conditions: Conditions | None,
+    sourcetexts_root: Path | None,
 ) -> tuple[str, str]:
-    """One weekly parshah: its heading, its reading divisions, and the text between them."""
-    urn_base = f"{URN_PREFIX}:parsha/{parsha.slug}"
-    spans = list(parsha.spans)
-    for year_spans in triennial_spans.values():
-        spans.extend(year_spans)
+    """A parshah file: its heading, its reading divisions, and the text between them."""
+    urn_base = f"{URN_PREFIX}:parsha/{slug}"
 
     # A parshah is one continuous reading, so it is always emitted once; see segment_reading.
     overlapping = model.overlapping_units(spans)
     if overlapping:
         logger.info(
             "%s: %s overlap themselves, so those milestones scope to the next marker rather "
-            "than to their recorded end", parsha.slug, ", ".join(sorted(overlapping)),
+            "than to their recorded end", slug, ", ".join(sorted(overlapping)),
         )
 
     needs_variants = any(span.crosses_divergent_chapter for span in spans)
     if needs_variants:
         body_inner = _numbered_variants(
-            spans, parsha.start, parsha.end, urn_base, sourcetexts_root
+            spans, start, end, urn_base, sourcetexts_root, conditions
         )
     else:
         segments = model.segment_reading(
-            spans, parsha.start, parsha.end, sourcetexts_root, DEFAULT_NUMBERING,
+            spans, start, end, sourcetexts_root, DEFAULT_NUMBERING,
             allow_duplication=False,
         )
-        body_inner = "".join(_segment_xml(s, urn_base, sourcetexts_root) for s in segments)
+        body_inner = "".join(
+            _segment_xml(s, urn_base, sourcetexts_root, conditions) for s in segments
+        )
 
-    hebrew = SLUG_TO_HEBREW.get(parsha.slug, parsha.hebrew_name)
     body = (
-        f'<tei:div corresp="{urn_base}" n="{parsha.slug}">'
-        f"<tei:head>{_escape(hebrew)}</tei:head>"
-        f'<tei:milestone unit="{UNIT_PARSHA}" n="{_escape(hebrew)}" corresp="{urn_base}"/>'
-        f"{body_inner}</tei:div>"
+        f'<tei:div corresp="{urn_base}" n="{slug}">'
+        f"<tei:head>{_escape(hebrew)}</tei:head>{body_inner}</tei:div>"
     )
-    header = _header(hebrew, parsha.slug.replace("_", " ").title(), f"parsha/{parsha.slug}")
-    return f"parashat_{parsha.slug}", _document(header, body)
+    header = _header(hebrew, slug.replace("_", " ").title(), f"parsha/{slug}")
+    return f"parashat_{slug}", _document(header, body)
+
+
+def parsha_file(
+    parsha: Parsha,
+    triennial_divisions: TriennialDivisions,
+    sourcetexts_root: Path | None = None,
+) -> tuple[str, str]:
+    """One weekly parshah, read on its own week."""
+    spans = [parsha.parsha_span, *parsha.spans]
+    for division in triennial_divisions.values():
+        spans.extend(division)
+    hebrew = SLUG_TO_HEBREW.get(parsha.slug, parsha.hebrew_name)
+    return _reading_document(
+        parsha.slug, hebrew, spans, parsha.start, parsha.end, None, sourcetexts_root
+    )
+
+
+def pair_file(
+    pair: CombinedParsha,
+    members: list[Parsha],
+    triennial_divisions: dict[str, TriennialDivisions],
+    patterns: dict[str, str],
+    sourcetexts_root: Path | None = None,
+) -> tuple[str, str]:
+    """A pair that may be read together, holding both singles and the combined reading.
+
+    The two are alternatives, not a whole and its parts, so they are separate unit-spaces over
+    one copy of the text: the combined fourth aliyah runs through the point where the second
+    parshah begins, and would be cut there if it were scoped by ``parsha.annual``.
+
+    The combined divisions are unconditioned, so a volume carries the pair both ways. Each
+    single's triennial divisions are not: which of them applies depends on how the pair fell
+    in that cycle, and the condition says which cycles each is for.
+    """
+    spans = [pair.parsha_span]
+    conditions: Conditions = {}
+    for member in members:
+        spans.append(member.parsha_span)
+        # The singles' divisions keep their own URN space: both parshiyot have a first aliyah.
+        spans.extend(replace(span, owner=member.slug) for span in member.spans)
+        for (variation, _year), division in triennial_divisions.get(member.slug, {}).items():
+            matching = sorted(
+                pattern for pattern, name in patterns.items() if name == variation
+            )
+            if variation is not None and not matching:
+                logger.warning(
+                    "%s: no cycle pattern selects triennial variation %s, so its markers are "
+                    "emitted unconditionally", member.slug, variation,
+                )
+            for span in division:
+                if variation is not None and matching:
+                    conditions[span.unit] = (pair.slug, matching)
+            spans.extend(division)
+
+    spans.extend(pair.spans)
+    for division in triennial_divisions.get(pair.slug, {}).values():
+        spans.extend(division)
+
+    return _reading_document(
+        pair.slug, SLUG_TO_HEBREW.get(pair.slug, pair.hebrew_name), spans,
+        pair.start, pair.end, conditions, sourcetexts_root,
+    )
 
 
 def _passage_xml(passage: Passage, urn_base: str) -> str:
@@ -400,12 +555,19 @@ def festival_file(
 
 
 def book_file(book: str, parshiyot: list[Parsha]) -> tuple[str, str]:
-    """One of the five books, transcluding its parshiyot in order."""
+    """One of the five books, transcluding its parshiyot in order.
+
+    A pair is transcluded once, by the pair's own URN: its file holds both singles, so
+    transcluding the members as well would print their text twice.
+    """
     urn_base = f"{URN_PREFIX}:humash/{book}"
     hebrew = SLUG_TO_HEBREW_BOOK[book]
-    inner = "".join(
-        _transclude(f"{URN_PREFIX}:parsha/{parsha.slug}") for parsha in parshiyot
-    )
+    targets: list[str] = []
+    for parsha in parshiyot:
+        slug = PAIR_FOR_MEMBER.get(parsha.slug, parsha.slug)
+        if not targets or targets[-1] != slug:
+            targets.append(slug)
+    inner = "".join(_transclude(f"{URN_PREFIX}:parsha/{slug}") for slug in targets)
     body = (
         f'<tei:div type="book" corresp="{urn_base}" n="{book}">'
         f"<tei:head>{_escape(hebrew)}</tei:head>{inner}</tei:div>"
@@ -474,15 +636,25 @@ def build(
     project_dir = project_directory / PROJECT
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    parshiyot = parse_parshiyot(sourcetexts_root)
+    parshiyot, pairs = parse_readings(sourcetexts_root)
     all_haftarot = haftarot(sourcetexts_root)
     all_triennial = triennial(sourcetexts_root)
+    all_patterns = triennial_patterns(sourcetexts_root)
     festivals = festival_readings(sourcetexts_root)
 
     documents: list[tuple[str, str]] = []
+    by_slug = {parsha.slug: parsha for parsha in parshiyot}
     for parsha in parshiyot:
+        # The fourteen that have a partner are emitted inside their pair's file instead.
+        if parsha.slug in PAIR_FOR_MEMBER:
+            continue
         documents.append(parsha_file(
             parsha, all_triennial.get(parsha.slug, {}), sourcetexts_root
+        ))
+    for pair in pairs:
+        documents.append(pair_file(
+            pair, [by_slug[slug] for slug in pair.members], all_triennial,
+            all_patterns.get(pair.slug, {}), sourcetexts_root,
         ))
 
     by_book: dict[str, list[Parsha]] = {}

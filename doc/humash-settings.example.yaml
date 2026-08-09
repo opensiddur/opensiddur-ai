@@ -45,6 +45,14 @@ declarations:
   # derives opensiddur:holiday and opensiddur:torah-reading from it, so a volume compiled for
   # one day carries only that day's readings. Omit the date to keep them all.
   #
+  # A date also settles the triennial division of the twelve parshiyot that are sometimes read
+  # together with their partner, which divide differently depending on how the pair fell in
+  # that three-year cycle: opensiddur:torah-reading gets a triennial-pattern- feature per pair,
+  # and each file keeps only the division that pattern calls for. Without a date every division
+  # is kept, each marked with its cycle year, the way leaving opensiddur:rite out keeps every
+  # rite's haftarah. The reading of the weeks the pair is read together is always kept, marked
+  # מחוברות in the margin.
+  #
   # opensiddur:gregorian-date:
   #   year: 2025
   #   month: 3

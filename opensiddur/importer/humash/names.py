@@ -73,15 +73,18 @@ PARSHA_NAMES: tuple[tuple[str, str, str], ...] = (
     ("וזאת הברכה", "Vezot Haberakhah", "vezot_haberakhah"),
 )
 
-# Weeks on which two parshiyot are read together. hebcal names these by joining the two.
-COMBINED_PARSHIYOT: tuple[tuple[str, str], ...] = (
-    ("Vayakhel-Pekudei", "vayakhel_pekudei"),
-    ("Tazria-Metzora", "tazria_metzora"),
-    ("Achrei Mot-Kedoshim", "achrei_mot_kedoshim"),
-    ("Behar-Bechukotai", "behar_bechukotai"),
-    ("Chukat-Balak", "chukat_balak"),
-    ("Matot-Masei", "matot_masei"),
-    ("Nitzavim-Vayeilech", "nitzavim_vayeilech"),
+# Weeks on which two parshiyot are read together, each with the two it joins. MAM writes the
+# joined name with an en-dash — ויקהל–פקודי — which is not the maqaf of לך־לך and not the
+# hyphen hebcal joins with, so the Hebrew form is given here rather than composed.
+COMBINED_PARSHIYOT: tuple[tuple[str, str, str, str], ...] = (
+    # (MAM Hebrew name, hebcal name, opensiddur slug, first member slug)
+    ("ויקהל–פקודי", "Vayakhel-Pekudei", "vayakhel_pekudei", "vayakhel"),
+    ("תזריע–מצֹרע", "Tazria-Metzora", "tazria_metzora", "tazria"),
+    ("אחרי מות–קדֹשים", "Achrei Mot-Kedoshim", "achrei_mot_kedoshim", "achrei_mot"),
+    ("בהר–בחֻקֹתי", "Behar-Bechukotai", "behar_bechukotai", "behar"),
+    ("חֻקת–בלק", "Chukat-Balak", "chukat_balak", "chukat"),
+    ("מטות–מסעי", "Matot-Masei", "matot_masei", "matot"),
+    ("נִצבים–וילך", "Nitzavim-Vayeilech", "nitzavim_vayeilech", "nitzavim"),
 )
 
 
@@ -97,12 +100,29 @@ def _fold(hebrew: str) -> str:
     )
 
 
+_ORDER = [slug for _, _, slug in PARSHA_NAMES]
+
+# The two parshiyot each pair joins. They are always consecutive, so the second is read off the
+# order rather than listed again.
+PAIR_MEMBERS: dict[str, tuple[str, str]] = {
+    slug: (first, _ORDER[_ORDER.index(first) + 1])
+    for _, _, slug, first in COMBINED_PARSHIYOT
+}
+
+# The pair a parshah belongs to, for the twelve — fourteen, with Nitzavim-Vayeilech — that have
+# one. Every other parshah is absent.
+PAIR_FOR_MEMBER: dict[str, str] = {
+    member: pair for pair, members in PAIR_MEMBERS.items() for member in members
+}
+
 _BY_FOLDED_HEBREW = {_fold(hebrew): (hebrew, hebcal, slug) for hebrew, hebcal, slug in PARSHA_NAMES}
 _BY_HEBCAL = {hebcal: (hebrew, hebcal, slug) for hebrew, hebcal, slug in PARSHA_NAMES}
+_PAIR_BY_FOLDED_HEBREW = {_fold(hebrew): slug for hebrew, _, slug, _ in COMBINED_PARSHIYOT}
 
 HEBCAL_TO_SLUG = {hebcal: slug for _, hebcal, slug in PARSHA_NAMES}
-HEBCAL_TO_SLUG.update(dict(COMBINED_PARSHIYOT))
+HEBCAL_TO_SLUG.update({hebcal: slug for _, hebcal, slug, _ in COMBINED_PARSHIYOT})
 SLUG_TO_HEBREW = {slug: hebrew for hebrew, _, slug in PARSHA_NAMES}
+SLUG_TO_HEBREW.update({slug: hebrew for hebrew, _, slug, _ in COMBINED_PARSHIYOT})
 
 
 def slug_for_hebrew(hebrew: str) -> str:
@@ -111,6 +131,14 @@ def slug_for_hebrew(hebrew: str) -> str:
     if entry is None:
         raise KeyError(f"Unknown parshah name: {hebrew!r}")
     return entry[2]
+
+
+def slug_for_combined_hebrew(hebrew: str) -> str:
+    """The slug for a *pair* named in Hebrew, e.g. ויקהל–פקודי."""
+    slug = _PAIR_BY_FOLDED_HEBREW.get(_fold(hebrew))
+    if slug is None:
+        raise KeyError(f"Unknown combined parshah name: {hebrew!r}")
+    return slug
 
 
 def hebcal_for_hebrew(hebrew: str) -> str:

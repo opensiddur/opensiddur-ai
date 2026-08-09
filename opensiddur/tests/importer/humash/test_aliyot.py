@@ -13,8 +13,11 @@ from opensiddur.importer.humash import aliyot
 from opensiddur.importer.humash.names import slug_for_hebrew
 from opensiddur.importer.humash.refs import (
     UNIT_ALIYAH,
+    UNIT_ALIYAH_COMBINED,
     UNIT_MAFTIR,
+    UNIT_MAFTIR_COMBINED,
     UNIT_WEEKDAY,
+    UNIT_WEEKDAY_COMBINED,
     ReadingSpan,
     VerseRef,
     verses_in_chapter,
@@ -22,8 +25,8 @@ from opensiddur.importer.humash.refs import (
 
 HEBREW_NUMERALS = {
     1: "א", 2: "ב", 3: "ג", 4: "ד", 5: "ה", 6: "ו", 7: "ז", 8: "ח", 9: "ט", 10: "י",
-    11: "יא", 12: "יב", 13: "יג", 14: "יד", 19: "יט", 20: "כ", 22: "כב", 25: "כה", 26: "כו",
-    31: "לא", 32: "לב",
+    11: "יא", 12: "יב", 13: "יג", 14: "יד", 15: "טו", 16: "טז", 17: "יז", 19: "יט", 20: "כ",
+    22: "כב", 25: "כה", 26: "כו", 31: "לא", 32: "לב",
 }
 
 
@@ -162,6 +165,81 @@ class TestParseParshiyot(unittest.TestCase):
     def test_unknown_parsha_name_is_rejected_rather_than_guessed(self):
         with self.assertRaises(KeyError):
             slug_for_hebrew("פרשה שאינה קיימת")
+
+
+class TestParseCombined(unittest.TestCase):
+    """The ``ג`` parameters, which divide the week the two parshiyot are read together.
+
+    The fixture is a synthetic Tazria-Metzora: Tazria runs Leviticus 12:1-13:17 and Metzora
+    14:1-15:17, and the combined reading deliberately has one aliyah that runs from one into
+    the other, which is the case the single parshiyot's divisions cannot express.
+    """
+
+    PAIR = "תזריע–מצֹרע"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        sheets = self.root / "miqra_al_pi_hamasorah" / "sheets"
+        sheets.mkdir(parents=True)
+        _write_verse_counts(self.root)
+        rows = [
+            _row("ויקרא", 12, 1, ב0="תזריע", ב1="ראשון", ב2="כהן",
+                 ג0=self.PAIR, ג1="ראשון", ג2="כהן"),
+            _row("ויקרא", 12, 5, ב0="תזריע", ב2="לוי", ג0=self.PAIR, ג2="לוי"),
+            _row("ויקרא", 13, 1, ב0="תזריע", ב1="שני", ג0=self.PAIR, ג1="שני"),
+            _row("ויקרא", 13, 5, ב0="תזריע", ג0=self.PAIR, ג2='ע"כ ישראל'),
+            # No ג1 here: the combined second aliyah carries on past where Metzora begins.
+            _row("ויקרא", 14, 1, ב0="מצֹרע", ב1="ראשון", ג0=self.PAIR),
+            _row("ויקרא", 14, 5, ב0="מצֹרע", ב1="שני", ג0=self.PAIR, ג1="שלישי"),
+            _row("ויקרא", 14, 9, ב0="מצֹרע", ב3="מפטיר", ג0=self.PAIR, ג3="מפטיר"),
+            _row("ויקרא", 16, 1, ב0="אחרי מות", ב1="ראשון"),
+        ]
+        (sheets / "torah.tsv").write_text(
+            "\n".join("\t".join(["page", "id", "", row, "text"]) for row in rows) + "\n",
+            encoding="utf-8",
+        )
+        self.parshiyot, self.combined = aliyot.parse_readings(self.root)
+
+    def test_a_pair_covers_both_parshiyot_end_to_end(self):
+        self.assertEqual([pair.slug for pair in self.combined], ["tazria_metzora"])
+        pair = self.combined[0]
+        self.assertEqual(pair.members, ("tazria", "metzora"))
+        self.assertEqual(pair.start, VerseRef("leviticus", 12, 1))
+        # Metzora's own end, not the last marker's parshah: the pair runs to Achrei Mot.
+        self.assertEqual(pair.end, VerseRef("leviticus", 15, 17))
+
+    def test_a_combined_aliyah_may_run_from_one_parshah_into_the_other(self):
+        combined = self.combined[0].spans_in(UNIT_ALIYAH_COMBINED)
+        self.assertEqual([span.label for span in combined], ["1", "2", "3"])
+        self.assertEqual(combined[1].start, VerseRef("leviticus", 13, 1))
+        # Metzora begins at 14:1, and this aliyah is not cut there.
+        self.assertEqual(combined[1].end, VerseRef("leviticus", 14, 4))
+        self.assertEqual(combined[2].end, VerseRef("leviticus", 15, 17))
+
+    def test_the_singles_keep_their_own_divisions(self):
+        tazria, metzora = self.parshiyot[0], self.parshiyot[1]
+        self.assertEqual([p.slug for p in self.parshiyot[:2]], ["tazria", "metzora"])
+        second = tazria.spans_in(UNIT_ALIYAH)[1]
+        self.assertEqual(second.start, VerseRef("leviticus", 13, 1))
+        # Where the combined aliyah carries on, Tazria's own ends with Tazria.
+        self.assertEqual(second.end, VerseRef("leviticus", 13, 17))
+        self.assertEqual(metzora.spans_in(UNIT_MAFTIR)[0].start, VerseRef("leviticus", 14, 9))
+
+    def test_the_combined_maftir_runs_to_the_end_of_the_pair(self):
+        maftir = self.combined[0].spans_in(UNIT_MAFTIR_COMBINED)
+        self.assertEqual(len(maftir), 1)
+        self.assertEqual(maftir[0].start, VerseRef("leviticus", 14, 9))
+        self.assertEqual(maftir[0].end, VerseRef("leviticus", 15, 17))
+
+    def test_the_combined_weekday_reading_has_its_own_end_marker(self):
+        """The pair's ע"כ ישראל is its own, and does not move the singles' weekday reading."""
+        combined = self.combined[0].spans_in(UNIT_WEEKDAY_COMBINED)
+        self.assertEqual([span.label for span in combined], ["1", "2"])
+        self.assertEqual(combined[1].end, VerseRef("leviticus", 13, 4))
+        single = self.parshiyot[0].spans_in(UNIT_WEEKDAY)
+        self.assertEqual(single[1].end, VerseRef("leviticus", 13, 17))
 
 
 class TestReadingSpan(unittest.TestCase):

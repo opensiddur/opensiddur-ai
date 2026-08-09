@@ -81,9 +81,29 @@ AGGREGATE_FEATURES = (
     "day-after-holiday",
 )
 
+# The modern triennial cycle as reckoned by the CJLS, whose first year was 5756.
+_TRIENNIAL_EPOCH_YEAR = 5756
+
+# The six pairs of parshiyot whose triennial division depends on how the pair fell in the
+# cycle, each with the index pyluach gives the first of the two. Nitzavim-Vayeilech is doubled
+# as well but divides the same way however it falls, so it needs no feature.
+TRIENNIAL_PAIRS: tuple[tuple[str, int], ...] = (
+    ("vayakhel-pekudei", 21),
+    ("tazria-metzora", 26),
+    ("achrei-mot-kedoshim", 28),
+    ("behar-bechukotai", 31),
+    ("chukat-balak", 38),
+    ("matot-masei", 41),
+)
+
+TRIENNIAL_PATTERN_FEATURES = tuple(
+    f"triennial-pattern-{pair}" for pair, _ in TRIENNIAL_PAIRS
+)
+
 TORAH_FEATURES = (
     "diaspora-parsha",
     "israel-parsha",
+    *TRIENNIAL_PATTERN_FEATURES,
     "shabbat-shuva",
     "shabbat-shira",
     "shabbat-shkalim",
@@ -551,6 +571,32 @@ def _parsha_slug(name: str) -> str:
     return name.lower().replace(" ", "-").replace(",", "")
 
 
+def _triennial_cycle_patterns(hebrew_year: int, israel: bool) -> dict[str, str]:
+    """For each pair, whether it was read [T]ogether or [S]eparately in each year of the cycle.
+
+    The three characters run from the first year of the cycle, so ``"TSS"`` means the pair was
+    read together in the first year and apart in the other two. The triennial division of a
+    parshah that is sometimes doubled depends on this pattern rather than on the cycle year
+    alone, which is why it is derived here; the humash conditions on it.
+
+    The Hebrew year is enough to identify a pair's week, even though the reading year turns
+    over at Simhat Torah rather than at Rosh Hashanah: every one of these pairs is read
+    between Adar and Av.
+    """
+    start = hebrew_year - ((hebrew_year - _TRIENNIAL_EPOCH_YEAR) % 3)
+    combined_per_year = []
+    for year in (start, start + 1, start + 2):
+        table = parshios.parshatable(year, israel=israel)
+        combined_per_year.append({
+            reading[0] for reading in table.values()
+            if reading is not None and len(reading) > 1
+        })
+    return {
+        pair: "".join("T" if index in combined else "S" for combined in combined_per_year)
+        for pair, index in TRIENNIAL_PAIRS
+    }
+
+
 def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     if gdate is None:
@@ -562,6 +608,11 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "diaspora-parsha": _parsha_slug(diaspora),
         "israel-parsha": _parsha_slug(israel),
     }
+    patterns = _triennial_cycle_patterns(
+        g.to_heb().year, israel=not snapshot.is_diaspora()
+    )
+    for pair, pattern in patterns.items():
+        result[f"triennial-pattern-{pair}"] = pattern
     for feature in TORAH_FEATURES:
         if feature not in result:
             result[feature] = False
