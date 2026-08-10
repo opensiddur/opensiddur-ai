@@ -83,6 +83,12 @@ ALIYAH_TITLES = {
 
 WEEKDAY_TITLES = {"1": "כֹּהֵן", "2": "לֵוִי", "3": "יִשְׂרָאֵל"}
 
+# Sukkot's Chol HaMoed Shabbat maftir varies by which intermediate day it falls on
+# ("maftir_day1".."maftir_day5"). Latin/digits here would be reversed when set in the
+# surrounding right-to-left text, same as TRIENNIAL_YEARS below, so days are spelled out
+# as Hebrew letters rather than left as the raw source label.
+MAFTIR_DAY_LETTERS = {1: "א׳", 2: "ב׳", 3: "ג׳", 4: "ד׳", 5: "ה׳"}
+
 
 def _escape(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -156,6 +162,9 @@ def _milestone_title(span: ReadingSpan) -> str:
     if span.unit == UNIT_WEEKDAY:
         return WEEKDAY_TITLES.get(label, label)
     if span.unit == UNIT_MAFTIR:
+        if label.startswith("maftir_day"):
+            day = int(label[len("maftir_day"):])
+            return f"{ALIYAH_TITLES['maftir']} לְיוֹם {MAFTIR_DAY_LETTERS[day]}"
         return ALIYAH_TITLES["maftir"]
     if span.unit in (UNIT_PARSHA, UNIT_PARSHA_COMBINED):
         return SLUG_TO_HEBREW.get(label, label)

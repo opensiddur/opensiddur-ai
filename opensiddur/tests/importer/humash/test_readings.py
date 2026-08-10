@@ -13,10 +13,12 @@ import unittest
 from pathlib import Path
 
 from opensiddur.importer.humash.readings import (
+    festival_readings,
     triennial,
     triennial_haftarot,
     triennial_patterns,
 )
+from opensiddur.importer.humash.refs import UNIT_ALIYAH, UNIT_MAFTIR
 
 
 def _aliyot(chapter: int) -> dict[str, list[str]]:
@@ -202,3 +204,67 @@ class TestTriennialHaftarot(unittest.TestCase):
     def test_an_occasion_that_is_not_a_parshah_is_dropped(self):
         self.assertNotIn("tisha_bav", self.haftarot)
         self.assertEqual(sorted(self.haftarot), ["bereshit", "noach", "tazria"])
+
+
+HOLIDAY_READINGS_FIXTURE = {
+    # Ordinary festival: one maftir, keyed "M".
+    "Pesach I": {
+        "fullkriyah": {
+            "1": {"k": 2, "b": "12:21", "e": "12:28"},
+            "M": {"k": 4, "b": "28:16", "e": "28:25"},
+        },
+    },
+    # Sukkot's Chol HaMoed Shabbat: the maftir varies by which intermediate day it is,
+    # keyed "M-day1".."M-day5" rather than a plain "M" (real hebcal shape).
+    "Sukkot Shabbat Chol ha-Moed": {
+        "fullkriyah": {
+            "1": {"k": 2, "b": "33:12", "e": "33:16"},
+            "M-day1": {"k": 4, "b": "29:17", "e": "29:22"},
+            "M-day2": {"k": 4, "b": "29:20", "e": "29:25"},
+            "M-day5": {"k": 4, "b": "29:29", "e": "29:34"},
+        },
+    },
+}
+
+
+class TestFestivalReadingsMaftir(unittest.TestCase):
+    """Regression: Sukkot Chol HaMoed's per-day maftir keys ("M-day1"..) used to fall
+    through to UNIT_ALIYAH with the raw, untranslated key kept as the label, which then
+    surfaced as backwards-looking raw English ("M-day1") inside an all-Hebrew RTL milestone.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        directory = self.root / "hebcal_leyning"
+        directory.mkdir(parents=True)
+        (directory / "holiday-readings.json").write_text(
+            json.dumps(HOLIDAY_READINGS_FIXTURE), encoding="utf-8"
+        )
+        self.festivals = festival_readings(self.root)
+
+    def _span(self, occasion: str, label: str):
+        spans = self.festivals[occasion]["aliyot"]
+        matches = [span for span in spans if span.label == label]
+        self.assertEqual(len(matches), 1, f"expected exactly one span labeled {label!r}")
+        return matches[0]
+
+    def test_ordinary_single_maftir_is_normalized_to_maftir(self):
+        span = self._span("pesach_i", "maftir")
+        self.assertEqual(span.unit, UNIT_MAFTIR)
+
+    def test_sukkot_chol_hamoed_day_maftirs_are_recognized_as_maftir(self):
+        for day in (1, 2, 5):
+            span = self._span("sukkot_shabbat_chol_ha_moed", f"maftir_day{day}")
+            self.assertEqual(span.unit, UNIT_MAFTIR)
+
+    def test_sukkot_chol_hamoed_day_maftirs_are_not_left_as_raw_source_keys(self):
+        labels = {span.label for span in self.festivals["sukkot_shabbat_chol_ha_moed"]["aliyot"]}
+        self.assertNotIn("M-day1", labels)
+        self.assertNotIn("M-day2", labels)
+        self.assertNotIn("M-day5", labels)
+
+    def test_sukkot_chol_hamoed_non_maftir_aliyah_is_unaffected(self):
+        span = self._span("sukkot_shabbat_chol_ha_moed", "1")
+        self.assertEqual(span.unit, UNIT_ALIYAH)
