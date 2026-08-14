@@ -101,10 +101,12 @@ class TestAssembleParallelStreams(unittest.TestCase):
         el.text = text
         return el
 
-    def _transclude(self, target="urn:test@orig", *children):
+    def _transclude(self, target="urn:test@orig", *children, lang=None):
         el = etree.Element(f"{{{P_NS}}}transclude", nsmap=self.ns)
         el.set("target", target)
         el.set("type", "external")
+        if lang:
+            el.set(f"{{{XML_NS}}}lang", lang)
         for child in (children or (self._div("inner"),)):
             el.append(child)
         return el
@@ -206,6 +208,45 @@ class TestAssembleParallelStreams(unittest.TestCase):
         assert_parallel_invariants(self, result)
         for par_el in result[0].iter(f"{{{P_NS}}}parallel"):
             self.assertEqual(len(list(par_el)), 2)
+
+    def test_nested_transclude_language_override_propagates(self):
+        """Regression (#p856): a nested transclude into a different-language document must
+        stamp its own p:parallelItem with that document's language, not the outer stream's.
+
+        The Ki Tisa haftarah (Hebrew humash) transcludes 1 Kings 8 from the jps1917 English
+        translation; the resulting p:parallelItem kept the outer xml:lang="he", so
+        reledmac.xslt wrapped the genuinely-English text in \\begin{hebrew}, and pdfTeX's
+        \\textdir primitive mirrored it (backwards English on the printed page).
+        """
+        prim_inner = self._transclude("urn:inner@orig", self._div("english text"), lang="en")
+        par_inner = self._transclude("urn:inner@trans", self._div("hebrew parallel"), lang="he")
+        prim_outer = self._transclude("urn:outer@orig", self._div("a"), prim_inner)
+        par_outer = self._transclude("urn:outer@trans", self._div("pa"), par_inner)
+
+        result = self._assemble([prim_outer], [par_outer])
+
+        outer = result[0]
+        inner_transclude = [c for c in outer if etree.QName(c).localname == "transclude"][0]
+        inner_parallel = list(inner_transclude)[0]
+        prim_item, par_item = list(inner_parallel)
+        self.assertEqual(prim_item.get(f"{{{XML_NS}}}lang"), "en")
+        self.assertEqual(par_item.get(f"{{{XML_NS}}}lang"), "he")
+
+    def test_nested_transclude_without_lang_override_inherits_outer_language(self):
+        """A nested transclude that doesn't declare its own xml:lang keeps the outer language."""
+        prim_inner = self._transclude("urn:inner@orig", self._div("deep"))
+        par_inner = self._transclude("urn:inner@trans", self._div("deep-par"))
+        prim_outer = self._transclude("urn:outer@orig", self._div("a"), prim_inner)
+        par_outer = self._transclude("urn:outer@trans", self._div("pa"), par_inner)
+
+        result = self._assemble([prim_outer], [par_outer])
+
+        outer = result[0]
+        inner_transclude = [c for c in outer if etree.QName(c).localname == "transclude"][0]
+        inner_parallel = list(inner_transclude)[0]
+        prim_item, par_item = list(inner_parallel)
+        self.assertEqual(prim_item.get(f"{{{XML_NS}}}lang"), "he")
+        self.assertEqual(par_item.get(f"{{{XML_NS}}}lang"), "en")
 
     def test_milestone_alignment_survives_inside_nested_transclude(self):
         def _ms(corresp):

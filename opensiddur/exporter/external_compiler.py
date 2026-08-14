@@ -349,7 +349,19 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 transclude_el.get(f"{{{p_ns}}}file_name") or default_file,
             )
 
-        def make_rows(prim_flat, par_flat, prim_src, par_src):
+        def lang_of(transclude_el, default_lang):
+            """Language of a boundary transclude, falling back to the enclosing document.
+
+            Mirrors source_of(): a nested transclude may cross into a document in a
+            different language (e.g. an English translation transcluded into a Hebrew
+            humash), and each p:parallelItem must be stamped with the language of the
+            content it actually holds, not the language of the outermost stream.
+            """
+            if transclude_el is None:
+                return default_lang
+            return transclude_el.get(xml_lang) or default_lang
+
+        def make_rows(prim_flat, par_flat, prim_src, par_src, prim_lang, par_lang):
             prim_sub = ExternalCompilerProcessor._split_at_milestones(prim_flat, ns_map)
             par_sub = ExternalCompilerProcessor._split_at_milestones(par_flat, ns_map)
 
@@ -382,12 +394,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     continue
                 rows.append(make_parallel(
                     column_order,
-                    make_item("primary", primary_lang, prim_src[0], prim_src[1], p_elems),
-                    make_item("parallel", parallel_lang, par_src[0], par_src[1], q_elems),
+                    make_item("primary", prim_lang, prim_src[0], prim_src[1], p_elems),
+                    make_item("parallel", par_lang, par_src[0], par_src[1], q_elems),
                 ))
             return rows
 
-        def assemble(prim_flat, par_flat, prim_src, par_src):
+        def assemble(prim_flat, par_flat, prim_src, par_src, prim_lang, par_lang):
             primary_segments, primary_transcludes = split_at_transcludes(prim_flat)
             parallel_segments, parallel_transcludes = split_at_transcludes(par_flat)
 
@@ -402,7 +414,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             output = []
             for i in range(max_segments):
                 output.extend(make_rows(
-                    primary_segments[i], parallel_segments[i], prim_src, par_src))
+                    primary_segments[i], parallel_segments[i], prim_src, par_src, prim_lang, par_lang))
 
                 if i < max_transcludes:
                     prim_t = primary_transcludes[i] if i < len(primary_transcludes) else None
@@ -421,10 +433,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         # independent of the enclosing one rather than nested inside it.
                         # Items built from a transcluded document must be attributed to that
                         # document, not to the enclosing one: latex.py::get_file_references reads
-                        # these attributes to build the licence, credits and bibliography.
+                        # these attributes to build the licence, credits and bibliography, and
+                        # numbered-stream in reledmac.xslt reads @xml:lang to pick the stream's
+                        # typesetting direction, so a stale language here mislabels a translation
+                        # as the host document's language and gets it mirrored under RTL (#p856).
                         inner = assemble(
                             list(prim_t), list(par_t) if par_t is not None else [],
-                            source_of(prim_t, *prim_src), source_of(par_t, *par_src))
+                            source_of(prim_t, *prim_src), source_of(par_t, *par_src),
+                            lang_of(prim_t, prim_lang), lang_of(par_t, par_lang))
                         for child in inner:
                             combined.append(child)
 
@@ -434,7 +450,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         return assemble(
             primary, parallel,
-            (primary_project, primary_file), (parallel_project, parallel_file))
+            (primary_project, primary_file), (parallel_project, parallel_file),
+            primary_lang, parallel_lang)
 
     def _resolve_parallel_range(self, target: str, target_end: Optional[str], parallel_project: str):
         """Resolve a parallel URN to (project, file_name, from_start, to_end, include_tail).
@@ -736,19 +753,24 @@ class ExternalCompilerProcessor(CompilerProcessor):
         Update the processing context for the given element, after the element has been processed.
         """
         context = self.linear_data.processing_context[-1]
+
+        # A single-point range (start == end == deepest_common_ancestor) must still close here,
+        # since there is no deeper element for the end-element check below to ever run against.
+        is_end_element = (
+            not context['before_start']
+            and not context['after_end']
+            and element is self.end_element
+        )
+        if is_end_element:
+            context['after_end'] = True
+
         if element is self.deepest_common_ancestor:
             context['inside_deepest_common_ancestor'] = False
+            context["include_tail_after_end"] = self.include_tail_after_end if is_end_element else False
             return context
 
-
         # always reset the include_tail_after_end flag except for the one case where we are processing the end element
-        context["include_tail_after_end"] = False
-
-        if not context['before_start'] and not context['after_end']:
-            # between start and end
-            if element is self.end_element:
-                context['after_end'] = True
-                context["include_tail_after_end"] = self.include_tail_after_end
+        context["include_tail_after_end"] = self.include_tail_after_end if is_end_element else False
 
         context['element_path'] = None
         return context
