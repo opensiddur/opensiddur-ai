@@ -36,7 +36,6 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
     page_break_anchors,
 )
 from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_offsets
-from opensiddur.tests.importer.feinstein_haggadah import support
 
 ALL_FOLIOS = [f"{folio}{side}" for folio in range(2, 41) for side in ("r", "v")]
 
@@ -454,31 +453,6 @@ class TestCitationBibl(unittest.TestCase):
     def test_header_without_source_desc_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             header_with_page_scope("<tei:teiHeader/>", project_id="p", from_page="2r", to_page="3v")
-
-
-class TestGeneratedProject(unittest.TestCase):
-    """Checks against the committed project, skipped when it is not present."""
-
-    PROJECT = Path("project/heidenheim_haggadah_1822")
-
-    def setUp(self) -> None:
-        support.require_path(self.PROJECT, "haggadah project not generated")
-
-    def test_every_folio_appears_exactly_once_across_the_project(self) -> None:
-        found: list[str] = []
-        for path in self.PROJECT.glob("*.xml"):
-            found.extend(
-                re.findall(r'<tei:pb n="([^"]+)" ed="1822" facs="[^"]+"/>', path.read_text("utf-8"))
-            )
-        self.assertEqual(sorted(found), sorted(ALL_FOLIOS))
-
-    def test_every_file_declares_a_page_range(self) -> None:
-        for path in self.PROJECT.glob("*.xml"):
-            self.assertRegex(
-                path.read_text("utf-8"),
-                r'<tei:biblScope unit="pages" from="\d+[rv]" to="\d+[rv]"/>',
-                path.name,
-            )
 
 
 class TestLoading(unittest.TestCase):

@@ -91,6 +91,44 @@ class TestPreamble(unittest.TestCase):
         self.assertIn("Ezra SIL", out)
         self.assertIn("TeX Gyre Pagella", out)
 
+    def test_preamble_bookmarks_three_levels_deep(self):
+        """The third heading level (index > book > parshah) must reach the PDF outline.
+
+        The book class stops the table of contents at subsection and hyperref follows it,
+        which silently drops the deepest \addcontentsline.
+        """
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\setcounter{tocdepth}{3}", out)
+        self.assertIn("bookmarksdepth=3", out)
+
+    def test_a_third_level_head_is_added_to_the_outline(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Humash</tei:head>
+              <tei:div><tei:head>Genesis</tei:head>
+                <tei:div><tei:head>Bereshit</tei:head><tei:p>Hi</tei:p></tei:div>
+              </tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\addcontentsline{toc}{subsubsection}", out)
+
+    def test_a_direction_switch_is_gobbled_whole_in_pdf_strings(self):
+        """\textdir takes three letter tokens (TLT). A one-argument gobble leaves "LT" in
+        the bookmark, in front of every non-Hebrew title."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\def\textdir#1#2#3{}", out)
+
 
 class TestSingleStreamMapping(unittest.TestCase):
     """Single-language documents (no p:parallel) must still produce a valid
