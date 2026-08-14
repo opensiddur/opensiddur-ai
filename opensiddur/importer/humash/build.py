@@ -21,8 +21,10 @@ from pathlib import Path
 from opensiddur.importer.feinstein_haggadah.tei_builder import validate_and_write
 from opensiddur.importer.humash import model
 from opensiddur.importer.humash.aliyot import CombinedParsha, Parsha, parse_readings
+from opensiddur.importer.humash.festival_names import hebrew_name
 from opensiddur.importer.humash.names import (
     PAIR_FOR_MEMBER,
+    PAIR_MEMBERS,
     SLUG_TO_HEBREW,
     slugify_reading_name,
 )
@@ -54,6 +56,8 @@ from opensiddur.importer.humash.refs import (
     VARIATION_COMBINED,
     ReadingSpan,
     VerseRef,
+    chapters_in_book,
+    verses_in_chapter,
 )
 
 logger = logging.getLogger(__name__)
@@ -588,12 +592,27 @@ def haftarah_file(
     return f"haftarat_{slug}", _document(header, body)
 
 
-def megillah_file(book: str, hebrew: str, holiday: str) -> tuple[str, str]:
+def megillah_file(
+    book: str,
+    hebrew: str,
+    holiday: str,
+    sourcetexts_root: Path | None = None,
+) -> tuple[str, str]:
     """One of the five megillot, read whole on its festival."""
     from opensiddur.importer.humash.readings import REPEATED_CLOSING_VERSES
 
     urn_base = f"{URN_PREFIX}:megillah/{book}"
-    parts = [_transclude(f"{URN_PREFIX}:{book}")]
+    # Named as a range from the first verse to the last, not by the book's own URN. Every
+    # project holding a Tanakh book claims that URN, including one that carries only the
+    # book's title and no text — MAM has such a file for each of the megillot — and the book
+    # URN would resolve to the first project in priority order whether or not it has the
+    # words. A verse range asks for what is actually read, so it passes over an edition that
+    # does not have it, which is what every other reading the humash emits already does.
+    last_chapter = chapters_in_book(book, sourcetexts_root)
+    whole_book = VerseRef(book, 1, 1).range_urn(
+        VerseRef(book, last_chapter, verses_in_chapter(book, last_chapter, sourcetexts_root))
+    )
+    parts = [_transclude(whole_book)]
     repeat = REPEATED_CLOSING_VERSES.get((f"megillah:{book}", book))
     if repeat is not None:
         chapter, verse = repeat
@@ -644,11 +663,14 @@ def festival_file(
             )
             parts.append(_conditional("opensiddur:rite", passage.rite, variant, "rite"))
 
+    # hebcal names its readings in English; the heading is what the page shows, and everything
+    # else in the volume is titled in Hebrew. The English name is kept in the header.
+    hebrew = hebrew_name(name)
     body = (
         f'<tei:div corresp="{urn_base}" n="reading_{slug}">'
-        f'<tei:head xml:lang="en">{_escape(name)}</tei:head>{"".join(parts)}</tei:div>'
+        f'<tei:head>{_escape(hebrew)}</tei:head>{"".join(parts)}</tei:div>'
     )
-    header = _header(name, name, f"reading/{slug}")
+    header = _header(hebrew, name, f"reading/{slug}")
     return f"reading_{slug}", _document(header, body, lang="he")
 
 
@@ -672,6 +694,26 @@ def book_file(book: str, parshiyot: list[Parsha]) -> tuple[str, str]:
     )
     header = _header(hebrew, book.title(), f"humash/{book}")
     return book, _document(header, body)
+
+
+def haftarah_order(parshiyot: list[Parsha], available: dict[str, object]) -> list[str]:
+    """The haftarah slugs in the order their parshiyot are read.
+
+    Sorting by slug would file חיי שרה between בשלח and חֻקת. A pair's haftarah follows both
+    its members', since a pair is read on a week that would otherwise have read the second of
+    them. Anything with no parshah of that name — hebcal has none today — keeps a place at the
+    end rather than being dropped.
+    """
+    ordered: list[str] = []
+    for parsha in parshiyot:
+        if parsha.slug in available:
+            ordered.append(parsha.slug)
+        pair = PAIR_FOR_MEMBER.get(parsha.slug)
+        # The pair goes after its second member, which is the parshah that follows its first.
+        if pair is not None and pair in available and PAIR_MEMBERS[pair][1] == parsha.slug:
+            ordered.append(pair)
+    ordered.extend(sorted(set(available) - set(ordered)))
+    return ordered
 
 
 def index_file(extra_urns: list[str]) -> tuple[str, str]:
@@ -763,9 +805,9 @@ def build(
         documents.append(book_file(book, by_book.get(book, [])))
 
     extra_urns: list[str] = []
-    for slug, passages in sorted(all_haftarot.items()):
+    for slug in haftarah_order(parshiyot, all_haftarot):
         documents.append(
-            haftarah_file(slug, passages, all_triennial_haftarot.get(slug, {}))
+            haftarah_file(slug, all_haftarot[slug], all_triennial_haftarot.get(slug, {}))
         )
         extra_urns.append(f"{URN_PREFIX}:haftarah/{slug}")
 
@@ -778,7 +820,7 @@ def build(
             ", ".join(unplaced),
         )
     for book, hebrew, holiday in MEGILLOT:
-        documents.append(megillah_file(book, hebrew, holiday))
+        documents.append(megillah_file(book, hebrew, holiday, sourcetexts_root))
         extra_urns.append(f"{URN_PREFIX}:megillah/{book}")
     for slug, reading in sorted(festivals.items()):
         documents.append(festival_file(slug, reading, sourcetexts_root))

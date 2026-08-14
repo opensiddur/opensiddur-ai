@@ -120,6 +120,9 @@ SLUG_TO_HEBREW_BOOK = {slug: hebrew for hebrew, slug, _ in TORAH_BOOKS}
 SLUG_TO_HEBCAL_BOOK = {slug: english for _, slug, english in TORAH_BOOKS}
 HEBCAL_BOOK_TO_SLUG = {english: slug for _, slug, english in TORAH_BOOKS}
 HEBCAL_BOOK_TO_SLUG.update(dict(OTHER_BOOKS))
+# Every book the humash reads from, not only the Torah: a megillah is transcluded as a range
+# over its whole book, which needs that book's verse counts.
+SLUG_TO_HEBCAL_BOOK.update({slug: english for english, slug in OTHER_BOOKS})
 
 # hebcal numbers the Torah books 1-5 in the festival readings.
 BOOK_NUMBER_TO_SLUG = {number: slug for number, (_, slug, _) in enumerate(TORAH_BOOKS, start=1)}

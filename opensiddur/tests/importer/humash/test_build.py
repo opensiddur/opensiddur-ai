@@ -328,3 +328,83 @@ class TestMaftirMilestoneTitle(unittest.TestCase):
             for day in (1, 2, 3, 4, 5)
         }
         self.assertEqual(len(titles), 5)
+
+
+class TestHaftarahOrder(unittest.TestCase):
+    """Haftarot follow the order the parshiyot are read, not the order of their slugs.
+
+    The parshiyot here are synthetic, so this holds whatever MAM and hebcal say.
+    """
+
+    def _parshiyot(self, *slugs):
+        return [
+            Parsha(slug=slug, hebrew_name=slug, book="leviticus", start=_ref(1, 1))
+            for slug in slugs
+        ]
+
+    def test_reading_order_is_kept_rather_than_alphabetical(self):
+        parshiyot = self._parshiyot("vayikra", "tzav", "shmini", "emor")
+        available = {slug: [] for slug in ("emor", "shmini", "tzav", "vayikra")}
+        self.assertEqual(
+            build.haftarah_order(parshiyot, available),
+            ["vayikra", "tzav", "shmini", "emor"],
+        )
+
+    def test_a_pair_follows_both_of_its_members(self):
+        parshiyot = self._parshiyot("vayikra", "tazria", "metzora", "emor")
+        available = {slug: [] for slug in ("vayikra", "tazria", "metzora", PAIR, "emor")}
+        self.assertEqual(
+            build.haftarah_order(parshiyot, available),
+            ["vayikra", "tazria", "metzora", PAIR, "emor"],
+        )
+
+    def test_a_parshah_with_no_haftarah_is_skipped(self):
+        parshiyot = self._parshiyot("vayikra", "tzav", "shmini")
+        self.assertEqual(
+            build.haftarah_order(parshiyot, {"vayikra": [], "shmini": []}),
+            ["vayikra", "shmini"],
+        )
+
+    def test_a_haftarah_belonging_to_no_parshah_is_kept_at_the_end(self):
+        parshiyot = self._parshiyot("vayikra", "tzav")
+        order = build.haftarah_order(parshiyot, {"tzav": [], "vayikra": [], "unknown": []})
+        self.assertEqual(order, ["vayikra", "tzav", "unknown"])
+
+
+class TestMegillahFile(unittest.TestCase):
+    """A megillah is read whole, but must still name the verses it is made of.
+
+    Asking for the book's own URN would take whichever project stands first in priority order
+    and claims that book, whether or not that project has the text — and one that carries only
+    the title exists. The verse counts here are synthetic.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        directory = self.root / "hebcal_leyning"
+        directory.mkdir(parents=True)
+        (directory / "numverses.json").write_text(
+            json.dumps({"Esther": [0, 22, 23, 15], "Ruth": [0, 22, 23, 18, 22]}),
+            encoding="utf-8",
+        )
+
+    def _targets(self, book: str, hebrew: str, holiday: str) -> list[str]:
+        _, document = build.megillah_file(book, hebrew, holiday, self.root)
+        return [
+            element.get("target")
+            for element in etree.fromstring(document.encode("utf-8")).iter(f"{J}transclude")
+        ]
+
+    def test_the_whole_book_is_transcluded_as_a_verse_range(self):
+        targets = self._targets("esther", "אֶסְתֵּר", "purim")
+        self.assertEqual(targets[0], f"{build.URN_PREFIX}:esther/1/1-3/15")
+
+    def test_the_books_own_urn_is_not_used(self):
+        targets = self._targets("esther", "אֶסְתֵּר", "purim")
+        self.assertNotIn(f"{build.URN_PREFIX}:esther", targets)
+
+    def test_the_range_ends_on_the_last_verse_of_the_last_chapter(self):
+        targets = self._targets("ruth", "רוּת", "shavuot")
+        self.assertEqual(targets[0], f"{build.URN_PREFIX}:ruth/1/1-4/22")

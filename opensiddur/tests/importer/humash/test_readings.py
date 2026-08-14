@@ -10,8 +10,10 @@ division and the table saying which variation each cycle pattern selects.
 import json
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
+from opensiddur.importer.humash import readings
 from opensiddur.importer.humash.readings import (
     festival_readings,
     triennial,
@@ -268,3 +270,51 @@ class TestFestivalReadingsMaftir(unittest.TestCase):
     def test_sukkot_chol_hamoed_non_maftir_aliyah_is_unaffected(self):
         span = self._span("sukkot_shabbat_chol_ha_moed", "1")
         self.assertEqual(span.unit, UNIT_ALIYAH)
+
+
+class TestHebcalCorrections(unittest.TestCase):
+    """The table that repairs references hebcal names to verses that do not exist.
+
+    The data here is synthetic and shaped like the real file, so these keep their meaning
+    whether or not hebcal has fixed anything.
+    """
+
+    NAME = "triennial-haft.json"
+
+    def setUp(self):
+        self.corrections = {
+            self.NAME: {("Ki Teitzei", "3", 1, "b"): ("4:20", "48:20")},
+        }
+        patcher = unittest.mock.patch.object(
+            readings, "HEBCAL_CORRECTIONS", self.corrections
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _data(self, value: str) -> dict:
+        return {"Ki Teitzei": {"3": [
+            {"k": "Isaiah", "b": "48:12", "e": "48:21"},
+            {"k": "Isaiah", "b": value, "e": "48:20"},
+        ]}}
+
+    def test_the_bad_reference_is_replaced(self):
+        data = readings._apply_corrections(self.NAME, self._data("4:20"))
+        self.assertEqual(data["Ki Teitzei"]["3"][1]["b"], "48:20")
+
+    def test_a_value_already_corrected_upstream_is_left_alone(self):
+        with self.assertNoLogs(readings.logger, "WARNING"):
+            data = readings._apply_corrections(self.NAME, self._data("48:20"))
+        self.assertEqual(data["Ki Teitzei"]["3"][1]["b"], "48:20")
+
+    def test_an_unrecognized_value_is_kept_and_warned_about(self):
+        with self.assertLogs(readings.logger, "WARNING"):
+            data = readings._apply_corrections(self.NAME, self._data("49:20"))
+        self.assertEqual(data["Ki Teitzei"]["3"][1]["b"], "49:20")
+
+    def test_a_path_that_no_longer_exists_is_warned_about(self):
+        with self.assertLogs(readings.logger, "WARNING"):
+            readings._apply_corrections(self.NAME, {"Ki Teitzei": {}})
+
+    def test_a_file_with_no_corrections_is_untouched(self):
+        data = {"Ki Teitzei": {"3": []}}
+        self.assertEqual(readings._apply_corrections("aliyot.json", data), data)

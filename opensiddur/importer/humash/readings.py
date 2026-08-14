@@ -88,10 +88,48 @@ class Passage:
         return seen
 
 
+# Verses hebcal names that do not exist. Corrected on the way in rather than in sourcetexts,
+# which is kept a faithful copy of upstream. Each entry gives the path to the value, what
+# upstream says, and what it should say, so that a fix upstream is noticed rather than
+# silently overwritten.
+HEBCAL_CORRECTIONS: dict[str, dict[tuple, tuple[str, str]]] = {
+    "triennial-haft.json": {
+        # Ki Teitzei year 3 reads Isaiah 48:12-21 and then repeats 48:20, so that the haftarah
+        # does not end on 48:22, אין שלום אמר ה׳ לרשעים. Upstream writes chapter 4, which has
+        # six verses.
+        ("Ki Teitzei", "3", 1, "b"): ("4:20", "48:20"),
+        ("Ki Teitzei", "3", 1, "e"): ("4:20", "48:20"),
+    },
+}
+
+
+def _apply_corrections(name: str, data: dict) -> dict:
+    """Replace the known bad references in one hebcal file, in place."""
+    for path, (wrong, right) in HEBCAL_CORRECTIONS.get(name, {}).items():
+        node = data
+        try:
+            for step in path[:-1]:
+                node = node[step]
+            found = node[path[-1]]
+        except (KeyError, IndexError, TypeError):
+            logger.warning("%s: %s is gone, so its correction no longer applies", name, path)
+            continue
+        if found == right:
+            continue
+        if found != wrong:
+            logger.warning(
+                "%s: %s reads %r, neither the %r this corrects nor the %r it corrects it to; "
+                "leaving it alone", name, path, found, wrong, right,
+            )
+            continue
+        node[path[-1]] = right
+    return data
+
+
 @functools.cache
 def _load(name: str, sourcetexts_root: Path | None = None) -> dict:
     path = hebcal_leyning_data_directory(sourcetexts_root) / name
-    return json.loads(path.read_text(encoding="utf-8"))
+    return _apply_corrections(name, json.loads(path.read_text(encoding="utf-8")))
 
 
 def _haftarah_spans(raw, unit: str = "haftarah") -> list[ReadingSpan]:
