@@ -103,13 +103,13 @@ TANAKH_INDEX: list[Index] = [
                 file_name="the_prophets",
                 transclusions=[
                     Book("יהושע", "Joshua", "joshua"),
-                    Book("שפטים", "Judges", "judges"),
+                    Book("שופטים", "Judges", "judges"),
                     Book("שמואל א", "I Samuel", "samuel_1"),
                     Book("שמואל ב", "II Samuel", "samuel_2"),
                     Book("מלכים א", "I Kings", "kings_1"),
                     Book("מלכים ב", "II Kings", "kings_2"),
-                    Book("ישעיה", "Isaiah", "isaiah"),
-                    Book("ירמיה", "Jeremiah", "jeremiah"),
+                    Book("ישעיהו", "Isaiah", "isaiah"),
+                    Book("ירמיהו", "Jeremiah", "jeremiah"),
                     Book("יחזקאל", "Ezekiel", "ezekiel"),
                     Index(
                         index_title_en="The Twelve",
@@ -121,7 +121,7 @@ TANAKH_INDEX: list[Index] = [
                             Book("הושע", "Hosea", "hosea"),
                             Book("יואל", "Joel", "joel"),
                             Book("עמוס", "Amos", "amos"),
-                            Book("עובדיה", "Obadiah", "obadiah"),
+                            Book("עבדיה", "Obadiah", "obadiah"),
                             Book("יונה", "Jonah", "jonah"),
                             Book("מיכה", "Micah", "micah"),
                             Book("נחום", "Nahum", "nahum"),
@@ -259,14 +259,39 @@ def _xml_escape(text: str) -> str:
     )
 
 
-_PAGE_KEY_RE = re.compile(r"^\s*(?:ספר\s+)?(?P<book>[^/]+)\s*/\s*(?P<chapter>[^/\s]+)\s*$")
+_PAGE_KEY_RE = re.compile(r"^\s*(?:(?:ספר|מגילת)\s+)?(?P<book>[^/]+)\s*/\s*(?P<rest>.+?)\s*$")
+
+# Some sheet tabs group several books under one outer "ספר X" label, with the
+# actual sub-book abbreviated and embedded alongside the chapter numeral in
+# the second field (e.g. "ספר שמואל/שמ""א א" -> sub-book שמ"א, chapter א).
+_SUBBOOK_ABBREVIATIONS = {
+    'שמ"א': "שמואל א",
+    'שמ"ב': "שמואל ב",
+    'מל"א': "מלכים א",
+    'מל"ב': "מלכים ב",
+    'דה"א': "דברי הימים א",
+    'דה"ב': "דברי הימים ב",
+}
 
 
-def _book_key_from_page_key(page_key: str) -> Optional[str]:
+def _split_page_key(page_key: str) -> Optional[tuple[str, str]]:
+    """Resolve a page key to (book_name_he, chapter_token), or None if unparseable."""
     m = _PAGE_KEY_RE.match(page_key or "")
     if not m:
         return None
-    return m.group("book").strip()
+    outer_book = m.group("book").strip()
+    rest = m.group("rest").strip()
+    parts = rest.split(None, 1)
+    if len(parts) == 2:
+        sub_label, chapter_token = parts
+        book = _SUBBOOK_ABBREVIATIONS.get(sub_label, sub_label)
+        return book, chapter_token
+    return outer_book, rest
+
+
+def _book_key_from_page_key(page_key: str) -> Optional[str]:
+    parsed = _split_page_key(page_key)
+    return parsed[0] if parsed else None
 
 
 _HEBREW_NUM_RE = re.compile(r"^[\u05d0-\u05ea\"׳״\s]+$")
@@ -349,10 +374,10 @@ def _valid_urn_segment(value: str) -> str:
 
 
 def _chapter_from_page_key(page_key: str) -> str:
-    m = _PAGE_KEY_RE.match(page_key or "")
-    if not m:
+    parsed = _split_page_key(page_key)
+    if not parsed:
         return ""
-    return _normalize_to_arabic_numerals(m.group("chapter").strip())
+    return _normalize_to_arabic_numerals(parsed[1])
 
 
 def _extract_m_pasuk(scaffold_wikitext: str) -> tuple[str, str]:
