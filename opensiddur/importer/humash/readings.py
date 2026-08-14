@@ -197,10 +197,19 @@ def festival_readings(sourcetexts_root: Path | None = None) -> dict[str, dict]:
         aliyot_spans: list[ReadingSpan] = []
         for label, value in entry.get("fullkriyah", {}).items():
             book = BOOK_NUMBER_TO_SLUG[value["k"]]
-            unit = UNIT_MAFTIR if label == "M" else UNIT_ALIYAH
+            # Most festivals have one maftir, keyed "M". Sukkot's Chol HaMoed Shabbat has a
+            # different maftir per weekday of the intermediate days, keyed "M-day1".."M-day5".
+            is_maftir = label == "M" or label.startswith("M-day")
+            unit = UNIT_MAFTIR if is_maftir else UNIT_ALIYAH
+            if label == "M":
+                normalized_label = "maftir"
+            elif is_maftir:
+                normalized_label = f"maftir_{label[len('M-'):]}"
+            else:
+                normalized_label = label
             aliyot_spans.append(ReadingSpan(
                 unit=unit,
-                label="maftir" if label == "M" else label,
+                label=normalized_label,
                 start=parse_hebcal_ref(book, value["b"]),
                 end=parse_hebcal_ref(book, value["e"]),
                 numbering=NUMBERING_COMMON,

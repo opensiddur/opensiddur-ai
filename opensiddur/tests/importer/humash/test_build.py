@@ -16,6 +16,7 @@ from opensiddur.importer.humash.readings import Passage
 from opensiddur.importer.humash.refs import (
     UNIT_ALIYAH,
     UNIT_ALIYAH_COMBINED,
+    UNIT_MAFTIR,
     ReadingSpan,
     VerseRef,
     triennial_unit,
@@ -301,3 +302,29 @@ class TestBookFile(unittest.TestCase):
             [target.rsplit("/", 1)[1] for target in targets],
             ["vayikra", PAIR, "emor"],
         )
+
+
+class TestMaftirMilestoneTitle(unittest.TestCase):
+    """Regression: Sukkot Chol HaMoed's per-day maftir labels ("maftir_day1", etc., after
+    readings.festival_readings normalizes them) used to have no entry in ALIYAH_TITLES and
+    so fell back to the raw label, which is Latin text with no place inside a Hebrew RTL
+    milestone (it prints mirrored, as `readings.py`'s TRIENNIAL_YEARS comment warns).
+    """
+
+    def test_ordinary_maftir_is_unchanged(self):
+        span = _span(UNIT_MAFTIR, "maftir", (1, 1), (1, 1))
+        self.assertEqual(build._milestone_title(span), "מַפְטִיר")
+
+    def test_a_days_maftir_gets_a_hebrew_day_qualified_title(self):
+        span = _span(UNIT_MAFTIR, "maftir_day1", (1, 1), (1, 1))
+        title = build._milestone_title(span)
+        self.assertNotIn("day", title.lower())
+        self.assertNotIn("1", title)
+        self.assertIn("מַפְטִיר", title)
+
+    def test_each_day_gets_a_distinct_title(self):
+        titles = {
+            build._milestone_title(_span(UNIT_MAFTIR, f"maftir_day{day}", (1, 1), (1, 1)))
+            for day in (1, 2, 3, 4, 5)
+        }
+        self.assertEqual(len(titles), 5)
