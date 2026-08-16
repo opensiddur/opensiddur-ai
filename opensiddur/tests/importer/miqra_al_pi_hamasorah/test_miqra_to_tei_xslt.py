@@ -76,8 +76,8 @@ def _verse_text(body: etree._Element, chapter: str, verse: str) -> str:
 
 def _anchor_ids(element: etree._Element) -> list[str]:
     return [
-        seg.get(f"{{http://www.w3.org/XML/1998/namespace}}id")
-        for seg in element.findall(f".//{{{TEI_NS}}}seg")
+        anchor.get(f"{{http://www.w3.org/XML/1998/namespace}}id")
+        for anchor in element.findall(f".//{{{TEI_NS}}}anchor")
     ]
 
 
@@ -128,8 +128,8 @@ class TestDualAccent(unittest.TestCase):
         note = stand_off.find(f".//{{{TEI_NS}}}note")
         self.assertEqual("#n1-ref", note.get("target"))
         anchors = [
-            seg.get(f"{{http://www.w3.org/XML/1998/namespace}}id")
-            for seg in body.findall(f".//{{{TEI_NS}}}seg")
+            anchor.get(f"{{http://www.w3.org/XML/1998/namespace}}id")
+            for anchor in body.findall(f".//{{{TEI_NS}}}anchor")
         ]
         self.assertIn("n1-ref", anchors)
 
