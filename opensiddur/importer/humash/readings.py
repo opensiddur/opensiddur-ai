@@ -232,6 +232,16 @@ def festival_readings(sourcetexts_root: Path | None = None) -> dict[str, dict]:
     data = _load("holiday-readings.json", sourcetexts_root)
     result: dict[str, dict] = {}
     for name, entry in data.items():
+        if entry.get("alias"):
+            # A pointer, not a reading: hebcal names the occasion and says which reading it
+            # takes. Rosh Chodesh Nisan is the Rosh Chodesh reading, Tzom Gedaliah the Fast
+            # Day (Morning) one, Pesach III (CH"M) is what Israel calls Pesach Chol ha-Moed
+            # Day 1. The reading itself is emitted under the name hebcal points at, so
+            # following the pointer here would print the same text under thirty-one more
+            # headings; which occasions fall on which day is the calendar's business, not a
+            # division of the text.
+            logger.debug("%s reads %s, so it is not a reading of its own", name, entry["key"])
+            continue
         aliyot_spans: list[ReadingSpan] = []
         for label, value in entry.get("fullkriyah", {}).items():
             book = BOOK_NUMBER_TO_SLUG[value["k"]]

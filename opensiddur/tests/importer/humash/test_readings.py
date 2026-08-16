@@ -226,6 +226,10 @@ HOLIDAY_READINGS_FIXTURE = {
             "M-day5": {"k": 4, "b": "29:29", "e": "29:34"},
         },
     },
+    # A pointer rather than a reading: hebcal names the occasion and says which reading it
+    # takes. Real examples are every Rosh Chodesh of a named month, the fast days, and the
+    # Israel names for the chol ha-moed days.
+    "Pesach III (CH''M)": {"alias": True, "il": True, "key": "Pesach I"},
 }
 
 
@@ -318,3 +322,34 @@ class TestHebcalCorrections(unittest.TestCase):
     def test_a_file_with_no_corrections_is_untouched(self):
         data = {"Ki Teitzei": {"3": []}}
         self.assertEqual(readings._apply_corrections("aliyot.json", data), data)
+
+
+class TestFestivalAliases(unittest.TestCase):
+    """An aliased occasion is not a reading of its own.
+
+    Following the pointer would print the same text under another heading; which occasion
+    falls on which day is the calendar's business, not a division of the text.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        directory = self.root / "hebcal_leyning"
+        directory.mkdir(parents=True)
+        (directory / "holiday-readings.json").write_text(
+            json.dumps(HOLIDAY_READINGS_FIXTURE), encoding="utf-8"
+        )
+        self.festivals = festival_readings(self.root)
+
+    def test_an_alias_gets_no_reading_of_its_own(self):
+        self.assertNotIn("pesach_iii_(chm)", self.festivals)
+
+    def test_the_reading_it_points_at_is_still_there(self):
+        self.assertIn("pesach_i", self.festivals)
+        self.assertTrue(self.festivals["pesach_i"]["aliyot"])
+
+    def test_no_reading_is_left_without_content_by_the_alias_rule(self):
+        for slug, reading in self.festivals.items():
+            with self.subTest(slug=slug):
+                self.assertTrue(reading["aliyot"] or reading["haftarot"])
