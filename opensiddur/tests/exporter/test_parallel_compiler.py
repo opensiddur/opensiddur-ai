@@ -616,6 +616,22 @@ class TestParallelCompilationFlag(_ProcessorBase):
             proc.process()
             mock_root.assert_called_once()
 
+    def test_root_returning_none_falls_through_to_normal_compilation(self):
+        """No root counterpart must not abort parallel processing, only defer it.
+
+        Returning None leaves parallel_compilation_depth at 0 so that each transclusion
+        pairs itself; swallowing it here would drop the parallel column entirely.
+        """
+        self.linear_data.parallel_projects = ["some-proj"]
+        proc = self._make_processor(in_parallel_compilation=False)
+
+        with patch.object(proc, "_process_parallel_root", return_value=None) as mock_root:
+            result = proc.process()
+            mock_root.assert_called_once()
+
+        self.assertEqual(self.linear_data.parallel_compilation_depth, 0)
+        self.assertTrue(result, "compilation must still produce output")
+
     def test_structural_elements_always_get_markers_in_marker_mode(self):
         """In marker mode, all structural elements get start/end marker pairs."""
         proc = self._make_processor(in_parallel_compilation=True)
