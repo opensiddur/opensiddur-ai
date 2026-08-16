@@ -13,6 +13,15 @@ from opensiddur.common.constants import PROJECT_DIRECTORY, INDEX_DB_DIRECTORY
 
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 
+#: URNs under this prefix identify a stretch of text, so they must be unique within a
+#: project. Other URN types (condition, notes) are names and are meant to be shared.
+TEXT_URN_PREFIX = "urn:x-opensiddur:text:"
+
+
+class DuplicateUrnError(ValueError):
+    """A text URN is mapped to more than one place within a single project."""
+
+
 # Which milestone units contain which others.
 #
 # A milestone's URN scopes from the milestone to the next milestone of the *same* unit
@@ -320,11 +329,15 @@ class ReferenceDatabase:
 
     def add_urn_mapping(self, project: str, file_name: str, element: ElementBase):
         """Add or update a URN mapping.
-        
+
         Args:
             project: The project/directory name
             file_name: The file name containing the element
             element: The element that has the URN mapping
+
+        Raises:
+            DuplicateUrnError: if the same URN is already mapped to a different place in the
+                same project.
         """
         cursor = self.conn.cursor()
         urn = element.get('corresp')
@@ -334,11 +347,36 @@ class ReferenceDatabase:
         end_element_path, end_includes_tail = find_end_of_mapping(element)
         element_tag = element.tag
         element_type = element.get('type')
+
+        # A text URN names one stretch of text, so a second, different mapping for it within
+        # one project is a data error rather than an update. Letting the conflict resolve
+        # silently is how MAM's repeated Decalogue milestones went unnoticed: the row kept
+        # the first element_path and every later segment became unreachable by URN.
+        #
+        # Only text URNs are identities. A condition URN is a feature name and is meant to
+        # repeat — one setting selects the ta'am elyon reading everywhere it occurs — and a
+        # note URN names a kind of note shared across books, so neither is checked.
+        existing = cursor.execute(
+            'SELECT file_name, element_path FROM urn_mappings WHERE urn = ? AND project = ?',
+            (urn, project),
+        ).fetchone() if urn.startswith(TEXT_URN_PREFIX) else None
+        if existing is not None and (
+            existing['file_name'] != file_name or existing['element_path'] != element_path
+        ):
+            raise DuplicateUrnError(
+                f"{urn} is mapped twice in project {project!r}: "
+                f"{existing['file_name']}:{existing['element_path']} and "
+                f"{file_name}:{element_path}"
+            )
+
         cursor.execute('''
             INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(urn, project) DO UPDATE SET
                 file_name = excluded.file_name,
+                element_path = excluded.element_path,
+                end_element_path = excluded.end_element_path,
+                end_includes_tail = excluded.end_includes_tail,
                 updated_at = CURRENT_TIMESTAMP
         ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail))
         self.conn.commit()

@@ -434,13 +434,17 @@
             <!-- add an initial paragraph break -->
             <p/>
         </xsl:if>
-        <xsl:if test="$chapter">
+        <!-- A chapter is opened either by its dropinitial or by an explicit verse 1 marker,
+             never by both: the verse template emits the chapter milestone alongside verse 1,
+             so emitting one here as well would give the chapter two identical corresp
+             values, and the reference database and the parallel compiler each keep only the
+             first of those. Where a verse 1 marker follows, it opens the chapter and this
+             dropinitial is decoration. -->
+        <xsl:if test="$chapter and not(following-sibling::verse[@chapter=$chapter][@verse='1'])">
             <tei:milestone unit="chapter" n="{$chapter}"
                 corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}"/>
-            <xsl:if test="not(following-sibling::verse[@chapter=$chapter][@verse='1'])">
-                <tei:milestone unit="verse" n="1"
-                    corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}/1"/>
-            </xsl:if>
+            <tei:milestone unit="verse" n="1"
+                corresp="urn:x-opensiddur:text:bible:{$book_name}/{$chapter}/1"/>
         </xsl:if>
 
     </xsl:template>
@@ -457,6 +461,14 @@
                 <!-- add an initial paragraph break -->
                 <p/>
             </xsl:if>
+        </xsl:if>
+        <!-- @verse is the canonical number and drives the URN; @editionVerse is JPS's own,
+             emitted only where the two differ. It carries no @corresp, so the reference
+             database and the parallel compiler — which look only at @corresp — ignore it,
+             while a renderer can still show JPS's numbering. A verse continued from a
+             merged one has no @editionVerse at all: it is the same JPS verse. -->
+        <xsl:if test="@editionVerse and @editionVerse != @verse">
+            <tei:milestone unit="edition-verse" n="{@editionVerse}"/>
         </xsl:if>
         <tei:milestone unit="verse" n="{@verse}"
             corresp="urn:x-opensiddur:text:bible:{$book_name}/{@chapter}/{@verse}"/>

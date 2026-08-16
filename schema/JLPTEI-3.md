@@ -56,7 +56,9 @@ An example complete Biblical URN is:
 urn:x-opensiddur:text:bible:genesis/1/1@wlc
 ```
 which identifies the verse Genesis 1:1 in the WLC source.
-The URN `urn:x-opensiddur:text:bible:genesis/1` identifies the chapter Genesis 1 in *every possible* source.
+The URN `urn:x-opensiddur:text:bible:genesis/1` identifies the chapter Genesis 1 in *every* source. A biblical
+URN names a stretch of text, not one edition's way of numbering it, so every project must mean the same thing by
+it — see [Versification](#versification).
 
 While Biblical texts have a natural hierarchical scheme, liturgical texts do not. Siddur texts also have a canonical naming scheme, using the `prayer` namespace. Names will normally be in 
 transliterated Hebrew. Spaces are replaced by `_` characters. Unless the text has a common name (with a common
@@ -115,6 +117,76 @@ All URIs reference the following scopes:
 1. If the URI is on an element with non-empty content, it references that content.
 2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the next milestone of the same unit *or* the end of the file if no subsequent milestone of the same unit exists.
 3. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
+
+## Versification
+
+Editions of the Tanakh do not all divide the text into verses the same way, but a verse URN has to denote the
+same words everywhere or nothing can be joined to anything. The URN space therefore has one **canonical** verse
+division, and every project maps its own numbering onto it.
+
+> **A canonical verse boundary is any point that is a verse boundary under _either_ ta'am elyon or ta'am
+> tachton.**
+
+The two cantillations divide the Decalogue differently. Ta'am tachton merges the four short commandments into a
+single verse — they are too short to stand alone — and reads אנכי together with לא יהיה לך. Ta'am elyon does the
+reverse: one verse per commandment, so the four short ones are four verses, while the first two commandments
+each run long. Neither division is a refinement of the other, but their union is finer than both, and every
+edition's division is a coarsening of that union. An edition verse is therefore always a whole number of
+consecutive canonical verses, which is what makes a mapping possible at all.
+
+The canonical division is the one the Leningrad Codex numbers, so `wlc` needs no mapping. Exodus 20 has **26**
+canonical verses and Deuteronomy 5 has **33**:
+
+| canonical | text | MAM (ta'am tachton) | JPS 1917 (common) |
+|---|---|---|---|
+| `exodus/20/2` | אנכי | 20:2 | 20:2 |
+| `exodus/20/3` | לא יהיה לך | 20:2 | 20:3 |
+| `exodus/20/13` | לא תרצח | 20:12 | 20:13 |
+| `exodus/20/14` | לא תנאף | 20:12 | 20:13 |
+| `exodus/20/15` | לא תגנב | 20:12 | 20:13 |
+| `exodus/20/16` | לא תענה | 20:12 | 20:13 |
+| `exodus/20/17` | לא תחמד | 20:13 | 20:14 |
+| `exodus/20/26` | ולא תעלה במעלת | 20:22 | 20:23 |
+
+A handful of chapters diverge for reasons unrelated to cantillation — a chapter boundary one verse further on,
+a verse a witness does not contain. Those are recorded in `opensiddur/common/versification.py`, which is the
+single place any edition's numbering is stated.
+
+### Recording an edition's own numbering
+
+Two milestone units carry the two numberings, and they must not be confused:
+
+| unit | `@corresp` | `@n` | role |
+|---|---|---|---|
+| `verse` | required, canonical URN | canonical number | identity, alignment, transclusion |
+| `edition-verse` | **never** | the edition's own number | display only |
+
+```xml
+<!-- Miqra al pi ha-Masorah, Exodus 20. One MAM verse, four canonical verses. -->
+<tei:milestone unit="edition-verse" n="12"/>
+<tei:p><tei:milestone unit="verse" n="13" corresp="urn:x-opensiddur:text:bible:exodus/20/13"/>לֹא תִרְצָח</tei:p>
+<tei:p><tei:milestone unit="verse" n="14" corresp="urn:x-opensiddur:text:bible:exodus/20/14"/>לֹא תִנְאָף</tei:p>
+<tei:p><tei:milestone unit="verse" n="15" corresp="urn:x-opensiddur:text:bible:exodus/20/15"/>לֹא תִגְנֹב</tei:p>
+<tei:p><tei:milestone unit="verse" n="16" corresp="urn:x-opensiddur:text:bible:exodus/20/16"/>לֹא תַעֲנֶה</tei:p>
+<tei:milestone unit="edition-verse" n="13"/>
+<tei:milestone unit="verse" n="17" corresp="urn:x-opensiddur:text:bible:exodus/20/17"/>לֹא תַחְמֹד
+```
+
+Because `edition-verse` carries no `@corresp`, the reference database and the parallel compiler — which look
+only at `@corresp` — ignore it entirely. Which numbering a reader sees is a rendering choice, driven by the
+`opensiddur:verse-numbering` setting.
+
+### Rules
+
+- **One milestone per canonical verse, exactly once per project.** A verse split across paragraphs by a
+  parashah break in the middle of it is still one verse and keeps one milestone; its scope runs to the next
+  verse milestone regardless of paragraph boundaries. Repeating the milestone gives the verse two identical
+  `@corresp` values, and both the reference database and the parallel compiler keep only the first and silently
+  drop the rest.
+- **Never renumber to paper over a disagreement.** If an edition's verse count does not match the canonical
+  one and the reason is not in the versification table, that is a defect in the importer or an unrecorded
+  divergence, not something to be shifted into alignment.
+- `opensiddur/exporter/validate_versification.py` checks both of these across the Tanakh projects.
 
 #### Contributors and contributor URNs
 Contributions are credited in the file header using `tei:respStmt` entries, with a contributor URN stored in `tei:name/@ref`.
@@ -1256,5 +1328,10 @@ The truth tables are here:
 
 ### Alignment
 
-Translation (or other alternate text) alignment can be performed if both texts declare their correspondence to common URNs using the `corresp` attribute. For example, if two Bibles declare that a verse corresponds to `urn:x-opensiddur:text:bible:song_of_songs/1/5`, then that segment of text can be aligned with each other. The alignment will starting from the declared milestone until the next verse-level unit.
+Translation (or other alternate text) alignment can be performed if both texts declare their correspondence to common URNs using the `corresp` attribute. For example, if two Bibles declare that a verse corresponds to `urn:x-opensiddur:text:bible:song_of_songs/1/5`, then that segment of text can be aligned with each other. The alignment starts from the declared milestone and runs until the next verse-level unit.
+
+The join is on exact URN equality and nothing else: the compiler has no notion of one edition's verse
+corresponding to several of another's. Two texts therefore align correctly only if both number their verses
+canonically — see [Versification](#versification) — and a `@corresp` repeated within a document breaks the join
+silently, because only the first segment carrying a given URN is kept.
 

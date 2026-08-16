@@ -59,3 +59,20 @@ class TestJlpteiOddConstraints(unittest.TestCase):
         )
         self.assertTrue(member, "Expected j:divineName to be member of model.nameLike.agent")
 
+    def test_corresp_is_unique_within_a_document(self):
+        """A repeated URN breaks alignment and resolution silently, so the schema rejects it."""
+        reports = self.tree.xpath(
+            "//tei:constraintSpec[@ident='corresp-uniqueness']//sch:report",
+            namespaces=self.ns,
+        )
+        self.assertTrue(reports, "Expected a schematron report for duplicate @corresp")
+
+    def test_edition_verse_milestone_must_not_carry_a_urn(self):
+        """unit='edition-verse' records an edition's own numbering, never an identity."""
+        asserts = self.tree.xpath(
+            "//tei:constraintSpec[@ident='edition-verse-constraints']//sch:assert/@test",
+            namespaces=self.ns,
+        )
+        self.assertIn("not(@corresp)", asserts)
+        self.assertIn("@n", asserts)
+
