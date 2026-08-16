@@ -49,8 +49,7 @@ KNOWN_ABSENCES: dict[str, set[tuple[str, int, int]]] = {
 #: Chapters where a project's verse division is known to differ and has not yet been
 #: reconciled with the canonical numbering. These predate the canonical URN space and are
 #: reported as unresolved rather than as regressions. Each needs the edition's own text
-#: aligned against the canonical division before it can be encoded or fixed; zechariah 4
-#: and 14 in particular look transposed rather than genuinely divergent.
+#: aligned against the canonical division before it can be encoded or fixed.
 UNRESOLVED_CHAPTERS: set[tuple[str, str, int]] = {
     ("jps1917", "ezra", 2),
     ("jps1917", "ezra", 4),
@@ -59,9 +58,6 @@ UNRESOLVED_CHAPTERS: set[tuple[str, str, int]] = {
     ("jps1917", "leviticus", 14),
     ("jps1917", "nehemiah", 7),
     ("jps1917", "psalms", 30),
-    ("jps1917", "zechariah", 4),
-    ("jps1917", "zechariah", 8),
-    ("jps1917", "zechariah", 14),
 }
 
 
