@@ -237,11 +237,7 @@
   <!-- Variant documentation (נוסח) -->
   <xsl:template match="miqra:variant" mode="inline">
     <xsl:if test="@noteId">
-      <!-- Use tei:seg instead of tei:anchor because the compiler inserts resolved
-           annotations as children of the referenced element; tei:anchor must be empty. -->
-      <tei:seg>
-        <xsl:attribute name="xml:id" select="concat(@noteId, '-ref')"/>
-      </tei:seg>
+      <tei:anchor xml:id="{concat(@noteId, '-ref')}"/>
     </xsl:if>
     <xsl:apply-templates select="miqra:display" mode="inline"/>
   </xsl:template>
@@ -358,18 +354,17 @@
   </xsl:template>
 
   <xsl:template match="miqra:anchor" mode="inline">
-    <!-- Use tei:seg instead of tei:anchor because annotations get inserted as children. -->
-    <tei:seg>
+    <tei:anchor>
       <xsl:copy-of select="@xml:id"/>
-    </tei:seg>
+    </tei:anchor>
   </xsl:template>
 
   <!-- An anchor lifted out of column C sits beside the parashah breaks, not inside a verse,
        so it reaches mode="block"; without this rule the built-in one would discard it. -->
   <xsl:template match="miqra:anchor" mode="block">
-    <tei:seg>
+    <tei:anchor>
       <xsl:copy-of select="@xml:id"/>
-    </tei:seg>
+    </tei:anchor>
   </xsl:template>
 
   <!-- Dual cantillation (מ:כפול): the two readings are alternate wordings of the same text,
@@ -396,13 +391,13 @@
   </xsl:template>
 
   <xsl:template match="miqra:variant[@noteId]" mode="anchor-only">
-    <tei:seg xml:id="{@noteId}-ref"/>
+    <tei:anchor xml:id="{@noteId}-ref"/>
   </xsl:template>
 
   <xsl:template match="miqra:anchor" mode="anchor-only">
-    <tei:seg>
+    <tei:anchor>
       <xsl:copy-of select="@xml:id"/>
-    </tei:seg>
+    </tei:anchor>
   </xsl:template>
 
   <!-- A strand is only ever reached through miqra:dual-accent, which selects its children
