@@ -22,7 +22,6 @@ from opensiddur.importer.humash.names import (
 )
 from opensiddur.importer.humash.refs import (
     BOOK_NUMBER_TO_SLUG,
-    NUMBERING_COMMON,
     HEBCAL_BOOK_TO_SLUG,
     UNIT_ALIYAH,
     UNIT_MAFTIR,
@@ -30,6 +29,8 @@ from opensiddur.importer.humash.refs import (
     triennial_unit,
     ReadingSpan,
     VerseRef,
+    NUMBERING_COMMON,
+    canonical_ref,
     hebcal_ref_half,
     parse_hebcal_ref,
 )
@@ -142,9 +143,8 @@ def _haftarah_spans(raw, unit: str = "haftarah") -> list[ReadingSpan]:
             unit=unit,
             label=str(index),
             start=parse_hebcal_ref(book, part["b"]),
-            end=parse_hebcal_ref(book, part["e"]),
+            end=parse_hebcal_ref(book, part["e"], at_end=True),
             note=part.get("note"),
-            numbering=NUMBERING_COMMON,
             start_half=hebcal_ref_half(part["b"]),
             end_half=hebcal_ref_half(part["e"]),
         ))
@@ -189,7 +189,8 @@ def _repeated_span(key: str, spans: list[ReadingSpan]) -> ReadingSpan | None:
     if repeat is None:
         return None
     chapter, verse = repeat
-    ref = VerseRef(book, chapter, verse)
+    # Stated the way the printed editions number, like everything else taken from hebcal.
+    ref = canonical_ref(NUMBERING_COMMON, VerseRef(book, chapter, verse))
     return ReadingSpan(unit="haftarah.repeated", label="repeated", start=ref, end=ref)
 
 
@@ -259,8 +260,7 @@ def festival_readings(sourcetexts_root: Path | None = None) -> dict[str, dict]:
                 unit=unit,
                 label=normalized_label,
                 start=parse_hebcal_ref(book, value["b"]),
-                end=parse_hebcal_ref(book, value["e"]),
-                numbering=NUMBERING_COMMON,
+                end=parse_hebcal_ref(book, value["e"], at_end=True),
             ))
         passages: list[Passage] = []
         for hebcal_key, rite in HEBCAL_RITE_KEYS.items():
@@ -303,8 +303,7 @@ def _division_spans(
             unit=triennial_unit(year, maftir=maftir, variation=variation, owner=owner),
             label=f"{year}.{name}" if variation is None else f"{variation}.{year}.{name}",
             start=parse_hebcal_ref(book, value[0]),
-            end=parse_hebcal_ref(book, value[1]),
-            numbering=NUMBERING_COMMON,
+            end=parse_hebcal_ref(book, value[1], at_end=True),
             owner=owner,
         ))
     return spans

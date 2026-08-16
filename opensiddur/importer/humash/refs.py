@@ -14,6 +14,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from opensiddur.common import versification
+from opensiddur.common.versification import NUMBERING_COMMON, NUMBERING_MASORAH
 from opensiddur.importer.util.pages import hebcal_leyning_data_directory
 
 # Unit-spaces. These become tei:milestone/@unit, and refdb.UNIT_CONTAINED_BY decides which of
@@ -139,35 +141,12 @@ SLUG_TO_HEBCAL_BOOK.update({slug: english for english, slug in OTHER_BOOKS})
 BOOK_NUMBER_TO_SLUG = {number: slug for number, (_, slug, _) in enumerate(TORAH_BOOKS, start=1)}
 
 
-# Verse numbering conventions, and the project that follows each.
-#
-# Four Torah chapters are divided into verses differently by different editions, because the
-# Decalogue and a few other passages can be grouped by the upper cantillation (ta'am elyon) or
-# the lower (ta'am tachton). The humash therefore emits a variant range per numbering, under
-# conditional control; see model.py. MAM's division is the default, since the aliyah
-# boundaries come from MAM.
-NUMBERING_MASORAH = "masorah"       # Miqra al pi ha-Masorah
-NUMBERING_LENINGRAD = "leningrad"   # Westminster Leningrad Codex
-NUMBERING_COMMON = "common"         # common printed editions, which hebcal and jps1917 follow
-
-NUMBERINGS = (NUMBERING_MASORAH, NUMBERING_LENINGRAD, NUMBERING_COMMON)
-DEFAULT_NUMBERING = NUMBERING_MASORAH
-
-NUMBERING_PROJECT = {
-    NUMBERING_MASORAH: "miqra_al_pi_hamasorah",
-    NUMBERING_LENINGRAD: "wlc",
-    NUMBERING_COMMON: "jps1917",
-}
-
-# Chapters whose verse count depends on the numbering. Everywhere else the three agree, so
-# hebcal's counts are used directly. Verified against each edition's own source rather than
-# against the generated projects: miqra_al_pi_hamasorah's Numbers 10 is short two verses in
-# the project but not in MAM itself, and encoding that would bake a defect into the humash.
-DIVERGENT_CHAPTER_VERSES: dict[tuple[str, int], dict[str, int]] = {
-    ("exodus", 20): {NUMBERING_MASORAH: 22, NUMBERING_LENINGRAD: 26, NUMBERING_COMMON: 23},
-    ("numbers", 25): {NUMBERING_MASORAH: 18, NUMBERING_LENINGRAD: 19, NUMBERING_COMMON: 19},
-    ("deuteronomy", 5): {NUMBERING_MASORAH: 29, NUMBERING_LENINGRAD: 33, NUMBERING_COMMON: 30},
-}
+# The bible URN space has one canonical verse division (opensiddur.common.versification), so
+# every range here is stated in it. The sources are not: MAM gives the weekly aliyot in its own
+# numbering and hebcal gives everything else in the common printed editions', and in the
+# Decalogue and a handful of other chapters those differ from canonical. Each reference is
+# converted where it is read, by _parse_verse_position for MAM and parse_hebcal_ref for hebcal,
+# so that nothing downstream has to carry a numbering at all.
 
 
 @dataclass(frozen=True, order=True)
@@ -207,10 +186,6 @@ class ReadingSpan:
     end: VerseRef
     # Free text from the source noting that other traditions divide differently.
     note: str | None = None
-    # Which edition's verse division the references are stated in. It matters only in the
-    # four chapters of DIVERGENT_CHAPTER_VERSES: MAM supplies the weekly aliyot in its own
-    # numbering, while everything taken from hebcal follows the common printed editions.
-    numbering: str = "masorah"
     # The reading this span's URN hangs off, where that is not the file it is emitted in. Set
     # for the two parshiyot of a pair, which share a file but keep their own URN spaces:
     # without it their identically numbered aliyot would both be .../vayakhel_pekudei/1.
@@ -227,18 +202,6 @@ class ReadingSpan:
         """The book this span lies in. Both ends are always in the same one."""
         return self.start.book
 
-    @property
-    def crosses_divergent_chapter(self) -> bool:
-        """Whether either end lies in a chapter the editions divide differently.
-
-        Only these spans need a per-numbering variant; everywhere else one range serves
-        every edition.
-        """
-        return any(
-            (ref.book, ref.chapter) in DIVERGENT_CHAPTER_VERSES
-            for ref in (self.start, self.end)
-        )
-
     def __post_init__(self):
         if self.start.book != self.end.book:
             raise ValueError(f"{self.unit} {self.label} crosses books: {self.start}-{self.end}")
@@ -253,21 +216,32 @@ def _verse_counts(sourcetexts_root: Path | None = None) -> dict[str, list[int]]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def canonical_ref(numbering: str, ref: VerseRef, at_end: bool = False) -> VerseRef:
+    """`ref`, stated in `numbering`, as a verse of the canonical division.
+
+    An edition verse may cover several canonical ones — MAM reads the four short commandments
+    as a single verse where the canonical division has four — so a reference that opens a
+    reading takes the first of them and one that closes it takes the last.
+    """
+    first, last = versification.to_canonical(numbering, ref.book, ref.chapter, ref.verse)
+    chosen = last if at_end else first
+    return VerseRef(ref.book, chosen.chapter, chosen.verse)
+
+
 def verses_in_chapter(
     book: str,
     chapter: int,
     sourcetexts_root: Path | None = None,
-    numbering: str = DEFAULT_NUMBERING,
 ) -> int:
-    """How many verses chapter `chapter` of `book` (an opensiddur slug) has.
+    """How many verses chapter `chapter` of `book` (an opensiddur slug) has, canonically.
 
-    hebcal's counts follow the common printed editions, so the four chapters where the
-    editions disagree are looked up separately — using hebcal's count for a MAM-numbered span
-    would run the span past the end of the chapter as MAM divides it.
+    hebcal's counts follow the common printed editions, which in a few chapters are coarser
+    than the canonical division: taking hebcal's count for canonical Exodus 20 would end the
+    chapter three verses early.
     """
-    divergent = DIVERGENT_CHAPTER_VERSES.get((book, chapter))
-    if divergent is not None:
-        return divergent[numbering]
+    canonical = versification.CANONICAL_VERSE_COUNTS.get((book, chapter))
+    if canonical is not None:
+        return canonical
     counts = _verse_counts(sourcetexts_root)[SLUG_TO_HEBCAL_BOOK[book]]
     if not 1 <= chapter < len(counts):
         raise ValueError(f"{book} has no chapter {chapter}")
@@ -281,7 +255,6 @@ def chapters_in_book(book: str, sourcetexts_root: Path | None = None) -> int:
 def previous_verse(
     ref: VerseRef,
     sourcetexts_root: Path | None = None,
-    numbering: str = DEFAULT_NUMBERING,
 ) -> VerseRef:
     """The verse before `ref`, stepping back over a chapter boundary when needed.
 
@@ -294,7 +267,7 @@ def previous_verse(
         raise ValueError(f"No verse precedes {ref}")
     chapter = ref.chapter - 1
     return VerseRef(
-        ref.book, chapter, verses_in_chapter(ref.book, chapter, sourcetexts_root, numbering)
+        ref.book, chapter, verses_in_chapter(ref.book, chapter, sourcetexts_root)
     )
 
 
@@ -304,16 +277,20 @@ def previous_verse(
 _HEBCAL_REF = re.compile(r"\s*(\d+)\s*:\s*(\d+)\s*([ab]?)\s*\Z")
 
 
-def parse_hebcal_ref(book: str, spec: str) -> VerseRef:
+def parse_hebcal_ref(book: str, spec: str, at_end: bool = False) -> VerseRef:
     """Parse hebcal's ``"chapter:verse"`` form against an opensiddur book slug.
 
-    A half-verse marker is read as the whole verse containing it, since a URN addresses whole
-    verses; ``hebcal_ref_half`` recovers which half was meant so the reading can say so.
+    hebcal numbers by the common printed editions, so the result is converted to the canonical
+    division the URN space uses. A half-verse marker is read as the whole verse containing it,
+    since a URN addresses whole verses; ``hebcal_ref_half`` recovers which half was meant so
+    the reading can say so.
     """
     match = _HEBCAL_REF.match(spec)
     if match is None:
         raise ValueError(f"Unparseable hebcal reference {spec!r} in {book}")
-    return VerseRef(book, int(match.group(1)), int(match.group(2)))
+    return canonical_ref(
+        NUMBERING_COMMON, VerseRef(book, int(match.group(1)), int(match.group(2))), at_end
+    )
 
 
 def hebcal_ref_half(spec: str) -> str | None:

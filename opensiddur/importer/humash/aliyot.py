@@ -52,8 +52,10 @@ from opensiddur.importer.humash.refs import (
     UNIT_PARSHA_COMBINED,
     UNIT_WEEKDAY,
     UNIT_WEEKDAY_COMBINED,
+    NUMBERING_MASORAH,
     ReadingSpan,
     VerseRef,
+    canonical_ref,
     chapters_in_book,
     previous_verse,
     verses_in_chapter,
@@ -168,7 +170,10 @@ def _parse_verse_position(scaffold: str) -> VerseRef | None:
     verse = _hebrew_numeral_to_int(match.group(3))
     if chapter is None or verse is None:
         return None
-    return VerseRef(book, chapter, verse)
+    # MAM's own numbering, which the canonical URN space does not share in the Decalogue and
+    # a few other chapters. A marker names where an aliyah begins, so where MAM reads several
+    # canonical verses as one, the aliyah begins at the first of them.
+    return canonical_ref(NUMBERING_MASORAH, VerseRef(book, chapter, verse))
 
 
 def read_markers(sourcetexts_root: Path | None = None) -> list[_Marker]:

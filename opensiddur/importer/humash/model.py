@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from opensiddur.importer.humash.refs import (
-    DEFAULT_NUMBERING,
     ReadingSpan,
     VerseRef,
     previous_verse,
@@ -50,10 +49,9 @@ class Segment:
 def next_verse(
     ref: VerseRef,
     sourcetexts_root: Path | None = None,
-    numbering: str = DEFAULT_NUMBERING,
 ) -> VerseRef:
     """The verse after `ref`, stepping into the next chapter at a chapter end."""
-    if ref.verse < verses_in_chapter(ref.book, ref.chapter, sourcetexts_root, numbering):
+    if ref.verse < verses_in_chapter(ref.book, ref.chapter, sourcetexts_root):
         return VerseRef(ref.book, ref.chapter, ref.verse + 1)
     return VerseRef(ref.book, ref.chapter + 1, 1)
 
@@ -76,7 +74,6 @@ def segment_by_union(
     start: VerseRef,
     end: VerseRef,
     sourcetexts_root: Path | None = None,
-    numbering: str = DEFAULT_NUMBERING,
 ) -> list[Segment]:
     """Cut `start`-`end` at every span boundary, emitting the text once.
 
@@ -91,13 +88,13 @@ def segment_by_union(
         if start <= span.start <= end:
             boundaries.add(span.start)
         if start <= span.end < end:
-            boundaries.add(next_verse(span.end, sourcetexts_root, numbering))
+            boundaries.add(next_verse(span.end, sourcetexts_root))
 
     ordered = sorted(boundaries)
     segments: list[Segment] = []
     for index, boundary in enumerate(ordered):
         segment_end = (
-            previous_verse(ordered[index + 1], sourcetexts_root, numbering)
+            previous_verse(ordered[index + 1], sourcetexts_root)
             if index + 1 < len(ordered)
             else end
         )
@@ -149,7 +146,6 @@ def segment_reading(
     start: VerseRef | None = None,
     end: VerseRef | None = None,
     sourcetexts_root: Path | None = None,
-    numbering: str = DEFAULT_NUMBERING,
     allow_duplication: bool = True,
 ) -> list[Segment]:
     """Segment a reading, choosing the strategy its spans call for.
@@ -170,4 +166,4 @@ def segment_reading(
         return segment_by_span(spans)
     start = start if start is not None else min(span.start for span in spans)
     end = end if end is not None else max(span.end for span in spans)
-    return segment_by_union(spans, start, end, sourcetexts_root, numbering)
+    return segment_by_union(spans, start, end, sourcetexts_root)

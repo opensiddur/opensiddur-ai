@@ -5,10 +5,9 @@
 # carry no project suffix, so these priorities decide which edition supplies the words.
 
 priority:
-  # Miqra al pi ha-Masorah first: the aliyah and maftir divisions were taken from MAM, so its
-  # verse numbering is the one the ranges are stated in. Put wlc first instead and the four
-  # chapters the editions divide differently — Exodus 20, Numbers 10, Numbers 25 and
-  # Deuteronomy 5 — will need opensiddur:verse-numbering set to match; see below.
+  # Miqra al pi ha-Masorah first, since the aliyah and maftir divisions were taken from MAM.
+  # The order decides only which edition's words are set: every project mints URNs in the one
+  # canonical verse division, so any order resolves the same verses.
   transclusion:
     - miqra_al_pi_hamasorah
     - wlc
@@ -28,13 +27,6 @@ parallel:
   column_order: primary_first
 
 declarations:
-  # Which edition's verse division the transclusion ranges are stated in. Leaving this unset
-  # uses MAM's, which is the default the humash is generated for. Set one of leningrad or
-  # common — and match priority.transclusion to it — to read the four divergent chapters as
-  # wlc or as the common printed editions divide them.
-  opensiddur:verse-numbering:
-    masorah: true
-
   # Which rite's haftarot to print. Leaving the group out entirely keeps *every* variant,
   # each under a heading naming whose custom it is, which is usually what a printed volume
   # wants. Several may be true at once.

@@ -5,9 +5,9 @@ content is the headings and the reading instructions, so nothing here duplicates
 already exists in another project.
 
 Targets carry no ``@project`` suffix, so which edition supplies the text is decided at compile
-time by ``priority.transclusion``. The exception is the four chapters the editions divide into
-verses differently, where one range cannot serve them all; those are emitted once per
-numbering under ``opensiddur:verse-numbering``, defaulting to MAM's division.
+time by ``priority.transclusion``. Every range is stated in the canonical verse division that
+the bible URN space uses (opensiddur.common.versification), so one range serves every edition;
+the sources are converted to it as they are read.
 """
 
 from __future__ import annotations
@@ -39,10 +39,7 @@ from opensiddur.importer.humash.readings import (
     triennial_patterns,
 )
 from opensiddur.importer.humash.refs import (
-    DEFAULT_NUMBERING,
-    DIVERGENT_CHAPTER_VERSES,
     MEGILLOT,
-    NUMBERINGS,
     SLUG_TO_VOCALIZED_BOOK,
     TORAH_BOOKS,
     UNIT_ALIYAH,
@@ -197,6 +194,13 @@ def _milestone(span: ReadingSpan, urn_base: str) -> str:
         # A parshah's own URN, not one below the file's: inside a combined file the marker for
         # each single is what makes urn:...:parsha/<slug> resolve to that single's text.
         urn = f"{URN_PREFIX}:parsha/{span.label}"
+        if urn == urn_base:
+            # A parshah read alone: the file's own div already carries this URN and covers
+            # exactly the same text. Naming it twice maps one URN to two places, which is
+            # what a text URN may not do — it is the join key the parallel compiler and the
+            # reference database resolve by. The marker still opens the division; it just
+            # does not claim the name.
+            return f'<tei:milestone unit="{span.unit}" n="{_escape(title)}"/>'
     else:
         base = f"{URN_PREFIX}:parsha/{span.owner}" if span.owner else urn_base
         urn = f"{base}/{span.unit.replace('.', '_')}/{slugify_reading_name(span.label)}"
@@ -282,29 +286,6 @@ def _triennial_year_feature(year: int) -> str:
     return f"triennial-year-{year}"
 
 
-def _default_numbering_conditional(content: str) -> str:
-    """Wrap `content` so it is used unless another numbering is explicitly selected.
-
-    ``j:none`` over the other numberings is false as soon as one of them is true, and
-    undefined while none is set — which keeps MAM's division as the default.
-    """
-    identifier = _condition_id("numbering_default")
-    others = "".join(
-        f'<tei:fs type="opensiddur:verse-numbering"><tei:f name="{numbering}">'
-        f'<tei:binary value="true"/></tei:f></tei:fs>'
-        for numbering in NUMBERINGS
-        if numbering != DEFAULT_NUMBERING
-    )
-    return (
-        f'<j:conditional xml:id="{identifier}"><j:none>{others}</j:none></j:conditional>'
-        f"{content}"
-        f'<j:endConditional target="#{identifier}"/>'
-    )
-
-
-Conditions = dict[str, tuple[str, list[str]]]
-
-
 def _segment_xml(
     segment: model.Segment,
     urn_base: str,
@@ -331,58 +312,6 @@ def _segment_xml(
     return "".join(parts)
 
 
-def _numbered_variants(
-    spans: list[ReadingSpan],
-    start: VerseRef,
-    end: VerseRef,
-    urn_base: str,
-    sourcetexts_root: Path | None,
-    conditions: Conditions | None = None,
-) -> str:
-    """Emit one variant of a reading per verse numbering, under conditional control.
-
-    Only reached for readings touching Exodus 20, Numbers 10, Numbers 25 or Deuteronomy 5.
-    Everywhere else a single range resolves in every edition and no variant is needed.
-    """
-    parts: list[str] = []
-    for numbering in NUMBERINGS:
-        segments = model.segment_reading(
-            _restated(spans, numbering), start, end, sourcetexts_root, numbering,
-            allow_duplication=False,
-        )
-        content = "".join(
-            _segment_xml(s, urn_base, sourcetexts_root, conditions) for s in segments
-        )
-        if numbering == DEFAULT_NUMBERING:
-            parts.append(_default_numbering_conditional(content))
-        else:
-            parts.append(_conditional(
-                "opensiddur:verse-numbering", numbering, content, f"numbering_{numbering}"
-            ))
-    return "".join(parts)
-
-
-def _restated(spans: list[ReadingSpan], numbering: str) -> list[ReadingSpan]:
-    """The spans as the given edition numbers them.
-
-    Only the ends that fall on the last verse of a divergent chapter move: those are stated as
-    "to the end of the chapter", and each edition ends the chapter at a different verse. A
-    boundary inside such a chapter cannot be restated without a verse-by-verse alignment of the
-    editions, so it is left alone and the reading keeps the numbering it was recorded in.
-    """
-    restated: list[ReadingSpan] = []
-    for span in spans:
-        end = span.end
-        counts = DIVERGENT_CHAPTER_VERSES.get((end.book, end.chapter))
-        if counts is not None and end.verse == counts[span.numbering]:
-            end = VerseRef(end.book, end.chapter, counts[numbering])
-        restated.append(ReadingSpan(
-            unit=span.unit, label=span.label, start=span.start, end=end,
-            note=span.note, numbering=numbering, owner=span.owner,
-        ))
-    return restated
-
-
 TriennialDivisions = dict[tuple[str | None, int], list[ReadingSpan]]
 
 
@@ -406,18 +335,11 @@ def _reading_document(
             "than to their recorded end", slug, ", ".join(sorted(overlapping)),
         )
 
-    needs_variants = any(span.crosses_divergent_chapter for span in spans)
-    if needs_variants:
-        body_inner = _numbered_variants(
-            spans, start, end, urn_base, sourcetexts_root, conditions
-        )
-    else:
-        segments = model.segment_reading(
-            spans, start, end, sourcetexts_root, DEFAULT_NUMBERING,
-            allow_duplication=False,
-        )
-        body_inner = "".join(
-            _segment_xml(s, urn_base, sourcetexts_root, conditions) for s in segments
+    segments = model.segment_reading(
+        spans, start, end, sourcetexts_root, allow_duplication=False,
+    )
+    body_inner = "".join(
+        _segment_xml(s, urn_base, sourcetexts_root, conditions) for s in segments
         )
 
     body = (
@@ -653,7 +575,7 @@ def festival_file(
         for book_spans in by_book.values():
             ordered = sorted(book_spans, key=lambda span: (span.start, span.end))
             segments = model.segment_reading(
-                ordered, sourcetexts_root=sourcetexts_root, numbering=ordered[0].numbering
+                ordered, sourcetexts_root=sourcetexts_root
             )
             parts.extend(_segment_xml(s, urn_base, sourcetexts_root) for s in segments)
 

@@ -11,7 +11,9 @@ from pathlib import Path
 
 from opensiddur.importer.humash import aliyot
 from opensiddur.importer.humash.names import slug_for_hebrew
+from opensiddur.common.versification import NUMBERING_COMMON, NUMBERING_MASORAH
 from opensiddur.importer.humash.refs import (
+    canonical_ref,
     UNIT_ALIYAH,
     UNIT_ALIYAH_COMBINED,
     UNIT_MAFTIR,
@@ -262,8 +264,8 @@ class TestReadingSpan(unittest.TestCase):
             VerseRef("genesis", 50, 26).range_urn(VerseRef("exodus", 1, 1))
 
 
-class TestNumbering(unittest.TestCase):
-    """The four chapters the editions divide differently."""
+class TestCanonicalVerseCounts(unittest.TestCase):
+    """Verse counts follow the canonical division of the bible URN space, not hebcal's."""
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -271,16 +273,44 @@ class TestNumbering(unittest.TestCase):
         self.root = Path(self.temp_dir.name)
         _write_verse_counts(self.root)
 
-    def test_divergent_chapters_depend_on_the_numbering(self):
-        """These four are looked up from a table, so they need no source file at all."""
-        self.assertEqual(verses_in_chapter("exodus", 20, self.root, "masorah"), 22)
-        self.assertEqual(verses_in_chapter("exodus", 20, self.root, "leningrad"), 26)
-        self.assertEqual(verses_in_chapter("exodus", 20, self.root, "common"), 23)
+    def test_a_divergent_chapter_is_counted_canonically(self):
+        """The canonical count comes from a table, so it needs no source file at all — and it
+        is finer than hebcal's, which follows the printed editions."""
+        self.assertEqual(verses_in_chapter("exodus", 20, self.root), 26)
+        self.assertEqual(verses_in_chapter("deuteronomy", 5, self.root), 33)
 
-    def test_other_chapters_are_the_same_in_every_numbering(self):
-        for numbering in ("masorah", "leningrad", "common"):
-            with self.subTest(numbering=numbering):
-                self.assertEqual(verses_in_chapter("genesis", 1, self.root, numbering), 31)
+    def test_an_ordinary_chapter_comes_from_the_source(self):
+        self.assertEqual(verses_in_chapter("genesis", 1, self.root), 31)
+
+
+class TestCanonicalRefs(unittest.TestCase):
+    """References stated in an edition's numbering are converted as they are read."""
+
+    def test_a_mam_reference_below_the_decalogue_is_unchanged(self):
+        self.assertEqual(
+            canonical_ref(NUMBERING_MASORAH, VerseRef("exodus", 20, 1)),
+            VerseRef("exodus", 20, 1),
+        )
+
+    def test_a_mam_reference_after_the_decalogue_shifts(self):
+        """MAM reads the four short commandments as one verse where canonical has four, so
+        everything after them is numbered lower in MAM."""
+        self.assertEqual(
+            canonical_ref(NUMBERING_MASORAH, VerseRef("exodus", 20, 22)),
+            VerseRef("exodus", 20, 26),
+        )
+
+    def test_a_merged_verse_opens_at_its_first_canonical_verse(self):
+        start = canonical_ref(NUMBERING_MASORAH, VerseRef("exodus", 20, 12))
+        end = canonical_ref(NUMBERING_MASORAH, VerseRef("exodus", 20, 12), at_end=True)
+        self.assertEqual((start.verse, end.verse), (13, 16))
+
+    def test_a_common_reference_is_converted_too(self):
+        """hebcal follows the printed editions, which split אנכי but merge the four."""
+        self.assertEqual(
+            canonical_ref(NUMBERING_COMMON, VerseRef("exodus", 20, 23)),
+            VerseRef("exodus", 20, 26),
+        )
 
 
 if __name__ == "__main__":

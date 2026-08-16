@@ -18,6 +18,8 @@ from opensiddur.importer.humash.refs import (
     UNIT_ALIYAH,
     UNIT_ALIYAH_COMBINED,
     UNIT_MAFTIR,
+    UNIT_PARSHA,
+    UNIT_PARSHA_COMBINED,
     ReadingSpan,
     VerseRef,
     triennial_unit,
@@ -113,10 +115,9 @@ class TestPairFile(unittest.TestCase):
             ["urn:x-opensiddur:text:bible:parsha/tazria",
              "urn:x-opensiddur:text:bible:parsha/metzora"],
         )
-        self.assertEqual(
-            by_unit["parsha.combined"][0].get("corresp"),
-            f"urn:x-opensiddur:text:bible:parsha/{PAIR}",
-        )
+        # The pair's own URN is on the file's div, which covers exactly the same text, so the
+        # marker does not claim it a second time.
+        self.assertIsNone(by_unit["parsha.combined"][0].get("corresp"))
         # Both parshiyot have a first aliyah, so the two must not land on one URN.
         self.assertEqual(
             [m.get("corresp") for m in by_unit["aliyah.annual"]],
@@ -575,3 +576,84 @@ class TestFestivalHaftarahHeading(unittest.TestCase):
         reading = {"name": "Pesach I", "aliyot": [_span(UNIT_ALIYAH, "1", (12, 21), (12, 28))],
                    "haftarot": []}
         self.assertNotIn(build.HAFTARAH_TITLE, self._heads(reading))
+
+
+class TestParshaUrnIsClaimedOnce(unittest.TestCase):
+    """A text URN names one stretch of text, so it may be mapped in only one place.
+
+    The file's own div and the parshah milestone cover exactly the same text in a file
+    holding one parshah. Naming it on both makes the reference database reject the file —
+    and, because indexing abandons a file on the first error, silently drops every other URN
+    in it along with the duplicate.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        directory = self.root / "hebcal_leyning"
+        directory.mkdir(parents=True)
+        (directory / "numverses.json").write_text(
+            json.dumps({name: [0] + [40] * 30 for name in
+                        ("Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy")}),
+            encoding="utf-8",
+        )
+
+    def _milestones(self, document: str) -> list:
+        return list(etree.fromstring(document.encode("utf-8")).iter(f"{TEI}milestone"))
+
+    def _parsha(self, slug: str, hebrew: str) -> Parsha:
+        return Parsha(
+            slug=slug, hebrew_name=hebrew, book="leviticus",
+            start=_ref(12, 1), end=_ref(13, 17),
+            spans=[
+                _span(UNIT_PARSHA, slug, (12, 1), (13, 17)),
+                _span(UNIT_ALIYAH, "1", (12, 1), (13, 17)),
+            ],
+        )
+
+    def test_a_parshah_read_alone_does_not_name_itself_twice(self):
+        _, document = build.parsha_file(self._parsha("tazria", "תזריע"), {}, self.root)
+        root = etree.fromstring(document.encode("utf-8"))
+        div = root.find(f"{TEI}text/{TEI}body/{TEI}div")
+        parsha_urn = div.get("corresp")
+        claimed = [
+            element.get("corresp")
+            for element in root.iter()
+            if element.get("corresp") == parsha_urn
+        ]
+        self.assertEqual(len(claimed), 1, f"{parsha_urn} is claimed {len(claimed)} times")
+
+    def test_the_marker_is_still_emitted(self):
+        _, document = build.parsha_file(self._parsha("tazria", "תזריע"), {}, self.root)
+        units = [m.get("unit") for m in self._milestones(document)]
+        self.assertIn(UNIT_PARSHA, units)
+
+    def test_no_urn_in_a_pair_file_is_claimed_twice(self):
+        """In a pair's file the members' URNs differ from the pair's, so they are kept.
+
+        pair_file marks each member itself, so the members carry only their aliyot here.
+        """
+        tazria = Parsha(
+            slug="tazria", hebrew_name="תזריע", book="leviticus",
+            start=_ref(12, 1), end=_ref(13, 17),
+            spans=[_span(UNIT_ALIYAH, "1", (12, 1), (13, 17))],
+        )
+        metzora = Parsha(
+            slug="metzora", hebrew_name="מצֹרע", book="leviticus",
+            start=_ref(14, 1), end=_ref(15, 33),
+            spans=[_span(UNIT_ALIYAH, "1", (14, 1), (15, 33))],
+        )
+        pair = CombinedParsha(
+            slug=PAIR, hebrew_name="תזריע–מצֹרע", book="leviticus",
+            members=("tazria", "metzora"), start=_ref(12, 1), end=_ref(15, 33),
+            spans=[_span(UNIT_ALIYAH_COMBINED, "1", (12, 1), (15, 33))],
+        )
+        _, document = build.pair_file(pair, [tazria, metzora], {}, {}, self.root)
+        claimed = [
+            element.get("corresp")
+            for element in etree.fromstring(document.encode("utf-8")).iter()
+            if element.get("corresp", "").startswith("urn:x-opensiddur:text:")
+        ]
+        self.assertEqual(len(claimed), len(set(claimed)), sorted(claimed))
+        self.assertIn(f"{build.URN_PREFIX}:parsha/tazria", claimed)
