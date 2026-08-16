@@ -307,7 +307,7 @@ class TestBookFile(unittest.TestCase):
 
 class TestIndexFile(unittest.TestCase):
     def test_has_a_title_page_before_the_body(self):
-        _, document = build.index_file([])
+        _, document = build.index_file({})
         root = etree.fromstring(document.encode("utf-8"))
         text = root.find(f"{TEI}text")
         front = text.find(f"{TEI}front")
@@ -324,6 +324,44 @@ class TestIndexFile(unittest.TestCase):
         alt = doc_title.find(f'{TEI}titlePart[@type="alt"]')
         self.assertEqual(alt.get(f"{XML}lang"), "en")
         self.assertEqual(alt.text, "Humash")
+
+    def _body(self, sections: dict) -> object:
+        _, document = build.index_file(sections)
+        root = etree.fromstring(document.encode("utf-8"))
+        return root.find(f"{TEI}text/{TEI}body/{TEI}div")
+
+    def test_the_books_stand_directly_under_the_volume(self):
+        body = self._body({})
+        targets = [t.get("target") for t in body.findall(f"{J}transclude")]
+        self.assertEqual(len(targets), 5)
+        self.assertTrue(all("humash/" in target for target in targets))
+
+    def test_each_group_becomes_a_headed_section(self):
+        body = self._body({
+            "haftarot": [f"{build.URN_PREFIX}:haftarah/bereshit"],
+            "megillot": [f"{build.URN_PREFIX}:megillah/esther"],
+            "readings": [f"{build.URN_PREFIX}:reading/pesach_i"],
+        })
+        sections = body.findall(f"{TEI}div")
+        self.assertEqual(
+            [section.get("n") for section in sections], ["haftarot", "megillot", "readings"]
+        )
+        self.assertEqual(
+            [section.find(f"{TEI}head").text for section in sections],
+            [title for _, title in build.SECTIONS],
+        )
+
+    def test_a_section_holds_its_own_readings(self):
+        body = self._body({"megillot": [f"{build.URN_PREFIX}:megillah/esther"]})
+        section = body.find(f'{TEI}div[@n="megillot"]')
+        self.assertEqual(
+            [t.get("target") for t in section.findall(f"{J}transclude")],
+            [f"{build.URN_PREFIX}:megillah/esther"],
+        )
+
+    def test_an_empty_group_gets_no_section(self):
+        body = self._body({"haftarot": [], "megillot": [], "readings": []})
+        self.assertEqual(body.findall(f"{TEI}div"), [])
 
 
 class TestMaftirMilestoneTitle(unittest.TestCase):

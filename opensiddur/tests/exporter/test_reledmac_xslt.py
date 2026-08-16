@@ -91,19 +91,55 @@ class TestPreamble(unittest.TestCase):
         self.assertIn("Ezra SIL", out)
         self.assertIn("TeX Gyre Pagella", out)
 
-    def test_preamble_bookmarks_three_levels_deep(self):
-        """The third heading level (index > book > parshah) must reach the PDF outline.
-
-        The book class stops the table of contents at subsection and hyperref follows it,
-        which silently drops the deepest \addcontentsline.
+    def test_preamble_bookmarks_four_levels_deep(self):
+        """The deeper heading levels (index > section > haftarah > rite) must reach the PDF
+        outline. The book class stops the table of contents at subsection and hyperref
+        follows it, which silently drops anything deeper.
         """
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\setcounter{tocdepth}{3}", out)
-        self.assertIn("bookmarksdepth=3", out)
+        self.assertIn(r"\setcounter{tocdepth}{4}", out)
+        self.assertIn("bookmarksdepth=4", out)
+
+    def test_a_fourth_level_head_gets_its_own_macro_and_outline_entry(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Humash</tei:head>
+              <tei:div><tei:head>Haftarot</tei:head>
+                <tei:div><tei:head>Bereshit</tei:head>
+                  <tei:div><tei:head>Ashkenaz</tei:head><tei:p>Hi</tei:p></tei:div>
+                </tei:div>
+              </tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\OSheadD{", out)
+        self.assertIn(r"\addcontentsline{toc}{paragraph}", out)
+
+    def test_a_fifth_level_head_stays_at_the_fourth(self):
+        """Nesting deeper than the macros go must not fall off the end of the sequence."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>One</tei:head>
+              <tei:div><tei:head>Two</tei:head>
+                <tei:div><tei:head>Three</tei:head>
+                  <tei:div><tei:head>Four</tei:head>
+                    <tei:div><tei:head>Five</tei:head><tei:p>Hi</tei:p></tei:div>
+                  </tei:div>
+                </tei:div>
+              </tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn("english}Five}", out)
+        self.assertNotIn("OSheadE", out)
 
     def test_a_third_level_head_is_added_to_the_outline(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>

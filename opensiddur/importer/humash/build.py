@@ -735,12 +735,31 @@ def haftarah_order(parshiyot: list[Parsha], available: dict[str, object]) -> lis
     return ordered
 
 
-def index_file(extra_urns: list[str]) -> tuple[str, str]:
+# The parts of the volume that are not the Torah itself. Each gathers its readings under one
+# heading, so that they stand to their readings as a book stands to its parshiyot rather than
+# lying beside the five books as 250 loose sections.
+SECTIONS: tuple[tuple[str, str], ...] = (
+    ("haftarot", "הַפְטָרוֹת"),
+    ("megillot", "מְגִלּוֹת"),
+    ("readings", "קְרִיאֵי מוֹעֵד"),
+)
+
+
+def index_file(sections: dict[str, list[str]]) -> tuple[str, str]:
     """The project entry point, holding the bibliography and transcluding everything."""
     urn = f"{URN_PREFIX}:humash"
     inner = "".join(
         _transclude(f"{URN_PREFIX}:humash/{slug}") for _, slug, _ in TORAH_BOOKS
-    ) + "".join(_transclude(target) for target in extra_urns)
+    )
+    for name, title in SECTIONS:
+        targets = sections.get(name) or []
+        if not targets:
+            continue
+        inner += (
+            f'<tei:div corresp="{urn}/{name}" n="{name}">'
+            f"<tei:head>{_escape(title)}</tei:head>"
+            f"{''.join(_transclude(target) for target in targets)}</tei:div>"
+        )
     body = (
         f'<tei:div corresp="{urn}" n="humash">'
         f"<tei:head>{_escape('חֻמָּשׁ')}</tei:head>{inner}</tei:div>"
@@ -829,12 +848,12 @@ def build(
     for _, book, _ in TORAH_BOOKS:
         documents.append(book_file(book, by_book.get(book, [])))
 
-    extra_urns: list[str] = []
+    sections: dict[str, list[str]] = {name: [] for name, _ in SECTIONS}
     for slug in haftarah_order(parshiyot, all_haftarot):
         documents.append(
             haftarah_file(slug, all_haftarot[slug], all_triennial_haftarot.get(slug, {}))
         )
-        extra_urns.append(f"{URN_PREFIX}:haftarah/{slug}")
+        sections["haftarot"].append(f"{URN_PREFIX}:haftarah/{slug}")
 
     unplaced = sorted(set(all_triennial_haftarot) - set(all_haftarot))
     if unplaced:
@@ -846,12 +865,12 @@ def build(
         )
     for book, hebrew, holiday in MEGILLOT:
         documents.append(megillah_file(book, hebrew, holiday, sourcetexts_root))
-        extra_urns.append(f"{URN_PREFIX}:megillah/{book}")
+        sections["megillot"].append(f"{URN_PREFIX}:megillah/{book}")
     for slug, reading in sorted(festivals.items()):
         documents.append(festival_file(slug, reading, sourcetexts_root))
-        extra_urns.append(f"{URN_PREFIX}:reading/{slug}")
+        sections["readings"].append(f"{URN_PREFIX}:reading/{slug}")
 
-    documents.append(index_file(extra_urns))
+    documents.append(index_file(sections))
 
     written: list[Path] = []
     for file_name, content in documents:

@@ -116,13 +116,12 @@
              misconfigured on some systems. -->
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
-        <!-- Headings go three deep (index > book > parshah), and f:head-level emits the
-             third as \addcontentsline{toc}{subsubsection}. The book class stops the table of
-             contents at subsection, and hyperref takes its bookmark depth from that, so
-             without this the deepest level is silently missing from the PDF outline — a
-             humash bookmarked by book and by haftarah but not by parshah. -->
-        <xsl:text>\setcounter{tocdepth}{3}&#10;</xsl:text>
-        <xsl:text>\hypersetup{bookmarksdepth=3}&#10;</xsl:text>
+        <!-- Headings go four deep (index > section > haftarah > rite), and f:heading-toc-level
+             emits the fourth as \addcontentsline{toc}{paragraph}. The book class stops the
+             table of contents at subsection, and hyperref takes its bookmark depth from that,
+             so without this the deeper levels are silently missing from the PDF outline. -->
+        <xsl:text>\setcounter{tocdepth}{4}&#10;</xsl:text>
+        <xsl:text>\hypersetup{bookmarksdepth=4}&#10;</xsl:text>
         <!-- hyperref builds PDF strings for bookmarks/outlines.  Direction and
              language switches (luabidi/polyglossia) are not representable in
              PDF strings and generate warnings (and sometimes broken outlines).
@@ -189,6 +188,7 @@
         <xsl:text>\newcommand{\OSheadA}[1]{\mbox{}\hfill{\normalfont\LARGE\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSheadB}[1]{\mbox{}\hfill{\normalfont\Large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSheadC}[1]{\mbox{}\hfill{\normalfont\large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSheadD}[1]{\mbox{}\hfill{\normalfont\normalsize\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
 
         <!-- Title page (tei:titlePage).
              Unlike \OSheadA/B/C, these are never emitted inside a reledmac \pstart — a
@@ -912,7 +912,7 @@
             <xsl:call-template name="head-sentinel">
                 <xsl:with-param name="head" select="tei:head[1]"/>
                 <xsl:with-param name="level"
-                                select="min((count(ancestor::tei:div[tei:head]) + 1, 3))"/>
+                                select="min((count(ancestor::tei:div[tei:head]) + 1, 4))"/>
             </xsl:call-template>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
@@ -1382,16 +1382,17 @@
         <xsl:sequence select="count($ctx/preceding::tei:note[not(@type='instruction') and not(ancestor::tei:standOff)])"/>
     </xsl:function>
 
-    <!-- Heading level (1-3) to the \OSheadA/B/C macro suffix. -->
+    <!-- Heading level (1-4) to the \OSheadA/B/C/D macro suffix. -->
     <xsl:function name="f:heading-suffix" as="xs:string">
         <xsl:param name="level" as="xs:integer"/>
-        <xsl:sequence select="('A', 'B', 'C')[min((max(($level, 1)), 3))]"/>
+        <xsl:sequence select="('A', 'B', 'C', 'D')[min((max(($level, 1)), 4))]"/>
     </xsl:function>
 
-    <!-- Heading level (1-3) to the \addcontentsline level driving hyperref bookmarks. -->
+    <!-- Heading level (1-4) to the \addcontentsline level driving hyperref bookmarks. -->
     <xsl:function name="f:heading-toc-level" as="xs:string">
         <xsl:param name="level" as="xs:integer"/>
-        <xsl:sequence select="('section', 'subsection', 'subsubsection')[min((max(($level, 1)), 3))]"/>
+        <xsl:sequence select="('section', 'subsection', 'subsubsection', 'paragraph')[
+            min((max(($level, 1)), 4))]"/>
     </xsl:function>
 
     <!-- Nearest xml:lang in scope for any element, falling back to the document language. -->
