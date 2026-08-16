@@ -12,6 +12,7 @@ from opensiddur.importer.util.pages import (
     get_credits,
     get_page,
 )
+from opensiddur.importer.jps1917.canonical_verses import annotate_canonical_verses
 from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 from opensiddur.importer.util.parshiyot import skeleton_map_json
 from opensiddur.importer.util.prettify import prettify_xml
@@ -583,6 +584,9 @@ def process_mediawiki(
     <mediawikis>{content}</mediawikis>
     </tei:{wrapper_element}>
     """
+    book_name = kwargs.get("book_name")
+    if book_name:
+        pre_xml = annotate_canonical_verses(pre_xml, book_name)
     # Path("temp").mkdir(parents=True, exist_ok=True)
     # with open(f"temp/{kwargs.get("book_name", "temp")}.temp.xml", "w") as f:
     #     f.write(pre_xml)

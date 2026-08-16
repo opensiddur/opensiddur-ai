@@ -332,6 +332,51 @@ class TestTransformBookXSLT(unittest.TestCase):
             self.assertIn('corresp="urn:x-opensiddur:text:bible:genesis/1/1"', result)
             # Note: sof pasuq (׃) is commented out in the current XSLT
     
+    def test_verse_numbering_is_canonical(self):
+        """WLC's numbering *is* the canonical URN numbering, so it passes through untouched.
+
+        The canonical division is the union of the ta'am elyon and ta'am tachton verse
+        boundaries, which is what the Leningrad Codex numbers. WLC therefore needs no
+        remapping and no edition-verse milestones, unlike MAM and JPS, whose own divisions
+        are coarser in the Decalogue. Fixture verse numbers are deliberately spaced apart so
+        a stray offset would show up rather than coincide with the input.
+        """
+        input_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Tanach>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title level="a" type="main">Exodus</title>
+            </titleStmt>
+            <publicationStmt/>
+            <sourceDesc/>
+        </fileDesc>
+    </teiHeader>
+    <tanach>
+        <book>
+            <names><name>Exodus</name></names>
+            <c n="20">
+                <v n="13"><w>לֹא</w><w>תִּרְצָח</w></v>
+                <v n="14"><w>לֹא</w><w>תִּנְאָף</w></v>
+                <v n="26"><w>וְלֹא</w><w>תַעֲלֶה</w></v>
+            </c>
+        </book>
+    </tanach>
+</Tanach>'''
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as f:
+            f.write(self.xslt_content)
+            f.flush()
+
+            result = xslt_transform_string(Path(f.name), input_xml)
+
+        for verse in ("13", "14", "26"):
+            with self.subTest(verse=verse):
+                self.assertIn(
+                    f'corresp="urn:x-opensiddur:text:bible:exodus/20/{verse}"', result
+                )
+        self.assertNotIn('unit="edition-verse"', result)
+
     def test_word_elements_have_spaces(self):
         """Test that w (word) elements are separated by spaces"""
         input_xml = '''<?xml version="1.0" encoding="UTF-8"?>

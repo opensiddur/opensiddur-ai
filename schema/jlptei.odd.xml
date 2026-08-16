@@ -539,6 +539,53 @@
             </sch:rule>
           </constraint>
         </constraintSpec>
+        <constraintSpec ident="corresp-uniqueness" scheme="schematron">
+          <desc>
+            A text URN names one stretch of text, so it may appear on at most one element per
+            document. A repeated corresp breaks alignment and resolution silently: the
+            reference database keeps only the first element bearing it, and the parallel
+            compiler drops every segment after the first.
+
+            Only text URNs are identities. A condition URN is a feature *name* and is meant
+            to repeat — one setting selects the ta'am elyon reading everywhere it occurs —
+            so it is deliberately outside this rule.
+          </desc>
+          <constraint>
+            <sch:rule context="//*[starts-with(@corresp, 'urn:x-opensiddur:text:')]"
+                      xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:report test="preceding::*[@corresp = current()/@corresp]">
+                The corresp <sch:value-of select="@corresp"/> is used more than once in this
+                document. Each text URN must identify exactly one element.
+              </sch:report>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+    </elementSpec>
+
+    <!-- Verse milestones carry two numberings. unit="verse" is the canonical division and
+         carries the URN that joins projects together; unit="edition-verse" carries the
+         edition's own verse number for display and must never carry a URN, so that the
+         reference database and the parallel compiler ignore it. See JLPTEI-3.md,
+         "Versification". -->
+    <elementSpec ident="milestone" module="core" mode="change">
+        <constraintSpec ident="edition-verse-constraints" scheme="schematron">
+          <desc>
+            An edition-verse milestone records an edition's own numbering, not an identity.
+          </desc>
+          <constraint>
+            <sch:rule context="tei:milestone[@unit = 'edition-verse']"
+                      xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:assert test="@n">
+                A milestone with unit="edition-verse" must carry the edition's verse number in @n.
+              </sch:assert>
+              <sch:assert test="not(@corresp)">
+                A milestone with unit="edition-verse" must not carry @corresp: it records an
+                edition's own numbering for display, and only the canonical unit="verse"
+                milestone identifies the text.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
     </elementSpec>
 
     </schemaSpec>
