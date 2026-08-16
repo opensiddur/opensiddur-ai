@@ -912,5 +912,64 @@ class TestTransformBookXSLT(unittest.TestCase):
             self.assertIn('content', result)
 
 
+class TestBookUrnName(unittest.TestCase):
+    """The book slug the URNs are built from.
+
+    WLC titles the paired books with a leading ordinal; every other project, and WLC's own
+    file names, put it last. The input here is synthetic, so these hold whatever the real
+    WLC distribution says.
+    """
+
+    def setUp(self):
+        xslt_source = Path(__file__).parent.parent.parent.parent / "importer/wlc/transform_book.xslt"
+        self.xslt_content = xslt_source.read_text().replace(
+            '<xsl:mode on-no-match="fail"/>',
+            '<xsl:mode on-no-match="shallow-copy"/>'
+        )
+
+    def _urn(self, title: str) -> str:
+        input_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Tanach>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title level="a" type="main">{title}</title>
+            </titleStmt>
+            <publicationStmt/>
+            <sourceDesc/>
+        </fileDesc>
+    </teiHeader>
+    <tanach>
+        <book>
+            <names><name>{title}</name></names>
+        </book>
+    </tanach>
+</Tanach>'''
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as f:
+            f.write(self.xslt_content)
+            f.flush()
+            result = xslt_transform_string(Path(f.name), input_xml)
+        tree = etree.fromstring(result.encode('utf-8'))
+        idno = tree.xpath(
+            '//tei:idno[@type="urn"]',
+            namespaces={'tei': 'http://www.tei-c.org/ns/1.0'},
+        )[0]
+        return idno.text
+
+    def test_a_leading_ordinal_moves_to_the_end(self):
+        self.assertEqual(self._urn("1 Kings"), "urn:x-opensiddur:text:bible:kings_1@wlc")
+
+    def test_the_second_of_a_pair_too(self):
+        self.assertEqual(self._urn("2 Samuel"), "urn:x-opensiddur:text:bible:samuel_2@wlc")
+
+    def test_a_two_word_name_keeps_its_underscore(self):
+        self.assertEqual(
+            self._urn("Song of Songs"), "urn:x-opensiddur:text:bible:song_of_songs@wlc"
+        )
+
+    def test_a_plain_name_is_unchanged(self):
+        self.assertEqual(self._urn("Genesis"), "urn:x-opensiddur:text:bible:genesis@wlc")
+
+
 if __name__ == '__main__':
     unittest.main()
