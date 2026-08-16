@@ -19,6 +19,7 @@ from opensiddur.importer.util.pages import (
 )
 from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
+from opensiddur.importer.miqra_al_pi_hamasorah.canonical_verses import annotate_canonical_verses
 from opensiddur.importer.miqra_al_pi_hamasorah.miqra_wikitext import (
     wikitext_to_intermediate_xml,
 )
@@ -511,6 +512,7 @@ def book_file(book: Book, *, sourcetexts_root: Path | None, project_dir: Path | 
         raise FileNotFoundError(f"Missing Miqra sheets directory: {sheets_dir} (run download first)")
 
     intermediate = miqra_rows_to_intermediate(book, sheets_dir)
+    intermediate = annotate_canonical_verses(intermediate, book.file_name)
     xml_dict = intermediate_to_tei(intermediate)
     header_xml = header(book.book_name_he, book.book_name_en, qualifier=f":{book.file_name}")
     tei_content = tei_file(header_xml, **xml_dict)

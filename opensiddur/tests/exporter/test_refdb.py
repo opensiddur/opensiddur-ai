@@ -7,7 +7,13 @@ import time
 import os
 from lxml import etree
 from lxml.etree import ElementBase
-from opensiddur.exporter.refdb import ReferenceDatabase, UrnMapping, Reference, find_end_of_mapping
+from opensiddur.exporter.refdb import (
+    DuplicateUrnError,
+    ReferenceDatabase,
+    UrnMapping,
+    Reference,
+    find_end_of_mapping,
+)
 
 
 class TestReferenceDatabaseBasics(unittest.TestCase):
@@ -52,43 +58,63 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         """Test adding a URN mapping."""
         project = "test_project"
         file_name = "doc1.xml"
-        elem = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
         
         self.db.add_urn_mapping(project, file_name, elem)
         
         # Verify it was added
         cursor = self.db.conn.cursor()
-        cursor.execute('SELECT * FROM urn_mappings WHERE urn = ?', ("urn:x-opensiddur:test:doc1",))
+        cursor.execute('SELECT * FROM urn_mappings WHERE urn = ?', ("urn:x-opensiddur:text:doc1",))
         row = cursor.fetchone()
         
         self.assertIsNotNone(row)
-        self.assertEqual(row['urn'], "urn:x-opensiddur:test:doc1")
+        self.assertEqual(row['urn'], "urn:x-opensiddur:text:doc1")
         self.assertEqual(row['project'], project)
         self.assertEqual(row['file_name'], file_name)
 
-    def test_add_urn_mapping_update(self):
-        """Test updating an existing URN mapping."""
+    def test_reindexing_the_same_element_is_idempotent(self):
+        """Re-indexing a project must not fail on mappings it already holds."""
         project = "test_project"
-        
-        # Add initial mapping
-        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
-        self.db.add_urn_mapping(project, "file1.xml", elem1)
-        
-        # Update with new file name
-        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
-        self.db.add_urn_mapping(project, "file2.xml", elem2)
-        
-        # Verify it was updated
+        elem = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
+
+        self.db.add_urn_mapping(project, "file1.xml", elem)
+        self.db.add_urn_mapping(project, "file1.xml", elem)
+
         cursor = self.db.conn.cursor()
-        cursor.execute('SELECT file_name FROM urn_mappings WHERE urn = ? AND project = ?', 
-                      ("urn:x-opensiddur:test:doc1", project))
-        row = cursor.fetchone()
-        self.assertEqual(row['file_name'], "file2.xml")
+        cursor.execute('SELECT COUNT(*) AS n FROM urn_mappings WHERE urn = ? AND project = ?',
+                      ("urn:x-opensiddur:text:doc1", project))
+        self.assertEqual(cursor.fetchone()['n'], 1)
+
+    def test_the_same_urn_twice_in_one_project_is_an_error(self):
+        """A URN names one stretch of text, so a second mapping for it is a data error.
+
+        Resolving the conflict silently is how MAM's repeated Decalogue milestones went
+        unnoticed: the row kept the first location and the rest became unreachable by URN.
+        """
+        project = "test_project"
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
+        self.db.add_urn_mapping(project, "file1.xml", elem1)
+
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
+        with self.assertRaises(DuplicateUrnError) as caught:
+            self.db.add_urn_mapping(project, "file2.xml", elem2)
+        self.assertIn("urn:x-opensiddur:text:doc1", str(caught.exception))
+
+    def test_a_second_location_in_the_same_file_is_an_error(self):
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        first = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        first.set("corresp", "urn:x-opensiddur:text:doc1")
+        second = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        second.set("corresp", "urn:x-opensiddur:text:doc1")
+
+        self.db.add_urn_mapping("test_project", "file1.xml", first)
+        with self.assertRaises(DuplicateUrnError):
+            self.db.add_urn_mapping("test_project", "file1.xml", second)
 
     def test_add_urn_mapping_multiple_projects(self):
         """Test that same URN can exist in multiple projects."""
-        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
-        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
         
         self.db.add_urn_mapping("project1", "file1.xml", elem1)
         self.db.add_urn_mapping("project2", "file2.xml", elem2)
@@ -96,7 +122,7 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         # Verify both exist
         cursor = self.db.conn.cursor()
         cursor.execute('SELECT project, file_name FROM urn_mappings WHERE urn = ? ORDER BY project', 
-                      ("urn:x-opensiddur:test:doc1",))
+                      ("urn:x-opensiddur:text:doc1",))
         rows = cursor.fetchall()
         
         self.assertEqual(len(rows), 2)
@@ -128,8 +154,8 @@ class TestReferenceDatabaseGetUrnMappings(unittest.TestCase):
     def _setup_test_data(self):
         """Set up test data after helper method is defined."""
         # Add test data
-        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
-        elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
+        elem2 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
         elem3 = self._create_element_with_corresp("urn:x-opensiddur:test:doc2", "chapter")
         self.db.add_urn_mapping("wlc", "doc1.xml", elem1)
         self.db.add_urn_mapping("jps1917", "doc1.xml", elem2)
@@ -143,11 +169,11 @@ class TestReferenceDatabaseGetUrnMappings(unittest.TestCase):
         
     def test_get_urn_mappings_with_urn(self):
         """Test getting URN mappings filtered by URN."""
-        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:test:doc1")
+        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:text:doc1")
         
         self.assertEqual(len(results), 2)
         for result in results:
-            self.assertEqual(result.urn, "urn:x-opensiddur:test:doc1")
+            self.assertEqual(result.urn, "urn:x-opensiddur:text:doc1")
         
     def test_get_urn_mappings_with_project(self):
         """Test getting URN mappings filtered by project."""
@@ -159,10 +185,10 @@ class TestReferenceDatabaseGetUrnMappings(unittest.TestCase):
             
     def test_get_urn_mappings_with_urn_and_project(self):
         """Test getting URN mappings filtered by both URN and project."""
-        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:test:doc1", project="wlc")
+        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:text:doc1", project="wlc")
         
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].urn, "urn:x-opensiddur:test:doc1")
+        self.assertEqual(results[0].urn, "urn:x-opensiddur:text:doc1")
         self.assertEqual(results[0].project, "wlc")
 
 
@@ -190,7 +216,7 @@ class TestReferenceDatabaseGetByProject(unittest.TestCase):
     def _setup_test_data(self):
         """Set up test data after helper method is defined."""
         # Add test data
-        elem1 = self._create_element_with_corresp("urn:x-opensiddur:test:doc1", "chapter")
+        elem1 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
         elem2 = self._create_element_with_corresp("urn:x-opensiddur:test:doc2", "chapter")
         elem3 = self._create_element_with_corresp("urn:x-opensiddur:test:doc3", "chapter")
         self.db.add_urn_mapping("wlc", "doc1.xml", elem1)
@@ -203,7 +229,7 @@ class TestReferenceDatabaseGetByProject(unittest.TestCase):
         
         self.assertEqual(len(results), 2)
         urns = {r.urn for r in results}
-        self.assertEqual(urns, {"urn:x-opensiddur:test:doc1", "urn:x-opensiddur:test:doc2"})
+        self.assertEqual(urns, {"urn:x-opensiddur:text:doc1", "urn:x-opensiddur:test:doc2"})
         
         # All should be in wlc project
         for result in results:
@@ -245,8 +271,8 @@ class TestReferenceDatabaseGetByProject(unittest.TestCase):
     def test_get_files_by_project_no_duplicates(self):
         """Test that files list contains no duplicates."""
         # Add multiple URNs to same file
-        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/new", "chapter"))
-        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/another", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:text:doc1/new", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:text:doc1/another", "chapter"))
         
         files = self.db.get_files_by_project("wlc")
         
@@ -321,9 +347,9 @@ class TestReferenceDatabaseIndexing(unittest.TestCase):
     def test_index_file(self):
         """Test indexing a single XML file."""
         urns = [
-            "urn:x-opensiddur:test:doc1",
-            "urn:x-opensiddur:test:doc1/1",
-            "urn:x-opensiddur:test:doc1/1/1",
+            "urn:x-opensiddur:text:doc1",
+            "urn:x-opensiddur:text:doc1/1",
+            "urn:x-opensiddur:text:doc1/1/1",
         ]
         xml_path = self._create_test_xml("doc1.xml", urns)
         
@@ -341,7 +367,7 @@ class TestReferenceDatabaseIndexing(unittest.TestCase):
     def test_index_file_ignores_non_opensiddur_urns(self):
         """Test that indexing ignores URNs not starting with urn:x-opensiddur:."""
         urns = [
-            "urn:x-opensiddur:test:doc1",
+            "urn:x-opensiddur:text:doc1",
             "urn:other:test:doc2",  # Should be ignored
             "http://example.com",   # Should be ignored
         ]
@@ -354,7 +380,7 @@ class TestReferenceDatabaseIndexing(unittest.TestCase):
     def test_index_urns(self):
         """Test indexing all XML files in a project directory."""
         # Create multiple XML files
-        self._create_test_xml("doc1.xml", ["urn:x-opensiddur:test:doc1"])
+        self._create_test_xml("doc1.xml", ["urn:x-opensiddur:text:doc1"])
         self._create_test_xml("doc2.xml", ["urn:x-opensiddur:test:doc2"])
         self._create_test_xml("doc3.xml", ["urn:x-opensiddur:test:doc3"])
         
@@ -414,8 +440,8 @@ class TestReferenceDatabaseRemoval(unittest.TestCase):
     def _setup_test_data(self):
         """Set up test data after helper method is defined."""
         # Add test data
-        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/1", "chapter"))
-        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/2", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:text:doc1/1", "chapter"))
+        self.db.add_urn_mapping("wlc", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:text:doc1/2", "chapter"))
         self.db.add_urn_mapping("wlc", "doc2.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc2/1", "chapter"))
         self.db.add_urn_mapping("jps1917", "doc3.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc3/1", "chapter"))
         self.db.add_urn_mapping("jps1917", "doc4.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc4/1", "chapter"))
@@ -428,7 +454,7 @@ class TestReferenceDatabaseRemoval(unittest.TestCase):
         self.assertEqual(removed_count, 2)
         
         # Verify doc1.xml URNs are gone
-        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:test:doc1/1")
+        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:text:doc1/1")
         self.assertEqual(results, [])
         
         # Verify other files still exist
@@ -445,7 +471,7 @@ class TestReferenceDatabaseRemoval(unittest.TestCase):
     def test_remove_file_only_affects_specified_project(self):
         """Test that removing a file only affects the specified project."""
         # Add same file name in different project
-        self.db.add_urn_mapping("jps1917", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:doc1/1", "chapter"))
+        self.db.add_urn_mapping("jps1917", "doc1.xml", self._create_element_with_corresp("urn:x-opensiddur:text:doc1/1", "chapter"))
         
         # Remove from wlc only
         removed_count = self.db.remove_file("doc1.xml", "wlc")
@@ -453,7 +479,7 @@ class TestReferenceDatabaseRemoval(unittest.TestCase):
         self.assertEqual(removed_count, 2)
         
         # Verify jps1917 version still exists
-        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:test:doc1/1", project="jps1917")
+        results = self.db.get_urn_mappings(urn="urn:x-opensiddur:text:doc1/1", project="jps1917")
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].project, "jps1917")
 
@@ -726,7 +752,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
     def test_add_reference_with_urn_target(self):
         """Test adding a reference with URN target."""
         elem = self._create_element_with_target(
-            target="urn:x-opensiddur:test:doc1",
+            target="urn:x-opensiddur:text:doc1",
             element_type="transclude",
             corresp="urn:x-opensiddur:ref:1"
         )
@@ -736,11 +762,11 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         # Verify it was added
         cursor = self.db.conn.cursor()
         cursor.execute('SELECT * FROM element_references WHERE target_start = ?', 
-                      ("urn:x-opensiddur:test:doc1",))
+                      ("urn:x-opensiddur:text:doc1",))
         row = cursor.fetchone()
         
         self.assertIsNotNone(row)
-        self.assertEqual(row['target_start'], "urn:x-opensiddur:test:doc1")
+        self.assertEqual(row['target_start'], "urn:x-opensiddur:text:doc1")
         self.assertEqual(row['element_type'], "transclude")
         self.assertEqual(row['corresponding_urn'], "urn:x-opensiddur:ref:1")
         self.assertFalse(row['target_is_id'])
@@ -768,8 +794,8 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
     def test_add_reference_with_target_range(self):
         """Test adding a reference with targetEnd."""
         elem = self._create_element_with_target(
-            target="urn:x-opensiddur:test:doc1/1",
-            target_end="urn:x-opensiddur:test:doc1/5",
+            target="urn:x-opensiddur:text:doc1/1",
+            target_end="urn:x-opensiddur:text:doc1/5",
             element_type="range"
         )
         
@@ -778,16 +804,16 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         # Verify range was stored
         cursor = self.db.conn.cursor()
         cursor.execute('SELECT * FROM element_references WHERE target_start = ?', 
-                      ("urn:x-opensiddur:test:doc1/1",))
+                      ("urn:x-opensiddur:text:doc1/1",))
         row = cursor.fetchone()
         
         self.assertIsNotNone(row)
-        self.assertEqual(row['target_end'], "urn:x-opensiddur:test:doc1/5")
+        self.assertEqual(row['target_end'], "urn:x-opensiddur:text:doc1/5")
 
     def test_add_reference_with_multiple_targets(self):
         """Test adding a reference with space-separated targets."""
         elem = self._create_element_with_target(
-            target="urn:x-opensiddur:test:doc1 urn:x-opensiddur:test:doc2",
+            target="urn:x-opensiddur:text:doc1 urn:x-opensiddur:test:doc2",
             element_type="multi"
         )
         
@@ -801,18 +827,18 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         
         self.assertEqual(len(rows), 2)
         targets = {row['target_start'] for row in rows}
-        self.assertEqual(targets, {"urn:x-opensiddur:test:doc1", "urn:x-opensiddur:test:doc2"})
+        self.assertEqual(targets, {"urn:x-opensiddur:text:doc1", "urn:x-opensiddur:test:doc2"})
 
     def test_add_reference_stores_element_path(self):
         """Test that element path is correctly stored."""
-        elem = self._create_element_with_target(target="urn:x-opensiddur:test:doc1")
+        elem = self._create_element_with_target(target="urn:x-opensiddur:text:doc1")
         
         self.db.add_reference("test_project", "test.xml", elem)
         
         # Verify element path was stored
         cursor = self.db.conn.cursor()
         cursor.execute('SELECT element_path FROM element_references WHERE target_start = ?', 
-                      ("urn:x-opensiddur:test:doc1",))
+                      ("urn:x-opensiddur:text:doc1",))
         row = cursor.fetchone()
         
         self.assertIsNotNone(row)
@@ -861,7 +887,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
 
     def test_get_references_by_project(self):
         """Test retrieving all references for a project."""
-        elem1 = self._create_element_with_target(target="urn:x-opensiddur:test:doc1")
+        elem1 = self._create_element_with_target(target="urn:x-opensiddur:text:doc1")
         elem2 = self._create_element_with_target(target="urn:x-opensiddur:test:doc2")
         elem3 = self._create_element_with_target(target="urn:x-opensiddur:test:doc3")
         
@@ -883,7 +909,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         
         # Element with corresp (URN)
         div = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
-        div.set("corresp", "urn:x-opensiddur:test:doc1")
+        div.set("corresp", "urn:x-opensiddur:text:doc1")
         
         # Element with target (reference)
         ptr = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}ptr")
@@ -911,7 +937,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
 
     def test_remove_file_removes_references(self):
         """Test that removing a file also removes its references."""
-        elem = self._create_element_with_target(target="urn:x-opensiddur:test:doc1")
+        elem = self._create_element_with_target(target="urn:x-opensiddur:text:doc1")
         self.db.add_reference("proj1", "file1.xml", elem)
         
         # Also add a URN mapping
@@ -929,7 +955,7 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
 
     def test_remove_project_removes_references(self):
         """Test that removing a project also removes its references."""
-        elem = self._create_element_with_target(target="urn:x-opensiddur:test:doc1")
+        elem = self._create_element_with_target(target="urn:x-opensiddur:text:doc1")
         self.db.add_reference("proj1", "file1.xml", elem)
         self.db.add_urn_mapping("proj1", "file1.xml", self._create_element_with_corresp("urn:x-opensiddur:test:urn1", "chapter"))
         
@@ -1036,11 +1062,11 @@ class TestReferenceDatabaseContextManager(unittest.TestCase):
                 # Create element with corresp attribute
                 root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
                 elem = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
-                elem.set("corresp", "urn:x-opensiddur:test:doc1")
+                elem.set("corresp", "urn:x-opensiddur:text:doc1")
                 elem.set("type", "chapter")
                 
                 db.add_urn_mapping("test", "doc1.xml", elem)
-                results = db.get_urn_mappings(urn="urn:x-opensiddur:test:doc1")
+                results = db.get_urn_mappings(urn="urn:x-opensiddur:text:doc1")
                 self.assertEqual(len(results), 1)
             
             # Connection should be closed after context

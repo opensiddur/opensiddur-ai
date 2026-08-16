@@ -154,22 +154,26 @@ class TestDualAccent(unittest.TestCase):
 
 
 class TestMidVerseParashah(unittest.TestCase):
-    """A parashah break inside a verse splits its paragraph. The verse must keep both
-    its text and its milestone on each side of the break."""
+    """A parashah break inside a verse splits its paragraph but not the verse. The text
+    carries on across the break under a single milestone."""
 
     def test_verse_survives_a_mid_text_break(self):
         body, _ = _transform(
             _row("13", 'AAA<miqra:parashah type="close-inline" midVerse="true"/>BBB'),
             _row("14", "CCC"),
         )
-        self.assertEqual("AAA BBB", _verse_text(body, "20", "13"))
+        self.assertEqual("AAABBB", _verse_text(body, "20", "13"))
         milestones = [
             m.get("corresp")
             for m in body.findall(f".//{{{TEI_NS}}}milestone")
             if m.get("unit") == "verse"
         ]
-        # The milestone repeats so the verse's corresp scope resumes after the break.
-        self.assertEqual(2, milestones.count("urn:x-opensiddur:text:bible:exodus/20/13"))
+        # Exactly one milestone per verse. Repeating it in the second paragraph would give
+        # the verse two identical corresp values, and both the reference database and the
+        # parallel compiler keep only the first of those and silently drop the rest. The
+        # verse's scope runs to the next verse milestone regardless of paragraph boundaries,
+        # so a single milestone still covers the text after the break.
+        self.assertEqual(1, milestones.count("urn:x-opensiddur:text:bible:exodus/20/13"))
         self.assertIn("urn:x-opensiddur:text:bible:exodus/20/14", milestones)
 
     def test_plain_verse_is_unaffected(self):

@@ -100,6 +100,8 @@
          context item is a member of the group, not the row. -->
     <xsl:variable name="chapter" select="string(@chapter)"/>
     <xsl:variable name="verse" select="string(@verse)"/>
+    <xsl:variable name="editionVerse" select="string(@editionVerse)"/>
+    <xsl:variable name="editionVerseStart" select="string(@editionVerseStart)"/>
     <xsl:variable name="fileName" select="string(ancestor::miqra:book/@fileName)"/>
     <!-- The rest of the column C/D notes annotate the row — a break another witness has
          but MAM does not, a seder marker, a free {{מ:הערה}} — rather than a point in the
@@ -118,19 +120,37 @@
     </xsl:variable>
     <xsl:choose>
       <xsl:when test="$text-nodes[self::miqra:parashah]">
+        <!-- A parashah break in the middle of a verse splits the verse across paragraphs, but
+             the verse is still one verse: only the first group that carries content opens it,
+             and the rest continue it. Emitting a milestone per group is what previously gave
+             MAM's לא תחמד two identical corresp values. -->
+        <xsl:variable name="group-has-content" as="xs:boolean*">
+          <xsl:for-each-group select="$text-nodes" group-starting-with="miqra:parashah">
+            <xsl:sequence select="
+              exists(current-group()[not(self::miqra:parashah)][not(self::miqra:note)])"/>
+          </xsl:for-each-group>
+        </xsl:variable>
+        <xsl:variable name="first-group" select="index-of($group-has-content, true())[1]"/>
         <xsl:for-each-group select="$text-nodes" group-starting-with="miqra:parashah">
+          <xsl:variable name="position" select="position()"/>
           <xsl:apply-templates select="current-group()[self::miqra:parashah]" mode="flatten"/>
           <xsl:variable name="content"
                         select="current-group()[not(self::miqra:parashah)][not(self::miqra:note)]"/>
           <xsl:if test="exists($content)">
-            <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}">
+            <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}"
+                         editionVerse="{$editionVerse}"
+                         editionVerseStart="{$editionVerseStart}"
+                         opensVerse="{if ($position = $first-group) then 'true' else 'false'}">
               <xsl:copy-of select="$content"/>
             </miqra:verse>
           </xsl:if>
         </xsl:for-each-group>
       </xsl:when>
       <xsl:otherwise>
-        <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}">
+        <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}"
+                     editionVerse="{$editionVerse}"
+                     editionVerseStart="{$editionVerseStart}"
+                     opensVerse="true">
           <xsl:copy-of select="$text-nodes[not(self::miqra:note)]"/>
         </miqra:verse>
       </xsl:otherwise>
@@ -174,21 +194,35 @@
     <xsl:copy-of select="."/>
   </xsl:template>
 
-  <!-- Verse milestone + text (no tei:ab wrapper). -->
+  <!-- Verse milestones + text (no tei:ab wrapper).
+
+       Two units are emitted. @unit='verse' carries the canonical URN and is the join key for
+       alignment and transclusion; there is exactly one per canonical verse. @unit='edition-verse'
+       carries MAM's own number and no @corresp, so the reference database and the parallel
+       compiler — which both look only at @corresp — ignore it, while a renderer can still show
+       MAM's numbering. The two coincide everywhere except the chapters the editions divide
+       differently, where one MAM verse opens several canonical ones. -->
   <xsl:template match="miqra:verse" mode="block">
     <xsl:variable name="chapter" select="normalize-space(@chapter)"/>
     <xsl:variable name="verse" select="normalize-space(@verse)"/>
+    <xsl:variable name="editionVerse" select="normalize-space(@editionVerse)"/>
     <xsl:if test="miqra:has-verse-ref($chapter, $verse)">
-      <tei:milestone unit="verse" n="{$verse}">
-        <xsl:attribute name="corresp">
-          <xsl:text>urn:x-opensiddur:text:bible:</xsl:text>
-          <xsl:value-of select="@fileName"/>
-          <xsl:text>/</xsl:text>
-          <xsl:value-of select="$chapter"/>
-          <xsl:text>/</xsl:text>
-          <xsl:value-of select="$verse"/>
-        </xsl:attribute>
-      </tei:milestone>
+      <xsl:if test="@editionVerseStart = 'true' and @opensVerse = 'true'
+                    and $editionVerse != '' and $editionVerse != $verse">
+        <tei:milestone unit="edition-verse" n="{$editionVerse}"/>
+      </xsl:if>
+      <xsl:if test="@opensVerse = 'true'">
+        <tei:milestone unit="verse" n="{$verse}">
+          <xsl:attribute name="corresp">
+            <xsl:text>urn:x-opensiddur:text:bible:</xsl:text>
+            <xsl:value-of select="@fileName"/>
+            <xsl:text>/</xsl:text>
+            <xsl:value-of select="$chapter"/>
+            <xsl:text>/</xsl:text>
+            <xsl:value-of select="$verse"/>
+          </xsl:attribute>
+        </tei:milestone>
+      </xsl:if>
     </xsl:if>
     <xsl:apply-templates select="node()" mode="inline"/>
   </xsl:template>
