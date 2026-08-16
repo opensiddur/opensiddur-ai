@@ -595,6 +595,57 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn(r"{{\textdir TLT\selectlanguage{english} English note}}", out)
         self.assertIn(r"{{\textdir TLT\selectlanguage{english} Inline English instruction}}", out)
 
+    def test_hebrew_note_wraps_embedded_latin_siglum(self):
+        """MAM apparatus notes are Hebrew prose that embeds Latin manuscript
+        sigla, e.g. "פטרבורג-EVR-II-B-8". \\textdir TRT forces the whole note
+        into strict RTL, which has no per-run bidi detection, so an embedded
+        Latin token renders back-to-front unless it gets its own explicit LTR
+        override — same as digits already get in \\vno/\\chno."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+          <tei:text><tei:body>
+            <tei:p>
+              <tei:milestone unit="verse" n="1"/>טקסט<tei:note xml:lang="he">פטרבורג-EVR-II-B-8 ומ""ג</tei:note>
+            </tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"{{\textdir TLT\selectlanguage{english}EVR-II-B-8}}", out)
+        # The hyphen joining the Hebrew word to the siglum stays outside the
+        # wrap; only the Latin/digit token itself is switched to LTR.
+        self.assertIn("פטרבורג-{{\\textdir TLT\\selectlanguage{english}EVR-II-B-8}}", out)
+
+    def test_pure_hebrew_note_has_no_spurious_latin_wrap(self):
+        """Hebrew abbreviation punctuation (ASCII gershayim, e.g. מ""ג) must
+        not be mistaken for a Latin run: it contains no [A-Za-z0-9], so it
+        should pass through unwrapped."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+          <tei:text><tei:body>
+            <tei:p>
+              <tei:milestone unit="verse" n="1"/>טקסט<tei:note xml:lang="he">וכך מ""ג ודותן</tei:note>
+            </tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertNotIn(r"\textdir TLT", out.split(r"\notenote{", 1)[1])
+
+    def test_english_context_latin_text_not_double_wrapped(self):
+        """Latin text already in an LTR (English) context must go through
+        plain escaping, not the Hebrew-context bidi wrapper — that would be
+        redundant with note-content's own English-note wrap."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:p>
+              <tei:milestone unit="verse" n="1"/>Manuscript EVR-II-B-8 is cited here.
+            </tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertNotIn(r"\textdir TLT\selectlanguage{english}EVR-II-B-8", out)
+        self.assertIn("EVR-II-B-8", out)
+
 
 class TestInlineFormatting(unittest.TestCase):
     """Inline formatting elements that survived the compiler should map to
