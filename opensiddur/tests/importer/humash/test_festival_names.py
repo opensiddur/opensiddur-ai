@@ -38,11 +38,11 @@ class TestHebrewName(unittest.TestCase):
 
     def test_a_reading_named_by_its_parshah(self):
         self.assertEqual(
-            hebrew_name("Masei on Shabbat Rosh Chodesh"), "מסעי (בְּשַׁבָּת רֹאשׁ חֹדֶשׁ)"
+            hebrew_name("Masei on Shabbat Rosh Chodesh"), "מַסְעֵי (בְּשַׁבָּת רֹאשׁ חֹדֶשׁ)"
         )
 
     def test_a_parshah_named_inside_a_qualifier(self):
-        self.assertEqual(hebrew_name("Shabbat Shuva (with Ha'azinu)"), "שַׁבָּת שׁוּבָה (עִם האזינו)")
+        self.assertEqual(hebrew_name("Shabbat Shuva (with Ha'azinu)"), "שַׁבָּת שׁוּבָה (עִם הַאֲזִינוּ)")
 
     def test_an_unknown_occasion_keeps_its_english_and_warns(self):
         with self.assertLogs("opensiddur.importer.humash.festival_names", logging.WARNING):

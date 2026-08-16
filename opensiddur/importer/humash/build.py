@@ -27,6 +27,7 @@ from opensiddur.importer.humash.names import (
     PAIR_MEMBERS,
     SLUG_TO_HEBREW,
     slugify_reading_name,
+    vocalized_name,
 )
 from opensiddur.importer.humash.readings import (
     REPEATED_VERSE_INSTRUCTION,
@@ -42,7 +43,7 @@ from opensiddur.importer.humash.refs import (
     DIVERGENT_CHAPTER_VERSES,
     MEGILLOT,
     NUMBERINGS,
-    SLUG_TO_HEBREW_BOOK,
+    SLUG_TO_VOCALIZED_BOOK,
     TORAH_BOOKS,
     UNIT_ALIYAH,
     UNIT_ALIYAH_COMBINED,
@@ -126,10 +127,12 @@ def _header(title_he: str, title_en: str, urn_suffix: str) -> str:
 </tei:teiHeader>"""
 
 
-def _document(header: str, body: str, lang: str = "he") -> str:
+def _document(header: str, body: str, lang: str = "he", front: str = "") -> str:
+    front_element = f"<tei:front>{front}</tei:front>" if front else ""
     return (
         f'<tei:TEI xmlns:tei="{TEI_NS}" xmlns:j="{J_NS}" xml:lang="{lang}">'
-        f"{header}<tei:text xml:lang=\"{lang}\"><tei:body>{body}</tei:body></tei:text></tei:TEI>"
+        f'{header}<tei:text xml:lang="{lang}">{front_element}'
+        f"<tei:body>{body}</tei:body></tei:text></tei:TEI>"
     )
 
 
@@ -140,6 +143,9 @@ TRIENNIAL_YEARS = {1: "א׳", 2: "ב׳", 3: "ג׳"}
 # What the margin says of a division that belongs to the pair read together, so that it is not
 # mistaken for the same-numbered aliyah of either single, which is beside it in the same file.
 COMBINED_SUFFIX = "מְחֻבָּרוֹת"
+
+# What the prophetic reading of a festival or special Shabbat is headed.
+HAFTARAH_TITLE = "הַפְטָרָה"
 
 
 def _triennial_title(label: str) -> str:
@@ -171,7 +177,7 @@ def _milestone_title(span: ReadingSpan) -> str:
             return f"{ALIYAH_TITLES['maftir']} לְיוֹם {MAFTIR_DAY_LETTERS[day]}"
         return ALIYAH_TITLES["maftir"]
     if span.unit in (UNIT_PARSHA, UNIT_PARSHA_COMBINED):
-        return SLUG_TO_HEBREW.get(label, label)
+        return vocalized_name(label)
     if span.unit == UNIT_ALIYAH_COMBINED:
         return f"{ALIYAH_TITLES.get(label, label)} ({COMBINED_SUFFIX})"
     if span.unit == UNIT_WEEKDAY_COMBINED:
@@ -431,7 +437,7 @@ def parsha_file(
     spans = [parsha.parsha_span, *parsha.spans]
     for division in triennial_divisions.values():
         spans.extend(division)
-    hebrew = SLUG_TO_HEBREW.get(parsha.slug, parsha.hebrew_name)
+    hebrew = vocalized_name(parsha.slug)
     return _reading_document(
         parsha.slug, hebrew, spans, parsha.start, parsha.end, None, sourcetexts_root
     )
@@ -479,7 +485,7 @@ def pair_file(
         spans.extend(division)
 
     return _reading_document(
-        pair.slug, SLUG_TO_HEBREW.get(pair.slug, pair.hebrew_name), spans,
+        pair.slug, vocalized_name(pair.slug), spans,
         pair.start, pair.end, conditions, sourcetexts_root,
     )
 
@@ -537,7 +543,7 @@ def haftarah_file(
     printing four haftarot for it would be wrong however they were headed.
     """
     urn_base = f"{URN_PREFIX}:haftarah/{slug}"
-    hebrew = SLUG_TO_HEBREW.get(slug, slug)
+    hebrew = vocalized_name(slug)
     title = f"הַפְטָרַת {hebrew}"
 
     annual: list[str] = []
@@ -651,17 +657,30 @@ def festival_file(
             )
             parts.extend(_segment_xml(s, urn_base, sourcetexts_root) for s in segments)
 
+    # The haftarah gets a division of its own, headed, rather than following the maftir inside
+    # the reading's div: where a festival has one rite's haftarah and so no rite heading, the
+    # prophetic reading would otherwise begin with nothing at all to announce it, running on
+    # from the end of the Torah reading as though it were more of the same.
+    haftarah_parts: list[str] = []
     for passage in reading["haftarot"]:
         content = _passage_xml(passage, urn_base)
         if passage.rite is None:
-            parts.append(content)
+            haftarah_parts.append(content)
         else:
             variant = (
                 f'<tei:div corresp="{urn_base}/{passage.rite}" n="{passage.rite}">'
                 f"<tei:head>{_escape(passage.title or passage.rite)}</tei:head>"
                 f"{content}</tei:div>"
             )
-            parts.append(_conditional("opensiddur:rite", passage.rite, variant, "rite"))
+            haftarah_parts.append(
+                _conditional("opensiddur:rite", passage.rite, variant, "rite")
+            )
+    if haftarah_parts:
+        parts.append(
+            f'<tei:div corresp="{urn_base}/haftarah" n="haftarah">'
+            f"<tei:head>{_escape(HAFTARAH_TITLE)}</tei:head>"
+            f"{''.join(haftarah_parts)}</tei:div>"
+        )
 
     # hebcal names its readings in English; the heading is what the page shows, and everything
     # else in the volume is titled in Hebrew. The English name is kept in the header.
@@ -681,7 +700,7 @@ def book_file(book: str, parshiyot: list[Parsha]) -> tuple[str, str]:
     transcluding the members as well would print their text twice.
     """
     urn_base = f"{URN_PREFIX}:humash/{book}"
-    hebrew = SLUG_TO_HEBREW_BOOK[book]
+    hebrew = SLUG_TO_VOCALIZED_BOOK[book]
     targets: list[str] = []
     for parsha in parshiyot:
         slug = PAIR_FOR_MEMBER.get(parsha.slug, parsha.slug)
@@ -764,7 +783,13 @@ def index_file(extra_urns: list[str]) -> tuple[str, str]:
     </tei:sourceDesc>
   </tei:fileDesc>
 </tei:teiHeader>"""
-    return "index", _document(header, body)
+    front = (
+        "<tei:titlePage><tei:docTitle>"
+        '<tei:titlePart type="main" xml:lang="he">חֻמָּשׁ</tei:titlePart>'
+        '<tei:titlePart type="alt" xml:lang="en">Humash</tei:titlePart>'
+        "</tei:docTitle></tei:titlePage>"
+    )
+    return "index", _document(header, body, front=front)
 
 
 def build(

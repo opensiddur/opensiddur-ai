@@ -10,7 +10,8 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.importer.humash import build
+from opensiddur.importer.humash import build, names
+from opensiddur.importer.util.hebrew import normalize_hebrew
 from opensiddur.importer.humash.aliyot import CombinedParsha, Parsha
 from opensiddur.importer.humash.readings import Passage
 from opensiddur.importer.humash.refs import (
@@ -304,6 +305,27 @@ class TestBookFile(unittest.TestCase):
         )
 
 
+class TestIndexFile(unittest.TestCase):
+    def test_has_a_title_page_before_the_body(self):
+        _, document = build.index_file([])
+        root = etree.fromstring(document.encode("utf-8"))
+        text = root.find(f"{TEI}text")
+        front = text.find(f"{TEI}front")
+        self.assertIsNotNone(front)
+        self.assertEqual(list(text).index(front), 0)
+
+        doc_title = front.find(f"{TEI}titlePage/{TEI}docTitle")
+        self.assertIsNotNone(doc_title)
+
+        main = doc_title.find(f'{TEI}titlePart[@type="main"]')
+        self.assertEqual(main.get(f"{XML}lang"), "he")
+        self.assertEqual(main.text, "חֻמָּשׁ")
+
+        alt = doc_title.find(f'{TEI}titlePart[@type="alt"]')
+        self.assertEqual(alt.get(f"{XML}lang"), "en")
+        self.assertEqual(alt.text, "Humash")
+
+
 class TestMaftirMilestoneTitle(unittest.TestCase):
     """Regression: Sukkot Chol HaMoed's per-day maftir labels ("maftir_day1", etc., after
     readings.festival_readings normalizes them) used to have no entry in ALIYAH_TITLES and
@@ -408,3 +430,110 @@ class TestMegillahFile(unittest.TestCase):
     def test_the_range_ends_on_the_last_verse_of_the_last_chapter(self):
         targets = self._targets("ruth", "רוּת", "shavuot")
         self.assertEqual(targets[0], f"{build.URN_PREFIX}:ruth/1/1-4/22")
+
+
+class TestVocalizedNames(unittest.TestCase):
+    """Titles are pointed. The shared table's names are the form to match source text
+    against; a heading wants vowels."""
+
+    def test_every_pointed_name_has_the_same_consonants_as_the_shared_table(self):
+        for slug, pointed in names.SLUG_TO_VOCALIZED.items():
+            with self.subTest(slug=slug):
+                self.assertEqual(
+                    normalize_hebrew(pointed),
+                    normalize_hebrew(names.SLUG_TO_HEBREW[slug]),
+                    f"{pointed!r} is not {names.SLUG_TO_HEBREW[slug]!r} with vowels",
+                )
+
+    def test_every_parshah_and_pair_is_pointed(self):
+        for slug in names.SLUG_TO_HEBREW:
+            with self.subTest(slug=slug):
+                self.assertIn(slug, names.SLUG_TO_VOCALIZED)
+
+    def test_a_pair_joins_its_members_pointed_names(self):
+        self.assertEqual(
+            names.SLUG_TO_VOCALIZED["matot_masei"],
+            f"{names.SLUG_TO_VOCALIZED['matot']}–{names.SLUG_TO_VOCALIZED['masei']}",
+        )
+
+    def test_an_unknown_slug_falls_back_to_itself(self):
+        self.assertEqual(names.vocalized_name("no_such_parshah"), "no_such_parshah")
+
+    def test_every_pointed_book_name_has_the_same_consonants_as_the_table(self):
+        from opensiddur.importer.humash.refs import (
+            SLUG_TO_HEBREW_BOOK, SLUG_TO_VOCALIZED_BOOK,
+        )
+        for slug, pointed in SLUG_TO_VOCALIZED_BOOK.items():
+            with self.subTest(slug=slug):
+                self.assertEqual(
+                    normalize_hebrew(pointed), normalize_hebrew(SLUG_TO_HEBREW_BOOK[slug])
+                )
+
+    def test_every_book_is_pointed(self):
+        from opensiddur.importer.humash.refs import (
+            SLUG_TO_HEBREW_BOOK, SLUG_TO_VOCALIZED_BOOK,
+        )
+        self.assertEqual(set(SLUG_TO_VOCALIZED_BOOK), set(SLUG_TO_HEBREW_BOOK))
+
+    def test_a_book_heading_is_pointed(self):
+        from opensiddur.importer.humash.refs import SLUG_TO_VOCALIZED_BOOK
+        parshiyot = [
+            Parsha(slug="vayikra", hebrew_name="ויקרא", book="leviticus", start=_ref(1, 1))
+        ]
+        _, document = build.book_file("leviticus", parshiyot)
+        heads = [
+            element.text
+            for element in etree.fromstring(document.encode("utf-8")).iter(f"{TEI}head")
+        ]
+        self.assertIn(SLUG_TO_VOCALIZED_BOOK["leviticus"], heads)
+
+    def test_a_parshah_heading_is_pointed(self):
+        parsha = Parsha(
+            slug="tazria", hebrew_name="תזריע", book="leviticus",
+            start=_ref(12, 1), end=_ref(13, 17),
+            spans=[_span(UNIT_ALIYAH, "1", (12, 1), (13, 17))],
+        )
+        _, document = build.parsha_file(parsha, {}, None)
+        heads = [
+            element.text
+            for element in etree.fromstring(document.encode("utf-8")).iter(f"{TEI}head")
+        ]
+        self.assertIn(names.SLUG_TO_VOCALIZED["tazria"], heads)
+
+
+class TestFestivalHaftarahHeading(unittest.TestCase):
+    """A festival's haftarah is a headed division, not a continuation of the maftir."""
+
+    def _heads(self, reading: dict) -> list[str]:
+        _, document = build.festival_file("pesach_i", reading, None)
+        return [
+            element.text
+            for element in etree.fromstring(document.encode("utf-8")).iter(f"{TEI}head")
+        ]
+
+    def _reading(self, rite, title) -> dict:
+        span = _span(UNIT_ALIYAH, "1", (12, 21), (12, 28))
+        passage = Passage(
+            key="Pesach I",
+            spans=[ReadingSpan(
+                unit="haftarah", label="1",
+                start=VerseRef("joshua", 5, 2), end=VerseRef("joshua", 6, 1),
+            )],
+            rite=rite,
+            title=title,
+        )
+        return {"name": "Pesach I", "aliyot": [span], "haftarot": [passage]}
+
+    def test_a_single_rite_haftarah_is_still_headed(self):
+        self.assertIn(build.HAFTARAH_TITLE, self._heads(self._reading(None, None)))
+
+    def test_a_rite_heading_sits_under_the_haftarah_heading(self):
+        heads = self._heads(self._reading("ashkenaz", "מִנְהַג אַשְׁכְּנַז"))
+        self.assertIn(build.HAFTARAH_TITLE, heads)
+        self.assertIn("מִנְהַג אַשְׁכְּנַז", heads)
+        self.assertLess(heads.index(build.HAFTARAH_TITLE), heads.index("מִנְהַג אַשְׁכְּנַז"))
+
+    def test_a_reading_with_no_haftarah_gets_no_haftarah_heading(self):
+        reading = {"name": "Pesach I", "aliyot": [_span(UNIT_ALIYAH, "1", (12, 21), (12, 28))],
+                   "haftarot": []}
+        self.assertNotIn(build.HAFTARAH_TITLE, self._heads(reading))

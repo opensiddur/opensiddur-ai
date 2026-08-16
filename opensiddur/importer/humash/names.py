@@ -28,6 +28,8 @@ __all__ = [
     "PAIR_MEMBERS",
     "PARSHA_NAMES",
     "SLUG_TO_HEBREW",
+    "SLUG_TO_VOCALIZED",
+    "vocalized_name",
     "hebcal_for_hebrew",
     "slug_for_combined_hebrew",
     "slug_for_hebrew",
@@ -82,3 +84,77 @@ def slug_for_combined_hebrew(hebrew: str) -> str:
     if slug is None:
         raise KeyError(f"Unknown combined parshah name: {hebrew!r}")
     return slug
+
+
+# The parshah names pointed, for headings and margin markers. The shared table carries the
+# names as MAM writes them in its own apparatus — consonants with only the occasional holam
+# haser — which is the form to match source text against, but not the form to set a title in.
+# The spelling (defective where MAM is defective: תולדֹת, בחֻקֹתי, נשֹא) is kept, so that these
+# differ from the shared table by vowels alone; test_names asserts exactly that.
+SLUG_TO_VOCALIZED: dict[str, str] = {
+    "bereshit": "בְּרֵאשִׁית",
+    "noach": "נֹחַ",
+    "lech_lecha": "לֶךְ־לְךָ",
+    "vayera": "וַיֵּרָא",
+    "chayei_sara": "חַיֵּי שָׂרָה",
+    "toldot": "תּוֹלְדֹת",
+    "vayetzei": "וַיֵּצֵא",
+    "vayishlach": "וַיִּשְׁלַח",
+    "vayeshev": "וַיֵּשֶׁב",
+    "miketz": "מִקֵּץ",
+    "vayigash": "וַיִּגַּשׁ",
+    "vayechi": "וַיְחִי",
+    "shemot": "שְׁמוֹת",
+    "vaera": "וָאֵרָא",
+    "bo": "בֹּא",
+    "beshalach": "בְּשַׁלַּח",
+    "yitro": "יִתְרוֹ",
+    "mishpatim": "מִשְׁפָּטִים",
+    "terumah": "תְּרוּמָה",
+    "tetzaveh": "תְּצַוֶּה",
+    "ki_tisa": "כִּי תִשָּׂא",
+    "vayakhel": "וַיַּקְהֵל",
+    "pekudei": "פְקוּדֵי",
+    "vayikra": "וַיִּקְרָא",
+    "tzav": "צַו",
+    "shmini": "שְׁמִינִי",
+    "tazria": "תַזְרִיעַ",
+    "metzora": "מְצֹרָע",
+    "achrei_mot": "אַחֲרֵי מוֹת",
+    "kedoshim": "קְדֹשִׁים",
+    "emor": "אֱמֹר",
+    "behar": "בְּהַר",
+    "bechukotai": "בְּחֻקֹּתַי",
+    "bamidbar": "בְּמִדְבַּר",
+    "nasso": "נָשֹׂא",
+    "behaalotcha": "בְּהַעֲלֹתְךָ",
+    "shlach": "שְׁלַח",
+    "korach": "קֹרַח",
+    "chukat": "חֻקַּת",
+    "balak": "בָּלָק",
+    "pinchas": "פִּינְחָס",
+    "matot": "מַטּוֹת",
+    "masei": "מַסְעֵי",
+    "devarim": "דְּבָרִים",
+    "vaetchanan": "וָאֶתְחַנַּן",
+    "eikev": "עֵקֶב",
+    "reeh": "רְאֵה",
+    "shoftim": "שֹׁפְטִים",
+    "ki_teitzei": "כִּי־תֵצֵא",
+    "ki_tavo": "כִּי־תָבוֹא",
+    "nitzavim": "נִצָּבִים",
+    "vayeilech": "וַיֵּלֶךְ",
+    "haazinu": "הַאֲזִינוּ",
+    "vezot_haberakhah": "וְזֹאת הַבְּרָכָה",
+}
+
+# A pair keeps each member's pointing, joined by the en-dash MAM writes.
+SLUG_TO_VOCALIZED.update({
+    pair: "–".join(SLUG_TO_VOCALIZED[member] for member in members)
+    for pair, members in PAIR_MEMBERS.items()
+})
+
+
+def vocalized_name(slug: str) -> str:
+    """The pointed name of a parshah, falling back to the unpointed one."""
+    return SLUG_TO_VOCALIZED.get(slug) or SLUG_TO_HEBREW.get(slug, slug)

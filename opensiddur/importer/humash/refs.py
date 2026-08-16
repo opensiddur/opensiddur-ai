@@ -115,6 +115,17 @@ MEGILLOT: tuple[tuple[str, str, str], ...] = (
     ("esther", "אֶסְתֵּר", "purim"),
 )
 
+# The book names pointed, for headings. As with the parshah names, the table above holds the
+# form to match MAM's text against; a title on the page wants vowels. test_build asserts these
+# differ from it by vowels alone.
+SLUG_TO_VOCALIZED_BOOK: dict[str, str] = {
+    "genesis": "בְּרֵאשִׁית",
+    "exodus": "שְׁמוֹת",
+    "leviticus": "וַיִּקְרָא",
+    "numbers": "בְּמִדְבַּר",
+    "deuteronomy": "דְּבָרִים",
+}
+
 HEBREW_BOOK_TO_SLUG = {hebrew: slug for hebrew, slug, _ in TORAH_BOOKS}
 SLUG_TO_HEBREW_BOOK = {slug: hebrew for hebrew, slug, _ in TORAH_BOOKS}
 SLUG_TO_HEBCAL_BOOK = {slug: english for _, slug, english in TORAH_BOOKS}

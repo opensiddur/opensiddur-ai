@@ -16,7 +16,11 @@ from __future__ import annotations
 import logging
 import re
 
-from opensiddur.importer.humash.names import SLUG_TO_HEBREW, slugify_reading_name
+from opensiddur.importer.humash.names import (
+    SLUG_TO_HEBREW,
+    SLUG_TO_VOCALIZED,
+    slugify_reading_name,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +133,8 @@ def _occasion(name: str) -> str | None:
             return f"{OCCASION_NAMES['Rosh Chodesh']} {month}"
         return None
     # Several readings are a weekly parshah read on a particular year, named by the parshah.
-    return SLUG_TO_HEBREW.get(slugify_reading_name(name))
+    slug = slugify_reading_name(name)
+    return SLUG_TO_VOCALIZED.get(slug) or SLUG_TO_HEBREW.get(slug)
 
 
 def hebrew_name(name: str) -> str:
@@ -144,7 +149,8 @@ def hebrew_name(name: str) -> str:
         qualifier_he = QUALIFIERS.get(qualifier)
         if qualifier_he is None and qualifier.startswith("with "):
             # "(with Ha'azinu)" — which parshah Shabbat Shuva falls on that year.
-            parshah = SLUG_TO_HEBREW.get(slugify_reading_name(qualifier[len("with "):]))
+            slug = slugify_reading_name(qualifier[len("with "):])
+            parshah = SLUG_TO_VOCALIZED.get(slug) or SLUG_TO_HEBREW.get(slug)
             qualifier_he = f"עִם {parshah}" if parshah is not None else None
         if qualifier_he is None:
             logger.warning("No Hebrew for the qualifier %r of %r", qualifier, name)
