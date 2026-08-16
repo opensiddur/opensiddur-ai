@@ -88,6 +88,9 @@ class _E2EBase(unittest.TestCase):
     PRIMARY_PROJECT = "primary-proj"
     PARALLEL_PROJECT = "parallel-proj"
     PARALLEL_CORRESP = {
+        # The root document's own URN: both fixtures carry it on tei:body/tei:div/@corresp,
+        # so they genuinely correspond and root-level parallel applies to them.
+        "urn:x-test:section",
         "urn:x-test:section/1",
         "urn:x-test:section/2",
     }
@@ -496,6 +499,184 @@ class TestThreeWayTransclusionE2E(_E2EBase):
         self.assertNotIn("English verse", primary_text,
                          "translation must not leak into the primary column")
         self.assertIn("English verse", parallel_text)
+
+
+# ── Arrangement projects (a wrapper that holds no text of its own) ────────────
+
+class TestArrangementProjectRootE2E(_E2EBase):
+    """A wrapper project that only arranges transclusions has no document-level counterpart.
+
+    Regression: the root document used to be paired with whichever parallel project merely
+    contained a file of the same name. Every project has an index.xml, so an arrangement
+    project (a humash built by transcluding Tanakh verses) was paired with an unrelated
+    index, and that pairing suppressed the per-transclusion parallels that were the only
+    real correspondence. The result was a Hebrew source facing itself, with the translation
+    absent from the output entirely.
+    """
+
+    WRAPPER_URN = "urn:x-test:arrangement"
+    ENGLISH_PROJECT = "english-proj"
+
+    _UNRELATED_INDEX_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
+         xml:lang="he">
+  <tei:teiHeader>
+    <tei:fileDesc>
+      <tei:titleStmt><tei:title>Whole Collection</tei:title></tei:titleStmt>
+      <tei:publicationStmt>
+        <tei:distributor><tei:ref target="http://e.org">e</tei:ref></tei:distributor>
+        <tei:availability status="free">
+          <tei:licence target="http://creativecommons.org/publicdomain/zero/1.0/">CC0</tei:licence>
+        </tei:availability>
+      </tei:publicationStmt>
+      <tei:sourceDesc><tei:bibl xml:id="usrc"><tei:title>U</tei:title></tei:bibl></tei:sourceDesc>
+    </tei:fileDesc>
+  </tei:teiHeader>
+  <tei:text xml:lang="he">
+    <tei:body>
+      <tei:div corresp="urn:x-test:collection">
+        <tei:p>Front matter of the whole collection.</tei:p>
+      </tei:div>
+    </tei:body>
+  </tei:text>
+</tei:TEI>"""
+
+    _WRAPPER_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
+         xml:lang="he">
+  <tei:teiHeader>
+    <tei:fileDesc>
+      <tei:titleStmt><tei:title>Arrangement</tei:title></tei:titleStmt>
+      <tei:publicationStmt>
+        <tei:distributor><tei:ref target="http://e.org">e</tei:ref></tei:distributor>
+        <tei:availability status="free">
+          <tei:licence target="http://creativecommons.org/publicdomain/zero/1.0/">CC0</tei:licence>
+        </tei:availability>
+      </tei:publicationStmt>
+      <tei:sourceDesc><tei:bibl xml:id="wsrc"><tei:title>W</tei:title></tei:bibl></tei:sourceDesc>
+    </tei:fileDesc>
+  </tei:teiHeader>
+  <tei:text xml:lang="he">
+    <tei:body>
+      <tei:div corresp="urn:x-test:arrangement">
+        <tei:head>Arrangement</tei:head>
+        <j:transclude type="external" target="urn:x-test:section/1"/>
+      </tei:div>
+    </tei:body>
+  </tei:text>
+</tei:TEI>"""
+
+    def setUp(self):
+        super().setUp()
+        base = Path(self.temp_dir.name)
+        (base / self.ENGLISH_PROJECT).mkdir()
+
+        # The wrapper is the compilation root and holds no text of its own.
+        (base / self.PRIMARY_PROJECT / "index.xml").write_bytes(self._WRAPPER_XML)
+        # The Hebrew project plays MAM's role: it supplies the transcluded verses *and*
+        # owns an index.xml that has nothing to do with the wrapper. That file-name
+        # collision is what used to be mistaken for a correspondence.
+        (base / self.PARALLEL_PROJECT / "index.xml").write_bytes(self._UNRELATED_INDEX_XML)
+        (base / self.PARALLEL_PROJECT / "verses.xml").write_bytes(_PRIMARY_XML)
+        # The English project plays jps1917's role: the translation, listed second.
+        (base / self.ENGLISH_PROJECT / "verses.xml").write_bytes(_PARALLEL_XML)
+
+        # Hebrew first, exactly as the real settings list MAM before jps1917.
+        self.linear_data.parallel_projects = [self.PARALLEL_PROJECT, self.ENGLISH_PROJECT]
+        self.linear_data.project_priority = [
+            self.PRIMARY_PROJECT, self.PARALLEL_PROJECT, self.ENGLISH_PROJECT]
+
+    def _milestone_path(self, xml_bytes, n):
+        tree_root = etree.fromstring(xml_bytes)
+        milestone = tree_root.xpath(
+            f"//tei:milestone[@n='{n}']",
+            namespaces={"tei": TEI_NS})[0]
+        return tree_root.getroottree().getpath(milestone)
+
+    def _mock_resolve_range(self, urn):
+        base_urn, _, hint = urn.partition("@")
+        # The wrapper's own URN is private to the arrangement project: no parallel
+        # project contains it, so no root-level pairing is possible.
+        if base_urn == self.WRAPPER_URN:
+            return []
+        if base_urn == "urn:x-test:collection":
+            return [ResolvedUrn(
+                urn=base_urn, project=self.PARALLEL_PROJECT, file_name="index.xml",
+                element_path="/tei:TEI")]
+        if base_urn == "urn:x-test:section/1":
+            if hint == self.ENGLISH_PROJECT:
+                project, xml_bytes = self.ENGLISH_PROJECT, _PARALLEL_XML
+            else:
+                project, xml_bytes = self.PARALLEL_PROJECT, _PRIMARY_XML
+            path = self._milestone_path(xml_bytes, "1")
+            return [ResolvedUrn(
+                urn=base_urn, project=project, file_name="verses.xml",
+                element_path=path, end_element_path=path, end_includes_tail=True)]
+        return []
+
+    def _compile_wrapper(self):
+        proc = ExternalCompilerProcessor(
+            self.PRIMARY_PROJECT, "index.xml", linear_data=self.linear_data)
+        with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range):
+            with patch.object(UrnResolver, "prioritize_range",
+                              side_effect=lambda urns, priority, return_all=False: (
+                                  urns[0] if urns else None)):
+                return proc.process()
+
+    def _compiled_root(self):
+        result = self._compile_wrapper()
+        result_xml = "".join(etree.tostring(el, encoding="unicode") for el in result)
+        return etree.fromstring(f"<root>{result_xml}</root>")
+
+    def test_no_root_parallel_is_selected(self):
+        """The wrapper's URN resolves in no parallel project, so root pairing is declined."""
+        proc = ExternalCompilerProcessor(
+            self.PRIMARY_PROJECT, "index.xml", linear_data=self.linear_data)
+        with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range):
+            self.assertIsNone(proc._select_root_parallel_project())
+
+    def test_same_file_name_does_not_make_a_counterpart(self):
+        """The Hebrew project's index.xml exists but is a different document, so it loses.
+
+        Both files are named index.xml; only their URNs distinguish them.
+        """
+        proc = ExternalCompilerProcessor(
+            self.PRIMARY_PROJECT, "index.xml", linear_data=self.linear_data)
+        self.assertEqual(proc._root_correspondence_urn(), self.WRAPPER_URN)
+        with patch.object(UrnResolver, "resolve_range", side_effect=self._mock_resolve_range):
+            self.assertIsNone(proc._process_parallel_root())
+
+    def test_translation_reaches_the_output(self):
+        """The whole point: English must be present, via the per-transclusion parallel."""
+        root = self._compiled_root()
+
+        parallel_text = " ".join(
+            "".join(item.itertext())
+            for item in root.findall(f".//{{{P_NS}}}parallelItem[@role='parallel']"))
+        self.assertIn("English verse 1", parallel_text)
+
+    def test_columns_are_not_the_same_source(self):
+        """No row may draw both of its columns from the same project."""
+        parallels = self._compiled_root().findall(f".//{{{P_NS}}}parallel")
+        self.assertGreater(len(parallels), 0, "expected per-transclusion parallels")
+
+        for par in parallels:
+            primary = par.find(f"{{{P_NS}}}parallelItem[@role='primary']")
+            parallel = par.find(f"{{{P_NS}}}parallelItem[@role='parallel']")
+            self.assertNotEqual(
+                primary.get(f"{{{P_NS}}}project"),
+                parallel.get(f"{{{P_NS}}}project"),
+                "a parallel row must not have the same source in both columns")
+
+    def test_columns_carry_distinct_languages(self):
+        root = self._compiled_root()
+        for par in root.findall(f".//{{{P_NS}}}parallel"):
+            primary = par.find(f"{{{P_NS}}}parallelItem[@role='primary']")
+            parallel = par.find(f"{{{P_NS}}}parallelItem[@role='parallel']")
+            self.assertEqual(primary.get(f"{{{XML_NS}}}lang"), "he")
+            self.assertEqual(parallel.get(f"{{{XML_NS}}}lang"), "en")
 
 
 if __name__ == "__main__":

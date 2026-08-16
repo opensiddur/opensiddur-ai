@@ -1,5 +1,6 @@
 """External compiler processor for processing specific ranges of XML files."""
 
+import logging
 import re
 from contextlib import contextmanager
 from typing import Any, Optional
@@ -29,6 +30,8 @@ from opensiddur.exporter.marker_reconstruct import (
     doc_needs_marker_reconstruction,
     reconstruct_markered_document,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _attrs_structural_original(source: ElementBase) -> dict[str, str]:
@@ -499,6 +502,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
             return p_project, p_file, p_start, p_end, p_tail
         except Exception:
+            logger.warning(
+                "parallel: could not resolve %s in project %s; that project contributes no "
+                "parallel column here", parallel_target, parallel_project, exc_info=True)
             return None
 
     def _transclude_parallel(self, element: ElementBase, transclude_range: ResolvedUrnRange, transclusion_type: str) -> Optional[ElementBase]:
@@ -555,6 +561,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     parallel_file = p_file
                     break
                 except Exception:
+                    logger.warning(
+                        "parallel: compiling %s/%s as the parallel column for %s failed; "
+                        "trying the next configured parallel project",
+                        p_project, p_file, target, exc_info=True)
                     continue
 
         if parallel_result is None:
@@ -612,8 +622,83 @@ class ExternalCompilerProcessor(CompilerProcessor):
             self.linear_data.project_priority = saved_priority
             self.linear_data.instruction_priority = saved_instr
 
-    def _process_parallel_root(self) -> list[ElementBase]:
-        """Compile this file in parallel mode, replacing tei:body with p:parallel content."""
+    def _root_correspondence_urn(self) -> Optional[str]:
+        """The URN identifying this document as a whole, for parallel-column matching.
+
+        Prefers the @corresp of the body's first tei:div, which is what the reference
+        database indexes; falls back to the header's URN idno with any @project stripped.
+        Returns None if the document declares neither.
+        """
+        body_div = self.root_tree.find(
+            f"{{{TEI_NS}}}text/{{{TEI_NS}}}body/{{{TEI_NS}}}div")
+        if body_div is not None and body_div.get('corresp'):
+            return body_div.get('corresp')
+
+        idno = self.root_tree.find(
+            f"{{{TEI_NS}}}teiHeader//{{{TEI_NS}}}idno[@type='urn']")
+        if idno is not None and idno.text:
+            return re.sub(r'@[\w-]+$', '', idno.text.strip())
+
+        return None
+
+    def _select_root_parallel_project(self) -> Optional[tuple[str, str]]:
+        """Pick the project holding this document's counterpart, as (project, file_name).
+
+        Correspondence is decided by URN, not by file name: two documents pair up only when
+        the parallel project actually contains this document's URN. Matching on file name
+        alone pairs unrelated documents that happen to share a name -- every project has an
+        index.xml -- which silently commits the whole compilation to a bogus column pairing
+        and suppresses the per-transclusion parallels that would have been correct.
+
+        Returns None when this document has no counterpart, which is the normal case for a
+        project that holds no text of its own and only transcludes (its URNs are private to
+        it, while its transclusion *targets* are what the parallel project shares).
+        """
+        root_urn = self._root_correspondence_urn()
+        if root_urn is None:
+            logger.warning(
+                "parallel: %s/%s declares no URN, so no parallel counterpart can be "
+                "identified; falling back to per-transclusion parallels",
+                self.project, self.file_name)
+            return None
+
+        for proj in self.linear_data.parallel_projects:
+            # Never parallelize a project against itself.
+            if proj == self.project:
+                continue
+            try:
+                resolved = self._urn_resolver.resolve_range(
+                    self._build_parallel_urn(root_urn, proj))
+            except Exception:
+                logger.warning(
+                    "parallel: resolving %s in project %s failed", root_urn, proj,
+                    exc_info=True)
+                continue
+            if not resolved:
+                continue
+            match = resolved[0]
+            file_name = (match.start.file_name
+                         if isinstance(match, ResolvedUrnRange) else match.file_name)
+            return proj, file_name
+
+        logger.warning(
+            "parallel: %s (%s/%s) has no counterpart in any configured parallel project "
+            "(%s); falling back to per-transclusion parallels",
+            root_urn, self.project, self.file_name,
+            ", ".join(self.linear_data.parallel_projects) or "none")
+        return None
+
+    def _process_parallel_root(self) -> Optional[list[ElementBase]]:
+        """Compile this file in parallel mode, replacing tei:body with p:parallel content.
+
+        Returns None if no parallel project holds a counterpart of this document, signalling
+        the caller to compile normally so that each transclusion can pair itself instead.
+        """
+        selected = self._select_root_parallel_project()
+        if selected is None:
+            return None
+        parallel_project, parallel_file = selected
+
         with self._parallel_sub_compilation():
             primary_proc = ExternalCompilerProcessor(
                 self.project, self.file_name,
@@ -622,30 +707,24 @@ class ExternalCompilerProcessor(CompilerProcessor):
             primary_proc.marker_stack = []
             primary_result = primary_proc.process()
 
-            parallel_result = None
-            parallel_project = None
-            parallel_file = self.file_name
-            parallel_proc = None
-
-            for proj in self.linear_data.parallel_projects:
-                # Never parallelize a project against itself.
-                if proj == self.project:
-                    continue
-                try:
-                    with self._parallel_priority(proj):
-                        parallel_proc = ExternalCompilerProcessor(
-                            proj, self.file_name,
-                            linear_data=self.linear_data,
-                            reference_database=self._refdb)
-                        parallel_proc.marker_stack = []
-                        parallel_result = parallel_proc.process()
-                    parallel_project = proj
-                    break
-                except Exception:
-                    continue
+            try:
+                with self._parallel_priority(parallel_project):
+                    parallel_proc = ExternalCompilerProcessor(
+                        parallel_project, parallel_file,
+                        linear_data=self.linear_data,
+                        reference_database=self._refdb)
+                    parallel_proc.marker_stack = []
+                    parallel_result = parallel_proc.process()
+            except Exception:
+                logger.warning(
+                    "parallel: compiling %s/%s as the parallel column for %s/%s failed; "
+                    "falling back to per-transclusion parallels",
+                    parallel_project, parallel_file, self.project, self.file_name,
+                    exc_info=True)
+                parallel_result = None
 
         if parallel_result is None:
-            return primary_result
+            return None
 
         def _body_children(result):
             for el in result:
@@ -891,8 +970,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         if is_root and self.linear_data.parallel_projects and not self._in_parallel_compilation:
             processed = self._process_parallel_root()
-            _reconstruct_if_needed(processed)
-            return processed
+            if processed is not None:
+                _reconstruct_if_needed(processed)
+                return processed
+            # No counterpart document: fall through to the normal path, which leaves
+            # parallel_compilation_depth at 0 so that _transclude_parallel pairs each
+            # external transclusion individually. A project that only arranges transclusions
+            # (a humash built from Tanakh verses) has no document-level counterpart at all --
+            # its correspondence with the parallel project lives entirely in its targets.
 
         # set the root language to the language of the deepest common ancestor if present, else root
         self.root_language = self._get_in_scope_language(
