@@ -47,6 +47,15 @@
     <xsl:param name="paper" as="xs:string">a4paper</xsl:param>
     <xsl:param name="fontsize" as="xs:string">11pt</xsl:param>
 
+    <!-- How many parallel blocks one \Pages/\Columns typesets at a time. reledpar holds
+         every chunk of a group in memory as a pair of boxes and refuses more than
+         \maxchunks (5120) of them, so a whole humash — ~49000 blocks — cannot be one
+         group: it dies with "Too many \pstart without printing". Batching bounds the
+         memory and the chunk count. Alignment is unaffected, since both sides are cut at
+         the same block boundaries; the visible cost is that \Pages starts a fresh page
+         pair at each batch, which \Columns (layout=pairs) does not. -->
+    <xsl:param name="parallel-batch-size" as="xs:integer" select="500"/>
+
     <!-- ====================================================================
          Document scaffolding
          ==================================================================== -->
@@ -107,12 +116,22 @@
              misconfigured on some systems. -->
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
+        <!-- Headings go three deep (index > book > parshah), and f:head-level emits the
+             third as \addcontentsline{toc}{subsubsection}. The book class stops the table of
+             contents at subsection, and hyperref takes its bookmark depth from that, so
+             without this the deepest level is silently missing from the PDF outline — a
+             humash bookmarked by book and by haftarah but not by parshah. -->
+        <xsl:text>\setcounter{tocdepth}{3}&#10;</xsl:text>
+        <xsl:text>\hypersetup{bookmarksdepth=3}&#10;</xsl:text>
         <!-- hyperref builds PDF strings for bookmarks/outlines.  Direction and
              language switches (luabidi/polyglossia) are not representable in
              PDF strings and generate warnings (and sometimes broken outlines).
              Disable them *only* for PDF-string construction. -->
         <xsl:text>\pdfstringdefDisableCommands{&#10;</xsl:text>
-        <xsl:text>  \def\textdir#1{}&#10;</xsl:text>
+        <!-- A direction is three letter tokens, not one: \textdir TLT. Gobbling a single
+             argument eats only the T and leaves "LT" glued to the front of the title, so
+             every non-Hebrew bookmark reads "LTShabbat Shekalim". -->
+        <xsl:text>  \def\textdir#1#2#3{}&#10;</xsl:text>
         <xsl:text>  \def\selectlanguage#1{}&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
 
@@ -383,9 +402,14 @@
                             group-adjacent="if (self::p:parallel) then 'parallel' else 'inline'">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'parallel'">
-                    <xsl:call-template name="parallel-run">
-                        <xsl:with-param name="parallels" select="current-group()"/>
-                    </xsl:call-template>
+                    <!-- One \Pages/\Columns per batch: see $parallel-batch-size. -->
+                    <xsl:variable name="blocks" as="element(p:parallel)*" select="current-group()"/>
+                    <xsl:for-each-group select="$blocks"
+                                        group-adjacent="(position() - 1) idiv $parallel-batch-size">
+                        <xsl:call-template name="parallel-run">
+                            <xsl:with-param name="parallels" select="current-group()"/>
+                        </xsl:call-template>
+                    </xsl:for-each-group>
                 </xsl:when>
                 <xsl:when test="every $n in current-group() satisfies (
                                   $n/self::text() and not(normalize-space($n)))">
@@ -973,7 +997,14 @@
          ==================================================================== -->
 
     <xsl:template match="text()" mode="emit">
-        <xsl:value-of select="f:escape-tex(.)"/>
+        <xsl:choose>
+            <xsl:when test="f:is-hebrew-lang(f:in-scope-lang(.))">
+                <xsl:value-of select="f:emit-bidi-text(string(.))"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="f:escape-tex(.)"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <!-- Headings are centered with symmetric fill glue, which only exists on the first
@@ -1433,6 +1464,29 @@
         <xsl:variable name="t3" select="replace($t2, '~', '\\textasciitilde{}')"/>
         <xsl:variable name="t4" select="replace($t3, '\^', '\\textasciicircum{}')"/>
         <xsl:sequence select="$t4"/>
+    </xsl:function>
+
+    <!-- Sources like the MAM apparatus notes are Hebrew prose that embeds short Latin
+         tokens (manuscript sigla such as "EVR-II-B-8", "BHS"). \textdir TRT forces the
+         whole Hebrew note into strict RTL layout (note-content), which has no per-run
+         bidi detection, so an embedded Latin token renders with its characters
+         back-to-front unless explicitly switched back to LTR. Wrap each such token the
+         same way \vno/\chno/note-content already wrap other LTR content in RTL context,
+         leaving a hyphen that merely touches Hebrew (e.g. "פטרבורג-EVR-II-B-8") outside
+         the wrap so its direction still resolves normally. -->
+    <xsl:function name="f:emit-bidi-text" as="xs:string">
+        <xsl:param name="s" as="xs:string"/>
+        <xsl:variable name="parts" as="xs:string*">
+            <xsl:analyze-string select="$s" regex="[A-Za-z0-9]+([-'.][A-Za-z0-9]+)*">
+                <xsl:matching-substring>
+                    <xsl:sequence select="concat('{{\textdir TLT\selectlanguage{english}', f:escape-tex(.), '}}')"/>
+                </xsl:matching-substring>
+                <xsl:non-matching-substring>
+                    <xsl:sequence select="f:escape-tex(.)"/>
+                </xsl:non-matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:sequence select="string-join($parts, '')"/>
     </xsl:function>
 
     <xsl:function name="f:escape-url" as="xs:string">

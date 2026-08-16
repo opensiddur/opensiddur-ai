@@ -13,9 +13,14 @@
     <!-- Identity transform as default -->
     <xsl:mode on-no-match="fail"/>
 
-    <xsl:variable name="urn-book-name" 
-        select="replace(lower-case(/Tanach/teiHeader/fileDesc/titleStmt/
-            title[@level='a'][@type='main']/text()), ' ', '_')"/>
+    <!-- WLC titles the paired books "1 Kings", "2 Samuel" and so on. Every other project
+         puts the ordinal last — kings_1, samuel_2 — as do the WLC source file names these
+         are written to, so the ordinal is moved to the end here. Without it the Hebrew of
+         Samuel, Kings and Chronicles carries a URN nothing else uses, and an unsuffixed
+         reference to it (a humash haftarah, say) resolves only to the English. -->
+    <xsl:variable name="urn-book-name"
+        select="replace(replace(lower-case(/Tanach/teiHeader/fileDesc/titleStmt/
+            title[@level='a'][@type='main']/text()), '^(\d+) (.+)$', '$2_$1'), ' ', '_')"/>
     
     <!-- Entry point -->
     <xsl:template match="/">
