@@ -722,6 +722,18 @@
                             <xsl:with-param name="in-pstart" select="false()"/>
                         </xsl:next-iteration>
                     </xsl:when>
+                    <xsl:when test="self::tei:milestone">
+                        <!-- A milestone this stylesheet does not set: unit="edition-verse",
+                             which records an edition's own verse numbering beside the
+                             canonical one, and anything else a source marks but a printed
+                             page does not show. Falling through to the generic branch would
+                             open a \pstart that then receives no text, and reledmac cannot
+                             set an empty paragraph — it dies with "You can't use \lastbox in
+                             vertical mode". Skip it, leaving any open pstart as it is. -->
+                        <xsl:next-iteration>
+                            <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                        </xsl:next-iteration>
+                    </xsl:when>
                     <xsl:when test="self::f:head">
                         <xsl:choose>
                             <xsl:when test="$single-pstart">

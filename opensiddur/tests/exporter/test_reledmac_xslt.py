@@ -1322,3 +1322,34 @@ class TestReadingDivisions(unittest.TestCase):
     def test_the_aliyah_macro_is_defined_in_the_preamble(self):
         out = self._transform_body("""<tei:p>text</tei:p>""")
         self.assertIn(r"\newcommand{\OSaliyah}", out.split(r"\begin{document}", 1)[0])
+
+class TestUnrenderedMilestones(unittest.TestCase):
+    """A milestone the stylesheet does not set must not open a paragraph of its own.
+
+    reledmac cannot typeset an empty \pstart: it fails with "You can't use \lastbox in
+    vertical mode" and produces no PDF at all. A paragraph holding only such a milestone —
+    which is what a range boundary falling inside an edition's own verse produces — used to
+    make exactly that.
+    """
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+      <tei:text><tei:body>
+        <tei:p><tei:milestone unit="verse" n="17"/>text</tei:p>
+        <tei:p><tei:milestone unit="edition-verse" n="14"/></tei:p>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_no_empty_paragraph_is_emitted(self):
+        out = _transform(self.XML)
+        self.assertNotIn(r"\pstart \pend", out)
+        self.assertNotIn("\\pstart\n\\pend", out)
+
+    def test_the_verse_before_it_is_still_set(self):
+        out = _transform(self.XML)
+        self.assertIn(r"\vno{17}", out)
+        self.assertIn("text", out)
+
+    def test_an_edition_verse_prints_nothing(self):
+        self.assertNotIn("14", _transform(self.XML).split("begin{document}")[1])
+
