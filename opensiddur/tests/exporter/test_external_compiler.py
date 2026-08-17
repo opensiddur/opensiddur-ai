@@ -1654,6 +1654,72 @@ class TestExternalCompilerProcessor(unittest.TestCase):
         self.assertNotIn("Chapter 2 verse 1", result_str)
         self.assertIn("Chapter 2 verse 2", result_str)
 
+    # The shape the parallel humash actually compiles: one tei:p holding a run of verses,
+    # each opened by a milestone whose text is carried as that milestone's *tail*. A range
+    # starting mid-paragraph therefore has to reject the tails of the children before it.
+    MID_PARAGRAPH_VERSES_SOURCE = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:text>
+        <tei:body>
+            <tei:div type="book"><tei:p><tei:milestone unit="verse" n="1" corresp="urn:x-opensiddur:text:bible:book/1/1"/>Verse one text.<tei:milestone unit="verse" n="2" corresp="urn:x-opensiddur:text:bible:book/1/2"/>Verse two text.<tei:milestone unit="verse" n="3" corresp="urn:x-opensiddur:text:bible:book/1/3"/>Verse three text.<tei:milestone unit="verse" n="4" corresp="urn:x-opensiddur:text:bible:book/1/4"/>Verse four text.</tei:p></tei:div>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+
+    def _compile_mid_paragraph_range(self, file_name, corresp, *, marker_mode):
+        xml_bytes = self.MID_PARAGRAPH_VERSES_SOURCE.encode('utf-8')
+        project, name = self._create_test_file(file_name, xml_bytes)
+
+        root = etree.fromstring(xml_bytes)
+        tree = root.getroottree()
+        milestone = root.xpath(f"//*[@corresp='{corresp}']")[0]
+        from_start = tree.getpath(milestone)
+        end_path, include_tail = find_end_of_mapping(milestone)
+
+        processor = ExternalCompilerProcessor(
+            project, name, from_start, end_path, include_tail_after_end=include_tail)
+        if marker_mode:
+            processor.marker_stack = []
+        result = processor.process()
+        return ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+
+    def test_marker_mode_range_starting_mid_paragraph_drops_preceding_verse_text(self):
+        """Regression: in marker mode, a tei:p spanning the range start carried the tails of
+        every child preceding it, so a ranged transclusion was prefixed with all the text
+        before its own start. Each aliyah re-emitted every earlier one and the parallel
+        humash grew to 377MB."""
+        result_str = self._compile_mid_paragraph_range(
+            "mid_paragraph_marker.xml",
+            "urn:x-opensiddur:text:bible:book/1/3",
+            marker_mode=True)
+
+        self.assertIn("Verse three text.", result_str)
+        self.assertNotIn("Verse one text.", result_str)
+        self.assertNotIn("Verse two text.", result_str)
+        self.assertNotIn("Verse four text.", result_str)
+
+    def test_non_marker_mode_range_starting_mid_paragraph_is_unchanged(self):
+        """Positive control: the non-marker path was already correct here and must stay so."""
+        result_str = self._compile_mid_paragraph_range(
+            "mid_paragraph_plain.xml",
+            "urn:x-opensiddur:text:bible:book/1/3",
+            marker_mode=False)
+
+        self.assertIn("Verse three text.", result_str)
+        self.assertNotIn("Verse one text.", result_str)
+        self.assertNotIn("Verse two text.", result_str)
+        self.assertNotIn("Verse four text.", result_str)
+
+    def test_marker_mode_range_from_the_first_verse_keeps_its_own_text(self):
+        """The guard must reject only pre-range tails: a range starting at the paragraph's
+        first child still carries that child's text."""
+        result_str = self._compile_mid_paragraph_range(
+            "mid_paragraph_first.xml",
+            "urn:x-opensiddur:text:bible:book/1/1",
+            marker_mode=True)
+
+        self.assertIn("Verse one text.", result_str)
+        self.assertNotIn("Verse two text.", result_str)
+
     def test_range_keeps_declarations_made_before_the_start(self):
         """A j:declare preceding the range inside the DCA is still in scope in the range."""
         xml_bytes = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">

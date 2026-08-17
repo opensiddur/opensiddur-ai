@@ -142,6 +142,26 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
     # ── Marker-mode helpers ─────────────────────────────────────────────────
 
+    def _tail_is_in_range(self) -> bool:
+        """True when the tail of the child just processed belongs to the compiled range.
+
+        Must be consulted *after* the child has been processed, so that the range flags
+        already reflect crossing the start or the end element: a `tei:p` that spans the
+        range start owns children on both sides of it, and only the ones after it
+        contribute text.
+
+        Marker mode has to ask, because `copy_text` is fixed for the whole element while
+        `before_start` flips partway through its children. Carrying tails unconditionally
+        prepended every verse preceding a range to that range's output, which grew
+        quadratically across the aliyot and inflated the parallel humash to 377MB.
+        """
+        context = self.linear_data.processing_context[-1]
+        if context['before_start']:
+            return False
+        if context['after_end']:
+            return bool(context['include_tail_after_end'])
+        return True
+
     def _process_element_as_marker(
         self,
         element: ElementBase,
@@ -185,9 +205,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
                 if child_context["command"] == _ProcessingCommand.RECURSE:
                     # Before the range's start (#63, same root cause as #53): don't resolve
-                    # the transclusion or emit suspend/resume brackets for it at all.
-                    if child.tail:
-                        self._carry_dropped_tail(result, child)
+                    # the transclusion or emit suspend/resume brackets for it at all. RECURSE
+                    # here also means the start is not inside this child (a start ancestor
+                    # would have been COPY_ELEMENT_AND_RECURSE), so its tail is pre-range
+                    # text and is dropped with it.
                     self._update_processing_context_after(child)
                     continue
 
@@ -209,14 +230,17 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     resume.set(f"{{{p_ns}}}resume", sid)
                     result.append(resume)
 
-                if child.tail and result:
-                    result[-1].tail = (result[-1].tail or '') + child.tail
-
+                # After the context update, as in the else branch below: if this transclude
+                # was the range's end element, after_end is only set by that call, and
+                # whether its tail survives is then include_tail_after_end's decision.
                 self._update_processing_context_after(child)
+
+                if child.tail and result and self._tail_is_in_range():
+                    result[-1].tail = (result[-1].tail or '') + child.tail
             else:
                 child_result = self._process_element(child, root)
                 result.extend(child_result)
-                if child.tail:
+                if child.tail and self._tail_is_in_range():
                     if child_result:
                         last = child_result[-1]
                         last.tail = (last.tail or '') + child.tail
@@ -1001,6 +1025,22 @@ class ExternalCompilerProcessor(CompilerProcessor):
             # external transclusion individually. A project that only arranges transclusions
             # (a humash built from Tanakh verses) has no document-level counterpart at all --
             # its correspondence with the parallel project lives entirely in its targets.
+
+        # A p:parallel must end up a flat sibling of the surrounding flow, never wrapped in a
+        # tei:div (specs/COMPILER_SPECIFICATION.md, "Parallel Compilation"). That only holds
+        # if the containers *above* the parallel-triggering transclusion are marker pairs
+        # too: _split_at_milestones can then suspend them at each alignment boundary and
+        # marker_reconstruct rebuilds them inside each column, stamped with p:part.
+        #
+        # Marker mode used to begin at _transclude_parallel, so everything above the first
+        # parallel transclusion stayed ordinary nested elements. Real books came out as
+        # body/div/transclude/div[book]/transclude/div/transclude/p:parallel, and the TeX
+        # stage -- which groups on p:parallel among the top-level nodes -- never saw a single
+        # block, emitted no \begin{pairs}, and ran both columns together into one numbered
+        # stream.
+        if is_root and self.linear_data.parallel_projects and not self._in_parallel_compilation:
+            if self.marker_stack is None:
+                self.marker_stack = []
 
         # set the root language to the language of the deepest common ancestor if present, else root
         self.root_language = self._get_in_scope_language(

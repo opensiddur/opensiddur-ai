@@ -255,6 +255,14 @@ rather than failing loudly, so they are asserted in the parallel test suites.
    hierarchy inside it is *independent of*, not nested within, any enclosing one — which is
    precisely what makes (1) and (2) hold simultaneously.
 
+4. **A `p:parallel` never has a `tei:div` (or any other structural) ancestor.** Only
+   `p:transclude` wrappers may stand between it and `tei:body`, because those are the only
+   thing the TeX stage flattens. Enclosing structure is not discarded to achieve this: it is
+   reproduced *inside* each `p:parallelItem`, stamped `p:part="first|middle|last"` when one
+   source element spans several rows. Both halves matter — the flat outside is what lets
+   `reledmac.xslt` find the blocks and emit `\begin{pairs}`, and the copy inside each column
+   is what keeps `ancestor::tei:div[@type='book']` true so chapter numbers still render.
+
 So the shape is a flat alternation at each level, recursively:
 
 ```
@@ -270,7 +278,7 @@ tei:body
 
 ### Enforcement
 
-Two mechanisms, both required:
+Three mechanisms, all required:
 
 - `LinearData.parallel_compilation_depth` is incremented for the duration of any parallel
   sub-compilation (`ExternalCompilerProcessor._parallel_sub_compilation`). While it is non-zero,
@@ -283,6 +291,25 @@ Two mechanisms, both required:
   row, and recurses into the boundary transclude with the same split. `make_rows` is therefore
   the only producer of `p:parallel`, and only ever receives segments from which every
   `p:transclude` has been removed — so invariants (1) and (2) hold by construction.
+
+- **Marker mode is document-wide whenever `parallel.projects` is configured**, switched on for
+  the root processor in `ExternalCompilerProcessor.process` and propagated to every nested one.
+  Structural elements then compile to `p:start`/`p:end` marker pairs everywhere, and
+  `_process_element_as_marker` brackets each external transclusion with `p:suspend`/`p:resume`
+  for every open frame — which is what leaves the transclusion, and so the `p:parallel` inside
+  it, a *sibling* of the enclosing element's segments rather than a child. `marker_reconstruct`
+  then rebuilds the nesting: `reconstruct_container` runs over each `p:parallelItem` and over
+  the surrounding flow (`tei:body` and the `p:transclude` wrappers), deepest first and sharing
+  one `pid_state`, and `normalize_segment_parts` prunes empty segments and assigns `p:part`.
+  This is what invariant (4) rests on.
+
+  Enabling marker mode only inside `_transclude_parallel` is not enough, and was the bug: every
+  container *above* the first parallel-triggering transclusion stayed an ordinary nested
+  element, so a real book compiled to
+  `body/div/transclude/div[book]/transclude/div/transclude/p:parallel`. `reledmac.xslt` groups
+  on `p:parallel` among the top-level nodes of the transclude-flattened body and never matched
+  one, emitted no `\begin{pairs}` at all, and ran both columns together into a single numbered
+  stream.
 
 ## Annotation Processing
 

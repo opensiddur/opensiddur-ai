@@ -169,11 +169,17 @@ def _move_plain_content(
         fragments.append(el)
 
 
-def reconstruct_parallel_item(
+def reconstruct_container(
     pi: etree.ElementBase,
     pid_state: defaultdict[str, dict[str, Any]],
 ) -> None:
-    """Rebuild pi's direct linear stream into nested TEI fragments (mutating pi)."""
+    """Rebuild a container's direct linear stream into nested TEI fragments (mutating it).
+
+    Container-agnostic: it consumes whatever direct children it is given. A parallel
+    column (`p:parallelItem`) is the original caller, but with document-wide marker mode
+    the top-level flow (`tei:body`, and each `p:transclude`) is a marker stream too and
+    is rebuilt by the same walk.
+    """
     fragments: list[etree.ElementBase] = []
     stack: list[_Frame] = []
 
@@ -216,7 +222,7 @@ def reconstruct_parallel_item(
         _move_plain_content(el, stack, fragments)
 
     if stack:
-        raise ValueError(f"unclosed structural frames remain in parallelItem: {[f.pid for f in stack]}")
+        raise ValueError(f"unclosed structural frames remain in container: {[f.pid for f in stack]}")
 
     for frag in fragments:
         pi.append(frag)
@@ -287,16 +293,46 @@ def doc_needs_marker_reconstruction(root: etree.ElementBase) -> bool:
     return False
 
 
+def _marker_containers(root: etree.ElementBase) -> list[etree.ElementBase]:
+    """Elements outside the parallel columns whose direct children form a marker stream.
+
+    Under document-wide marker mode the top-level flow is flattened the same way a column
+    is, so `tei:body` — and any `p:transclude` or transcluded `tei:body` beneath it — has
+    to be rebuilt too. Found by inspection rather than by tag, because which element ends
+    up holding the stream depends on how the transclusion was spliced in.
+    """
+    containers = []
+    for el in root.iter():
+        if el.tag == _PARALLEL_ITEM:
+            continue
+        if any(child.tag in STRUCTURAL_BLOCKS and _structural_marker_map(child) for child in el):
+            containers.append(el)
+    return containers
+
+
+def _depth(el: etree.ElementBase) -> int:
+    return sum(1 for _ in el.iterancestors())
+
+
 def reconstruct_markered_document(root: etree.ElementBase) -> None:
     pid_state: defaultdict[str, dict[str, Any]] = defaultdict(dict)
 
-    # Snapshot before iterating: reconstruct_parallel_item mutates the tree underneath us.
+    # Snapshot before iterating: reconstruct_container mutates the tree underneath us.
     for parallel in list(root.iter()):
         if parallel.tag != _PARALLEL:
             continue
         for pi in parallel:
             if pi.tag == _PARALLEL_ITEM:
-                reconstruct_parallel_item(pi, pid_state)
+                reconstruct_container(pi, pid_state)
+
+    # Then the flow around them, deepest first, so a container is rebuilt before an
+    # ancestor's pass moves it. One shared pid_state throughout: a structural element
+    # suspended before a transclusion resumes in a later segment, and both halves need
+    # the same logical-id for normalize_segment_parts to pair them. Pids cannot collide
+    # across passes -- _get_path_hash folds in the whole processing-context stack,
+    # including each range's bounds.
+    for container in sorted(_marker_containers(root), key=_depth, reverse=True):
+        reconstruct_container(container, pid_state)
 
     normalize_segment_parts(root)
 

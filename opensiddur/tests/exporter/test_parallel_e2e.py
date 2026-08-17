@@ -678,6 +678,110 @@ class TestArrangementProjectRootE2E(_E2EBase):
             self.assertEqual(primary.get(f"{{{XML_NS}}}lang"), "he")
             self.assertEqual(parallel.get(f"{{{XML_NS}}}lang"), "en")
 
+    def test_no_parallel_block_is_wrapped_in_a_div(self):
+        """The invariant the TeX stage depends on: p:parallel is a flat sibling of the flow.
+
+        The wrapper's tei:div encloses the transclusion in the source, so before
+        document-wide marker mode the compiled block came out as
+        body/div/transclude/p:parallel. reledmac.xslt groups on p:parallel among the
+        top-level nodes of the (transclude-flattened) body, so a block behind a div was
+        invisible to it: no \\begin{pairs} was emitted at all and both columns were run
+        together into one numbered stream.
+        """
+        root = self._compiled_root()
+        parallels = root.findall(f".//{{{P_NS}}}parallel")
+        self.assertGreater(len(parallels), 0, "expected per-transclusion parallels")
+
+        for par in parallels:
+            div_ancestors = [a for a in par.iterancestors(f"{{{TEI_NS}}}div")]
+            self.assertEqual(
+                div_ancestors, [],
+                "a p:parallel must not have a tei:div ancestor")
+
+    def test_the_enclosing_structure_is_reproduced_inside_each_column(self):
+        """Structure is not discarded to achieve that — it is copied into the columns."""
+        root = self._compiled_root()
+
+        rows_with_content = [
+            par for par in root.findall(f".//{{{P_NS}}}parallel")
+            if "".join(par.itertext()).strip()
+        ]
+        self.assertGreater(len(rows_with_content), 0)
+
+        for par in rows_with_content:
+            for item in par.findall(f"{{{P_NS}}}parallelItem"):
+                self.assertIsNotNone(
+                    item.find(f"{{{TEI_NS}}}div"),
+                    "each column must carry its own copy of the source's div")
+
+    def test_the_wrapper_div_still_encloses_its_own_heading(self):
+        """Marker-ifying the wrapper must not lose it: its head is still inside a div."""
+        root = self._compiled_root()
+        heads = root.findall(f".//{{{TEI_NS}}}div/{{{TEI_NS}}}head")
+        self.assertIn("Arrangement", [h.text for h in heads])
+
+
+class TestSplitStructureAcrossParallelsE2E(TestArrangementProjectRootE2E):
+    """Two transclusions inside one div: the div is split into segments around them."""
+
+    # Text of the wrapper's own between the two readings, so the enclosing div really is
+    # cut into two non-empty segments. Two adjacent transclusions would leave the segment
+    # between them empty, and an empty segment is pruned rather than marked.
+    _WRAPPER_XML = TestArrangementProjectRootE2E._WRAPPER_XML.replace(
+        b'<j:transclude type="external" target="urn:x-test:section/1"/>',
+        b'<j:transclude type="external" target="urn:x-test:section/1"/>\n'
+        b'        <tei:p>Between the readings.</tei:p>\n'
+        b'        <j:transclude type="external" target="urn:x-test:section/2"/>',
+    )
+
+    def _mock_resolve_range(self, urn):
+        base_urn, _, hint = urn.partition("@")
+        if base_urn == "urn:x-test:section/2":
+            if hint == self.ENGLISH_PROJECT:
+                project, xml_bytes = self.ENGLISH_PROJECT, _PARALLEL_XML
+            else:
+                project, xml_bytes = self.PARALLEL_PROJECT, _PRIMARY_XML
+            path = self._milestone_path(xml_bytes, "2")
+            return [ResolvedUrn(
+                urn=base_urn, project=project, file_name="verses.xml",
+                element_path=path, end_element_path=path, end_includes_tail=True)]
+        return super()._mock_resolve_range(urn)
+
+    def test_both_transclusions_reach_the_output(self):
+        text = "".join(self._compiled_root().itertext())
+        self.assertIn("Hebrew verse 1", text)
+        self.assertIn("English verse 1", text)
+        self.assertIn("Hebrew verse 2", text)
+        self.assertIn("English verse 2", text)
+
+    def test_each_verse_appears_once_per_column(self):
+        """Guards the quadratic tail leak at the level it actually mattered: a ranged
+        transclusion must carry its own verse and no earlier one."""
+        text = "".join(self._compiled_root().itertext())
+        self.assertEqual(text.count("Hebrew verse 1"), 1)
+        self.assertEqual(text.count("English verse 1"), 1)
+        self.assertEqual(text.count("Hebrew verse 2"), 1)
+        self.assertEqual(text.count("English verse 2"), 1)
+
+    def test_split_column_segments_are_marked_with_p_part(self):
+        """A structural element split across rows is stamped first/middle/last so the
+        exporter can tell a continuation from a fresh block."""
+        root = self._compiled_root()
+        parts = [
+            el.get(f"{{{P_NS}}}part")
+            for el in root.iter()
+            if el.get(f"{{{P_NS}}}part")
+        ]
+        self.assertIn("first", parts)
+        self.assertIn("last", parts)
+
+    def test_no_raw_markers_survive_reconstruction(self):
+        """The new top-level pass must consume its markers, not leave them in the output."""
+        root = self._compiled_root()
+        for attr in ("start", "end", "suspend", "resume", "logical-id"):
+            leftovers = root.findall(f".//*[@{{{P_NS}}}{attr}]")
+            self.assertEqual(leftovers, [], f"p:{attr} survived reconstruction")
+
 
 if __name__ == "__main__":
     unittest.main()
