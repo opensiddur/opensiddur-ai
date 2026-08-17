@@ -1493,11 +1493,10 @@
         )[1])"/>
     </xsl:function>
 
-    <!-- Hebrew titles stay in the stream direction, but any embedded digit/Latin run (e.g. a
-         "52:13" citation range inside a Hebrew heading) still needs its own LTR wrap or it
-         renders reversed — the same problem f:emit-bidi-text already solves for Hebrew notes
-         with embedded sigla, so it is reused here rather than left as raw escaped text.
-         Other languages need the whole title wrapped, since it's Latin throughout. -->
+    <!-- Hebrew titles stay in the stream direction, but any embedded digit range (e.g. a
+         "52:13" citation inside a Hebrew heading) still needs an LTR wrap kept together as
+         one run or it renders reversed — see f:emit-bidi-text. Other languages need the
+         whole title wrapped, since it's Latin throughout. -->
     <xsl:function name="f:format-section-title" as="xs:string">
         <xsl:param name="title" as="xs:string"/>
         <xsl:param name="lang" as="xs:string"/>
@@ -1533,17 +1532,27 @@
     </xsl:function>
 
     <!-- Sources like the MAM apparatus notes are Hebrew prose that embeds short Latin
-         tokens (manuscript sigla such as "EVR-II-B-8", "BHS"). \textdir TRT forces the
-         whole Hebrew note into strict RTL layout (note-content), which has no per-run
-         bidi detection, so an embedded Latin token renders with its characters
-         back-to-front unless explicitly switched back to LTR. Wrap each such token the
-         same way \vno/\chno/note-content already wrap other LTR content in RTL context,
-         leaving a hyphen that merely touches Hebrew (e.g. "פטרבורג-EVR-II-B-8") outside
-         the wrap so its direction still resolves normally. -->
+         tokens (manuscript sigla such as "EVR-II-B-8", "BHS") and citation ranges (build.
+         _citation, e.g. "42:5-43:10"). \textdir TRT forces the whole Hebrew note/heading
+         into strict RTL layout, which has no per-run bidi detection, so an embedded Latin
+         or digit token renders with its characters back-to-front unless explicitly
+         switched back to LTR. Wrap each such token the same way \vno/\chno already wrap
+         other LTR content in RTL context, leaving a hyphen that merely touches Hebrew
+         (e.g. "פטרבורג-EVR-II-B-8") outside the wrap so its direction still resolves
+         normally.
+
+         A citation's separators (":", ";", the en dash) join a whole run into ONE
+         embedding rather than one per token, because two separate LTR embeds sitting side
+         by side in RTL text, with nothing but a colon or dash between them, do not
+         reliably keep their *relative* order — the bidi algorithm has no strong character
+         between them to anchor on, so wrapping "42" and "5" and "43" and "10" separately
+         can come out as "43:10-42:5". A Hebrew book name, not in this character class,
+         still ends a run and starts a fresh one, so "18:46; מלאכי 3:4" wraps its two
+         ranges separately, each still safe on its own. -->
     <xsl:function name="f:emit-bidi-text" as="xs:string">
         <xsl:param name="s" as="xs:string"/>
         <xsl:variable name="parts" as="xs:string*">
-            <xsl:analyze-string select="$s" regex="[A-Za-z0-9]+([-'.][A-Za-z0-9]+)*">
+            <xsl:analyze-string select="$s" regex="[A-Za-z0-9]+([-'.:;–]\s?[A-Za-z0-9]+)*">
                 <xsl:matching-substring>
                     <xsl:sequence select="concat('{{\textdir TLT\selectlanguage{english}', f:escape-tex(.), '}}')"/>
                 </xsl:matching-substring>

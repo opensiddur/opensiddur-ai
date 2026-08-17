@@ -1012,9 +1012,12 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
+        # "42" and "5" must wrap as a single LTR run, not two side by side: two separate
+        # embeds with only a colon between them can have their *relative* order swapped by
+        # the bidi algorithm (this is what previously rendered "42:5" as "43:10-42:5" in a
+        # citation — see TestCitationMilestone.test_a_multi_number_range_stays_in_order).
         self.assertIn(
-            r"\OSheadA{ישעיהו {{\textdir TLT\selectlanguage{english}42}}:"
-            r"{{\textdir TLT\selectlanguage{english}5}}}",
+            r"\OSheadA{ישעיהו {{\textdir TLT\selectlanguage{english}42:5}}}",
             out,
         )
 
@@ -1382,11 +1385,32 @@ class TestCitationMilestone(unittest.TestCase):
                <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
         )
         body = self._body(out)
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}42}", body)
-        # A hyphen joins adjacent digit runs into one LTR-wrapped group, the same way
-        # f:emit-bidi-text already treats a hyphenated siglum like "EVR-II-B-8".
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}5-43}", body)
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}10}", body)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}42:5-43:10}", body)
+
+    def test_a_multi_number_range_stays_in_order(self):
+        """Two colon/dash-joined number groups sitting side by side in RTL text, with no
+        strong character between them to anchor on, do not reliably keep their relative
+        order if wrapped as separate LTR embeds: "42:5-43:10" can come out as "43:10-42:5".
+        The whole range must go in one embedding instead — see f:emit-bidi-text."""
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="ירמיהו 34:8–34:22; 33:25–33:26"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(
+            r"{\textdir TLT\selectlanguage{english}34:8–34:22; 33:25–33:26}", body,
+        )
+
+    def test_a_book_change_still_gets_its_own_wrap(self):
+        """A Hebrew book name between two ranges is a strong character, so it is safe to
+        end one LTR run and start a fresh one there rather than merging across it."""
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="מלכים א 18:46; מלאכי 3:4–3:24"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}18:46}", body)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}3:4–3:24}", body)
 
     def test_a_citation_does_not_break_the_reading(self):
         """The reading's own transcluded text still follows in the numbered stream."""
