@@ -1,0 +1,88 @@
+---
+# Example settings for compiling the humash.
+#
+# The humash holds no text of its own: every reading is transcluded by URN, and the targets
+# carry no project suffix, so these priorities decide which edition supplies the words.
+
+priority:
+  # Miqra al pi ha-Masorah first, since the aliyah and maftir divisions were taken from MAM.
+  # The order decides only which edition's words are set: every project mints URNs in the one
+  # canonical verse division, so any order resolves the same verses.
+  transclusion:
+    - miqra_al_pi_hamasorah
+    - wlc
+    - jps1917
+  instructions:
+    - humash
+    - miqra_al_pi_hamasorah
+
+annotations:
+  - miqra_al_pi_hamasorah
+
+# Hebrew against the JPS 1917 English. Drop this block for a Hebrew-only volume.
+parallel:
+  projects:
+    - miqra_al_pi_hamasorah
+    - jps1917
+  column_order: primary_first
+
+declarations:
+  # Which rite's haftarot to print. Leaving the group out entirely keeps *every* variant,
+  # each under a heading naming whose custom it is, which is usually what a printed volume
+  # wants. Several may be true at once.
+  opensiddur:rite:
+    ashkenaz: true
+
+  # The megillot and the festival readings are conditioned on the occasion. Declaring a date
+  # derives opensiddur:holiday and opensiddur:torah-reading from it, so a volume compiled for
+  # one day carries only that day's readings. Omit the date to keep them all.
+  #
+  # A date also settles the triennial division of the twelve parshiyot that are sometimes read
+  # together with their partner, which divide differently depending on how the pair fell in
+  # that three-year cycle: opensiddur:torah-reading gets a triennial-pattern- feature per pair,
+  # and each file keeps only the division that pattern calls for. Without a date every division
+  # is kept, each marked with its cycle year, the way leaving opensiddur:rite out keeps every
+  # rite's haftarah. The reading of the weeks the pair is read together is always kept, marked
+  # מחוברות in the margin.
+  #
+  # opensiddur:gregorian-date:
+  #   year: 2025
+  #   month: 3
+  #   day: 1
+
+  # Which haftarot this volume carries. Leaving the group out reads annually, which is the one
+  # place the humash decides rather than keeping every variant: 51 parshiyot have a haftarah of
+  # their own for each year of the triennial cycle, and those are alternatives to the annual
+  # haftarah of the same Shabbat rather than additions to it, so a volume that kept them all
+  # would print four haftarot for one week.
+  #
+  # For one Shabbat, set triennial true and declare a date above — that settles which of the
+  # three years is read, and drops the annual haftarah:
+  #
+  # opensiddur:reading-cycle:
+  #   triennial: true
+  #
+  # For a volume covering a whole three-year cycle, name the years instead. Each is its own
+  # setting, so any combination is possible; keep annual as well to print all four.
+  #
+  # opensiddur:reading-cycle:
+  #   annual: false
+  #   triennial-year-1: true
+  #   triennial-year-2: true
+  #   triennial-year-3: true
+  #
+  # Either way the parshiyot with no triennial haftarah keep their annual one — Devarim,
+  # Vaetchanan and Vezot Haberakhah, which never have one; the pairs, which have none of their
+  # own; and Tazria, Achrei Mot and Behar in year 3, when they are read with their partner. So
+  # no week is ever left without a haftarah, whichever years are chosen.
+  #
+  # The triennial *Torah* divisions do not go through this: they are markers over the annual
+  # text rather than a separate reading, so every year's are always present, marked with the
+  # cycle year in the margin.
+
+typography:
+  hebrew_font: "Frank Ruehl CLM"
+  latin_font: "Linux Libertine O"
+  layout: pairs
+  paper: letterpaper
+  fontsize: "11pt"

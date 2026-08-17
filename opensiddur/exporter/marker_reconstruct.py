@@ -11,7 +11,7 @@ from typing import Any
 
 from lxml import etree
 
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE, STRUCTURAL_BLOCKS
+from opensiddur.exporter.constants import PROCESSING_NAMESPACE, STRUCTURAL_BLOCKS, TEI_NS
 
 _P_START = f"{{{PROCESSING_NAMESPACE}}}start"
 _P_END = f"{{{PROCESSING_NAMESPACE}}}end"
@@ -21,6 +21,7 @@ _P_LOGICAL = f"{{{PROCESSING_NAMESPACE}}}logical-id"
 _P_PART = f"{{{PROCESSING_NAMESPACE}}}part"
 _PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
 _PARALLEL = f"{{{PROCESSING_NAMESPACE}}}parallel"
+_TEI_MILESTONE = f"{{{TEI_NS}}}milestone"
 
 
 def _structural_marker_map(el: etree.ElementBase) -> dict[str, str]:
@@ -37,7 +38,19 @@ def _structural_marker_map(el: etree.ElementBase) -> dict[str, str]:
 
 
 def substantive_content(el: etree.ElementBase) -> bool:
+    """Whether `el` carries anything worth keeping: real text, or a tei:milestone.
+
+    A milestone (chapter, aliyah, citation, parsha...) has no text of its own, but it is
+    never filler — it is a deliberate marker the source placed there, and the exporter has
+    its own rendering for each kind (or explicitly renders nothing for the ones it doesn't
+    know, see reledmac.xslt's generic milestone fallback). Pruning the wrapper that holds
+    one, on the same footing as a genuinely empty leftover paragraph shell, would drop it
+    from the compiled document before the exporter ever sees it — which is what silently
+    erased chapter numbers whenever one landed alone in its own parallel-aligned segment.
+    """
     def walk(x: etree.ElementBase) -> bool:
+        if x.tag == _TEI_MILESTONE:
+            return True
         if (x.text or "").strip():
             return True
         for c in x:

@@ -5,7 +5,11 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from opensiddur.exporter.calendar.compute import SettingSnapshot
+from opensiddur.exporter.calendar.compute import (
+    FS_READING_CYCLE,
+    READING_CYCLE_DEFAULTS,
+    SettingSnapshot,
+)
 from opensiddur.exporter.conditional_settings import INIT_DECLARE_ID
 from opensiddur.exporter.derivation_graph import DerivationSpec, topological_derivation_order
 from opensiddur.exporter.linear import ConditionalSettingEntry, LinearData, Undefined
@@ -19,6 +23,15 @@ OVERRIDE_FEATURES = (
     "wedding",
     "sheva-brachot",
 )
+
+# Features that are never computed from anything and take a fixed value unless the volume
+# declares otherwise. An undeclared feature is normally *undefined*, which keeps every variant
+# of a conditional text; these are the ones that instead have to answer true or false, because
+# leaving them open would keep alternatives that contradict one another.
+STATIC_DEFAULTS: dict[str, dict[str, Any]] = {
+    FS_OVERRIDE: dict.fromkeys(OVERRIDE_FEATURES, False),
+    FS_READING_CYCLE: READING_CYCLE_DEFAULTS,
+}
 
 
 class SettingChangeTrigger(StrEnum):
@@ -88,23 +101,24 @@ def _collect_contributors(
     return contributors, True
 
 
-def _push_static_override_defaults(linear_data: LinearData) -> None:
-    for feature_name in OVERRIDE_FEATURES:
-        if get_active_setting_entry(linear_data, FS_OVERRIDE, feature_name) is not None:
-            continue
-        declare_id = derived_declare_id(FS_OVERRIDE, feature_name)
-        _remove_derived_for_feature(linear_data, FS_OVERRIDE, feature_name)
-        register_derived_entry(
-            linear_data,
-            ConditionalSettingEntry(
-                declare_id=declare_id,
-                fs_type=FS_OVERRIDE,
-                feature_name=feature_name,
-                value=False,
-                source="derived",
-                contributors={INIT_DECLARE_ID},
-            ),
-        )
+def _push_static_defaults(linear_data: LinearData) -> None:
+    for fs_type, features in STATIC_DEFAULTS.items():
+        for feature_name, value in features.items():
+            if get_active_setting_entry(linear_data, fs_type, feature_name) is not None:
+                continue
+            declare_id = derived_declare_id(fs_type, feature_name)
+            _remove_derived_for_feature(linear_data, fs_type, feature_name)
+            register_derived_entry(
+                linear_data,
+                ConditionalSettingEntry(
+                    declare_id=declare_id,
+                    fs_type=fs_type,
+                    feature_name=feature_name,
+                    value=value,
+                    source="derived",
+                    contributors={INIT_DECLARE_ID},
+                ),
+            )
 
 
 def _apply_derivation_spec(
@@ -171,7 +185,7 @@ def recalculate_derived_settings(
     del declare_id  # reserved for incremental invalidation in future
 
     if trigger == SettingChangeTrigger.INIT:
-        _push_static_override_defaults(linear_data)
+        _push_static_defaults(linear_data)
 
     snapshot = SettingSnapshot(
         get_setting=lambda fs_type, feature_name: _get_setting_from_linear_data(

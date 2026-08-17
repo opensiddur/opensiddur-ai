@@ -102,6 +102,14 @@ class TestLicensesToTex(unittest.TestCase):
         self.assertIn("CC", out)
         self.assertIn(r"\url{http://creativecommons.org/cc}", out)
 
+    def test_no_licences_emits_nothing(self):
+        """An itemize with no items is a LaTeX error and kills the run before any PDF.
+
+        A document can genuinely have no licences to list — one built entirely of public
+        domain text, or compiled without annotations.
+        """
+        self.assertEqual(licenses_to_tex([]), "")
+
 
 class TestExtractCredits(unittest.TestCase):
 

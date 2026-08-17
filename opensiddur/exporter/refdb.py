@@ -22,11 +22,93 @@ class DuplicateUrnError(ValueError):
     """A text URN is mapped to more than one place within a single project."""
 
 
+# Which milestone units contain which others.
+#
+# A milestone's URN scopes from the milestone to the next milestone of the *same* unit
+# (schema/JLPTEI-3.md, "URN scope"), or to the next milestone of a unit that *contains* it,
+# since no division crosses the boundary of a division that contains it. A verse therefore
+# ends at the next verse or at the next chapter, but a chapter does not end at the next verse.
+#
+# Reading divisions deliberately overlap and so are absent from each other's containment sets:
+# maftir re-reads the close of the seventh aliyah, weekday aliyot subdivide the Shabbat ones,
+# and triennial breaks cut across the annual ones. Each is contained only by the parsha.
+UNIT_CONTAINED_BY: dict[str, frozenset[str]] = {
+    "verse": frozenset({"chapter"}),
+    "chapter": frozenset(),
+    "parsha": frozenset(),
+    "parsha.annual": frozenset(),
+    "aliyah.annual": frozenset({"parsha.annual"}),
+    "aliyah.weekday": frozenset({"parsha.annual"}),
+    "maftir.annual": frozenset({"parsha.annual"}),
+    "aliyah.festival": frozenset(),
+    "maftir.festival": frozenset(),
+}
+
+# Each year of the triennial cycle divides the same parshah differently, and consecutive years
+# deliberately overlap — in Beshalach, year 1's fifth aliyah and year 2's first are the same
+# verses — so every year is its own unit-space rather than all three sharing one.
+UNIT_CONTAINED_BY.update({
+    f"{unit}.{year}": frozenset({"parsha.annual"})
+    for unit in ("aliyah.triennial", "maftir.triennial")
+    for year in (1, 2, 3)
+})
+
+# Two parshiyot that are sometimes read together share a file, and the reading of the combined
+# week is a division of the pair rather than of either single: the fourth aliyah of the
+# combined Vayakhel-Pekudei runs through the point where Pekudei begins. So it is scoped by
+# the pair and not by parsha.annual, which would cut it there.
+UNIT_CONTAINED_BY.update({
+    "parsha.combined": frozenset(),
+    "aliyah.combined": frozenset({"parsha.combined"}),
+    "aliyah.weekday.combined": frozenset({"parsha.combined"}),
+    "maftir.combined": frozenset({"parsha.combined"}),
+})
+
+_TRIENNIAL_PREFIXES = ("aliyah.triennial.", "maftir.triennial.")
+
+
+def containing_units(unit: str | None) -> frozenset[str] | None:
+    """Which units end `unit`'s scope, or None if the unit is not one this table knows.
+
+    Inside a pair's file a triennial unit-space names the parshah it belongs to and, where the
+    division depends on how the pair fell that cycle, the variation — `aliyah.triennial.
+    behar.IL3.2`. Those are open-ended, so they are matched by shape rather than listed: any
+    triennial unit that names more than a cycle year belongs to a pair's file and is scoped by
+    the pair, since such a division may cross from one of the two parshiyot into the other.
+    """
+    known = UNIT_CONTAINED_BY.get(unit)
+    if known is not None or unit is None:
+        return known
+    if unit.startswith(_TRIENNIAL_PREFIXES):
+        return frozenset({"parsha.combined"})
+    return None
+
+
+def milestone_terminates(element: ElementBase, following: ElementBase) -> bool:
+    """Whether `following` ends the scope opened by the milestone `element`.
+
+    Scope ends at the next milestone of the same unit, or of a unit that contains it
+    (`containing_units`). When either milestone carries no `@unit`, or carries one that
+    is not in the containment table, fall back to comparing the number of path components
+    in the URN -- the original heuristic, kept so that unit-less documents keep working.
+    """
+    unit = element.get('unit')
+    following_unit = following.get('unit')
+    containers = containing_units(unit)
+
+    if containers is not None and containing_units(following_unit) is not None:
+        return following_unit == unit or following_unit in containers
+
+    num_dividers = element.get('corresp', '').split(':')[-1].count('/')
+    following_dividers = following.get('corresp', '').split(':')[-1].count('/')
+    return following_dividers <= num_dividers
+
+
 def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
     """Find the end element path and tail-inclusion flag for a URN mapping.
 
-    For milestone elements, finds the element just before the next same-level milestone.
-    For non-milestones, the element itself is the end.
+    For milestone elements, finds the element just before the next milestone that ends
+    this one's scope. For non-milestones, the element itself is the end.
 
     "Just before" is the nearest preceding sibling of the next milestone, or -- when the
     next milestone is the first element in its parent -- the nearest preceding sibling of
@@ -43,16 +125,11 @@ def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
 
     is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
     if is_milestone:
-        corresp = element.get('corresp', '')
-        last_part = corresp.split(':')[-1]
-        num_dividers = last_part.count('/')
         following_milestones = element.xpath(
             './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
         actual_end = None
         for milestone in following_milestones:
-            following_corresp = milestone.attrib.get('corresp', '')
-            following_last_part = following_corresp.split(':')[-1]
-            if following_last_part.count('/') <= num_dividers:
+            if milestone_terminates(element, milestone):
                 node = milestone
                 while node is not None:
                     preceding = node.xpath('./preceding-sibling::*[1]')

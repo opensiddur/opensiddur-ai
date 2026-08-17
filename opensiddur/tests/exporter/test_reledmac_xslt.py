@@ -91,19 +91,55 @@ class TestPreamble(unittest.TestCase):
         self.assertIn("Ezra SIL", out)
         self.assertIn("TeX Gyre Pagella", out)
 
-    def test_preamble_bookmarks_three_levels_deep(self):
-        """The third heading level (index > book > parshah) must reach the PDF outline.
-
-        The book class stops the table of contents at subsection and hyperref follows it,
-        which silently drops the deepest \addcontentsline.
+    def test_preamble_bookmarks_four_levels_deep(self):
+        """The deeper heading levels (index > section > haftarah > rite) must reach the PDF
+        outline. The book class stops the table of contents at subsection and hyperref
+        follows it, which silently drops anything deeper.
         """
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\setcounter{tocdepth}{3}", out)
-        self.assertIn("bookmarksdepth=3", out)
+        self.assertIn(r"\setcounter{tocdepth}{4}", out)
+        self.assertIn("bookmarksdepth=4", out)
+
+    def test_a_fourth_level_head_gets_its_own_macro_and_outline_entry(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Humash</tei:head>
+              <tei:div><tei:head>Haftarot</tei:head>
+                <tei:div><tei:head>Bereshit</tei:head>
+                  <tei:div><tei:head>Ashkenaz</tei:head><tei:p>Hi</tei:p></tei:div>
+                </tei:div>
+              </tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\OSheadD{", out)
+        self.assertIn(r"\addcontentsline{toc}{paragraph}", out)
+
+    def test_a_fifth_level_head_stays_at_the_fourth(self):
+        """Nesting deeper than the macros go must not fall off the end of the sequence."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>One</tei:head>
+              <tei:div><tei:head>Two</tei:head>
+                <tei:div><tei:head>Three</tei:head>
+                  <tei:div><tei:head>Four</tei:head>
+                    <tei:div><tei:head>Five</tei:head><tei:p>Hi</tei:p></tei:div>
+                  </tei:div>
+                </tei:div>
+              </tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn("english}Five}", out)
+        self.assertNotIn("OSheadE", out)
 
     def test_a_third_level_head_is_added_to_the_outline(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -963,6 +999,28 @@ class TestStructuralElements(unittest.TestCase):
             out,
         )
 
+    def test_digits_embedded_in_a_hebrew_head_are_forced_ltr(self):
+        """A Hebrew heading was never expected to carry a number before, so digits in it
+        went out unwrapped and would render reversed (e.g. "42:5" as "5:24")."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head>ישעיהו 42:5</tei:head>
+              <tei:p><tei:milestone unit="verse" n="1"/>בְּרֵאשִׁית</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        # "42" and "5" must wrap as a single LTR run, not two side by side: two separate
+        # embeds with only a colon between them can have their *relative* order swapped by
+        # the bidi algorithm (this is what previously rendered "42:5" as "43:10-42:5" in a
+        # citation — see TestCitationMilestone.test_a_multi_number_range_stays_in_order).
+        self.assertIn(
+            r"\OSheadA{ישעיהו {{\textdir TLT\selectlanguage{english}42:5}}}",
+            out,
+        )
+
 
 class TestFrontMatter(unittest.TestCase):
     """``tei:front`` is set before the body, with title pages on pages of their own
@@ -1189,3 +1247,246 @@ class TestParshaMilestones(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReadingDivisions(unittest.TestCase):
+    """Aliyah, maftir and parshah markers, as the humash emits them.
+
+    These divisions overlap on purpose, so their markers are inline rather than breaks: a
+    maftir opens inside the seventh aliyah, and a marker that ended a paragraph would assert
+    a break that is not there — besides desynchronising a reledpar pairing, which counts
+    \\pstart markers on each side.
+    """
+
+    @staticmethod
+    def _body(tex: str) -> str:
+        return tex.split(r"\begin{document}", 1)[1]
+
+    def _transform_body(self, body: str, **params) -> str:
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>""",
+            **params,
+        )
+
+    def test_aliyah_marker_is_emitted_inline(self):
+        out = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>text one
+               <tei:milestone unit="aliyah.annual" n="שני"/>text two</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"\OSaliyah{", body)
+        for word in ("text one", "text two"):
+            with self.subTest(word):
+                self.assertIn(word, body)
+
+    def test_maftir_and_weekday_and_triennial_all_get_markers(self):
+        for unit in ("maftir.annual", "aliyah.weekday", "aliyah.triennial.2"):
+            with self.subTest(unit=unit):
+                out = self._transform_body(
+                    f"""<tei:p><tei:milestone unit="verse" n="1"/>text
+                        <tei:milestone unit="{unit}" n="X"/>more</tei:p>"""
+                )
+                self.assertIn(r"\OSaliyah{X}", self._body(out))
+
+    def test_a_marker_does_not_break_the_paragraph(self):
+        """The maftir begins inside the seventh aliyah, so it must not close its pstart."""
+        out = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>before
+               <tei:milestone unit="maftir.annual" n="מפטיר"/>after</tei:p>"""
+        )
+        body = self._body(out)
+        marker = body.index(r"\OSaliyah{")
+        # No paragraph is closed and reopened around the marker.
+        self.assertNotIn(r"\pend", body[max(0, marker - 120):marker])
+
+    def test_markers_keep_pstart_counts_equal_for_parallel_text(self):
+        """reledpar pairs columns by \\pstart count, so a marker on one side only must not
+        add or remove one."""
+        without = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/>a</tei:p>"""
+        )
+        with_marker = self._transform_body(
+            """<tei:p><tei:milestone unit="verse" n="1"/><tei:milestone
+               unit="aliyah.annual" n="ראשון"/>a</tei:p>"""
+        )
+        self.assertEqual(
+            self._body(without).count(r"\pstart"), self._body(with_marker).count(r"\pstart")
+        )
+        self.assertEqual(
+            self._body(without).count(r"\pend"), self._body(with_marker).count(r"\pend")
+        )
+
+    def test_a_qualified_parsha_unit_is_left_to_the_heading(self):
+        """The humash gives every parshah a tei:head, so printing the milestone too would
+        name it twice."""
+        out = self._transform_body(
+            """<tei:div><tei:head>בראשית</tei:head>
+               <tei:p><tei:milestone unit="verse" n="1"/><tei:milestone
+                 unit="parsha.annual" n="בראשית"/>text</tei:p></tei:div>"""
+        )
+        body = self._body(out)
+        self.assertNotIn("Parsha:", body)
+        self.assertIn("text", body)
+
+    def test_an_unqualified_parsha_unit_still_gets_its_name_rendered(self):
+        """wlc and jps1917 mark parshiyot inside a book with no heading of their own."""
+        out = self._transform_body(
+            """<tei:div type="book"><tei:head>Genesis</tei:head>
+               <tei:p><tei:milestone unit="verse" n="1"/>text
+               <tei:milestone unit="parsha" n="נח"/>more</tei:p></tei:div>"""
+        )
+        self.assertIn("\\OSParsha{\\texthebrew{נח}}", self._body(out))
+
+    def test_the_aliyah_macro_is_defined_in_the_preamble(self):
+        out = self._transform_body("""<tei:p>text</tei:p>""")
+        self.assertIn(r"\newcommand{\OSaliyah}", out.split(r"\begin{document}", 1)[0])
+
+
+class TestCitationMilestone(unittest.TestCase):
+    """A tei:milestone[@unit='citation'] is how the humash states a haftarah/festival
+    reading's scriptural source, or where it resumes after a jump (build._citation)."""
+
+    @staticmethod
+    def _body(tex: str) -> str:
+        return tex.split(r"\begin{document}", 1)[1]
+
+    def _transform_body(self, body: str, **params) -> str:
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:p="http://jewishliturgy.org/ns/processing">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>""",
+            **params,
+        )
+
+    def test_citation_is_rendered_in_its_own_pstart(self):
+        out = self._transform_body(
+            """<tei:head>הַפְטָרַת בְּרֵאשִׁית</tei:head>
+               <tei:milestone unit="citation" n="ישעיהו מב:ה–מג:י"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"\OScitation{", body)
+        before = body.split(r"\OScitation{", 1)[0]
+        self.assertTrue(before.rstrip().endswith(r"\pstart \skipnumbering"))
+
+    def test_the_citation_macro_is_defined_in_the_preamble(self):
+        out = self._transform_body("""<tei:p>text</tei:p>""")
+        self.assertIn(r"\newcommand{\OScitation}", out.split(r"\begin{document}", 1)[0])
+
+    def test_digits_in_the_citation_are_forced_ltr(self):
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="ישעיהו 42:5-43:10"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}42:5-43:10}", body)
+
+    def test_a_multi_number_range_stays_in_order(self):
+        """Two colon/dash-joined number groups sitting side by side in RTL text, with no
+        strong character between them to anchor on, do not reliably keep their relative
+        order if wrapped as separate LTR embeds: "42:5-43:10" can come out as "43:10-42:5".
+        The whole range must go in one embedding instead — see f:emit-bidi-text."""
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="ירמיהו 34:8–34:22; 33:25–33:26"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(
+            r"{\textdir TLT\selectlanguage{english}34:8–34:22; 33:25–33:26}", body,
+        )
+
+    def test_a_book_change_still_gets_its_own_wrap(self):
+        """A Hebrew book name between two ranges is a strong character, so it is safe to
+        end one LTR run and start a fresh one there rather than merging across it."""
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="מלכים א 18:46; מלאכי 3:4–3:24"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}18:46}", body)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}3:4–3:24}", body)
+
+    def test_a_citation_does_not_break_the_reading(self):
+        """The reading's own transcluded text still follows in the numbered stream."""
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="ישעיהו 42:5-43:10"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        self.assertIn(r"\vno{1}", self._body(out))
+
+    def test_markers_keep_pstart_counts_equal_for_parallel_text(self):
+        """A citation exists only on the Hebrew source's milestones, so it must not add or
+        remove a \\pstart on either side, or reledpar's column-pairing desyncs."""
+        without = _transform(
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+              <tei:text><tei:body>
+                <p:parallel column-order="primary_first">
+                  <p:parallelItem role="primary" xml:lang="he">
+                    <tei:p><tei:milestone unit="verse" n="1"/>שלום</tei:p>
+                  </p:parallelItem>
+                  <p:parallelItem role="parallel" xml:lang="en">
+                    <tei:p><tei:milestone unit="verse" n="1"/>Hello</tei:p>
+                  </p:parallelItem>
+                </p:parallel>
+              </tei:body></tei:text>
+            </tei:TEI>"""
+        )
+        with_citation = _transform(
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+              <tei:text><tei:body>
+                <p:parallel column-order="primary_first">
+                  <p:parallelItem role="primary" xml:lang="he">
+                    <tei:p><tei:milestone unit="citation" n="ישעיהו א:א"/>
+                      <tei:milestone unit="verse" n="1"/>שלום</tei:p>
+                  </p:parallelItem>
+                  <p:parallelItem role="parallel" xml:lang="en">
+                    <tei:p><tei:milestone unit="verse" n="1"/>Hello</tei:p>
+                  </p:parallelItem>
+                </p:parallel>
+              </tei:body></tei:text>
+            </tei:TEI>"""
+        )
+        self.assertEqual(without.count(r"\pstart"), with_citation.count(r"\pstart"))
+        self.assertEqual(without.count(r"\pend"), with_citation.count(r"\pend"))
+
+
+class TestUnrenderedMilestones(unittest.TestCase):
+    """A milestone the stylesheet does not set must not open a paragraph of its own.
+
+    reledmac cannot typeset an empty \pstart: it fails with "You can't use \lastbox in
+    vertical mode" and produces no PDF at all. A paragraph holding only such a milestone —
+    which is what a range boundary falling inside an edition's own verse produces — used to
+    make exactly that.
+    """
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+      <tei:text><tei:body>
+        <tei:p><tei:milestone unit="verse" n="17"/>text</tei:p>
+        <tei:p><tei:milestone unit="edition-verse" n="14"/></tei:p>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_no_empty_paragraph_is_emitted(self):
+        out = _transform(self.XML)
+        self.assertNotIn(r"\pstart \pend", out)
+        self.assertNotIn("\\pstart\n\\pend", out)
+
+    def test_the_verse_before_it_is_still_set(self):
+        out = _transform(self.XML)
+        self.assertIn(r"\vno{17}", out)
+        self.assertIn("text", out)
+
+    def test_an_edition_verse_prints_nothing(self):
+        self.assertNotIn("14", _transform(self.XML).split("begin{document}")[1])
+

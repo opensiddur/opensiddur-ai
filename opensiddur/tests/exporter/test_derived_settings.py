@@ -5,8 +5,14 @@ import unittest
 from pathlib import Path
 
 import yaml
+from lxml import etree
 
 from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.condition_eval import (
+    TriState,
+    evaluate_condition,
+    parse_condition_element,
+)
 from opensiddur.exporter.conditional_settings import (
     INIT_DECLARE_ID,
     yaml_to_declaration_entries,
@@ -68,6 +74,107 @@ class TestDerivedSettingsFramework(unittest.TestCase):
         entry = get_active_setting_entry(self.linear_data, "opensiddur:override", "omit-tahanun")
         self.assertTrue(entry.value)
         self.assertEqual(entry.source, "init")
+
+    CYCLE = "opensiddur:reading-cycle"
+
+    def _cycle(self) -> dict[str, object]:
+        """Which readings the volume carries, as a plain dict."""
+        return {
+            feature: get_active_setting_entry(self.linear_data, self.CYCLE, feature).value
+            for feature in
+            ("annual", "triennial-year-1", "triennial-year-2", "triennial-year-3")
+        }
+
+    def test_reading_cycle_defaults_to_the_annual_reading_alone(self):
+        """These cannot be left undefined the way opensiddur:rite is.
+
+        The annual haftarah and the three triennial ones are read on the same Shabbat, and an
+        undefined condition keeps its text, so an open feature here would print all four.
+        """
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
+        self.assertEqual(self._cycle(), {
+            "annual": True,
+            "triennial-year-1": False,
+            "triennial-year-2": False,
+            "triennial-year-3": False,
+        })
+
+    def test_a_date_alone_selects_no_triennial_year(self):
+        """Every date falls in some year of the cycle, including an annual volume's."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2026, "month": 1, "day": 3},
+            }),
+        )
+        self.assertEqual(self._cycle()["annual"], True)
+        self.assertEqual(self._cycle()["triennial-year-1"], False)
+
+    def test_a_triennial_volume_takes_its_year_from_the_date(self):
+        """5788 is the third year of the cycle, and the annual reading gives way to it."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2028, "month": 1, "day": 8},
+                "opensiddur:reading-cycle": {"triennial": True},
+            }),
+        )
+        self.assertEqual(self._cycle(), {
+            "annual": False,
+            "triennial-year-1": False,
+            "triennial-year-2": False,
+            "triennial-year-3": True,
+        })
+
+    def test_a_volume_for_a_whole_cycle_keeps_all_three_years(self):
+        """A printed humash covering a cycle turns on every year; a date would allow only one."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:reading-cycle": {
+                    "annual": False,
+                    "triennial-year-1": True,
+                    "triennial-year-2": True,
+                    "triennial-year-3": True,
+                },
+            }),
+        )
+        self.assertEqual(self._cycle(), {
+            "annual": False,
+            "triennial-year-1": True,
+            "triennial-year-2": True,
+            "triennial-year-3": True,
+        })
+
+    def test_a_declared_year_wins_over_the_date(self):
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2026, "month": 1, "day": 3},
+                "opensiddur:reading-cycle": {"triennial": True, "triennial-year-2": True},
+            }),
+        )
+        self.assertEqual(self._cycle()["triennial-year-2"], True)
+
+    def test_triennial_year_is_derived_from_the_date(self):
+        """The cycle is counted from 5756, so 5786 opens one and 5788 closes it."""
+        for gregorian, expected in (((2026, 1, 3), 1), ((2028, 1, 8), 3)):
+            with self.subTest(date=gregorian):
+                reset_linear_data()
+                linear_data = get_linear_data()
+                year, month, day = gregorian
+                CompilerProcessor.load_init_settings(
+                    linear_data,
+                    yaml_to_declaration_entries({
+                        "opensiddur:gregorian-date": {
+                            "year": year, "month": month, "day": day
+                        },
+                    }),
+                )
+                entry = get_active_setting_entry(
+                    linear_data, "opensiddur:torah-reading", "triennial-year"
+                )
+                self.assertEqual(entry.value, expected)
 
     def test_secular_day_from_gregorian_init(self):
         CompilerProcessor.load_init_settings(
@@ -287,6 +394,39 @@ class TestGoldenCalendarDates(unittest.TestCase):
         )
         self.assertEqual(
             get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah").value, 1
+        )
+
+    def test_a_triennial_variation_condition_selects_on_the_declared_date(self):
+        """The condition the humash puts on the twelve doubled parshiyot, end to end.
+
+        A parshah that is sometimes read with its partner divides differently depending on how
+        the pair fell across the cycle, so each division is conditioned on the patterns that
+        select it. With a date declared, only the live one survives.
+        """
+        def condition(*patterns: str):
+            alternatives = "".join(
+                f'<tei:fs type="opensiddur:torah-reading">'
+                f'<tei:f name="triennial-pattern-vayakhel-pekudei">'
+                f"<tei:string>{pattern}</tei:string></tei:f></tei:fs>"
+                for pattern in patterns
+            )
+            element = etree.fromstring(
+                f'<j:conditional xmlns:j="{J}" xmlns:tei="{TEI}" xml:id="c">'
+                f"<j:any>{alternatives}</j:any></j:conditional>".encode()
+            )
+            return parse_condition_element(element)
+
+        processor = CompilerProcessor.__new__(CompilerProcessor)
+        processor.linear_data = self.linear_data
+
+        # Undeclared, every variation is kept, the way an undeclared rite keeps every rite.
+        self.assertEqual(evaluate_condition(condition("TSS"), processor), TriState.UNDEFINED)
+
+        # 5786 opens a cycle in which the pair falls together, apart, together.
+        self._load({"opensiddur:gregorian-date": {"year": 2025, "month": 11, "day": 1}})
+        self.assertEqual(evaluate_condition(condition("TST"), processor), TriState.TRUE)
+        self.assertEqual(
+            evaluate_condition(condition("TSS", "SSS"), processor), TriState.FALSE
         )
 
     def test_torah_reading_parsha(self):

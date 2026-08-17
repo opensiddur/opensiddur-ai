@@ -921,6 +921,25 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="triennial-year">
       <tei:numeric value="1"/>
    </tei:f>
+   <!-- One per pair of parshiyot that is sometimes read combined; see below. -->
+   <tei:f name="triennial-pattern-vayakhel-pekudei">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-tazria-metzora">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-achrei-mot-kedoshim">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-behar-bechukotai">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-chukat-balak">
+      <tei:string/>
+   </tei:f>
+   <tei:f name="triennial-pattern-matot-masei">
+      <tei:string/>
+   </tei:f>
    <tei:f name="shabbat-shuva">
       <tei:binary/>
    </tei:f>
@@ -970,6 +989,91 @@ turns over at Simhat Torah rather than at Rosh Hashanah, so the Shabbatot of ear
 Shabbat Shuva among them — still report the outgoing year. A single turnover date serves both
 rites: Simhat Torah is 22 Tishrei in Israel and 23 in the diaspora, but no Shabbat carrying a
 weekly parshah ever falls between the two.
+
+Each `triennial-pattern-` feature describes the three-year triennial cycle the date falls in,
+not the date itself: one character per year of the cycle, `T` where that pair of parshiyot was
+read together and `S` where the two were read apart. `TSS` therefore means the pair was
+combined in the first year of the cycle and separate in the second and third.
+
+Six pairs have one, because the triennial division of a parshah that is sometimes doubled
+depends on how the pair fell across the whole cycle rather than on the cycle year alone. A
+text that divides differently per pattern conditions each division on the patterns it belongs
+to, as the humash does:
+
+```xml
+<j:conditional xml:id="triennial_1">
+   <j:any>
+      <tei:fs type="opensiddur:torah-reading">
+         <tei:f name="triennial-pattern-vayakhel-pekudei"><tei:string>TSS</tei:string></tei:f>
+      </tei:fs>
+   </j:any>
+</j:conditional>
+```
+
+The value is reckoned for the diaspora or for Israel according to `opensiddur:israel`, since
+the two diverge whenever a festival falling on Shabbat puts them a week apart. No separate
+test on `opensiddur:israel` is needed alongside the pattern: a pattern that can only arise in
+Israel selects an Israel division on its own.
+
+Which cycle of readings a volume follows is a choice it makes rather than something the date
+settles — every date falls in some year of the triennial cycle, including the dates a volume
+that reads annually is compiled for. It is declared:
+```xml
+<tei:fs type="opensiddur:reading-cycle">
+   <tei:f name="annual">
+      <!-- true if this volume carries the annual haftarah of each week. Defaults to true. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial">
+      <!-- true if this volume reads the modern triennial cycle. Defaults to false. This is
+      the opt-in that gives a declared date meaning here; on its own it selects nothing. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year-1">
+      <!-- true if this volume carries the first year's triennial readings. Defaults to false.
+      Derived, along with its siblings and with annual, from
+      opensiddur:torah-reading/triennial-year when triennial is true and a date is declared. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year-2">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="triennial-year-3">
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+
+One binary per year rather than a single year number, because several may be true at once, the
+way several rites may be. A volume for one Shabbat has one year; a volume covering a whole
+three-year cycle turns on all three, which a year number could not express:
+
+| volume | declares | carries |
+| --- | --- | --- |
+| annual | nothing | the annual haftarah |
+| one Shabbat | `triennial` and a date | that cycle year's |
+| a whole cycle | the three year features, `annual` false | all three years' |
+| complete reference | the three year features | all four |
+
+Unlike most features these take a value rather than staying `undefined`, because the readings
+they select are alternatives to one another. The annual haftarah of a parshah and its three
+triennial ones are all read on the same Shabbat, and an undefined condition keeps its text, so
+an open feature here would print four haftarot for one week. A volume that says nothing gets
+the annual reading. The humash conditions its haftarot this way:
+
+```xml
+<j:conditional xml:id="triennial_haftarah_1">
+   <tei:fs type="opensiddur:reading-cycle">
+      <tei:f name="triennial-year-1"><tei:binary value="true"/></tei:f>
+   </tei:fs>
+</j:conditional>
+```
+
+Always one feature per test: `j:all` over a false test and an undefined one is `undefined`
+rather than false, per the truth tables below, so a condition that has to be decisive must turn
+on a single feature that always has a value. Where a reading covers several cases — the humash's
+annual haftarah stands in for the cycle years a parshah has no reading for — the tests are
+combined with `j:any`, which does answer true as soon as one of them is true.
 
 There are also special manual overrides available, which
 are never set automatically (they default to the `false` value)

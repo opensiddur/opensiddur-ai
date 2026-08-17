@@ -1592,6 +1592,68 @@ class TestExternalCompilerProcessor(unittest.TestCase):
             self.assertTrue(len(paragraph) or (paragraph.text or "").strip(),
                             "No empty paragraph shells")
 
+    # A chapter milestone sits immediately before the verse-1 milestone that opens a new
+    # chapter, the way miqra_to_tei.xslt emits it. @unit (not @type, as MULTI_PARAGRAPH_SOURCE
+    # above uses) is what refdb.UNIT_CONTAINED_BY and the boundary check key off of.
+    CHAPTER_BOUNDARY_SOURCE = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">
+    <tei:text>
+        <tei:body>
+            <tei:div type="book">
+                <tei:p><tei:milestone unit="verse" n="10" corresp="urn:x-opensiddur:text:bible:book/1/10"/> Chapter 1 verse 10
+                    <tei:milestone unit="chapter" n="2" corresp="urn:x-opensiddur:text:bible:book/2"/>
+                    <tei:milestone unit="verse" n="1" corresp="urn:x-opensiddur:text:bible:book/2/1"/> Chapter 2 verse 1
+                    <tei:milestone unit="verse" n="2" corresp="urn:x-opensiddur:text:bible:book/2/2"/> Chapter 2 verse 2</tei:p>
+            </tei:div>
+        </tei:body>
+    </tei:text>
+</tei:TEI>'''
+
+    def test_a_chapter_milestone_opening_the_range_start_is_included(self):
+        """A range beginning exactly at a new chapter's first verse must still carry the
+        chapter milestone that announces it, even though it is a preceding sibling."""
+        xml_bytes = self.CHAPTER_BOUNDARY_SOURCE.encode('utf-8')
+        project, file_name = self._create_test_file("chapter_boundary.xml", xml_bytes)
+
+        root = etree.fromstring(xml_bytes)
+        tree = root.getroottree()
+        start_milestone = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/2/1']")[0]
+        end_milestone = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/2/2']")[0]
+        from_start = tree.getpath(start_milestone)
+        end_path, include_tail = find_end_of_mapping(end_milestone)
+
+        processor = ExternalCompilerProcessor(
+            project, file_name, from_start, end_path, include_tail_after_end=include_tail)
+        result = processor.process()
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+
+        self.assertIn('unit="chapter" n="2" corresp="urn:x-opensiddur:text:bible:book/2"',
+                       result_str)
+        self.assertIn("Chapter 2 verse 1", result_str)
+        self.assertNotIn("Chapter 1 verse 10", result_str)
+
+    def test_a_verse_milestone_before_the_range_start_is_still_excluded(self):
+        """The chapter-boundary exception must not reopen #51: an ordinary preceding verse
+        milestone (not a container of the start's unit) still gets no empty shell."""
+        xml_bytes = self.CHAPTER_BOUNDARY_SOURCE.encode('utf-8')
+        project, file_name = self._create_test_file("chapter_boundary2.xml", xml_bytes)
+
+        root = etree.fromstring(xml_bytes)
+        tree = root.getroottree()
+        # Start at chapter 2 verse 2: verse 1's milestone immediately precedes it, but a
+        # verse does not contain another verse, so it must still be excluded.
+        start_milestone = root.xpath("//*[@corresp='urn:x-opensiddur:text:bible:book/2/2']")[0]
+        from_start = tree.getpath(start_milestone)
+        end_path, include_tail = find_end_of_mapping(start_milestone)
+
+        processor = ExternalCompilerProcessor(
+            project, file_name, from_start, end_path, include_tail_after_end=include_tail)
+        result = processor.process()
+        result_str = ''.join(etree.tostring(elem, encoding='unicode') for elem in result)
+
+        self.assertNotIn('corresp="urn:x-opensiddur:text:bible:book/2/1"', result_str)
+        self.assertNotIn("Chapter 2 verse 1", result_str)
+        self.assertIn("Chapter 2 verse 2", result_str)
+
     def test_range_keeps_declarations_made_before_the_start(self):
         """A j:declare preceding the range inside the DCA is still in scope in the range."""
         xml_bytes = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="he">

@@ -280,5 +280,63 @@ class TestNavAndScaffoldNotes(unittest.TestCase):
         self.assertNotIn("הערה", "".join(body.itertext()))
 
 
+class TestChapterMilestone(unittest.TestCase):
+    """A chapter milestone has no column of its own in MAM's source; it is inferred from a
+    row's chapter differing from the one before it."""
+
+    def _chapter_milestones(self, body: etree._Element) -> list[tuple[str, str]]:
+        return [
+            (m.get("n"), m.get("corresp"))
+            for m in body.findall(f".//{{{TEI_NS}}}milestone")
+            if m.get("unit") == "chapter"
+        ]
+
+    def test_first_verse_of_the_book_opens_a_chapter(self):
+        body, _ = _transform(_row("1", "AAA", chapter="20"))
+        self.assertEqual(
+            [("20", "urn:x-opensiddur:text:bible:exodus/20")],
+            self._chapter_milestones(body),
+        )
+
+    def test_chapter_milestone_precedes_the_verse_milestone(self):
+        body, _ = _transform(_row("1", "AAA", chapter="20"))
+        p = body.find(f"{{{TEI_NS}}}div/{{{TEI_NS}}}p")
+        milestones = list(p.findall(f"{{{TEI_NS}}}milestone"))
+        self.assertEqual("chapter", milestones[0].get("unit"))
+        self.assertEqual("verse", milestones[1].get("unit"))
+
+    def test_no_milestone_for_a_later_verse_of_the_same_chapter(self):
+        body, _ = _transform(
+            _row("1", "AAA", chapter="20"), _row("2", "BBB", chapter="20"),
+        )
+        self.assertEqual(
+            [("20", "urn:x-opensiddur:text:bible:exodus/20")],
+            self._chapter_milestones(body),
+        )
+
+    def test_chapter_change_opens_a_new_milestone(self):
+        body, _ = _transform(
+            _row("18", "AAA", chapter="20"), _row("1", "BBB", chapter="21"),
+        )
+        self.assertEqual(
+            [
+                ("20", "urn:x-opensiddur:text:bible:exodus/20"),
+                ("21", "urn:x-opensiddur:text:bible:exodus/21"),
+            ],
+            self._chapter_milestones(body),
+        )
+
+    def test_mid_verse_parashah_break_does_not_repeat_the_chapter_milestone(self):
+        """A verse split by a parashah break still opens only once (see
+        TestMidVerseParashah); the chapter milestone must not double up with it."""
+        body, _ = _transform(
+            _row("13", 'AAA<miqra:parashah type="close-inline" midVerse="true"/>BBB', chapter="20"),
+        )
+        self.assertEqual(
+            [("20", "urn:x-opensiddur:text:bible:exodus/20")],
+            self._chapter_milestones(body),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -28,6 +28,7 @@ FS_DAY_OF_WEEK = "opensiddur:day-of-week"
 FS_HOLIDAY = "opensiddur:holiday"
 FS_HOLIDAY_AGG = "opensiddur:holiday-aggregate"
 FS_TORAH = "opensiddur:torah-reading"
+FS_READING_CYCLE = "opensiddur:reading-cycle"
 FS_SERVICE_TIME = "opensiddur:service-time"
 FS_QUORUM = "opensiddur:quorum"
 FS_HOUSEHOLD = "opensiddur:household"
@@ -82,10 +83,30 @@ AGGREGATE_FEATURES = (
     "day-after-holiday",
 )
 
+# The modern triennial cycle as reckoned by the CJLS, whose first year was 5756.
+_TRIENNIAL_EPOCH_YEAR = 5756
+
+# The six pairs of parshiyot whose triennial division depends on how the pair fell in the
+# cycle, each with the index pyluach gives the first of the two. Nitzavim-Vayeilech is doubled
+# as well but divides the same way however it falls, so it needs no feature.
+TRIENNIAL_PAIRS: tuple[tuple[str, int], ...] = (
+    ("vayakhel-pekudei", 21),
+    ("tazria-metzora", 26),
+    ("achrei-mot-kedoshim", 28),
+    ("behar-bechukotai", 31),
+    ("chukat-balak", 38),
+    ("matot-masei", 41),
+)
+
+TRIENNIAL_PATTERN_FEATURES = tuple(
+    f"triennial-pattern-{pair}" for pair, _ in TRIENNIAL_PAIRS
+)
+
 TORAH_FEATURES = (
     "diaspora-parsha",
     "israel-parsha",
     "triennial-year",
+    *TRIENNIAL_PATTERN_FEATURES,
     "shabbat-shuva",
     "shabbat-shira",
     "shabbat-shkalim",
@@ -107,10 +128,32 @@ _TISHREI = 7
 _ADAR = 12
 _ADAR_II = 13
 
-# The modern triennial cycle as reckoned by the CJLS, whose first year was 5756. The cycle
-# turns over on Simhat Torah; see _triennial_year for why the Israel date serves both rites.
-_TRIENNIAL_EPOCH_YEAR = 5756
+# The cycle turns over on Simhat Torah; see _triennial_year for why the Israel date serves both
+# rites.
 _SIMHAT_TORAH_DAY = 22
+
+# Which readings the volume carries: the annual haftarah of each week, or the triennial one of
+# a given cycle year, or several at once. One binary per year rather than a single year number,
+# so that a volume for a whole three-year cycle can turn on all three — a printed humash is a
+# durable book, and covering a cycle is at least as natural as being for one Shabbat. Several
+# may be true together, the way several rites may be.
+#
+# `triennial` is the volume's opt-in, and is what makes a date mean anything here: every date
+# falls in some year of the cycle, including the dates a volume that reads annually is compiled
+# for, so the date alone can never select a reading. It is never derived.
+#
+# These take a value rather than staying undefined, unlike most features. The annual haftarah
+# and the three triennial ones are read on the same Shabbat, and an undefined condition keeps
+# its text, so leaving them open would print four haftarot for one week.
+TRIENNIAL_YEARS = (1, 2, 3)
+
+TRIENNIAL_YEAR_FEATURES = tuple(f"triennial-year-{year}" for year in TRIENNIAL_YEARS)
+
+READING_CYCLE_DEFAULTS: dict[str, Any] = {
+    "annual": True,
+    "triennial": False,
+    **dict.fromkeys(TRIENNIAL_YEAR_FEATURES, False),
+}
 
 SERVICE_TIME_FEATURES = (
     "shaharit",
@@ -569,6 +612,32 @@ def _parsha_slug(name: str) -> str:
     return name.lower().replace(" ", "-").replace(",", "")
 
 
+def _triennial_cycle_patterns(hebrew_year: int, israel: bool) -> dict[str, str]:
+    """For each pair, whether it was read [T]ogether or [S]eparately in each year of the cycle.
+
+    The three characters run from the first year of the cycle, so ``"TSS"`` means the pair was
+    read together in the first year and apart in the other two. The triennial division of a
+    parshah that is sometimes doubled depends on this pattern rather than on the cycle year
+    alone, which is why it is derived here; the humash conditions on it.
+
+    The Hebrew year is enough to identify a pair's week, even though the reading year turns
+    over at Simhat Torah rather than at Rosh Hashanah: every one of these pairs is read
+    between Adar and Av.
+    """
+    start = hebrew_year - ((hebrew_year - _TRIENNIAL_EPOCH_YEAR) % 3)
+    combined_per_year = []
+    for year in (start, start + 1, start + 2):
+        table = parshios.parshatable(year, israel=israel)
+        combined_per_year.append({
+            reading[0] for reading in table.values()
+            if reading is not None and len(reading) > 1
+        })
+    return {
+        pair: "".join("T" if index in combined else "S" for combined in combined_per_year)
+        for pair, index in TRIENNIAL_PAIRS
+    }
+
+
 def _adar_of_purim(year: int) -> int:
     """The Adar in which Purim falls: Adar II in a leap year, Adar otherwise."""
     return _ADAR_II if hebrewcal.Year(year).leap else _ADAR
@@ -657,6 +726,11 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "shabbat-rosh-hodesh": shabbat.day in (1, 30),
         "shabbat-mahar-hodesh": tomorrow.day in (1, 30),
     }
+    patterns = _triennial_cycle_patterns(
+        year, israel=not snapshot.is_diaspora()
+    )
+    for pair, pattern in patterns.items():
+        result[f"triennial-pattern-{pair}"] = pattern
     for feature in TORAH_FEATURES:
         if feature not in result:
             result[feature] = False
@@ -682,6 +756,25 @@ def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         ),
         "neila": holidays.get("yom-kippur", 0) > 0 and aware_dt >= z.plag_hamincha.local,
         "slihot": z.alot_hashachar.local <= aware_dt < z.netz_hachama.local,
+    }
+
+
+def compute_reading_cycle(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """Turn a triennial volume's date into the one cycle year it reads.
+
+    This is where the volume's choice of cycle and its date meet: the cycle year of the date
+    sits on ``opensiddur:torah-reading`` whatever cycle the volume follows, so it cannot select
+    a reading by itself. A volume that reads annually is left alone however its date falls.
+
+    Only the volume compiled for a particular Shabbat is derived. One that turns the year
+    features on itself — a volume for a whole cycle, which turns on all three — says so
+    explicitly and is not overridden, since a declared value beats a derived one.
+    """
+    triennial = snapshot.get_bool(FS_READING_CYCLE, "triennial") is True
+    year = snapshot.get_int(FS_TORAH, "triennial-year") if triennial else None
+    return {
+        "annual": year is None,
+        **{f"triennial-year-{n}": n == year for n in TRIENNIAL_YEARS},
     }
 
 
