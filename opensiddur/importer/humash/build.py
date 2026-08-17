@@ -40,6 +40,7 @@ from opensiddur.importer.humash.readings import (
 )
 from opensiddur.importer.humash.refs import (
     MEGILLOT,
+    SLUG_TO_HEBREW_ANY_BOOK,
     SLUG_TO_VOCALIZED_BOOK,
     TORAH_BOOKS,
     UNIT_ALIYAH,
@@ -55,6 +56,7 @@ from opensiddur.importer.humash.refs import (
     ReadingSpan,
     VerseRef,
     chapters_in_book,
+    next_verse,
     verses_in_chapter,
 )
 
@@ -215,6 +217,48 @@ def _transclude(target: str) -> str:
 
 def _instruction(text: str) -> str:
     return f'<tei:note type="instruction" xml:lang="he">{_escape(text)}</tei:note>'
+
+
+def _citation_range(book: str, start: VerseRef, end: VerseRef) -> str:
+    """"<book> <chapter>:<verse>[–<chapter>:<verse>]" for one contiguous range."""
+    book_he = SLUG_TO_HEBREW_ANY_BOOK.get(book, book)
+    start_ref = f"{start.chapter}:{start.verse}"
+    end_ref = f"{end.chapter}:{end.verse}"
+    return f"{book_he} {start_ref if start == end else f'{start_ref}–{end_ref}'}"
+
+
+def _citation(spans: list[ReadingSpan]) -> str:
+    """A citation for a passage's spans, in reading order: one clause per span, joined by
+    "; ". Only the first span of a run in one book states the book name; a passage that
+    bridges books (readings.Passage) or backtracks within one (Mishpatim's haftarah) states
+    it again wherever the book changes.
+    """
+    clauses: list[str] = []
+    prev_book: str | None = None
+    for span in spans:
+        if span.book == prev_book:
+            start_ref = f"{span.start.chapter}:{span.start.verse}"
+            end_ref = f"{span.end.chapter}:{span.end.verse}"
+            clauses.append(start_ref if span.start == span.end else f"{start_ref}–{end_ref}")
+        else:
+            clauses.append(_citation_range(span.book, span.start, span.end))
+        prev_book = span.book
+    return "; ".join(clauses)
+
+
+def _citation_milestone(text: str) -> str:
+    return f'<tei:milestone unit="citation" n="{_escape(text)}"/>'
+
+
+def _is_contiguous(
+    prev: ReadingSpan, following: ReadingSpan, sourcetexts_root: Path | None,
+) -> bool:
+    """Whether `following` picks up exactly where `prev` left off: same book, and its first
+    verse is the one right after `prev`'s last. False for a backward jump, a skip ahead, or
+    a change of book — see readings.Passage."""
+    if prev.book != following.book:
+        return False
+    return next_verse(prev.end, sourcetexts_root) == following.start
 
 
 _CONDITION_INDEX = {"value": 0}
@@ -421,10 +465,21 @@ HALF_VERSE_START_INSTRUCTION = "מתחילים מאמצע הפסוק"
 HALF_VERSE_END_INSTRUCTION = "מסיימים באמצע הפסוק"
 
 
-def _passage_xml(passage: Passage, urn_base: str) -> str:
-    """A haftarah or megillah: its spans in order, then any repeated closing verse."""
+def _passage_xml(
+    passage: Passage, urn_base: str, sourcetexts_root: Path | None = None,
+) -> str:
+    """A haftarah or megillah: its citation, its spans in order, then any repeated closing verse.
+
+    A citation opens the passage, and another opens again at any span that does not pick up
+    where the one before it left off — a backward jump, a skip ahead, or a change of book (see
+    readings.Passage) — so the reading always states where it is even when it is discontinuous.
+    """
     parts: list[str] = []
-    for span in passage.spans:
+    if passage.spans:
+        parts.append(_citation_milestone(_citation(passage.spans)))
+    for i, span in enumerate(passage.spans):
+        if i > 0 and not _is_contiguous(passage.spans[i - 1], span, sourcetexts_root):
+            parts.append(_citation_milestone(_citation([span])))
         if span.start_half == "b":
             parts.append(_instruction(HALF_VERSE_START_INSTRUCTION))
         parts.append(_transclude(span.start.range_urn(span.end)))
@@ -447,6 +502,7 @@ def haftarah_file(
     slug: str,
     passages: list[Passage],
     triennial_passages: dict[int, Passage] | None = None,
+    sourcetexts_root: Path | None = None,
 ) -> tuple[str, str]:
     """The haftarah of one parshah: the annual reading, and the triennial ones as alternatives.
 
@@ -470,7 +526,7 @@ def haftarah_file(
 
     annual: list[str] = []
     for passage in passages:
-        content = _passage_xml(passage, urn_base)
+        content = _passage_xml(passage, urn_base, sourcetexts_root)
         if passage.rite is None:
             annual.append(content)
             continue
@@ -503,7 +559,7 @@ def haftarah_file(
         division = (
             f'<tei:div corresp="{urn_base}/triennial/{year}" n="triennial_{year}">'
             f"<tei:head>{_escape(year_title)}</tei:head>"
-            f"{_passage_xml(triennial_passages[year], urn_base)}</tei:div>"
+            f"{_passage_xml(triennial_passages[year], urn_base, sourcetexts_root)}</tei:div>"
         )
         inner += (
             f'<j:conditional xml:id="{identifier}">'
@@ -574,6 +630,10 @@ def festival_file(
             by_book.setdefault(span.book, []).append(span)
         for book_spans in by_book.values():
             ordered = sorted(book_spans, key=lambda span: (span.start, span.end))
+            book = ordered[0].book
+            start = min(span.start for span in ordered)
+            end = max(span.end for span in ordered)
+            parts.append(_citation_milestone(_citation_range(book, start, end)))
             segments = model.segment_reading(
                 ordered, sourcetexts_root=sourcetexts_root
             )
@@ -585,7 +645,7 @@ def festival_file(
     # from the end of the Torah reading as though it were more of the same.
     haftarah_parts: list[str] = []
     for passage in reading["haftarot"]:
-        content = _passage_xml(passage, urn_base)
+        content = _passage_xml(passage, urn_base, sourcetexts_root)
         if passage.rite is None:
             haftarah_parts.append(content)
         else:
@@ -773,7 +833,10 @@ def build(
     sections: dict[str, list[str]] = {name: [] for name, _ in SECTIONS}
     for slug in haftarah_order(parshiyot, all_haftarot):
         documents.append(
-            haftarah_file(slug, all_haftarot[slug], all_triennial_haftarot.get(slug, {}))
+            haftarah_file(
+                slug, all_haftarot[slug], all_triennial_haftarot.get(slug, {}),
+                sourcetexts_root,
+            )
         )
         sections["haftarot"].append(f"{URN_PREFIX}:haftarah/{slug}")
 

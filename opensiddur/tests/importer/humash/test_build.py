@@ -281,12 +281,195 @@ class TestHaftarahFile(unittest.TestCase):
         division = tree.findall(f".//{TEI}div[@n='triennial_3']")[0]
         self.assertEqual(
             [child.tag for child in division][1:],
-            [f"{TEI}note", f"{J}transclude", f"{TEI}note"],
+            [f"{TEI}milestone", f"{TEI}note", f"{J}transclude", f"{TEI}note"],
         )
         self.assertEqual(
             division.find(f"{J}transclude").get("target"),
             "urn:x-opensiddur:text:bible:nahum/2/2-2/3",
         )
+
+
+class TestCitation(unittest.TestCase):
+    """build._citation/_citation_range: the "<book> <chapter>:<verse>-..." string a haftarah
+    or festival reading's citation milestone carries (see TestPassageCitationMilestones)."""
+
+    def test_a_single_verse_span_has_no_dash(self):
+        span = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("isaiah", 42, 5), end=VerseRef("isaiah", 42, 5),
+        )
+        self.assertEqual(build._citation([span]), "ישעיהו 42:5")
+
+    def test_a_multi_verse_span_gives_a_range(self):
+        span = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("isaiah", 42, 5), end=VerseRef("isaiah", 43, 10),
+        )
+        self.assertEqual(build._citation([span]), "ישעיהו 42:5–43:10")
+
+    def test_a_second_span_in_the_same_book_does_not_repeat_the_name(self):
+        spans = [
+            ReadingSpan(
+                unit="haftarah", label="1",
+                start=VerseRef("jeremiah", 34, 8), end=VerseRef("jeremiah", 34, 22),
+            ),
+            ReadingSpan(
+                unit="haftarah", label="2",
+                start=VerseRef("jeremiah", 33, 25), end=VerseRef("jeremiah", 33, 26),
+            ),
+        ]
+        self.assertEqual(build._citation(spans), "ירמיהו 34:8–34:22; 33:25–33:26")
+
+    def test_a_span_in_a_different_book_restates_the_name(self):
+        spans = [
+            ReadingSpan(
+                unit="haftarah", label="1",
+                start=VerseRef("kings_1", 18, 46), end=VerseRef("kings_1", 18, 46),
+            ),
+            ReadingSpan(
+                unit="haftarah", label="2",
+                start=VerseRef("malachi", 3, 4), end=VerseRef("malachi", 3, 24),
+            ),
+        ]
+        self.assertEqual(build._citation(spans), "מלכים א 18:46; מלאכי 3:4–3:24")
+
+    def test_a_torah_book_is_named_too(self):
+        """Festival aliyot cite a Torah book, not only the haftarah's prophetic ones."""
+        self.assertEqual(
+            build._citation_range("genesis", VerseRef("genesis", 22, 1), VerseRef("genesis", 22, 24)),
+            "בראשית 22:1–22:24",
+        )
+
+
+class TestPassageContiguity(unittest.TestCase):
+    """build._is_contiguous decides whether a passage's next span picks up exactly where
+    the one before it left off, or whether the reading jumps."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        directory = self.root / "hebcal_leyning"
+        directory.mkdir(parents=True)
+        (directory / "numverses.json").write_text(
+            json.dumps({"Jeremiah": [0] + [30] * 52, "Isaiah": [0] + [30] * 66}),
+            encoding="utf-8",
+        )
+
+    def test_the_next_verse_of_the_same_book_is_contiguous(self):
+        prev = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("isaiah", 42, 1), end=VerseRef("isaiah", 42, 5),
+        )
+        following = ReadingSpan(
+            unit="haftarah", label="2",
+            start=VerseRef("isaiah", 42, 6), end=VerseRef("isaiah", 42, 9),
+        )
+        self.assertTrue(build._is_contiguous(prev, following, self.root))
+
+    def test_a_chapter_boundary_is_still_contiguous(self):
+        prev = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("isaiah", 42, 1), end=VerseRef("isaiah", 42, 30),
+        )
+        following = ReadingSpan(
+            unit="haftarah", label="2",
+            start=VerseRef("isaiah", 43, 1), end=VerseRef("isaiah", 43, 5),
+        )
+        self.assertTrue(build._is_contiguous(prev, following, self.root))
+
+    def test_a_backward_jump_is_not_contiguous(self):
+        """Mishpatim's haftarah: Jeremiah 34:8-22, then back to 33:25-26."""
+        prev = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("jeremiah", 34, 8), end=VerseRef("jeremiah", 34, 22),
+        )
+        following = ReadingSpan(
+            unit="haftarah", label="2",
+            start=VerseRef("jeremiah", 33, 25), end=VerseRef("jeremiah", 33, 26),
+        )
+        self.assertFalse(build._is_contiguous(prev, following, self.root))
+
+    def test_a_skip_ahead_is_not_contiguous(self):
+        prev = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("isaiah", 42, 1), end=VerseRef("isaiah", 42, 5),
+        )
+        following = ReadingSpan(
+            unit="haftarah", label="2",
+            start=VerseRef("isaiah", 42, 10), end=VerseRef("isaiah", 42, 15),
+        )
+        self.assertFalse(build._is_contiguous(prev, following, self.root))
+
+    def test_a_change_of_book_is_not_contiguous(self):
+        prev = ReadingSpan(
+            unit="haftarah", label="1",
+            start=VerseRef("isaiah", 42, 1), end=VerseRef("isaiah", 42, 5),
+        )
+        following = ReadingSpan(
+            unit="haftarah", label="2",
+            start=VerseRef("jeremiah", 1, 1), end=VerseRef("jeremiah", 1, 5),
+        )
+        self.assertFalse(build._is_contiguous(prev, following, self.root))
+
+
+class TestPassageCitationMilestones(unittest.TestCase):
+    """_passage_xml (via haftarah_file) opens a passage with a citation, and states one
+    again at any span that does not pick up where the one before it left off."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.root = Path(self.temp_dir.name)
+        directory = self.root / "hebcal_leyning"
+        directory.mkdir(parents=True)
+        (directory / "numverses.json").write_text(
+            json.dumps({"Jeremiah": [0] + [30] * 52}), encoding="utf-8",
+        )
+
+    def _citations(self, passages) -> list[str]:
+        _, document = build.haftarah_file("mishpatim", passages, None, self.root)
+        tree = etree.fromstring(document.encode("utf-8"))
+        return [m.get("n") for m in tree.iter(f"{TEI}milestone") if m.get("unit") == "citation"]
+
+    def test_a_continuous_passage_gets_one_citation(self):
+        passage = _passage("isaiah", (42, 5), (43, 10))
+        self.assertEqual(self._citations([passage]), ["ישעיהו 42:5–43:10"])
+
+    def test_a_discontinuous_passage_gets_a_second_citation_at_the_jump(self):
+        passage = Passage(
+            key="mishpatim",
+            spans=[
+                ReadingSpan(
+                    unit="haftarah", label="1",
+                    start=VerseRef("jeremiah", 34, 8), end=VerseRef("jeremiah", 34, 22),
+                ),
+                ReadingSpan(
+                    unit="haftarah", label="2",
+                    start=VerseRef("jeremiah", 33, 25), end=VerseRef("jeremiah", 33, 26),
+                ),
+            ],
+        )
+        self.assertEqual(
+            self._citations([passage]),
+            ["ירמיהו 34:8–34:22; 33:25–33:26", "ירמיהו 33:25–33:26"],
+        )
+
+    def test_a_contiguous_two_span_passage_gets_only_the_opening_citation(self):
+        passage = Passage(
+            key="test",
+            spans=[
+                ReadingSpan(
+                    unit="haftarah", label="1",
+                    start=VerseRef("jeremiah", 1, 1), end=VerseRef("jeremiah", 1, 5),
+                ),
+                ReadingSpan(
+                    unit="haftarah", label="2",
+                    start=VerseRef("jeremiah", 1, 6), end=VerseRef("jeremiah", 1, 10),
+                ),
+            ],
+        )
+        self.assertEqual(self._citations([passage]), ["ירמיהו 1:1–1:5; 1:6–1:10"])
 
 
 class TestBookFile(unittest.TestCase):

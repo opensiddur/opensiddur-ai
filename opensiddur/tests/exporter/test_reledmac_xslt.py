@@ -999,6 +999,25 @@ class TestStructuralElements(unittest.TestCase):
             out,
         )
 
+    def test_digits_embedded_in_a_hebrew_head_are_forced_ltr(self):
+        """A Hebrew heading was never expected to carry a number before, so digits in it
+        went out unwrapped and would render reversed (e.g. "42:5" as "5:24")."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head>ישעיהו 42:5</tei:head>
+              <tei:p><tei:milestone unit="verse" n="1"/>בְּרֵאשִׁית</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\OSheadA{ישעיהו {{\textdir TLT\selectlanguage{english}42}}:"
+            r"{{\textdir TLT\selectlanguage{english}5}}}",
+            out,
+        )
+
 
 class TestFrontMatter(unittest.TestCase):
     """``tei:front`` is set before the body, with title pages on pages of their own
@@ -1322,6 +1341,100 @@ class TestReadingDivisions(unittest.TestCase):
     def test_the_aliyah_macro_is_defined_in_the_preamble(self):
         out = self._transform_body("""<tei:p>text</tei:p>""")
         self.assertIn(r"\newcommand{\OSaliyah}", out.split(r"\begin{document}", 1)[0])
+
+
+class TestCitationMilestone(unittest.TestCase):
+    """A tei:milestone[@unit='citation'] is how the humash states a haftarah/festival
+    reading's scriptural source, or where it resumes after a jump (build._citation)."""
+
+    @staticmethod
+    def _body(tex: str) -> str:
+        return tex.split(r"\begin{document}", 1)[1]
+
+    def _transform_body(self, body: str, **params) -> str:
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:p="http://jewishliturgy.org/ns/processing">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>""",
+            **params,
+        )
+
+    def test_citation_is_rendered_in_its_own_pstart(self):
+        out = self._transform_body(
+            """<tei:head>הַפְטָרַת בְּרֵאשִׁית</tei:head>
+               <tei:milestone unit="citation" n="ישעיהו מב:ה–מג:י"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"\OScitation{", body)
+        before = body.split(r"\OScitation{", 1)[0]
+        self.assertTrue(before.rstrip().endswith(r"\pstart \skipnumbering"))
+
+    def test_the_citation_macro_is_defined_in_the_preamble(self):
+        out = self._transform_body("""<tei:p>text</tei:p>""")
+        self.assertIn(r"\newcommand{\OScitation}", out.split(r"\begin{document}", 1)[0])
+
+    def test_digits_in_the_citation_are_forced_ltr(self):
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="ישעיהו 42:5-43:10"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        body = self._body(out)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}42}", body)
+        # A hyphen joins adjacent digit runs into one LTR-wrapped group, the same way
+        # f:emit-bidi-text already treats a hyphenated siglum like "EVR-II-B-8".
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}5-43}", body)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}10}", body)
+
+    def test_a_citation_does_not_break_the_reading(self):
+        """The reading's own transcluded text still follows in the numbered stream."""
+        out = self._transform_body(
+            """<tei:milestone unit="citation" n="ישעיהו 42:5-43:10"/>
+               <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
+        )
+        self.assertIn(r"\vno{1}", self._body(out))
+
+    def test_markers_keep_pstart_counts_equal_for_parallel_text(self):
+        """A citation exists only on the Hebrew source's milestones, so it must not add or
+        remove a \\pstart on either side, or reledpar's column-pairing desyncs."""
+        without = _transform(
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+              <tei:text><tei:body>
+                <p:parallel column-order="primary_first">
+                  <p:parallelItem role="primary" xml:lang="he">
+                    <tei:p><tei:milestone unit="verse" n="1"/>שלום</tei:p>
+                  </p:parallelItem>
+                  <p:parallelItem role="parallel" xml:lang="en">
+                    <tei:p><tei:milestone unit="verse" n="1"/>Hello</tei:p>
+                  </p:parallelItem>
+                </p:parallel>
+              </tei:body></tei:text>
+            </tei:TEI>"""
+        )
+        with_citation = _transform(
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+              <tei:text><tei:body>
+                <p:parallel column-order="primary_first">
+                  <p:parallelItem role="primary" xml:lang="he">
+                    <tei:p><tei:milestone unit="citation" n="ישעיהו א:א"/>
+                      <tei:milestone unit="verse" n="1"/>שלום</tei:p>
+                  </p:parallelItem>
+                  <p:parallelItem role="parallel" xml:lang="en">
+                    <tei:p><tei:milestone unit="verse" n="1"/>Hello</tei:p>
+                  </p:parallelItem>
+                </p:parallel>
+              </tei:body></tei:text>
+            </tei:TEI>"""
+        )
+        self.assertEqual(without.count(r"\pstart"), with_citation.count(r"\pstart"))
+        self.assertEqual(without.count(r"\pend"), with_citation.count(r"\pend"))
+
 
 class TestUnrenderedMilestones(unittest.TestCase):
     """A milestone the stylesheet does not set must not open a paragraph of its own.

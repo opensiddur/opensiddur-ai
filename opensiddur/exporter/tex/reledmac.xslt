@@ -141,6 +141,12 @@
              tei:div[@type='book'] (Bible exports), where the chapter exists solely as a
              milestone and would otherwise be invisible. -->
         <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+        <!-- A scriptural citation ("<book> <chapter>:<verse>-..."), on a line of its own:
+             either the source of a haftarah/festival reading the humash otherwise never
+             states (see tei:milestone[@unit='citation'] below), or where a reading resumes
+             after a backward jump or a skip. Centred like \OSheadA-D but italic, not bold,
+             so it reads as a caption on the reading rather than another level of heading. -->
+        <xsl:text>\newcommand{\OScitation}[1]{\mbox{}\hfill{\normalfont\normalsize\itshape #1}\hfill\mbox{}}&#10;</xsl:text>
         <!-- Aliyah and maftir markers, inline at the verse the reading division begins on.
              Deliberately inline rather than a break: the maftir opens *inside* the seventh
              aliyah rather than after it, and the weekday and triennial divisions cut across
@@ -622,6 +628,51 @@
                             <xsl:otherwise>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                                </xsl:next-iteration>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:when>
+                    <xsl:when test="self::tei:milestone[@unit='citation']">
+                        <!-- A scriptural citation the humash generator inserts to state a
+                             haftarah/festival reading's source, or to mark where it resumes
+                             after a backward jump or a skip (build._citation). It is not a
+                             tei:head — it earns no bookmark entry, being a caption on a
+                             reading already headed by its own tei:head — but it is treated
+                             the way a heading is for reledpar column-pairing: only the
+                             Hebrew source carries this milestone (an English/JPS column has
+                             no matching one), so closing and reopening the pstart here would
+                             desync the two sides' \pstart counts. Stay inside whatever is
+                             already open in single-pstart (parallel) mode, the way f:head
+                             does above. -->
+                        <xsl:choose>
+                            <xsl:when test="$single-pstart">
+                                <xsl:choose>
+                                    <xsl:when test="$in-pstart">
+                                        <xsl:text>\par&#10;</xsl:text>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                        <xsl:text>\pstart </xsl:text>
+                                    </xsl:otherwise>
+                                </xsl:choose>
+                                <xsl:text>\OScitation{</xsl:text>
+                                <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
+                                <xsl:text>}</xsl:text>
+                                <xsl:text>\par&#10;</xsl:text>
+                                <xsl:next-iteration>
+                                    <xsl:with-param name="in-pstart" select="true()"/>
+                                </xsl:next-iteration>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:if test="$in-pstart">
+                                    <xsl:text>\pend&#10;</xsl:text>
+                                </xsl:if>
+                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
+                                <xsl:text>\OScitation{</xsl:text>
+                                <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
+                                <xsl:text>}</xsl:text>
+                                <xsl:text>&#10;\pend&#10;</xsl:text>
+                                <xsl:next-iteration>
+                                    <xsl:with-param name="in-pstart" select="false()"/>
                                 </xsl:next-iteration>
                             </xsl:otherwise>
                         </xsl:choose>
@@ -1442,18 +1493,20 @@
         )[1])"/>
     </xsl:function>
 
-    <!-- Hebrew titles stay in the stream direction; other languages need an
-         explicit LTR wrapper so Latin text is not reversed in RTL blocks. -->
+    <!-- Hebrew titles stay in the stream direction, but any embedded digit/Latin run (e.g. a
+         "52:13" citation range inside a Hebrew heading) still needs its own LTR wrap or it
+         renders reversed — the same problem f:emit-bidi-text already solves for Hebrew notes
+         with embedded sigla, so it is reused here rather than left as raw escaped text.
+         Other languages need the whole title wrapped, since it's Latin throughout. -->
     <xsl:function name="f:format-section-title" as="xs:string">
         <xsl:param name="title" as="xs:string"/>
         <xsl:param name="lang" as="xs:string"/>
-        <xsl:variable name="escaped" select="f:escape-tex($title)"/>
         <xsl:choose>
             <xsl:when test="$lang = 'he' or starts-with($lang, 'he-')">
-                <xsl:sequence select="$escaped"/>
+                <xsl:sequence select="f:emit-bidi-text($title)"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}', $escaped, '}')"/>
+                <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}', f:escape-tex($title), '}')"/>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:function>

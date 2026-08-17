@@ -103,6 +103,14 @@
     <xsl:variable name="editionVerse" select="string(@editionVerse)"/>
     <xsl:variable name="editionVerseStart" select="string(@editionVerseStart)"/>
     <xsl:variable name="fileName" select="string(ancestor::miqra:book/@fileName)"/>
+    <!-- Whether this row opens a new chapter, decided here against the real source tree
+         (preceding-sibling::miqra:row) rather than downstream against the constructed
+         miqra:verse elements: those are built by independent element constructors inside
+         the $blocks variable in the calling template, so they are not one tree and
+         preceding:: cannot see across them there. -->
+    <xsl:variable name="opens-chapter" select="
+        not(preceding-sibling::miqra:row[1])
+        or preceding-sibling::miqra:row[1]/normalize-space(@chapter) != $chapter"/>
     <!-- The rest of the column C/D notes annotate the row — a break another witness has
          but MAM does not, a seder marker, a free {{מ:הערה}} — rather than a point in the
          verse, so they anchor at the head of the verse. Without this the standOff note
@@ -140,7 +148,8 @@
             <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}"
                          editionVerse="{$editionVerse}"
                          editionVerseStart="{$editionVerseStart}"
-                         opensVerse="{if ($position = $first-group) then 'true' else 'false'}">
+                         opensVerse="{if ($position = $first-group) then 'true' else 'false'}"
+                         opensChapter="{if ($opens-chapter) then 'true' else 'false'}">
               <xsl:copy-of select="$content"/>
             </miqra:verse>
           </xsl:if>
@@ -150,7 +159,8 @@
         <miqra:verse chapter="{$chapter}" verse="{$verse}" fileName="{$fileName}"
                      editionVerse="{$editionVerse}"
                      editionVerseStart="{$editionVerseStart}"
-                     opensVerse="true">
+                     opensVerse="true"
+                     opensChapter="{if ($opens-chapter) then 'true' else 'false'}">
           <xsl:copy-of select="$text-nodes[not(self::miqra:note)]"/>
         </miqra:verse>
       </xsl:otherwise>
@@ -207,6 +217,22 @@
     <xsl:variable name="verse" select="normalize-space(@verse)"/>
     <xsl:variable name="editionVerse" select="normalize-space(@editionVerse)"/>
     <xsl:if test="miqra:has-verse-ref($chapter, $verse)">
+      <xsl:if test="@opensVerse = 'true' and @opensChapter = 'true'">
+        <!-- A chapter milestone has no representation of its own in MAM's source; @opensChapter
+             is computed in mode="flatten", against the real miqra:row source tree, because by
+             the time verses reach this template they are independent nodes built by separate
+             element constructors and so cannot be compared by document order (preceding::)
+             against one another. wlc emits the same unit from its own explicit c/@n; see
+             transform_book.xslt. -->
+        <tei:milestone unit="chapter" n="{$chapter}">
+          <xsl:attribute name="corresp">
+            <xsl:text>urn:x-opensiddur:text:bible:</xsl:text>
+            <xsl:value-of select="@fileName"/>
+            <xsl:text>/</xsl:text>
+            <xsl:value-of select="$chapter"/>
+          </xsl:attribute>
+        </tei:milestone>
+      </xsl:if>
       <xsl:if test="@editionVerseStart = 'true' and @opensVerse = 'true'
                     and $editionVerse != '' and $editionVerse != $verse">
         <tei:milestone unit="edition-verse" n="{$editionVerse}"/>

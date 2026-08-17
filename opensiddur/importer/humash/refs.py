@@ -106,6 +106,37 @@ OTHER_BOOKS: tuple[tuple[str, str], ...] = (
     ("Esther", "esther"),
 )
 
+# Unvocalized Hebrew names for the books a haftarah or megillah is drawn from, for citations.
+# Matches the forms miqra_al_pi_hamasorah.convert_tsv.TANAKH_INDEX uses for the same books.
+SLUG_TO_HEBREW_OTHER_BOOK: dict[str, str] = {
+    "joshua": "יהושע",
+    "judges": "שופטים",
+    "samuel_1": "שמואל א",
+    "samuel_2": "שמואל ב",
+    "kings_1": "מלכים א",
+    "kings_2": "מלכים ב",
+    "isaiah": "ישעיהו",
+    "jeremiah": "ירמיהו",
+    "ezekiel": "יחזקאל",
+    "hosea": "הושע",
+    "joel": "יואל",
+    "amos": "עמוס",
+    "obadiah": "עבדיה",
+    "jonah": "יונה",
+    "micah": "מיכה",
+    "nahum": "נחום",
+    "habakkuk": "חבקוק",
+    "zephaniah": "צפניה",
+    "haggai": "חגי",
+    "zechariah": "זכריה",
+    "malachi": "מלאכי",
+    "song_of_songs": "שיר השירים",
+    "ruth": "רות",
+    "lamentations": "איכה",
+    "ecclesiastes": "קהלת",
+    "esther": "אסתר",
+}
+
 # The five megillot, each with the occasion it is read on and its Hebrew title. The occasion
 # names are features of the existing opensiddur:holiday feature structure.
 MEGILLOT: tuple[tuple[str, str, str], ...] = (
@@ -130,6 +161,10 @@ SLUG_TO_VOCALIZED_BOOK: dict[str, str] = {
 
 HEBREW_BOOK_TO_SLUG = {hebrew: slug for hebrew, slug, _ in TORAH_BOOKS}
 SLUG_TO_HEBREW_BOOK = {slug: hebrew for hebrew, slug, _ in TORAH_BOOKS}
+
+# Every book the humash reads from, Torah or not, for citations (build._citation).
+SLUG_TO_HEBREW_ANY_BOOK: dict[str, str] = {**SLUG_TO_HEBREW_BOOK, **SLUG_TO_HEBREW_OTHER_BOOK}
+
 SLUG_TO_HEBCAL_BOOK = {slug: english for _, slug, english in TORAH_BOOKS}
 HEBCAL_BOOK_TO_SLUG = {english: slug for _, slug, english in TORAH_BOOKS}
 HEBCAL_BOOK_TO_SLUG.update(dict(OTHER_BOOKS))
@@ -269,6 +304,22 @@ def previous_verse(
     return VerseRef(
         ref.book, chapter, verses_in_chapter(ref.book, chapter, sourcetexts_root)
     )
+
+
+def next_verse(
+    ref: VerseRef,
+    sourcetexts_root: Path | None = None,
+) -> VerseRef:
+    """The verse after `ref`, stepping over a chapter boundary when needed.
+
+    Used to tell whether one reading span continues directly into the next, or whether the
+    reading skips or backtracks between them.
+    """
+    if ref.verse < verses_in_chapter(ref.book, ref.chapter, sourcetexts_root):
+        return VerseRef(ref.book, ref.chapter, ref.verse + 1)
+    if ref.chapter >= chapters_in_book(ref.book, sourcetexts_root):
+        raise ValueError(f"No verse follows {ref}")
+    return VerseRef(ref.book, ref.chapter + 1, 1)
 
 
 # hebcal writes a boundary that falls inside a verse as a letter after the verse number: the
