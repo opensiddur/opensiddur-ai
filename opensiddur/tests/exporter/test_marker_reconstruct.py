@@ -109,6 +109,40 @@ class TestMarkerReconstruct(unittest.TestCase):
         p = root.find(f".//{{{TEI_NS}}}p")
         self.assertTrue(substantive_content(p))
 
+    def test_substantive_content_bare_milestone(self):
+        """A milestone with no text of its own (e.g. a chapter marker) still counts: it
+        is a deliberate marker, never filler, even though it carries no text."""
+        xml = f"""<tei:TEI xmlns:tei="{TEI_NS}">
+          <tei:p><tei:milestone unit="chapter" n="5"/></tei:p>
+        </tei:TEI>"""
+        root = etree.fromstring(xml.encode())
+        p = root.find(f".//{{{TEI_NS}}}p")
+        self.assertTrue(substantive_content(p))
+
+    def test_a_bare_milestone_fragment_is_not_pruned(self):
+        """A source tei:p that a chapter-boundary milestone splits into three parallel-row
+        fragments (verses before, the bare milestone alone, verses after) reconstructs into
+        three same-logical-id fragments. The middle one carries no text of its own — this
+        is what silently erased chapter numbers from the compiled humash, wherever one
+        landed alone between two verse-aligned parallel segments like this."""
+        ns = {"tei": TEI_NS, "p": P_NS}
+        xml = f"""<tei:TEI xmlns:tei="{TEI_NS}" xmlns:p="{P_NS}">
+          <tei:text><tei:body>
+            <tei:p p:logical-id="a" p:part="first">before</tei:p>
+            <tei:p p:logical-id="a" p:part="middle"><tei:milestone unit="chapter" n="6"/></tei:p>
+            <tei:p p:logical-id="a" p:part="last">after</tei:p>
+          </tei:body></tei:text></tei:TEI>"""
+        root = etree.fromstring(xml.encode())
+        from opensiddur.exporter.marker_reconstruct import normalize_segment_parts
+        normalize_segment_parts(root)
+        ps = root.xpath("//tei:p", namespaces=ns)
+        self.assertEqual(len(ps), 3, "the milestone-only fragment must survive")
+        milestones = root.xpath("//tei:milestone[@unit='chapter']", namespaces=ns)
+        self.assertEqual(len(milestones), 1)
+        self.assertEqual(milestones[0].get("n"), "6")
+        # Still ordered first/middle/last across all three surviving fragments.
+        self.assertEqual([p.get(f"{{{P_NS}}}part") for p in ps], ["first", "middle", "last"])
+
     def test_substantive_content_nested_child_text(self):
         xml = f"""<tei:TEI xmlns:tei="{TEI_NS}">
           <tei:p><tei:hi><tei:seg>deep</tei:seg></tei:hi></tei:p>
