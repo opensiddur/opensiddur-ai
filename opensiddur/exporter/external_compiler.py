@@ -22,7 +22,7 @@ from opensiddur.exporter.constants import (
     is_element_node,
 )
 from opensiddur.exporter.linear import LinearData
-from opensiddur.exporter.refdb import ReferenceDatabase
+from opensiddur.exporter.refdb import UNIT_CONTAINED_BY, ReferenceDatabase
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
 from lxml import etree
 
@@ -119,6 +119,26 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         # None = marker mode off; [] = marker mode active
         self.marker_stack: list[tuple[str, ElementBase]] | None = None
+
+    def _is_boundary_container_milestone(self, element: ElementBase) -> bool:
+        """True when `element` is a milestone that opens the container the range's start
+        opens into — e.g. a chapter milestone immediately before the verse milestone a
+        range starts at — so it belongs to the range even though it sits just before it.
+
+        Everything else immediately preceding the start is deliberately excluded (#51: a
+        verse milestone from the verse before would otherwise print a spurious number), but
+        a milestone whose unit *contains* the start's unit (refdb.UNIT_CONTAINED_BY) carries
+        no such content of its own — it only announces the boundary the range is stepping
+        into, which is exactly the range's own first moment.
+        """
+        tei_milestone_tag = f"{{{TEI_NS}}}milestone"
+        if element.tag != tei_milestone_tag or self.start_element is None:
+            return False
+        if self.start_element.tag != tei_milestone_tag:
+            return False
+        start_unit = self.start_element.get("unit")
+        containers = UNIT_CONTAINED_BY.get(start_unit, frozenset())
+        return element.get("unit") in containers and element.getnext() is self.start_element
 
     # ── Marker-mode helpers ─────────────────────────────────────────────────
 
@@ -818,6 +838,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 # empty shell of each one -- including verse milestones, which then printed
                 # spurious verse numbers and broke parallel alignment (#51).
                 context['command'] = _ProcessingCommand.COPY_ELEMENT_AND_RECURSE
+                return context
+            elif self._is_boundary_container_milestone(element):
+                context['command'] = _ProcessingCommand.COPY_AND_RECURSE
                 return context
             else:
                 context['command'] = _ProcessingCommand.RECURSE
