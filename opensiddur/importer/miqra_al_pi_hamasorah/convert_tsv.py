@@ -570,14 +570,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--sourcetexts-root",
         type=Path,
         default=default_sourcetexts_root(),
-        help="Root of sourcetexts tree (default: <repo>/sources).",
+        help="Root of sourcetexts tree (default: <repo>/sourcetexts/sources).",
     )
     parser.add_argument(
         "--project-dir",
         type=Path,
         default=None,
         help=(
-            "Output project directory (default: <repo>/project/miqra_al_pi_hamasorah)."
+            "Output project directory (default: <repo>/opensiddur-projects/project/miqra_al_pi_hamasorah)."
         ),
     )
     parser.add_argument(

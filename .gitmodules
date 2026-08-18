@@ -1,0 +1,8 @@
+[submodule "sourcetexts"]
+	path = sourcetexts
+	url = git@github.com:opensiddur/sourcetexts.git
+	branch = master
+[submodule "opensiddur-projects"]
+	path = opensiddur-projects
+	url = git@github.com:opensiddur/opensiddur-projects.git
+	branch = main

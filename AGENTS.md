@@ -4,14 +4,17 @@ This file provides guidance to coding agents when working with code in this repo
 
 The project derives from 3 repositories:
 opensiddur-ai https://github.com/opensiddur/opensiddur-ai (this repository)
-sourcetexts https://github.com/opensiddur/sourcetexts (sources/ subdirectory)
-opensiddur-projects https://github.com/opensiddur/projects (project/ subdirectory)
+sourcetexts https://github.com/opensiddur/sourcetexts (submodule at sourcetexts/, content in sourcetexts/sources/)
+opensiddur-projects https://github.com/opensiddur/opensiddur-projects (submodule at opensiddur-projects/, content in opensiddur-projects/project/)
+
+The other two repositories are git submodules of this one, so a release tag pins the exact
+source and project commits it was built against. See `RELEASE_PROCEDURE.md`.
 
 This repository has 3 parts: 
 (1) schema documentation for the Jewish Liturgy Project TEI extension (`JLPTEI-3.md`) and formal RelaxNG and Schematron schemas (schema/ subdirectory)
 (2) importers (opensiddur/importer/ subdirectory) that 
- (a) download raw data and put them into the sources/ subdirectory and 
- (b) convert the raw data into JLPTEI XML format and save them as projects (project/ subdirectory)
+ (a) download raw data and put them into the sourcetexts/sources/ submodule and 
+ (b) convert the raw data into JLPTEI XML format and save them as projects (opensiddur-projects/project/ submodule)
 (3) exporters (opensiddur/exporter/ subdirectory) that 
  (a) compile JLPTEI projects containing multiple JLPTEI files and/or reference multiple projects into a compiled intermediate format and 
  (b) export the intermediate format into finalized consumable forms (currently PDF via LuaLaTeX).
@@ -20,11 +23,14 @@ Any specifications for agents to build code should be stored in the specs/ direc
 
 ## Commands
 
-**Set up a fresh checkout or worktree** — run both before trusting a test run:
+**Set up a fresh checkout or worktree** — run all three before trusting a test run:
 ```bash
+git submodule update --init
 uv sync --all-groups
 bash scripts/build-schema.sh
 ```
+A new worktree starts with empty submodule directories, so the importers and exporters find
+no sources or projects until `git submodule update --init` has run.
 The compiled schema artifacts are gitignored, so a new worktree has none. Without them
 ~47 validation tests fail in a way that looks like a real regression rather than missing
 setup.
@@ -62,32 +68,27 @@ bash scripts/build-schema.sh
 
 **Validate a JLPTEI file** (requires `jing`: `apt install jing`):
 ```bash
-uv run python -m opensiddur.importer.util.validation project/wlc/ruth.xml
+uv run python -m opensiddur.importer.util.validation opensiddur-projects/project/wlc/ruth.xml
 ```
 
 **Download Feinstein/Heidenheim haggadah sources** (OSP compilation + HebrewBooks PDF):
 ```bash
-uv run python -m opensiddur.importer.feinstein_haggadah.download \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+uv run python -m opensiddur.importer.feinstein_haggadah.download
 ```
 
 **Align page breaks** from the 1822 PDF facsimile (writes `page_breaks.json`):
 ```bash
-uv run python -m opensiddur.importer.feinstein_haggadah.align_page_breaks \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+uv run python -m opensiddur.importer.feinstein_haggadah.align_page_breaks
 ```
 
 **Convert haggadah sources to JLPTEI projects** (each output file is validated against RelaxNG + Schematron before write):
 ```bash
-uv run python -m opensiddur.importer.feinstein_haggadah.convert \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
-  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project
+uv run python -m opensiddur.importer.feinstein_haggadah.convert
 ```
 
 **Sync reference database** after adding or updating projects:
 ```bash
-uv run python -m opensiddur.exporter.refdb \
-  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project
+uv run python -m opensiddur.exporter.refdb
 ```
 
 ## Architecture

@@ -820,7 +820,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
         "--project-directory",
         type=Path,
         default=PROJECT_DIRECTORY,
-        help="Base directory containing project subdirectories (default: <repo>/project).",
+        help="Base directory containing project subdirectories (default: <repo>/opensiddur-projects/project).",
     )
     parser.add_argument(
         "--reference-db",

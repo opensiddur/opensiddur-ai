@@ -4,20 +4,17 @@ import os
 import sys
 from pathlib import Path
 
+from opensiddur.common.constants import PROJECT_DIRECTORY, SOURCETEXTS_ROOT
 from opensiddur.common.xslt import xslt_transform
 from opensiddur.importer.util.validation import validate
 
 logger = logging.getLogger(__name__)
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parent.parent.parent.parent
-
-
 def make_project_directory(project_dir: Path | None = None) -> Path:
     """Create the WLC project directory if missing; return its path."""
     directory = (
-        project_dir.resolve() if project_dir is not None else _repo_root() / "project" / "wlc"
+        project_dir.resolve() if project_dir is not None else PROJECT_DIRECTORY / "wlc"
     )
     directory.mkdir(parents=True, exist_ok=True)
     return directory
@@ -28,7 +25,7 @@ def get_source_directory(sourcetexts_root: Path | None = None) -> Path:
     root = (
         sourcetexts_root.resolve()
         if sourcetexts_root is not None
-        else _repo_root() / "sources"
+        else SOURCETEXTS_ROOT
     )
     return root / "wlc"
 
@@ -44,23 +41,25 @@ def _wlc_directory_uri(wlc_directory: Path) -> str:
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    repo = _repo_root()
     parser = argparse.ArgumentParser(
         description="Transform WLC UXLC XML from sourcetexts into JLPTEI project files."
     )
     parser.add_argument(
         "--project-dir",
         type=Path,
-        default=repo / "project" / "wlc",
-        help="Output directory for generated JLPTEI (default: <repo>/project/wlc).",
+        default=PROJECT_DIRECTORY / "wlc",
+        help=(
+            "Output directory for generated JLPTEI "
+            "(default: <repo>/opensiddur-projects/project/wlc)."
+        ),
     )
     parser.add_argument(
         "--sourcetexts-root",
         type=Path,
-        default=repo / "sources",
+        default=SOURCETEXTS_ROOT,
         help=(
             "Root of the opensiddur/sourcetexts repository; WLC files are read from "
-            "<root>/wlc/Books (default: <repo>/sources so legacy layout stays <repo>/sources/wlc)."
+            "<root>/wlc/Books (default: <repo>/sourcetexts/sources)."
         ),
     )
     return parser

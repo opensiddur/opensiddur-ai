@@ -422,7 +422,7 @@ def _run_cli() -> None:  # pragma: no cover
         "--sourcetexts-root",
         type=Path,
         default=default_sourcetexts_root(),
-        help="Root of sourcetexts repo; JPS pages under <root>/jps1917 (default: <repo>/sources).",
+        help="Root of sourcetexts repo; JPS pages under <root>/jps1917 (default: <repo>/sourcetexts/sources).",
     )
     args = parser.parse_args()
     root = args.sourcetexts_root

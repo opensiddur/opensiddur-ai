@@ -8,11 +8,11 @@ The README tab of the source spreadsheet states that the text is prepared by Avi
 
 ## Download
 
-Prerequisites: clone [opensiddur/sourcetexts](https://github.com/opensiddur/sourcetexts) (or use `<repo>/sources`).
+Writes into the `sourcetexts` submodule (`sourcetexts/sources`) by default; pass
+`--sourcetexts-root` to use an external clone instead.
 
 ```bash
-uv run python -m opensiddur.importer.miqra_al_pi_hamasorah.download \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+uv run python -m opensiddur.importer.miqra_al_pi_hamasorah.download
 ```
 
 Use `--dry-run` to print paths without downloading.
