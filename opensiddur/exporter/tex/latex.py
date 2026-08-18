@@ -388,6 +388,8 @@ def transform_xml_to_tex(
                 "layout": typography.layout.value,
                     "paper": typography.paper.value,
                 "fontsize": typography.fontsize,
+                "table-of-contents": typography.table_of_contents.enabled,
+                "table-of-contents-depth": typography.table_of_contents.depth,
             },
         )
 

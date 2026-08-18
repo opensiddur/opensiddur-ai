@@ -94,6 +94,9 @@ typography:
   layout: pages                      # "pages" → facing pages; "pairs" → two columns/page
   paper: a4paper                     # any \documentclass paper option
   fontsize: 11pt                     # 10pt | 11pt | 12pt
+  table_of_contents:
+    enabled: false                   # true → print a table of contents page
+    depth: 4                         # 1-4; heading levels shown in the printed TOC
 ```
 
 The `typography` section is read by the PDF/TeX stage only; the linear-XML
@@ -101,6 +104,10 @@ compiler ignores it. Every key is optional — when the section (or any single
 key) is omitted, the defaults shown above are used. Fonts that aren't found
 on the system fall back to a sensible default automatically (`Ezra SIL` →
 `SBL Hebrew` → `FreeSerif` for Hebrew).
+
+`table_of_contents.depth` controls only the printed table of contents; it is
+independent of the PDF bookmark/outline depth, which is always 4 levels deep
+regardless of this setting.
 
 ## Settings file versioning
 Note that this file is likely to change slightly in format as more output

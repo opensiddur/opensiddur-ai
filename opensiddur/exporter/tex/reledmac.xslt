@@ -47,6 +47,12 @@
     <xsl:param name="paper" as="xs:string">a4paper</xsl:param>
     <xsl:param name="fontsize" as="xs:string">11pt</xsl:param>
 
+    <!-- Auto-generated table of contents (driven by settings.yaml
+         `typography.table_of_contents`). Depth is independent of the PDF
+         bookmark depth below, which is always 4 levels deep. -->
+    <xsl:param name="table-of-contents" as="xs:boolean" select="false()"/>
+    <xsl:param name="table-of-contents-depth" as="xs:integer" select="4"/>
+
     <!-- How many parallel blocks one \Pages/\Columns typesets at a time. reledpar holds
          every chunk of a group in memory as a pair of boxes and refuses more than
          \maxchunks (5120) of them, so a whole humash — ~49000 blocks — cannot be one
@@ -330,11 +336,20 @@
 
     <xsl:template match="tei:text">
         <!-- \frontmatter/\mainmatter are book-class page-numbering switches (roman for the
-             front matter, restarting at arabic for the body). Emit them only when there is
-             front matter to number, so a document without one is unaffected. -->
-        <xsl:if test="tei:front">
+             front matter, restarting at arabic for the body). Emit them when there is front
+             matter to number, or when a table of contents needs the roman-numeral front-matter
+             pagination, so a document without either is unaffected. -->
+        <xsl:variable name="needs-frontmatter" select="exists(tei:front) or $table-of-contents"/>
+        <xsl:if test="$needs-frontmatter">
             <xsl:text>\frontmatter&#10;</xsl:text>
             <xsl:apply-templates select="tei:front"/>
+            <xsl:if test="$table-of-contents">
+                <!-- Scoped in a TeX group so tocdepth reverts afterward and does not affect
+                     \hypersetup{bookmarksdepth=4} or the global tocdepth set in the preamble. -->
+                <xsl:text>{\setcounter{tocdepth}{</xsl:text>
+                <xsl:value-of select="$table-of-contents-depth"/>
+                <xsl:text>}\tableofcontents}&#10;</xsl:text>
+            </xsl:if>
             <xsl:text>\mainmatter&#10;</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="tei:body"/>
