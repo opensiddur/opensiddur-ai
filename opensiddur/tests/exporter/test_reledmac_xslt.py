@@ -1204,6 +1204,70 @@ class TestFrontMatter(unittest.TestCase):
         self.assertNotIn("Stray", body)
 
 
+class TestTableOfContents(unittest.TestCase):
+    """``table-of-contents`` optionally prints a TOC page (\\tableofcontents), reusing the
+    \\addcontentsline entries the heading template already writes for PDF bookmarks."""
+
+    NESTED_HEADS_XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+      <tei:text><tei:body>
+        <tei:div><tei:head>Section One</tei:head>
+          <tei:div><tei:head>Subsection</tei:head><tei:p>Hi</tei:p></tei:div>
+        </tei:div>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_table_of_contents_omitted_by_default(self):
+        out = _transform(self.NESTED_HEADS_XML)
+        self.assertNotIn(r"\tableofcontents", out)
+
+    def test_table_of_contents_printed_when_enabled(self):
+        out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
+        self.assertIn(r"\tableofcontents", out)
+
+    def test_table_of_contents_comes_after_frontmatter_and_before_mainmatter(self):
+        out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
+        self.assertLess(out.index(r"\frontmatter"), out.index(r"\tableofcontents"))
+        self.assertLess(out.index(r"\tableofcontents"), out.index(r"\mainmatter"))
+
+    def test_addcontentsline_entries_still_present_when_enabled(self):
+        """The TOC page must not replace the existing bookmark plumbing."""
+        out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
+        self.assertIn(r"\addcontentsline{toc}{section}", out)
+        self.assertIn(r"\addcontentsline{toc}{subsection}", out)
+
+    def test_frontmatter_emitted_even_without_tei_front(self):
+        """A document with no tei:front still needs \\frontmatter/\\mainmatter so the TOC
+        gets roman-numeral front-matter pagination."""
+        out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
+        self.assertIn(r"\frontmatter", out)
+        self.assertIn(r"\mainmatter", out)
+
+    def test_document_without_table_of_contents_has_no_frontmatter_switch(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body><tei:p>In the beginning.</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertNotIn(r"\frontmatter", out)
+        self.assertNotIn(r"\mainmatter", out)
+
+    def test_table_of_contents_depth_is_scoped_locally(self):
+        """A custom depth must not leak into the global tocdepth that drives bookmarks."""
+        out = _transform(
+            self.NESTED_HEADS_XML,
+            **{"table-of-contents": True, "table-of-contents-depth": 2},
+        )
+        self.assertIn(r"{\setcounter{tocdepth}{2}\tableofcontents}", out)
+        # The preamble's global tocdepth (drives bookmarksdepth) is unaffected.
+        self.assertIn(r"\setcounter{tocdepth}{4}", out)
+        self.assertIn("bookmarksdepth=4", out)
+
+    def test_table_of_contents_depth_defaults_to_four(self):
+        out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
+        self.assertIn(r"{\setcounter{tocdepth}{4}\tableofcontents}", out)
+
+
 class TestParshaMilestones(unittest.TestCase):
     """A parsha is a division containing the chapters and verses that follow it, so its
     milestone legitimately sits between paragraphs rather than inside one. It used to be

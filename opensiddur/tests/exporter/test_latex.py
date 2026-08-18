@@ -417,6 +417,9 @@ typography:
   layout: pairs
   paper: letterpaper
   fontsize: 12pt
+  table_of_contents:
+    enabled: true
+    depth: 2
 """
         )
         cfg = load_typography(settings_path)
@@ -425,6 +428,13 @@ typography:
         self.assertEqual(cfg.layout, ParallelLayout.PAIRS)
         self.assertEqual(cfg.paper, PaperType.LETTERPAPER)
         self.assertEqual(cfg.fontsize, "12pt")
+        self.assertTrue(cfg.table_of_contents.enabled)
+        self.assertEqual(cfg.table_of_contents.depth, 2)
+
+    def test_table_of_contents_defaults_to_disabled(self):
+        cfg = TypographyConfig()
+        self.assertFalse(cfg.table_of_contents.enabled)
+        self.assertEqual(cfg.table_of_contents.depth, 4)
 
     def test_defaults_when_typography_section_missing(self):
         settings_path = self.test_dir / "settings.yaml"
@@ -533,6 +543,20 @@ class TestTransformXmlToTex(unittest.TestCase):
             out = transform_xml_to_tex(f, typography=typography)
         self.assertIn(r"\begin{pairs}", out)
         self.assertIn(r"\Columns", out)
+
+    def test_table_of_contents_setting_is_threaded_into_xslt_params(self):
+        xml = b"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        f = self._create("p", "input.xml", xml)
+        typography = TypographyConfig(
+            table_of_contents={"enabled": True, "depth": 2}
+        )
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=typography)
+        self.assertIn(r"\tableofcontents", out)
+        self.assertIn(r"\setcounter{tocdepth}{2}", out)
 
     def test_integrates_licenses_into_postamble(self):
         xml = b"""<?xml version="1.0"?>

@@ -91,6 +91,16 @@ class PaperType(StrEnum):
     EXECUTIVEPAPER = "executivepaper"
 
 
+class TableOfContentsConfig(BaseModel):
+    """ Auto-generated table of contents (PDF/TeX stage only).
+
+    ``depth`` is independent of the PDF bookmark depth, which is always 4
+    levels deep regardless of this setting.
+    """
+    enabled: bool = False
+    depth: int = Field(default=4, ge=1, le=4)
+
+
 class TypographyConfig(BaseModel):
     """ Output-format settings consumed by the TeX/PDF stage only.
 
@@ -103,6 +113,7 @@ class TypographyConfig(BaseModel):
     layout: ParallelLayout = ParallelLayout.PAIRS
     paper: PaperType = PaperType.LETTERPAPER
     fontsize: str = "11pt"
+    table_of_contents: TableOfContentsConfig = Field(default_factory=TableOfContentsConfig)
 
 
 class SettingsYaml(BaseModel):
