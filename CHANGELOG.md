@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-17
+
 ### Added
 - Shared table of the 54 weekly parshiyot (`opensiddur/importer/util/parshiyot.py`), mapping any
   source's spelling of a parshah name to a canonical Hebrew name and a URN slug.
@@ -41,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JPS 1917 importer: each generated file declares its own document URN instead of all 44 sharing
   `urn:x-opensiddur:text:bible:tanakh@jps1917`.
 
+### Pinned sources
+
+- `opensiddur-projects`: ba29479e194a3426f9aa7fd59eb9d526a85ddf5b
+- `sourcetexts`: 2e59018fba559edc22affa47135d8f5c006e95c0
+
 ## [0.1.0] - 2026-05-26
 
 Initial public release.
@@ -60,4 +67,3 @@ Initial public release.
 ### Known limitations
 - This is a pre-1.0 release; schemas, CLI flags, and module APIs may change quickly.
 - PDF/TeX output requires an external TeX toolchain and may need environment-specific tuning.
-
