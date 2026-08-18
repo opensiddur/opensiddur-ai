@@ -308,7 +308,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--sourcetexts-root",
         type=Path,
         default=default_sourcetexts_root(),
-        help="Root of sourcetexts (default: <repo>/sources).",
+        help="Root of sourcetexts (default: <repo>/sourcetexts/sources).",
     )
     parser.add_argument(
         "--dry-run",

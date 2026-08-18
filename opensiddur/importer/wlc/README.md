@@ -11,21 +11,19 @@ To download the data:
 uv run python -m download_tanach 
 ```
 
-The data will be downloaded to the `sources/wlc` directory.
+The data will be downloaded to the `sourcetexts/sources/wlc` directory (the sourcetexts submodule).
 
 To convert the data to JLPTEI 2:
 ```bash
 uv run python -m opensiddur.importer.wlc.wlc
 ```
 
-The output will be in the `project/wlc` directory.
+The output will be in the `opensiddur-projects/project/wlc` directory (the opensiddur-projects submodule).
 
-If you are using external clones of [opensiddur/sourcetexts](https://github.com/opensiddur/sourcetexts)
-and [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects), pass the
-paths explicitly:
+To use external clones instead of the submodules, pass the paths explicitly:
 
 ```bash
 uv run python -m opensiddur.importer.wlc.wlc \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
-  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project/wlc
+  --sourcetexts-root /path/to/sourcetexts/sources \
+  --project-dir /path/to/opensiddur-projects/project/wlc
 ```

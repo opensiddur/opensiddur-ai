@@ -6,16 +6,14 @@ from zipfile import ZipFile
 
 import requests
 
+from opensiddur.common.constants import SOURCETEXTS_ROOT
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parent.parent.parent.parent
-
-
 def _default_sourcetexts_root() -> Path:
-    return _repo_root() / "sources"
+    return SOURCETEXTS_ROOT
 
 
 def download_and_unzip_tanach(sourcetexts_root: Path | None = None) -> None:
@@ -60,7 +58,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=_default_sourcetexts_root(),
         help=(
             "Root of the opensiddur/sourcetexts repository; files are written under "
-            "<root>/wlc (default: <repo>/sources so output matches legacy sources/wlc)."
+            "<root>/wlc (default: <repo>/sourcetexts/sources)."
         ),
     )
     return parser

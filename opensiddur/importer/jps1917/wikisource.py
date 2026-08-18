@@ -18,7 +18,7 @@ pages = range(start_page, 1158 + 1)
 # Backward-compatible name for JPS tree under sourcetexts
 jps1917_output_directory = jps1917_data_directory
 
-# Default layout (legacy): <repo>/sources/jps1917
+# Default layout: <repo>/sourcetexts/sources/jps1917
 output_directory = jps1917_data_directory()
 
 
@@ -114,7 +114,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=default_sourcetexts_root(),
         help=(
             "Root of the opensiddur/sourcetexts repository; page text is written under "
-            "<root>/jps1917 (default: <repo>/sources for legacy sources/jps1917)."
+            "<root>/jps1917 (default: <repo>/sourcetexts/sources)."
         ),
     )
     parser.add_argument(

@@ -25,10 +25,6 @@ logger = logging.getLogger(__name__)
 MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parent.parent.parent.parent
-
-
 def make_project_directory(project_dir: Path | None = None) -> Path:
     """Create the JPS 1917 project directory if missing; return its path."""
     directory = (
@@ -715,15 +711,18 @@ def index_file(
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    repo = _repo_root()
     parser = argparse.ArgumentParser(
-        description="Convert JPS 1917 Wikisource page dumps to JLPTEI under project/jps1917."
+        description="Convert JPS 1917 Wikisource page dumps to JLPTEI under "
+                    "opensiddur-projects/project/jps1917."
     )
     parser.add_argument(
         "--project-dir",
         type=Path,
-        default=repo / "project" / "jps1917",
-        help="Output directory for generated JLPTEI (default: <repo>/project/jps1917).",
+        default=_default_project_directory(),
+        help=(
+            "Output directory for generated JLPTEI "
+            "(default: <repo>/opensiddur-projects/project/jps1917)."
+        ),
     )
     parser.add_argument(
         "--sourcetexts-root",
@@ -731,7 +730,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=default_sourcetexts_root(),
         help=(
             "Root of the opensiddur/sourcetexts repository; page text is read from "
-            "<root>/jps1917 (default: <repo>/sources)."
+            "<root>/jps1917 (default: <repo>/sourcetexts/sources)."
         ),
     )
     return parser

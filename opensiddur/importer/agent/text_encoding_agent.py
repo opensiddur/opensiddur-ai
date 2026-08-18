@@ -56,7 +56,7 @@ class TextEncodingAgentState(TypedDict):
     session_id: Optional[str]
     last_checkpoint_time: Optional[str]
 
-    # JPS 1917 page files live under <sourcetexts_root>/jps1917 (None = default <repo>/sources)
+    # JPS 1917 page files live under <sourcetexts_root>/jps1917 (None = default <repo>/sourcetexts/sources)
     sourcetexts_root: Optional[str]
 
 
@@ -73,7 +73,7 @@ class TextEncodingAgentInput(BaseModel):
     enable_checkpointing: bool = Field(default=True, description="Enable checkpointing for this session")
     sourcetexts_root: Optional[Path] = Field(
         default=None,
-        description="Root of sourcetexts repo; Wikisource page dumps under <root>/jps1917 (default: <repo>/sources).",
+        description="Root of sourcetexts repo; Wikisource page dumps under <root>/jps1917 (default: <repo>/sourcetexts/sources).",
     )
 
 

@@ -9,6 +9,25 @@ This is a work in progress to convert the Open Siddur Project to use AI to aid i
 * A new version of JLPTEI (2) with a simplified schema.
 * Less emphasis on UI: This is primarily about converting texts from any input format to JLPTEI, and converting the JLPTEI to useful output formats and combining texts in novel ways.
 
+## Checkout
+
+The source texts and the derived JLPTEI projects live in two other repositories, both attached
+here as git submodules — `sourcetexts/` and `opensiddur-projects/`. A release tag of this
+repository therefore names the exact commits of both (see `RELEASE_PROCEDURE.md`).
+
+```bash
+git clone git@github.com:opensiddur/opensiddur-ai.git
+cd opensiddur-ai
+git submodule update --init
+uv sync --all-groups
+```
+
+A new git worktree starts with empty submodule directories; run `git submodule update --init`
+there too.
+
+See [RELEASE_PROCEDURE.md](RELEASE_PROCEDURE.md) for how a version of this repository is tagged
+and how it pins `sourcetexts`/`opensiddur-projects` commits.
+
 ## Schema
 To compile the schema:
 
@@ -24,50 +43,45 @@ The output will be in the `schema` directory as RelaxNG XML (and, eventually, IS
 
 ## Sources
 
-Available sources in their original (or close to original) form are in the `sources` directory.
-The canonical source texts repository is at [opensiddur/sourcetexts](https://github.com/opensiddur/sourcetexts).
-Clone or symlink it as the `sources` root before running any importers.
+Available sources in their original (or close to original) form are in `sourcetexts/sources`,
+the [opensiddur/sourcetexts](https://github.com/opensiddur/sourcetexts) submodule. Every importer
+reads from there by default; `--sourcetexts-root` overrides it with an external clone.
 
 Input converters for each specific source are in the `importer` directory.
 
-Example: run the WLC importer against an external clone:
+Example: run the WLC importer:
 
 ```bash
-uv run python -m opensiddur.importer.wlc.wlc \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
-  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project/wlc
+uv run python -m opensiddur.importer.wlc.wlc
 ```
 
-Example: run the JPS 1917 importer against an external clone:
+Example: run the JPS 1917 importer:
 
 ```bash
-uv run python -m opensiddur.importer.jps1917.convert_wikisource \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources \
-  --project-dir ~/src/opensiddur-repos/opensiddur-projects/project/jps1917
+uv run python -m opensiddur.importer.jps1917.convert_wikisource
 ```
 
 Example: download Miqra al pi ha-Masorah from Google Sheets into sourcetexts:
 
 ```bash
-uv run python -m opensiddur.importer.miqra_al_pi_hamasorah.download \
-  --sourcetexts-root ~/src/opensiddur-repos/sourcetexts/sources
+uv run python -m opensiddur.importer.miqra_al_pi_hamasorah.download
 ```
 
 ## JLPTEI sources
 
-JLPTEI sources are compiled into the `project` directory.
-The canonical projects repository is at [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects).
-Clone or symlink it as the `project` root before running the compiler or exporter.
+JLPTEI sources are compiled into `opensiddur-projects/project`, the
+[opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects) submodule.
+`--project-directory` overrides it with an external clone.
 
 ## Reference database
 
 The exporter resolves `urn:x-opensiddur:` URIs to project files via a SQLite
 database at `database/reference.db`. Whenever you add, remove, or rename files
-in the `project/` directory (e.g. a clone of [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects)),
-re-sync the database so the compiler can find them, as in the example here:
+in `opensiddur-projects/project/`,
+re-sync the database so the compiler can find them:
 
 ```bash
-uv run python -m opensiddur.exporter.refdb --project-directory ~/src/opensiddur-projects/project
+uv run python -m opensiddur.exporter.refdb
 ```
 
 The command scans every `project/<name>/` subdirectory, updates URN and
@@ -79,7 +93,7 @@ You must re-sync before running the compiler on any newly-added project.
 
 ## Compilation (JLPTEI → compiled linear XML)
 
-The compiler takes a `project/<name>/` file (from [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects)),
+The compiler takes an `opensiddur-projects/project/<name>/` file,
 resolves transclusions, annotations, and parallel texts,
 and outputs a single “compiled” XML file that can be 
 converted into a final printable format (eg, PDF).
@@ -88,7 +102,6 @@ Example (compile `project/wlc/ruth.xml` to `compiled.xml`):
 
 ```bash
 uv run python -m opensiddur.exporter.compiler \
-  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project \
   --project wlc \
   --file_name ruth.xml \
   --output_file compiled.xml
@@ -98,7 +111,6 @@ Example with a settings YAML (controls project priorities, annotations, and opti
 
 ```bash
 uv run python -m opensiddur.exporter.compiler \
-  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project \
   --project wlc \
   --file_name ruth.xml \
   --settings doc/exporter-settings.example.yaml \
@@ -111,7 +123,6 @@ Convert the compiled XML file to LuaLaTeX using the `reledmac`/`reledpar` pipeli
 
 ```bash
 uv run python -m opensiddur.exporter.tex.latex \
-  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project \
   compiled.xml \
   --settings doc/exporter-settings.example.yaml \
   --output compiled.tex
@@ -123,7 +134,6 @@ Export directly to PDF (generates TeX internally, then runs LuaLaTeX/latexmk):
 
 ```bash
 uv run python -m opensiddur.exporter.pdf.pdf \
-  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project \
   --settings doc/exporter-settings.example.yaml \
   compiled.xml \
   output.pdf
@@ -133,7 +143,6 @@ Keep the intermediate TeX (helpful for debugging LaTeX issues):
 
 ```bash
 uv run python -m opensiddur.exporter.pdf.pdf \
-  --project-directory ~/src/opensiddur-repos/opensiddur-projects/project \
   --settings doc/exporter-settings.example.yaml \
   --keep-tex \
   compiled.xml \

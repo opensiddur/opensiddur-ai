@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Optional
 
-from opensiddur.importer.util.constants import BASE_PATH, Page
+from opensiddur.common.constants import SOURCETEXTS_ROOT
+from opensiddur.importer.util.constants import Page
 
 
 def default_sourcetexts_root() -> Path:
-    """Default opensiddur/sourcetexts checkout root (legacy layout: <repo>/sources)."""
-    return BASE_PATH / "sources"
+    """Default opensiddur/sourcetexts checkout root (the sourcetexts submodule)."""
+    return SOURCETEXTS_ROOT
 
 
 def jps1917_data_directory(sourcetexts_root: Path | None = None) -> Path:

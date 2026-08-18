@@ -198,7 +198,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=default_sourcetexts_root(),
         help=(
             "Root of the sourcetexts tree; output is written under "
-            "<root>/miqra_al_pi_hamasorah (default: <repo>/sources)."
+            "<root>/miqra_al_pi_hamasorah (default: <repo>/sourcetexts/sources)."
         ),
     )
     parser.add_argument(
