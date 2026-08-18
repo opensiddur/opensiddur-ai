@@ -148,3 +148,9 @@ uv run python -m opensiddur.exporter.pdf.pdf \
   compiled.xml \
   output.pdf
 ```
+
+## Licensing
+
+* **Code** in this repository is licensed under the GNU Lesser General Public License v3 or later (LGPL 3+) — see [LICENSE](LICENSE).
+* **Project texts** (`opensiddur-projects/` submodule) are each covered by the license declared in that document's own TEI header (`tei:publicationStmt/tei:availability/tei:licence`), which may differ per document.
+* **Source texts** (`sourcetexts/` submodule) are each covered by the license accompanying that source in `sourcetexts/sources/`, which may differ per source.
