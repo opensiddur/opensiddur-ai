@@ -248,6 +248,44 @@ class TestSingleStreamMapping(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}12}}", out)
 
+    def test_chapter_milestone_inside_a_parallel_column_still_emits_its_number(self):
+        """The book div now lives *inside* each column, not around the p:parallel.
+
+        Chapter numbers are gated on ancestor::tei:div[@type='book'], so the compiler
+        reproducing that div inside each p:parallelItem (stamped p:part when the div is
+        split across rows) is what keeps the gate satisfied in parallel mode. If the div
+        were hoisted away to flatten the blocks instead, \\chno would silently vanish.
+        """
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div type="book" p:part="first">
+                  <tei:p>
+                    <tei:milestone unit="chapter" n="3"/>
+                    <tei:milestone unit="verse" n="1"/>טקסט
+                  </tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div type="book" p:part="first">
+                  <tei:p>
+                    <tei:milestone unit="chapter" n="3"/>
+                    <tei:milestone unit="verse" n="1"/>Text
+                  </tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, layout="pairs")
+        self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}3}}", out)
+        # ...and it is genuinely the two-column path, not the linear fallback.
+        self.assertIn(r"\begin{pairs}", out)
+        self.assertIn(r"\Columns", out)
+
     def test_verse_numbers_appear_as_superscripts(self):
         out = _transform(self.XML)
         # The \vno{} command renders as a superscript prefix.

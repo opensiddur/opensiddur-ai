@@ -9,7 +9,7 @@ from opensiddur.exporter.external_compiler import PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.marker_reconstruct import (
     doc_needs_marker_reconstruction,
     reconstruct_markered_document,
-    reconstruct_parallel_item,
+    reconstruct_container,
     substantive_content,
 )
 from opensiddur.exporter import marker_reconstruct as mr
@@ -157,7 +157,7 @@ class TestMarkerReconstruct(unittest.TestCase):
         </p:parallelItem>"""
         pi = etree.fromstring(xml.encode())
         with self.assertRaises(ValueError):
-            reconstruct_parallel_item(pi, mr.defaultdict(dict))
+            reconstruct_container(pi, mr.defaultdict(dict))
 
     def test_close_open_segment_validates_stack_and_pid(self):
         stack: list[mr._Frame] = []
@@ -259,5 +259,5 @@ class TestMarkerReconstruct(unittest.TestCase):
         </p:parallelItem>"""
         pi = etree.fromstring(xml.encode())
         with unittest.mock.patch.object(mr, "_structural_marker_map", return_value={"unknown": "z"}):
-            reconstruct_parallel_item(pi, mr.defaultdict(dict))
+            reconstruct_container(pi, mr.defaultdict(dict))
         self.assertEqual(len(pi), 2)
