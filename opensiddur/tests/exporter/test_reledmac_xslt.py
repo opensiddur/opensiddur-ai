@@ -90,7 +90,11 @@ class TestPreamble(unittest.TestCase):
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\newcommand{\OSDocumentTitle}{A Book of Prayer}", out)
+        self.assertIn(
+            r"\newcommand{\OSDocumentTitle}{{\textdir TLT\selectlanguage{english}"
+            r"A Book of Prayer}}",
+            out,
+        )
 
     def test_document_title_is_empty_without_one(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -497,8 +501,27 @@ class TestParallelMapping(unittest.TestCase):
         """reledpar pairs the two sides by \\pstart count, so a mark must never
         open one of its own."""
         out = _transform(self.XML)
-        self.assertIn(r"\InsertMark{OSchapter}{1}", out)
-        self.assertNotIn(r"\InsertMark{OSchapter}{1}\pstart", out)
+        self.assertIn(
+            r"\InsertMark{OSchapter}{{\textdir TLT\selectlanguage{english}1}}", out
+        )
+        self.assertNotIn(r"}}\pstart", out)
+
+    def test_chapter_number_mark_forces_ltr_digits(self):
+        """A slot declaring Hebrew forces RTL, and \\textdir forces a direction
+        rather than running the bidi algorithm, so bare digits are laid out
+        right to left and chapter 50 reads "05"."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div type="book"><tei:head>בראשית</tei:head>
+              <tei:p><tei:milestone unit="chapter" n="50"/>טקסט</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\InsertMark{OSchapter}{{\textdir TLT\selectlanguage{english}50}}", out
+        )
 
     def test_pairs_layout_uses_columns_typesetter(self):
         out = _transform(self.XML, layout="pairs")

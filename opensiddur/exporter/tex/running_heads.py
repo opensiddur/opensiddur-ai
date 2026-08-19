@@ -38,8 +38,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # would make an English running head impossible on a Hebrew-primary parallel
 # volume. In a non-parallel document these marks are never set and the codes
 # expand to nothing.
+#
+# \thepage is wrapped LTR for the same reason \chno and \vno wrap digits in the
+# body: a slot declaring Hebrew forces RTL, and digits laid out in that
+# direction come out reversed — page 50 reads "05". This applies to the roman
+# numerals of the front matter too. An extra LTR group inside an LTR slot is
+# harmless. \hebrewnumeral needs no such wrapper: its output is Hebrew letters,
+# which belong in the slot's own direction.
 RUNNING_HEAD_CODES: dict[str, str] = {
-    "page": r"\thepage",
+    "page": r"{\textdir TLT\selectlanguage{english}\thepage}",
     "page-hebrew": r"\hebrewnumeral{\value{page}}",
     "document-title": r"\OSDocumentTitle",
     "book-title": r"\LastMark{OSbook}",
@@ -75,6 +82,42 @@ def _escape_tex(s: str) -> str:
     t = t.replace("~", r"\textasciitilde{}")
     t = t.replace("^", r"\textasciicircum{}")
     return t.replace(_BACKSLASH_SENTINEL, r"\textbackslash{}")
+
+
+# Hebrew block plus the Hebrew presentation forms, matching the range
+# f:emit-bidi-mark uses in reledmac.xslt.
+_HEBREW_RUN = re.compile(r"[֐-׿יִ-ﭏ]+(?:\s+[֐-׿יִ-ﭏ]+)*")
+
+
+def _emit_bidi_literal(s: str) -> str:
+    """Give each run of literal template text its own direction and font.
+
+    The Python counterpart of ``f:emit-bidi-mark``. A slot's declared language
+    sets the base direction, which decides the order runs are laid out in, but
+    ``\\textdir`` forces a direction rather than running the bidi algorithm — so
+    a run left bare comes out reversed in a slot that runs the other way, and
+    ``"p{page}"`` in a Hebrew slot reads "1p". Hebrew runs take ``\\texthebrew``,
+    which also selects the Hebrew font a Latin-font slot has no glyphs from.
+    """
+    parts: list[str] = []
+    position = 0
+    for match in _HEBREW_RUN.finditer(s):
+        _append_ltr(parts, s[position:match.start()])
+        parts.append(r"\texthebrew{" + _escape_tex(match.group()) + "}")
+        position = match.end()
+    _append_ltr(parts, s[position:])
+    return "".join(parts)
+
+
+def _append_ltr(parts: list[str], text: str) -> None:
+    if not text:
+        return
+    if not text.strip():
+        # Whitespace between two runs carries no direction of its own; wrapping
+        # it would only add empty groups.
+        parts.append(text)
+        return
+    parts.append(r"{\textdir TLT\selectlanguage{english}" + _escape_tex(text) + "}")
 
 
 @dataclass(frozen=True)
@@ -143,7 +186,7 @@ def expand_template(template: str) -> str:
     return "".join(
         RUNNING_HEAD_CODES[segment.value]
         if segment.is_code
-        else _escape_tex(segment.value)
+        else _emit_bidi_literal(segment.value)
         for segment in parse_template(template)
     )
 

@@ -139,10 +139,13 @@ ones: `left` is the left edge whichever way the text runs.
 Each position is either a bare string or a mapping with:
 
 - `text` — the template (see the codes below).
-- `language` — decides the direction and font of the slot. Defaults to the
-  document's own `xml:lang`. Only Hebrew (`he`, `he-*`) versus everything else
-  is distinguished. A heading recorded in a mark keeps its own per-run
-  direction, so a mixed title like "רות RUTH" reads correctly either way.
+- `language` — the slot's base direction, which decides the order its runs are
+  laid out in, and the font for content that declares nothing else. Defaults to
+  the document's own `xml:lang`; only Hebrew (`he`, `he-*`) versus everything
+  else is distinguished. Every run — literal text, a heading recorded in a mark,
+  the page number — carries its own direction inside that, so a mixed title like
+  "רות RUTH" reads correctly in a slot of either direction, and digits are never
+  reversed.
 - `if` — a second template. When it expands to nothing, the whole position is
   dropped, literal text included, so `"Chapter {chapter-number}"` leaves no
   orphaned "Chapter" on a page before the first chapter.

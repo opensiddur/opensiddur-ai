@@ -87,8 +87,11 @@ typography:
   # `left`, `center` and `right` are *physical* page positions. Each is either a
   # bare string or a mapping of:
   #   text      - the template
-  #   language  - direction and font for the slot; defaults to the document's
-  #               own xml:lang. Only Hebrew (he, he-*) vs. everything else matters.
+  #   language  - the slot's base direction, which sets the order its runs are laid
+  #               out in, and the font for anything that declares nothing else.
+  #               Defaults to the document's own xml:lang; only Hebrew (he, he-*)
+  #               vs. everything else matters. Each run carries its own direction
+  #               inside that, so digits and mixed scripts are never reversed.
   #   if        - when this template expands to nothing, the whole position is
   #               dropped, literal text included.
   #

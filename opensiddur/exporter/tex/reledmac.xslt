@@ -180,9 +180,11 @@
         <xsl:text>\NewMarkClass{OSbookAlt}&#10;</xsl:text>
 
         <!-- The document's own title, for the {document-title} code. The TEI
-             header is dropped from the output but can still be read here. -->
+             header is dropped from the output but can still be read here.
+             Per-run direction, like the marks: the slot it lands in may run
+             either way. -->
         <xsl:text>\newcommand{\OSDocumentTitle}{</xsl:text>
-        <xsl:value-of select="f:escape-tex(normalize-space(string-join((
+        <xsl:value-of select="f:emit-bidi-mark(normalize-space(string-join((
             /tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title[@type='main'][1],
             //tei:titlePage//tei:titlePart[@type='main'][1])[1]//text(), '')))"/>
         <xsl:text>}&#10;</xsl:text>
@@ -711,9 +713,14 @@
                              between \pend and \pstart is harmless. -->
                         <!-- One class for both streams, unsuffixed: parallel columns
                              carry the same chapter numbers, so there is nothing for a
-                             per-stream class to distinguish. -->
+                             per-stream class to distinguish.
+
+                             The digits go through f:emit-bidi-mark for the same
+                             reason \chno wraps them below: a slot that declares
+                             Hebrew forces RTL, and bare digits are laid out in
+                             that direction, so chapter 50 reads "05". -->
                         <xsl:text>\InsertMark{OSchapter}{</xsl:text>
-                        <xsl:value-of select="f:escape-tex(string(@n))"/>
+                        <xsl:value-of select="f:emit-bidi-mark(string(@n))"/>
                         <xsl:text>}</xsl:text>
                         <xsl:choose>
                             <xsl:when test="ancestor::tei:div[@type='book']">

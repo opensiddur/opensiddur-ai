@@ -21,6 +21,9 @@ from opensiddur.exporter.tex.running_heads import (
 )
 
 
+LTR = r"{\textdir TLT\selectlanguage{english}"
+
+
 class TestParseTemplate(unittest.TestCase):
     """Templates are literal text with codes from a closed list in braces."""
 
@@ -65,8 +68,12 @@ class TestExpandTemplate(unittest.TestCase):
             with self.subTest(code=code):
                 self.assertEqual(expand_template("{" + code + "}"), expansion)
 
-    def test_page_number_uses_thepage(self):
-        self.assertEqual(expand_template("{page}"), r"\thepage")
+    def test_page_number_uses_thepage_forced_ltr(self):
+        """Digits laid out RTL come out reversed: page 50 would read "05"."""
+        self.assertEqual(
+            expand_template("{page}"),
+            r"{\textdir TLT\selectlanguage{english}\thepage}",
+        )
 
     def test_hebrew_page_number_uses_hebrewnumeral(self):
         self.assertEqual(expand_template("{page-hebrew}"), r"\hebrewnumeral{\value{page}}")
@@ -80,13 +87,18 @@ class TestExpandTemplate(unittest.TestCase):
         self.assertEqual(expand_template("{book-title-alt}"), r"\LastMark{OSbookAlt}")
 
     def test_literal_tex_specials_are_escaped(self):
-        self.assertEqual(expand_template("100% & more_"), r"100\% \& more\_")
+        self.assertEqual(
+            expand_template("100% & more_"),
+            LTR + r"100\% \& more\_" + "}",
+        )
 
     def test_literal_backslash_is_escaped_before_the_rest(self):
-        self.assertEqual(expand_template("a\\b"), r"a\textbackslash{}b")
+        self.assertEqual(
+            expand_template("a\\b"), LTR + r"a\textbackslash{}b" + "}"
+        )
 
     def test_doubled_braces_survive_as_escaped_literal_braces(self):
-        self.assertEqual(expand_template("{{x}}"), r"\{x\}")
+        self.assertEqual(expand_template("{{x}}"), LTR + r"\{x\}" + "}")
 
 
 class TestRenderPosition(unittest.TestCase):
@@ -97,11 +109,11 @@ class TestRenderPosition(unittest.TestCase):
 
     def test_non_hebrew_slot_forces_ltr(self):
         out = render_position(RunningHeadPosition(text="{page}", language="en"))
-        self.assertEqual(out, r"{\textdir TLT\selectlanguage{english} \thepage}")
+        self.assertTrue(out.startswith(r"{\textdir TLT\selectlanguage{english} "))
 
     def test_hebrew_slot_forces_rtl(self):
         out = render_position(RunningHeadPosition(text="{page}", language="he"))
-        self.assertEqual(out, r"{\textdir TRT\selectlanguage{hebrew} \thepage}")
+        self.assertTrue(out.startswith(r"{\textdir TRT\selectlanguage{hebrew} "))
 
     def test_hebrew_subtag_counts_as_hebrew(self):
         out = render_position(RunningHeadPosition(text="{page}", language="he-IL"))
@@ -132,6 +144,46 @@ class TestRenderPosition(unittest.TestCase):
             RunningHeadPosition(text="x", language="he", **{"if": "{head1}"})
         )
         self.assertIn(r"\OSHFIfNonEmpty{\LastMark{OSheadA}}{", out)
+
+
+class TestBidiLiterals(unittest.TestCase):
+    """Literal template text gets per-run direction, like the marks do.
+
+    The slot's declared language sets the base direction, which decides the
+    order runs are laid out in; \textdir forces a direction rather than running
+    the bidi algorithm, so a run left bare comes out reversed in a slot that
+    runs the other way.
+    """
+
+    def test_latin_literal_is_wrapped_ltr(self):
+        self.assertEqual(expand_template("Page"), LTR + "Page}")
+
+    def test_hebrew_literal_takes_texthebrew(self):
+        """\\texthebrew carries the Hebrew font too, without which a Latin-font
+        slot has no glyphs for it."""
+        self.assertEqual(expand_template("פרק"), r"\texthebrew{פרק}")
+
+    def test_mixed_literal_splits_into_runs(self):
+        """The space separating them rides along with the Latin run, which is
+        harmless — what matters is that neither run is left bare."""
+        self.assertEqual(
+            expand_template("פרק ch"), r"\texthebrew{פרק}" + LTR + " ch}"
+        )
+
+    def test_whitespace_alone_is_not_wrapped(self):
+        """Whitespace between two codes carries no direction of its own;
+        wrapping it would only add an empty group."""
+        self.assertEqual(
+            expand_template("{head1} {head2}"),
+            r"\LastMark{OSheadA} \LastMark{OSheadB}",
+        )
+
+    def test_a_latin_literal_beside_the_page_number_reads_in_order(self):
+        """Regression: "p{page}" in a Hebrew slot used to read "1p"."""
+        out = expand_template("p{page}")
+        self.assertEqual(
+            out, LTR + "p}" + r"{\textdir TLT\selectlanguage{english}\thepage}"
+        )
 
 
 class TestRunningHeadModels(unittest.TestCase):
