@@ -59,6 +59,64 @@ class TestPreamble(unittest.TestCase):
         self.assertNotIn(r"\usepackage{reledpar}", out)
         self.assertIn(r"\setotherlanguage{hebrew}", out)
 
+    def test_preamble_declares_running_head_mark_classes(self):
+        """Every heading level, plus book and chapter, needs a mark class for the
+        running heads to read; the `Alt` family carries the second parallel
+        column. Declared unconditionally so the preamble stays deterministic."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        for mark_class in (
+            "OSheadA", "OSheadB", "OSheadC", "OSheadD", "OSheadAny",
+            "OSbook", "OSchapter",
+            "OSheadAAlt", "OSheadBAlt", "OSheadCAlt", "OSheadDAlt",
+            "OSheadAnyAlt", "OSbookAlt",
+        ):
+            with self.subTest(mark_class=mark_class):
+                self.assertIn(r"\NewMarkClass{%s}" % mark_class, out)
+        self.assertIn(r"\newcommand{\OSHFIfNonEmpty}", out)
+        self.assertIn(r"\newcommand{\OSHebrewNumber}", out)
+
+    def test_document_title_comes_from_the_tei_header(self):
+        """The header is dropped from the output but is still readable here, and
+        it is where {document-title} gets its text."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:teiHeader><tei:fileDesc><tei:titleStmt>
+            <tei:title type="main">A Book of Prayer</tei:title>
+          </tei:titleStmt></tei:fileDesc></tei:teiHeader>
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\newcommand{\OSDocumentTitle}{{\textdir TLT\selectlanguage{english}"
+            r"A Book of Prayer}}",
+            out,
+        )
+
+    def test_document_title_is_empty_without_one(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        self.assertIn(r"\newcommand{\OSDocumentTitle}{}", _transform(xml))
+
+    def test_page_style_preamble_is_emitted_after_hyperref(self):
+        """fancyhdr must load after hyperref, and nothing is emitted when no
+        running head is configured."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        self.assertNotIn("fancyhdr", _transform(xml))
+
+        out = _transform(xml, **{"page-style-preamble": r"\usepackage{fancyhdr}"})
+        self.assertIn(r"\usepackage{fancyhdr}", out)
+        self.assertLess(out.index(r"\usepackage{hyperref}"), out.index("fancyhdr"))
+        self.assertLess(out.index("fancyhdr"), out.index(r"\begin{document}"))
+
     def test_preamble_loads_reledpar_when_parallel(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
@@ -413,6 +471,57 @@ class TestParallelMapping(unittest.TestCase):
         self.assertIsNotNone(right)
         self.assertIn("In the beginning", right.group(1))
         self.assertNotIn(r"\begin{hebrew}", right.group(1))
+
+    def test_second_column_records_into_the_alt_mark_classes(self):
+        """A running head must be able to name either language's heading, so the
+        two columns cannot share one set of mark classes."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing"
+                 xml:lang="he">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div type="book"><tei:head>בראשית</tei:head><tei:p>טקסט</tei:p></tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div type="book"><tei:head>GENESIS</tei:head><tei:p>Text</tei:p></tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\InsertMark{OSbook}{\texthebrew{בראשית}}", out)
+        self.assertIn(
+            r"\InsertMark{OSbookAlt}{{\textdir TLT\selectlanguage{english}GENESIS}}", out
+        )
+        self.assertIn(r"\InsertMark{OSheadAAlt}{", out)
+
+    def test_chapter_milestone_records_a_mark_without_opening_a_pstart(self):
+        """reledpar pairs the two sides by \\pstart count, so a mark must never
+        open one of its own."""
+        out = _transform(self.XML)
+        self.assertIn(
+            r"\InsertMark{OSchapter}{{\textdir TLT\selectlanguage{english}1}}", out
+        )
+        self.assertNotIn(r"}}\pstart", out)
+
+    def test_chapter_number_mark_forces_ltr_digits(self):
+        """A slot declaring Hebrew forces RTL, and \\textdir forces a direction
+        rather than running the bidi algorithm, so bare digits are laid out
+        right to left and chapter 50 reads "05"."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div type="book"><tei:head>בראשית</tei:head>
+              <tei:p><tei:milestone unit="chapter" n="50"/>טקסט</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\InsertMark{OSchapter}{{\textdir TLT\selectlanguage{english}50}}", out
+        )
 
     def test_pairs_layout_uses_columns_typesetter(self):
         out = _transform(self.XML, layout="pairs")
@@ -909,13 +1018,98 @@ class TestStructuralElements(unittest.TestCase):
         out = _transform(xml)
         # Top-level head → \OSheadA (LTR wrapper when not Hebrew), and the heading must
         # sit alone in a skipnumbering pstart so it is a real, unnumbered heading.
+        # The running-head marks precede it inside the same pstart.
         self.assertIn(
             "\\pstart \\skipnumbering\n"
+            r"\InsertMark{OSheadA}{{\textdir TLT\selectlanguage{english}Genesis}}"
+            r"\InsertMark{OSheadAny}{{\textdir TLT\selectlanguage{english}Genesis}}"
             r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}",
             out,
         )
         self.assertNotIn(r"\eledchapter", out)
         self.assertNotIn(r"\eledsubsection", out)
+
+    def test_book_div_head_also_records_the_book_mark(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head>Genesis</tei:head>
+              <tei:p>In the beginning.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\InsertMark{OSbook}{{\textdir TLT\selectlanguage{english}Genesis}}", out)
+
+    def test_non_book_div_head_records_no_book_mark(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div type="section">
+              <tei:head>A Section</tei:head>
+              <tei:p>Text.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\InsertMark{OSheadA}{{\textdir TLT\selectlanguage{english}A Section}}", out)
+        self.assertNotIn(r"\InsertMark{OSbook}", out)
+
+    def test_heading_marks_follow_the_heading_level(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Outer</tei:head>
+              <tei:div><tei:head>Inner</tei:head><tei:p>Text.</tei:p></tei:div>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\InsertMark{OSheadA}{{\textdir TLT\selectlanguage{english}Outer}}", out)
+        self.assertIn(r"\InsertMark{OSheadB}{{\textdir TLT\selectlanguage{english}Inner}}", out)
+        # Every heading also records into the any-level class, which backs
+        # the {section-title} code.
+        self.assertIn(r"\InsertMark{OSheadAny}{{\textdir TLT\selectlanguage{english}Inner}}", out)
+
+    def test_mixed_script_heading_mark_carries_per_run_direction(self):
+        """A running head can be placed in a slot of either direction, so the
+        mark cannot assume one: Hebrew runs need \\texthebrew (direction *and*
+        font) and Latin runs need an explicit LTR wrapper."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div type="book">
+              <tei:head><tei:foreign xml:lang="he">רות</tei:foreign><tei:lb/>RUTH</tei:head>
+              <tei:p>Text.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\InsertMark{OSbook}{\texthebrew{רות}", out)
+        self.assertIn(r"{\textdir TLT\selectlanguage{english}RUTH}", out)
+
+    def test_a_hyphenated_hebrew_heading_stays_one_run(self):
+        """A paired parsha name is written with an en-dash, which is outside the
+        Hebrew block. Splitting on it would make the dash its own LTR embedding
+        and let a neighbouring chapter number reorder into the middle of the
+        name."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div><tei:head>\u05ea\u05b7\u05d6\u05b0\u05e8\u05b4\u05d9\u05e2\u05b7\u2013\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2</tei:head>
+              <tei:p>\u05d8\u05e7\u05e1\u05d8</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            "\\InsertMark{OSheadA}{\\texthebrew{"
+            "\u05ea\u05b7\u05d6\u05b0\u05e8\u05b4\u05d9\u05e2\u05b7\u2013"
+            "\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2}}",
+            out,
+        )
+        self.assertNotIn("selectlanguage{english}\u2013", out)
 
     def test_div_head_emits_pdf_bookmark(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -1089,6 +1283,13 @@ class TestFrontMatter(unittest.TestCase):
         <tei:body><tei:p>In the beginning.</tei:p></tei:body>
       </tei:text>
     </tei:TEI>"""
+
+    def test_title_page_carries_no_running_head(self):
+        """A title page is not part of the running-head scheme. The titlepage
+        environment sets this itself, but `plain` is redefined for running heads,
+        so do not leave the guarantee to a class internal."""
+        out = _transform(self.TITLE_PAGE_XML)
+        self.assertIn("\\begin{titlepage}\n\\thispagestyle{empty}", out)
 
     def test_front_matter_is_set_before_the_body(self):
         out = _transform(self.TITLE_PAGE_XML)

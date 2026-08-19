@@ -16,6 +16,8 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from pydantic import ValidationError
+
 import opensiddur.exporter.tex.latex as latex_module
 from opensiddur.exporter.settings import PaperType, ParallelLayout, TypographyConfig
 from opensiddur.exporter.tex.latex import (
@@ -448,6 +450,57 @@ priority:
         cfg = load_typography(settings_path)
         self.assertEqual(cfg, TypographyConfig())
 
+    def test_reads_running_head_settings(self):
+        settings_path = self.test_dir / "settings.yaml"
+        settings_path.write_text(
+            """
+typography:
+  page_header:
+    odd:
+      left: "{book-title}"
+      right: {text: "{page}", language: en}
+  page_footer:
+    all:
+      center: "{page}"
+"""
+        )
+        cfg = load_typography(settings_path)
+        self.assertEqual(cfg.page_header.odd.left.text, "{book-title}")
+        self.assertEqual(cfg.page_header.odd.right.language, "en")
+        self.assertIsNone(cfg.page_header.even)
+        self.assertEqual(cfg.page_footer.all.center.text, "{page}")
+
+    def test_invalid_typography_is_an_error_not_a_silent_default(self):
+        """Substituting defaults for a mistyped running-head code would produce a
+        PDF missing what was asked for, explained only by a warning on stderr."""
+        settings_path = self.test_dir / "settings.yaml"
+        settings_path.write_text(
+            """
+typography:
+  page_header:
+    all:
+      left: "{no-such-code}"
+"""
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            load_typography(settings_path)
+        self.assertIn("Unknown header/footer code", str(ctx.exception))
+
+    def test_all_combined_with_odd_is_an_error(self):
+        settings_path = self.test_dir / "settings.yaml"
+        settings_path.write_text(
+            """
+typography:
+  page_footer:
+    all:
+      center: "{page}"
+    odd:
+      left: "{page}"
+"""
+        )
+        with self.assertRaises(ValidationError):
+            load_typography(settings_path)
+
     def test_returns_defaults_on_invalid_file(self):
         f = self.test_dir / "broken.yaml"
         f.write_text(":\n: not yaml")
@@ -525,6 +578,49 @@ class TestTransformXmlToTex(unittest.TestCase):
         self.assertIn(r"\documentclass[12pt,letterpaper]{book}", out)
         self.assertIn("Ezra SIL", out)
         self.assertIn("TeX Gyre Pagella", out)
+
+    def test_running_heads_are_built_into_the_page_style_preamble(self):
+        xml = b"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        f = self._create("p", "input.xml", xml)
+        typography = TypographyConfig.model_validate(
+            {
+                "page_header": {"odd": {"left": "{book-title}"}},
+                "page_footer": {"all": {"center": "{page}"}},
+            }
+        )
+
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=typography)
+
+        self.assertIn(r"\usepackage{fancyhdr}", out)
+        self.assertIn(r"\fancyhead[LO]{", out)
+        self.assertIn(r"\fancyfoot[C]{", out)
+
+    def test_no_running_heads_configured_emits_no_page_style(self):
+        xml = b"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        f = self._create("p", "input.xml", xml)
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=TypographyConfig())
+        self.assertNotIn("fancyhdr", out)
+
+    def test_document_language_fills_in_for_slots_that_declare_none(self):
+        xml = """<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
+        </tei:TEI>""".encode()
+        f = self._create("p", "input.xml", xml)
+        typography = TypographyConfig.model_validate(
+            {"page_header": {"all": {"left": "{book-title}"}}}
+        )
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=typography)
+        self.assertIn(r"\fancyhead[L]{{\textdir TRT\selectlanguage{hebrew} ", out)
 
     def test_layout_pairs_propagates_to_parallel_block(self):
         xml = """<?xml version="1.0"?>

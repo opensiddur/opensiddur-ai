@@ -109,6 +109,71 @@ on the system fall back to a sensible default automatically (`Ezra SIL` →
 independent of the PDF bookmark/outline depth, which is always 4 levels deep
 regardless of this setting.
 
+### Running heads and feet
+
+`typography.page_header` and `typography.page_footer` put content in the left,
+center and right of each page. Omit them and the book class's own page style is
+left alone.
+
+```yaml
+typography:
+  page_header:
+    odd:
+      left: "{book-title}"                                    # bare string = just text
+      right: {text: "Page {page}", language: en}
+    even:
+      left: {text: "{page-hebrew}", language: he}
+      center: {text: "Chapter {chapter-number}", language: en, if: "{chapter-number}"}
+  page_footer:
+    all:                                                      # same on every page
+      center: "{page}"
+```
+
+Each of `page_header` and `page_footer` takes either `all` — the same content on
+every page — or `odd` and/or `even` to differentiate them. Combining `all` with
+`odd` or `even` is an error.
+
+`left`, `center` and `right` are *physical* positions on the page, not logical
+ones: `left` is the left edge whichever way the text runs.
+
+Each position is either a bare string or a mapping with:
+
+- `text` — the template (see the codes below).
+- `language` — the slot's base direction, which decides the order its runs are
+  laid out in, and the font for content that declares nothing else. Defaults to
+  the document's own `xml:lang`; only Hebrew (`he`, `he-*`) versus everything
+  else is distinguished. Every run — literal text, a heading recorded in a mark,
+  the page number — carries its own direction inside that, so a mixed title like
+  "רות RUTH" reads correctly in a slot of either direction, and digits are never
+  reversed.
+- `if` — a second template. When it expands to nothing, the whole position is
+  dropped, literal text included, so `"Chapter {chapter-number}"` leaves no
+  orphaned "Chapter" on a page before the first chapter.
+
+Anything outside braces is literal text; `{{` and `}}` are literal braces. The
+codes are a closed list, and an unrecognized one is a settings error:
+
+| Code | Expands to |
+| --- | --- |
+| `{page}` | the page number as the document numbers it (roman in front matter) |
+| `{page-hebrew}` | the page number in Hebrew numerals |
+| `{document-title}` | the title from the TEI header, fixed for the whole document |
+| `{book-title}` | the head of the enclosing `tei:div[@type='book']` |
+| `{chapter-number}` | the `n` of the last `tei:milestone[@unit='chapter']` |
+| `{chapter-number-hebrew}` | the same, in Hebrew numerals |
+| `{head1}` … `{head4}` | the last heading at that level |
+| `{section-title}` | the last heading at any level |
+| `{book-title-alt}`, `{head1-alt}` … `{head4-alt}`, `{section-title-alt}` | the same, from the *second* parallel column |
+
+Everything but `{page}`, `{page-hebrew}` and `{document-title}` names whatever
+was in force at the *end* of the page, so a heading starting partway down a page
+names that page. The `-alt` codes are what let a running head name the second
+language of a parallel volume; in a non-parallel document they expand to
+nothing.
+
+Title pages never carry a running head or foot, nor do the blank pages inserted
+to keep a title page on a recto.
+
 ## Settings file versioning
 Note that this file is likely to change slightly in format as more output
 formats are introduced.
