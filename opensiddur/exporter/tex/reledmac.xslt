@@ -53,6 +53,13 @@
     <xsl:param name="table-of-contents" as="xs:boolean" select="false()"/>
     <xsl:param name="table-of-contents-depth" as="xs:integer" select="4"/>
 
+    <!-- Running heads and feet: a complete fancyhdr block built by
+         opensiddur/exporter/tex/running_heads.py from the settings.yaml
+         `typography.page_header`/`page_footer` sections. Empty when nothing is
+         configured, which leaves the book class's own page style alone. The
+         mark classes it reads are declared and inserted by this stylesheet. -->
+    <xsl:param name="page-style-preamble" as="xs:string?"/>
+
     <!-- How many parallel blocks one \Pages/\Columns typesets at a time. reledpar holds
          every chunk of a group in memory as a pair of boxes and refuses more than
          \maxchunks (5120) of them, so a whole humash — ~49000 blocks — cannot be one
@@ -139,6 +146,71 @@
         <xsl:text>  \def\textdir#1#2#3{}&#10;</xsl:text>
         <xsl:text>  \def\selectlanguage#1{}&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
+
+        <!-- ================================================================
+             Running heads and feet.
+
+             Every heading and chapter milestone records itself in a LaTeX mark
+             class, so a page style can ask what was in force on the page it is
+             typesetting. Marks inserted inside a reledmac \pstart do reach the
+             output routine, in single-text numbering and inside reledpar's
+             \Columns alike, so no aux-file round trip is needed.
+
+             The `Alt` classes carry the *second* parallel stream. Without them
+             only the first column's headings could ever reach a running head,
+             which would make an English running head impossible on a
+             Hebrew-primary parallel volume.
+
+             The classes are declared unconditionally — they cost nothing when
+             no running head is configured, and it keeps the preamble
+             deterministic.
+             ================================================================ -->
+        <xsl:text>\NewMarkClass{OSheadA}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadB}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadC}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadD}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadAny}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSbook}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSchapter}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadAAlt}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadBAlt}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadCAlt}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadDAlt}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSheadAnyAlt}&#10;</xsl:text>
+        <xsl:text>\NewMarkClass{OSbookAlt}&#10;</xsl:text>
+
+        <!-- The document's own title, for the {document-title} code. The TEI
+             header is dropped from the output but can still be read here. -->
+        <xsl:text>\newcommand{\OSDocumentTitle}{</xsl:text>
+        <xsl:value-of select="f:escape-tex(normalize-space(string-join((
+            /tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title[@type='main'][1],
+            //tei:titlePage//tei:titlePart[@type='main'][1])[1]//text(), '')))"/>
+        <xsl:text>}&#10;</xsl:text>
+
+        <xsl:text>\makeatletter&#10;</xsl:text>
+        <!-- Render #2 only when #1 expands to something. A slot whose marks are
+             not yet set then disappears entirely, literal text included, so
+             "Chapter {chapter-number}" leaves no orphaned "Chapter" on a page
+             before the first chapter. -->
+        <xsl:text>\newcommand{\OSHFIfNonEmpty}[2]{%&#10;</xsl:text>
+        <xsl:text>  \protected@edef\OSHF@test{#1}%&#10;</xsl:text>
+        <xsl:text>  \ifx\OSHF@test\@empty\else#2\fi}&#10;</xsl:text>
+        <!-- Hebrew numerals for a value that is only known at shipout (a chapter
+             mark). polyglossia's \hebrewnumeral requires an integer, so anything
+             else is passed through unchanged. The test is a Lua pattern using
+             [0-9] rather than %d: a percent sign would be a TeX comment and
+             would swallow the rest of the chunk. -->
+        <xsl:text>\newcommand{\OSHebrewNumber}[1]{%&#10;</xsl:text>
+        <xsl:text>  \edef\OSHF@num{#1}%&#10;</xsl:text>
+        <xsl:text>  \directlua{&#10;</xsl:text>
+        <xsl:text>    local s = "\luaescapestring{\OSHF@num}"&#10;</xsl:text>
+        <xsl:text>    if s:match("^[0-9]+$") then tex.sprint("\string\\hebrewnumeral{" .. s .. "}") else tex.sprint(s) end&#10;</xsl:text>
+        <xsl:text>  }}&#10;</xsl:text>
+        <xsl:text>\makeatother&#10;</xsl:text>
+
+        <!-- fancyhdr must load after hyperref. Empty unless the settings file
+             configures a running head or foot. -->
+        <xsl:value-of select="$page-style-preamble"/>
 
         <!-- Verse numbers rendered as superscripts at the start of each verse.
              Force LTR for digits even inside Hebrew RTL contexts. -->
@@ -389,6 +461,11 @@
         <xsl:variable name="is-hebrew" select="f:is-hebrew-lang(f:in-scope-lang(.))"/>
 
         <xsl:text>\begin{titlepage}&#10;</xsl:text>
+        <!-- A title page carries no running head or foot. The titlepage
+             environment sets this itself in the book class, but say it
+             explicitly: we redefine the `plain` page style, and this guarantee
+             should not rest on a class internal. -->
+        <xsl:text>\thispagestyle{empty}&#10;</xsl:text>
         <xsl:if test="$is-hebrew">
             <xsl:text>\begin{hebrew}&#10;</xsl:text>
         </xsl:if>
@@ -533,6 +610,7 @@
                 <xsl:with-param name="lang" select="$left-lang"/>
                 <xsl:with-param name="align-verses" select="false()"/>
                 <xsl:with-param name="single-pstart" select="true()"/>
+                <xsl:with-param name="stream" select="'primary'"/>
             </xsl:call-template>
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
@@ -542,6 +620,9 @@
                 <xsl:with-param name="lang" select="$right-lang"/>
                 <xsl:with-param name="align-verses" select="false()"/>
                 <xsl:with-param name="single-pstart" select="true()"/>
+                <!-- The second column records into the `Alt` mark classes so a
+                     running head can name either language's heading. -->
+                <xsl:with-param name="stream" select="'alt'"/>
             </xsl:call-template>
             <xsl:text>\end{Rightside}&#10;</xsl:text>
 
@@ -579,6 +660,10 @@
         <!-- When true, force exactly one \pstart...\pend for the entire stream
              (used for parallel blocks where verse-level pstart pairing is not desired). -->
         <xsl:param name="single-pstart" as="xs:boolean" select="false()"/>
+        <!-- Which family of running-head mark classes this stream records into:
+             'primary' for a single text or the first parallel column, 'alt' for
+             the second column. See the mark declarations in the preamble. -->
+        <xsl:param name="stream" as="xs:string" select="'primary'"/>
 
         <xsl:variable name="leaves" as="node()*">
             <xsl:apply-templates select="$nodes" mode="leaves"/>
@@ -618,6 +703,18 @@
                              (e.g. a psalm quoted in a liturgical text) the surrounding
                              tei:head already names the section and a chapter number would be
                              noise, so render nothing. -->
+                        <!-- The running-head mark is recorded either way: a header
+                             asking for the chapter number wants it even where the
+                             number itself is deliberately not printed. It must not
+                             open a \pstart of its own — that would desync the two
+                             sides' \pstart counts under reledpar — but a mark
+                             between \pend and \pstart is harmless. -->
+                        <!-- One class for both streams, unsuffixed: parallel columns
+                             carry the same chapter numbers, so there is nothing for a
+                             per-stream class to distinguish. -->
+                        <xsl:text>\InsertMark{OSchapter}{</xsl:text>
+                        <xsl:value-of select="f:escape-tex(string(@n))"/>
+                        <xsl:text>}</xsl:text>
                         <xsl:choose>
                             <xsl:when test="ancestor::tei:div[@type='book']">
                                 <xsl:if test="not($in-pstart)">
@@ -818,7 +915,9 @@
                                         <xsl:text>\pstart </xsl:text>
                                     </xsl:otherwise>
                                 </xsl:choose>
-                                <xsl:call-template name="heading"/>
+                                <xsl:call-template name="heading">
+                                    <xsl:with-param name="stream" select="$stream"/>
+                                </xsl:call-template>
                                 <xsl:text>\par&#10;</xsl:text>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="true()"/>
@@ -831,7 +930,9 @@
                                 <!-- The heading gets its own paragraph in the numbered stream,
                                      excluded from line numbering. -->
                                 <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
-                                <xsl:call-template name="heading"/>
+                                <xsl:call-template name="heading">
+                                    <xsl:with-param name="stream" select="$stream"/>
+                                </xsl:call-template>
                                 <xsl:text>&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="false()"/>
@@ -912,8 +1013,28 @@
     <!-- Render one f:head sentinel (the context node) as a heading macro plus its PDF
          outline entry. Caller is responsible for the surrounding \pstart/\pend. -->
     <xsl:template name="heading">
+        <xsl:param name="stream" as="xs:string" select="'primary'"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
         <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
+
+        <!-- Record the heading for the running heads before setting it, so a
+             head at the very top of a page is already in force there. The
+             payload is the flattened title with per-run direction applied, so a
+             mixed title like "רות RUTH" reads correctly in a slot of either
+             direction; see f:emit-bidi-mark. -->
+        <xsl:variable name="mark-suffix" select="if ($stream = 'alt') then 'Alt' else ''"/>
+        <xsl:variable name="mark-title" select="f:emit-bidi-mark(string(@title))"/>
+        <xsl:text>\InsertMark{OShead</xsl:text>
+        <xsl:value-of select="f:heading-suffix(xs:integer(@level))"/>
+        <xsl:value-of select="$mark-suffix"/>
+        <xsl:text>}{</xsl:text><xsl:value-of select="$mark-title"/><xsl:text>}</xsl:text>
+        <xsl:text>\InsertMark{OSheadAny</xsl:text><xsl:value-of select="$mark-suffix"/>
+        <xsl:text>}{</xsl:text><xsl:value-of select="$mark-title"/><xsl:text>}</xsl:text>
+        <xsl:if test="@is-book = 'true'">
+            <xsl:text>\InsertMark{OSbook</xsl:text><xsl:value-of select="$mark-suffix"/>
+            <xsl:text>}{</xsl:text><xsl:value-of select="$mark-title"/><xsl:text>}</xsl:text>
+        </xsl:if>
+
         <xsl:text>\OShead</xsl:text>
         <xsl:value-of select="f:heading-suffix(xs:integer(@level))"/>
         <xsl:text>{</xsl:text>
@@ -1017,6 +1138,9 @@
                                $head//text()[not(ancestor::tei:note)], ''))"/>
             <xsl:attribute name="xml:lang" select="f:section-title-lang($head)"/>
             <xsl:attribute name="level" select="$level"/>
+            <!-- Drives the {book-title} running-head code: in a Bible export the
+                 book is a div[@type='book'] whose head names it. -->
+            <xsl:attribute name="is-book" select="$head/parent::tei:div/@type = 'book'"/>
             <!-- The head's own content is carried through so it can be rendered in
                  mode="emit" rather than flattened: a title like
                  <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
@@ -1573,6 +1697,44 @@
                 </xsl:matching-substring>
                 <xsl:non-matching-substring>
                     <xsl:sequence select="f:escape-tex(.)"/>
+                </xsl:non-matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:sequence select="string-join($parts, '')"/>
+    </xsl:function>
+
+    <!-- A running-head mark, which the settings file can place in a slot of
+         either direction, so neither direction may be assumed.
+
+         \textdir forces a direction rather than running the bidi algorithm, so
+         a run left bare is reversed whenever the slot runs the other way: a
+         Hebrew book title reversed in an English header, "RUTH" reversed in a
+         Hebrew one. Hebrew runs therefore take \texthebrew — which also selects
+         the Hebrew font, without which a Latin-font slot has no glyphs for them
+         at all — and every other run is wrapped LTR.
+
+         Each run is wrapped whole. f:emit-bidi-text is not reused for the Latin
+         side because it joins only the words of a siglum, so "A Section" would
+         become two separate embeddings and read "Section A" in an RTL slot.
+         f:format-section-title is not reused either: it wraps a whole
+         non-Hebrew title in one LTR group, which is harmless in a PDF bookmark
+         (where \textdir is gobbled) but reverses embedded Hebrew on a visible
+         page. -->
+    <xsl:function name="f:emit-bidi-mark" as="xs:string">
+        <xsl:param name="s" as="xs:string"/>
+        <xsl:variable name="parts" as="xs:string*">
+            <xsl:analyze-string select="$s"
+                                regex="[&#x0590;-&#x05FF;&#xFB1D;-&#xFB4F;]+(\s+[&#x0590;-&#x05FF;&#xFB1D;-&#xFB4F;]+)*">
+                <xsl:matching-substring>
+                    <xsl:sequence select="concat('\texthebrew{', f:escape-tex(.), '}')"/>
+                </xsl:matching-substring>
+                <xsl:non-matching-substring>
+                    <!-- Whitespace separating two runs carries no direction of
+                         its own; wrapping it would only add empty groups. -->
+                    <xsl:if test="normalize-space(.)">
+                        <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}',
+                                                     f:escape-tex(.), '}')"/>
+                    </xsl:if>
                 </xsl:non-matching-substring>
             </xsl:analyze-string>
         </xsl:variable>

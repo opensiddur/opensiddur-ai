@@ -15,6 +15,7 @@ from opensiddur.exporter.linear import (
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
+from opensiddur.exporter.tex.running_heads import RunningHeadConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 
@@ -114,6 +115,11 @@ class TypographyConfig(BaseModel):
     paper: PaperType = PaperType.LETTERPAPER
     fontsize: str = "11pt"
     table_of_contents: TableOfContentsConfig = Field(default_factory=TableOfContentsConfig)
+    # Running heads and feet. Empty by default, which leaves the book class's
+    # own page style alone. See opensiddur/exporter/tex/running_heads.py for
+    # the closed list of codes a slot may use.
+    page_header: RunningHeadConfig = Field(default_factory=RunningHeadConfig)
+    page_footer: RunningHeadConfig = Field(default_factory=RunningHeadConfig)
 
 
 class SettingsYaml(BaseModel):

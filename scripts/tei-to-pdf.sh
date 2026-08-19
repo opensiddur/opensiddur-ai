@@ -9,7 +9,8 @@
 #
 # The optional ``-s <settings-file>`` flag is forwarded to *both* stages:
 #   - the compiler reads ``priority``, ``parallel``, ``annotations``;
-#   - the PDF stage reads ``typography`` (fonts, layout, paper, fontsize).
+#   - the PDF stage reads ``typography`` (fonts, layout, paper, fontsize,
+#     running heads and feet).
 #
 # Usage:
 #   ./tei-to-pdf.sh [-s <settings-file>] [--keep-tex | --tex-output <path>] <project> <file_name> <output-file>

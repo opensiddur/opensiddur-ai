@@ -7,7 +7,7 @@ license, credit, and source bibliographic metadata from all referenced source
 files, then drives the XSLT transformation that produces a LuaLaTeX document
 ready for ``latexmk -lualatex``.
 
-Typography settings (font, paper, layout, fontsize) are pulled from the same
+Typography settings (font, paper, layout, fontsize, running heads) are pulled from the same
 ``settings.yaml`` the compiler uses; only the ``typography`` section is read
 here. When no settings file is supplied, sensible defaults from
 ``TypographyConfig`` are used.
@@ -29,6 +29,7 @@ sys.path.insert(0, str(project_root))
 from opensiddur.common.xslt import xslt_transform_string  # noqa: E402
 from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 from opensiddur.exporter.settings import TypographyConfig  # noqa: E402
+from opensiddur.exporter.tex.running_heads import build_page_style_tex  # noqa: E402
 
 XSLT_FILE = Path(__file__).parent / "reledmac.xslt"
 
@@ -311,22 +312,30 @@ def load_typography(settings_file: Optional[Path]) -> TypographyConfig:
     the full SettingsYaml — the compiler stage already does that — so that
     the PDF stage can run even when the settings file references projects
     not present in this checkout.
+
+    A typography section that is present but invalid is an error, not a
+    fallback: silently substituting defaults for, say, a mistyped running-head
+    code would produce a PDF that is simply missing what was asked for, with
+    nothing but a warning to say why. Only being unable to read or parse the
+    file at all falls back to defaults.
     """
     if settings_file is None:
         return TypographyConfig()
-    try:
-        import yaml
+    import yaml
 
+    try:
         with open(settings_file, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-        return TypographyConfig.model_validate(data.get("typography", {}) or {})
-    except Exception as e:
+            data = yaml.safe_load(f)
+    except (OSError, yaml.YAMLError) as e:
         print(
             f"Warning: could not load typography from {settings_file}: {e}; "
             "using defaults",
             file=sys.stderr,
         )
         return TypographyConfig()
+    if not isinstance(data, dict):
+        return TypographyConfig()
+    return TypographyConfig.model_validate(data.get("typography") or {})
 
 
 def transform_xml_to_tex(
@@ -368,6 +377,15 @@ def transform_xml_to_tex(
         if typography is None:
             typography = load_typography(settings_file)
 
+        # Running-head slots that declare no language of their own follow the
+        # document's, so their direction is right without being restated.
+        root_language = etree.parse(input_file).getroot().get(
+            "{http://www.w3.org/XML/1998/namespace}lang"
+        )
+        page_style_tex = build_page_style_tex(
+            typography.page_header, typography.page_footer, root_language
+        )
+
         result = xslt_transform_string(
             Path(xslt_file),
             input_xml,
@@ -386,10 +404,11 @@ def transform_xml_to_tex(
                 "hebrew-font": typography.hebrew_font,
                 "latin-font": typography.latin_font,
                 "layout": typography.layout.value,
-                    "paper": typography.paper.value,
+                "paper": typography.paper.value,
                 "fontsize": typography.fontsize,
                 "table-of-contents": typography.table_of_contents.enabled,
                 "table-of-contents-depth": typography.table_of_contents.depth,
+                "page-style-preamble": page_style_tex,
             },
         )
 
