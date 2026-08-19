@@ -97,7 +97,7 @@ typography:
   # and `even` instead to differentiate them. `left`, `center` and `right` are
   # *physical* page positions, so they do not swap with the text direction.
   #
-  # The left slot names the division and its chapter, the center the reading.
+  # The left slot names the reading, the center the division it sits in.
   #
   #   {head2}  the five books, then הפטרות / מגילות / קריאי מועד
   #   {head3}  the reading itself — the parsha, or the individual haftarah,
@@ -122,8 +122,8 @@ typography:
   # number is on the page already.
   page_header:
     all:
-      left: {text: "{head2}", language: he}
-      center: {text: "{head3}", language: he}
+      left: {text: "{head3}", language: he}
+      center: {text: "{head2}", language: he}
       right: {text: "{page-hebrew}", language: he}
   page_footer:
     all:
