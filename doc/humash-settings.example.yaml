@@ -86,3 +86,18 @@ typography:
   layout: pairs
   paper: letterpaper
   fontsize: "11pt"
+
+  # Running heads and feet. `all` puts the same content on every page; use `odd`
+  # and `even` instead to differentiate them. `left`, `center` and `right` are
+  # *physical* page positions, so they do not swap with the text direction.
+  #
+  # The chapter number is set in Latin digits to match the \chno the body prints
+  # at the head of each chapter; switch to {chapter-number-hebrew} for gematria.
+  page_header:
+    all:
+      left: {text: "{book-title} {chapter-number}", language: he}
+      center: {text: "{document-title}", language: he}
+      right: {text: "{page-hebrew}", language: he}
+  page_footer:
+    all:
+      center: {text: "{page}", language: en}
