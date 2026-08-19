@@ -85,8 +85,15 @@ def _escape_tex(s: str) -> str:
 
 
 # Hebrew block plus the Hebrew presentation forms, matching the range
-# f:emit-bidi-mark uses in reledmac.xslt.
-_HEBREW_RUN = re.compile(r"[֐-׿יִ-ﭏ]+(?:\s+[֐-׿יִ-ﭏ]+)*")
+# f:emit-bidi-mark uses in reledmac.xslt. Hebrew segments joined by whitespace
+# or connecting punctuation are one run: a paired parsha name is written with
+# an en-dash — תַזְרִיעַ–מְצֹרָע — which is outside the Hebrew block, and splitting on
+# it would make the dash its own LTR embedding and let a neighbouring chapter
+# number reorder into the middle of the name. (The maqaf of לֶךְ־לְךָ is inside
+# the block and was never at risk.)
+_HEBREW = "֐-׿יִ-ﭏ"
+_HEBREW_JOINER = r"[\s‐-―/,.:;-]"
+_HEBREW_RUN = re.compile(f"[{_HEBREW}]+(?:{_HEBREW_JOINER}*[{_HEBREW}]+)*")
 
 
 def _emit_bidi_literal(s: str) -> str:

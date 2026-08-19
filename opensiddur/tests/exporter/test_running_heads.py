@@ -178,6 +178,26 @@ class TestBidiLiterals(unittest.TestCase):
             r"\LastMark{OSheadA} \LastMark{OSheadB}",
         )
 
+    def test_hebrew_joined_by_an_en_dash_stays_one_run(self):
+        """A paired parsha name uses an en-dash, outside the Hebrew block.
+        Splitting on it would make the dash its own LTR embedding and let a
+        neighbouring chapter number reorder into the middle of the name."""
+        self.assertEqual(
+            expand_template("\u05ea\u05b7\u05d6\u05b0\u05e8\u05b4\u05d9\u05e2\u05b7\u2013\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2"),
+            "\\texthebrew{\u05ea\u05b7\u05d6\u05b0\u05e8\u05b4\u05d9\u05e2\u05b7\u2013\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2}",
+        )
+
+    def test_hebrew_joined_by_a_space_and_a_dash_stays_one_run(self):
+        self.assertEqual(
+            expand_template("\u05d0\u05b7\u05d7\u05b2\u05e8\u05b5\u05d9 \u05de\u05d5\u05b9\u05ea\u2013\u05e7\u05b0\u05d3\u05b9\u05e9\u05c1\u05b4\u05d9\u05dd"),
+            "\\texthebrew{\u05d0\u05b7\u05d7\u05b2\u05e8\u05b5\u05d9 \u05de\u05d5\u05b9\u05ea\u2013\u05e7\u05b0\u05d3\u05b9\u05e9\u05c1\u05b4\u05d9\u05dd}",
+        )
+
+    def test_a_digit_after_hebrew_is_still_its_own_run(self):
+        """The joiner must not swallow the chapter number into the name."""
+        out = expand_template("\u05e4\u05e8\u05e7 14")
+        self.assertEqual(out, "\\texthebrew{\u05e4\u05e8\u05e7}" + LTR + " 14}")
+
     def test_a_latin_literal_beside_the_page_number_reads_in_order(self):
         """Regression: "p{page}" in a Hebrew slot used to read "1p"."""
         out = expand_template("p{page}")

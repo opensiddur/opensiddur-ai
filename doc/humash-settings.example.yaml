@@ -97,28 +97,33 @@ typography:
   # and `even` instead to differentiate them. `left`, `center` and `right` are
   # *physical* page positions, so they do not swap with the text direction.
   #
-  # {head3} names the reading: the parsha in the five books, and the individual
-  # haftarah or festival reading in the sections after them. Compiled from
-  # index.xml the levels run
-  #   1 חמש  →  2 book / הפטרות / מגילות / קריאי מועד  →  3 the reading
-  # and in the haftarot a 4th level for the rite (מנהג אשכנז / מנהג ספרד).
+  # The left slot names the division and its chapter, the center the reading.
   #
-  # None of the other codes does this. {book-title} reads div[@type='book'],
-  # which only the five books are, so it names the last book seen and stays
-  # stuck on דברים through the whole back half of the volume. {head2} names the
-  # division but never the reading. {section-title} takes the innermost heading,
-  # which is the reading in the books but drops to the *rite* on any haftarah
-  # page that has one.
+  #   {head2}  the five books, then הפטרות / מגילות / קריאי מועד
+  #   {head3}  the reading itself — the parsha, or the individual haftarah,
+  #            megillah or festival reading
   #
-  # Being a level, this depends on the entry point: compiling a single book file
-  # on its own puts that book's head at level 1 and the parsha at level 2.
+  # {book-title} is deliberately *not* used for the division. It reads
+  # div[@type='book'], which only the five books are, so it names the last book
+  # seen and stays stuck on דברים through the whole back half of the volume.
+  # {head2} moves on to הפטרות at the start of the haftarot. {section-title} is
+  # likewise wrong for the reading: it takes the innermost heading, which drops
+  # to the *rite* (מנהג אשכנז / מנהג ספרד) on any haftarah page carrying one.
   #
-  # The chapter number is set in Latin digits to match the \chno the body prints
-  # at the head of each chapter; switch to {chapter-number-hebrew} for gematria.
+  # Being levels, these depend on the entry point — compiling a single book file
+  # on its own puts that book's head at level 1 and the parsha at level 2 — so
+  # they are right for index.xml specifically.
+  #
+  # There is deliberately no {chapter-number}. It is the chapter of whatever book
+  # the page is drawn from, which does not pair with either slot: beside the
+  # parsha it names the book's chapter rather than the parsha's, and beside the
+  # division it reads "הפטרות 5", the chapter of a prophetic book the division
+  # does not name. The body prints \chno at the head of each chapter, so the
+  # number is on the page already.
   page_header:
     all:
-      left: {text: "{head3} {chapter-number}", language: he}
-      center: {text: "{document-title}", language: he}
+      left: {text: "{head2}", language: he}
+      center: {text: "{head3}", language: he}
       right: {text: "{page-hebrew}", language: he}
   page_footer:
     all:

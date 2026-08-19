@@ -1730,8 +1730,14 @@
     <xsl:function name="f:emit-bidi-mark" as="xs:string">
         <xsl:param name="s" as="xs:string"/>
         <xsl:variable name="parts" as="xs:string*">
+            <!-- Hebrew segments joined by whitespace or connecting punctuation are
+                 one run. A paired parsha name is written with an en-dash —
+                 תַזְרִיעַ–מְצֹרָע — which is outside the Hebrew block, so splitting on it
+                 would make the dash its own LTR embedding and let a neighbouring
+                 chapter number reorder into the middle of the name. (The maqaf of
+                 לֶךְ־לְךָ is inside the block and was never at risk.) -->
             <xsl:analyze-string select="$s"
-                                regex="[&#x0590;-&#x05FF;&#xFB1D;-&#xFB4F;]+(\s+[&#x0590;-&#x05FF;&#xFB1D;-&#xFB4F;]+)*">
+                                regex="[&#x0590;-&#x05FF;&#xFB1D;-&#xFB4F;]+([\s&#x2010;-&#x2015;/,.:;-]*[&#x0590;-&#x05FF;&#xFB1D;-&#xFB4F;]+)*">
                 <xsl:matching-substring>
                     <xsl:sequence select="concat('\texthebrew{', f:escape-tex(.), '}')"/>
                 </xsl:matching-substring>

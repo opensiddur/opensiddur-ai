@@ -1089,6 +1089,28 @@ class TestStructuralElements(unittest.TestCase):
         self.assertIn(r"\InsertMark{OSbook}{\texthebrew{רות}", out)
         self.assertIn(r"{\textdir TLT\selectlanguage{english}RUTH}", out)
 
+    def test_a_hyphenated_hebrew_heading_stays_one_run(self):
+        """A paired parsha name is written with an en-dash, which is outside the
+        Hebrew block. Splitting on it would make the dash its own LTR embedding
+        and let a neighbouring chapter number reorder into the middle of the
+        name."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div><tei:head>\u05ea\u05b7\u05d6\u05b0\u05e8\u05b4\u05d9\u05e2\u05b7\u2013\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2</tei:head>
+              <tei:p>\u05d8\u05e7\u05e1\u05d8</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            "\\InsertMark{OSheadA}{\\texthebrew{"
+            "\u05ea\u05b7\u05d6\u05b0\u05e8\u05b4\u05d9\u05e2\u05b7\u2013"
+            "\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2}}",
+            out,
+        )
+        self.assertNotIn("selectlanguage{english}\u2013", out)
+
     def test_div_head_emits_pdf_bookmark(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
