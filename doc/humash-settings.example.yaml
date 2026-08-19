@@ -97,23 +97,27 @@ typography:
   # and `even` instead to differentiate them. `left`, `center` and `right` are
   # *physical* page positions, so they do not swap with the text direction.
   #
-  # {section-title} is the innermost heading in force, so the head names the
-  # parsha in the five books and the individual haftarah or megillah in the
-  # sections after them.
+  # {head3} names the reading: the parsha in the five books, and the individual
+  # haftarah or festival reading in the sections after them. Compiled from
+  # index.xml the levels run
+  #   1 חמש  →  2 book / הפטרות / מגילות / קריאי מועד  →  3 the reading
+  # and in the haftarot a 4th level for the rite (מנהג אשכנז / מנהג ספרד).
   #
-  # Neither of the more obvious codes does that. {book-title} reads
-  # div[@type='book'], which only the five books are, so it would name the last
-  # book seen and stay stuck on דברים through the whole back half of the volume.
-  # {head2} tracks the level-2 divisions — the books plus הפטרות / מגילות /
-  # קריאי מועד — which is right as far as it goes, but never names the reading
-  # itself, and it depends on the entry point: compiling one book file on its
-  # own puts that book's head at level 1. {section-title} is level-independent.
+  # None of the other codes does this. {book-title} reads div[@type='book'],
+  # which only the five books are, so it names the last book seen and stays
+  # stuck on דברים through the whole back half of the volume. {head2} names the
+  # division but never the reading. {section-title} takes the innermost heading,
+  # which is the reading in the books but drops to the *rite* on any haftarah
+  # page that has one.
+  #
+  # Being a level, this depends on the entry point: compiling a single book file
+  # on its own puts that book's head at level 1 and the parsha at level 2.
   #
   # The chapter number is set in Latin digits to match the \chno the body prints
   # at the head of each chapter; switch to {chapter-number-hebrew} for gematria.
   page_header:
     all:
-      left: {text: "{section-title} {chapter-number}", language: he}
+      left: {text: "{head3} {chapter-number}", language: he}
       center: {text: "{document-title}", language: he}
       right: {text: "{page-hebrew}", language: he}
   page_footer:
