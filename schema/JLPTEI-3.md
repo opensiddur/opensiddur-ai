@@ -188,6 +188,73 @@ only at `@corresp` — ignore it entirely. Which numbering a reader sees is a re
   divergence, not something to be shifted into alignment.
 - `opensiddur/exporter/validate_versification.py` checks both of these across the Tanakh projects.
 
+### Sub-verse scope
+
+Liturgy quotes less than a verse constantly. Kiddush opens on the second half of Genesis 1:31;
+the third-year haftarah of Emor runs from Nachum 2:2b to 2:3a; the Thirteen Attributes begin
+partway through Exodus 34:6 and stop partway through 34:7. A verse URN cannot say any of that,
+and `tei:anchor` does not reach — anchored points have no canonical references.
+
+Two milestone units divide a verse. Each hangs its URN one path component below the verse's, so
+no new URN grammar is needed: `urn:x-opensiddur:text:bible:genesis/1/31/b` is an ordinary URN
+one level deeper.
+
+| unit | `@corresp` | `@n` | placed |
+|---|---|---|---|
+| `half-verse` | verse URN + `/a` or `/b` | `a` or `b` | from the accents, mechanically |
+| `verse-part` | verse URN + `/<name>` | the name | from a declared table |
+
+```xml
+<tei:milestone unit="verse" n="31" corresp="urn:x-opensiddur:text:bible:genesis/1/31"/>
+<tei:milestone unit="half-verse" n="a" corresp="urn:x-opensiddur:text:bible:genesis/1/31/a"/>
+וַיַּרְא אֱלֹהִים אֵת כׇּל אֲשֶׁר עָשָׂה וְהִנֵּה טוֹב מְאֹ֑ד
+<tei:milestone unit="half-verse" n="b" corresp="urn:x-opensiddur:text:bible:genesis/1/31/b"/>
+וַיְהִי עֶרֶב וַיְהִי בֹקֶר
+<tei:milestone unit="verse-part" n="yom_hashishi"
+               corresp="urn:x-opensiddur:text:bible:genesis/1/31/yom_hashishi"/>
+יוֹם הַשִּׁשִּׁי׃
+```
+
+**A half-verse is the accentual division of the verse**, at the etnachta: `a` from the head of
+the verse to the accent inclusive, `b` from the next word to the end. This is what a citation
+means by "2:2b", and because it is read off the text it needs no curation — every accented
+Hebrew Tanakh project carries it on every verse that has one.
+
+**A verse-part is any other break**, at a word boundary the accents do not mark. It is named by
+the transliterated first word of the part, exactly as a division of a poem is
+(`yonah_matzah/hayom` above), and the name **may not contain `-`**, which marks a range. Parts
+cannot be derived, so they are declared in `opensiddur/common/subverse.py` and every Tanakh
+importer places them. Because a part's scope runs to the next sub-verse milestone, a passage
+that stops in the middle of a verse needs a part declared where the *remainder* begins too:
+`exodus/34/7/lo_yenakeh` exists so that `exodus/34/7/venakeh` ends where the recitation does.
+
+The two units are separate unit-spaces and neither ends the other's scope: the Thirteen
+Attributes close one word past the etnachta of Exodus 34:7, so a named part really does straddle
+the accentual boundary. Neither ends the verse containing it either.
+
+#### What sub-verse URNs do not cover
+
+- **A break inside a word or inside a maqqef-joined unit.** The words a maqqef joins are read as
+  one, and nothing may be placed between them.
+- **A break inside a `tei:choice`.** A ketiv and a qere are two readings of one word, not two
+  words. A boundary at the *head* of a choice is fine — the milestone goes before the element.
+- **A verse whose division differs by variant.** Exodus 20:2 has its etnachta in one place under
+  ta'am tachton and another under ta'am elyon, so it has no one accentual division and gets no
+  halves. A URN must denote the same words wherever it resolves.
+- **A verse with no etnachta**, which simply has no halves. Declare a verse-part if such a verse
+  ever needs a break.
+- **Psalms, Proverbs and Job where ole-we-yored governs.** There the etnachta is not the primary
+  division, so verses carrying an ole are left undivided rather than divided at the wrong point.
+
+**A project need not carry them.** A translation has no accents and can place no half-verses. A
+reference to a division a project lacks resolves to the division containing it — the whole verse
+— so the compiled text covers more than the reference asks for. That is deliberate, and it is
+the behaviour there was before sub-verse URNs existed; what is new is that it is never silent.
+The compiler logs it and `opensiddur/exporter/validate_urn_references.py` reports every such
+reference ahead of a build. Where a reading is printed for a human, keep the instruction beside
+the text as well ("מתחילים מאמצע הפסוק"): in a volume set from a project with no half-verses, it
+is the only thing that says where to stop.
+
 #### Contributors and contributor URNs
 Contributions are credited in the file header using `tei:respStmt` entries, with a contributor URN stored in `tei:name/@ref`.
 
@@ -574,7 +641,31 @@ Two types of inclusions are supported. The intended type is indicated by the `ty
 `target` attributes may reference ranges, such as `urn:x-opensiddur:text:bible:genesis/1/1-1/3`, as long as the reference
 does not cross hierarchical boundaries or files. The refererence may entirely contain XML hierarchy or other files.
 
-Note for range references that the start of the range is interpreted at the same hierarchical level as the end of the range. In the example above `1/1` refers to chapter 1, verse 1 and `1/3` therefore refers to chapter 1, verse 3. The following is illegal: `urn:x-opensiddur:text:bible:genesis/1-2/3`. If you want to express "from chapter 1 to chapter 2, verse 3", the correct reference would be: `urn:x-opensiddur:text:bible:genesis/1/1-2/3`.
+A range is written `START-END`, and the end has two forms.
+
+**Relative** — an end that does not begin with `/` replaces that many trailing components of the
+start, which leaves it at the start's own level. In
+`urn:x-opensiddur:text:bible:genesis/1/1-2/3`, `1/1` is chapter 1, verse 1 and `2/3` is
+therefore chapter 2, verse 3.
+
+**Absolute** — an end that begins with `/` replaces the whole path below the namespace-and-work
+component, so the two ends need not sit at the same level:
+
+| range | means |
+|---|---|
+| `…:genesis/1/1-2` | Genesis 1:1 through 1:2 |
+| `…:genesis/1/1-2/3` | Genesis 1:1 through 2:3 |
+| `…:nahum/2/2/b-2/3/a` | the second half of Nahum 2:2 through the first half of 2:3 |
+| `…:nahum/2/2/b-/2/5` | the second half of Nahum 2:2 through the end of 2:5 |
+| `…:genesis/1/1-/3` | Genesis 1:1 through the end of chapter 3 |
+
+**Use the absolute form whenever the two ends are at different levels.** The relative form
+cannot express that and will name a different point instead: `…:nahum/2/2/b-2/5` reads as
+"Nahum 2:2, half 5", not "Nahum 2:2b through 2:5". A relative end *deeper* than the start it
+replaces — `…:nahum/2/2-2/3/a` — is rejected outright; state it as `…:nahum/2/2-/2/3/a`.
+
+Since the absolute form keeps the start's namespace-and-work component, neither form can cross
+works, which is what keeps a range inside one file.
 
 ### Annotations
 

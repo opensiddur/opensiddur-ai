@@ -5,14 +5,14 @@ from typing import Optional
 import unittest
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 from lxml import etree
 from opensiddur.exporter.compiler import CompilerProcessor, JLPTEI_NAMESPACE
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
 from opensiddur.exporter.linear import LinearData, reset_linear_data, get_linear_data
 from opensiddur.exporter.refdb import Reference, ReferenceDatabase, UrnMapping
-from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange
+from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange, split_range
 
 
 class TestCompilerProcessorWithFiles(unittest.TestCase):
@@ -2069,6 +2069,81 @@ class TestCompilerTranscludeTextOnly(unittest.TestCase):
         children_tags = [c.tag for c in list(out)]
         self.assertIn(f"{{{self.TEI_NS}}}p", [gc.tag for c in list(out) for gc in list(c.iter())])
         self.assertNotIn(f"{{{self.TEI_NS}}}TEI", children_tags)
+
+
+class TestSubverseCoarsening(unittest.TestCase):
+    """A reference below the verse falls back on the verse where no project divides finer."""
+
+    TEI_NS = "http://www.tei-c.org/ns/1.0"
+    VERSE = "urn:x-opensiddur:text:bible:genesis/1/31"
+
+    def _processor(self):
+        root = etree.Element(f"{{{self.TEI_NS}}}TEI", nsmap={"tei": self.TEI_NS, "j": JLPTEI_NAMESPACE})
+        return CompilerProcessor("p", "root.xml", linear_data=_linear_data_with_root(root))
+
+    def _resolver_carrying(self, *urns):
+        """A resolver that knows only `urns`, all in project 'p'."""
+        known = set(urns)
+
+        def resolve(urn):
+            actual = urn.rsplit("@", 1)[0] if "@" in urn else urn
+            if actual not in known:
+                return []
+            return [ResolvedUrn(project="p", file_name="genesis.xml", urn=actual,
+                                element_path="/a", end_element_path="/b")]
+
+        resolver = Mock()
+        resolver.resolve_range.side_effect = lambda urn: (
+            resolve(urn) if split_range(urn) is None else self._resolve_range(urn, resolve)
+        )
+        return resolver
+
+    @staticmethod
+    def _resolve_range(urn, resolve):
+        start_urn, end_urn = split_range(urn)
+        start, end = resolve(start_urn), resolve(end_urn)
+        if not start or not end:
+            return []
+        return [ResolvedUrnRange(start=start[0], end=end[0])]
+
+    def test_falls_back_to_the_verse_when_no_project_has_the_half(self):
+        proc = self._processor()
+        proc._urn_resolver = self._resolver_carrying(self.VERSE)
+
+        with self.assertLogs("opensiddur.exporter.compiler", level="WARNING") as logs:
+            result = proc._get_start_and_end_from_ranges(f"{self.VERSE}/b")
+
+        self.assertEqual(result.start.urn, self.VERSE)
+        self.assertIn(f"{self.VERSE}/b", "".join(logs.output))
+        self.assertIn("more text than the reference asks for", "".join(logs.output))
+
+    def test_uses_the_half_when_a_project_has_it(self):
+        proc = self._processor()
+        proc._urn_resolver = self._resolver_carrying(self.VERSE, f"{self.VERSE}/b")
+
+        result = proc._get_start_and_end_from_ranges(f"{self.VERSE}/b")
+
+        self.assertEqual(result.start.urn, f"{self.VERSE}/b")
+
+    def test_a_range_below_the_verse_coarsens_at_both_ends(self):
+        proc = self._processor()
+        proc._urn_resolver = self._resolver_carrying(
+            "urn:x-opensiddur:text:bible:nahum/2/2", "urn:x-opensiddur:text:bible:nahum/2/3")
+
+        with self.assertLogs("opensiddur.exporter.compiler", level="WARNING"):
+            result = proc._get_start_and_end_from_ranges(
+                "urn:x-opensiddur:text:bible:nahum/2/2/b-2/3/a")
+
+        self.assertEqual(result.start.urn, "urn:x-opensiddur:text:bible:nahum/2/2")
+        self.assertEqual(result.end.urn, "urn:x-opensiddur:text:bible:nahum/2/3")
+
+    def test_a_reference_to_nothing_at_all_still_raises(self):
+        """Coarsening is for a division a project lacks, not for a URN that does not exist."""
+        proc = self._processor()
+        proc._urn_resolver = self._resolver_carrying("urn:x-opensiddur:text:bible:exodus/1/1")
+
+        with self.assertRaises(ValueError):
+            proc._get_start_and_end_from_ranges(f"{self.VERSE}/b")
 
 
 class TestCompilerMain(unittest.TestCase):

@@ -219,11 +219,16 @@ def _instruction(text: str) -> str:
     return f'<tei:note type="instruction" xml:lang="he">{_escape(text)}</tei:note>'
 
 
+def _verse_citation(ref: VerseRef) -> str:
+    """"<chapter>:<verse>", with the half after it where the reading names one — "2:2b"."""
+    return f"{ref.chapter}:{ref.verse}{ref.half or ''}"
+
+
 def _citation_range(book: str, start: VerseRef, end: VerseRef) -> str:
     """"<book> <chapter>:<verse>[–<chapter>:<verse>]" for one contiguous range."""
     book_he = SLUG_TO_HEBREW_ANY_BOOK.get(book, book)
-    start_ref = f"{start.chapter}:{start.verse}"
-    end_ref = f"{end.chapter}:{end.verse}"
+    start_ref = _verse_citation(start)
+    end_ref = _verse_citation(end)
     return f"{book_he} {start_ref if start == end else f'{start_ref}–{end_ref}'}"
 
 
@@ -237,8 +242,8 @@ def _citation(spans: list[ReadingSpan]) -> str:
     prev_book: str | None = None
     for span in spans:
         if span.book == prev_book:
-            start_ref = f"{span.start.chapter}:{span.start.verse}"
-            end_ref = f"{span.end.chapter}:{span.end.verse}"
+            start_ref = _verse_citation(span.start)
+            end_ref = _verse_citation(span.end)
             clauses.append(start_ref if span.start == span.end else f"{start_ref}–{end_ref}")
         else:
             clauses.append(_citation_range(span.book, span.start, span.end))
@@ -258,7 +263,10 @@ def _is_contiguous(
     a change of book — see readings.Passage."""
     if prev.book != following.book:
         return False
-    return next_verse(prev.end, sourcetexts_root) == following.start
+    # A span that stops at the etnachta runs straight on into one that starts there.
+    if prev.end.half == "a" and following.start == replace(prev.end, half="b"):
+        return True
+    return next_verse(prev.end.whole_verse, sourcetexts_root) == following.start
 
 
 _CONDITION_INDEX = {"value": 0}

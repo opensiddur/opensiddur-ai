@@ -31,7 +31,6 @@ from opensiddur.importer.humash.refs import (
     VerseRef,
     NUMBERING_COMMON,
     canonical_ref,
-    hebcal_ref_half,
     parse_hebcal_ref,
 )
 from opensiddur.importer.util.pages import hebcal_leyning_data_directory
@@ -145,8 +144,6 @@ def _haftarah_spans(raw, unit: str = "haftarah") -> list[ReadingSpan]:
             start=parse_hebcal_ref(book, part["b"]),
             end=parse_hebcal_ref(book, part["e"], at_end=True),
             note=part.get("note"),
-            start_half=hebcal_ref_half(part["b"]),
-            end_half=hebcal_ref_half(part["e"]),
         ))
     return spans
 

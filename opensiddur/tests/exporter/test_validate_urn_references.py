@@ -12,6 +12,7 @@ from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.validate_urn_references import (
     UnresolvableUrnReference,
     _format_failure,
+    find_coarsened_urn_references,
     main,
     validate_project_urn_references,
 )
@@ -303,6 +304,87 @@ class TestValidateUrnReferences(unittest.TestCase):
             "proj1/a.xml: /TEI/text/body/ptr[1] @target=urn:x-opensiddur:test:missing",
         )
 
+
+
+class TestCoarsenedUrnReferences(unittest.TestCase):
+    """A reference to a division a project does not carry still resolves, one level up."""
+
+    VERSE = "urn:x-opensiddur:text:bible:genesis/1/31"
+
+    def _project_referring_to(self, base: Path, target: str) -> Path:
+        xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+        text = etree.SubElement(xml, f"{{{TEI_NS}}}text")
+        body = etree.SubElement(text, f"{{{TEI_NS}}}body")
+        etree.SubElement(body, f"{{{JLPTEI_NS}}}transclude", target=target)
+        return _write_project_xml(base, "humash", "a.xml", xml)
+
+    def test_reports_a_half_verse_no_project_carries(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            self._project_referring_to(base, f"{self.VERSE}/b")
+
+            db_path = base / "ref.db"
+            _add_urn_mapping(db_path, "jps1917", "genesis.xml", self.VERSE)
+
+            coarsened = find_coarsened_urn_references(
+                "humash", project_directory=base, reference_db_path=db_path
+            )
+
+            self.assertEqual(len(coarsened), 1)
+            self.assertEqual(coarsened[0].urn, f"{self.VERSE}/b")
+            self.assertEqual(coarsened[0].resolves_as, self.VERSE)
+
+    def test_says_nothing_when_the_reference_resolves_as_written(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            self._project_referring_to(base, f"{self.VERSE}/b")
+
+            db_path = base / "ref.db"
+            _add_urn_mapping(db_path, "mam", "genesis.xml", f"{self.VERSE}/b")
+
+            self.assertEqual(
+                find_coarsened_urn_references(
+                    "humash", project_directory=base, reference_db_path=db_path
+                ),
+                [],
+            )
+
+    def test_says_nothing_when_neither_the_reference_nor_its_container_resolves(self):
+        """That is an unresolvable reference, which the other check reports."""
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            self._project_referring_to(base, f"{self.VERSE}/b")
+
+            db_path = base / "ref.db"
+            _add_urn_mapping(db_path, "mam", "exodus.xml", "urn:x-opensiddur:text:bible:exodus/1/1")
+
+            self.assertEqual(
+                find_coarsened_urn_references(
+                    "humash", project_directory=base, reference_db_path=db_path
+                ),
+                [],
+            )
+
+    def test_reports_a_range_whose_ends_are_both_below_the_verse(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            self._project_referring_to(
+                base, "urn:x-opensiddur:text:bible:nahum/2/2/b-2/3/a"
+            )
+
+            db_path = base / "ref.db"
+            for urn in ("urn:x-opensiddur:text:bible:nahum/2/2",
+                        "urn:x-opensiddur:text:bible:nahum/2/3"):
+                _add_urn_mapping(db_path, "jps1917", "nahum.xml", urn)
+
+            coarsened = find_coarsened_urn_references(
+                "humash", project_directory=base, reference_db_path=db_path
+            )
+
+            self.assertEqual(len(coarsened), 1)
+            self.assertEqual(
+                coarsened[0].resolves_as, "urn:x-opensiddur:text:bible:nahum/2/2-/2/3"
+            )
 
 
 if __name__ == "__main__":

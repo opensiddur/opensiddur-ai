@@ -195,10 +195,14 @@ class TestTriennialHaftarot(unittest.TestCase):
             [("isaiah 54:1", "isaiah 54:10"), ("isaiah 53:1", "isaiah 53:2")],
         )
 
-    def test_a_half_verse_boundary_reads_the_whole_verse_and_says_so(self):
+    def test_a_half_verse_boundary_is_kept_on_the_reference(self):
+        """The Tanakh projects mark the etnachta, so "30:1b" names a point a URN can reach."""
         span = self.haftarot["tazria"][2].spans[0]
-        self.assertEqual((str(span.start), str(span.end)), ("jeremiah 30:1", "jeremiah 30:9"))
+        self.assertEqual((str(span.start), str(span.end)), ("jeremiah 30:1b", "jeremiah 30:9a"))
         self.assertEqual((span.start_half, span.end_half), ("b", "a"))
+        self.assertEqual(
+            span.start.urn, "urn:x-opensiddur:text:bible:jeremiah/30/1/b"
+        )
 
     def test_a_parshah_read_alone_in_two_years_has_only_those(self):
         self.assertEqual(sorted(self.haftarot["tazria"]), [1, 2])

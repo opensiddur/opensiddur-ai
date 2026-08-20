@@ -74,6 +74,7 @@ class TestWLCPathFunctions(unittest.TestCase):
 class TestWLCMain(unittest.TestCase):
     """Test the main function that orchestrates the WLC transformation"""
     
+    @patch('opensiddur.importer.wlc.wlc.add_subverse_milestones_to_file')
     @patch('opensiddur.importer.wlc.wlc.validate')
     @patch('opensiddur.importer.wlc.wlc.os.listdir')
     @patch('opensiddur.importer.wlc.wlc.xslt_transform')
@@ -85,7 +86,8 @@ class TestWLCMain(unittest.TestCase):
         mock_get_xslt_dir,
         mock_xslt_transform,
         mock_listdir,
-        mock_validate
+        mock_validate,
+        mock_add_subverse,
     ):
         """Test that main transforms index and books, then validates all output files"""
         
@@ -184,7 +186,17 @@ class TestWLCMain(unittest.TestCase):
         
         # Verify validate was called for each file
         self.assertEqual(mock_validate.call_count, 4)
-    
+
+        # Every transformed book gets its sub-verse milestones; the index has no verses.
+        self.assertEqual(
+            mock_add_subverse.call_args_list,
+            [
+                call(mock_project_dir / book, language="he", project="wlc")
+                for book in ("genesis.xml", "exodus.xml", "leviticus.xml")
+            ],
+        )
+
+    @patch('opensiddur.importer.wlc.wlc.add_subverse_milestones_to_file')
     @patch('opensiddur.importer.wlc.wlc.validate')
     @patch('opensiddur.importer.wlc.wlc.os.listdir')
     @patch('opensiddur.importer.wlc.wlc.xslt_transform')
@@ -196,7 +208,8 @@ class TestWLCMain(unittest.TestCase):
         mock_get_xslt_dir,
         mock_xslt_transform,
         mock_listdir,
-        mock_validate
+        mock_validate,
+        mock_add_subverse,
     ):
         """Test that main handles validation errors gracefully"""
         

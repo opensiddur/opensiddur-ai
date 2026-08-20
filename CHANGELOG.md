@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Sub-verse URNs. A URN reached no further than a whole verse, so a reading that begins or ends
+  inside one could not be said: Emor's third-year haftarah is Nachum 2:2b–3a, the Thirteen
+  Attributes open partway through Exodus 34:6, and kiddush opens on the last words of Genesis
+  1:31. Two milestone units now divide a verse, each hanging its URN one path component below
+  the verse's, so no URN grammar changes: `half-verse` (`…/1/31/a`, `…/1/31/b`), the accentual
+  division at the etnachta, placed mechanically on every verse the accents divide; and
+  `verse-part` (`…/34/6/adonai_adonai`), any other break at a word boundary, named by its
+  transliterated incipit and declared in `opensiddur/common/subverse.py`. See JLPTEI-3.md,
+  "Sub-verse scope", for what the two cover and what they deliberately do not.
+- Ranges may state their end absolutely: an end beginning with `/` replaces the whole path below
+  the work, so `…:nahum/2/2/b-/2/5` runs from a half-verse to the end of a whole one. The
+  relative form always lands at the start's own depth and cannot express that.
+- `validate_urn_references` reports references that resolve only after a division is dropped
+  from the end of them, so that reading a whole verse where half was asked for is never silent.
+
+### Fixed
+- A range whose relative end was deeper than the start it replaced — `…:nahum/2/2-2/3/a` —
+  silently built a URN with the scheme sliced off it, which then resolved to nothing. It is now
+  rejected, with the absolute spelling named in the message.
+- Parallel alignment joined on exact URN equality, so an edition that divided the text more
+  finely than the one beside it put its subdivisions in rows facing empty cells. Rows are now
+  formed at the divisions both sides carry.
+
 ## [0.2.0] - 2026-08-17
 
 ### Added

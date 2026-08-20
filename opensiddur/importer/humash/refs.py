@@ -11,7 +11,7 @@ from __future__ import annotations
 import functools
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from opensiddur.common import versification
@@ -184,31 +184,82 @@ BOOK_NUMBER_TO_SLUG = {number: slug for number, (_, slug, _) in enumerate(TORAH_
 # so that nothing downstream has to carry a numbering at all.
 
 
-@dataclass(frozen=True, order=True)
+# Ordered by _sort_key rather than by field order, so `order=True` is deliberately absent:
+# the halves do not sort the way the string "a" < "b" would place them against a whole verse.
+@dataclass(frozen=True)
 class VerseRef:
-    """One verse, identified the way the Tanakh projects' URNs identify it."""
+    """One verse, or one half of one, identified the way the Tanakh projects' URNs do.
+
+    A reading that begins or ends inside a verse names the accentual half it means, the way
+    the sources cite it: hebcal writes the third-year haftarah of Emor as Nachum 2:2b-3a, and
+    the Hebrew Tanakh projects carry a `half-verse` milestone at the etnachta of every verse
+    the accents divide (opensiddur/common/subverse.py).
+
+    Ordering puts the first half before the whole and the whole before the second, which is
+    document order: `a` closes where `b` opens, and a bare reference to the verse covers
+    both. `readings._without_anchor_verses` compares refs this way when it decides whether
+    one span lies inside another.
+    """
 
     book: str  # opensiddur slug, e.g. "genesis"
     chapter: int
     verse: int
+    half: str | None = None  # "a", "b", or None for the whole verse
+
+    def __post_init__(self):
+        if self.half not in (None, "a", "b"):
+            raise ValueError(f"A verse has halves 'a' and 'b', not {self.half!r}")
 
     def __str__(self) -> str:
-        return f"{self.book} {self.chapter}:{self.verse}"
+        return f"{self.book} {self.chapter}:{self.verse}{self.half or ''}"
+
+    @property
+    def _sort_key(self) -> tuple:
+        return (self.book, self.chapter, self.verse, {"a": 0, None: 1, "b": 2}[self.half])
+
+    def __lt__(self, other: "VerseRef") -> bool:
+        return self._sort_key < other._sort_key
+
+    def __le__(self, other: "VerseRef") -> bool:
+        return self._sort_key <= other._sort_key
+
+    def __gt__(self, other: "VerseRef") -> bool:
+        return self._sort_key > other._sort_key
+
+    def __ge__(self, other: "VerseRef") -> bool:
+        return self._sort_key >= other._sort_key
+
+    @property
+    def whole_verse(self) -> "VerseRef":
+        """This reference with any half dropped — the verse that contains it."""
+        return replace(self, half=None) if self.half else self
 
     @property
     def urn(self) -> str:
-        """The unsuffixed verse URN, which resolves in whichever project has priority."""
-        return f"urn:x-opensiddur:text:bible:{self.book}/{self.chapter}/{self.verse}"
+        """The unsuffixed URN, which resolves in whichever project has priority."""
+        urn = f"urn:x-opensiddur:text:bible:{self.book}/{self.chapter}/{self.verse}"
+        return f"{urn}/{self.half}" if self.half else urn
+
+    @property
+    def _path_below_book(self) -> str:
+        """The URN's path components below the book, which the absolute range form takes."""
+        return self.urn.partition("/")[2]
 
     def range_urn(self, end: "VerseRef") -> str:
-        """A ranged transclusion target from this verse to `end`.
+        """A ranged transclusion target from this reference to `end`.
 
-        The range syntax replaces the trailing components of the start, so the end is written
-        as ``chapter/verse`` — see UrnResolver.resolve_range.
+        A relative range end replaces the trailing components of the start and so always
+        lands at the start's own depth, which reaches only where both ends are the same kind
+        of thing — two verses, or two halves. Where one end is a half of a verse and the
+        other a whole verse, the end is stated absolutely instead. See
+        `opensiddur.exporter.urn.split_range` for both forms.
         """
         if end.book != self.book:
             raise ValueError(f"A range may not cross books: {self} to {end}")
-        return f"{self.urn}-{end.chapter}/{end.verse}"
+        if (self.half is None) == (end.half is None):
+            end_spec = f"{end.chapter}/{end.verse}" + (f"/{end.half}" if end.half else "")
+            return f"{self.urn}-{end_spec}"
+        return f"{self.urn}-/{end._path_below_book}"
 
 
 @dataclass(frozen=True)
@@ -225,12 +276,15 @@ class ReadingSpan:
     # for the two parshiyot of a pair, which share a file but keep their own URN spaces:
     # without it their identically numbered aliyot would both be .../vayakhel_pekudei/1.
     owner: str | None = None
-    # Where the span really begins or ends, when that is inside a verse rather than at its
-    # edge: "b" on `start_half` means it begins at the second half of `start`, and "a" on
-    # `end_half` that it ends at the first half of `end`. The whole verse is transcluded either
-    # way — a URN addresses no less than a verse — and the reading says where to stop.
-    start_half: str | None = None
-    end_half: str | None = None
+    @property
+    def start_half(self) -> str | None:
+        """"b" when the span begins at the second half of its first verse, else None."""
+        return self.start.half
+
+    @property
+    def end_half(self) -> str | None:
+        """"a" when the span ends at the first half of its last verse, else None."""
+        return self.end.half
 
     @property
     def book(self) -> str:
@@ -332,21 +386,14 @@ def parse_hebcal_ref(book: str, spec: str, at_end: bool = False) -> VerseRef:
     """Parse hebcal's ``"chapter:verse"`` form against an opensiddur book slug.
 
     hebcal numbers by the common printed editions, so the result is converted to the canonical
-    division the URN space uses. A half-verse marker is read as the whole verse containing it,
-    since a URN addresses whole verses; ``hebcal_ref_half`` recovers which half was meant so
-    the reading can say so.
+    division the URN space uses. A half-verse marker is kept: the Hebrew Tanakh projects carry
+    a milestone at the etnachta of every verse the accents divide, so "2:2b" names a point the
+    URN space can reach.
     """
     match = _HEBCAL_REF.match(spec)
     if match is None:
         raise ValueError(f"Unparseable hebcal reference {spec!r} in {book}")
-    return canonical_ref(
+    canonical = canonical_ref(
         NUMBERING_COMMON, VerseRef(book, int(match.group(1)), int(match.group(2))), at_end
     )
-
-
-def hebcal_ref_half(spec: str) -> str | None:
-    """Which half of the verse a reference names — ``"a"``, ``"b"``, or None for the whole."""
-    match = _HEBCAL_REF.match(spec)
-    if match is None:
-        raise ValueError(f"Unparseable hebcal reference {spec!r}")
-    return match.group(3) or None
+    return replace(canonical, half=match.group(3) or None)

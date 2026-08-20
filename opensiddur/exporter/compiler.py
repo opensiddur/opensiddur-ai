@@ -18,6 +18,7 @@ import argparse
 from contextlib import contextmanager
 from enum import Enum
 import hashlib
+import logging
 from pathlib import Path
 import re
 import sys
@@ -49,8 +50,10 @@ from opensiddur.exporter.condition_eval import (
     parse_condition_element,
 )
 from opensiddur.exporter.refdb import ReferenceDatabase
-from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
+from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
 from opensiddur.common.constants import PROJECT_DIRECTORY
+
+logger = logging.getLogger(__name__)
 
 class _ProcessingCommand(Enum):
     """ Possible ways the compiler can process an element """
@@ -522,15 +525,34 @@ class CompilerProcessor:
         start, end = None, None
         resolver = self._urn_resolver
         
-        range_start = resolver.resolve_range(target)
-        if not range_start:
-            raise ValueError(f"Target URN {target=} not found")
         project_priority = self.linear_data.project_priority
-        
-        range_start = UrnResolver.prioritize_range(range_start, project_priority)
+
+        resolved = resolver.resolve_range(target)
+        range_start = UrnResolver.prioritize_range(resolved, project_priority)
         if not range_start:
-            raise ValueError(f"No prioritized URNs found: {target=} {project_priority=}")
-        
+            # No prioritized project carries this reference. If it names a point below a
+            # division they all do carry — a half-verse, a named part of a verse — take the
+            # division that contains it instead. The compiled text then covers more than was
+            # asked for, which is what happened before sub-verse URNs existed; the warning
+            # is what is new, and validate_urn_references reports the same thing ahead of a
+            # build.
+            coarser = coarsen(target)
+            coarsened = (
+                UrnResolver.prioritize_range(resolver.resolve_range(coarser), project_priority)
+                if coarser else None
+            )
+            if coarsened:
+                logger.warning(
+                    "%s/%s: no project in %s carries %s; falling back to %s, which covers "
+                    "more text than the reference asks for",
+                    self.project, self.file_name, project_priority, target, coarser,
+                )
+                range_start, target = coarsened, coarser
+            elif not resolved:
+                raise ValueError(f"Target URN {target=} not found")
+            else:
+                raise ValueError(f"No prioritized URNs found: {target=} {project_priority=}")
+
         if isinstance(range_start, ResolvedUrnRange):
             if target_end is not None:
                 raise ValueError(f"If target {target=} is a range, target_end {target_end=} cannot be provided")

@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from opensiddur.common.constants import PROJECT_DIRECTORY, SOURCETEXTS_ROOT
+from opensiddur.common.subverse import add_subverse_milestones_to_file
 from opensiddur.common.xslt import xslt_transform
 from opensiddur.importer.util.validation import validate
 
@@ -84,6 +85,9 @@ def main(argv: list[str] | None = None) -> int:
                 xslt_directory / "transform_book.xslt",
                 wlc_directory / "Books" / book,
                 project_directory / book.lower(),
+            )
+            add_subverse_milestones_to_file(
+                project_directory / book.lower(), language="he", project="wlc"
             )
 
     for book in os.listdir(project_directory):

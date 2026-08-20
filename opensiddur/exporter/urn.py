@@ -22,6 +22,127 @@ class ResolvedUrnRange(BaseModel):
     end: ResolvedUrn
 
 
+def split_range(ranged_urn: str) -> Optional[tuple[str, str]]:
+    """Split a ranged URN into its start and end URNs.
+
+    A range is written with '-' in a path component. The part before the dash closes the
+    start URN; what follows names the end. There are two ways to name the end:
+
+    **Relative** — the end replaces that many trailing components of the start, which leaves
+    it at the same depth::
+
+        genesis/1/1-2      → genesis/1/1  … genesis/1/2
+        genesis/1/1-2/3    → genesis/1/1  … genesis/2/3
+        nahum/2/2/b-2/3/a  → nahum/2/2/b  … nahum/2/3/a
+
+    **Absolute** — an end that begins with '/' replaces the whole path below the component
+    carrying the namespace and the work, so the two ends need not be at the same depth::
+
+        nahum/2/2/b-/2/5   → nahum/2/2/b  … nahum/2/5
+        genesis/1/1-/3     → genesis/1/1  … genesis/3
+
+    Write the absolute form whenever the ends are at different depths: a sub-verse start
+    with a whole-verse end has no relative spelling, since a relative end always lands at
+    the start's own depth. This is also why a range cannot cross works — the absolute form
+    keeps the start's namespace-and-work component, and the relative form never touches it.
+
+    Args:
+        ranged_urn: A URN, with or without range notation. Any '@project' suffix must
+                    already have been stripped.
+
+    Returns:
+        (start_urn, end_urn), or None if `ranged_urn` names no range at all.
+
+    Raises:
+        ValueError: if it names a range but not a well-formed one.
+    """
+    parts = ranged_urn.split('/')
+
+    # Index 0 holds the scheme, namespace and work ("urn:x-opensiddur:text:bible:genesis"),
+    # whose dashes ("x-opensiddur") never mark a range. Only the path components below it
+    # are candidates, and the last dash-bearing one wins.
+    range_start_idx = None
+    for i in range(len(parts) - 1, 0, -1):
+        if '-' in parts[i]:
+            range_start_idx = i
+            break
+
+    if range_start_idx is None:
+        return None
+
+    start_value, end_spec_start = parts[range_start_idx].split('-', 1)
+    if not start_value:
+        raise ValueError(f"Range has no start: {ranged_urn!r}")
+    start_urn = '/'.join(parts[:range_start_idx] + [start_value])
+
+    remaining_parts = parts[range_start_idx + 1:]
+    end_spec = end_spec_start
+    if remaining_parts:
+        end_spec += '/' + '/'.join(remaining_parts)
+
+    if end_spec.startswith('/'):
+        end_components = end_spec[1:].split('/')
+        if not all(end_components):
+            raise ValueError(f"Absolute range end is empty: {ranged_urn!r}")
+        end_parts = [parts[0]] + end_components
+    else:
+        if not end_spec:
+            raise ValueError(f"Range has no end: {ranged_urn!r}")
+        end_components = end_spec.split('/')
+        # A relative end replaces trailing components of the start, so it can never be
+        # deeper than the start is. Before the absolute form existed this case built an end
+        # URN with the scheme sliced off it, which then resolved to nothing, silently.
+        base = range_start_idx - len(end_components) + 1
+        if base < 1:
+            raise ValueError(
+                f"Relative range end {end_spec!r} is deeper than the start it replaces in "
+                f"{ranged_urn!r}; state it absolutely as -/{end_spec}"
+            )
+        end_parts = parts[:base] + end_components
+
+    return start_urn, '/'.join(end_parts)
+
+
+def coarsen(urn: str) -> Optional[str]:
+    """`urn` with its last path component dropped, or None if it has only one.
+
+    A project need not carry every division another project does: a translation has no
+    accents, so it can place no half-verses, and a reference to one has to fall back on the
+    verse that contains it or the translation drops out of the page altogether. Reading a
+    whole verse where half was asked for is the behaviour that was there before sub-verse
+    URNs existed; what is new is that the caller knows it happened and can say so.
+
+    Ranges are coarsened at both ends, and the result is stated absolutely so that ends
+    which no longer sit at the same depth still resolve.
+    """
+    project_specifier = None
+    if '@' in urn:
+        urn, project_specifier = urn.rsplit('@', 1)
+
+    try:
+        split = split_range(urn)
+    except ValueError:
+        return None
+
+    def drop(one: str) -> Optional[str]:
+        head, _, tail = one.rpartition('/')
+        return head if head and tail else None
+
+    if split is None:
+        coarsened = drop(urn)
+    else:
+        start, end = (drop(part) for part in split)
+        if start is None or end is None:
+            return None
+        # The absolute form, since the two ends may no longer be at the same depth.
+        _work, _, below = end.partition('/')
+        coarsened = f"{start}-/{below}" if below else None
+
+    if coarsened is None:
+        return None
+    return f"{coarsened}@{project_specifier}" if project_specifier else coarsened
+
+
 class UrnResolver:
     """Resolves URNs to their corresponding project and file paths."""
     
@@ -68,103 +189,42 @@ class UrnResolver:
     def resolve_range(self, ranged_urn: str) -> list[ResolvedUrnRange | ResolvedUrn]:
         """Resolve a ranged URN to start and end URNs, or a non-ranged URN.
         
-        A range URN uses '-' to indicate a range in the final components:
-        - 'urn:.../genesis/1/1-2' resolves to start='...genesis/1/1', end='...genesis/1/2'
-        - 'urn:.../genesis/1/1-2/3' resolves to start='...genesis/1/1', end='...genesis/2/3'
-        
-        The end specification replaces the last N components of the start URN, where N is
-        the number of components (slash-delimited) in the end specification.
-        
-        If the URN does not contain a dash in the last path component, it is treated as a
-        non-ranged URN and resolve() is called instead.
-        
+        The range notation itself is parsed by `split_range`, which documents the relative
+        and absolute forms of a range end.
+
+        If the URN names no range, it is treated as a non-ranged URN and resolve() is
+        called instead.
+
         Args:
-            ranged_urn: A URN with range notation (e.g., 'urn:.../1/1-2' or 'urn:.../1/1-2/3@project')
-                       or a non-ranged URN (e.g., 'urn:.../genesis/1/1')
-        
+            ranged_urn: A URN with range notation (e.g., 'urn:.../1/1-2', 'urn:.../1/1-2/3@project'
+                       or 'urn:.../2/2/b-/2/5') or a non-ranged URN (e.g., 'urn:.../genesis/1/1')
+
         Returns:
             List of ResolvedUrnRange objects for ranged URNs, or list of ResolvedUrn objects
             for non-ranged URNs. May contain multiple entries if the URN exists in multiple
             projects (when no project specifier is provided).
-            Returns empty list if the URN cannot be parsed as a range, or if start and end 
-            don't resolve to any matching project/file combinations.
+            Returns empty list if start and end don't resolve to any matching project/file
+            combinations.
+
+        Raises:
+            ValueError: if the URN names a range but not a well-formed one.
         """
         # Handle @project notation
         project_specifier = None
         if '@' in ranged_urn:
             ranged_urn, project_specifier = ranged_urn.rsplit('@', 1)
-        
-        # Find the '-' that indicates the range
-        # It should be in the path portion (after the scheme and initial parts)
-        # Split to find where the range starts
-        # We look for '-' that's in a path component (contains '/')
-        
-        # Find the first '-' that appears after a '/' or at the start of a path component
-        parts = ranged_urn.split('/')
-        
-        # Only check path components (not the scheme part) for a dash
-        # For example, "urn:x-opensiddur:test:doc" splits to ["urn:x-opensiddur:test:doc"]
-        # and we should NOT treat the dash in "x-opensiddur" as a range indicator
-        # But "urn:x-opensiddur:test:doc/1-2" splits to ["urn:x-opensiddur:test:doc", "1-2"]
-        # and we SHOULD treat the dash in "1-2" as a range indicator
-        
-        # For a URN to be ranged, we need at least 2 parts when split by '/' 
-        # (meaning there's at least one '/' in the URN, so we have actual path components)
-        
-        if len(parts) < 2:
-            # No '/' in the URN, so no range possible (dash would be in scheme part)
-            # Call resolve() instead and return the results
+
+        split = split_range(ranged_urn)
+
+        if split is None:
+            # Not a range. Add back the project specifier if present and resolve it alone.
             urn_to_resolve = ranged_urn
             if project_specifier:
                 urn_to_resolve = f"{ranged_urn}@{project_specifier}"
             return self.resolve(urn_to_resolve)
-        
-        # Search from the end backwards through path components (not the first component which is the scheme)
-        # to find the first component containing a dash
-        # Start from parts[1:] to skip the scheme component
-        range_start_idx = None
-        for i in range(len(parts) - 1, 0, -1):  # Search from the end, but skip index 0 (scheme)
-            if '-' in parts[i]:
-                range_start_idx = i
-                break
-        
-        # If no dash found in any path component, this is not a ranged URN
-        # Call resolve() instead and return the results
-        if range_start_idx is None:
-            # Add back the project specifier if present
-            urn_to_resolve = ranged_urn
-            if project_specifier:
-                urn_to_resolve = f"{ranged_urn}@{project_specifier}"
-            return self.resolve(urn_to_resolve)
-        
-        # Split at the '-' within that component
-        range_part = parts[range_start_idx]
-        if '-' not in range_part:
-            return []
-        
-        start_value, end_spec_start = range_part.split('-', 1)
-        
-        # Build the start URN
-        start_parts = parts[:range_start_idx] + [start_value]
-        start_urn = '/'.join(start_parts)
-        
-        # Build the end URN
-        # The end spec includes everything after '-', plus remaining path components
-        # For "genesis/1/1-2/3", after finding "1-2", we need end_spec = "2/3"
-        remaining_parts = parts[range_start_idx + 1:]
-        if remaining_parts:
-            end_spec = end_spec_start + '/' + '/'.join(remaining_parts)
-        else:
-            end_spec = end_spec_start
-        
-        # Split end_spec to get individual components
-        end_spec_parts = end_spec.split('/')
-        num_components = len(end_spec_parts)
-        
-        # Replace the last num_components components with end_spec_parts
-        end_parts = parts[:range_start_idx - num_components + 1] + end_spec_parts
-        end_urn = '/'.join(end_parts)
-        
+
+        start_urn, end_urn = split
+
         # Add back the project specifier if present
         if project_specifier:
             start_urn = f"{start_urn}@{project_specifier}"
