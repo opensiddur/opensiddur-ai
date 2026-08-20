@@ -23,7 +23,7 @@ from opensiddur.exporter.constants import (
 )
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import UNIT_CONTAINED_BY, ReferenceDatabase
-from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver
+from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
 from lxml import etree
 
 from opensiddur.exporter.marker_reconstruct import (
@@ -32,6 +32,51 @@ from opensiddur.exporter.marker_reconstruct import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _urn_prefixes(urn: str) -> list[str]:
+    """The URNs of the divisions containing `urn`, innermost first.
+
+    Path components only: the first component carries the scheme, the namespace and the
+    work, and nothing above the work is a division of it.
+    """
+    prefixes = []
+    head = urn
+    while '/' in head:
+        head = head.rpartition('/')[0]
+        prefixes.append(head)
+    return prefixes
+
+
+def _milestone_corresps(elements: list[ElementBase]) -> set[str]:
+    """The URNs of the milestones in a flat marker stream."""
+    tei_milestone_tag = f"{{{TEI_NS}}}milestone"
+    return {
+        el.get('corresp') for el in elements
+        if el.tag == tei_milestone_tag and el.get('corresp')
+    }
+
+
+def _common_split_points(ours: set[str], theirs: set[str]) -> set[str]:
+    """Which of `ours` are boundaries when the text is set beside a stream marking `theirs`.
+
+    Two editions need not divide the text alike below the verse: the Hebrew is divided at
+    its accents and a translation cannot be. A division the other side does not carry is not
+    a row boundary — its text belongs in the row of the nearest division that both carry, or
+    the halves of a Hebrew verse would face an empty English cell and the English verse an
+    empty Hebrew one.
+
+    A division with no such container is kept as a boundary of its own. It gets a row facing
+    nothing, which is what a URN only one side has did before any of this.
+
+    Only a division *both* sides mark can absorb another's text: falling back on one this
+    side does not itself mark would put the text under a URN it never claimed.
+    """
+    common = ours & theirs
+    return common | {
+        corresp for corresp in ours - common
+        if not any(prefix in common for prefix in _urn_prefixes(corresp))
+    }
 
 
 def _attrs_structural_original(source: ElementBase) -> dict[str, str]:
@@ -271,6 +316,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
     def _split_at_milestones(
         elements: list[ElementBase],
         ns_map: dict,
+        split_at: Optional[set[str]] = None,
     ) -> list[tuple[Optional[str], list[ElementBase]]]:
         """Split a flat marker stream at tei:milestone[@corresp] boundaries.
 
@@ -278,6 +324,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         corresp_or_None is None for content before the first milestone.
         At each milestone, open structural markers are suspended (LIFO) into the
         current sub-segment and resumed (FIFO) into the new sub-segment.
+
+        `split_at` limits which URNs are boundaries; a milestone outside it stays where it
+        is, inside the sub-segment it falls in. None means every milestone with a @corresp.
         """
         p_ns = PROCESSING_NAMESPACE
         tei_milestone_tag = f"{{{TEI_NS}}}milestone"
@@ -291,7 +340,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             p_suspend = el.get(f"{{{p_ns}}}suspend")
             p_resume = el.get(f"{{{p_ns}}}resume")
 
-            if el.tag == tei_milestone_tag and el.get('corresp'):
+            if (el.tag == tei_milestone_tag and el.get('corresp')
+                    and (split_at is None or el.get('corresp') in split_at)):
                 corresp = el.get('corresp')
 
                 # Close current sub-segment: emit suspends LIFO (carry TEI/XML attrs)
@@ -409,8 +459,16 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return transclude_el.get(xml_lang) or default_lang
 
         def make_rows(prim_flat, par_flat, prim_src, par_src, prim_lang, par_lang):
-            prim_sub = ExternalCompilerProcessor._split_at_milestones(prim_flat, ns_map)
-            par_sub = ExternalCompilerProcessor._split_at_milestones(par_flat, ns_map)
+            # Only divisions both sides carry are row boundaries — see _common_split_points.
+            # Deciding this before splitting rather than merging the rows afterwards matters:
+            # every split suspends and resumes the structure open across it, and those
+            # carriers would survive a merge and break the verse into pieces inside its row.
+            prim_corresps = _milestone_corresps(prim_flat)
+            par_corresps = _milestone_corresps(par_flat)
+            prim_sub = ExternalCompilerProcessor._split_at_milestones(
+                prim_flat, ns_map, _common_split_points(prim_corresps, par_corresps))
+            par_sub = ExternalCompilerProcessor._split_at_milestones(
+                par_flat, ns_map, _common_split_points(par_corresps, prim_corresps))
 
             prim_by_c: dict[Optional[str], list] = {}
             for c, els in prim_sub:
@@ -507,12 +565,25 @@ class ExternalCompilerProcessor(CompilerProcessor):
         """
         parallel_target = self._build_parallel_urn(target, parallel_project)
         try:
-            p_list = self._urn_resolver.resolve_range(parallel_target)
-            if not p_list:
-                return None
-            p_resolved = UrnResolver.prioritize_range(p_list, [parallel_project])
+            p_resolved = UrnResolver.prioritize_range(
+                self._urn_resolver.resolve_range(parallel_target), [parallel_project])
             if not p_resolved:
-                return None
+                # This project does not divide the text this finely — a translation has no
+                # accents and so carries no half-verses. Set the containing division beside
+                # the primary rather than leaving the column empty; make_rows pairs the two
+                # up at whatever division they have in common.
+                coarser = coarsen(parallel_target)
+                p_resolved = UrnResolver.prioritize_range(
+                    self._urn_resolver.resolve_range(coarser), [parallel_project]
+                ) if coarser else None
+                if not p_resolved:
+                    return None
+                logger.warning(
+                    "parallel: %s does not carry %s; setting %s beside it, which covers "
+                    "more text than the reference asks for",
+                    parallel_project, parallel_target, coarser,
+                )
+                parallel_target = coarser
 
             if isinstance(p_resolved, ResolvedUrnRange):
                 if target_end is not None:
@@ -528,12 +599,23 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 p_start = p_resolved.element_path
                 if target_end is not None:
                     parallel_target_end = self._build_parallel_urn(target_end, parallel_project)
-                    pe_list = self._urn_resolver.resolve_range(parallel_target_end)
-                    if not pe_list:
-                        return None
-                    pe_resolved = UrnResolver.prioritize_range(pe_list, [parallel_project])
+                    pe_resolved = UrnResolver.prioritize_range(
+                        self._urn_resolver.resolve_range(parallel_target_end),
+                        [parallel_project])
                     if not pe_resolved:
-                        return None
+                        # The end of the range may name a division this project lacks just
+                        # as the start may; close on the division that contains it.
+                        coarser_end = coarsen(parallel_target_end)
+                        pe_resolved = UrnResolver.prioritize_range(
+                            self._urn_resolver.resolve_range(coarser_end), [parallel_project]
+                        ) if coarser_end else None
+                        if not pe_resolved:
+                            return None
+                        logger.warning(
+                            "parallel: %s does not carry %s; ending at %s instead, which "
+                            "covers more text than the reference asks for",
+                            parallel_project, parallel_target_end, coarser_end,
+                        )
                     p_end = (pe_resolved.end_element_path or pe_resolved.element_path
                              if not isinstance(pe_resolved, ResolvedUrnRange)
                              else pe_resolved.end.end_element_path or pe_resolved.end.element_path)

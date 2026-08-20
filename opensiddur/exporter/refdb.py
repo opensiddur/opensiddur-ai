@@ -32,8 +32,17 @@ class DuplicateUrnError(ValueError):
 # Reading divisions deliberately overlap and so are absent from each other's containment sets:
 # maftir re-reads the close of the seventh aliyah, weekday aliyot subdivide the Shabbat ones,
 # and triennial breaks cut across the annual ones. Each is contained only by the parsha.
+#
+# The two sub-verse units divide a verse and are contained by it, but never by each other: the
+# accentual halves and the named parts cut the verse at different points, and a named part may
+# well straddle the etnachta — the Thirteen Attributes end one word past the etnachta of Exodus
+# 34:7. Neither contains the other, so neither ends the other's scope. Note also that `verse`
+# does not name them among *its* containers, so a sub-verse milestone never truncates the verse
+# it sits inside.
 UNIT_CONTAINED_BY: dict[str, frozenset[str]] = {
     "verse": frozenset({"chapter"}),
+    "half-verse": frozenset({"verse", "chapter"}),
+    "verse-part": frozenset({"verse", "chapter"}),
     "chapter": frozenset(),
     "parsha": frozenset(),
     "parsha.annual": frozenset(),

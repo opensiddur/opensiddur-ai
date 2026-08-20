@@ -67,6 +67,18 @@ class TestJlpteiOddConstraints(unittest.TestCase):
         )
         self.assertTrue(reports, "Expected a schematron report for duplicate @corresp")
 
+    def test_subverse_constraints_exist(self):
+        """The two sub-verse units are constrained, not merely allowed."""
+        asserts = self.tree.xpath(
+            "//tei:constraintSpec[@ident='subverse-constraints']//sch:assert/@test",
+            namespaces=self.ns,
+        )
+        self.assertIn("@n = 'a' or @n = 'b'", asserts)
+        self.assertTrue(
+            any("ends-with(@corresp" in a for a in asserts),
+            "Expected @n and @corresp to be checked against each other",
+        )
+
     def test_edition_verse_milestone_must_not_carry_a_urn(self):
         """unit='edition-verse' records an edition's own numbering, never an identity."""
         asserts = self.tree.xpath(
@@ -76,3 +88,85 @@ class TestJlpteiOddConstraints(unittest.TestCase):
         self.assertIn("not(@corresp)", asserts)
         self.assertIn("@n", asserts)
 
+
+
+class TestSubverseValidation(unittest.TestCase):
+    """The compiled schema's behaviour on sub-verse milestones, not just the ODD's wording.
+
+    Requires the compiled schema artifacts (`bash scripts/build-schema.sh`).
+    """
+
+    SKELETON = (
+        '<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"'
+        ' xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="he">'
+        "<tei:teiHeader><tei:fileDesc>"
+        '<tei:titleStmt><tei:title type="main" xml:lang="en">t</tei:title></tei:titleStmt>'
+        "<tei:publicationStmt><tei:distributor>d</tei:distributor></tei:publicationStmt>"
+        "<tei:sourceDesc><tei:bibl><tei:title>s</tei:title></tei:bibl></tei:sourceDesc>"
+        "</tei:fileDesc></tei:teiHeader>"
+        '<tei:text xml:lang="he"><tei:body><tei:p>{body}</tei:p></tei:body></tei:text>'
+        "</tei:TEI>"
+    )
+    VERSE = "urn:x-opensiddur:text:bible:nahum/2/2"
+
+    def assertValidity(self, valid: bool, body: str, message: str):
+        from opensiddur.importer.util.validation import validate
+
+        is_valid, errors = validate(self.SKELETON.format(body=body))
+        self.assertEqual(is_valid, valid, f"{message}\n{errors if is_valid != valid else ''}")
+
+    def test_a_well_formed_half_verse_validates(self):
+        for n in ("a", "b"):
+            with self.subTest(n):
+                self.assertValidity(
+                    True,
+                    f'<tei:milestone unit="half-verse" n="{n}" corresp="{self.VERSE}/{n}"/>x',
+                    f"half-verse {n} should validate",
+                )
+
+    def test_a_half_verse_numbered_anything_else_is_rejected(self):
+        self.assertValidity(
+            False,
+            f'<tei:milestone unit="half-verse" n="c" corresp="{self.VERSE}/c"/>x',
+            "a verse has two halves, not a third",
+        )
+
+    def test_a_half_verse_whose_n_and_urn_disagree_is_rejected(self):
+        self.assertValidity(
+            False,
+            f'<tei:milestone unit="half-verse" n="a" corresp="{self.VERSE}/b"/>x',
+            "@n and the last component of @corresp must agree",
+        )
+
+    def test_a_sub_verse_milestone_without_a_urn_is_rejected(self):
+        """A division nothing can refer to is the one thing these must never be."""
+        for unit, n in (("half-verse", "a"), ("verse-part", "tzapeh")):
+            with self.subTest(unit):
+                self.assertValidity(
+                    False, f'<tei:milestone unit="{unit}" n="{n}"/>x', f"{unit} needs @corresp"
+                )
+
+    def test_a_well_formed_verse_part_validates(self):
+        self.assertValidity(
+            True,
+            f'<tei:milestone unit="verse-part" n="tzapeh" corresp="{self.VERSE}/tzapeh"/>x',
+            "a named verse part should validate",
+        )
+
+    def test_a_verse_part_named_with_a_dash_is_rejected(self):
+        """A dash in the last component of a URN is what marks a range."""
+        self.assertValidity(
+            False,
+            f'<tei:milestone unit="verse-part" n="a_b" corresp="{self.VERSE}/a-b"/>x',
+            "a verse part name may not contain a dash",
+        )
+
+    def test_a_verse_part_may_not_be_named_a_or_b(self):
+        """Those are reserved for the accentual halves."""
+        for name in ("a", "b"):
+            with self.subTest(name):
+                self.assertValidity(
+                    False,
+                    f'<tei:milestone unit="verse-part" n="{name}" corresp="{self.VERSE}/{name}"/>x',
+                    f"{name!r} is reserved",
+                )

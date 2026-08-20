@@ -274,9 +274,15 @@ class TestHaftarahFile(unittest.TestCase):
         self.assertEqual(len(opened), 4)  # the annual one, and one per year
         self.assertEqual(sorted(opened), sorted(closed))
 
-    def test_a_boundary_inside_a_verse_reads_the_whole_verse_and_says_where_to_stop(self):
+    def test_a_boundary_inside_a_verse_is_transcluded_and_said(self):
+        """Emor's third-year haftarah runs from Nachum 2:2b to 2:3a.
+
+        The transclusion now stops where the reading stops, and the instruction beside it
+        stays: a volume whose text comes from a project that marks no half-verses falls back
+        on the whole verse, and there the printed instruction is all a reader has.
+        """
         tree = self._tree("emor", {
-            3: _passage("nahum", (2, 2), (2, 3), start_half="b", end_half="a"),
+            3: _passage("nahum", (2, 2, "b"), (2, 3, "a")),
         })
         division = tree.findall(f".//{TEI}div[@n='triennial_3']")[0]
         self.assertEqual(
@@ -285,7 +291,16 @@ class TestHaftarahFile(unittest.TestCase):
         )
         self.assertEqual(
             division.find(f"{J}transclude").get("target"),
-            "urn:x-opensiddur:text:bible:nahum/2/2-2/3",
+            "urn:x-opensiddur:text:bible:nahum/2/2/b-2/3/a",
+        )
+
+    def test_a_range_from_a_half_verse_to_a_whole_verse_is_stated_absolutely(self):
+        """A relative range end always lands at the start's depth, so it cannot say this."""
+        tree = self._tree("emor", {3: _passage("nahum", (2, 2, "b"), (2, 5))})
+        division = tree.findall(f".//{TEI}div[@n='triennial_3']")[0]
+        self.assertEqual(
+            division.find(f"{J}transclude").get("target"),
+            "urn:x-opensiddur:text:bible:nahum/2/2/b-/2/5",
         )
 
 

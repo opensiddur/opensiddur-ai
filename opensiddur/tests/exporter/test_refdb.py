@@ -1119,6 +1119,51 @@ class TestMilestoneScoping(unittest.TestCase):
         # Ends just before chapter 2, i.e. after the second seg, not the first.
         self.assertTrue(self._scope_end(chapter).endswith("seg[2]"))
 
+    def test_verse_does_not_end_at_a_half_verse_inside_it(self):
+        """A verse holding sub-verse milestones still runs to the next verse.
+
+        If the halves closed the verse, every verse carrying them would silently shrink to
+        its first half wherever it were transcluded.
+        """
+        verse, _a, _b, _next_verse = self._document(
+            ("verse", "31", "urn:x-opensiddur:text:bible:genesis/1/31"),
+            ("half-verse", "a", "urn:x-opensiddur:text:bible:genesis/1/31/a"),
+            ("half-verse", "b", "urn:x-opensiddur:text:bible:genesis/1/31/b"),
+            ("verse", "1", "urn:x-opensiddur:text:bible:genesis/2/1"),
+        )
+        self.assertTrue(self._scope_end(verse).endswith("seg[3]"))
+
+    def test_half_verse_ends_at_the_next_half_verse(self):
+        verse_a = self._document(
+            ("verse", "31", "urn:x-opensiddur:text:bible:genesis/1/31"),
+            ("half-verse", "a", "urn:x-opensiddur:text:bible:genesis/1/31/a"),
+            ("half-verse", "b", "urn:x-opensiddur:text:bible:genesis/1/31/b"),
+        )[1]
+        self.assertTrue(self._scope_end(verse_a).endswith("seg[2]"))
+
+    def test_half_verse_ends_at_the_next_verse(self):
+        """The second half runs to the end of its verse and no further."""
+        verse_b = self._document(
+            ("verse", "31", "urn:x-opensiddur:text:bible:genesis/1/31"),
+            ("half-verse", "b", "urn:x-opensiddur:text:bible:genesis/1/31/b"),
+            ("verse", "1", "urn:x-opensiddur:text:bible:genesis/2/1"),
+        )[1]
+        self.assertTrue(self._scope_end(verse_b).endswith("seg[2]"))
+
+    def test_a_verse_part_is_not_ended_by_a_half_verse(self):
+        """The two sub-verse divisions cut at different points and must not close each other.
+
+        The Thirteen Attributes end one word past the etnachta of Exodus 34:7, so a named
+        part really does straddle the accentual boundary.
+        """
+        venakeh = self._document(
+            ("verse", "7", "urn:x-opensiddur:text:bible:exodus/34/7"),
+            ("verse-part", "venakeh", "urn:x-opensiddur:text:bible:exodus/34/7/venakeh"),
+            ("half-verse", "b", "urn:x-opensiddur:text:bible:exodus/34/7/b"),
+            ("verse-part", "lo_yenakeh", "urn:x-opensiddur:text:bible:exodus/34/7/lo_yenakeh"),
+        )[1]
+        self.assertTrue(self._scope_end(venakeh).endswith("seg[3]"))
+
     def test_maftir_does_not_end_the_seventh_aliyah(self):
         """Maftir re-reads the close of aliyah 7; it opens inside it rather than ending it."""
         aliyah7, _maftir, _parsha = self._document(

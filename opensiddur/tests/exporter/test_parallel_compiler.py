@@ -269,6 +269,128 @@ class TestAssembleParallelStreams(unittest.TestCase):
             items = list(row)
             self.assertEqual([i.get("role") for i in items], ["primary", "parallel"])
 
+    def _milestone(self, corresp, unit="verse"):
+        el = etree.Element(f"{{{TEI_NS}}}milestone", nsmap=self.ns)
+        el.set("corresp", corresp)
+        el.set("unit", unit)
+        return el
+
+    def _rows_by_corresp(self, result):
+        """The corresp each parallel row is keyed on, with its two columns' text."""
+        rows = []
+        for row in result[0].iter(f"{{{P_NS}}}parallel") if result else []:
+            items = list(row)
+            texts = ["".join(item.itertext()) for item in items]
+            rows.append(texts)
+        return rows
+
+    def test_half_verses_fold_into_the_verse_the_other_side_has(self):
+        """The Hebrew divides at its accents; a translation cannot, and must not lose its
+        text to an empty row because of it."""
+        prim = self._transclude(
+            "urn:o@orig",
+            self._milestone("urn:v/1"),
+            self._milestone("urn:v/1/a", unit="half-verse"),
+            self._div("first-half"),
+            self._milestone("urn:v/1/b", unit="half-verse"),
+            self._div("second-half"),
+        )
+        par = self._transclude(
+            "urn:o@trans", self._milestone("urn:v/1"), self._div("whole-verse"))
+
+        result = self._assemble([prim], [par])
+
+        assert_parallel_invariants(self, result)
+        rows = self._rows_by_corresp(result)
+        # One row for the verse, with both halves of the Hebrew against the whole English.
+        self.assertEqual(len(rows), 1, rows)
+        primary_text, parallel_text = rows[0]
+        self.assertIn("first-half", primary_text)
+        self.assertIn("second-half", primary_text)
+        self.assertIn("whole-verse", parallel_text)
+
+    def test_folding_happens_in_both_directions(self):
+        """Whichever side is divided more finely is the one that folds."""
+        prim = self._transclude(
+            "urn:o@orig", self._milestone("urn:v/1"), self._div("whole-verse"))
+        par = self._transclude(
+            "urn:o@trans",
+            self._milestone("urn:v/1"),
+            self._milestone("urn:v/1/a", unit="half-verse"),
+            self._div("first-half"),
+            self._milestone("urn:v/1/b", unit="half-verse"),
+            self._div("second-half"),
+        )
+
+        result = self._assemble([prim], [par])
+
+        rows = self._rows_by_corresp(result)
+        self.assertEqual(len(rows), 1, rows)
+        self.assertIn("whole-verse", rows[0][0])
+        self.assertIn("first-half", rows[0][1])
+        self.assertIn("second-half", rows[0][1])
+
+    def test_both_sides_divided_alike_still_align_at_the_finer_division(self):
+        """Folding is a fallback, not a ceiling: matching halves keep their own rows."""
+        def stream(prefix):
+            return self._transclude(
+                f"urn:o@{prefix}",
+                self._milestone("urn:v/1"),
+                self._milestone("urn:v/1/a", unit="half-verse"),
+                self._div(f"{prefix}-a"),
+                self._milestone("urn:v/1/b", unit="half-verse"),
+                self._div(f"{prefix}-b"),
+            )
+
+        result = self._assemble([stream("orig")], [stream("trans")])
+
+        rows = self._rows_by_corresp(result)
+        self.assertEqual(len(rows), 3, rows)  # the verse milestone, then each half
+        self.assertIn("orig-a", rows[1][0])
+        self.assertIn("trans-a", rows[1][1])
+        self.assertIn("orig-b", rows[2][0])
+        self.assertIn("trans-b", rows[2][1])
+
+    def test_a_verse_the_other_side_does_not_subdivide_stays_in_one_piece(self):
+        """Folding must happen before the split, not after it.
+
+        Every split suspends the structure open across it and resumes it on the far side.
+        Splitting at a half-verse and merging the rows afterwards would leave those carriers
+        behind, breaking the verse into three pieces inside its own row.
+        """
+        prim = self._transclude(
+            "urn:o@orig",
+            self._milestone("urn:v/1"),
+            self._milestone("urn:v/1/a", unit="half-verse"),
+            self._div("first-half"),
+            self._milestone("urn:v/1/b", unit="half-verse"),
+            self._div("second-half"),
+        )
+        par = self._transclude(
+            "urn:o@trans", self._milestone("urn:v/1"), self._div("whole-verse"))
+
+        result = self._assemble([prim], [par])
+
+        primary = list(result[0].iter(f"{{{P_NS}}}parallel"))[0][0]
+        self.assertEqual(
+            [el.get(f"{{{P_NS}}}suspend") for el in primary.iter()
+             if el.get(f"{{{P_NS}}}suspend")],
+            [],
+            "the half-verses should not have suspended anything",
+        )
+
+    def test_a_division_with_no_container_in_common_keeps_its_own_row(self):
+        """Folding only ever moves text onto a URN this side actually marks."""
+        prim = self._transclude(
+            "urn:o@orig", self._milestone("urn:v/9/a", unit="half-verse"), self._div("orphan"))
+        par = self._transclude(
+            "urn:o@trans", self._milestone("urn:v/1"), self._div("elsewhere"))
+
+        result = self._assemble([prim], [par])
+
+        rows = self._rows_by_corresp(result)
+        self.assertTrue(any("orphan" in row[0] for row in rows), rows)
+
     def test_mismatched_transclude_counts(self):
         t1 = self._transclude()
         prim = [self._div("a"), t1, self._div("b")]  # 1 transclude

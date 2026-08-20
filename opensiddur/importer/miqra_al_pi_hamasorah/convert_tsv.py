@@ -12,6 +12,7 @@ from typing import Any, Iterable, Optional
 import mwparserfromhell
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.subverse import add_subverse_milestones
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.importer.util.pages import (
     default_sourcetexts_root,
@@ -239,10 +240,21 @@ def tei_file(
 """
 
 
-def validate_and_write_tei_file(tei_content: str, file_name: str, project_dir: Path | None) -> Path:
+def validate_and_write_tei_file(
+    tei_content: str,
+    file_name: str,
+    project_dir: Path | None,
+    add_subverse: bool = False,
+) -> Path:
     directory = project_dir.resolve() if project_dir is not None else _default_project_directory()
     out_path = directory / f"{file_name}.xml"
     pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
+    if add_subverse:
+        # After prettifying, not before: the pass splits text nodes to place its milestones,
+        # and re-indenting afterwards would put whitespace inside the words it split.
+        pretty_xml = add_subverse_milestones(
+            pretty_xml, language="he", project="miqra_al_pi_hamasorah"
+        )
     is_valid, errors = validate(pretty_xml)
     if not is_valid:
         raise Exception(f"Errors in {file_name}: {errors}")
@@ -517,7 +529,7 @@ def book_file(book: Book, *, sourcetexts_root: Path | None, project_dir: Path | 
     header_xml = header(book.book_name_he, book.book_name_en, qualifier=f":{book.file_name}")
     tei_content = tei_file(header_xml, **xml_dict)
     make_project_directory(project_dir)
-    validate_and_write_tei_file(tei_content, book.file_name, project_dir)
+    validate_and_write_tei_file(tei_content, book.file_name, project_dir, add_subverse=True)
 
 
 def _readme_front_matter(sourcetexts_root: Path | None) -> str:

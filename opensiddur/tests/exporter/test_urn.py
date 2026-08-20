@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
-from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange
+from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange, split_range
 from opensiddur.exporter.refdb import UrnMapping
 
 
@@ -312,6 +312,61 @@ class TestUrnResolverRange(unittest.TestCase):
         
         self.assertEqual(results, [])
 
+    def test_resolve_range_absolute_end(self):
+        """A range from a half-verse to a whole verse, stated absolutely."""
+        def mock_get_urn_mappings(urn, project=None):
+            if urn in ("urn:x-opensiddur:test:bible:nahum/2/2/b",
+                       "urn:x-opensiddur:test:bible:nahum/2/5"):
+                return [make_urn_mapping(project="mam", file_name="nahum.xml", urn=urn, element_type="verse")]
+            return []
+
+        self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
+
+        results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:nahum/2/2/b-/2/5")
+
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], ResolvedUrnRange)
+        self.assertEqual(results[0].start.urn, "urn:x-opensiddur:test:bible:nahum/2/2/b")
+        self.assertEqual(results[0].end.urn, "urn:x-opensiddur:test:bible:nahum/2/5")
+
+    def test_resolve_range_absolute_end_with_project(self):
+        """The @project suffix lands on both ends of an absolute range."""
+        def mock_get_urn_mappings(urn, project=None):
+            if project == "mam" and urn in (
+                "urn:x-opensiddur:test:bible:nahum/2/2/b",
+                "urn:x-opensiddur:test:bible:nahum/2/5",
+            ):
+                return [make_urn_mapping(project="mam", file_name="nahum.xml", urn=urn, element_type="verse")]
+            return []
+
+        self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
+
+        results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:nahum/2/2/b-/2/5@mam")
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].start.project, "mam")
+        self.assertEqual(results[0].end.project, "mam")
+
+    def test_resolve_range_absolute_end_not_found(self):
+        """An absolute end that no project carries is an empty result, not an exception."""
+        def mock_get_urn_mappings(urn, project=None):
+            if urn == "urn:x-opensiddur:test:bible:nahum/2/2/b":
+                return [make_urn_mapping(project="mam", file_name="nahum.xml", urn=urn, element_type="verse")]
+            return []
+
+        self.mock_db.get_urn_mappings.side_effect = mock_get_urn_mappings
+
+        results = self.resolver.resolve_range("urn:x-opensiddur:test:bible:nahum/2/2/b-/2/99")
+
+        self.assertEqual(results, [])
+
+    def test_resolve_range_malformed_range_raises(self):
+        """A relative end deeper than its start is rejected rather than silently missed."""
+        self.mock_db.get_urn_mappings.return_value = []
+
+        with self.assertRaises(ValueError):
+            self.resolver.resolve_range("urn:x-opensiddur:test:bible:nahum/2/2-2/3/a")
+
     def test_resolve_range_not_a_range(self):
         """Test resolving URN without dash calls resolve() and returns results."""
         # Mock database
@@ -397,6 +452,79 @@ class TestUrnResolverRange(unittest.TestCase):
         # Verify resolve() was called
         mock_resolve.assert_called_once_with("urn:x-opensiddur:text:some-book/1")
         self.assertEqual(result, expected_result)
+
+
+class TestSplitRange(unittest.TestCase):
+    """Test the range notation itself, without a database behind it."""
+
+    BASE = "urn:x-opensiddur:test:bible:"
+
+    def assertSplits(self, ranged: str, start: str, end: str):
+        self.assertEqual(
+            split_range(self.BASE + ranged),
+            (self.BASE + start, self.BASE + end),
+            f"splitting {ranged!r}",
+        )
+
+    def test_relative_end_single_component(self):
+        self.assertSplits("genesis/1/1-2", "genesis/1/1", "genesis/1/2")
+
+    def test_relative_end_multi_component(self):
+        self.assertSplits("genesis/1/1-2/3", "genesis/1/1", "genesis/2/3")
+
+    def test_relative_end_at_chapter_level(self):
+        self.assertSplits("genesis/1-2", "genesis/1", "genesis/2")
+
+    def test_relative_end_between_half_verses(self):
+        """Both ends below the verse, at the same depth, so the relative form reaches."""
+        self.assertSplits("nahum/2/2/b-2/3/a", "nahum/2/2/b", "nahum/2/3/a")
+
+    def test_relative_end_between_verse_parts(self):
+        self.assertSplits(
+            "exodus/34/6/adonai_adonai-34/7/venakeh",
+            "exodus/34/6/adonai_adonai",
+            "exodus/34/7/venakeh",
+        )
+
+    def test_absolute_end_from_half_verse_to_whole_verse(self):
+        """The ends are at different depths, which only the absolute form can state."""
+        self.assertSplits("nahum/2/2/b-/2/5", "nahum/2/2/b", "nahum/2/5")
+
+    def test_absolute_end_from_verse_to_whole_chapter(self):
+        self.assertSplits("genesis/1/1-/3", "genesis/1/1", "genesis/3")
+
+    def test_absolute_end_from_verse_to_half_verse(self):
+        self.assertSplits("nahum/2/2-/2/3/a", "nahum/2/2", "nahum/2/3/a")
+
+    def test_absolute_end_deeper_than_start(self):
+        """Relative notation cannot reach downward; absolute notation can."""
+        self.assertSplits("genesis/1-/2/3", "genesis/1", "genesis/2/3")
+
+    def test_not_a_range(self):
+        self.assertIsNone(split_range(self.BASE + "genesis/1/1"))
+
+    def test_dash_in_the_work_component_is_not_a_range(self):
+        """'x-opensiddur' and a hyphenated book name both live in component 0."""
+        self.assertIsNone(split_range("urn:x-opensiddur:text:some-book/1"))
+        self.assertIsNone(split_range("urn:x-opensiddur:test:doc"))
+
+    def test_relative_end_deeper_than_start_raises(self):
+        """The case that used to build a URN with the scheme sliced off it."""
+        with self.assertRaises(ValueError) as caught:
+            split_range(self.BASE + "nahum/2/2-2/3/a")
+        self.assertIn("-/2/3/a", str(caught.exception))
+
+    def test_missing_end_raises(self):
+        with self.assertRaises(ValueError):
+            split_range(self.BASE + "genesis/1/1-")
+
+    def test_missing_start_raises(self):
+        with self.assertRaises(ValueError):
+            split_range(self.BASE + "genesis/1/-2")
+
+    def test_empty_component_in_absolute_end_raises(self):
+        with self.assertRaises(ValueError):
+            split_range(self.BASE + "genesis/1/1-//3")
 
 
 class TestUrnResolverGetPathFromUrn(unittest.TestCase):
