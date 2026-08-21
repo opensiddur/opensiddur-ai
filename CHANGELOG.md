@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A Wikisource downloader that follows Wikimedia's rules, and a Birnbaum siddur importer built on
+  it (`opensiddur/importer/util/wikisource.py`, `opensiddur/importer/birnbaum_siddur/`). The JPS
+  1917 downloader scrapes `action=raw` and an Atom history feed through `/w/index.php` at two
+  requests per page, sends no `maxlag`, ignores `Retry-After`, and refetches the whole book every
+  run. The new client reads the Action API instead: batched 50 titles per request, `maxlag=5`,
+  backoff on 429 and replication lag, strictly serial as the unauthenticated concurrency limit of
+  1 requires, and gzipped. The contact address in the `User-Agent` is now a `--contact-email`
+  parameter (or `$OPENSIDDUR_CONTACT_EMAIL`) with no default, because the address baked into the
+  old downloaders was `opensiddur@example.com`, a reserved domain that reaches nobody.
+  `manifest.json` records each page's revision id, so a re-run probes revisions and rewrites only
+  what changed — for the 815-page Birnbaum siddur that is ~17 requests and no file writes, against
+  ~1,630 requests before. Downloads all 815 pages into `sourcetexts/sources/birnbaum_siddur/`
+  as `text/NNN.txt` and `credits/NNN.txt`, matching the `jps1917` layout.
+
+### Changed
+- `RELEASE_PROCEDURE.md` now says to re-lock and push `uv.lock` after a release. The release script
+  writes the new version into `pyproject.toml` but never re-locks, so `uv.lock` kept the previous
+  version and the next `uv sync --all-groups` left a modified lockfile in the working tree — which
+  then collides with the "must be clean" check the procedure opens with.
+
 ## [0.3.0] - 2026-08-21
 
 ### Added
