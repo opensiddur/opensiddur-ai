@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-21
+
 ### Added
 - Sub-verse URNs. A URN reached no further than a whole verse, so a reading that begins or ends
   inside one could not be said: Emor's third-year haftarah is Nachum 2:2b–3a, the Thirteen
@@ -30,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallel alignment joined on exact URN equality, so an edition that divided the text more
   finely than the one beside it put its subdivisions in rows facing empty cells. Rows are now
   formed at the divisions both sides carry.
+
+### Pinned sources
+
+- `opensiddur-projects`: 075863d9754578b4b46a221a4dfdc0c5c3c1b9ef
+- `sourcetexts`: 9557244eacdd33d03906148a0bfc67600664dff6
 
 ## [0.2.0] - 2026-08-17
 
