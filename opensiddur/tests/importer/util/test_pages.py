@@ -3,11 +3,15 @@ from unittest.mock import patch, mock_open, MagicMock
 from pathlib import Path
 
 from opensiddur.importer.util.pages import (
+    birnbaum_siddur_external_text_directory,
+    birnbaum_siddur_source_text_directory,
     feinstein_haggadah_data_directory,
     get_page,
     get_credits,
     heidenheim_haggadah_data_directory,
     jps1917_text_directory,
+    relative_path_to_title,
+    title_to_relative_path,
 )
 from opensiddur.importer.util.constants import Page
 
@@ -238,6 +242,52 @@ class TestHaggadahDataDirectories(unittest.TestCase):
         self.assertEqual(
             heidenheim_haggadah_data_directory(root),
             root / "heidenheim_haggadah_1822",
+        )
+
+
+class TestTitleToRelativePath(unittest.TestCase):
+    """Mapping wiki titles onto paths, so subpages become real directories"""
+
+    def test_subpage_slashes_become_directories(self):
+        self.assertEqual(
+            title_to_relative_path("אשכנז/דפי יסוד/קדיש"),
+            Path("אשכנז") / "דפי יסוד" / "קדיש.txt",
+        )
+
+    def test_a_title_without_slashes_is_a_single_file(self):
+        self.assertEqual(title_to_relative_path("index"), Path("index.txt"))
+
+    def test_round_trips(self):
+        for title in (
+            "אשכנז/דפי יסוד/קדיש",
+            "index",
+            'אשכנז/תפילה לפני יציאה לקרב לחיילי צה"ל',   # gershayim quote
+            "עשרת הדברות/ניקוד",
+            "a%b/c",                                      # the one escaped character
+        ):
+            self.assertEqual(relative_path_to_title(title_to_relative_path(title)), title)
+
+    def test_percent_is_escaped_so_the_mapping_is_reversible(self):
+        self.assertEqual(title_to_relative_path("a%25b"), Path("a%2525b.txt"))
+
+    def test_rejects_a_title_that_cannot_be_a_path(self):
+        for bad in ("", "a//b", "/leading", "trailing/"):
+            with self.assertRaises(ValueError):
+                title_to_relative_path(bad)
+
+
+class TestBirnbaumSourceDirectories(unittest.TestCase):
+    """The source and external trees hang off the Birnbaum data directory"""
+
+    def test_source_and_external_trees_are_separate(self):
+        root = Path("/tmp/sources")
+        self.assertEqual(
+            birnbaum_siddur_source_text_directory(root),
+            root / "birnbaum_siddur" / "source" / "text",
+        )
+        self.assertEqual(
+            birnbaum_siddur_external_text_directory(root),
+            root / "birnbaum_siddur" / "external" / "text",
         )
 
 

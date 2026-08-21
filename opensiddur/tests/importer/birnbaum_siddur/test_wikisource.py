@@ -20,6 +20,22 @@ TITLES = {
     LAST: f"{wikisource.WIKI_NAMESPACE}:{wikisource.BOOK_NAME}/{LAST}",
 }
 
+ROOT = wikisource.SOURCE_ROOT
+FOUNDATION = f"{ROOT}/אשכנז/דפי יסוד/קדיש"
+REDIRECT_PAGE = f"{ROOT}/אשכנז/הלל"
+EXTERNAL = "עשרת הדברות/ניקוד"
+
+# The scan page names a section that the foundation page defines, which is the
+# relationship structure.json exists to record.
+SECTION = "כותרת חצי קדיש"
+SCAN_WIKITEXT = f"{{{{#קטע:{FOUNDATION}|{SECTION}}}}}"
+SOURCE_WIKITEXT = {
+    ROOT: "index page",
+    FOUNDATION: f"<קטע התחלה={SECTION}/>text<קטע סוף={SECTION}/>",
+    REDIRECT_PAGE: f"#הפניה [[{FOUNDATION}]]",
+    EXTERNAL: "<קטע התחלה=דברות/>text<קטע סוף=דברות/>",
+}
+
 
 class BirnbaumDownloadTestCase(unittest.TestCase):
     """Fixture wiring the downloader to a temporary sourcetexts tree and a fake wiki."""
@@ -39,12 +55,20 @@ class BirnbaumDownloadTestCase(unittest.TestCase):
 
         self.content_requests = []
         self.contributor_requests = []
+        self.closure_calls = []
+
+        # The source layer: revision ids keyed by title, same shape as the scan layer.
+        self.source_revids = {t: 500 for t in SOURCE_WIKITEXT}
 
         patcher = patch.multiple(
             wikisource,
             list_book_pages=MagicMock(return_value=dict(TITLES)),
             fetch_revisions=MagicMock(side_effect=self.fake_fetch_revisions),
             fetch_contributors=MagicMock(side_effect=self.fake_fetch_contributors),
+            list_pages_with_prefix=MagicMock(
+                return_value=[FOUNDATION, REDIRECT_PAGE]
+            ),
+            download_closure=MagicMock(side_effect=self.fake_download_closure),
         )
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -57,7 +81,7 @@ class BirnbaumDownloadTestCase(unittest.TestCase):
             title: RevisionInfo(
                 revid=self.revids[title],
                 timestamp="2022-02-07T05:35:00Z",
-                content=f"wikitext for {title}" if include_content else None,
+                content=SCAN_WIKITEXT if include_content else None,
             )
             for title in titles
         }
@@ -65,7 +89,23 @@ class BirnbaumDownloadTestCase(unittest.TestCase):
     def fake_fetch_contributors(self, wiki, titles, **kwargs):
         titles = list(titles)
         self.contributor_requests.append(titles)
-        return {title: self.contributors[title] for title in titles}
+        return {title: self.contributors.get(title, ["Dovi"]) for title in titles}
+
+    def fake_download_closure(self, wiki, roots, *, include, **kwargs):
+        """Stand in for the real walker, returning a fixed small source tree.
+
+        Records `include` so tests can assert what the real walker would follow
+        without re-implementing traversal here.
+        """
+        self.closure_calls.append((list(roots), include))
+        return {
+            title: RevisionInfo(
+                revid=self.source_revids[title],
+                timestamp="2022-02-07T05:35:00Z",
+                content=text,
+            )
+            for title, text in SOURCE_WIKITEXT.items()
+        }
 
     def run_download(self, **kwargs):
         return download_book(
@@ -94,6 +134,31 @@ class BirnbaumDownloadTestCase(unittest.TestCase):
     def read_manifest(self):
         return json.loads(self.manifest_file.read_text(encoding="utf-8"))
 
+    def read_structure(self):
+        path = wikisource.birnbaum_siddur_data_directory(self.root) / "structure.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def seed_everything_current(self):
+        """Put both layers on disk and in the manifest, exactly as a finished run would."""
+        self.seed_page(FIRST, "001", revid=self.revids[TITLES[FIRST]])
+        (self.text_dir / "815.txt").write_text(SCAN_WIKITEXT, encoding="utf-8")
+        (self.credits_dir / "815.txt").write_text("Dovi", encoding="utf-8")
+
+        source_pages = {}
+        for title, text in SOURCE_WIKITEXT.items():
+            text_path, credits_path = wikisource.source_page_paths(title, self.root)
+            text_path.parent.mkdir(parents=True, exist_ok=True)
+            credits_path.parent.mkdir(parents=True, exist_ok=True)
+            text_path.write_text(text, encoding="utf-8")
+            credits_path.write_text("Dovi", encoding="utf-8")
+            source_pages[title] = {"revid": self.source_revids[title]}
+
+        manifest = self.read_manifest()
+        manifest["pages"]["815"] = {"revid": self.revids[TITLES[LAST]]}
+        manifest["source_pages"] = source_pages
+        self.manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+        wikisource.save_structure(wikisource.build_structure(self.root), self.root)
+
 
 class TestFirstRun(BirnbaumDownloadTestCase):
     def test_downloads_every_page_when_there_is_no_manifest(self):
@@ -108,8 +173,7 @@ class TestFirstRun(BirnbaumDownloadTestCase):
             sorted(p.name for p in self.text_dir.iterdir()), ["001.txt", "815.txt"]
         )
         self.assertEqual(
-            (self.text_dir / "815.txt").read_text(encoding="utf-8"),
-            f"wikitext for {TITLES[LAST]}",
+            (self.text_dir / "815.txt").read_text(encoding="utf-8"), SCAN_WIKITEXT
         )
 
     def test_writes_contributors_one_per_line(self):
@@ -141,8 +205,9 @@ class TestIncrementalUpdate(BirnbaumDownloadTestCase):
 
         self.run_download()
 
+        # The source phase makes its own requests; assert on the scan phase's.
         self.assertEqual(self.content_requests, [[TITLES[LAST]]])
-        self.assertEqual(self.contributor_requests, [[TITLES[LAST]]])
+        self.assertEqual(self.contributor_requests[0], [TITLES[LAST]])
 
     def test_leaves_an_unchanged_page_untouched_on_disk(self):
         self.seed_page(FIRST, "001", revid=111, text="existing", credits="Dovi")
@@ -163,18 +228,31 @@ class TestIncrementalUpdate(BirnbaumDownloadTestCase):
         self.assertEqual(pages["815"]["revid"], 999)
 
     def test_downloads_nothing_when_the_whole_book_is_current(self):
-        self.seed_page(FIRST, "001", revid=111)
-        # Make page 815 current too.
-        (self.text_dir / "815.txt").write_text("existing", encoding="utf-8")
-        (self.credits_dir / "815.txt").write_text("Dovi", encoding="utf-8")
-        manifest = self.read_manifest()
-        manifest["pages"]["815"] = {"revid": 222, "timestamp": "2022-02-07T05:35:00Z"}
-        self.manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+        self.seed_everything_current()
 
         self.run_download()
 
         self.assertEqual(self.content_requests, [])
         self.assertEqual(self.contributor_requests, [])
+
+    def test_a_no_op_rerun_leaves_every_file_untouched(self):
+        # The property that makes re-running cheap enough to do routinely: an
+        # unchanged run must not even rewrite the manifest, or it shows up as a diff.
+        self.seed_everything_current()
+        before = {
+            p: p.stat().st_mtime_ns
+            for p in wikisource.birnbaum_siddur_data_directory(self.root).rglob("*")
+            if p.is_file()
+        }
+
+        self.run_download()
+
+        after = {
+            p: p.stat().st_mtime_ns
+            for p in wikisource.birnbaum_siddur_data_directory(self.root).rglob("*")
+            if p.is_file()
+        }
+        self.assertEqual(before, after)
 
     def test_refetches_when_a_file_has_gone_missing(self):
         # A manifest entry is not proof the files survived.
@@ -215,6 +293,120 @@ class TestDryRun(BirnbaumDownloadTestCase):
         self.run_download(dry_run=True)
 
         self.assertEqual(self.content_requests, [])
+
+
+class TestSourceLayout(BirnbaumDownloadTestCase):
+    def test_subtree_pages_mirror_the_title_hierarchy(self):
+        self.run_download()
+
+        expected = (
+            wikisource.birnbaum_siddur_source_text_directory(self.root)
+            / "אשכנז"
+            / "דפי יסוד"
+            / "קדיש.txt"
+        )
+        self.assertTrue(expected.is_file())
+        self.assertEqual(expected.read_text(encoding="utf-8"), SOURCE_WIKITEXT[FOUNDATION])
+
+    def test_credits_mirror_the_text_tree(self):
+        self.run_download()
+
+        self.assertTrue(
+            (
+                wikisource.birnbaum_siddur_source_credits_directory(self.root)
+                / "אשכנז" / "דפי יסוד" / "קדיש.txt"
+            ).is_file()
+        )
+
+    def test_the_root_page_becomes_index(self):
+        self.run_download()
+
+        self.assertTrue(
+            (wikisource.birnbaum_siddur_source_text_directory(self.root) / "index.txt").is_file()
+        )
+
+    def test_pages_outside_the_subtree_go_in_the_external_tree(self):
+        self.run_download()
+
+        expected = (
+            wikisource.birnbaum_siddur_external_text_directory(self.root)
+            / "עשרת הדברות" / "ניקוד.txt"
+        )
+        self.assertTrue(expected.is_file())
+
+    def test_redirects_are_kept_and_recorded(self):
+        # Roughly half the real subtree is redirects carrying alternate service
+        # names, so they are organization rather than noise.
+        self.run_download()
+
+        entry = self.read_manifest()["source_pages"][REDIRECT_PAGE]
+        self.assertEqual(entry["redirect_target"], FOUNDATION)
+        self.assertIsNone(self.read_manifest()["source_pages"][FOUNDATION]["redirect_target"])
+
+
+class TestClosureBoundary(BirnbaumDownloadTestCase):
+    def test_the_walker_is_told_not_to_follow_scan_pages(self):
+        # They are downloaded by the other phase; following them here would fetch
+        # the whole book a second time, since the two layers reference each other.
+        self.run_download()
+
+        _roots, include = self.closure_calls[0]
+        self.assertFalse(include(TITLES[FIRST]))
+        self.assertTrue(include(FOUNDATION))
+
+    def test_the_root_page_is_added_to_the_enumerated_roots(self):
+        # A prefix search on "ROOT/" cannot match ROOT itself.
+        self.run_download()
+
+        roots, _include = self.closure_calls[0]
+        self.assertIn(ROOT, roots)
+
+
+class TestStructure(BirnbaumDownloadTestCase):
+    def test_records_the_sections_a_page_defines(self):
+        self.run_download()
+
+        self.assertEqual(self.read_structure()["pages"][FOUNDATION]["defines"], [SECTION])
+
+    def test_records_what_the_scan_pages_transclude(self):
+        # This is the link between printed pagination and liturgical text, and the
+        # main reason structure.json exists.
+        self.run_download()
+
+        scan = self.read_structure()["pages"][TITLES[FIRST]]
+        self.assertEqual(scan["transcludes"], [{"title": FOUNDATION, "section": SECTION}])
+
+    def test_reports_references_that_resolve_to_nothing(self):
+        self.assertEqual(self.run_download() and self.read_structure()["dangling"], [])
+
+    def test_flags_a_dangling_reference(self):
+        SOURCE_WIKITEXT[FOUNDATION] = "<קטע התחלה=something else/>x"
+        self.addCleanup(
+            SOURCE_WIKITEXT.__setitem__,
+            FOUNDATION,
+            f"<קטע התחלה={SECTION}/>text<קטע סוף={SECTION}/>",
+        )
+
+        self.run_download()
+
+        self.assertIn(
+            {"title": FOUNDATION, "section": SECTION}, self.read_structure()["dangling"]
+        )
+
+    def test_says_it_is_derived(self):
+        self.run_download()
+
+        self.assertIn("regenerate", self.read_structure()["generated_from"])
+
+
+class TestSkipSource(BirnbaumDownloadTestCase):
+    def test_skipping_the_source_phase_downloads_only_the_scans(self):
+        self.run_download(include_source=False)
+
+        self.assertEqual(self.closure_calls, [])
+        self.assertFalse(
+            wikisource.birnbaum_siddur_source_text_directory(self.root).exists()
+        )
 
 
 class TestCli(unittest.TestCase):

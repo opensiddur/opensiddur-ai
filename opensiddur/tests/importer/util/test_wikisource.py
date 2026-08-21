@@ -6,15 +6,22 @@ import requests
 from opensiddur.importer.util import wikisource
 from opensiddur.importer.util.wikisource import (
     RateLimiter,
+    RevisionInfo,
     Wiki,
     WikisourceError,
     api_get,
     batched,
     build_session,
+    download_closure,
     fetch_contributors,
     fetch_revisions,
+    find_sections,
+    find_transclusions,
     is_bot_name,
+    is_redirect,
     list_book_pages,
+    list_pages_with_prefix,
+    normalize_title,
     page_title,
     query_pages,
     resolve_contact_email,
@@ -40,7 +47,7 @@ def make_response(status_code=200, payload=None, headers=None):
 def make_wiki(*responses):
     """A Wiki whose session returns the given responses in order."""
     session = MagicMock()
-    session.get.side_effect = list(responses)
+    session.post.side_effect = list(responses)
     return Wiki(server="he.wikisource.org", session=session)
 
 
@@ -122,16 +129,16 @@ class TestApiGet(unittest.TestCase):
         wiki = make_wiki(make_response(payload={"query": {}}))
         api_get(wiki, {"action": "query"})
 
-        _, kwargs = wiki.session.get.call_args
-        self.assertEqual(kwargs["params"]["format"], "json")
-        self.assertEqual(kwargs["params"]["formatversion"], 2)
-        self.assertEqual(kwargs["params"]["maxlag"], 5)
+        _, kwargs = wiki.session.post.call_args
+        self.assertEqual(kwargs["data"]["format"], "json")
+        self.assertEqual(kwargs["data"]["formatversion"], 2)
+        self.assertEqual(kwargs["data"]["maxlag"], 5)
 
     def test_targets_the_action_api(self):
         wiki = make_wiki(make_response(payload={"query": {}}))
         api_get(wiki, {"action": "query"})
 
-        args, _ = wiki.session.get.call_args
+        args, _ = wiki.session.post.call_args
         self.assertEqual(args[0], "https://he.wikisource.org/w/api.php")
 
     def test_waits_and_retries_when_the_database_is_lagging(self):
@@ -146,7 +153,7 @@ class TestApiGet(unittest.TestCase):
             api_get(wiki, {"action": "query"})
 
         sleep.assert_called_once_with(6.0)
-        self.assertEqual(wiki.session.get.call_count, 2)
+        self.assertEqual(wiki.session.post.call_count, 2)
 
     def test_gives_up_on_sustained_lag(self):
         lagging = [
@@ -188,7 +195,7 @@ class TestApiGet(unittest.TestCase):
         with self.assertRaises(requests.HTTPError):
             api_get(wiki, {"action": "query"})
 
-        self.assertEqual(wiki.session.get.call_count, 1)
+        self.assertEqual(wiki.session.post.call_count, 1)
 
     def test_reports_other_api_errors(self):
         wiki = make_wiki(
@@ -264,8 +271,8 @@ class TestQueryPages(unittest.TestCase):
 
         query_pages(wiki, {"action": "query"})
 
-        _, kwargs = wiki.session.get.call_args
-        self.assertEqual(kwargs["params"]["pccontinue"], "next")
+        _, kwargs = wiki.session.post.call_args
+        self.assertEqual(kwargs["data"]["pccontinue"], "next")
 
     def test_drops_pages_the_wiki_does_not_have(self):
         wiki = make_wiki(
@@ -319,9 +326,9 @@ class TestListBookPages(unittest.TestCase):
 
         list_book_pages(wiki, BOOK)
 
-        _, kwargs = wiki.session.get.call_args
-        self.assertEqual(kwargs["params"]["gapnamespace"], 104)
-        self.assertEqual(kwargs["params"]["gapprefix"], f"{BOOK}/")
+        _, kwargs = wiki.session.post.call_args
+        self.assertEqual(kwargs["data"]["gapnamespace"], 104)
+        self.assertEqual(kwargs["data"]["gapprefix"], f"{BOOK}/")
 
 
 class TestFetchRevisions(unittest.TestCase):
@@ -348,9 +355,9 @@ class TestFetchRevisions(unittest.TestCase):
         self.assertEqual(found[f"{NAMESPACE}:{BOOK}/1"].revid, 111)
         self.assertIsNone(found[f"{NAMESPACE}:{BOOK}/2"].content)
 
-        _, kwargs = wiki.session.get.call_args
-        self.assertNotIn("content", kwargs["params"]["rvprop"])
-        self.assertNotIn("rvslots", kwargs["params"])
+        _, kwargs = wiki.session.post.call_args
+        self.assertNotIn("content", kwargs["data"]["rvprop"])
+        self.assertNotIn("rvslots", kwargs["data"])
 
     def test_reads_wikitext_when_asked(self):
         wiki = make_wiki(
@@ -376,9 +383,9 @@ class TestFetchRevisions(unittest.TestCase):
         self.assertEqual(found[f"{NAMESPACE}:{BOOK}/1"].content, "שלום")
         self.assertEqual(found[f"{NAMESPACE}:{BOOK}/1"].user, "Dovi")
 
-        _, kwargs = wiki.session.get.call_args
-        self.assertIn("content", kwargs["params"]["rvprop"])
-        self.assertEqual(kwargs["params"]["rvslots"], "main")
+        _, kwargs = wiki.session.post.call_args
+        self.assertIn("content", kwargs["data"]["rvprop"])
+        self.assertEqual(kwargs["data"]["rvslots"], "main")
 
     def test_batches_titles_to_stay_within_the_api_limit(self):
         titles = [f"{NAMESPACE}:{BOOK}/{n}" for n in range(1, 121)]
@@ -386,7 +393,7 @@ class TestFetchRevisions(unittest.TestCase):
 
         fetch_revisions(wiki, titles, include_content=False)
 
-        self.assertEqual(wiki.session.get.call_count, 3)
+        self.assertEqual(wiki.session.post.call_count, 3)
 
     def test_skips_pages_with_no_revisions(self):
         wiki = make_wiki(
@@ -451,6 +458,164 @@ class TestFetchContributors(unittest.TestCase):
         )
 
         self.assertEqual(found[f"{NAMESPACE}:{BOOK}/50"], ["Dovi"])
+
+
+class TestNormalizeTitle(unittest.TestCase):
+    def test_folds_underscores_to_spaces(self):
+        # The Birnbaum siddur is linked both ways; without folding, the link graph
+        # double-counts it and the downloader fetches it twice.
+        self.assertEqual(
+            normalize_title("עמוד:Philip_Birnbaum_-_x.pdf/1"),
+            normalize_title("עמוד:Philip Birnbaum - x.pdf/1"),
+        )
+
+    def test_collapses_and_trims_whitespace(self):
+        self.assertEqual(normalize_title("  A   B  "), "A B")
+
+    def test_leaves_capitalisation_alone(self):
+        # Whether the first letter is case-insensitive is a per-wiki setting, so
+        # folding it here could merge two genuinely distinct titles.
+        self.assertEqual(normalize_title("aPage"), "aPage")
+
+
+class TestFindTransclusions(unittest.TestCase):
+    def test_reads_the_hebrew_parser_function(self):
+        self.assertEqual(
+            find_transclusions("{{#קטע:הסידור/קדיש|חצי קדיש}}"),
+            [("הסידור/קדיש", "חצי קדיש")],
+        )
+
+    def test_reads_the_english_aliases(self):
+        self.assertEqual(find_transclusions("{{#lst:Page|Sec}}"), [("Page", "Sec")])
+        self.assertEqual(find_transclusions("{{#section:Page|Sec}}"), [("Page", "Sec")])
+
+    def test_normalises_the_target_but_not_the_label(self):
+        found = find_transclusions("{{#קטע:A_B|keep  this}}")
+        self.assertEqual(found, [("A B", "keep  this")])
+
+    def test_reads_a_call_that_spans_a_line_break(self):
+        # Real data does this; a line-based reader silently misses it.
+        self.assertEqual(
+            find_transclusions("{{#קטע:Page|מגן אבות הוראה\n}}"),
+            [("Page", "מגן אבות הוראה")],
+        )
+
+    def test_finds_several_on_one_line(self):
+        self.assertEqual(
+            find_transclusions("{{ק|{{#קטע:A|1}}}} {{#קטע:B|2}}"),
+            [("A", "1"), ("B", "2")],
+        )
+
+    def test_ignores_markup_the_parser_would_not_act_on(self):
+        self.assertEqual(find_transclusions("<nowiki>{{#קטע:A|B}}</nowiki>"), [])
+        self.assertEqual(find_transclusions("<!-- {{#קטע:A|B}} -->"), [])
+
+
+class TestFindSections(unittest.TestCase):
+    def test_reads_the_hebrew_tag(self):
+        self.assertEqual(
+            find_sections("<קטע התחלה=כותרת חצי קדיש/>x<קטע סוף=כותרת חצי קדיש/>"),
+            ["כותרת חצי קדיש"],
+        )
+
+    def test_reads_quoted_and_bare_values(self):
+        self.assertEqual(find_sections('<section begin="Foo Bar"/>'), ["Foo Bar"])
+        self.assertEqual(find_sections("<section begin=Foo/>"), ["Foo"])
+        self.assertEqual(find_sections("<section begin='Foo'/>"), ["Foo"])
+
+    def test_deduplicates_while_keeping_order(self):
+        self.assertEqual(
+            find_sections("<קטע התחלה=b/><קטע התחלה=a/><קטע התחלה=b/>"), ["b", "a"]
+        )
+
+    def test_ignores_end_tags(self):
+        self.assertEqual(find_sections("<קטע סוף=a/>"), [])
+
+
+class TestIsRedirect(unittest.TestCase):
+    def test_recognises_the_hebrew_form(self):
+        self.assertEqual(is_redirect("#הפניה [[הסידור/הלל]]"), (True, "הסידור/הלל"))
+
+    def test_recognises_the_english_form(self):
+        self.assertEqual(is_redirect("#REDIRECT [[Target]]"), (True, "Target"))
+
+    def test_normalises_the_target(self):
+        self.assertEqual(is_redirect("#REDIRECT [[A_B]]")[1], "A B")
+
+    def test_ordinary_pages_are_not_redirects(self):
+        self.assertEqual(is_redirect("just text"), (False, None))
+
+
+class TestDownloadClosure(unittest.TestCase):
+    def _wiki_returning(self, graph):
+        """A Wiki whose fetch_revisions serves `graph` (title -> wikitext)."""
+        def fake(wiki, titles, *, include_content, **kwargs):
+            return {
+                t: RevisionInfo(revid=1, timestamp="2022-01-01T00:00:00Z", content=graph[t])
+                for t in titles
+                if t in graph
+            }
+        return MagicMock(), fake
+
+    def test_follows_references_breadth_first(self):
+        graph = {
+            "A": "{{#קטע:B|s}}",
+            "B": "{{#קטע:C|s}}",
+            "C": "leaf",
+        }
+        wiki, fake = self._wiki_returning(graph)
+        with patch.object(wikisource, "fetch_revisions", side_effect=fake):
+            found = download_closure(wiki, ["A"], include=lambda t: True)
+        self.assertEqual(sorted(found), ["A", "B", "C"])
+
+    def test_terminates_on_a_reference_cycle(self):
+        # The real graph is cyclic: assemblies transclude scan pages that
+        # transclude assemblies. Without cycle detection this never returns.
+        graph = {"A": "{{#קטע:B|s}}", "B": "{{#קטע:A|s}}"}
+        wiki, fake = self._wiki_returning(graph)
+        with patch.object(wikisource, "fetch_revisions", side_effect=fake):
+            found = download_closure(wiki, ["A"], include=lambda t: True)
+        self.assertEqual(sorted(found), ["A", "B"])
+
+    def test_include_stops_traversal(self):
+        graph = {"A": "{{#קטע:B|s}}", "B": "leaf"}
+        wiki, fake = self._wiki_returning(graph)
+        with patch.object(wikisource, "fetch_revisions", side_effect=fake):
+            found = download_closure(wiki, ["A"], include=lambda t: t != "B")
+        self.assertEqual(sorted(found), ["A"])
+
+    def test_max_depth_bounds_traversal(self):
+        graph = {"A": "{{#קטע:B|s}}", "B": "{{#קטע:C|s}}", "C": "leaf"}
+        wiki, fake = self._wiki_returning(graph)
+        with patch.object(wikisource, "fetch_revisions", side_effect=fake):
+            found = download_closure(wiki, ["A"], include=lambda t: True, max_depth=1)
+        self.assertEqual(sorted(found), ["A", "B"])
+
+    def test_deduplicates_roots_by_normalised_title(self):
+        graph = {"A B": "leaf"}
+        wiki, fake = self._wiki_returning(graph)
+        with patch.object(wikisource, "fetch_revisions", side_effect=fake) as fetch:
+            download_closure(wiki, ["A B", "A_B"], include=lambda t: True)
+        self.assertEqual(fetch.call_args.args[1], ["A B"])
+
+
+class TestListPagesWithPrefix(unittest.TestCase):
+    def test_collects_titles_across_continuation(self):
+        wiki = make_wiki(
+            make_response(payload=pages_payload({"title": "P/b"}, continuation={"gapcontinue": "x"})),
+            make_response(payload=pages_payload({"title": "P/a"})),
+        )
+
+        self.assertEqual(list_pages_with_prefix(wiki, "P/"), ["P/a", "P/b"])
+
+    def test_defaults_to_the_main_namespace(self):
+        wiki = make_wiki(make_response(payload=pages_payload()))
+
+        list_pages_with_prefix(wiki, "P/")
+
+        _, kwargs = wiki.session.post.call_args
+        self.assertEqual(kwargs["data"]["gapnamespace"], 0)
+        self.assertEqual(kwargs["data"]["gapprefix"], "P/")
 
 
 if __name__ == "__main__":

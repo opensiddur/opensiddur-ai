@@ -50,6 +50,54 @@ def birnbaum_siddur_credits_directory(sourcetexts_root: Path | None = None) -> P
     return birnbaum_siddur_data_directory(sourcetexts_root) / "credits"
 
 
+def birnbaum_siddur_source_text_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Mainspace pages holding the text the scan pages transclude."""
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "source" / "text"
+
+
+def birnbaum_siddur_source_credits_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Contributor credits for the mainspace source pages."""
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "source" / "credits"
+
+
+def birnbaum_siddur_external_text_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Pages referenced from outside the siddur's own subtree."""
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "external" / "text"
+
+
+def birnbaum_siddur_external_credits_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Contributor credits for externally referenced pages."""
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "external" / "credits"
+
+
+def title_to_relative_path(title: str, suffix: str = ".txt") -> Path:
+    """Map a wiki title to a relative path, turning subpage slashes into directories.
+
+    Mirroring the title hierarchy keeps the wiki's own organization visible on disk
+    and in diffs, which is most of the value of these pages.
+
+    Only ``%`` is escaped, so that the mapping round-trips: everything else a wiki
+    title may contain — Hebrew, spaces, parentheses, the gershayim quote in
+    ``צה"ל`` — is legal in a POSIX path segment and stays readable. Note the quote
+    would be a problem on Windows; these files are only ever read back through
+    :func:`relative_path_to_title`, so it is a portability caveat, not a bug.
+    """
+    segments = [segment.replace("%", "%25") for segment in title.split("/")]
+    if not segments or not all(segments):
+        raise ValueError(f"Title does not map to a path: {title!r}")
+    return Path(*segments[:-1], segments[-1] + suffix)
+
+
+def relative_path_to_title(path: Path | str, suffix: str = ".txt") -> str:
+    """Inverse of :func:`title_to_relative_path`."""
+    parts = list(Path(path).parts)
+    if not parts:
+        raise ValueError("Empty path does not map to a title")
+    if parts[-1].endswith(suffix):
+        parts[-1] = parts[-1][: -len(suffix)]
+    return "/".join(part.replace("%25", "%") for part in parts)
+
+
 def hebcal_leyning_data_directory(sourcetexts_root: Path | None = None) -> Path:
     """hebcal leyning raw data: <sourcetexts-root>/hebcal_leyning."""
     root = (
