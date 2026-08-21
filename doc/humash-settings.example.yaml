@@ -87,11 +87,14 @@ declarations:
   # cycle year in the margin.
 
 typography:
-  hebrew_font: "Frank Ruehl CLM"
-  latin_font: "Linux Libertine O"
-  layout: pairs
-  paper: letterpaper
-  fontsize: "11pt"
+  fonts:
+    hebrew: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"]
+    latin: ["Linux Libertine O", "TeX Gyre Pagella", "FreeSerif"]
+  page:
+    paper: letterpaper
+    base_font_size: "11pt"
+  parallel:
+    layout: pairs
 
   # Running heads and feet. `all` puts the same content on every page; use `odd`
   # and `even` instead to differentiate them. `left`, `center` and `right` are

@@ -28,8 +28,12 @@ sys.path.insert(0, str(project_root))
 
 from opensiddur.common.xslt import xslt_transform_string  # noqa: E402
 from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
-from opensiddur.exporter.settings import TypographyConfig  # noqa: E402
+from opensiddur.exporter.typography import TypographyConfig  # noqa: E402
 from opensiddur.exporter.tex.running_heads import build_page_style_tex  # noqa: E402
+from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
+    build_typography_preamble,
+    documentclass_options,
+)
 
 XSLT_FILE = Path(__file__).parent / "reledmac.xslt"
 
@@ -358,7 +362,16 @@ def transform_xml_to_tex(
 
     Returns:
         The transformed LaTeX content as a string.
+
+    Raises:
+        pydantic.ValidationError: if the settings file's typography section is
+            invalid. Deliberately outside the catch-all below, whose one-line
+            report would throw away the part of the message that says which
+            setting is wrong and why.
     """
+    if typography is None:
+        typography = load_typography(settings_file)
+
     try:
         with open(input_file, "r", encoding="utf-8") as input_fd:
             input_xml = input_fd.read()
@@ -374,17 +387,21 @@ def transform_xml_to_tex(
         credits_tex = credits_to_tex(group_credits(credits))
         sources_preamble_tex, sources_postamble_tex = extract_sources(file_references)
 
-        if typography is None:
-            typography = load_typography(settings_file)
-
         # Running-head slots that declare no language of their own follow the
         # document's, so their direction is right without being restated.
-        root_language = etree.parse(input_file).getroot().get(
-            "{http://www.w3.org/XML/1998/namespace}lang"
-        )
+        parsed = etree.parse(input_file)
+        root = parsed.getroot()
+        root_language = root.get("{http://www.w3.org/XML/1998/namespace}lang")
         page_style_tex = build_page_style_tex(
             typography.page_header, typography.page_footer, root_language
         )
+        # Several reledpar declarations do not exist unless the package is
+        # loaded, and the stylesheet loads it only for a document with two
+        # aligned streams. The typography block has to know which this is.
+        has_parallel = (
+            root.find(".//{http://jewishliturgy.org/ns/processing}parallel") is not None
+        )
+        typography_tex = build_typography_preamble(typography, has_parallel)
 
         result = xslt_transform_string(
             Path(xslt_file),
@@ -401,11 +418,11 @@ def transform_xml_to_tex(
                     + "\n"
                     + sources_postamble_tex
                 ),
-                "hebrew-font": typography.hebrew_font,
-                "latin-font": typography.latin_font,
-                "layout": typography.layout.value,
-                "paper": typography.paper.value,
-                "fontsize": typography.fontsize,
+                "documentclass-options": documentclass_options(typography),
+                "typography-preamble": typography_tex,
+                "layout": typography.parallel.layout.value,
+                "notes-placement": typography.notes.placement.value,
+                "notes-mark": typography.notes.mark.value,
                 "table-of-contents": typography.table_of_contents.enabled,
                 "table-of-contents-depth": typography.table_of_contents.depth,
                 "page-style-preamble": page_style_tex,

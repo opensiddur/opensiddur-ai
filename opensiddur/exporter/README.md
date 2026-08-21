@@ -87,92 +87,55 @@ left column for a `pairs` layout); `primary_last` swaps them.
 
 ### Typography (PDF/TeX stage only)
 
+The `typography` section says how the exported document should look: paper and margins, fonts,
+the size and weight of each kind of text, line spacing, line numbers, how notes are marked,
+running heads. It is read by the PDF/TeX stage only; the linear-XML compiler ignores it.
+
+**[`doc/typography.md`](../../doc/typography.md) is the full reference** — every key, its type,
+its allowed values, its default and what it affects.
+
 ```yaml
 typography:
-  hebrew_font: "Frank Ruehl CLM"     # any installed OpenType font with Hebrew coverage
-  latin_font: "Linux Libertine O"    # any installed OpenType font for the Latin stream
-  layout: pages                      # "pages" → facing pages; "pairs" → two columns/page
-  paper: a4paper                     # any \documentclass paper option
-  fontsize: 11pt                     # 10pt | 11pt | 12pt
+  fonts:
+    hebrew: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"]  # tried in order
+    latin: "Linux Libertine O"
+  page:
+    paper: letterpaper          # a4paper | letterpaper | legalpaper | a5paper | b5paper
+                                # | executivepaper | custom
+    base_font_size: 11pt        # 10pt | 11pt | 12pt
+    sides: two                  # two | one
+    margins: {inner: 1in, outer: 0.75in}
+  paragraphs:
+    line_spacing: 1.0           # 0.5-3.0
+  styles:
+    heading1: {size: xx-large, weight: bold, align: center}
+    note: {size: 9pt}
+  line_numbers:
+    enabled: true
+    increment: 5
+  notes:
+    placement: footnote         # footnote | endnote | none
+    anchor: interlinear         # interlinear | superscript | inline
+  parallel:
+    layout: pairs               # pairs -> two columns/page; pages -> facing pages
   table_of_contents:
-    enabled: false                   # true → print a table of contents page
-    depth: 4                         # 1-4; heading levels shown in the printed TOC
+    enabled: false
+    depth: 4
+  page_header: {}               # running heads; see doc/typography.md
+  page_footer: {}
 ```
 
-The `typography` section is read by the PDF/TeX stage only; the linear-XML
-compiler ignores it. Every key is optional — when the section (or any single
-key) is omitted, the defaults shown above are used. Fonts that aren't found
-on the system fall back to a sensible default automatically (`Ezra SIL` →
-`SBL Hebrew` → `FreeSerif` for Hebrew).
+Every key is optional, and every default reproduces the output this exporter has always
+produced — a settings file need only say what it wants changed.
 
-`table_of_contents.depth` controls only the printed table of contents; it is
-independent of the PDF bookmark/outline depth, which is always 4 levels deep
-regardless of this setting.
+Every key is also *checked*. An unknown key, a value outside a closed list, a malformed length
+or a font chain with nothing installed is an error naming the offending path, raised before
+anything is rendered. Nothing is silently ignored: a setting that was quietly dropped would
+leave a document missing what was asked for with nothing to say why.
 
-### Running heads and feet
-
-`typography.page_header` and `typography.page_footer` put content in the left,
-center and right of each page. Omit them and the book class's own page style is
-left alone.
-
-```yaml
-typography:
-  page_header:
-    odd:
-      left: "{book-title}"                                    # bare string = just text
-      right: {text: "Page {page}", language: en}
-    even:
-      left: {text: "{page-hebrew}", language: he}
-      center: {text: "Chapter {chapter-number}", language: en, if: "{chapter-number}"}
-  page_footer:
-    all:                                                      # same on every page
-      center: "{page}"
-```
-
-Each of `page_header` and `page_footer` takes either `all` — the same content on
-every page — or `odd` and/or `even` to differentiate them. Combining `all` with
-`odd` or `even` is an error.
-
-`left`, `center` and `right` are *physical* positions on the page, not logical
-ones: `left` is the left edge whichever way the text runs.
-
-Each position is either a bare string or a mapping with:
-
-- `text` — the template (see the codes below).
-- `language` — the slot's base direction, which decides the order its runs are
-  laid out in, and the font for content that declares nothing else. Defaults to
-  the document's own `xml:lang`; only Hebrew (`he`, `he-*`) versus everything
-  else is distinguished. Every run — literal text, a heading recorded in a mark,
-  the page number — carries its own direction inside that, so a mixed title like
-  "רות RUTH" reads correctly in a slot of either direction, and digits are never
-  reversed.
-- `if` — a second template. When it expands to nothing, the whole position is
-  dropped, literal text included, so `"Chapter {chapter-number}"` leaves no
-  orphaned "Chapter" on a page before the first chapter.
-
-Anything outside braces is literal text; `{{` and `}}` are literal braces. The
-codes are a closed list, and an unrecognized one is a settings error:
-
-| Code | Expands to |
-| --- | --- |
-| `{page}` | the page number as the document numbers it (roman in front matter) |
-| `{page-hebrew}` | the page number in Hebrew numerals |
-| `{document-title}` | the title from the TEI header, fixed for the whole document |
-| `{book-title}` | the head of the enclosing `tei:div[@type='book']` |
-| `{chapter-number}` | the `n` of the last `tei:milestone[@unit='chapter']` |
-| `{chapter-number-hebrew}` | the same, in Hebrew numerals |
-| `{head1}` … `{head4}` | the last heading at that level |
-| `{section-title}` | the last heading at any level |
-| `{book-title-alt}`, `{head1-alt}` … `{head4-alt}`, `{section-title-alt}` | the same, from the *second* parallel column |
-
-Everything but `{page}`, `{page-hebrew}` and `{document-title}` names whatever
-was in force at the *end* of the page, so a heading starting partway down a page
-names that page. The `-alt` codes are what let a running head name the second
-language of a parallel volume; in a non-parallel document they expand to
-nothing.
-
-Title pages never carry a running head or foot, nor do the blank pages inserted
-to keep a title page on a recto.
+Note that which text goes on which side of a parallel layout is `parallel.column_order` in the
+compiler section above, not in `typography` — the compiler is what decides the order the
+streams are emitted in.
 
 ## Settings file versioning
 Note that this file is likely to change slightly in format as more output

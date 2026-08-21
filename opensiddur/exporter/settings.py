@@ -1,9 +1,8 @@
 """ Exporter settings management utilities. """
 
-from enum import StrEnum
 from pathlib import Path
 from typing import Optional
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 import yaml
 
 from opensiddur.exporter.linear import (
@@ -15,7 +14,7 @@ from opensiddur.exporter.linear import (
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
-from opensiddur.exporter.tex.running_heads import RunningHeadConfig
+from opensiddur.exporter.typography import TypographyConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 
@@ -45,6 +44,8 @@ def _apply_project_directory(
 
 
 class Prioritizations(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     transclusion: list[str] = Field(default_factory=list)
     instructions: list[str] = Field(default_factory=list)
 
@@ -59,6 +60,8 @@ class Prioritizations(BaseModel):
         return _validate_project_list(v, _project_directory_from_context(info))
 
 class ParallelConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     projects: list[str] = Field(default_factory=list)
     column_order: ParallelColumnOrder = ParallelColumnOrder.PRIMARY_FIRST
 
@@ -68,61 +71,16 @@ class ParallelConfig(BaseModel):
         return _validate_project_list(v, _project_directory_from_context(info))
 
 
-class ParallelLayout(StrEnum):
-    """ Parallel-text page layout for the TeX/PDF stage.
-
-    pages: facing pages (reledpar \\Pages) — best for full critical editions.
-    pairs: two columns on the same page (reledpar \\Columns) — best for short docs.
-    """
-    PAGES = "pages"
-    PAIRS = "pairs"
-
-
-class PaperType(StrEnum):
-    """LaTeX \\documentclass paper options.
-
-    Keep this intentionally small and conventional; add more as needed.
-    """
-
-    A4PAPER = "a4paper"
-    LETTERPAPER = "letterpaper"
-    LEGALPAPER = "legalpaper"
-    A5PAPER = "a5paper"
-    B5PAPER = "b5paper"
-    EXECUTIVEPAPER = "executivepaper"
-
-
-class TableOfContentsConfig(BaseModel):
-    """ Auto-generated table of contents (PDF/TeX stage only).
-
-    ``depth`` is independent of the PDF bookmark depth, which is always 4
-    levels deep regardless of this setting.
-    """
-    enabled: bool = False
-    depth: int = Field(default=4, ge=1, le=4)
-
-
-class TypographyConfig(BaseModel):
-    """ Output-format settings consumed by the TeX/PDF stage only.
-
-    These don't affect the linear-XML compiler; they're forwarded as XSLT
-    parameters to ``reledmac.xslt``. Defaults match what the in-house LuaLaTeX
-    setup expects on a typical Linux TeXLive install.
-    """
-    hebrew_font: str = "Frank Ruehl CLM"
-    latin_font: str = "Linux Libertine O"
-    layout: ParallelLayout = ParallelLayout.PAIRS
-    paper: PaperType = PaperType.LETTERPAPER
-    fontsize: str = "11pt"
-    table_of_contents: TableOfContentsConfig = Field(default_factory=TableOfContentsConfig)
-    # Running heads and feet. Empty by default, which leaves the book class's
-    # own page style alone. See opensiddur/exporter/tex/running_heads.py for
-    # the closed list of codes a slot may use.
-    page_header: RunningHeadConfig = Field(default_factory=RunningHeadConfig)
-    page_footer: RunningHeadConfig = Field(default_factory=RunningHeadConfig)
-
-
 class SettingsYaml(BaseModel):
+    """ A settings file, whole.
+
+    Unknown keys are refused at every level: a mistyped setting that is quietly
+    ignored produces a document that is missing what was asked for, with nothing
+    to say why.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     priority: Prioritizations
     annotations: list[str] = Field(default_factory=list)
     parallel: Optional[ParallelConfig] = None

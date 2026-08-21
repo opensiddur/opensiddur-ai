@@ -19,7 +19,8 @@ from unittest.mock import MagicMock, patch
 from pydantic import ValidationError
 
 import opensiddur.exporter.tex.latex as latex_module
-from opensiddur.exporter.settings import PaperType, ParallelLayout, TypographyConfig
+from opensiddur.exporter import typography as typography_module
+from opensiddur.exporter.typography import PaperType, ParallelLayout, TypographyConfig
 from opensiddur.exporter.tex.latex import (
     CreditRecord,
     LicenseRecord,
@@ -34,6 +35,19 @@ from opensiddur.exporter.tex.latex import (
     load_typography,
     transform_xml_to_tex,
 )
+
+
+def _no_fontconfig():
+    """Mock out the installed-font lookup.
+
+    The settings models check a font chain a settings file names against
+    fontconfig. Whether the machine running the tests has Ezra SIL is not what
+    any test here is about, and a test that turned on it would fail for reasons
+    that have nothing to do with the code.
+    """
+    return patch.object(
+        typography_module, "_installed_font_families", return_value=None
+    )
 
 
 class TestExtractLicenses(unittest.TestCase):
@@ -414,22 +428,26 @@ priority:
   transclusion: [p]
   instructions: []
 typography:
-  hebrew_font: Ezra SIL
-  latin_font: TeX Gyre Pagella
-  layout: pairs
-  paper: letterpaper
-  fontsize: 12pt
+  fonts:
+    hebrew: [Ezra SIL, FreeSerif]
+    latin: TeX Gyre Pagella
+  parallel:
+    layout: pairs
+  page:
+    paper: letterpaper
+    base_font_size: 12pt
   table_of_contents:
     enabled: true
     depth: 2
 """
         )
-        cfg = load_typography(settings_path)
-        self.assertEqual(cfg.hebrew_font, "Ezra SIL")
-        self.assertEqual(cfg.latin_font, "TeX Gyre Pagella")
-        self.assertEqual(cfg.layout, ParallelLayout.PAIRS)
-        self.assertEqual(cfg.paper, PaperType.LETTERPAPER)
-        self.assertEqual(cfg.fontsize, "12pt")
+        with _no_fontconfig():
+            cfg = load_typography(settings_path)
+        self.assertEqual(cfg.fonts["hebrew"].names, ["Ezra SIL", "FreeSerif"])
+        self.assertEqual(cfg.fonts["latin"].names, ["TeX Gyre Pagella"])
+        self.assertEqual(cfg.parallel.layout, ParallelLayout.PAIRS)
+        self.assertEqual(cfg.page.paper, PaperType.LETTERPAPER)
+        self.assertEqual(cfg.page.base_font_size, "12pt")
         self.assertTrue(cfg.table_of_contents.enabled)
         self.assertEqual(cfg.table_of_contents.depth, 2)
 
@@ -516,11 +534,12 @@ typography:
 priority:
   transclusion: [a-project-that-does-not-exist]
 typography:
-  hebrew_font: Some Font
+  page:
+    paper: a5paper
 """
         )
         cfg = load_typography(settings_path)
-        self.assertEqual(cfg.hebrew_font, "Some Font")
+        self.assertEqual(cfg.page.paper, PaperType.A5PAPER)
 
 
 class TestTransformXmlToTex(unittest.TestCase):
@@ -564,20 +583,78 @@ class TestTransformXmlToTex(unittest.TestCase):
           <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
         </tei:TEI>"""
         f = self._create("p", "input.xml", xml)
-        typography = TypographyConfig(
-            hebrew_font="Ezra SIL",
-            latin_font="TeX Gyre Pagella",
-            layout=ParallelLayout.PAIRS,
-            paper="letterpaper",
-            fontsize="12pt",
+        with _no_fontconfig():
+            typography = TypographyConfig.model_validate(
+                {
+                    "fonts": {"hebrew": ["Ezra SIL", "FreeSerif"], "latin": "FreeSerif"},
+                    "parallel": {"layout": "pairs"},
+                    "page": {"paper": "letterpaper", "base_font_size": "12pt"},
+                }
+            )
+
+            with patch.object(latex_module, "projects_source_root", self.test_dir):
+                out = transform_xml_to_tex(f, typography=typography)
+
+        self.assertIn(r"\documentclass[12pt,letterpaper]{book}", out)
+        self.assertIn(r"\renewfontfamily\hebrewfont", out)
+        self.assertIn(r"\setmainfont{FreeSerif}", out)
+
+    def test_a_settings_file_reaches_the_emitted_tex(self):
+        """The whole path, YAML to TeX: a settings file that names paper,
+        margins, a heading size and line numbers has to show up in the
+        document, and nothing it did not name may."""
+        xml = b"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        f = self._create("p", "input.xml", xml)
+        settings_path = self.test_dir / "settings.yaml"
+        settings_path.write_text(
+            """
+typography:
+  page:
+    paper: a5paper
+    base_font_size: 10pt
+    sides: one
+    margins: {top: 2cm, inner: 25mm}
+  paragraphs:
+    line_spacing: 1.4
+  styles:
+    heading1: {size: small, weight: normal}
+  line_numbers:
+    enabled: false
+"""
         )
 
         with patch.object(latex_module, "projects_source_root", self.test_dir):
-            out = transform_xml_to_tex(f, typography=typography)
+            out = transform_xml_to_tex(f, settings_file=settings_path)
 
-        self.assertIn(r"\documentclass[12pt,letterpaper]{book}", out)
-        self.assertIn("Ezra SIL", out)
-        self.assertIn("TeX Gyre Pagella", out)
+        self.assertIn(r"\documentclass[10pt,a5paper,oneside]{book}", out)
+        self.assertIn("top=2cm", out)
+        self.assertIn("left=25mm", out)   # one-sided, so inner is the left margin
+        self.assertIn(r"\linespread{1.4}", out)
+        self.assertIn(r"\renewcommand{\OSheadA}", out)
+        self.assertIn(r"\numberlinefalse", out)
+        # Nothing the file did not ask for.
+        self.assertNotIn(r"\renewcommand{\OSheadB}", out)
+        self.assertNotIn("bottom=", out)
+
+    def test_an_invalid_settings_file_fails_before_anything_is_rendered(self):
+        """And says which setting is wrong. The blanket handler around the
+        transform would flatten the message to one line, so validation has to
+        happen outside it."""
+        xml = b"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        f = self._create("p", "input.xml", xml)
+        settings_path = self.test_dir / "settings.yaml"
+        settings_path.write_text("typography:\n  page:\n    paper: tabloid\n")
+
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            with self.assertRaises(ValidationError) as caught:
+                transform_xml_to_tex(f, settings_file=settings_path)
+        self.assertIn("paper", str(caught.exception))
 
     def test_running_heads_are_built_into_the_page_style_preamble(self):
         xml = b"""<?xml version="1.0"?>
@@ -634,7 +711,7 @@ class TestTransformXmlToTex(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>""".encode("utf-8")
         f = self._create("p", "input.xml", xml)
-        typography = TypographyConfig(layout=ParallelLayout.PAIRS)
+        typography = TypographyConfig.model_validate({"parallel": {"layout": "pairs"}})
         with patch.object(latex_module, "projects_source_root", self.test_dir):
             out = transform_xml_to_tex(f, typography=typography)
         self.assertIn(r"\begin{pairs}", out)
