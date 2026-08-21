@@ -78,6 +78,23 @@ What it does, in order:
 
 ## After releasing
 
+- **Re-lock and push `uv.lock`.** The release script writes the new version into `pyproject.toml`
+  (step 4) but never re-locks, so `uv.lock` still records the *previous* version for the
+  `opensiddur-ai` package. Correct it so the two agree:
+
+  ```bash
+  uv lock
+  git add uv.lock
+  git commit -m "Update uv.lock for vX.Y.Z"
+  git push origin main
+  ```
+
+  This lands after the tag, so the tagged commit itself still carries the stale lockfile. That is
+  cosmetic — the recorded version of the project's own package does not affect how dependencies
+  resolve — but skipping it means the next person to run `uv sync --all-groups` gets a modified
+  `uv.lock` in their working tree, which collides with the "working tree must be clean" check in
+  *Before releasing* and looks like an unrelated change in their branch.
+
 - Check the [releases page](https://github.com/opensiddur/opensiddur-ai/releases) and the pushed
   tag.
 - Confirm `git submodule status` on the tag shows the commits you expected.
