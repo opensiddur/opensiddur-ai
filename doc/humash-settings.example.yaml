@@ -89,7 +89,7 @@ declarations:
 typography:
   fonts:
     hebrew: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"]
-    latin: "Linux Libertine O"
+    latin: ["Linux Libertine O", "TeX Gyre Pagella", "FreeSerif"]
   page:
     paper: letterpaper
     base_font_size: "11pt"

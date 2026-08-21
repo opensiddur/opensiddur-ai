@@ -269,6 +269,44 @@ class TestFontFamilies(unittest.TestCase):
         self.assertIn("sans", str(caught.exception))
 
 
+class TestDefaultFontsOnAMachineWithoutThem(unittest.TestCase):
+    """The default chains must never be the reason a build fails.
+
+    The house fonts are not installed everywhere — they are not on CI — and a
+    document that asked for nothing must still export. The renderer falls back
+    for the defaults; only a chain the settings file named is an error.
+    """
+
+    def _installed(self, *families):
+        return patch.object(
+            typography_module,
+            "_installed_font_families",
+            return_value=frozenset(name.casefold() for name in families),
+        )
+
+    def test_defaults_validate_where_none_of_them_is_installed(self):
+        with self._installed("DejaVu Sans"):
+            config = TypographyConfig()
+        self.assertEqual(config.fonts["latin"].names, ["Linux Libertine O"])
+
+    def test_a_settings_file_that_names_no_fonts_validates_too(self):
+        with self._installed("DejaVu Sans"):
+            TypographyConfig.model_validate({"page": {"paper": "a4paper"}})
+
+    def test_but_a_named_font_that_is_missing_still_fails(self):
+        with self._installed("DejaVu Sans"):
+            with self.assertRaises(ValidationError):
+                TypographyConfig.model_validate({"fonts": {"latin": "No Such Face"}})
+
+    def test_naming_a_default_chain_explicitly_opts_into_the_check(self):
+        """Writing it down is asking for it, whatever its value happens to be."""
+        with self._installed("DejaVu Sans"):
+            with self.assertRaises(ValidationError):
+                TypographyConfig.model_validate(
+                    {"fonts": {"latin": ["Linux Libertine O"]}}
+                )
+
+
 class TestFontResolution(unittest.TestCase):
     """The first installed name in a chain wins; none installed is an error."""
 

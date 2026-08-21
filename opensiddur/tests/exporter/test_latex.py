@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 from pydantic import ValidationError
 
 import opensiddur.exporter.tex.latex as latex_module
+from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.typography import PaperType, ParallelLayout, TypographyConfig
 from opensiddur.exporter.tex.latex import (
     CreditRecord,
@@ -34,6 +35,19 @@ from opensiddur.exporter.tex.latex import (
     load_typography,
     transform_xml_to_tex,
 )
+
+
+def _no_fontconfig():
+    """Mock out the installed-font lookup.
+
+    The settings models check a font chain a settings file names against
+    fontconfig. Whether the machine running the tests has Ezra SIL is not what
+    any test here is about, and a test that turned on it would fail for reasons
+    that have nothing to do with the code.
+    """
+    return patch.object(
+        typography_module, "_installed_font_families", return_value=None
+    )
 
 
 class TestExtractLicenses(unittest.TestCase):
@@ -427,7 +441,8 @@ typography:
     depth: 2
 """
         )
-        cfg = load_typography(settings_path)
+        with _no_fontconfig():
+            cfg = load_typography(settings_path)
         self.assertEqual(cfg.fonts["hebrew"].names, ["Ezra SIL", "FreeSerif"])
         self.assertEqual(cfg.fonts["latin"].names, ["TeX Gyre Pagella"])
         self.assertEqual(cfg.parallel.layout, ParallelLayout.PAIRS)
@@ -568,16 +583,17 @@ class TestTransformXmlToTex(unittest.TestCase):
           <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
         </tei:TEI>"""
         f = self._create("p", "input.xml", xml)
-        typography = TypographyConfig.model_validate(
-            {
-                "fonts": {"hebrew": ["Ezra SIL", "FreeSerif"], "latin": "FreeSerif"},
-                "parallel": {"layout": "pairs"},
-                "page": {"paper": "letterpaper", "base_font_size": "12pt"},
-            }
-        )
+        with _no_fontconfig():
+            typography = TypographyConfig.model_validate(
+                {
+                    "fonts": {"hebrew": ["Ezra SIL", "FreeSerif"], "latin": "FreeSerif"},
+                    "parallel": {"layout": "pairs"},
+                    "page": {"paper": "letterpaper", "base_font_size": "12pt"},
+                }
+            )
 
-        with patch.object(latex_module, "projects_source_root", self.test_dir):
-            out = transform_xml_to_tex(f, typography=typography)
+            with patch.object(latex_module, "projects_source_root", self.test_dir):
+                out = transform_xml_to_tex(f, typography=typography)
 
         self.assertIn(r"\documentclass[12pt,letterpaper]{book}", out)
         self.assertIn(r"\renewfontfamily\hebrewfont", out)

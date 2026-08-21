@@ -967,9 +967,15 @@ class TypographyConfig(ForbidExtra):
         self._declared_fonts = frozenset(self.fonts)
         for family, names in _DEFAULT_FONTS.items():
             self.fonts.setdefault(family, FontFamily(names=list(names)))
-        for family, spec in self.fonts.items():
+        # Only a chain the settings file named is checked. A default the user
+        # never asked for must not fail on a machine that happens not to have
+        # it: the renderer already falls back for those — for the PDF stage,
+        # the stylesheet's own \IfFontExistsTF chain — and refusing to build at
+        # all would mean nobody could export anything without first installing
+        # this project's house fonts.
+        for family in self._declared_fonts:
             try:
-                resolve_font(spec.names)
+                resolve_font(self.fonts[family].names)
             except ValueError as e:
                 raise ValueError(f"font `{family}`: {e}") from e
         return self

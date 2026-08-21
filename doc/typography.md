@@ -74,6 +74,15 @@ typography:
     note-sans: ["DejaVu Sans"]                                           # your own
 ```
 
+**Only a chain you write is checked.** The two defaults are not: a document that asked for
+nothing must still export on a machine that does not have this project's house fonts, so the
+renderer falls back for them on its own. Writing a chain down — even one whose names happen to
+be the defaults — opts it into the check.
+
+That makes a one-name chain a deliberate assertion: name a single font and a machine without it
+fails the build rather than quietly substituting another. Give the chain a widely available last
+resort, as the default `hebrew` chain ends in `FreeSerif`, if you would rather it degrade.
+
 The check needs `fontconfig` (`fc-list`). On a machine without it the check is skipped and the
 chain is handed to the renderer to resolve at build time instead.
 

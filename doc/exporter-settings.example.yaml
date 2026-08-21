@@ -86,7 +86,7 @@ typography:
   # Declare your own and point a style at it by name.
   fonts:
     hebrew: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"]
-    latin: "Linux Libertine O"
+    latin: ["Linux Libertine O", "TeX Gyre Pagella", "FreeSerif"]
 
   page:
     paper: letterpaper       # a4paper | letterpaper | legalpaper | a5paper

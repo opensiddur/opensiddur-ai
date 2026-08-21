@@ -9,9 +9,11 @@ table fails here rather than going unnoticed.
 import typing
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from pydantic import BaseModel
 
+from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.typography import Styles, TextStyle, TypographyConfig
 
 
@@ -96,13 +98,19 @@ class TestExampleSettingsAreValid(unittest.TestCase):
     """The example files are the first thing anyone copies from."""
 
     def test_examples_validate_against_the_models(self):
+        """Structure only: fontconfig is mocked out as unavailable, so this asks
+        whether the example is well formed, not whether the machine running the
+        tests happens to have the fonts it names."""
         import yaml
 
         doc_dir = DOC.parent
         for example in sorted(doc_dir.glob("*settings.example.yaml")):
             with self.subTest(example=example.name):
                 data = yaml.safe_load(example.read_text(encoding="utf-8"))
-                TypographyConfig.model_validate(data.get("typography") or {})
+                with patch.object(
+                    typography_module, "_installed_font_families", return_value=None
+                ):
+                    TypographyConfig.model_validate(data.get("typography") or {})
 
 
 if __name__ == "__main__":
