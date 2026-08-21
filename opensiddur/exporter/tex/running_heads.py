@@ -24,6 +24,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from opensiddur.exporter.tex.escape import escape_tex
+
 
 # ---------------------------------------------------------------------------
 # The closed code list
@@ -66,24 +68,6 @@ RUNNING_HEAD_CODES: dict[str, str] = {
 }
 
 
-# Stands in for a literal backslash while the other specials are escaped, so
-# that the braces of its own replacement text are not escaped in turn. U+0000
-# cannot occur in a YAML scalar, so it can never collide with real input.
-_BACKSLASH_SENTINEL = "\x00"
-
-
-def _escape_tex(s: str) -> str:
-    """Escape characters that have special meaning in LaTeX.
-
-    Covers the same characters as ``f:escape-tex`` in ``reledmac.xslt``.
-    """
-    t = s.replace("\\", _BACKSLASH_SENTINEL)
-    t = re.sub(r"([&%$#_{}])", r"\\\1", t)
-    t = t.replace("~", r"\textasciitilde{}")
-    t = t.replace("^", r"\textasciicircum{}")
-    return t.replace(_BACKSLASH_SENTINEL, r"\textbackslash{}")
-
-
 # Hebrew block plus the Hebrew presentation forms, matching the range
 # f:emit-bidi-mark uses in reledmac.xslt. Hebrew segments joined by whitespace
 # or connecting punctuation are one run: a paired parsha name is written with
@@ -110,7 +94,7 @@ def _emit_bidi_literal(s: str) -> str:
     position = 0
     for match in _HEBREW_RUN.finditer(s):
         _append_ltr(parts, s[position:match.start()])
-        parts.append(r"\texthebrew{" + _escape_tex(match.group()) + "}")
+        parts.append(r"\texthebrew{" + escape_tex(match.group()) + "}")
         position = match.end()
     _append_ltr(parts, s[position:])
     return "".join(parts)
@@ -124,7 +108,7 @@ def _append_ltr(parts: list[str], text: str) -> None:
         # it would only add empty groups.
         parts.append(text)
         return
-    parts.append(r"{\textdir TLT\selectlanguage{english}" + _escape_tex(text) + "}")
+    parts.append(r"{\textdir TLT\selectlanguage{english}" + escape_tex(text) + "}")
 
 
 @dataclass(frozen=True)
@@ -221,7 +205,7 @@ class RunningHeadPosition(BaseModel):
     case stays a one-liner in YAML.
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     text: str = ""
     # Direction and font are chosen from this. Defaults to the document's own
@@ -254,6 +238,8 @@ class RunningHeadPosition(BaseModel):
 class RunningHeadSide(BaseModel):
     """The three slots of a running head or foot on one class of page."""
 
+    model_config = ConfigDict(extra="forbid")
+
     left: RunningHeadPosition = Field(default_factory=RunningHeadPosition)
     center: RunningHeadPosition = Field(default_factory=RunningHeadPosition)
     right: RunningHeadPosition = Field(default_factory=RunningHeadPosition)
@@ -273,6 +259,8 @@ class RunningHeadConfig(BaseModel):
     Nothing declared means "leave the book-class defaults alone" — the presence
     of content is the switch, so there is no separate `enabled` flag.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     all: Optional[RunningHeadSide] = None
     odd: Optional[RunningHeadSide] = None

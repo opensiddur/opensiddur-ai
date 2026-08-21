@@ -72,11 +72,102 @@ declarations:
 
 # Output-format settings consumed by the TeX/PDF stage only.
 typography:
-  hebrew_font: "Frank Ruehl CLM"
-  latin_font: "Linux Libertine O"
-  layout: pairs
-  paper: letterpaper
-  fontsize: "11pt"
+  # Every key below is optional, and every default is what this exporter produced
+  # before any of it was configurable. doc/typography.md is the full reference:
+  # every key, its type, its allowed values, its default and what it affects.
+  #
+  # Every key is also checked. An unknown key, a value outside a closed list, a
+  # malformed length or a font chain with nothing installed is an error naming
+  # the path, raised before anything is rendered.
+
+  # Font families, each a chain tried in order — the first one installed wins,
+  # and none of them being installed is an error rather than a silent fallback.
+  # `latin` and `hebrew` always exist; declaring one replaces its default chain.
+  # Declare your own and point a style at it by name.
+  fonts:
+    hebrew: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"]
+    latin: "Linux Libertine O"
+
+  page:
+    paper: letterpaper       # a4paper | letterpaper | legalpaper | a5paper
+                             # | b5paper | executivepaper | custom
+    orientation: portrait    # portrait | landscape
+    sides: two               # two: margins and running heads mirror between
+                             # recto and verso. one: printed on one side only.
+    chapter_start: recto     # recto: a book opens on a right-hand page
+    base_font_size: "11pt"   # 10pt | 11pt | 12pt — what named sizes scale from
+    # Margins are named for the binding, not the page edge, so they mean the same
+    # on a recto and a verso. Omitted margins keep the document class's own.
+    margins:
+      top: "1in"
+      bottom: "1in"
+      inner: "1.25in"        # at the binding edge
+      outer: "0.9in"         # at the fore edge
+      # binding_offset: "5mm"  # for the part of the page a binding swallows
+
+  paragraphs:
+    indent: "0pt"
+    spacing: "0.5em"
+    line_spacing: 1.0        # 0.5-3.0. Pointed Hebrew wants more than unpointed.
+    alignment: justify       # justify | left | right | center
+
+  # The appearance of each kind of text. Every role takes the same keys — font,
+  # size, weight, style, variant, align, space_before, space_after — and an
+  # omitted one leaves that aspect as the surrounding text has it. Sizes are the
+  # named ladder (xxx-small ... xxxx-large), which follows base_font_size, or an
+  # absolute length like 9pt, which does not.
+  styles:
+    heading1: {size: xx-large, weight: bold, align: center}
+    heading2: {size: x-large, weight: bold, align: center}
+    note: {size: "9pt"}
+    note_mark: {size: xx-small}
+    # ... and body, heading3, heading4, title_main, title_sub, title_alt,
+    # byline, edition, imprint, epigraph, imprimatur, title_page_block,
+    # citation, parsha, aliyah, verse_number, chapter_number, instruction,
+    # line_number, section_separator. See doc/typography.md.
+
+  line_numbers:
+    enabled: true
+    unit: page               # page | section — what numbering restarts at
+    increment: 5             # a number every nth line
+    first: 5                 # so they run 5, 10, 15 rather than 1, 5, 10
+    margin: outer            # inner | outer | left | right
+    separation: "1em"
+    numerals: arabic         # arabic | hebrew
+
+  notes:
+    placement: footnote      # footnote | endnote | none
+    anchor: interlinear      # interlinear: raised above the line and zero-width,
+                             # so the annotated text is not respaced — which is
+                             # what keeps two sides of a parallel text aligned.
+                             # superscript | inline are the alternatives.
+    mark: numeric            # numeric | alpha | roman | symbol
+
+  markers:
+    section_separator: "* * * *"   # between sections that carry no heading
+    verse_numbers: shown           # shown | hidden
+    chapter_numbers: shown
+    # Only conditions the compiler could not decide survive into the output, so a
+    # marker means "say this only if ...". A whole paragraph takes a rule rather
+    # than brackets: brackets several lines apart do not read as a pair.
+    conditional:
+      inline_open: "["
+      inline_close: "]"
+      block: rule                  # rule | brackets | none
+      rule_width: "25%"
+      rule_thickness: "0.4pt"
+
+  parallel:
+    layout: pairs            # pairs: two columns on a page. pages: facing pages,
+                             # which gives each text a full measure.
+    column_width: "43%"      # of the text block; the gap takes the remainder,
+                             # which is also what leaves room for line numbers
+    column_position: center  # left | center | right
+    # Which text goes on which side is `parallel.column_order` above, not here.
+
+  table_of_contents:
+    enabled: false
+    depth: 4                 # 1-4; independent of the PDF bookmark depth
 
   # Running heads and feet. Omit both sections to leave the book class's own
   # page style alone.

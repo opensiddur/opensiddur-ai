@@ -40,12 +40,32 @@
     <xsl:param name="additional-preamble" as="xs:string?"/>
     <xsl:param name="additional-postamble" as="xs:string?"/>
 
-    <!-- Typography (driven by settings.yaml `typography` section) -->
-    <xsl:param name="hebrew-font" as="xs:string">Frank Ruehl CLM</xsl:param>
-    <xsl:param name="latin-font" as="xs:string">Linux Libertine O</xsl:param>
+    <!-- Typography (driven by settings.yaml `typography` section).
+
+         Everything this stylesheet lays out is defined below as a macro or a
+         declaration with the defaults it has always had, so the output is
+         complete and correct with no typography settings at all. The settings
+         reach it two ways:
+
+           $documentclass-options   for the handful of things the class has to
+                                    be told when it is loaded (base font size,
+                                    paper, one- or two-sided);
+           $typography-preamble     a block of \renewcommand and \setlength,
+                                    emitted after every default below, built by
+                                    opensiddur/exporter/tex/typography_tex.py.
+
+         Only the settings that change the *structure* of the emitted document,
+         rather than its appearance, need a parameter of their own — those are
+         the three below the class options. -->
+    <xsl:param name="documentclass-options" as="xs:string">11pt,letterpaper</xsl:param>
+    <xsl:param name="typography-preamble" as="xs:string?"/>
     <xsl:param name="layout" as="xs:string">pages</xsl:param>
-    <xsl:param name="paper" as="xs:string">a4paper</xsl:param>
-    <xsl:param name="fontsize" as="xs:string">11pt</xsl:param>
+    <!-- footnote | endnote | none — where the text of an editorial note goes.
+         `none` drops notes entirely, anchor and all. -->
+    <xsl:param name="notes-placement" as="xs:string">footnote</xsl:param>
+    <!-- numeric | alpha | roman | symbol — the series note marks are drawn
+         from. The serial is known here, so the conversion is done here. -->
+    <xsl:param name="notes-mark" as="xs:string">numeric</xsl:param>
 
     <!-- Auto-generated table of contents (driven by settings.yaml
          `typography.table_of_contents`). Depth is independent of the PDF
@@ -78,9 +98,7 @@
         <xsl:variable name="has-parallel" select="exists(//p:parallel)"/>
 
         <xsl:text>\documentclass[</xsl:text>
-        <xsl:value-of select="$fontsize"/>
-        <xsl:text>,</xsl:text>
-        <xsl:value-of select="$paper"/>
+        <xsl:value-of select="$documentclass-options"/>
         <xsl:text>]{book}&#10;</xsl:text>
 
         <xsl:text>\usepackage{geometry}&#10;</xsl:text>
@@ -89,9 +107,13 @@
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
 
-        <!-- Latin font: try the requested one, otherwise let LaTeX pick the default. -->
-        <xsl:text>\IfFontExistsTF{</xsl:text><xsl:value-of select="$latin-font"/><xsl:text>}{&#10;</xsl:text>
-        <xsl:text>  \setmainfont{</xsl:text><xsl:value-of select="$latin-font"/><xsl:text>}&#10;</xsl:text>
+        <!-- The default faces. A settings file that names its own fonts overrides
+             these from $typography-preamble below, where the chain has already
+             been checked against the installed fonts; these are the fallback for
+             a document that asks for nothing. -->
+        <!-- Latin font: try the default, otherwise let LaTeX pick its own. -->
+        <xsl:text>\IfFontExistsTF{Linux Libertine O}{&#10;</xsl:text>
+        <xsl:text>  \setmainfont{Linux Libertine O}&#10;</xsl:text>
         <xsl:text>}{}&#10;</xsl:text>
 
         <!-- Hebrew font: try the requested one, with fallbacks for systems that don't have it.
@@ -99,9 +121,8 @@
         <!-- The Hebrew faces we ship against (Frank Ruehl CLM, Ezra SIL, SBL Hebrew) have
              no bold companion, so \bfseries would silently do nothing and headings would
              be indistinguishable from body text. BoldFont={*},AutoFakeBold synthesizes one. -->
-        <xsl:text>\IfFontExistsTF{</xsl:text><xsl:value-of select="$hebrew-font"/><xsl:text>}{&#10;</xsl:text>
-        <xsl:text>  \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{</xsl:text>
-        <xsl:value-of select="$hebrew-font"/><xsl:text>}&#10;</xsl:text>
+        <xsl:text>\IfFontExistsTF{Frank Ruehl CLM}{&#10;</xsl:text>
+        <xsl:text>  \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{Frank Ruehl CLM}&#10;</xsl:text>
         <xsl:text>}{&#10;</xsl:text>
         <xsl:text>  \IfFontExistsTF{Ezra SIL}{&#10;</xsl:text>
         <xsl:text>    \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{Ezra SIL}&#10;</xsl:text>
@@ -330,10 +351,18 @@
         <xsl:text>\Xinplaceofnumber[B]{0pt}&#10;</xsl:text>
 
         <!-- Line numbers must always be LTR (otherwise RTL contexts can flip digits).
-             reledmac exposes \linenumberstyle; reledpar uses \linenumrepR and a
-             right-side flag.
+             reledpar uses \linenumrepR and a right-side flag, set below.
              Use \hbox to contain direction/language changes without leaking
-             \begingroup/\endgroup into reledmac's aux-file write machinery. -->
+             \begingroup/\endgroup into reledmac's aux-file write machinery.
+
+             NOTE: this line does nothing. \linenumberstyle is a *declaration*
+             whose only job is to define \linenumrep, and reledmac calls it once
+             as it loads, so redefining it afterwards never takes effect — the
+             left-side numbers are still reledmac's own \@arabic. Left as it is
+             rather than corrected here, because correcting it would change the
+             output of every existing document; typography settings that touch
+             line numbers write \linenumrep, which is the macro that is actually
+             consulted (see tex/typography_tex.py). -->
         <xsl:text>\renewcommand*{\linenumberstyle}[1]{\hbox{\textdir TLT\selectlanguage{english}#1}}&#10;</xsl:text>
         <!-- line numbering by page -->
         <xsl:text>\lineation{page}&#10;</xsl:text>
@@ -391,14 +420,50 @@
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
         <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
 
+        <!-- Font switches applied to the whole body, from typography.styles.body.
+             Empty unless configured; emitted at the top of the document, where it
+             is in force for everything that follows. -->
+        <xsl:text>\newcommand{\OSBodyStyle}{}&#10;</xsl:text>
+
+        <!-- Separator between sections that carry no heading. Split in two so a
+             settings file can change the mark and its appearance independently. -->
+        <xsl:text>\newcommand{\OSSectionSeparatorStyle}[1]{\begin{center}#1\end{center}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSSectionSeparator}{\OSSectionSeparatorStyle{* * * *}}&#10;</xsl:text>
+
+        <xsl:if test="$notes-placement = 'endnote'">
+            <!-- The endnote apparatus is configured separately from the footnote
+                 one above, and needs the same treatment: no line number, and no
+                 repetition of the lemma, which is the raised mark itself and
+                 would print the serial twice. The notes are printed at the end
+                 of the document (see the postamble). -->
+            <xsl:text>\Xendnonumber[B]&#10;</xsl:text>
+            <xsl:text>\Xendlemmaseparator[B]{}&#10;</xsl:text>
+            <xsl:text>\makeatletter&#10;</xsl:text>
+            <xsl:text>\Xendwraplemma[B]{\@gobble}&#10;</xsl:text>
+            <xsl:text>\makeatother&#10;</xsl:text>
+        </xsl:if>
+
+        <!-- Everything the settings file asked for, overriding the defaults above.
+             Empty when it asked for nothing. Last, so that it wins; but before
+             $additional-preamble, which carries the bibliography and is not
+             typography. -->
+        <xsl:value-of select="$typography-preamble"/>
+
         <xsl:value-of select="$additional-preamble"/>
         <xsl:text>&#10;</xsl:text>
 
         <xsl:text>\begin{document}&#10;</xsl:text>
+        <xsl:text>\OSBodyStyle&#10;</xsl:text>
 
         <xsl:apply-templates select="tei:TEI/tei:text"/>
 
         <xsl:text>&#10;</xsl:text>
+        <xsl:if test="$notes-placement = 'endnote'">
+            <!-- Endnotes are collected as the document is typeset and printed
+                 here, after the text and before the metadata appendix. -->
+            <xsl:text>\section*{Notes}&#10;</xsl:text>
+            <xsl:text>\doendnotes{B}&#10;</xsl:text>
+        </xsl:if>
         <!-- Metadata appendix (licenses, credits, sources). -->
         <xsl:value-of select="$additional-postamble"/>
         <xsl:text>&#10;</xsl:text>
@@ -887,7 +952,7 @@
                         <xsl:if test="$in-pstart">
                             <xsl:text>\pend&#10;</xsl:text>
                         </xsl:if>
-                        <xsl:text>\begin{center}* * * *\end{center}&#10;</xsl:text>
+                        <xsl:text>\OSSectionSeparator&#10;</xsl:text>
                         <xsl:next-iteration>
                             <xsl:with-param name="in-pstart" select="false()"/>
                         </xsl:next-iteration>
@@ -1535,7 +1600,46 @@
         </xsl:call-template>
     </xsl:template>
 
+    <!-- The mark that anchors a note, in the series $notes-mark asks for.
+         format-integer handles alpha and roman for any serial; the traditional
+         symbol series has only six members, so past the sixth the symbol is
+         repeated, which is how a printed apparatus has always done it. -->
+    <xsl:variable name="note-symbols" as="xs:string+"
+                  select="('\textasteriskcentered', '\textdagger', '\textdaggerdbl',
+                           '\textsection', '\textbardbl', '\textparagraph')"/>
+
+    <xsl:function name="f:note-mark" as="xs:string">
+        <xsl:param name="serial" as="xs:integer"/>
+        <xsl:choose>
+            <xsl:when test="$notes-mark = 'alpha'">
+                <xsl:sequence select="format-integer($serial, 'a')"/>
+            </xsl:when>
+            <xsl:when test="$notes-mark = 'roman'">
+                <xsl:sequence select="format-integer($serial, 'i')"/>
+            </xsl:when>
+            <xsl:when test="$notes-mark = 'symbol'">
+                <xsl:variable name="symbol"
+                              select="$note-symbols[($serial - 1) mod count($note-symbols) + 1]"/>
+                <xsl:sequence select="string-join(
+                    for $repeat in 1 to ($serial - 1) idiv count($note-symbols) + 1
+                    return $symbol, '')"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:sequence select="string($serial)"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:function>
+
     <xsl:template name="os-b-footnote">
+        <xsl:param name="serial" as="xs:integer"/>
+        <xsl:if test="$notes-placement != 'none'">
+            <xsl:call-template name="os-b-footnote-emit">
+                <xsl:with-param name="serial" select="$serial"/>
+            </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template name="os-b-footnote-emit">
         <xsl:param name="serial" as="xs:integer"/>
         <!-- In bidi/RTL contexts, empty-lemma \edtext{} can be fragile with reledmac's
              aux-file writes. Use an explicit visible-but-zero-width lemma via
@@ -1546,9 +1650,11 @@
              corrupts the catcode-group that controls [ ] delimiters when the .1
              file is re-read on the next pass. -->
         <xsl:text>\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{</xsl:text>
-        <xsl:value-of select="string($serial)"/>
-        <xsl:text>}}{\Bfootnote{\OSFootnotemark{</xsl:text>
-        <xsl:value-of select="string($serial)"/>
+        <xsl:value-of select="f:note-mark($serial)"/>
+        <xsl:text>}}{\</xsl:text>
+        <xsl:value-of select="if ($notes-placement = 'endnote') then 'Bendnote' else 'Bfootnote'"/>
+        <xsl:text>{\OSFootnotemark{</xsl:text>
+        <xsl:value-of select="f:note-mark($serial)"/>
         <xsl:text>}\notenote{</xsl:text>
         <xsl:call-template name="note-content"/>
         <xsl:text>}}}}</xsl:text>

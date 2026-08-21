@@ -131,7 +131,18 @@ class TestPreamble(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(r"\usepackage{reledpar}", out)
 
-    def test_preamble_honors_typography_parameters(self):
+    def test_documentclass_options_are_passed_through_verbatim(self):
+        """The class options are built in Python; the stylesheet only places them."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"documentclass-options": "12pt,a5paper,oneside"})
+        self.assertIn(r"\documentclass[12pt,a5paper,oneside]{book}", out)
+
+    def test_typography_preamble_overrides_the_stylesheet_defaults(self):
+        """The block has to land after every default it is meant to override,
+        and before the bibliography, which is not typography."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
@@ -139,15 +150,23 @@ class TestPreamble(unittest.TestCase):
         out = _transform(
             xml,
             **{
-                "hebrew-font": "Ezra SIL",
-                "latin-font": "TeX Gyre Pagella",
-                "paper": "letterpaper",
-                "fontsize": "12pt",
+                "typography-preamble": "\\OSTYPOGRAPHY\n",
+                "additional-preamble": "\\OSBIBLIOGRAPHY\n",
             },
         )
-        self.assertIn(r"\documentclass[12pt,letterpaper]{book}", out)
-        self.assertIn("Ezra SIL", out)
-        self.assertIn("TeX Gyre Pagella", out)
+        self.assertLess(out.index(r"\newcommand{\OSheadA}"), out.index(r"\OSTYPOGRAPHY"))
+        self.assertLess(out.index(r"\setlength{\parskip}"), out.index(r"\OSTYPOGRAPHY"))
+        self.assertLess(out.index(r"\OSTYPOGRAPHY"), out.index(r"\OSBIBLIOGRAPHY"))
+        self.assertLess(out.index(r"\OSTYPOGRAPHY"), out.index(r"\begin{document}"))
+
+    def test_empty_typography_preamble_leaves_the_defaults_alone(self):
+        """A document that configures nothing must be the document this
+        exporter has always produced."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        self.assertEqual(_transform(xml), _transform(xml, **{"typography-preamble": ""}))
 
     def test_preamble_bookmarks_four_levels_deep(self):
         """The deeper heading levels (index > section > haftarah > rite) must reach the PDF
@@ -653,6 +672,76 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn("commentary", out)
         self.assertNotIn(r"\footnote{", out)
 
+    def test_notes_can_be_collected_as_endnotes(self):
+        """The apparatus series is the same; only where it is printed changes."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>Body<tei:note>commentary</tei:note>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"notes-placement": "endnote"})
+        self.assertIn(r"\Bendnote{", out)
+        self.assertNotIn(r"\Bfootnote{", out)
+        # Collected as the document is typeset, so they have to be printed out.
+        self.assertIn(r"\doendnotes{B}", out)
+        self.assertLess(out.index(r"\doendnotes{B}"), out.index(r"\end{document}"))
+
+    def test_notes_can_be_dropped_entirely(self):
+        """Anchor and all: a mark pointing at a note that is not printed would
+        be worse than no note."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>Body<tei:note>commentary</tei:note>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"notes-placement": "none"})
+        self.assertNotIn("commentary", out)
+        self.assertNotIn(r"\Bfootnote", out)
+        # The macro is still defined in the preamble, which costs nothing; what
+        # must be gone is every call to it.
+        body = out[out.index(r"\begin{document}"):]
+        self.assertNotIn(r"\OSInterlinearNotemark", body)
+
+    def test_note_marks_can_be_drawn_from_another_series(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>A<tei:note>one</tei:note>
+            B<tei:note>two</tei:note>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        alpha = _transform(xml, **{"notes-mark": "alpha"})
+        self.assertIn(r"\OSInterlinearNotemark{a}", alpha)
+        self.assertIn(r"\OSInterlinearNotemark{b}", alpha)
+
+        roman = _transform(xml, **{"notes-mark": "roman"})
+        self.assertIn(r"\OSInterlinearNotemark{i}", roman)
+        self.assertIn(r"\OSInterlinearNotemark{ii}", roman)
+
+        symbol = _transform(xml, **{"notes-mark": "symbol"})
+        self.assertIn(r"\OSInterlinearNotemark{\textasteriskcentered}", symbol)
+        self.assertIn(r"\OSInterlinearNotemark{\textdagger}", symbol)
+
+    def test_the_symbol_series_repeats_once_it_runs_out(self):
+        """Six symbols, then the same symbols doubled — how a printed apparatus
+        has always done it."""
+        notes = "".join(
+            f'<tei:note>n{i}</tei:note>' for i in range(1, 9)
+        )
+        xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>Body{notes}
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"notes-mark": "symbol"})
+        self.assertIn(r"\OSInterlinearNotemark{\textparagraph}", out)
+        self.assertIn(
+            r"\OSInterlinearNotemark{\textasteriskcentered\textasteriskcentered}", out
+        )
+
     def test_instruction_note_is_inline(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
@@ -828,6 +917,35 @@ class TestNotesMapping(unittest.TestCase):
         out = _transform(xml)
         self.assertNotIn(r"\textdir TLT\selectlanguage{english}EVR-II-B-8", out)
         self.assertIn("EVR-II-B-8", out)
+
+
+class TestSectionSeparator(unittest.TestCase):
+    """A milestone[@rend='****'] separates sections that carry no heading."""
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:p>Before</tei:p>
+            <tei:milestone unit="section" rend="****"/>
+            <tei:p>After</tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    def test_the_separator_goes_through_a_macro(self):
+        """Through a macro, so a settings file can change the mark and its
+        appearance without the stylesheet knowing what either is."""
+        out = _transform(self.XML)
+        body = out[out.index(r"\begin{document}"):]
+        self.assertIn(r"\OSSectionSeparator", body)
+
+    def test_the_default_macro_prints_what_it_always_printed(self):
+        out = _transform(self.XML)
+        self.assertIn(
+            r"\newcommand{\OSSectionSeparator}{\OSSectionSeparatorStyle{* * * *}}", out
+        )
+        self.assertIn(
+            r"\newcommand{\OSSectionSeparatorStyle}[1]{\begin{center}#1\end{center}}", out
+        )
 
 
 class TestInlineFormatting(unittest.TestCase):
