@@ -124,8 +124,17 @@ class BirnbaumIaTestCase(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def fake_download_file(self, archive, identifier, item_file, destination, *, force=False):
-        self.requested.append(item_file.name)
         body = self.contents[item_file.name]
+        # Mirror the real skip-if-unchanged behaviour, so a second run through the
+        # fixture is as quiet as a second run against archive.org.
+        if destination.is_file() and destination.read_bytes() == body and not force:
+            return DownloadedFile(
+                path=destination,
+                sha256=sha256_file(destination),
+                size=len(body),
+                skipped=True,
+            )
+        self.requested.append(item_file.name)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(body)
         return DownloadedFile(
@@ -256,6 +265,44 @@ class ManifestTestCase(BirnbaumIaTestCase):
         # The rights statement and the PDF's sha1 are the evidence for the licensing
         # claims made about this material, so the item's own metadata is preserved.
         self.assertEqual(payload["metadata"]["rights"], "public domain")
+
+    def test_an_unchanged_rerun_leaves_no_diff(self):
+        self.run_download()
+        before = (self.data_dir / "manifest.json").read_text(encoding="utf-8")
+        ocr_before = {
+            p.name: (p.read_text(encoding="utf-8"), p.stat().st_mtime_ns)
+            for p in self.ocr_dir.glob("*.txt")
+        }
+        self.requested.clear()
+
+        self.run_download()
+
+        # Nothing fetched, nothing rewritten -- not even the manifest, whose
+        # timestamp would otherwise churn a diff on every run.
+        self.assertEqual(self.requested, [])
+        self.assertEqual((self.data_dir / "manifest.json").read_text(encoding="utf-8"), before)
+        for path in self.ocr_dir.glob("*.txt"):
+            text, mtime = ocr_before[path.name]
+            self.assertEqual(path.read_text(encoding="utf-8"), text)
+            self.assertEqual(path.stat().st_mtime_ns, mtime, path.name)
+
+    def test_changed_ocr_is_rewritten_and_the_manifest_updated(self):
+        self.run_download()
+        before = (self.data_dir / "manifest.json").read_text(encoding="utf-8")
+
+        searchtext, index = build_searchtext()
+        altered = searchtext.replace(b"plain", b"PLAIN")
+        self.contents[BASENAME + SEARCHTEXT_SUFFIX] = gzip.compress(altered)
+        self.metadata.files[BASENAME + SEARCHTEXT_SUFFIX].size = len(
+            self.contents[BASENAME + SEARCHTEXT_SUFFIX]
+        )
+
+        self.run_download()
+
+        self.assertIn("PLAIN", (self.ocr_dir / "004.txt").read_text(encoding="utf-8"))
+        self.assertNotEqual(
+            (self.data_dir / "manifest.json").read_text(encoding="utf-8"), before
+        )
 
     def test_large_derivatives_are_kept_out_of_git(self):
         self.run_download()

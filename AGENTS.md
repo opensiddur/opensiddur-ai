@@ -91,15 +91,23 @@ uv run python -m opensiddur.importer.feinstein_haggadah.convert
 `--contact-email` or `$OPENSIDDUR_CONTACT_EMAIL`; the Archive additionally asks that AI
 agents name their model, via `--agent-model` or `$OPENSIDDUR_AGENT_MODEL`.
 ```bash
-# Hebrew Wikisource: text/, credits/, source/, external/, structure.json
-uv run python -m opensiddur.importer.birnbaum_siddur.wikisource
+# All four stages in dependency order -- this is the one to run
+uv run python -m opensiddur.importer.birnbaum_siddur.download
 
-# English Wikisource: en/ -- 284 of 815 pages exist, 129 of them proofread or better
-uv run python -m opensiddur.importer.birnbaum_siddur.en_wikisource
-
-# Internet Archive: ia/derivatives/ (~1 MB) plus ia/ocr/ sliced to one file per page
-uv run python -m opensiddur.importer.birnbaum_siddur.internet_archive
+# ...or individually. The first three fetch; the fourth reconciles and must run last.
+uv run python -m opensiddur.importer.birnbaum_siddur.wikisource         # text/ source/ external/
+uv run python -m opensiddur.importer.birnbaum_siddur.en_wikisource      # en/
+uv run python -m opensiddur.importer.birnbaum_siddur.internet_archive   # ia/
+uv run python -m opensiddur.importer.birnbaum_siddur.correspondence     # pages.json
 ```
+Every stage is a no-op when its source has not changed, down to leaving manifests
+unwritten so an unchanged run produces no diff at all.
+`pages.json` is the artifact every later stage reads: for each of the 815 leaves it gives the
+IA leaf, the printed page number, which side of the opening it is, its facsimile URL, the
+facing page, and which of the three sources its English text should come from. It is derived —
+regenerate it, never hand-edit it. `correspondence.py --check` exits non-zero if any page
+number could not be settled, for CI.
+
 The Archive item and the Commons file Wikisource transcribes are the same scan (identical
 SHA-1), which is what lets the two be paired: **IA leaf `n` is scan page `n + 1`**. Nothing
 on disk is named by leaf number. Add `--with-djvu` for the 20 MB word-coordinate file the
@@ -142,7 +150,7 @@ The compiler uses a **processing context state machine** — see `specs/COMPILER
 
 - `agent/`: LangGraph state machine for multi-page text encoding. Uses DeepInfra as the LLM backend (config in `importer/agent/common.py`). API keys stored in `opensiddur/private/`.
 - `jps1917/`: JPS 1917 Bible translation from Wikisource (MediaWiki → JLPTEI via LLM)
-- `birnbaum_siddur/`: Birnbaum ha-Siddur ha-Shalem, 1949, from three sources over one scan — Hebrew Wikisource (`wikisource.py`), English Wikisource (`en_wikisource.py`) and the Internet Archive's OCR (`internet_archive.py`)
+- `birnbaum_siddur/`: Birnbaum ha-Siddur ha-Shalem, 1949, from three sources over one scan — Hebrew Wikisource (`wikisource.py`), English Wikisource (`en_wikisource.py`) and the Internet Archive's OCR (`internet_archive.py`), reconciled into `pages.json` by `correspondence.py` and sequenced by `download.py`
 - `wlc/`: Westminster Leningrad Codex (structured data → JLPTEI via XSLT)
 - `miqra_al_pi_hamasorah/`: Miqra al pi ha-Masorah (TSV/Wikidata → JLPTEI via XSLT)
 

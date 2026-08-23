@@ -365,6 +365,20 @@ def download_file(
     return DownloadedFile(path=destination, sha256=sha256_file(destination), size=size)
 
 
+def write_if_changed(path: Path, text: str) -> bool:
+    """Write ``text`` only if it differs from what is there. Returns whether it did.
+
+    These files are committed to a repository, so rewriting one with identical
+    content is not free: it churns the working tree and turns a run that fetched
+    nothing into a diff.
+    """
+    if path.is_file() and path.read_text(encoding="utf-8") == text:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return True
+
+
 def read_maybe_gzip(path: Path) -> bytes:
     """Read a file, decompressing it when it is gzipped.
 

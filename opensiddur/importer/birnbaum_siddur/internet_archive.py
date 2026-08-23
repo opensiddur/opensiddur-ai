@@ -55,6 +55,7 @@ from opensiddur.importer.util.internet_archive import (
     resolve_agent_model,
     sha256_file,
     slice_searchtext,
+    write_if_changed,
 )
 from opensiddur.importer.util.pages import (
     birnbaum_siddur_ia_derivatives_directory,
@@ -143,14 +144,18 @@ def download_derivatives(
     destination: Path,
     *,
     force: bool = False,
-) -> dict[str, dict[str, Any]]:
+) -> tuple[dict[str, dict[str, Any]], int]:
     """Fetch the named derivatives into ``destination``, keyed by file name.
 
     Records the Archive's own sha1 and mtime beside our sha256. Without them a
     re-derivation — the Archive regenerating OCR from the same images — is
     indistinguishable from the scan itself having changed.
+
+    Also returns how many files were actually transferred, so a run that fetched
+    nothing can leave the manifest alone.
     """
     records: dict[str, dict[str, Any]] = {}
+    fetched = 0
     for suffix in suffixes:
         item_file = _require(metadata, suffix)
         result = download_file(
@@ -168,13 +173,14 @@ def download_derivatives(
             "ia_mtime": item_file.mtime,
             "format": item_file.format,
         }
+        fetched += 0 if result.skipped else 1
         logger.info(
             "%s %s (%d bytes)",
             "Unchanged" if result.skipped else "Fetched",
             item_file.name,
             result.size,
         )
-    return records
+    return records, fetched
 
 
 def write_leaf_text(
@@ -207,20 +213,27 @@ def write_leaf_text(
     chunks = slice_searchtext(read_maybe_gzip(searchtext_path), index)
 
     ocr_dir.mkdir(parents=True, exist_ok=True)
-    written = 0
+    changed = 0
     empty = 0
     for leaf, chunk in enumerate(chunks):
         text = chunk.decode("utf-8", errors="replace")
         if not text.strip():
             empty += 1
         key = page_key(scan_page_for_leaf(leaf), PAGE_DIGITS)
-        (ocr_dir / f"{key}.txt").write_text(text, encoding="utf-8")
-        written += 1
+        if write_if_changed(ocr_dir / f"{key}.txt", text):
+            changed += 1
 
-    logger.info("Wrote %d OCR page(s) under %s (%d empty)", written, ocr_dir, empty)
+    logger.info(
+        "%d of %d OCR page(s) changed under %s (%d empty)",
+        changed,
+        len(chunks),
+        ocr_dir,
+        empty,
+    )
     return {
+        "changed": changed,
         "leaf_count": leaves,
-        "pages": written,
+        "pages": len(chunks),
         "empty_pages": empty,
         "sliced_from": searchtext_path.name,
         "leaf_offset": LEAF_OFFSET,
@@ -312,7 +325,7 @@ def download_ia(
     data_dir.mkdir(parents=True, exist_ok=True)
     (data_dir / ".gitignore").write_text(GITIGNORE, encoding="utf-8")
 
-    records = download_derivatives(
+    records, fetched = download_derivatives(
         archive, metadata, suffixes, derivatives_dir, force=force
     )
 
@@ -334,7 +347,8 @@ def download_ia(
     # statement, and the sha1 of the scan PDF — which is the evidence that this item
     # and the Commons file Wikisource transcribes are one and the same scan, and so
     # the evidence for pairing the two sources leaf by leaf at all.
-    (data_dir / "metadata.json").write_text(
+    write_if_changed(
+        data_dir / "metadata.json",
         json.dumps(
             {
                 "identifier": metadata.identifier,
@@ -349,8 +363,15 @@ def download_ia(
             sort_keys=True,
         )
         + "\n",
-        encoding="utf-8",
     )
+
+    previous = load_manifest(data_dir)
+    if not fetched and not ocr.get("changed") and previous.get("derivatives"):
+        # Nothing was transferred and nothing on disk differs, so rewriting the
+        # manifest would change only its timestamp. Same reasoning as the
+        # Wikisource downloaders: an unchanged run should leave no diff.
+        logger.info("Everything is already up to date.")
+        return previous
 
     manifest = {
         "source": "archive.org",

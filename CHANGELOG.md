@@ -28,6 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `en/text/100.txt` and `ia/ocr/100.txt` are one leaf and the off-by-one lives in one function.
   `ia/ocr/` on a Hebrew page is not prose: the OCR reads Hebrew as Latin gibberish and interleaves
   it with the real English footnotes, which the region-segmentation stage will separate.
+- `pages.json`, the table that says what each of the Birnbaum siddur's 815 leaves is and where its
+  text comes from (`opensiddur/importer/birnbaum_siddur/correspondence.py`), plus a `download.py`
+  front door running all four stages in the order they depend on — the reconciliation reads all
+  three layers off disk, so running the commands by hand in the wrong order yields a table
+  describing a book that is no longer there. Each page records its IA leaf, printed page number
+  and where that number came from, which side of the opening it is, its facsimile URL, its facing
+  page, and its text source. Three things it works out rather than assumes. **Side** comes from
+  the markers, never from parity: ten pages break the odd-English/even-Hebrew rule, in two
+  contiguous runs that print Hebrew with no facing English at all, and a parity rule would
+  mis-pair everything after each run — those 20 pages are reported as unpaired rather than
+  wrongly paired. **The running header** is parsed by argument shape, not position: the printed
+  page number sits in the first, second or third slot depending on the variant, and reading slot 0
+  positionally loses 44 of the 405 pages that carry one. **The printed page number** prefers the
+  human transcription over OCR, but checks the sequence for monotonicity and falls back to the
+  Archive where a transcribed number goes backwards — which catches exactly one page in the book,
+  scan 738, where the running header was copied from scan 722 and its `697` never updated to
+  `713`. Both readings are kept and the correction is reported, and a number that cannot be
+  repaired is left alone and flagged rather than invented; `--check` exits non-zero on those.
+- The Archive stage now leaves its manifest and its 815 OCR files untouched when nothing changed,
+  matching the Wikisource downloaders. Rewriting a manifest whose only difference is its own
+  timestamp turns a run that fetched nothing into a diff, which teaches people to ignore diffs on
+  exactly the file that records provenance. `pages.json` is held to the same rule.
 - `internet_archive.py` reuses the Wikisource client's pacing and backoff rather than growing a
   second idea of politeness. archive.org's bot policy sets no numeric rate limit but requires a
   descriptive `User-Agent`, honouring `429` and `Retry-After`, exponential backoff, and preferring
