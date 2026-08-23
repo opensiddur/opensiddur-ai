@@ -11,6 +11,7 @@ from opensiddur.importer.util.pages import (
     birnbaum_siddur_data_directory,
     birnbaum_siddur_text_directory,
 )
+from opensiddur.importer.util import wikisource_book
 from opensiddur.importer.util.wikisource import RevisionInfo, WikisourceError
 
 # Page numbers chosen so the zero-padding width is the real one (three digits).
@@ -60,18 +61,25 @@ class BirnbaumDownloadTestCase(unittest.TestCase):
         # The source layer: revision ids keyed by title, same shape as the scan layer.
         self.source_revids = {t: 500 for t in SOURCE_WIKITEXT}
 
-        patcher = patch.multiple(
-            wikisource,
+        # The scan-page half of the download lives in util.wikisource_book, so its calls
+        # are looked up there; the source-page half is still this module's own.
+        scan_patcher = patch.multiple(
+            wikisource_book,
             list_book_pages=MagicMock(return_value=dict(TITLES)),
             fetch_revisions=MagicMock(side_effect=self.fake_fetch_revisions),
+            fetch_contributors=MagicMock(side_effect=self.fake_fetch_contributors),
+        )
+        source_patcher = patch.multiple(
+            wikisource,
             fetch_contributors=MagicMock(side_effect=self.fake_fetch_contributors),
             list_pages_with_prefix=MagicMock(
                 return_value=[FOUNDATION, REDIRECT_PAGE]
             ),
             download_closure=MagicMock(side_effect=self.fake_download_closure),
         )
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for patcher in (scan_patcher, source_patcher):
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def fake_fetch_revisions(self, wiki, titles, *, include_content, **kwargs):
         titles = list(titles)
@@ -192,7 +200,7 @@ class TestFirstRun(BirnbaumDownloadTestCase):
         self.assertEqual(manifest["book_name"], wikisource.BOOK_NAME)
 
     def test_refuses_a_book_with_no_transcribed_pages(self):
-        wikisource.list_book_pages.return_value = {}
+        wikisource_book.list_book_pages.return_value = {}
 
         with self.assertRaises(WikisourceError):
             self.run_download()

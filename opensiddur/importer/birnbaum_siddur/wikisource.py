@@ -17,7 +17,6 @@ the Wikisource edition, not Birnbaum 1949.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import logging
 import sys
@@ -44,14 +43,19 @@ from opensiddur.importer.util.wikisource import (
     connect,
     download_closure,
     fetch_contributors,
-    fetch_revisions,
     find_sections,
     find_transclusions,
     is_redirect,
-    list_book_pages,
     list_pages_with_prefix,
     normalize_title,
     resolve_contact_email,
+)
+from opensiddur.importer.util.wikisource_book import (
+    ScanPageLayout,
+    download_scan_pages,
+    load_manifest,
+    save_manifest,
+    sha256_text,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -70,67 +74,7 @@ SOURCE_ROOT = "הסידור השלם (בירנבוים)"
 # silently downloaded.
 MAX_SOURCE_DEPTH = 5
 
-MANIFEST_NAME = "manifest.json"
 STRUCTURE_NAME = "structure.json"
-
-
-def _sha256(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def manifest_path(sourcetexts_root: Path | None = None) -> Path:
-    return birnbaum_siddur_data_directory(sourcetexts_root) / MANIFEST_NAME
-
-
-def load_manifest(sourcetexts_root: Path | None = None) -> dict[str, Any]:
-    """Read the manifest, or return an empty one if this is a first run."""
-    try:
-        with open(manifest_path(sourcetexts_root), "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-    except json.JSONDecodeError as exc:
-        logger.warning(
-            "Manifest at %s is unreadable (%s); treating every page as new. "
-            "Use --force to rewrite it cleanly.",
-            manifest_path(sourcetexts_root),
-            exc,
-        )
-        return {}
-
-
-def save_manifest(manifest: dict[str, Any], sourcetexts_root: Path | None = None) -> None:
-    path = manifest_path(sourcetexts_root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-
-
-def page_key(page_num: int, digits: int) -> str:
-    """Zero-padded page identifier, used for both filenames and manifest keys."""
-    return f"{page_num:0{digits}d}"
-
-
-def _needs_download(
-    key: str,
-    revid: int,
-    manifest_pages: dict[str, Any],
-    text_dir: Path,
-    credits_dir: Path,
-) -> bool:
-    """Whether a page must be fetched: unknown, changed, or missing on disk.
-
-    The on-disk check matters because a manifest entry alone does not prove the files
-    survived — someone may have deleted or partially written them.
-    """
-    recorded = manifest_pages.get(key)
-    if recorded is None or recorded.get("revid") != revid:
-        return True
-    return not (
-        (text_dir / f"{key}.txt").is_file() and (credits_dir / f"{key}.txt").is_file()
-    )
 
 
 def is_scan_page(title: str) -> bool:
@@ -240,8 +184,8 @@ def download_source_pages(
         recorded[title] = {
             "revid": revision.revid,
             "timestamp": revision.timestamp,
-            "text_sha256": _sha256(revision.content),
-            "credits_sha256": _sha256(credits_text),
+            "text_sha256": sha256_text(revision.content),
+            "credits_sha256": sha256_text(credits_text),
             "redirect_target": target if redirect else None,
         }
         written += 1
@@ -351,85 +295,23 @@ def download_book(
         wiki = connect(SERVER, contact_email)
 
     data_dir = birnbaum_siddur_data_directory(sourcetexts_root)
-    text_dir = birnbaum_siddur_text_directory(sourcetexts_root)
-    credits_dir = birnbaum_siddur_credits_directory(sourcetexts_root)
 
-    logger.info("Enumerating pages of %s ...", BOOK_NAME)
-    titles_by_number = list_book_pages(wiki, BOOK_NAME)
-    if not titles_by_number:
-        raise WikisourceError(
-            f"No transcribed pages found for {BOOK_NAME!r} on {wiki.server}. "
-            "Has the book been moved or renamed?"
-        )
+    manifest = load_manifest(data_dir)
 
-    page_numbers = sorted(titles_by_number)
-    digits = len(str(page_numbers[-1]))
-    logger.info(
-        "Found %d transcribed pages (%d-%d)",
-        len(page_numbers),
-        page_numbers[0],
-        page_numbers[-1],
+    scans = download_scan_pages(
+        wiki,
+        BOOK_NAME,
+        ScanPageLayout(
+            data_dir=data_dir,
+            text_dir=birnbaum_siddur_text_directory(sourcetexts_root),
+            credits_dir=birnbaum_siddur_credits_directory(sourcetexts_root),
+        ),
+        dry_run=dry_run,
+        force=force,
+        manifest_pages=manifest.get("pages") or {},
     )
-
-    manifest = load_manifest(sourcetexts_root)
-    manifest_pages: dict[str, Any] = {} if force else dict(manifest.get("pages") or {})
-
-    # A revision-id-only probe: no wikitext is serialised, so this stays cheap even
-    # when nothing has changed.
-    logger.info("Checking which pages have changed ...")
-    latest = fetch_revisions(
-        wiki, [titles_by_number[n] for n in page_numbers], include_content=False
-    )
-
-    stale: list[int] = []
-    for number in page_numbers:
-        title = titles_by_number[number]
-        revision = latest.get(title)
-        if revision is None:
-            logger.warning("No revision reported for %s; skipping", title)
-            continue
-        if force or _needs_download(
-            page_key(number, digits), revision.revid, manifest_pages, text_dir, credits_dir
-        ):
-            stale.append(number)
-
-    logger.info("%d of %d scan pages need downloading", len(stale), len(page_numbers))
-
-    written = 0
-    if not stale:
-        logger.info("Scan pages are already up to date.")
-    elif not dry_run:
-        stale_titles = [titles_by_number[n] for n in stale]
-        logger.info("Fetching wikitext ...")
-        contents = fetch_revisions(wiki, stale_titles, include_content=True)
-        logger.info("Fetching contributors ...")
-        contributors = fetch_contributors(wiki, stale_titles)
-
-        text_dir.mkdir(parents=True, exist_ok=True)
-        credits_dir.mkdir(parents=True, exist_ok=True)
-
-        for number in stale:
-            title = titles_by_number[number]
-            revision = contents.get(title)
-            if revision is None or revision.content is None:
-                logger.warning("No wikitext returned for %s; leaving it for the next run", title)
-                continue
-
-            key = page_key(number, digits)
-            credits_text = "\n".join(contributors.get(title, []))
-
-            (text_dir / f"{key}.txt").write_text(revision.content, encoding="utf-8")
-            (credits_dir / f"{key}.txt").write_text(credits_text, encoding="utf-8")
-
-            manifest_pages[key] = {
-                "revid": revision.revid,
-                "timestamp": revision.timestamp,
-                "text_sha256": _sha256(revision.content),
-                "credits_sha256": _sha256(credits_text),
-            }
-            written += 1
-            if written % 50 == 0:
-                logger.info("Wrote %d/%d scan pages", written, len(stale))
+    manifest_pages = scans.pages
+    written = scans.written
 
     # The scan pages carry almost no text of their own; this is where it lives.
     source_pages: dict[str, Any] = {} if force else dict(manifest.get("source_pages") or {})
@@ -446,7 +328,7 @@ def download_book(
     if dry_run:
         logger.info(
             "Dry run: would write %d scan page(s) and refresh source pages under %s",
-            len(stale),
+            len(scans.stale),
             data_dir,
         )
         return manifest
@@ -471,7 +353,7 @@ def download_book(
     # intact and the interrupted pages simply look stale next time, which is safer
     # than a per-page write that could claim a page is current when its file was
     # only half written.
-    save_manifest(manifest, sourcetexts_root)
+    save_manifest(manifest, data_dir)
     structure = build_structure(sourcetexts_root)
     save_structure(structure, sourcetexts_root)
     logger.info(
