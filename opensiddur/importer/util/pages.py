@@ -70,6 +70,60 @@ def birnbaum_siddur_external_credits_directory(sourcetexts_root: Path | None = N
     return birnbaum_siddur_data_directory(sourcetexts_root) / "external" / "credits"
 
 
+def birnbaum_siddur_en_data_directory(sourcetexts_root: Path | None = None) -> Path:
+    """English Wikisource scan pages for the same book: <data>/en.
+
+    The English half of the printing lives on en.wikisource, which the Hebrew scan
+    pages reach by interwiki transclusion (``{{iwpage|en}}``) rather than holding the
+    text themselves. It is the same scan, so its pages are keyed by the same scan page
+    number as ``text/`` — see :func:`birnbaum_siddur_ia_directory` for why that
+    matters.
+    """
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "en"
+
+
+def birnbaum_siddur_en_text_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Directory of per-page English Wikisource wikitext files."""
+    return birnbaum_siddur_en_data_directory(sourcetexts_root) / "text"
+
+
+def birnbaum_siddur_en_credits_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Contributor credits for the English Wikisource scan pages."""
+    return birnbaum_siddur_en_data_directory(sourcetexts_root) / "credits"
+
+
+def birnbaum_siddur_ia_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Internet Archive material for the same scan: <data>/ia.
+
+    The Internet Archive item and the Commons file Wikisource indexes are the same
+    scan, which is what makes its OCR usable here at all. Its leaves are numbered from
+    zero, so IA leaf ``n`` is scan page ``n + 1``; everything written under this
+    directory is named by the *scan page* number so that no filename anywhere in the
+    tree carries the off-by-one.
+    """
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "ia"
+
+
+def birnbaum_siddur_ia_derivatives_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Whole-book OCR derivatives as downloaded from the Internet Archive."""
+    return birnbaum_siddur_ia_directory(sourcetexts_root) / "derivatives"
+
+
+def birnbaum_siddur_ia_ocr_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Per-page OCR text sliced out of the whole-book derivatives."""
+    return birnbaum_siddur_ia_directory(sourcetexts_root) / "ocr"
+
+
+def birnbaum_siddur_ia_regions_directory(sourcetexts_root: Path | None = None) -> Path:
+    """Per-page page-region segmentation (running head, body, footnote)."""
+    return birnbaum_siddur_ia_directory(sourcetexts_root) / "regions"
+
+
+def birnbaum_siddur_correspondence_path(sourcetexts_root: Path | None = None) -> Path:
+    """The page correspondence table tying the Hebrew, English and IA layers together."""
+    return birnbaum_siddur_data_directory(sourcetexts_root) / "pages.json"
+
+
 def title_to_relative_path(title: str, suffix: str = ".txt") -> Path:
     """Map a wiki title to a relative path, turning subpage slashes into directories.
 
@@ -196,3 +250,34 @@ def get_birnbaum_credits(
 ) -> Optional[list[str]]:
     """Return the credits of the given Birnbaum page, or None if it does not exist."""
     return _read_credits(birnbaum_siddur_credits_directory(sourcetexts_root), page_number, 3)
+
+
+def get_birnbaum_en_page(
+    page_number: str | int, sourcetexts_root: Path | None = None
+) -> Optional[Page]:
+    """Return the English Wikisource wikitext of the given scan page, or None.
+
+    Only about a third of the book's pages exist on en.wikisource, so None here is the
+    common case rather than an error.
+    """
+    return _read_page(birnbaum_siddur_en_text_directory(sourcetexts_root), page_number, 3)
+
+
+def get_birnbaum_en_credits(
+    page_number: str | int, sourcetexts_root: Path | None = None
+) -> Optional[list[str]]:
+    """Return the English Wikisource credits of the given scan page, or None."""
+    return _read_credits(birnbaum_siddur_en_credits_directory(sourcetexts_root), page_number, 3)
+
+
+def get_birnbaum_ia_ocr(
+    page_number: str | int, sourcetexts_root: Path | None = None
+) -> Optional[Page]:
+    """Return the Internet Archive OCR of the given scan page, or None.
+
+    Takes a scan page number, not an IA leaf number. On a Hebrew page the OCR
+    interleaves Birnbaum's real English footnotes with Hebrew misread as Latin, in
+    reading order; it is a provenance record, not usable prose, until segmentation
+    separates the regions.
+    """
+    return _read_page(birnbaum_siddur_ia_ocr_directory(sourcetexts_root), page_number, 3)

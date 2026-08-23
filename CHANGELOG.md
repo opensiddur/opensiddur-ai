@@ -8,6 +8,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The English side of the Birnbaum siddur, from two new sources over the same scan
+  (`opensiddur/importer/util/internet_archive.py`,
+  `opensiddur/importer/birnbaum_siddur/{en_wikisource,internet_archive}.py`). The Hebrew Wikisource
+  edition already downloaded is not a faithful reproduction of the 1949 printing — it renders
+  Birnbaum's English rubrics into Hebrew of its own and omits the English-only front matter — and
+  it holds none of the translation: its 408 English leaves are `{{iwpage|en}}` stubs transcluding
+  en.wikisource, and its 405 Hebrew leaves carry English footnote commentary nothing had captured.
+  The Internet Archive item and the Commons file Wikisource transcribes are provably the same scan
+  (both report SHA-1 `4208e06b…` at 488,138,938 bytes), so the Archive's OCR of the whole book
+  pairs with the transcription leaf by leaf for nothing: **IA leaf `n` is scan page `n + 1`**,
+  checked against all 361 pages where both sources state a printed page number, with none
+  disagreeing. Four whole-book derivatives (~1 MB) are fetched rather than 815 per-page files, and
+  their search text is sliced into `ia/ocr/NNN.txt` using the Archive's byte-offset page index —
+  on bytes, since the file holds 40,983 non-ASCII bytes and decoding first would shift every leaf
+  after the first of them. English Wikisource supplies `en/`: 284 of 815 pages exist, of which 129
+  are proofread or better and non-empty, so it is a quality overlay on the OCR rather than a
+  replacement. Everything on disk is named by scan page, never by leaf, so `text/100.txt`,
+  `en/text/100.txt` and `ia/ocr/100.txt` are one leaf and the off-by-one lives in one function.
+  `ia/ocr/` on a Hebrew page is not prose: the OCR reads Hebrew as Latin gibberish and interleaves
+  it with the real English footnotes, which the region-segmentation stage will separate.
+- `pages.json`, the table that says what each of the Birnbaum siddur's 815 leaves is and where its
+  text comes from (`opensiddur/importer/birnbaum_siddur/correspondence.py`), plus a `download.py`
+  front door running all four stages in the order they depend on — the reconciliation reads all
+  three layers off disk, so running the commands by hand in the wrong order yields a table
+  describing a book that is no longer there. Each page records its IA leaf, printed page number
+  and where that number came from, which side of the opening it is, its facsimile URL, its facing
+  page, and its text source. Three things it works out rather than assumes. **Side** comes from
+  the markers, never from parity: ten pages break the odd-English/even-Hebrew rule, in two
+  contiguous runs that print Hebrew with no facing English at all, and a parity rule would
+  mis-pair everything after each run — those 20 pages are reported as unpaired rather than
+  wrongly paired. **The running header** is parsed by argument shape, not position: the printed
+  page number sits in the first, second or third slot depending on the variant, and reading slot 0
+  positionally loses 44 of the 405 pages that carry one. **The printed page number** prefers the
+  human transcription over OCR, but checks the sequence for monotonicity and falls back to the
+  Archive where a transcribed number goes backwards — which catches exactly one page in the book,
+  scan 738, where the running header was copied from scan 722 and its `697` never updated to
+  `713`. Both readings are kept and the correction is reported, and a number that cannot be
+  repaired is left alone and flagged rather than invented; `--check` exits non-zero on those.
+- The Archive stage now leaves its manifest and its 815 OCR files untouched when nothing changed,
+  matching the Wikisource downloaders. Rewriting a manifest whose only difference is its own
+  timestamp turns a run that fetched nothing into a diff, which teaches people to ignore diffs on
+  exactly the file that records provenance. `pages.json` is held to the same rule.
+- `internet_archive.py` reuses the Wikisource client's pacing and backoff rather than growing a
+  second idea of politeness. archive.org's bot policy sets no numeric rate limit but requires a
+  descriptive `User-Agent`, honouring `429` and `Retry-After`, exponential backoff, and preferring
+  bulk endpoints; the existing client already does all of that, so the only addition is the model
+  name the policy asks of AI-agent clients (`--agent-model`, `$OPENSIDDUR_AGENT_MODEL`), omitted
+  entirely for a human-invoked run.
 - A Wikisource downloader that follows Wikimedia's rules, and a Birnbaum siddur importer built on
   it (`opensiddur/importer/util/wikisource.py`, `opensiddur/importer/birnbaum_siddur/`). The JPS
   1917 downloader scrapes `action=raw` and an Atom history feed through `/w/index.php` at two
