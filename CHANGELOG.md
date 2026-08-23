@@ -21,6 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   what changed — for the 815-page Birnbaum siddur that is ~17 requests and no file writes, against
   ~1,630 requests before. Downloads all 815 pages into `sourcetexts/sources/birnbaum_siddur/`
   as `text/NNN.txt` and `credits/NNN.txt`, matching the `jps1917` layout.
+- The Birnbaum importer now also downloads the pages the scans transclude their text from. Those
+  815 scan pages hold almost no text — median size 109 bytes — because 405 of them are mostly
+  `{{#קטע:PAGE|SECTION}}` calls, the Hebrew localisation of `{{#lst:}}` (labeled section
+  transclusion), with the text living in mainspace pages. The client gained generic support for
+  that mechanism (`find_transclusions`, `find_sections`, `is_redirect`, `download_closure`),
+  matching the localised parser-function and tag aliases rather than only the English spellings,
+  which is what hid this to begin with. 324 subtree pages land under `source/`, transitively
+  referenced pages outside it under `external/`, both mirroring the wiki's title hierarchy as
+  directories; a new `structure.json` records which named sections each page defines and which it
+  transcludes, including for the scan pages, since that is what ties printed pagination to
+  liturgical text. Redirects are kept — 151 of the subtree pages are redirects carrying
+  alternative names for a service.
+
+### Fixed
+- Batched Action API queries are sent as POST. Fifty Hebrew subpage titles percent-encode past the
+  URL length limit and the server answered `414 URI Too Long`, so batching was silently capped by
+  URL length on any wiki whose titles are not short and Latin.
 
 ### Changed
 - `RELEASE_PROCEDURE.md` now says to re-lock and push `uv.lock` after a release. The release script

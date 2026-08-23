@@ -194,6 +194,21 @@ def page_title(namespace: str, book_name: str, page_num: int | str) -> str:
     return f"{namespace}:{book_name}/{page_num}"
 
 
+def normalize_title(title: str) -> str:
+    """Canonical form of a wiki title, for comparing and deduplicating.
+
+    MediaWiki treats underscores and spaces as the same character in titles, so the
+    same page can be written either way — the Birnbaum siddur is linked both as
+    ``Philip Birnbaum - …`` and ``Philip_Birnbaum_-_…``. Without folding the two,
+    a link graph double-counts pages and a download set fetches them twice.
+
+    Deliberately does not touch capitalisation: whether the first letter is
+    case-insensitive is a per-wiki setting, and guessing wrong would merge two
+    genuinely distinct titles, which is worse than missing a duplicate.
+    """
+    return re.sub(r"\s+", " ", title.replace("_", " ")).strip()
+
+
 def batched(items: Sequence[Any], size: int = DEFAULT_BATCH_SIZE) -> Iterator[list[Any]]:
     """Split ``items`` into lists of at most ``size``."""
     if size < 1:
@@ -225,6 +240,12 @@ def api_get(
 
     The single place in this module that touches the network, so it owns the whole
     etiquette contract: identification, pacing, ``maxlag``, and backoff.
+
+    Sent as POST despite being a read. A batch of 50 long titles does not fit in a
+    URL — fifty Hebrew subpage titles percent-encode to well over 8KB and the server
+    answers 414 — and the Action API accepts POST for read queries precisely so that
+    batching is not limited by URL length. Nothing else changes: `maxlag`,
+    `Retry-After` and the error envelope behave identically either way.
     """
     query = dict(params)
     query.update(format="json", formatversion=2, maxlag=maxlag)
@@ -233,7 +254,7 @@ def api_get(
         if wiki.limiter is not None:
             wiki.limiter.wait()
 
-        response = wiki.session.get(wiki.api_url, params=query, timeout=timeout)
+        response = wiki.session.post(wiki.api_url, data=query, timeout=timeout)
 
         # Rate limiting and server-side faults are worth retrying; other 4xx are our
         # own fault and will fail identically no matter how long we wait.
@@ -324,6 +345,34 @@ def query_pages(
         query.update(continuation)
 
 
+def list_pages_with_prefix(
+    wiki: Wiki,
+    prefix: str,
+    *,
+    namespace_id: int = 0,
+    **kwargs: Any,
+) -> list[str]:
+    """Every page title in ``namespace_id`` starting with ``prefix``.
+
+    Titles come back in *lexicographic* order (``/1``, ``/10``, ``/100``), so reading
+    a single continuation batch numerically will appear full of holes that are not
+    there. Sort numerically yourself if that is what you need.
+    """
+    return sorted(
+        query_pages(
+            wiki,
+            {
+                "action": "query",
+                "generator": "allpages",
+                "gapnamespace": namespace_id,
+                "gapprefix": prefix,
+                "gaplimit": "max",
+            },
+            **kwargs,
+        )
+    )
+
+
 def list_book_pages(
     wiki: Wiki,
     book_name: str,
@@ -335,21 +384,9 @@ def list_book_pages(
 
     Enumerating beats assuming a range: it needs no hardcoded last page and it
     reports gaps honestly, for books that are only partly transcribed.
-
-    Note the titles come back in *lexicographic* order (``/1``, ``/10``, ``/100``),
-    so a numeric reading of any single continuation batch will appear full of holes
-    that are not there. Callers should sort the returned keys.
     """
-    pages = query_pages(
-        wiki,
-        {
-            "action": "query",
-            "generator": "allpages",
-            "gapnamespace": namespace_id,
-            "gapprefix": f"{book_name}/",
-            "gaplimit": "max",
-        },
-        **kwargs,
+    pages = list_pages_with_prefix(
+        wiki, f"{book_name}/", namespace_id=namespace_id, **kwargs
     )
 
     # gapprefix also matches deeper subpages; keep only direct numbered children.
@@ -452,3 +489,139 @@ def fetch_contributors(
 def is_bot_name(name: str) -> bool:
     """Whether a username looks like a bot, and so should not be credited."""
     return name.casefold().endswith("bot")
+
+
+# ---------------------------------------------------------------------------
+# Labeled Section Transclusion
+#
+# Wikisource projects routinely keep the real text on a few mainspace pages, cut
+# into named sections, and let other pages pull those sections in. The scan-backed
+# page view then holds almost no text of its own — the Birnbaum siddur's scan pages
+# have a median size of 109 bytes.
+#
+# Both the parser function and the tags are localised, so a wiki in Hebrew writes
+# `{{#קטע:PAGE|LABEL}}` and `<קטע התחלה=LABEL/>` where an English one writes
+# `{{#lst:PAGE|LABEL}}` and `<section begin=LABEL/>`. Matching only the English
+# spellings silently finds nothing rather than failing loudly, which is how this
+# was missed on the first pass.
+#
+# https://www.mediawiki.org/wiki/Extension:Labeled_Section_Transclusion
+# ---------------------------------------------------------------------------
+
+LST_PARSER_FUNCTIONS = ("lst", "section", "קטע")
+LST_SECTION_TAGS = ("section", "קטע")
+LST_BEGIN_ATTRIBUTES = ("begin", "התחלה")
+LST_END_ATTRIBUTES = ("end", "סוף")
+
+REDIRECT_PREFIXES = ("#redirect", "#הפניה")
+
+_NOWIKI_RE = re.compile(r"<nowiki>.*?</nowiki>|<!--.*?-->", re.DOTALL | re.IGNORECASE)
+
+_TRANSCLUSION_RE = re.compile(
+    r"\{\{\s*#(?:" + "|".join(LST_PARSER_FUNCTIONS) + r")\s*:\s*([^|}]+)\|([^}]*)\}\}",
+    re.IGNORECASE,
+)
+
+_SECTION_BEGIN_RE = re.compile(
+    r"<\s*(?:" + "|".join(LST_SECTION_TAGS) + r")\s+"
+    r"(?:" + "|".join(LST_BEGIN_ATTRIBUTES) + r")\s*=\s*"
+    r'(?:"([^"]*)"|\'([^\']*)\'|([^/>]+?))\s*/?\s*>',
+    re.IGNORECASE,
+)
+
+_REDIRECT_RE = re.compile(
+    r"^\s*(?:" + "|".join(re.escape(p) for p in REDIRECT_PREFIXES) + r")\s*:?\s*"
+    r"\[\[([^\]|]+)",
+    re.IGNORECASE,
+)
+
+
+def _strip_uninterpreted(wikitext: str) -> str:
+    """Blank out spans the parser would not act on, so we do not read markup in them."""
+    return _NOWIKI_RE.sub("", wikitext)
+
+
+def find_transclusions(wikitext: str) -> list[tuple[str, str]]:
+    """Every ``(target title, section label)`` this wikitext pulls in, in order.
+
+    Titles are normalised; labels are returned verbatim, since a label is an opaque
+    key chosen by an editor rather than a title.
+    """
+    return [
+        (normalize_title(target), label.strip())
+        for target, label in _TRANSCLUSION_RE.findall(_strip_uninterpreted(wikitext))
+    ]
+
+
+def find_sections(wikitext: str) -> list[str]:
+    """Every section label this wikitext defines, in order, deduplicated."""
+    labels: list[str] = []
+    for quoted, single, bare in _SECTION_BEGIN_RE.findall(_strip_uninterpreted(wikitext)):
+        label = (quoted or single or bare).strip()
+        if label and label not in labels:
+            labels.append(label)
+    return labels
+
+
+def is_redirect(wikitext: str) -> tuple[bool, str | None]:
+    """Whether this page is a redirect, and to where.
+
+    Roughly half the Birnbaum siddur's mainspace subpages are redirects carrying
+    alternative names for a service, so this is common enough to be worth reporting
+    rather than treating as an oddity.
+    """
+    match = _REDIRECT_RE.match(_strip_uninterpreted(wikitext))
+    if match is None:
+        return False, None
+    return True, normalize_title(match.group(1))
+
+
+def download_closure(
+    wiki: Wiki,
+    roots: Sequence[str],
+    *,
+    include: Callable[[str], bool],
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    max_depth: int | None = None,
+    **kwargs: Any,
+) -> dict[str, RevisionInfo]:
+    """Fetch ``roots`` and everything they transclude, breadth-first.
+
+    ``include`` decides whether a referenced title is followed, letting callers stop
+    at a namespace boundary or outside a subtree. Titles are tracked in normalised
+    form, so a reference cycle terminates — which matters, because these graphs are
+    genuinely cyclic: assemblies transclude scan pages that transclude assemblies.
+    """
+    collected: dict[str, RevisionInfo] = {}
+    seen: set[str] = set()
+    frontier: list[str] = []
+    for title in roots:
+        normalized = normalize_title(title)
+        if normalized not in seen:
+            seen.add(normalized)
+            frontier.append(normalized)
+    depth = 0
+
+    while frontier:
+        revisions = fetch_revisions(
+            wiki, frontier, include_content=True, batch_size=batch_size, **kwargs
+        )
+        collected.update(revisions)
+
+        if max_depth is not None and depth >= max_depth:
+            break
+
+        next_frontier: list[str] = []
+        for revision in revisions.values():
+            if not revision.content:
+                continue
+            for target, _label in find_transclusions(revision.content):
+                if target in seen or not include(target):
+                    continue
+                seen.add(target)
+                next_frontier.append(target)
+
+        frontier = next_frontier
+        depth += 1
+
+    return collected
