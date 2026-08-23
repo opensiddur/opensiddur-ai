@@ -3,7 +3,13 @@ from unittest.mock import patch, mock_open, MagicMock
 from pathlib import Path
 
 from opensiddur.importer.util.pages import (
+    birnbaum_siddur_correspondence_path,
+    birnbaum_siddur_en_credits_directory,
+    birnbaum_siddur_en_text_directory,
     birnbaum_siddur_external_text_directory,
+    birnbaum_siddur_ia_derivatives_directory,
+    birnbaum_siddur_ia_ocr_directory,
+    birnbaum_siddur_ia_regions_directory,
     birnbaum_siddur_source_text_directory,
     feinstein_haggadah_data_directory,
     get_page,
@@ -288,6 +294,34 @@ class TestBirnbaumSourceDirectories(unittest.TestCase):
         self.assertEqual(
             birnbaum_siddur_external_text_directory(root),
             root / "birnbaum_siddur" / "external" / "text",
+        )
+
+
+class TestBirnbaumEnglishAndArchiveDirectories(unittest.TestCase):
+    """The English and Internet Archive layers hang off the same data directory"""
+
+    def test_the_three_layers_are_separate_trees(self):
+        root = Path("/tmp/sources")
+        book = root / "birnbaum_siddur"
+        self.assertEqual(birnbaum_siddur_en_text_directory(root), book / "en" / "text")
+        self.assertEqual(
+            birnbaum_siddur_en_credits_directory(root), book / "en" / "credits"
+        )
+        self.assertEqual(
+            birnbaum_siddur_ia_derivatives_directory(root), book / "ia" / "derivatives"
+        )
+        self.assertEqual(birnbaum_siddur_ia_ocr_directory(root), book / "ia" / "ocr")
+        self.assertEqual(
+            birnbaum_siddur_ia_regions_directory(root), book / "ia" / "regions"
+        )
+
+    def test_the_correspondence_table_sits_beside_the_other_indexes(self):
+        # pages.json is derived from all three layers, so it belongs at the top of
+        # the book's directory rather than inside any one of them.
+        root = Path("/tmp/sources")
+        self.assertEqual(
+            birnbaum_siddur_correspondence_path(root),
+            root / "birnbaum_siddur" / "pages.json",
         )
 
 
