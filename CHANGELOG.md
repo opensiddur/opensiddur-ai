@@ -40,6 +40,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   URL length on any wiki whose titles are not short and Latin.
 
 ### Changed
+- The JPS 1917 downloader now reads the Action API through the shared client, like the Birnbaum
+  importer does. It had been scraping `action=raw` plus an Atom history feed through
+  `/w/index.php` — two uncached, unbatched requests per page, so ~2,300 for the book's 1,152
+  pages, where 50 batched API requests do the same work — sending no `maxlag`, ignoring
+  `Retry-After` in favour of a flat three-retry loop, and refetching every page on every run. It
+  also identified itself with `opensiddur@example.com`, a reserved domain that reaches nobody and
+  so fails Wikimedia's User-Agent policy; the address is now `--contact-email` or
+  `$OPENSIDDUR_CONTACT_EMAIL`, with no default, and `--force` refetches regardless of the
+  manifest. The page range is no longer hardcoded: `list_book_pages` reports what is actually
+  transcribed, which also retires a stale `start_page = 443` left behind by a partial re-run. The
+  `sourcetexts/sources/jps1917/` layout and its four-digit filenames are unchanged.
+- The download loop the two Wikisource importers would otherwise duplicate now lives in
+  `opensiddur/importer/util/wikisource_book.py`: the manifest, the zero-padded page naming, and
+  the enumerate → probe revisions → fetch only what changed → write pass. `util/wikisource.py`
+  stays free of filesystem knowledge; what remains in each importer is what is particular to its
+  book, which for Birnbaum is its mainspace source tree and `structure.json`, and for JPS is
+  nothing beyond the book's name and where its files go.
+- Credits now name registered accounts only. `prop=contributors` reports anonymous edits as an
+  aggregate count rather than by address, so the handful of JPS credits files that listed bare IP
+  addresses will lose them on the next refetch — a TEI `respStmt` wants people who can be
+  identified. The old Atom feed was also capped at its most recent entries, so pages with long
+  histories may gain names.
 - `RELEASE_PROCEDURE.md` now says to re-lock and push `uv.lock` after a release. The release script
   writes the new version into `pyproject.toml` but never re-locks, so `uv.lock` kept the previous
   version and the next `uv sync --all-groups` left a modified lockfile in the working tree — which

@@ -1,112 +1,119 @@
+"""Download the JPS 1917 Bible translation from English Wikisource into sourcetexts.
+
+Writes one wikitext file and one credits file per scan page, plus a manifest recording
+each page's revision id so later runs only refetch what actually changed.
+
+Unlike the Birnbaum siddur, these scan pages hold their own text: there is no labeled
+section transclusion to follow, so a page-by-page download is the whole job.
+
+The HTTP etiquette — batching, pacing, maxlag, backoff, identification — lives in
+:mod:`opensiddur.importer.util.wikisource`, along with the reasoning for reading the
+Action API rather than the monthly dumps. The per-page filesystem layout and the
+manifest live in :mod:`opensiddur.importer.util.wikisource_book`.
+"""
+
+from __future__ import annotations
+
 import argparse
-import random
+import logging
 import sys
-import time
-import xml.etree.ElementTree as et
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-import requests
+from opensiddur.importer.util.pages import (
+    default_sourcetexts_root,
+    jps1917_credits_directory,
+    jps1917_data_directory,
+    jps1917_text_directory,
+)
+from opensiddur.importer.util.wikisource import (
+    CONTACT_EMAIL_ENV_VAR,
+    Wiki,
+    WikisourceError,
+    connect,
+    resolve_contact_email,
+)
+from opensiddur.importer.util.wikisource_book import (
+    ScanPageLayout,
+    download_scan_pages,
+    load_manifest,
+    save_manifest,
+)
 
-from opensiddur.importer.util.pages import default_sourcetexts_root, jps1917_data_directory
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-server = "en.wikisource.org"
-wiki_namespace = "Page"
-book_name = "JPS-1917-Universal.djvu"
-start_page = 443  # 7
-pages = range(start_page, 1158 + 1)
-
-# Backward-compatible name for JPS tree under sourcetexts
-jps1917_output_directory = jps1917_data_directory
-
-# Default layout: <repo>/sourcetexts/sources/jps1917
-output_directory = jps1917_data_directory()
+SERVER = "en.wikisource.org"
+WIKI_NAMESPACE = "Page"  # ProofreadPage namespace 104, as named on en.wikisource
+BOOK_NAME = "JPS-1917-Universal.djvu"
 
 
-def wiki_url(book_name, page_num, action="raw", namespace=wiki_namespace):
-    return f"/w/index.php?title={wiki_namespace}:{book_name}/{page_num}&action={action}"
+def download_book(
+    contact_email: str,
+    sourcetexts_root: Path | None = None,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+    wiki: Wiki | None = None,
+) -> dict[str, Any]:
+    """Download every transcribed page of the book, skipping unchanged ones.
 
+    Returns the manifest that was written (or, on a dry run, would have been).
+    """
+    if wiki is None:
+        wiki = connect(SERVER, contact_email)
 
-def get_wiki_page(book_name, page_num, dry_run=True):
-    path = "https://" + server + wiki_url(book_name, page_num)
-    headers = {
-        "User-Agent": "OpenSiddur-AI/1.0 (https://github.com/opensiddur/opensiddur-ai; opensiddur@example.com)",
-        "Accept-Encoding": "gzip, deflate",
-    }
+    data_dir = jps1917_data_directory(sourcetexts_root)
+    manifest = load_manifest(data_dir)
+
+    scans = download_scan_pages(
+        wiki,
+        BOOK_NAME,
+        ScanPageLayout(
+            data_dir=data_dir,
+            text_dir=jps1917_text_directory(sourcetexts_root),
+            credits_dir=jps1917_credits_directory(sourcetexts_root),
+        ),
+        dry_run=dry_run,
+        force=force,
+        manifest_pages=manifest.get("pages") or {},
+    )
+
     if dry_run:
-        print(f"Would retrieve text: {page_num} from {path}")
-    else:
-        r = requests.get(path, headers=headers, timeout=60)
-        if r.status_code >= 400:
-            print(f"Error retrieving page {page_num}")
-        else:
-            return r.text
+        logger.info(
+            "Dry run: would write %d page(s) under %s", len(scans.stale), data_dir
+        )
+        return manifest
 
+    if not scans.written:
+        # Nothing changed. Leaving the manifest alone keeps a no-op re-run genuinely
+        # no-op, so an unchanged run never shows up as a diff.
+        logger.info("Everything is already up to date.")
+        return manifest
 
-def get_wiki_contributors(book_name, page_num, dry_run=True):
-    path = "https://" + server + wiki_url(book_name, page_num, action="history&feed=atom")
-    headers = {
-        "User-Agent": "OpenSiddur-AI/1.0 (https://github.com/opensiddur/opensiddur-ai; opensiddur@example.com)",
-        "Accept-Encoding": "gzip, deflate",
+    manifest = {
+        "source": wiki.server,
+        "book_name": BOOK_NAME,
+        "namespace": WIKI_NAMESPACE,
+        "downloaded_at": datetime.now(timezone.utc).isoformat(),
+        "pages": scans.pages,
     }
-    if dry_run:
-        print(f"Would retrieve history: {page_num} from {path}")
-    else:
-        r = requests.get(path, headers=headers, timeout=60)
-        if r.status_code >= 400:
-            print(f"Error retrieving history {page_num}: {r.status_code} {r.text}")
-        else:
-            feed = et.XML(r.text)
-            return list(
-                set(
-                    [
-                        element.find("{http://www.w3.org/2005/Atom}name").text
-                        for element in feed.findall(".//{http://www.w3.org/2005/Atom}author")
-                    ]
-                )
-            )
-
-
-def download_book(dry_run: bool = True, sourcetexts_root: Path | None = None) -> None:
-    out = jps1917_output_directory(sourcetexts_root)
-    digits = len(str(max(pages)))
-    format_string = "%%0%dd" % digits
-
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "text").mkdir(parents=True, exist_ok=True)
-    (out / "credits").mkdir(parents=True, exist_ok=True)
-
-    for page_num in pages:
-        print("Page: %d" % page_num)
-        success = False
-        retries = 0
-        while not success and retries < 3:
-            try:
-                wp = get_wiki_page(book_name, page_num, dry_run=dry_run)
-                wc = get_wiki_contributors(book_name, page_num, dry_run=dry_run)
-                success = True
-            except Exception as e:
-                print(f"Exception: {e} -- waiting 5s to recover...")
-                retries += 1
-                if retries >= 3:
-                    raise
-                time.sleep(5.0)
-        output_filename = (format_string % page_num) + ".txt"
-        text_path = out / "text" / output_filename
-        credits_path = out / "credits" / output_filename
-        if dry_run:
-            print(f"{page_num}: {text_path=}, {credits_path=}")
-        else:
-            with open(text_path, "w", encoding="utf-8") as f:
-                f.write(wp)
-            time.sleep(1.3 + random.random())
-            with open(credits_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(w for w in wc if w != "Wikisource-bot"))
-            time.sleep(1.3 + random.random())
+    # Written once, at the end. A crash mid-run then leaves the previous manifest
+    # intact and the interrupted pages simply look stale next time, which is safer
+    # than a per-page write that could claim a page is current when its file was
+    # only half written.
+    save_manifest(manifest, data_dir)
+    logger.info("Wrote %d page(s) under %s", scans.written, data_dir)
+    return manifest
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Download JPS 1917 Bible pages from English Wikisource into the sourcetexts tree."
+        description=(
+            "Download JPS 1917 Bible pages from English Wikisource into the sourcetexts "
+            "tree, refetching only pages that have changed."
+        )
     )
     parser.add_argument(
         "--sourcetexts-root",
@@ -118,16 +125,42 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--contact-email",
+        default=None,
+        help=(
+            "Contact address for the User-Agent header, as Wikimedia's User-Agent "
+            f"policy requires. Falls back to ${CONTACT_EMAIL_ENV_VAR}."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print planned fetches and paths without writing files.",
+        help=(
+            "Report what would be downloaded without writing anything. Still performs "
+            "the read-only enumeration and change check."
+        ),
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Refetch every page, ignoring the manifest.",
     )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_arg_parser().parse_args(argv)
-    download_book(dry_run=args.dry_run, sourcetexts_root=args.sourcetexts_root)
+    try:
+        contact_email = resolve_contact_email(args.contact_email)
+        download_book(
+            contact_email,
+            args.sourcetexts_root,
+            dry_run=args.dry_run,
+            force=args.force,
+        )
+    except WikisourceError as exc:
+        logger.error("%s", exc)
+        return 1
     return 0
 
 
