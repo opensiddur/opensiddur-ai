@@ -11,8 +11,10 @@ from opensiddur.exporter.constants import TEI_NS
 from opensiddur.importer.jps1917.convert_wikisource import (
     get_credits_pages, header, tei_file, process_mediawiki, validate_and_write_tei_file,
     book_file, index_file, Book, Index, mediawiki_xml_to_tei, main, make_project_directory,
-    TITLE_PAGE, prepend_to_front,
+    TITLE_PAGE, prepend_to_front, FALLBACK_DOWNLOAD_DATE, source_download_date,
 )
+from opensiddur.importer.util.pages import jps1917_data_directory
+from opensiddur.importer.util.wikisource_book import save_manifest
 from opensiddur.importer.util.parshiyot import skeleton_map_json
 from opensiddur.importer.util.validation import validate_with_start, validate
 
@@ -126,9 +128,38 @@ class TestGetCreditsPages(unittest.TestCase):
         self.assertEqual(result, ["Alpha", "Beta", "Charlie", "Zebra"])
 
 
+class TestHeaderDownloadDate(unittest.TestCase):
+    """The sourceDesc date reports when the Wikisource pages were actually fetched."""
+
+    def test_uses_the_date_it_is_given(self):
+        result = header(
+            book_name_he="בראשית",
+            book_name_en="Genesis",
+            source_download_date="2026-08-22",
+        )
+        self.assertIn("<tei:date>2026-08-22</tei:date>", result)
+
+    def test_falls_back_when_no_date_is_known(self):
+        result = header(book_name_he="בראשית", book_name_en="Genesis")
+        self.assertIn(f"<tei:date>{FALLBACK_DOWNLOAD_DATE}</tei:date>", result)
+
+    def test_reads_the_date_out_of_the_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            save_manifest(
+                {"downloaded_at": "2026-08-22T21:15:00+00:00"},
+                jps1917_data_directory(root),
+            )
+            self.assertEqual(source_download_date(root), "2026-08-22")
+
+    def test_falls_back_when_the_tree_has_no_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(source_download_date(Path(tmp)), FALLBACK_DOWNLOAD_DATE)
+
+
 class TestHeader(unittest.TestCase):
     """Tests for header function."""
-    
+
     def test_basic_header_without_subtitles(self):
         """Test basic header generation with required fields only."""
         result = header(
@@ -1146,7 +1177,10 @@ class TestBookFile(unittest.TestCase):
             book_name_he="בראשית",
             book_name_en="Genesis",
             entrypoint="genesis",
-            transcription_credits=["Credit1", "Credit2"]
+            transcription_credits=["Credit1", "Credit2"],
+            # Read from the manifest of whatever tree is being converted, so the value
+            # is not this test's business; TestHeaderDownloadDate covers it directly.
+            source_download_date=ANY,
         )
         
         # Verify process_mediawiki was called with correct parameters
@@ -1324,7 +1358,8 @@ class TestIndexFile(unittest.TestCase):
             book_sub_he="חמישה חומשי תורה",
             book_sub_en="Five Books of Moses",
             entrypoint="torah",
-            transcription_credits=["Index transcriber"]
+            transcription_credits=["Index transcriber"],
+            source_download_date=ANY,
         )
         
         # Verify process_mediawiki was called for front matter
@@ -1391,7 +1426,8 @@ class TestIndexFile(unittest.TestCase):
             book_sub_he=None,
             book_sub_en=None,
             entrypoint="bible_index",
-            transcription_credits=None
+            transcription_credits=None,
+            source_download_date=ANY,
         )
         
         # Verify tei_file was called with empty xml_dict and body with transclusions

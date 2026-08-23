@@ -18,6 +18,8 @@ from opensiddur.importer.util.wikisource import (
     find_sections,
     find_transclusions,
     is_bot_name,
+    is_temporary_account,
+    is_uncreditable,
     is_redirect,
     list_book_pages,
     list_pages_with_prefix,
@@ -122,6 +124,23 @@ class TestIsBotName(unittest.TestCase):
 
     def test_leaves_ordinary_names_alone(self):
         self.assertFalse(is_bot_name("Dovi"))
+
+
+class TestIsTemporaryAccount(unittest.TestCase):
+    def test_recognises_a_temporary_account(self):
+        self.assertTrue(is_temporary_account("~2026-44995-25"))
+
+    def test_leaves_ordinary_names_alone(self):
+        self.assertFalse(is_temporary_account("Prosody"))
+
+
+class TestIsUncreditable(unittest.TestCase):
+    def test_excludes_bots_and_temporary_accounts(self):
+        self.assertTrue(is_uncreditable("Wikisource-bot"))
+        self.assertTrue(is_uncreditable("~2026-19097-09"))
+
+    def test_credits_a_named_account(self):
+        self.assertFalse(is_uncreditable("Kathleen.wright5"))
 
 
 class TestApiGet(unittest.TestCase):
@@ -414,6 +433,9 @@ class TestFetchContributors(unittest.TestCase):
                             {"userid": 68, "name": "Nahum"},
                             {"userid": 1, "name": "Dovi"},
                             {"userid": 9, "name": "Wikisource-bot"},
+                            # A logged-out edit under IP masking; registered as far as
+                            # the API is concerned, but it names nobody.
+                            {"userid": 12, "name": "~2026-44995-25"},
                         ],
                     }
                 )

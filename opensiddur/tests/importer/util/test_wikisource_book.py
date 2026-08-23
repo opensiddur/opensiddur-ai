@@ -244,6 +244,38 @@ class TestManifestFile(unittest.TestCase):
         self.assertEqual(json.loads(raw)["book_name"], "ספר")
 
 
+class TestDownloadDate(unittest.TestCase):
+    """The date a TEI sourceDesc should report as when the source was retrieved."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.data_dir = Path(self._tmp.name) / "book"
+
+    def test_reports_the_date_a_download_recorded(self):
+        save_manifest({"downloaded_at": "2026-08-22T21:15:00+00:00"}, self.data_dir)
+        self.assertEqual(wikisource_book.download_date(self.data_dir), "2026-08-22")
+
+    def test_reports_nothing_when_there_is_no_manifest(self):
+        self.assertIsNone(wikisource_book.download_date(self.data_dir))
+
+    def test_reports_nothing_when_the_manifest_has_no_date(self):
+        save_manifest({"pages": {}}, self.data_dir)
+        self.assertIsNone(wikisource_book.download_date(self.data_dir))
+
+    def test_reports_nothing_when_the_date_is_unintelligible(self):
+        save_manifest({"downloaded_at": "last Tuesday"}, self.data_dir)
+        with self.assertLogs(wikisource_book.logger, level="WARNING"):
+            self.assertIsNone(wikisource_book.download_date(self.data_dir))
+
+    def test_a_real_download_records_a_usable_date(self):
+        """The two halves agree: what download_scan_pages records, this reads back."""
+        save_manifest(
+            {"downloaded_at": wikisource_book.datetime.now().isoformat()}, self.data_dir
+        )
+        self.assertRegex(wikisource_book.download_date(self.data_dir), r"^\d{4}-\d{2}-\d{2}$")
+
+
 class TestHelpers(unittest.TestCase):
     def test_page_key_pads_to_the_requested_width(self):
         self.assertEqual(page_key(7, 4), "0007")

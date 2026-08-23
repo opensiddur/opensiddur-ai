@@ -11,7 +11,9 @@ from opensiddur.importer.util.pages import (
     default_sourcetexts_root,
     get_credits,
     get_page,
+    jps1917_data_directory,
 )
+from opensiddur.importer.util.wikisource_book import download_date
 from opensiddur.importer.jps1917.canonical_verses import annotate_canonical_verses
 from opensiddur.importer.jps1917.mediawiki_processor import create_processor
 from opensiddur.importer.util.parshiyot import skeleton_map_json
@@ -23,6 +25,16 @@ from opensiddur.common.constants import PROJECT_DIRECTORY
 logger = logging.getLogger(__name__)
 
 MEDIAWIKI_TO_TEI_XSLT = Path(__file__).parent / "mediawiki_to_tei.xslt"
+
+# What the header reported before the downloader kept a manifest. Used only when there
+# is none to read, so that a conversion run against a tree downloaded by the old
+# scraper still states the date those files were actually fetched.
+FALLBACK_DOWNLOAD_DATE = "2025-07-27"
+
+
+def source_download_date(sourcetexts_root: Path | None = None) -> str:
+    """The date the Wikisource pages under this tree were last downloaded."""
+    return download_date(jps1917_data_directory(sourcetexts_root)) or FALLBACK_DOWNLOAD_DATE
 
 
 def make_project_directory(project_dir: Path | None = None) -> Path:
@@ -419,8 +431,10 @@ def header(
     license_url: str = "http://www.creativecommons.org/publicdomain/zero/1.0/",
     license_name: str = "Creative Commons Public Domain Dedication 1.0",
     transcription_credits: Optional[list[str]] = None,
+    source_download_date: Optional[str] = None,
 ):
     transcription_credits = transcription_credits or []
+    source_download_date = source_download_date or FALLBACK_DOWNLOAD_DATE
     book_sub_he = (
         f"""<tei:title type="alt-sub" xml:lang="he">{book_sub_he}</tei:title>"""
         if book_sub_he else ""
@@ -461,7 +475,7 @@ def header(
                 <tei:title>Bible (Jewish Publication Society 1917)</tei:title>
                 <tei:distributor><tei:ref target="https://en.wikisource.org">Wikisource</tei:ref></tei:distributor>
                 <tei:idno type="url">https://en.wikisource.org/wiki/Bible_(Jewish_Publication_Society_1917)</tei:idno>
-                <tei:date>2025-07-27</tei:date>
+                <tei:date>{source_download_date}</tei:date>
             </tei:bibl>
             <tei:bibl>
                <tei:title type="main">The Holy Scriptures</tei:title>
@@ -618,6 +632,7 @@ def book_file(
         book_name_en = book.book_name_en,
         entrypoint = book.file_name,
         transcription_credits = transcription_credits,
+        source_download_date = source_download_date(sourcetexts_root),
     )
     xml_dict = process_mediawiki(
         book.start_page,
@@ -662,6 +677,7 @@ def index_file(
         book_sub_en = idx.index_sub_en,
         entrypoint = entrypoint,
         transcription_credits = transcription_credits,
+        source_download_date = source_download_date(sourcetexts_root),
     )
     if idx.start_page is not None and idx.end_page is not None:
         xml_dict = process_mediawiki(

@@ -460,9 +460,11 @@ def fetch_contributors(
     Uses ``prop=contributors``, which is batchable and returns registered accounts
     already deduplicated. Anonymous edits are reported by the API only as an
     aggregate count, so they do not appear here — credits name people who can be
-    identified, which is what a TEI ``respStmt`` wants.
+    identified, which is what a TEI ``respStmt`` wants. By default bots and
+    temporary accounts are left out on that same reasoning; see
+    :func:`is_uncreditable`.
     """
-    should_exclude = exclude if exclude is not None else is_bot_name
+    should_exclude = exclude if exclude is not None else is_uncreditable
 
     contributors: dict[str, list[str]] = {}
     for batch in batched(list(titles), batch_size):
@@ -489,6 +491,25 @@ def fetch_contributors(
 def is_bot_name(name: str) -> bool:
     """Whether a username looks like a bot, and so should not be credited."""
     return name.casefold().endswith("bot")
+
+
+def is_temporary_account(name: str) -> bool:
+    """Whether a username is one of MediaWiki's temporary accounts.
+
+    Under IP masking, an edit made without logging in is attributed to an
+    auto-generated account named ``~2026-44995-25`` rather than to a bare address.
+    The name is registered as far as ``prop=contributors`` is concerned, but it
+    identifies a person no better than the IP it replaced, so it is excluded on the
+    same reasoning: credits name people who can be identified.
+
+    https://www.mediawiki.org/wiki/Trust_and_Safety_Product/Temporary_Accounts
+    """
+    return name.startswith("~")
+
+
+def is_uncreditable(name: str) -> bool:
+    """Whether a contributor name should be left out of credits."""
+    return is_bot_name(name) or is_temporary_account(name)
 
 
 # ---------------------------------------------------------------------------

@@ -57,11 +57,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stays free of filesystem knowledge; what remains in each importer is what is particular to its
   book, which for Birnbaum is its mainspace source tree and `structure.json`, and for JPS is
   nothing beyond the book's name and where its files go.
-- Credits now name registered accounts only. `prop=contributors` reports anonymous edits as an
-  aggregate count rather than by address, so the handful of JPS credits files that listed bare IP
-  addresses will lose them on the next refetch — a TEI `respStmt` wants people who can be
-  identified. The old Atom feed was also capped at its most recent entries, so pages with long
-  histories may gain names.
+- Credits now name registered accounts only, and are written in sorted order rather than whatever
+  order a `set` happened to yield. `prop=contributors` reports anonymous edits as an aggregate
+  count rather than by address, so the five JPS credits files that listed a bare IP no longer do —
+  a TEI `respStmt` wants people who can be identified. MediaWiki's temporary accounts
+  (`~2026-44995-25`), which under IP masking stand in for logged-out editors, are excluded on the
+  same reasoning, alongside bots. The old Atom feed was also capped at its most recent entries, so
+  pages with long histories gain the names it never showed.
+- The JPS TEI `sourceDesc` now reports the date the Wikisource pages were actually downloaded,
+  read from the manifest, instead of a date written into the source once by hand and left to go
+  stale. Conversions of a tree with no manifest keep reporting the old literal date.
 - `RELEASE_PROCEDURE.md` now says to re-lock and push `uv.lock` after a release. The release script
   writes the new version into `pyproject.toml` but never re-locks, so `uv.lock` kept the previous
   version and the next `uv sync --all-groups` left a modified lockfile in the working tree — which

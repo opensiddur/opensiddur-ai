@@ -16,6 +16,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -70,6 +71,25 @@ def save_manifest(manifest: dict[str, Any], data_dir: Path) -> None:
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def download_date(data_dir: Path) -> str | None:
+    """The date the manifest was last written, as ``YYYY-MM-DD``, or None.
+
+    This is what a TEI ``sourceDesc`` should report as the date the source was
+    retrieved, so that the header states when the wikitext underneath it was actually
+    fetched rather than a date someone typed once.
+    """
+    stamp = load_manifest(data_dir).get("downloaded_at")
+    if not isinstance(stamp, str) or not stamp:
+        return None
+    # Written by datetime.isoformat(), so the date is everything before the "T"; be
+    # lenient about anything else that parses, and report nothing if it does not.
+    try:
+        return datetime.fromisoformat(stamp).date().isoformat()
+    except ValueError:
+        logger.warning("Manifest in %s has an uninterpretable date: %r", data_dir, stamp)
+        return None
 
 
 def needs_download(
