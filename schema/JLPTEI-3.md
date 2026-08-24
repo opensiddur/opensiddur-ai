@@ -116,7 +116,29 @@ To add URNs to reference parts of poems and prayers that don't have natural line
 All URIs reference the following scopes:
 1. If the URI is on an element with non-empty content, it references that content.
 2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the next milestone of the same unit *or* the end of the file if no subsequent milestone of the same unit exists.
-3. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
+3. A `milestone` that carries a `unit` but **no** `corresp` is a *terminator*: it ends the scope opened by the nearest preceding milestone of that same unit, and opens nothing itself.
+
+4. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
+
+### Terminating a scope
+
+Rule 2 runs a scope to the end of the file when nothing of the same unit follows, which
+over-claims wherever a division ends partway through a file with no sibling after it — a
+page of shared liturgy whose last paragraph belongs to no named prayer, for instance. The
+terminator in rule 3 closes such a scope explicitly:
+
+```xml
+<tei:milestone unit="prayer" n="1" corresp="urn:x-opensiddur:text:prayer:amidah/avot"/>
+...
+<tei:milestone unit="prayer"/>   <!-- ends avot; starts nothing -->
+```
+
+A terminator is not indexed, because only elements carrying `corresp` are, so it adds no
+URN mapping and cannot be referenced.
+
+**The unit must match exactly.** A bare milestone of some *other* unit does not terminate
+anything, which is what keeps `unit="edition-verse"` — which carries `n` and never
+`corresp` — from closing every verse it follows.
 
 ## Versification
 

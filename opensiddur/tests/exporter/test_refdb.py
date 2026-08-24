@@ -1361,3 +1361,104 @@ class TestFindEndOfMapping(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
+
+
+class TestUnitTerminatingMilestone(unittest.TestCase):
+    """A milestone with a unit but no corresp closes the scope of that same unit.
+
+    Without it, a scope runs to the end of the file whenever nothing of its unit
+    follows, which over-claims wherever a division ends partway through a file. See
+    JLPTEI-3.md, "Terminating a scope".
+    """
+
+    TEI_NS = "http://www.tei-c.org/ns/1.0"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.db = ReferenceDatabase(Path(self.temp_dir.name) / "terminator.db")
+        self.addCleanup(self.db.close)
+
+    def _index(self, body: str):
+        """Index a document body and return its URN mappings."""
+        document = (
+            f'<tei:TEI xmlns:tei="{self.TEI_NS}" xml:lang="he">'
+            f"<tei:text><tei:body><tei:div>{body}</tei:div></tei:body></tei:text></tei:TEI>"
+        )
+        path = Path(self.temp_dir.name) / "doc.xml"
+        path.write_text(document, encoding="utf-8")
+        self.db.remove_file("doc.xml", "proj")
+        self.db.index_file(path, "proj", "doc.xml")
+        return self.db.get_urns_by_project("proj")
+
+    OPEN = ('<tei:milestone unit="prayer" n="1" '
+            'corresp="urn:x-opensiddur:text:prayer:alpha"/>')
+    TAIL = "<tei:p>one</tei:p><tei:p>two</tei:p><tei:p>after</tei:p>"
+
+    def test_without_a_terminator_the_scope_runs_to_the_end(self):
+        mappings = self._index(self.OPEN + self.TAIL)
+        self.assertEqual(len(mappings), 1)
+        self.assertTrue(mappings[0].end_element_path.endswith("tei:p[3]"))
+
+    def test_a_terminator_closes_the_scope_early(self):
+        mappings = self._index(
+            self.OPEN
+            + "<tei:p>one</tei:p><tei:p>two</tei:p>"
+            + '<tei:milestone unit="prayer"/>'
+            + "<tei:p>after</tei:p>"
+        )
+        self.assertEqual(len(mappings), 1)
+        self.assertTrue(mappings[0].end_element_path.endswith("tei:p[2]"))
+
+    def test_a_terminator_is_not_itself_indexed(self):
+        # It carries no corresp, so it adds no mapping and cannot be referenced.
+        mappings = self._index(self.OPEN + '<tei:p>x</tei:p><tei:milestone unit="prayer"/>')
+        self.assertEqual([m.urn for m in mappings],
+                         ["urn:x-opensiddur:text:prayer:alpha"])
+
+    def test_a_bare_milestone_of_another_unit_does_not_terminate(self):
+        mappings = self._index(
+            self.OPEN
+            + "<tei:p>one</tei:p><tei:p>two</tei:p>"
+            + '<tei:milestone unit="citation" n="x"/>'
+            + "<tei:p>after</tei:p>"
+        )
+        self.assertTrue(mappings[0].end_element_path.endswith("tei:p[3]"))
+
+    def test_an_edition_verse_milestone_does_not_terminate_a_verse(self):
+        # edition-verse carries @n and never @corresp. Under the path-depth fallback it
+        # would otherwise close every verse it follows, silently truncating the scope of
+        # canonical verses across WLC, MAM and JPS.
+        mappings = self._index(
+            '<tei:milestone unit="verse" n="1" '
+            'corresp="urn:x-opensiddur:text:bible:genesis/1/1"/>'
+            "<tei:p>one</tei:p>"
+            '<tei:milestone unit="edition-verse" n="2"/>'
+            "<tei:p>still the same canonical verse</tei:p>"
+        )
+        self.assertEqual(len(mappings), 1)
+        self.assertTrue(mappings[0].end_element_path.endswith("tei:p[2]"))
+
+    def test_a_following_milestone_of_the_same_unit_still_terminates(self):
+        mappings = self._index(
+            self.OPEN
+            + "<tei:p>one</tei:p>"
+            + '<tei:milestone unit="prayer" n="2" '
+              'corresp="urn:x-opensiddur:text:prayer:beta"/>'
+            + "<tei:p>two</tei:p>"
+        )
+        self.assertEqual(len(mappings), 2)
+        alpha = next(m for m in mappings if m.urn.endswith("alpha"))
+        self.assertTrue(alpha.end_element_path.endswith("tei:p[1]"))
+
+    def test_a_containing_unit_still_terminates(self):
+        mappings = self._index(
+            '<tei:milestone unit="verse" n="1" '
+            'corresp="urn:x-opensiddur:text:bible:genesis/1/1"/>'
+            "<tei:p>one</tei:p>"
+            '<tei:milestone unit="chapter" n="2" '
+            'corresp="urn:x-opensiddur:text:bible:genesis/2"/>'
+            "<tei:p>two</tei:p>"
+        )
+        verse = next(m for m in mappings if m.urn.endswith("1/1"))
+        self.assertTrue(verse.end_element_path.endswith("tei:p[1]"))

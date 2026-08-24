@@ -566,7 +566,20 @@
          carries the URN that joins projects together; unit="edition-verse" carries the
          edition's own verse number for display and must never carry a URN, so that the
          reference database and the parallel compiler ignore it. See JLPTEI-3.md,
-         "Versification". -->
+         "Versification".
+
+         A milestone with a unit but no corresp is a terminator: it closes the scope
+         opened by the nearest preceding milestone of that same unit and opens nothing.
+         See JLPTEI-3.md, "Terminating a scope". The unit must match exactly, which is
+         what keeps an edition-verse milestone (which by the rule above never carries a
+         corresp) from closing every verse it follows.
+
+         There is deliberately no Schematron rule for this. RelaxNG already requires
+         @unit, and a rule demanding that every corresp-less milestone follow one of its
+         own unit would misfire on the several hundred that are markers rather than
+         terminators: unit="citation", "acrostic", "parsha.annual" and edition-verse
+         itself. Which corresp-less milestones terminate is decided by
+         refdb.milestone_terminates, and pinned by tests there. -->
     <elementSpec ident="milestone" module="core" mode="change">
         <constraintSpec ident="edition-verse-constraints" scheme="schematron">
           <desc>

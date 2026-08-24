@@ -340,9 +340,20 @@ opening one.**
 <tei:milestone unit="prayer"/>          <!-- ends avot; starts nothing -->
 ```
 
-This needs no new machinery: scope already ends at any same-unit milestone, and only
-elements carrying `@corresp` are indexed, so the terminator creates no mapping. There is
-precedent in `unit="edition-verse"`, which carries `@n` but never `@corresp`.
+The terminator creates no mapping of its own, since only elements carrying `@corresp`
+are indexed. There is precedent for a deliberately unindexed milestone in
+`unit="edition-verse"`, which carries `@n` but never `@corresp`.
+
+It did need a change to `refdb`, contrary to an earlier draft of this document.
+`find_end_of_mapping` searched `following::tei:milestone[@corresp]`, so a terminator was
+never considered as a candidate at all. Dropping that filter naively would have been
+worse than doing nothing: under the path-depth fallback in `milestone_terminates`, an
+`edition-verse` milestone would then have closed every canonical verse it follows,
+truncating scopes across WLC, MAM and JPS. So a corresp-less milestone now terminates
+only on an **exact** `@unit` match, which admits the terminator and excludes every other
+bare milestone in the corpus — `citation`, `acrostic`, `parsha.annual` and
+`edition-verse` among them. Verified inert: reindexing every project produces byte-identical
+counts, and no bare milestone anywhere in the corpus follows an open scope of its own unit.
 
 ## The registry
 
