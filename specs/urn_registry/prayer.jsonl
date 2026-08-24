@@ -1,0 +1,63 @@
+{"urn": "urn:x-opensiddur:text:prayer:al_achilat_matzah", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:al_netilat_yadayim", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:ashrei", "status": "canonical", "label_en": "Ashrei"}
+{"urn": "urn:x-opensiddur:text:prayer:ashrei/tehila_ledavid", "parent": "urn:x-opensiddur:text:prayer:ashrei", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:berakhah_acharonah", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:berakhah_acharonah/al_hagefen", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:berakhah_acharonah"}
+{"urn": "urn:x-opensiddur:text:prayer:bfi_yesharim", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/bamarom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/eloheinu_avinu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yanchilenu_shabbat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yanchilenu_tov", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yefarnesenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yevarekh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yezakenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yimlokh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yishbor_ulenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yishlach_berakhah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yishlach_lanu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yishtabach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yitbarakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/hatov_vehametiv", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/hazan", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/nodeh_lekha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/rachem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/retzeh_vehachalitzenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/shir_hamaalot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/uvneh_yerushalayim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/veal_hakol", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/yiru_et_adonai", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/barukh_hu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/barukh_she_akhalnu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/barukh_umevorakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/hav_lan", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/nevarekh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/yehi_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_pri_hagafen", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:ha_el_btaatzumot", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_113", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_114", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_115", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_116", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_117", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_118", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/yehalelukha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel_hagadol", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:hamotzi", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:nishmat", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical", "label_en": "Verses of Praise"}
+{"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar", "parent": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:qiddush", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:qiddush/asher_bachar_banu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
+{"urn": "urn:x-opensiddur:text:prayer:qiddush/savri", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
+{"urn": "urn:x-opensiddur:text:prayer:qiddush/vayekhulu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
+{"urn": "urn:x-opensiddur:text:prayer:sefirat_haomer", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:shehecheyanu", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:shokhen_ad", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:uvmakhalot", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:yaaleh_veyavo", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:yishtabach", "status": "canonical"}

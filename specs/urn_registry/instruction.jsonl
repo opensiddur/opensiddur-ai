@@ -1,0 +1,6 @@
+{"urn": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Who recites"}
+{"urn": "urn:x-opensiddur:instruction:role/reader", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Reader"}
+{"urn": "urn:x-opensiddur:instruction:role/congregation", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Congregation"}
+{"urn": "urn:x-opensiddur:instruction:role/reader_and_congregation", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Reader and congregation"}
+{"urn": "urn:x-opensiddur:instruction:role/reader_then_congregation", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Reader then congregation"}
+{"urn": "urn:x-opensiddur:instruction:role/congregation_then_reader", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Congregation then reader"}
