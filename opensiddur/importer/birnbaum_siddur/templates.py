@@ -30,7 +30,6 @@ import json
 import logging
 import re
 import sys
-import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,6 +37,7 @@ from typing import Any, Iterator
 
 import mwparserfromhell
 
+from opensiddur.importer.util.hebrew import describe_normalization, is_nfkd
 from opensiddur.importer.util.pages import (
     birnbaum_siddur_external_text_directory,
     birnbaum_siddur_source_text_directory,
@@ -120,6 +120,7 @@ class Inventory:
     section_names: Counter = field(default_factory=Counter)
     pages_read: int = 0
     unnormalised: list[str] = field(default_factory=list)
+    normalization_changes: Counter = field(default_factory=Counter)
 
     def _bucket(self, table: dict[str, Use], name: str) -> Use:
         return table.setdefault(name, Use(name=name))
@@ -133,6 +134,7 @@ class Inventory:
             "distinct_section_names": len(self.section_names),
             "nusach": dict(self.nusach),
             "unnormalised_pages": self.unnormalised,
+            "normalization_changes": dict(self.normalization_changes.most_common()),
             "templates": [u.as_dict() for u in _by_count(self.templates)],
             "tags": [u.as_dict() for u in _by_count(self.tags)],
             "roles": [u.as_dict() for u in _by_count(self.roles)],
@@ -228,8 +230,10 @@ def inventory(sourcetexts_root: Path | None = None) -> Inventory:
 
         # The schema requires NFKD. Flag pages that are not already normalised, since
         # comparing a Birnbaum reading against a wiki one depends on it.
-        if unicodedata.normalize("NFKD", wikitext) != wikitext:
+        if not is_nfkd(wikitext):
             found.unnormalised.append(title)
+            for change in describe_normalization(wikitext):
+                found.normalization_changes[change] += 1
 
         for template in mwparserfromhell.parse(wikitext).filter_templates():
             name = str(template.name).strip()
@@ -282,7 +286,9 @@ def report(found: Inventory) -> Iterator[str]:
         yield f"  {count:6d}  {shape}"
     if found.unnormalised:
         yield ""
-        yield f"NOT NFKD-normalised: {len(found.unnormalised)} page(s)"
+        yield f"NOT NFKD-normalised: {len(found.unnormalised)} page(s). Characters rewritten:"
+        for change, count in found.normalization_changes.most_common():
+            yield f"  {count:6d}  {change}"
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
