@@ -74,19 +74,37 @@ keeps its own name and is wrapped in `j:conditional`:
 urn:x-opensiddur:text:prayer:amidah/avot
 urn:x-opensiddur:text:prayer:amidah/avot/zokhrenu
 urn:x-opensiddur:text:prayer:amidah/gevurot/mashiv_haruach
-urn:x-opensiddur:text:prayer:amidah/avodah/yaaleh_veyavo
-urn:x-opensiddur:text:prayer:birkat_hamazon/boneh_yerushalayim
 urn:x-opensiddur:text:prayer:qaddish/yatom
-urn:x-opensiddur:text:prayer:pesukei_dezimra/ashrei
+urn:x-opensiddur:text:prayer:ashrei
+urn:x-opensiddur:text:prayer:yaaleh_veyavo
 ```
 
-Ya'aleh v'yavo is the worked example of the rule. It is said on Rosh Chodesh, on the
-three festivals and on Chol HaMo'ed, naming the occasion inside itself. It has **one**
-URN, and which occasion is named is a condition. `prayer:rosh_chodesh/yaaleh_veyavo`
-would be four URNs for one prayer, and nothing could align them.
+### Nest only what lives in one place
 
-Sub-parts are used only where they are genuinely named sub-units — a berakhah of the
-Amidah, a named insertion within one. Do not manufacture depth.
+> **A text is a sub-part of another only if that is the *only* place it appears.
+> A text appearing in more than one parent is an independent unit that those parents
+> quote.**
+
+This is the same rule as "no occasion in the path", applied to containers. A path
+component is a claim about where a text belongs, and a text belonging in two places
+cannot be described by either one.
+
+`prayer:amidah/avot` is correctly nested: the first berakhah of the Amidah appears
+nowhere else, so the Amidah is genuinely part of what it is.
+
+`prayer:ashrei` is correctly **not** nested. Ashrei is said in P'sukei D'zimra, at
+Minchah, and at Ne'ilah. `prayer:pesukei_dezimra/ashrei` would name one of its homes and
+lose the rest, and a Minchah service transcluding it would either have to use a URN that
+says P'sukei D'zimra or invent a second one for the same text.
+
+`prayer:yaaleh_veyavo` likewise. It appears canonically in the Amidah *and* in Birkat
+HaMazon, so it is an independent unit quoted in both, not a part of either.
+`prayer:amidah/avodah/yaaleh_veyavo` would be wrong for the same reason
+`prayer:rosh_chodesh/yaaleh_veyavo` is: it names one context out of several.
+
+The practical test when adding a name: *can I think of a second service or prayer in
+which this text is said?* If yes, it is top-level. Depth is a claim, so do not
+manufacture it.
 
 ## `poem:` — piyyutim and zemirot
 
@@ -134,6 +152,27 @@ component to be safe — an unnecessary one makes a whole-unit quotation look pa
 breaks alignment against an edition that got it right.
 
 Tractate names use the same transliteration rules as `prayer:`.
+
+## Other cited works
+
+`bible:`, `mishnah:` and `talmud:` are instances of a pattern rather than a closed set:
+a work outside the liturgy, with its own canonical indexing scheme, that the liturgy
+quotes. Others behave the same way — the Zohar is the obvious next one, with a canonical
+citation scheme of its own and passages rather than whole sections quoted.
+
+Two ways to handle such a work, and the choice turns on how often it is quoted:
+
+- **A namespace of its own**, when the corpus quotes the work often enough that citations
+  need to be comparable and resolvable against an edition of it. Follow the `talmud:`
+  shape: the work's own canonical index, plus an incipit component where the quotation is
+  a passage within an indexed unit rather than the whole of it.
+- **A `prayer:` or `poem:` name from the siddur's own incipit**, when it is quoted a
+  handful of times. A passage the liturgy knows by its opening words, such as
+  `prayer:brich_shmei`, does not need a namespace stood up around it to be addressable,
+  and inventing one for two or three citations costs more than it returns.
+
+Either way the quotation carries a `tei:bibl`/`tei:ref` to the source. Standing up a new
+namespace is a change to this document; using an incipit is not.
 
 ## `instruction:` — rubrics
 
@@ -275,7 +314,7 @@ now and the projects rewritten later; deferring the edit does not defer the deci
 | `haggadah:hallel/psalm_113` … `/psalm_118` | `prayer:hallel/*` (+ `bible:psalms/*` milestones) |
 | `haggadah:hallel/yehalelukha` | `prayer:hallel/yehalelukha` |
 | `haggadah:hallel/psalm_136` | `prayer:hallel_hagadol` |
-| `haggadah:hallel/nishmat`, `/shokhen_ad`, `/ha_el_btaatzumot`, `/uvmakhalot`, `/bfi_yesharim`, `/yishtabach` | `prayer:pesukei_dezimra/*` |
+| `haggadah:hallel/nishmat`, `/shokhen_ad`, `/ha_el_btaatzumot`, `/uvmakhalot`, `/bfi_yesharim`, `/yishtabach` | under review — see below |
 | `haggadah:barech/1` … `/28` | `prayer:birkat_hamazon/*` |
 | `haggadah:barech/psalm_126` | `prayer:birkat_hamazon/shir_hamaalot` |
 | `haggadah:nirtzah/al_hagefen` | `prayer:berakhah_acharonah/al_hagefen` |
@@ -285,10 +324,17 @@ now and the projects rewritten later; deferring the edit does not defer the deci
 | `haggadah:motzi_matzah` | `prayer:hamotzi` + a haggadah-specific remainder |
 
 Two notes on the harder ones. **`barech/13` is Ya'aleh v'yavo**, an ordinal rather than a
-name; it is renamed like any other alias, and that its haggadah copy carries only the
-Pesach wording is not a reason to re-encode it — see *Partial witnesses are normal*.
-**`prayer:ashrei`** already exists in `original-example` at the wrong depth and should be
-`prayer:pesukei_dezimra/ashrei`.
+name; it is renamed to `prayer:yaaleh_veyavo` like any other alias, and that its haggadah
+copy carries only the Pesach wording is not a reason to re-encode it — see *Partial
+witnesses are normal*. **`prayer:ashrei`**, which already exists in `original-example`,
+is correct as it stands: Ashrei is said at several services, so it is top-level and needs
+no change.
+
+The Nishmat-to-Yishtabach block needs deciding under *Nest only what lives in one place*
+before it is renamed. It concludes P'sukei D'zimra on Shabbat and festivals and is also
+said at the seder, so whether these are `prayer:pesukei_dezimra/*` or top-level names
+turns on whether the seder is quoting P'sukei D'zimra or the texts have two homes. The
+registry records them as needing review rather than guessing.
 
 What stays in `haggadah:` is what is genuinely seder-specific: the fifteen simanim as an
 ordering, the Magid narrative, Shefokh Chamatkha, the Nirtzah songs, and the pre-Pesach
