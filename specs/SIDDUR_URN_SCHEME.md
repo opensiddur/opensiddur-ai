@@ -106,6 +106,64 @@ The practical test when adding a name: *can I think of a second service or praye
 which this text is said?* If yes, it is top-level. Depth is a claim, so do not
 manufacture it.
 
+### Name by incipit, not by ordinal
+
+**Where a text has no settled name, use its opening words. Never number it.**
+
+An ordinal records a position in one edition, and position is exactly what varies. The
+zimmun and the Harachaman series differ between rites in both order and wording, so
+`birkat_hamazon/17` names nothing that survives a change of edition, while
+`birkat_hamazon/harachaman/yitbarakh` names the same text wherever it falls.
+
+**A canonical incipit stands for the logically equivalent wordings of the same text.**
+The zimmun opens with הב לן ונברך in one rite and רבותי נברך in another; these are one
+text under one URN, and the differences are variants (`tei:choice`/`j:option`) or
+conditions. Choosing one incipit and canonicalising it is better than either numbering
+them or minting a URN per wording — the alternative is that no two editions of birkat
+hamazon can be aligned at all.
+
+**When two texts share an incipit, go further down.** Two Harachaman paragraphs both open
+הרחמן הוא ינחילנו יום שכלו and then diverge, one for Shabbat and one for Yom Tov. They are
+distinct texts, not one text with a variant ending, so they get distinct names:
+
+```
+urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yanchilenu_shabbat
+urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yanchilenu_tov
+```
+
+Each then carries its own condition — in a haggadah only the Shabbat one is conditional,
+since Pesach is a festival either way; in a siddur both are.
+
+### The same text in several contexts
+
+A text repeated verbatim in different places gets **one** URN for the text and keeps a
+distinct URN for each context, because what differs between the contexts is usually not
+the words but the rubrics around them.
+
+Borei Pri Hagafen is the worked example: the same blessing over each of the seder's four
+cups, over qiddush, and over havdalah. It is one `prayer:borei_pri_hagafen`. Each context
+keeps its own URN, which holds whatever is particular to it — the instruction for that
+cup, a note, a conditional — and reaches the shared words in one of two ways:
+
+- **Transclude it.** `<j:transclude target="urn:x-opensiddur:text:prayer:borei_pri_hagafen"/>`
+  inside the context's division. Right when the context adds nothing to the words.
+- **Declare partial correspondence by nesting.** The outer element carries the context
+  URN, an inner element carries the common one. This is the pattern
+  `heidenheim_haggadah_1822/psalm_126.xml` already uses, where a `tei:div` with the
+  haggadah's URN contains milestones with canonical `bible:` URNs.
+
+```xml
+<tei:div corresp="urn:x-opensiddur:text:haggadah:barech/kos_shlishi">
+  <tei:note type="instruction" corresp="urn:x-opensiddur:instruction:…"/>
+  <tei:seg corresp="urn:x-opensiddur:text:prayer:borei_pri_hagafen">…</tei:seg>
+</tei:div>
+```
+
+Note that `@corresp` holds **one** URN. `refdb.add_urn_mapping` indexes the attribute
+whole and does not split on whitespace, so a space-separated list would be recorded as a
+single nonexistent URN. Correspondence to two URNs at once is expressed by nesting, not
+by listing.
+
 ## `poem:` — piyyutim and zemirot
 
 Same rules and transliteration as `prayer:`. Used for poetry that is not itself part of
