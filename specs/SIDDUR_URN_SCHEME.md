@@ -132,7 +132,8 @@ urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/yanchilenu_tov
 ```
 
 Each then carries its own condition — in a haggadah only the Shabbat one is conditional,
-since Pesach is a festival either way; in a siddur both are.
+since Pesach is a festival either way; in a siddur both are. Where a pair like this is
+ordered, Shabbat conventionally precedes Yom Tov.
 
 ### The same text in several contexts
 
@@ -163,6 +164,20 @@ Note that `@corresp` holds **one** URN. `refdb.add_urn_mapping` indexes the attr
 whole and does not split on whitespace, so a space-separated list would be recorded as a
 single nonexistent URN. Correspondence to two URNs at once is expressed by nesting, not
 by listing.
+
+### Conditions belong to the context, not to the shared text
+
+Conditioning a transclusion from outside it is the established convention, not something
+this scheme introduces — see [Conditional text](../schema/JLPTEI-3.md#conditional-text),
+the `Transclusion` scope in `feinstein_haggadah/conditionals.py`, and the existing usage
+in `heidenheim_haggadah_1822/pre_seder.xml` and `humash/parashat_chukat_balak.xml`.
+
+It is restated here only because sharing depends on it. A Harachaman paragraph said on
+Shabbat is the same words as one said any other day; what differs is whether it is said.
+A shared text that carried its own condition would be bound to one occasion and useless
+to every other context, and the next context needing it would have to copy the words
+instead of transcluding them. The same reasoning keeps instructions in the context: the
+rubric for the third cup differs from the second while the blessing does not.
 
 ## `poem:` — piyyutim and zemirot
 
