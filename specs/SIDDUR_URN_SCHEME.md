@@ -196,7 +196,7 @@ scriptural unit inside the liturgy carries its `bible:` URN *in addition to* wha
 name the liturgy knows it by, on the enclosing division:
 
 ```xml
-<tei:div corresp="urn:x-opensiddur:text:prayer:pesukei_dezimra/ashrei">
+<tei:div corresp="urn:x-opensiddur:text:prayer:ashrei">
   <tei:milestone unit="chapter" n="145" corresp="urn:x-opensiddur:text:bible:psalms/145"/>
 ```
 
