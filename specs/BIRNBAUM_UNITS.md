@@ -104,9 +104,9 @@ guessed are listed under *Names needing a second look*.
 |  |  | שִׁיר הַכָּבוֹד | `rosh_hashanah/shir_hakavod` | 415–419 | 1479 | 8 | 2 | סוף התפילה קריאת התורה | OVERLAPPING-PAGES |
 |  | minchah | תַּשְׁלִיךְ | `rosh_hashanah/minchah/tashlikh` | 669–671 | 1968 | 12 | 1 | סוף התפילה פסוקי דזמרה ראש השנה |  |
 | הַמַּחֲזוֹר הַשָּׁלֵם לְיוֹם הַכִּפּוּרִים |  | כַּפָּרוֹת | `yom_kippur/kaparot` | 673 | 1379 | 7 | 3 | יום הכיפורים |  |
-| (not in the table of contents) |  | ברכת המזון | `hosafot/vrkht_hmzvn` | 171, 757–769 | 18638 | 18 | 17 |  | NEEDS-NAME NOT-IN-TOC OVERLAPPING-PAGES |
-|  |  | תפילה לשלום מדינת ישראל | `hosafot/tfylh_lshlvm_mdynt_yshrl` | 789 | 1051 | 6 |  | קריאת התורה | NEEDS-NAME NOT-IN-TOC |
-|  |  | תפילת העמידה לראש השנה | `hosafot/tfylt_hmydh_lrsh_hshnh` | 655–665 | 8772 | 57 | 6 | תפילת העמידה | NEEDS-NAME NOT-IN-TOC |
+| (not in the table of contents) |  | ברכת המזון | `berakhot/birkat_hamazon` | 171, 757–769 | 18638 | 18 | 17 |  | NOT-IN-TOC OVERLAPPING-PAGES |
+|  |  | תפילה לשלום מדינת ישראל | `hosafot/tefilah_lishlom_medinat_yisrael` | 789 | 1051 | 6 |  | קריאת התורה | NOT-IN-TOC |
+|  |  | תפילת העמידה לראש השנה | `rosh_hashanah/amidah` | 655–665 | 8772 | 57 | 6 | תפילת העמידה | NOT-IN-TOC |
 
 ## Excluded
 
@@ -151,18 +151,6 @@ gaps are visible rather than silent.
 | הַבְדָּלָה לְמוֹצָאֵי רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
 | חסר בוויקיטקסט | הוֹסָפוֹת | no printed page in the 1949 edition |
 | פיוטים מחודש אדר עד פסח | (not in the table of contents) | no printed page in the 1949 edition |
-
-## Units needing a title
-
-Reached from disk rather than the table of contents, so there is no
-vocalised title to transliterate and the proposed slug is meaningless.
-Each needs a name and a place in the hierarchy.
-
-| Page title | Printed pages |
-|---|---|
-| ברכת המזון | 171, 757–769 |
-| תפילה לשלום מדינת ישראל | 789 |
-| תפילת העמידה לראש השנה | 655–665 |
 
 ## Names needing a second look
 

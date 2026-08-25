@@ -7,6 +7,7 @@ reads the real sources, so these keep meaning as Wikisource is edited.
 import json
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 from opensiddur.importer.birnbaum_siddur.sections import (
@@ -137,6 +138,22 @@ class GatherTestCase(unittest.TestCase):
 
         self.units = gather(self.root)
         self.by = {u.title.split("/")[-1]: u for u in self.units}
+
+    def test_a_hand_placed_unit_keeps_the_name_it_was_given(self):
+        # A page title has no vocalisation, so transliterating one gives consonant soup.
+        # Placements are the one place a name is asserted rather than derived.
+        from opensiddur.importer.birnbaum_siddur.sections import UNIT_PLACEMENTS
+
+        with unittest.mock.patch.dict(
+            UNIT_PLACEMENTS, {"מודרני": ("berakhot", None, "a_real_name")}
+        ):
+            placed = {u.title.split("/")[-1]: u for u in gather(self.root)}["מודרני"]
+        self.assertEqual(placed.slug, "a_real_name")
+        self.assertEqual(placed.occasion, "berakhot")
+        self.assertNotIn("NEEDS-NAME", placed.flags)
+
+    def test_an_unplaced_unit_is_flagged_for_naming(self):
+        self.assertIn("NEEDS-NAME", self.by["מודרני"].flags)
 
     def test_a_unit_the_toc_does_not_list_is_still_found(self):
         # The ToC gives order, not completeness. Birkat HaMazon is absent from the real

@@ -110,6 +110,17 @@ REDUNDANT_SLUG_WORDS = frozenset({
 })
 
 
+# Units the table of contents does not list, placed by hand. The ToC gives order but not
+# completeness, and a page title carries no vocalisation to transliterate, so these are
+# the one place in this module where a name is asserted rather than derived.
+# Keyed by wiki page title -> (occasion, service, slug).
+UNIT_PLACEMENTS: dict[str, tuple[str, str | None, str]] = {
+    "ברכת המזון": ("berakhot", None, "birkat_hamazon"),
+    "תפילה לשלום מדינת ישראל": ("hosafot", None, "tefilah_lishlom_medinat_yisrael"),
+    "תפילת העמידה לראש השנה": ("rosh_hashanah", None, "amidah"),
+}
+
+
 #: Begadkefat softening: the same word is spelled either way depending on what precedes
 #: it, so "befurim" and "purim" are one word for the purpose of spotting a repetition.
 _SOFTENED = str.maketrans({"f": "p", "v": "b"})
@@ -142,6 +153,7 @@ class Unit:
     size: int = 0
     defines: int = 0
     transcludes: int = 0
+    slug_override: str | None = None
     printed_pages: list[int] = field(default_factory=list)
     nusach: int = 0
     instructions: int = 0
@@ -152,10 +164,15 @@ class Unit:
     def slug(self) -> str:
         """The unit's own name, with whatever the path already says stripped off.
 
+        A hand-placed unit keeps the name it was given: it has no vocalised title to
+        transliterate, which is why it needed placing.
+
         Empty is a meaningful answer: it means the unit *is* the service or occasion the
         path already names, so the URN should stop there rather than repeat it as
         `hallel/hallel`.
         """
+        if self.slug_override:
+            return self.slug_override
         # Anything the path already says: the occasion, the service, and the be-/le-
         # forms the Hebrew titles use for both.
         redundant = set(REDUNDANT_SLUG_WORDS)
@@ -295,15 +312,20 @@ def _units_missing_from_toc(structure: dict[str, Any], listed: set[str]) -> list
             continue
         if f"{RITE}/{name}" in listed:
             continue
+        placement = UNIT_PLACEMENTS.get(name)
+        occasion, service, slug = placement or ("hosafot", None, None)
         unit = Unit(
             title=f"{RITE}/{name}",
             display=name,
             group="(not in the table of contents)",
             subgroup=None,
-            occasion="hosafot",
-            service=None,
+            occasion=occasion,
+            service=service,
+            slug_override=slug,
         )
         unit.flags.add("NOT-IN-TOC")
+        if placement is None:
+            unit.flags.add("NEEDS-NAME")
         found.append(unit)
     return sorted(found, key=lambda u: u.title)
 
@@ -337,11 +359,6 @@ def gather(sourcetexts_root: Path | None = None) -> list[Unit]:
         if entry is None or not path.is_file():
             unit.flags.add("STUB")
             continue
-
-        # A unit reached only from disk has no vocalised title, and transliterating an
-        # unpointed one produces consonant soup rather than a name.
-        if "NOT-IN-TOC" in unit.flags:
-            unit.flags.add("NEEDS-NAME")
 
         unit.exists = True
         wikitext = path.read_text(encoding="utf-8")
