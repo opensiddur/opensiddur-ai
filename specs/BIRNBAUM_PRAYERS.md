@@ -9,13 +9,22 @@ labelled sections by name with their role markers stripped, since a prayer is
 spread over several sections that differ in role -- heading, rubric, the words,
 a note -- rather than in content.
 
-**290 need a person to look at them.** The rest derive mechanically
+**317 need a person to look at them.** The rest derive mechanically
 and are listed at the end for spot-checking.
 
 ## Named by a heading in the source
 
-206 groups carry a heading section. A heading is a name somebody
-chose, so it is the name worth confirming; the slug is transliterated from it.
+206 groups carry a heading section. **Many of these headings are not
+in the 1949 printing.** Like the rubrics, they are the Wikisource editors' own,
+so they belong to `he_wikisource_siddur_hashalem` and must not be emitted as a
+`tei:head` in the Birnbaum project, where they would assert that Birnbaum printed
+them.
+
+They are still the best source for a *name*, which is a different thing: a URN
+slug is something the corpus chooses, not a claim about the page. So the heading
+seeds the slug and is what needs confirming here, but which of these headings the
+print actually carries is a separate question, answerable against the English
+edition rather than this source.
 
 | Page | Heading | Proposed slug | Parts | Roles |
 |---|---|---|---:|---|
@@ -228,14 +237,34 @@ chose, so it is the name worth confirming; the slug is transliterated from it.
 
 ## Scriptural citations
 
-86 groups cite scripture. Each needs its `bible:` URN checked against
-the verses it claims -- the source has at least one citation whose link and
-display text disagree.
+113 groups cite scripture. Each needs its `bible:` URN checked against
+the verses it claims. A citation whose link contradicts its visible text is
+marked; formatting differences between the two -- gershayim, an omitted book
+name, verses the link cannot carry -- are not.
 
 | Page | Prayer | Cites |
 |---|---|---|
 | ברכות | מזמור כ"ג | תהלים כג — תהלים כג |
 | ברכות | מזמור קל"ז | תהלים קלז — תהלים קלז |
+| ברכות השחר וקרבנות | הקטורת | שמות ל — שמות ל, לד-לו; שמות ל — ל, ז-ח |
+| ברכות השחר וקרבנות | ושחט אותו | ויקרא א — ויקרא א, יא |
+| ברכות השחר וקרבנות | מה יקר | תהלים לו — תהלים לו, ח-יא |
+| ברכות השחר וקרבנות | מוסף של ראש חודש | במדבר כח — במדבר כח, יא-טו |
+| ברכות השחר וקרבנות | מוסף של שבת | במדבר כח — במדבר כח, ט-י |
+| ברכות השחר וקרבנות | מקור לברכת כהנים | במדבר ו — במדבר ו, כד-כו |
+| ברכות השחר וקרבנות | פרשות קדש לי כל בכור, והיה כי יביאך | שמות יג — שמות יג, א-טז |
+| ברכות השחר וקרבנות | פרשת הכיור | שמות ל — שמות ל, יז-כא |
+| ברכות השחר וקרבנות | פרשת העקידה | בראשית כב — בראשית כב, א-יט |
+| ברכות השחר וקרבנות | פרשת התמיד | במדבר כח — במדבר כח, א-ח |
+| ברכות השחר וקרבנות | פרשת והיה כי יביאך | שמות יג — שמות יג, יא-טז |
+| ברכות השחר וקרבנות | פרשת קדש לי כל בכור | שמות יג — שמות יג, א-י |
+| הגדה של פסח | וידוי מעשרות | פרשת כי תבוא — מִתּוֹךְ פָּרָשַׁת "וְהָיָה כִּי־תָבוֹא אֶל־הָאָֽרֶץ" (דְּבָרִים כו, יב-טו) |
+| הגדה של פסח | מקרא ביכורים | פרשת כי תבוא — מִתּוֹךְ פָּרָשַׁת "וְהָיָה כִּי־תָבוֹא אֶל־הָאָֽרֶץ" (דְּבָרִים כו, א-יא) |
+| הגדה של פסח | פרשה ראשונה | פרשת בא — מִתּוֹךְ פָּרָשַׁת "בֹּא אֶל פַּרְעֹה" (שְׁמוֹת יב, כא-כח) |
+| הגדה של פסח | פרשה רביעית | פרשת ואתחנן — מִתּוֹךְ פָּרָשַׁת "וָאֶתְחַנַּן" (דְּבָרִים ו, כ-כה) |
+| הגדה של פסח | פרשה שלישית | פרשת בא — מִתּוֹךְ פָּרָשַׁת "בֹּא אֶל פַּרְעֹה" (שְׁמוֹת יג, יא-טז) |
+| הגדה של פסח | פרשה שנייה | פרשת בא — מִתּוֹךְ פָּרָשַׁת "בֹּא אֶל פַּרְעֹה" (שְׁמוֹת יג, א-י) |
+| הגדה של פסח | פרשת לשונות גאולה | פרשת וארא — מִתּוֹךְ פָּרָשַׁת "וָאֵרָא" (שְׁמוֹת ו, ב-ח) |
 | הלל | אהבתי | תהלים קטז — תהלים קטז, א-יא |
 | הלל | בצאת ישראל | תהלים קיד — תהלים קיד |
 | הלל | ה' זכרנו יברך | תהלים קטו — תהלים קטו, יב-יח |
@@ -244,8 +273,10 @@ display text disagree.
 | הלל | לא לנו | תהלים קטו — תהלים קטו, א-יא |
 | הלל | מה אשיב | תהלים קטז — תהלים קטז, יב-יט |
 | הלל | מקור להללו עבדי ה' | תהלים קיג — תהלים קיג |
+| ימי הודאה | וכי תבואו | במדבר י — במדבר י, ט-י |
 | ימי הודאה | מזמור ק"ז | תהלים קז — תהלים קז |
 | ימי הודאה | מזמור קכ"ב | תהלים קכב — תהלים קכב |
+| ימי הודאה | על הפטרה ליום ירושלים | פרשת ניצבים — "שׂוֹשׂ אָשִׂישׂ בַּה'..." |
 | כניסת שבת ויום טוב | מזמור צ"ב | תהלים צב — תהלים צב |
 | כניסת שבת ויום טוב | מזמור צ"ג | תהלים צג — תהלים צג |
 | כניסת שבת ויום טוב | מזמור צ"ה | תהלים צה — תהלים צה |
@@ -282,6 +313,10 @@ display text disagree.
 | סוף התפילה | מזמור קל"ג | תהלים קלג — תהלים קלג |
 | סוף התפילה | מזמור קל"ד | תהלים קלד — תהלים קלד |
 | סוף התפילה | עֲשֶֽׂרֶת הַדִּבְּרוֹת | שמות כ — שמות כ, א-יז |
+| פסוקי דזמרה | אתה הוא ה' לבדך | נחמיה ט — נחמיה ט, ו-יא |
+| פסוקי דזמרה | הודו | דברי הימים א טז — דברי הימים א טז, ח-לו |
+| פסוקי דזמרה | ויברך דוד | דברי הימים א כט — דברי הימים א כט, י-יג |
+| פסוקי דזמרה | ויושע ה' ביום ההוא | שמות יד — שמות יד, ל-לא |
 | פסוקי דזמרה | מזמור י"ט | תהלים יט — תהלים יט |
 | פסוקי דזמרה | מזמור ל"ג | תהלים לג — תהלים לג |
 | פסוקי דזמרה | מזמור ל"ד | תהלים לד — תהלים לד |
@@ -301,8 +336,10 @@ display text disagree.
 | פסוקי דזמרה | מזמור שיר חנוכת הבית | תהלים ל — תהלים ל |
 | פסוקי דזמרה | שירת הים | שמות טו — שמות טו, א-יח |
 | קידוש והבדלה וסעודות שבת ויום טוב | מקור ל"ושמרו" | שמות לא — שמות לא, טז-יז |
-| קידוש והבדלה וסעודות שבת ויום טוב | מקור ל"זכור את יום השבת" | שמות לא — שמות כ, ח-יא |
+| קידוש והבדלה וסעודות שבת ויום טוב | מקור ל"זכור את יום השבת" | שמות לא — שמות כ, ח-יא **link and display disagree** |
 | קידוש והבדלה וסעודות שבת ויום טוב | מקור לאשת חיל | משלי לא — משלי לא, י-לא |
+| קריאת התורה | ברכת ההפטרה | דברי הימים א כט — דה"א כט,י |
+| קריאת התורה | והיטבך והרבך מאבותיך | דברים ל — הפסוק |
 | קריאת התורה | לדוד מזמור | תהלים כד — תהלים כד |
 | קריאת התורה | מזמור ט' | תהלים ט — תהלים ט |
 | קריאת התורה | מזמור כ"ט | תהלים כט — תהלים כט |
@@ -310,7 +347,7 @@ display text disagree.
 | קריאת התורה | מזמור פ"ג | תהלים פג — תהלים פג |
 | קריאת התורה | מזמור צ"א | תהלים צא — תהלים צא |
 | קריאת התורה | מזמורים נוספים ליום השואה | תהלים ב — תהלים ב'; תהלים כב — תהלים כ"ב; תהלים מד — תהלים מ"ד |
-| קריאת התורה | מי שברך ליולדת זכר | תהלים כט — תהלים כט; תהלים צא — תהלים צא; תהלים פג — תהלים פג |
+| קריאת התורה | מי שברך ליולדת זכר | דברי הימים א כט — דה"א כט,י; דברים ל — הפסוק; תהלים כט — תהלים כט |
 | קריאת שמע וברכותיה | והיה אם שמוע | דברים יא — דברים יא, יג-כא |
 | קריאת שמע וברכותיה | מזמור ג' | תהלים ג — תהלים ג |
 | קריאת שמע וברכותיה | מזמור ס"ז | תהלים סז — תהלים סז |
@@ -374,7 +411,7 @@ around them is a guess, and these are worth fixing upstream on Wikisource.
 
 ## Derived mechanically
 
-1473 groups with no heading and no citation. Their names come
+1446 groups with no heading and no citation. Their names come
 straight from the section name, and they are listed for spot-checking rather
 than review.
 
@@ -559,14 +596,12 @@ than review.
 | ברכות השחר וקרבנות | ברכת ציצית | `vrkht_tzytzyt` | 1 |
 | ברכות השחר וקרבנות | הנני מוכן לפני הנחת תפילין | `hnny_mvkhn_lfny_hncht_tfylyn` | 3 |
 | ברכות השחר וקרבנות | הנני מתעטף | `hnny_mttf` | 1 |
-| ברכות השחר וקרבנות | הקטורת | `hqtvrt` | 1 |
 | ברכות השחר וקרבנות | הקטורת פסוקים | `hqtvrt_fsvqym` | 1 |
 | ברכות השחר וקרבנות | וארשתיך | `vrshtykh` | 2 |
 | ברכות השחר וקרבנות | והיה כי יביאך | `vhyh_khy_yvykh` | 3 |
 | ברכות השחר וקרבנות | והערב נא | `vhrv_n` | 1 |
 | ברכות השחר וקרבנות | ויהי רצון אחרי הנחת תפילין | `vyhy_rtzvn_chry_hncht_tfylyn` | 3 |
 | ברכות השחר וקרבנות | ומחכמתך | `vmchkhmtkh` | 1 |
-| ברכות השחר וקרבנות | ושחט אותו | `vshcht_vtv` | 2 |
 | ברכות השחר וקרבנות | זכרנו בזיכרון | `zkhrnv_vzykhrvn` | 1 |
 | ברכות השחר וקרבנות | חדשה להמשך בפסוקי דזמרה | `chdshh_lhmshkh_vfsvqy_dzmrh` | 1 |
 | ברכות השחר וקרבנות | יגדל | `ygdl` | 3 |
@@ -583,26 +618,16 @@ than review.
 | ברכות השחר וקרבנות | לפיכך אנחנו חייבים א | `lfykhkh_nchnv_chyyvym` | 1 |
 | ברכות השחר וקרבנות | לפיכך אנחנו חייבים ב | `lfykhkh_nchnv_chyyvym_v` | 1 |
 | ברכות השחר וקרבנות | מה טובו | `mh_tvvv` | 1 |
-| ברכות השחר וקרבנות | מה יקר | `mh_yqr` | 2 |
 | ברכות השחר וקרבנות | מודה אני | `mvdh_ny` | 1 |
-| ברכות השחר וקרבנות | מוסף של ראש חודש | `mvsf_shl_rsh_chvdsh` | 2 |
 | ברכות השחר וקרבנות | מוסף של ראש חודש פסוקים | `mvsf_shl_rsh_chvdsh_fsvqym` | 3 |
-| ברכות השחר וקרבנות | מוסף של שבת | `mvsf_shl_shvt` | 2 |
 | ברכות השחר וקרבנות | מוסף של שבת פסוקים | `mvsf_shl_shvt_fsvqym` | 1 |
 | ברכות השחר וקרבנות | מקור לאלו דברים | `mqvr_llv_dvrym` | 1 |
 | ברכות השחר וקרבנות | מקור לברכות הבאות | `mqvr_lvrkhvt_hvvt` | 1 |
-| ברכות השחר וקרבנות | מקור לברכת כהנים | `mqvr_lvrkht_khhnym` | 1 |
 | ברכות השחר וקרבנות | סדר המערכה | `sdr_hmrkhh` | 2 |
 | ברכות השחר וקרבנות | על ברכת ציצית למי שאינו מתעטף בטלית גדול | `l_vrkht_tzytzyt_lmy_shynv_mttf_vtlyt_gdvl` | 1 |
 | ברכות השחר וקרבנות | על ברכת ציצית לקטן | `l_vrkht_tzytzyt_lqtn` | 1 |
 | ברכות השחר וקרבנות | פיטום הקטורת | `fytvm_hqtvrt` | 3 |
 | ברכות השחר וקרבנות | פיטום הקטורת מקורות | `fytvm_hqtvrt_mqvrvt` | 1 |
-| ברכות השחר וקרבנות | פרשות קדש לי כל בכור, והיה כי יביאך | `frshvt_qdsh_ly_khl_vkhvr_vhyh_khy_yvykh` | 1 |
-| ברכות השחר וקרבנות | פרשת הכיור | `frsht_hkhyvr` | 2 |
-| ברכות השחר וקרבנות | פרשת העקידה | `frsht_hqydh` | 4 |
-| ברכות השחר וקרבנות | פרשת התמיד | `frsht_htmyd` | 4 |
-| ברכות השחר וקרבנות | פרשת והיה כי יביאך | `frsht_vhyh_khy_yvykh` | 1 |
-| ברכות השחר וקרבנות | פרשת קדש לי כל בכור | `frsht_qdsh_ly_khl_vkhvr` | 1 |
 | ברכות השחר וקרבנות | קדש לי כל בכור | `qdsh_ly_khl_vkhvr` | 1 |
 | ברכות השחר וקרבנות | רבי ישמעאל | `rvy_yshml` | 5 |
 | ברכות השחר וקרבנות | רבי נתן | `rvy_ntn` | 1 |
@@ -652,7 +677,6 @@ than review.
 | הגדה של פסח | ובמורא גדול | `vvmvr_gdvl` | 1 |
 | הגדה של פסח | והיא שעמדה | `vhy_shmdh` | 4 |
 | הגדה של פסח | ויביאנו אל המקום הזה זה בית המקדש | `vyvynv_l_hmqvm_hzh_zh_vyt_hmqdsh` | 1 |
-| הגדה של פסח | וידוי מעשרות | `vydvy_mshrvt` | 2 |
 | הגדה של פסח | ויהי שם | `vyhy_shm` | 1 |
 | הגדה של פסח | ויוציאנו ה' ממצרים | `vyvtzynv_h_mmtzrym` | 1 |
 | הגדה של פסח | ויענונו | `vynvnv` | 1 |
@@ -701,7 +725,6 @@ than review.
 | הגדה של פסח | מעל פסגת הר הצופים מילים לפתיחה | `ml_fsgt_hr_htzvfym_mylym_lftychh` | 1 |
 | הגדה של פסח | מעשה ברבי אליעזר | `mshh_vrvy_lyzr` | 3 |
 | הגדה של פסח | מצה זו | `mtzh_zv` | 2 |
-| הגדה של פסח | מקרא ביכורים | `mqr_vykhvrym` | 2 |
 | הגדה של פסח | מרור זה | `mrvr_zh` | 2 |
 | הגדה של פסח | מתחילה | `mtchylh` | 1 |
 | הגדה של פסח | סימני הסדר | `symny_hsdr` | 1 |
@@ -719,11 +742,6 @@ than review.
 | הגדה של פסח | פסוק ונצעק | `fsvq_vntzq` | 3 |
 | הגדה של פסח | פסח מצה ומרור | `fsch_mtzh_vmrvr` | 1 |
 | הגדה של פסח | פסח שהיו אבותינו | `fsch_shhyv_vvtynv` | 3 |
-| הגדה של פסח | פרשה ראשונה | `frshh_rshvnh` | 2 |
-| הגדה של פסח | פרשה רביעית | `frshh_rvyyt` | 2 |
-| הגדה של פסח | פרשה שלישית | `frshh_shlyshyt` | 2 |
-| הגדה של פסח | פרשה שנייה | `frshh_shnyyh` | 2 |
-| הגדה של פסח | פרשת לשונות גאולה | `frsht_lshvnvt_gvlh` | 2 |
 | הגדה של פסח | צא ולמד | `tz_vlmd` | 1 |
 | הגדה של פסח | קערת הסדר תמונה | `qrt_hsdr_tmvnh` | 1 |
 | הגדה של פסח | רבי אליעזר אומר | `rvy_lyzr_vmr` | 1 |
@@ -849,7 +867,6 @@ than review.
 | ימי הודאה | הפטרת עוד היום בנוב לעמוד | `hftrt_vd_hyvm_vnvv_lmvd` | 1 |
 | ימי הודאה | השיר בר יוחאי | `hshyr_vr_yvchy` | 2 |
 | ימי הודאה | וגם חרבונה | `vgm_chrvvnh` | 1 |
-| ימי הודאה | וכי תבואו | `vkhy_tvvv` | 3 |
 | ימי הודאה | חשוף זרוע | `chshvf_zrv` | 1 |
 | ימי הודאה | יהי רצון שכשם שזכינו | `yhy_rtzvn_shkhshm_shzkhynv` | 2 |
 | ימי הודאה | להודיע | `lhvdy` | 3 |
@@ -859,7 +876,6 @@ than review.
 | ימי הודאה | מי שעשה ניסים ליום העצמאות | `my_shshh_nysym_lyvm_htzmvt` | 1 |
 | ימי הודאה | מעוז צור | `mvz_tzvr` | 4 |
 | ימי הודאה | משולבת לפני מעוז צור | `mshvlvt_lfny_mvz_tzvr` | 1 |
-| ימי הודאה | על הפטרה ליום ירושלים | `l_hftrh_lyvm_yrvshlym` | 1 |
 | ימי הודאה | על סוף תפילת ערבית ביום ירושלים | `l_svf_tfylt_rvyt_vyvm_yrvshlym` | 1 |
 | ימי הודאה | פשוטה לפני מעוז צור | `fshvth_lfny_mvz_tzvr` | 1 |
 | ימי הודאה | שהחיינו | `shhchyynv` | 2 |
@@ -1033,7 +1049,6 @@ than review.
 | פסוקי דזמרה | אילו פינו ב | `ylv_fynv_v` | 1 |
 | פסוקי דזמרה | אשרי העם | `shry_hm` | 1 |
 | פסוקי דזמרה | אשרי יושבי | `shry_yvshvy` | 1 |
-| פסוקי דזמרה | אתה הוא ה' לבדך | `th_hv_h_lvdkh` | 2 |
 | פסוקי דזמרה | אתה הוא ה' לבדך מילים א | `th_hv_h_lvdkh_mylym` | 1 |
 | פסוקי דזמרה | אתה הוא ה' לבדך מילים ב | `th_hv_h_lvdkh_mylym_v` | 1 |
 | פסוקי דזמרה | בפי ישרים לימים הנוראים | `vfy_yshrym_lymym_hnvrym` | 1 |
@@ -1052,7 +1067,6 @@ than review.
 | פסוקי דזמרה | ה' צבאות עמנו | `h_tzvvt_mnv` | 1 |
 | פסוקי דזמרה | האל בתעצומות | `hl_vttzvmvt` | 1 |
 | פסוקי דזמרה | האל בתעצומות עד בנוראותיך לימים הנוראים | `hl_vttzvmvt_d_vnvrvtykh_lymym_hnvrym` | 1 |
-| פסוקי דזמרה | הודו | `hvdv` | 4 |
 | פסוקי דזמרה | הודו עד אל תרעו | `hvdv_d_l_trv` | 1 |
 | פסוקי דזמרה | הודו עד כי גמל עלי | `hvdv_d_khy_gml_ly` | 1 |
 | פסוקי דזמרה | הושיע את עמך | `hvshy_t_mkh` | 1 |
@@ -1068,8 +1082,6 @@ than review.
 | פסוקי דזמרה | והוא רחום | `vhv_rchvm` | 4 |
 | פסוקי דזמרה | והוא רחום א | `vhv_rchvm` | 1 |
 | פסוקי דזמרה | והוא רחום ב | `vhv_rchvm_v` | 1 |
-| פסוקי דזמרה | ויברך דוד | `vyvrkh_dvd` | 2 |
-| פסוקי דזמרה | ויושע ה' ביום ההוא | `vyvsh_h_vyvm_hhv` | 2 |
 | פסוקי דזמרה | ויושע ה' ביום ההוא א | `vyvsh_h_vyvm_hhv` | 1 |
 | פסוקי דזמרה | ויושע ה' ביום ההוא ב | `vyvsh_h_vyvm_hhv_v` | 1 |
 | פסוקי דזמרה | וכרות עמו הברית | `vkhrvt_mv_hvryt` | 3 |
@@ -1286,7 +1298,6 @@ than review.
 | קריאת התורה | ברכות אחרי קריאת ההפטרה | `vrkhvt_chry_qryt_hhftrh` | 1 |
 | קריאת התורה | ברכת אשר בחר בנו | `vrkht_shr_vchr_vnv` | 1 |
 | קריאת התורה | ברכת אשר נתן לנו | `vrkht_shr_ntn_lnv` | 1 |
-| קריאת התורה | ברכת ההפטרה | `vrkht_hhftrh` | 2 |
 | קריאת התורה | ברכת על התורה ליום טוב | `vrkht_l_htvrh_lyvm_tvv` | 1 |
 | קריאת התורה | ברכת על התורה לשבת | `vrkht_l_htvrh_lshvt` | 1 |
 | קריאת התורה | בתפילת העמידה למוסף של שבת | `vtfylt_hmydh_lmvsf_shl_shvt` | 1 |
@@ -1317,7 +1328,6 @@ than review.
 | קריאת התורה | ואתם הדבקים | `vtm_hdvqym` | 2 |
 | קריאת התורה | ובא לציון גואל | `vv_ltzyvn_gvl` | 1 |
 | קריאת התורה | ובנוחה יאמר | `vvnvchh_ymr` | 2 |
-| קריאת התורה | והיטבך והרבך מאבותיך | `vhytvkh_vhrvkh_mvvtykh` | 1 |
 | קריאת התורה | וזאת התורה | `vzt_htvrh` | 2 |
 | קריאת התורה | ויבטחו בך | `vyvtchv_vkh` | 1 |
 | קריאת התורה | ויהי בנסוע | `vyhy_vnsv` | 2 |

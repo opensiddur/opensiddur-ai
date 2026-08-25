@@ -68,7 +68,54 @@ ORDINAL_SUFFIX_RE = re.compile(r"\s+\d+$")
 MARKUP_RE = re.compile(r"\{\{[^{}]*\}\}|\[\[[^\]]*\]\]|<[^>]+>|'''|''")
 
 # A scriptural citation, as the source writes it: [[<book> <chapter>/טעמים|<display>]].
-CITATION_RE = re.compile(r"\[\[([^\]|]+?)/טעמים\|([^\]]+)\]\]")
+CITATION_RE = re.compile(r"\[\[([^\]|]+?)/טעמים(?:#[^\]|]*)?\|([^\]]+)\]\]")
+
+# Hebrew numerals are written with or without gershayim, and a chapter may be given as
+# "כ״ב" in one half of a citation and "כב" in the other. Neither is a disagreement.
+GERSHAYIM_RE = re.compile(r"[\u05f3\u05f4'\"]")
+HEBREW_NUMERAL_RE = re.compile(r"^[אבגדהוזחטיכלמנסעפצקרשת]+$")
+
+#: Book names the source abbreviates. Only what is needed to compare a citation against
+#: its own link; the full mapping belongs to whatever resolves them to bible: URNs.
+BOOK_ABBREVIATIONS = {
+    'דה"א': "דברי הימים א",
+    'דה"ב': "דברי הימים ב",
+    'שמו"א': "שמואל א",
+    'שמו"ב': "שמואל ב",
+}
+
+
+def _book_and_chapter(text: str) -> tuple[str, str | None]:
+    """The book and chapter numeral a citation states, normalised for comparison."""
+    text = text.replace("־", " ").replace(",", " ").strip()
+    for abbreviation, full in BOOK_ABBREVIATIONS.items():
+        text = text.replace(abbreviation, full)
+    book: list[str] = []
+    for token in text.split():
+        bare = GERSHAYIM_RE.sub("", token)
+        if bare and HEBREW_NUMERAL_RE.match(bare) and book:
+            return " ".join(book), bare
+        book.append(token)
+    return " ".join(book), None
+
+
+def citation_disagrees(target: str, display: str) -> bool:
+    """Whether a citation's link and its visible text name different passages.
+
+    Most differences between the two are formatting, not disagreement: the display
+    usually omits the book, spells a numeral with gershayim, or gives verses the link
+    cannot carry. A parsha link addresses a reading rather than a chapter and cannot be
+    compared at all. Only a stated book-and-chapter that contradicts the link counts.
+    """
+    if target.strip().startswith("פרשת"):
+        return False
+    target_book, target_chapter = _book_and_chapter(target)
+    display_book, display_chapter = _book_and_chapter(display)
+    if display_chapter is None:
+        return False                       # the display makes no chapter claim
+    if display_book and display_book != target_book:
+        return True
+    return display_chapter != target_chapter
 
 
 @dataclass
@@ -222,10 +269,10 @@ def gather(sourcetexts_root: Path | None = None) -> tuple[list[Prayer], dict[str
                 if text:
                     prayer.heading = text
             body = wikitext[span.start : span.end]
-            prayer.citations += [
-                f"{book.strip()} — {display.strip()}"
-                for book, display in CITATION_RE.findall(body)
-            ]
+            for target, shown in CITATION_RE.findall(body):
+                note = " **link and display disagree**" if citation_disagrees(
+                    target, shown) else ""
+                prayer.citations.append(f"{target.strip()} — {shown.strip()}{note}")
 
         # A prayer's parent is the prayer containing its outermost section.
         for prayer in grouped.values():
@@ -261,8 +308,17 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
         "",
         "## Named by a heading in the source",
         "",
-        f"{len(headed)} groups carry a heading section. A heading is a name somebody",
-        "chose, so it is the name worth confirming; the slug is transliterated from it.",
+        f"{len(headed)} groups carry a heading section. **Many of these headings are not",
+        "in the 1949 printing.** Like the rubrics, they are the Wikisource editors' own,",
+        "so they belong to `he_wikisource_siddur_hashalem` and must not be emitted as a",
+        "`tei:head` in the Birnbaum project, where they would assert that Birnbaum printed",
+        "them.",
+        "",
+        "They are still the best source for a *name*, which is a different thing: a URN",
+        "slug is something the corpus chooses, not a claim about the page. So the heading",
+        "seeds the slug and is what needs confirming here, but which of these headings the",
+        "print actually carries is a separate question, answerable against the English",
+        "edition rather than this source.",
         "",
         "| Page | Heading | Proposed slug | Parts | Roles |",
         "|---|---|---|---:|---|",
@@ -278,8 +334,9 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
         "## Scriptural citations",
         "",
         f"{len(cited)} groups cite scripture. Each needs its `bible:` URN checked against",
-        "the verses it claims -- the source has at least one citation whose link and",
-        "display text disagree.",
+        "the verses it claims. A citation whose link contradicts its visible text is",
+        "marked; formatting differences between the two -- gershayim, an omitted book",
+        "name, verses the link cannot carry -- are not.",
         "",
         "| Page | Prayer | Cites |",
         "|---|---|---|",
