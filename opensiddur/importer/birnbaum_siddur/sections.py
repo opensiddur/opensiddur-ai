@@ -56,25 +56,76 @@ NUSACH_RE = re.compile(r"\{\{\s*נוסח\s*\|")
 INSTRUCTION_RE = re.compile(r"\{\{\s*(?:הסידור השלם|סידור בירנבוים)\s+הוראה\s*\|")
 WIP_RE = re.compile(r"\{\{\s*בעבודה")
 
-# The machzorim are a different book. Their two groups are dropped whole.
-MACHZOR_GROUPS = ("רֹאשׁ הַשָּׁנָה", "הַכִּפּוּרִים")
+# The table of contents numbers its groups. The number is navigation, not part of the
+# title, and must not reach a tei:head.
+GROUP_NUMBER_RE = re.compile(r"^[א-ת]{1,3}\.\s*")
 
-# ToC group -> the `siddur:` occasion. Matched on a distinctive substring, since the
-# headings are vocalised and numbered.
+# ToC group -> the `siddur:` occasion, matched on a distinctive substring of the
+# vocalised heading. Shabbat and festival share a hierarchy because the book does: most
+# of its Shabbat services are headed "for Shabbat and Yom Tov".
 OCCASION_BY_GROUP = (
     ("חוֹל", "chol"),
     ("בְּרָכוֹת", "berakhot"),
-    ("הַשַּׁבָּת", "shabbat"),
-    ("מוֹעֲדִים", "moadim"),
+    ("הַשַּׁבָּת", "shabbat_veyom_tov"),
+    ("רֹאשׁ הַשָּׁנָה", "rosh_hashanah"),
+    ("הַכִּפּוּרִים", "yom_kippur"),
+    ("מוֹעֲדִים", "shalosh_regalim"),
     ("הוֹסָפוֹת", "hosafot"),
 )
 
+# Within the festivals group, the occasion is the unit's own, not the group's. Chanukah
+# and Purim are not pilgrimage festivals, and Sukkot's own observances are not Musaf.
+OCCASION_BY_TITLE = (
+    ("חֲנֻכָּה", "chanukah"), ("חֲנוּכָּה", "chanukah"),
+    ("פּוּרִים", "purim"), ("מְּגִלָּה", "purim"),
+    ("סֻכּוֹת", "sukkot"), ("לוּלָב", "sukkot"), ("הוֹשַׁעְנוֹת", "sukkot"),
+    ("אֻשְׁפִּיזִין", "sukkot"), ("שִׂמְחַת תּוֹרָה", "sukkot"),
+    ("שָׁבוּעוֹת", "shavuot"), ("אַקְדָּמוּת", "shavuot"),
+    ("רֹאשׁ חֹֽדֶשׁ", "rosh_chodesh"), ("רֹאשׁ חוֹדֶשׁ", "rosh_chodesh"),
+    ("רֹאשׁ הַשָּׁנָה", "rosh_hashanah"),
+    ("הַכִּפּוּרִים", "yom_kippur"),
+    ("תַּעֲנִית", "taanit"),
+)
+
+# Service names, matched against the sub-group heading only. Matching the whole line
+# instead was catastrophic: the festivals group is a single unbulleted run of 26 links,
+# one of which mentions Musaf, so every one of the 26 came out as a Musaf unit.
 SERVICE_KEYWORDS = (
     ("שַׁחֲרִית", "shacharit"),
     ("מִנְחָה", "minchah"),
     ("עַרְבִית", "arvit"),
     ("מוּסָף", "musaf"),
 )
+
+# Hallel is said within Shacharit, but for the purposes of a book's structure it is its
+# own addressable service rather than a part of one.
+SERVICE_BY_TITLE = (("הַלֵּל", "hallel"),)
+
+# Slug fragments that repeat what the path already says. "chol/arvit/…_learvit_bechol"
+# says weekday evening three times.
+REDUNDANT_SLUG_WORDS = frozenset({
+    "lechol", "bechol", "leshacharit", "beshacharit", "learvit", "bearvit",
+    "leminchah", "beminchah", "lemusaf", "bemusaf", "shel", "leshabbat", "beshabbat",
+    "veyom", "tov", "shabbat_veyom_tov",
+})
+
+
+#: Begadkefat softening: the same word is spelled either way depending on what precedes
+#: it, so "befurim" and "purim" are one word for the purpose of spotting a repetition.
+_SOFTENED = str.maketrans({"f": "p", "v": "b"})
+
+
+def _same_word(word: str, other: str) -> bool:
+    """Whether two slug words are the same name, allowing for begadkefat and be-/le-."""
+    stripped = word
+    for prefix in ("be", "le", "u", "ve"):
+        if stripped.startswith(prefix) and len(stripped) > len(prefix) + 2:
+            stripped = stripped[len(prefix):]
+            break
+    return (
+        word.translate(_SOFTENED) == other.translate(_SOFTENED)
+        or stripped.translate(_SOFTENED) == other.translate(_SOFTENED)
+    )
 
 
 @dataclass
@@ -99,14 +150,27 @@ class Unit:
 
     @property
     def slug(self) -> str:
-        return transliterate(self.display)
+        """The unit's own name, with whatever the path already says stripped off.
+
+        Empty is a meaningful answer: it means the unit *is* the service or occasion the
+        path already names, so the URN should stop there rather than repeat it as
+        `hallel/hallel`.
+        """
+        # Anything the path already says: the occasion, the service, and the be-/le-
+        # forms the Hebrew titles use for both.
+        redundant = set(REDUNDANT_SLUG_WORDS)
+        for word in (self.occasion, self.service):
+            if word:
+                redundant.update({word, f"be{word}", f"le{word}"})
+                redundant.update(word.split("_"))
+        return "_".join(
+            w for w in transliterate(self.display).split("_")
+            if w and not any(_same_word(w, r) for r in redundant)
+        )
 
     @property
     def urn(self) -> str:
-        path = [self.occasion]
-        if self.service:
-            path.append(self.service)
-        path.append(self.slug)
+        path = [self.occasion, self.service, self.slug]
         return "urn:x-opensiddur:text:siddur:" + "/".join(p for p in path if p)
 
     @property
@@ -130,7 +194,14 @@ class Unit:
 
     @property
     def in_scope(self) -> bool:
-        return self.exists and not ({"NOT-IN-1949", "STUB", "MACHZOR"} & self.flags)
+        """Whether this belongs to the Birnbaum siddur.
+
+        One test: does the 1949 book paginate it. That admits the Rosh Hashanah and Yom
+        Kippur material this book does carry -- the machzorim are separate books, but the
+        parts printed here are part of this one -- and excludes the modern additions and
+        the Passover haggadah without a hand-maintained list.
+        """
+        return self.exists and not ({"NOT-IN-1949", "STUB"} & self.flags)
 
 
 def parse_toc(wikitext: str) -> list[Unit]:
@@ -146,7 +217,6 @@ def parse_toc(wikitext: str) -> list[Unit]:
     for index, (start, group) in enumerate(positions):
         end = positions[index + 1][0] if index + 1 < len(positions) else len(wikitext)
         occasion = next((o for key, o in OCCASION_BY_GROUP if key in group), "hosafot")
-        machzor = any(key in group for key in MACHZOR_GROUPS)
 
         # Every line, not only bulleted ones: four of the seven groups list their units
         # on plain lines, and the additions number theirs in bold instead.
@@ -156,25 +226,37 @@ def parse_toc(wikitext: str) -> list[Unit]:
             body = line.lstrip("*").strip()
             lead = BOLD_LEAD_RE.match(body)
             subgroup = lead.group(1) if lead and not LINK_RE.search(lead.group(1)) else None
+            # Sub-group only, never the whole line.
             service = next(
-                (s for key, s in SERVICE_KEYWORDS if key in (subgroup or body)), None
+                (s for key, s in SERVICE_KEYWORDS if subgroup and key in subgroup), None
             )
             for title, display in LINK_RE.findall(body):
                 # The additions link out to other projects in the user namespace; those
                 # are references, not units of this book.
                 if not title.startswith(f"{ROOT_TITLE}/"):
                     continue
-                unit = Unit(
+                shown = re.sub(r"\s+", " ", display).strip()
+                units.append(Unit(
                     title=title.replace(f"{ROOT_TITLE}/", ""),
-                    display=re.sub(r"\s+", " ", display).strip(),
-                    group=group,
+                    display=shown,
+                    group=GROUP_NUMBER_RE.sub("", group),
                     subgroup=subgroup,
-                    occasion=occasion,
-                    service=service,
-                )
-                if machzor:
-                    unit.flags.add("MACHZOR")
-                units.append(unit)
+                    # A unit names its own occasion where it has one; the group's is a
+                    # fallback for anything that does not.
+                    occasion=next(
+                        (o for key, o in OCCASION_BY_TITLE if key in shown), occasion
+                    ),
+                    # A bullet that is one bolded link has no sub-group heading; the
+                    # link's own title names the service. Matched against the title
+                    # alone, never the line, which is what caused 26 festival units to
+                    # come out as Musaf.
+                    service=next(
+                        (sv for key, sv in SERVICE_BY_TITLE if key in shown),
+                        service or next(
+                            (sv for key, sv in SERVICE_KEYWORDS if key in shown), None
+                        ),
+                    ),
+                ))
     return units
 
 
@@ -255,6 +337,11 @@ def gather(sourcetexts_root: Path | None = None) -> list[Unit]:
         if entry is None or not path.is_file():
             unit.flags.add("STUB")
             continue
+
+        # A unit reached only from disk has no vocalised title, and transliterating an
+        # unpointed one produces consonant soup rather than a name.
+        if "NOT-IN-TOC" in unit.flags:
+            unit.flags.add("NEEDS-NAME")
 
         unit.exists = True
         wikitext = path.read_text(encoding="utf-8")
@@ -379,6 +466,21 @@ def report_units(units: list[Unit]) -> str:
         else:
             why = " ".join(sorted(unit.flags)) or "—"
         lines.append(f"| {unit.display} | {unit.group} | {why} |")
+
+    unnamed = [u for u in in_scope if "NEEDS-NAME" in u.flags]
+    if unnamed:
+        lines += [
+            "",
+            "## Units needing a title",
+            "",
+            "Reached from disk rather than the table of contents, so there is no",
+            "vocalised title to transliterate and the proposed slug is meaningless.",
+            "Each needs a name and a place in the hierarchy.",
+            "",
+            "| Page title | Printed pages |",
+            "|---|---|",
+        ]
+        lines += [f"| {u.display} | {u.page_range} |" for u in unnamed]
 
     if flagged:
         lines += [

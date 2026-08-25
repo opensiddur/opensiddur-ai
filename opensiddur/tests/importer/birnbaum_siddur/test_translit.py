@@ -45,6 +45,17 @@ class MatresLectionisTestCase(unittest.TestCase):
     def test_a_consonantal_vav_is_still_a_v(self):
         self.assertIn("v", transliterate("וָו"))
 
+    def test_a_vav_with_holam_after_a_closed_syllable_is_a_consonant(self):
+        # Written identically to a holam male; what separates them is whether the
+        # previous letter already has a vowel. Reading it as a vowel letter gave
+        # "hamitzot" for "hamitzvot".
+        self.assertEqual(transliterate("הַמִּצְוֹת"), "hamitzvot")
+
+    def test_a_yod_after_a_sheva_is_a_consonant(self):
+        # Only hiriq and tsere take a yod as their vowel letter. Reading a sheva that
+        # way gave "veom_tov".
+        self.assertEqual(transliterate("וְיוֹם טוֹב"), "veyom_tov")
+
 
 class ShevaTestCase(unittest.TestCase):
     """Which sheva is vocal is not marked, so the guesses are reported."""
@@ -68,9 +79,28 @@ class ShevaTestCase(unittest.TestCase):
         self.assertFalse(uncertain("שׁוֹמְרִים"))
 
 
+class CommonSpellingTestCase(unittest.TestCase):
+    """A settled English spelling beats the table.
+
+    The table is a fallback for texts with no accepted name, not an authority. Nobody
+    writes "halayl", and a scheme producing it would be quietly ignored.
+    """
+
+    def test_a_word_with_a_settled_spelling_is_replaced(self):
+        self.assertEqual(transliterate("הַלֵּל"), "hallel")
+        self.assertEqual(transliterate("קַבָּלַת שַׁבָּת"), "kabbalat_shabbat")
+
+    def test_a_whole_phrase_may_be_replaced(self):
+        # Yizkor is not a transliteration of its Hebrew title at all.
+        self.assertEqual(transliterate("הַזְכָּרַת נְשָׁמוֹת"), "yizkor")
+
+    def test_a_name_with_no_override_is_left_to_the_table(self):
+        self.assertEqual(transliterate("עֲמִידָה"), "amidah")
+
+
 class NameShapeTestCase(unittest.TestCase):
     def test_words_are_joined_with_underscores(self):
-        self.assertEqual(transliterate("קַבָּלַת שַׁבָּת"), "qabalat_shabat")
+        self.assertEqual(transliterate("שִׁיר הַשִּׁירִים"), "shir_hashirim")
 
     def test_maqaf_separates_words(self):
         self.assertIn("_", transliterate("כׇּל־הָעָם"))

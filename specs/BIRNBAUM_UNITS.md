@@ -8,7 +8,7 @@ The list comes from the book's own table of contents, which already groups its
 units the way the book does, so the order and the grouping are the source's
 rather than an editorial invention.
 
-**71 units in scope**, 40 excluded.
+**75 units in scope**, 36 excluded.
 
 ## What the columns mean
 
@@ -32,77 +32,81 @@ guessed are listed under *Names needing a second look*.
 
 | Group | Service | Title | Proposed `siddur:` URN | Pages | Size | Trans | Rubrics | Foundation | Flags |
 |---|---|---|---|---:|---:|---:|---:|---|---|
-| א. סֵֽדֶר הַתְּפִלָּה בִּימֵי חוֹל | shacharit | שַׁחֲרִית לִילָדִים | `chol/shacharit/shacharit_liladim` | 1 | 2956 | 17 | 4 | ברכות השחר וקרבנות קריאת התורה קריאת שמע וברכותיה תפילת העמידה |  |
+| סֵֽדֶר הַתְּפִלָּה בִּימֵי חוֹל | shacharit | שַׁחֲרִית לִילָדִים | `chol/shacharit/liladim` | 1 | 2956 | 17 | 4 | ברכות השחר וקרבנות קריאת התורה קריאת שמע וברכותיה תפילת העמידה |  |
 |  | shacharit | בִּרְכוֹת הַשַּֽׁחַר וְקׇרְבָּנוֹת | `chol/shacharit/birkhot_hashachar_veqorbanot` | 1–5, 11–47 | 22029 | 127 | 13 | ברכות השחר וקרבנות פסוקי דזמרה קדיש קריאת שמע וברכותיה תפילת העמידה | LISTED-TWICE |
-|  | shacharit | פְּסוּקֵי דְּזִמְרָה לְחוֹל | `chol/shacharit/pesuqay_dezimrah_lechol` | 49–69 | 12499 | 80 | 7 | סוף התפילה פסוקי דזמרה קדיש |  |
-|  | shacharit | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/qeriat_shema_uvirkhoteha_leshacharit_bechol` | 71–81 | 6747 | 40 | 4 | קריאת שמע וברכותיה תפילת העמידה |  |
-|  | shacharit | תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/tefilat_haamidah_leshacharit_bechol` | 81–97 | 17133 | 111 | 26 | תפילת העמידה | OVERLAPPING-PAGES |
-|  | shacharit | תַּחֲנוּן לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/tachanun_leshacharit_bechol` | 97–117 | 11625 | 84 | 10 | קדיש תחנון | OVERLAPPING-PAGES |
-|  | shacharit | קְרִיאַת הַתּוֹרָה לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/qeriat_hatorah_leshacharit_bechol` | 117–127 | 8734 | 52 | 20 | קדיש קריאת התורה קריאת שמע וברכותיה | OVERLAPPING-PAGES |
+|  | shacharit | פְּסוּקֵי דְּזִמְרָה לְחוֹל | `chol/shacharit/pesuqay_dezimrah` | 49–69 | 12499 | 80 | 7 | סוף התפילה פסוקי דזמרה קדיש |  |
+|  | shacharit | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/qeriat_shema_uvirkhoteyha` | 71–81 | 6747 | 40 | 4 | קריאת שמע וברכותיה תפילת העמידה |  |
+|  | shacharit | תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/tefilat_haamidah` | 81–97 | 17133 | 111 | 26 | תפילת העמידה | OVERLAPPING-PAGES |
+|  | shacharit | תַּחֲנוּן לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/tachanun` | 97–117 | 11625 | 84 | 10 | קדיש תחנון | OVERLAPPING-PAGES |
+|  | shacharit | קְרִיאַת הַתּוֹרָה לְשַׁחֲרִית בְּחוֹל | `chol/shacharit/qeriat_hatorah` | 117–127 | 8734 | 52 | 20 | קדיש קריאת התורה קריאת שמע וברכותיה | OVERLAPPING-PAGES |
 |  | shacharit | קְדוּשָׁה דְּסִדְרָא | `chol/shacharit/qedushah_desidra` | 127–135 | 4201 | 25 | 3 | פסוקי דזמרה קדיש קריאת התורה | OVERLAPPING-PAGES |
-|  | shacharit | סוֹף תְּפִלַּת שַׁחֲרִית לְחוֹל | `chol/shacharit/sof_tefilat_shacharit_lechol` | 135–155 | 15585 | 99 | 22 | סוף התפילה קדיש קריאת שמע וברכותיה |  |
-|  | minchah | תְּפִלַּת מִנְחָה לְחוֹל | `chol/minchah/tefilat_minchah_lechol` | 157–187 | 22351 | 153 | 24 | סוף התפילה פסוקי דזמרה קדיש תחנון תפילת העמידה |  |
-|  | arvit | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּחוֹל | `chol/arvit/qeriat_shema_uvirkhoteha_learvit_bechol` | 189–199 | 8515 | 50 | 9 | פסוקי דזמרה קדיש קריאת שמע וברכותיה |  |
-|  | arvit | תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּחוֹל | `chol/arvit/tefilat_haamidah_learvit_bechol` | 199–213 | 12342 | 82 | 14 | קדיש תפילת העמידה | OVERLAPPING-PAGES |
-|  | arvit | סוֹף תְּפִלַּת עַרְבִית לְחוֹל | `chol/arvit/sof_tefilat_arvit_lechol` | 213–219 | 5532 | 36 | 7 | סוף התפילה קדיש |  |
+|  | shacharit | סוֹף תְּפִלַּת שַׁחֲרִית לְחוֹל | `chol/shacharit/sof_tefilat` | 135–155 | 15585 | 99 | 22 | סוף התפילה קדיש קריאת שמע וברכותיה |  |
+|  | minchah | תְּפִלַּת מִנְחָה לְחוֹל | `chol/minchah/tefilat` | 157–187 | 22351 | 153 | 24 | סוף התפילה פסוקי דזמרה קדיש תחנון תפילת העמידה |  |
+|  | arvit | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּחוֹל | `chol/arvit/qeriat_shema_uvirkhoteyha` | 189–199 | 8515 | 50 | 9 | פסוקי דזמרה קדיש קריאת שמע וברכותיה |  |
+|  | arvit | תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּחוֹל | `chol/arvit/tefilat_haamidah` | 199–213 | 12342 | 82 | 14 | קדיש תפילת העמידה | OVERLAPPING-PAGES |
+|  | arvit | סוֹף תְּפִלַּת עַרְבִית לְחוֹל | `chol/arvit/sof_tefilat` | 213–219 | 5532 | 36 | 7 | סוף התפילה קדיש |  |
 |  | arvit | סְפִירַת הָעֹֽמֶר | `chol/arvit/sefirat_haomer` | 637–645 | 2718 | 15 | 2 | ברכות השחר וקרבנות סוף התפילה קריאת שמע וברכותיה | LISTED-TWICE |
 |  | arvit | קְרִיאַת שְׁמַע עַל הַמִּטָּה | `chol/arvit/qeriat_shema_al_hamitah` | 777–785 | 4901 | 29 | 1 | ברכות השחר וקרבנות פסוקי דזמרה קריאת שמע וברכותיה תפילת העמידה |  |
 |  | arvit | קְרִיאַת שְׁמַע לִילָדִים | `chol/arvit/qeriat_shema_liladim` | 777, 787 | 1870 | 10 |  | קריאת שמע וברכותיה |  |
-| ב. סֵֽדֶר בְּרָכוֹת |  | תְּפִלַּת הַדֶּֽרֶךְ | `berakhot/tefilat_haderekh` | 731–733 | 1695 | 10 |  | ברכות פסוקי דזמרה תפילת העמידה |  |
+| סֵֽדֶר בְּרָכוֹת |  | תְּפִלַּת הַדֶּֽרֶךְ | `berakhot/tefilat_haderekh` | 731–733 | 1695 | 10 |  | ברכות פסוקי דזמרה תפילת העמידה |  |
 |  |  | תְּפִלָּה לְחוֹלֶה | `berakhot/tefilah_lecholeh` | 733 | 982 | 5 |  | ברכות תחנון תפילת העמידה |  |
 |  |  | צִדּוּק הַדִּין | `berakhot/tziduq_hadin` | 735–739 | 2489 | 15 | 4 | ברכות קדיש |  |
 |  |  | בְּרִית מִילָה | `berakhot/berit_milah` | 741–749 | 7157 | 46 | 20 | ברכות |  |
 |  |  | פִּדְיוֹן הַבֵּן | `berakhot/pidyon_habayn` | 749–751 | 2596 | 16 | 5 | ברכות כניסת שבת ויום טוב תפילת העמידה |  |
 |  |  | אֵרוּסִין וְנִשּׂוּאִין | `berakhot/ayrusin_venisuin` | 753–755 | 3447 | 22 | 6 | ברכות |  |
 |  |  | בִּרְכוֹת הָרְאִיָּה וְהַשְּׁמִיעָה | `berakhot/birkhot_hareiyah_vehashemiah` | 775–777 | 4518 | 25 | 12 | ברכות | OVERLAPPING-PAGES |
-|  |  | בִּרְכוֹת הַמִּצְוֹת | `berakhot/birkhot_hamitzot` | 775 | 3246 | 18 | 9 | ברכות |  |
+|  |  | בִּרְכוֹת הַמִּצְוֹת | `berakhot/birkhot_hamitzvot` | 775 | 3246 | 18 | 9 | ברכות |  |
 |  |  | בִּרְכוֹת הַנֶּהֱנִין | `berakhot/birkhot_hanehenin` | 773–775 | 4418 | 25 | 12 | ברכות כניסת שבת ויום טוב | OVERLAPPING-PAGES |
 |  |  | בְּרָכָה אַחֲרוֹנָה | `berakhot/berakhah_acharonah` | 771–773 | 1556 | 7 | 2 | ברכות |  |
 |  |  | סְעוּדָה וּבִרְכַּת הַמָּזוֹן | `berakhot/seudah_uvirkat_hamazon` | 757–769 | 10366 | 66 | 19 | ברכות ברכות השחר וקרבנות סוף התפילה תפילת העמידה | OVERLAPPING-PAGES |
-| ג. סֵֽדֶר הַתְּפִלָּה בְּיוֹם הַשַּׁבָּת |  | עֵרוּבִין | `shabbat/ayruvin` | 585 | 2820 | 16 | 3 | כניסת שבת ויום טוב | LISTED-TWICE |
-|  |  | הַדְלָקַת נֵר שֶׁל שַׁבָּת וְיוֹם טוֹב | `shabbat/hadlaqat_nayr_shel_shabat_veom_tov` | 221, 585, 673 | 2792 | 14 | 2 | כניסת שבת ויום טוב תפילת העמידה | OVERLAPPING-PAGES |
-|  |  | שִׁיר הַשִּׁירִים | `shabbat/shir_hashirim` | 221–235 | 4055 | 25 | 1 | כניסת שבת ויום טוב |  |
-|  |  | קַבָּלַת שַׁבָּת | `shabbat/qabalat_shabat` | 237–255 | 12704 | 76 | 10 | ברכות השחר וקרבנות כניסת שבת ויום טוב סוף התפילה קדיש קריאת התורה קריאת שמע וברכותיה |  |
-|  |  | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּשַׁבָּת וְיוֹם טוֹב | `shabbat/qeriat_shema_uvirkhoteha_learvit_beshabat_veom_tov` | 257–263 | 7861 | 46 | 9 | קדיש קריאת שמע וברכותיה |  |
-|  |  | תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּשַׁבָּת | `shabbat/tefilat_haamidah_learvit_beshabat` | 265–275 | 10563 | 69 | 15 | קדיש תפילת העמידה |  |
-|  |  | סוֹף תְּפִלַּת עַרְבִית לְשַׁבָּת | `shabbat/sof_tefilat_arvit_leshabat` | 277–283 | 4416 | 27 | 5 | ברכות ברכות השחר וקרבנות סוף התפילה קדיש קידוש והבדלה וסעודות שבת ויום טוב |  |
-|  |  | קִדּוּשׁ לְלֵיל שַׁבָּת | `shabbat/qidush_lelayl_shabat` | 283–289 | 3890 | 19 | 3 | ברכות קידוש והבדלה וסעודות שבת ויום טוב תפילת העמידה |  |
-|  |  | זְמִירוֹת לְלֵיל שַׁבָּת | `shabbat/zemirot_lelayl_shabat` | 291–297 | 5472 | 29 | 1 | קידוש והבדלה וסעודות שבת ויום טוב |  |
-|  |  | פְּסוּקֵי דְּזִמְרָה לְשַׁבָּת וְיוֹם טוֹב | `shabbat/pesuqay_dezimrah_leshabat_veom_tov` | 299–335 | 18722 | 119 | 9 | סוף התפילה פסוקי דזמרה קדיש |  |
-|  |  | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּשַׁבָּת וְיוֹם טוֹב | `shabbat/qeriat_shema_uvirkhoteha_leshacharit_beshabat_veom_tov` | 335–349 | 9296 | 55 | 7 | קריאת שמע וברכותיה תפילת העמידה | OVERLAPPING-PAGES |
-|  |  | תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּשַׁבָּת | `shabbat/tefilat_haamidah_leshacharit_beshabat` | 349–361 | 14520 | 93 | 24 | קדיש תפילת העמידה | OVERLAPPING-PAGES |
-|  |  | קְרִיאַת הַתּוֹרָה לְשַׁחֲרִית בְּשַׁבָּת וְיוֹם טוֹב | `shabbat/qeriat_hatorah_leshacharit_beshabat_veom_tov` | 361–389 | 24393 | 148 | 47 | פסוקי דזמרה קדיש קריאת התורה קריאת שמע וברכותיה תפילת העמידה |  |
-|  |  | תְּפִלַּת הָעֲמִידָה לְמוּסָף שֶׁל שַׁבָּת | `shabbat/tefilat_haamidah_lemusaf_shel_shabat` | 391–405 | 16298 | 103 | 26 | קדיש תפילת העמידה |  |
-|  |  | סוֹף תְּפִלַּת מוּסָף לְשַׁבָּת וְיוֹם טוֹב | `shabbat/sof_tefilat_musaf_leshabat_veom_tov` | 405–423 | 8787 | 53 | 9 | ברכות השחר וקרבנות סוף התפילה קדיש קריאת התורה שיר השירים וקבלת שבת | OVERLAPPING-PAGES |
-|  |  | קִדּוּשָׁא רַבָּה לְיוֹם שַׁבָּת | `shabbat/qidusha_rabah_leom_shabat` | 423 | 1514 | 7 | 1 | ברכות קידוש והבדלה וסעודות שבת ויום טוב קריאת שמע וברכותיה |  |
-|  |  | זְמִירוֹת לְיוֹם שַׁבָּת | `shabbat/zemirot_leom_shabat` | 425–435 | 9080 | 48 | 1 | קידוש והבדלה וסעודות שבת ויום טוב |  |
-|  | minchah | מִנְחָה לְשַׁבָּת וְיוֹם טוֹב | `shabbat/minchah/minchah_leshabat_veom_tov` | 437–475 | 28361 | 186 | 35 | סוף התפילה פסוקי דזמרה קדיש קריאת התורה קריאת שמע וברכותיה תחנון תפילת העמידה |  |
-|  | minchah | פִּרְקֵי אָבוֹת | `shabbat/minchah/pirqay_avot` | 477–533 | 8264 | 51 |  | סוף התפילה |  |
-|  |  | תְּפִלַּת עַרְבִית לְמוֹצָאֵי שַׁבָּת | `shabbat/tefilat_arvit_lemotzaay_shabat` | 535–549 | 8375 | 52 | 7 | ברכות סוף התפילה פסוקי דזמרה קדיש קידוש והבדלה וסעודות שבת ויום טוב קריאת התורה קריאת שמע וברכותיה |  |
-|  |  | בִּרְכַּת הַלְּבָנָה | `shabbat/birkat_halevanah` | 561–565 | 4598 | 29 | 3 | סוף התפילה פסוקי דזמרה | LISTED-TWICE OVERLAPPING-PAGES |
-|  |  | הַבְדָּלָה | `shabbat/havdalah` | 551 | 3011 | 16 | 4 | ברכות סוף התפילה פסוקי דזמרה קידוש והבדלה וסעודות שבת ויום טוב |  |
-|  |  | זְמִירוֹת לְמוֹצָאֵי שַׁבָּת | `shabbat/zemirot_lemotzaay_shabat` | 553–561 | 2402 | 10 |  | קידוש והבדלה וסעודות שבת ויום טוב |  |
-| ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | musaf | הַלֵּל | `moadim/musaf/halayl` | 565–573 | 5319 | 35 | 8 | הלל |  |
-|  | musaf | מוּסָף לְרֹאשׁ חֹֽדֶשׁ | `moadim/musaf/musaf_lerosh_chodesh` | 575–583 | 9737 | 60 | 14 | תפילת העמידה |  |
-|  | musaf | עֲמִידָה לְשָׁלוֹשׁ רְגָלִים | `moadim/musaf/amidah_leshalosh_regalim` | 585–597 | 13185 | 84 | 16 | תפילת העמידה | OVERLAPPING-PAGES |
-|  | musaf | קִדּוּשׁ לְשָׁלוֹשׁ רְגָלִים | `moadim/musaf/qidush_leshalosh_regalim` | 597–599 | 3730 | 17 | 4 | ברכות כניסת שבת ויום טוב קידוש והבדלה וסעודות שבת ויום טוב תפילת העמידה |  |
-|  | musaf | הַזְכָּרַת נְשָׁמוֹת | `moadim/musaf/hazkarat_neshamot` | 601–607 | 6749 | 38 | 17 | קריאת התורה |  |
-|  | musaf | מוּסָף לְשָׁלוֹשׁ רְגָלִים | `moadim/musaf/musaf_leshalosh_regalim` | 609–625 | 15099 | 93 | 22 | תפילת העמידה |  |
-|  | musaf | בִּרְכַּת כֹּהֲנִים | `moadim/musaf/birkat_kohanim` | 625–631 | 6034 | 35 | 13 | תפילת העמידה | OVERLAPPING-PAGES |
-|  | musaf | קִדּוּשָׁא רַבָּה לְשָׁלוֹשׁ רְגָלִים | `moadim/musaf/qidusha_rabah_leshalosh_regalim` | 631 | 2073 | 10 | 2 | ברכות קידוש והבדלה וסעודות שבת ויום טוב קריאת שמע וברכותיה |  |
-|  | musaf | תְּפִלַּת טַל | `moadim/musaf/tefilat_tal` | 633–635 | 2553 | 15 | 2 | תפילת העמידה |  |
-|  | musaf | אַקְדָּמוּת | `moadim/musaf/aqdamut` | 647–653 | 1469 | 6 | 1 | קריאת התורה |  |
-|  | musaf | אֻשְׁפִּיזִין | `moadim/musaf/ushpizin` | 675–677 | 3853 | 18 | 8 | קידוש והבדלה וסעודות שבת ויום טוב |  |
-|  | musaf | נְטִילַת לוּלָב | `moadim/musaf/netilat_lulav` | 677 | 1342 | 7 | 3 | הלל כניסת שבת ויום טוב |  |
-|  | musaf | הוֹשַׁעְנוֹת | `moadim/musaf/hoshanot` | 679–696 | 13397 | 86 | 25 | הלל |  |
-|  | musaf | תְּפִלַּת גֶּֽשֶׁם | `moadim/musaf/tefilat_geshem` | 697–701 | 4223 | 26 | 9 | תפילת העמידה |  |
-|  | musaf | הַקָּפוֹת לְשִׂמְחַת תּוֹרָה | `moadim/musaf/haqafot_lesimchat_torah` | 703–707 | 4832 | 29 | 12 | קריאת התורה קריאת שמע וברכותיה |  |
-|  | musaf | הַדְלָקַת נֵר שֶׁל חֲנֻכָּה | `moadim/musaf/hadlaqat_nayr_shel_chanukah` | 709–711 | 2012 | 11 | 3 | ימי הודאה כניסת שבת ויום טוב |  |
-|  | musaf | מְגִלַּת הַחַשְׁמוֹנָאִים | `moadim/musaf/megilat_hachashmonaim` | 713–725 | 1782 | 8 |  | ימי הודאה |  |
-|  | musaf | קְרִיאַת הַמְּגִלָּה בְּפוּרִים | `moadim/musaf/qeriat_hamegilah_befurim` | 725–729 | 3026 | 18 | 4 | ימי הודאה כניסת שבת ויום טוב |  |
-| (not in the table of contents) |  | ברכת המזון | `hosafot/vrkht_hmzvn` | 171, 757–769 | 18638 | 18 | 17 |  | NOT-IN-TOC OVERLAPPING-PAGES |
-|  |  | תפילה לשלום מדינת ישראל | `hosafot/tfylh_lshlvm_mdynt_yshrl` | 789 | 1051 | 6 |  | קריאת התורה | NOT-IN-TOC |
-|  |  | תפילת העמידה לראש השנה | `hosafot/tfylt_hmydh_lrsh_hshnh` | 655–665 | 8772 | 57 | 6 | תפילת העמידה | NOT-IN-TOC |
+| סֵֽדֶר הַתְּפִלָּה בְּיוֹם הַשַּׁבָּת |  | עֵרוּבִין | `shabbat_veyom_tov/ayruvin` | 585 | 2820 | 16 | 3 | כניסת שבת ויום טוב | LISTED-TWICE |
+|  |  | הַדְלָקַת נֵר שֶׁל שַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/hadlaqat_nayr` | 221, 585, 673 | 2792 | 14 | 2 | כניסת שבת ויום טוב תפילת העמידה | OVERLAPPING-PAGES |
+|  |  | שִׁיר הַשִּׁירִים | `shabbat_veyom_tov/shir_hashirim` | 221–235 | 4055 | 25 | 1 | כניסת שבת ויום טוב |  |
+|  |  | קַבָּלַת שַׁבָּת | `shabbat_veyom_tov/kabbalat` | 237–255 | 12704 | 76 | 10 | ברכות השחר וקרבנות כניסת שבת ויום טוב סוף התפילה קדיש קריאת התורה קריאת שמע וברכותיה |  |
+|  | arvit | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּשַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/arvit/qeriat_shema_uvirkhoteyha_beshabat` | 257–263 | 7861 | 46 | 9 | קדיש קריאת שמע וברכותיה |  |
+|  | arvit | תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּשַׁבָּת | `shabbat_veyom_tov/arvit/tefilat_haamidah_beshabat` | 265–275 | 10563 | 69 | 15 | קדיש תפילת העמידה |  |
+|  | arvit | סוֹף תְּפִלַּת עַרְבִית לְשַׁבָּת | `shabbat_veyom_tov/arvit/sof_tefilat_leshabat` | 277–283 | 4416 | 27 | 5 | ברכות ברכות השחר וקרבנות סוף התפילה קדיש קידוש והבדלה וסעודות שבת ויום טוב |  |
+|  |  | קִדּוּשׁ לְלֵיל שַׁבָּת | `shabbat_veyom_tov/qidush_lelayl` | 283–289 | 3890 | 19 | 3 | ברכות קידוש והבדלה וסעודות שבת ויום טוב תפילת העמידה |  |
+|  |  | זְמִירוֹת לְלֵיל שַׁבָּת | `shabbat_veyom_tov/zemirot_lelayl` | 291–297 | 5472 | 29 | 1 | קידוש והבדלה וסעודות שבת ויום טוב |  |
+|  |  | פְּסוּקֵי דְּזִמְרָה לְשַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/pesuqay_dezimrah_leshabat` | 299–335 | 18722 | 119 | 9 | סוף התפילה פסוקי דזמרה קדיש |  |
+|  | shacharit | קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּשַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/shacharit/qeriat_shema_uvirkhoteyha_beshabat` | 335–349 | 9296 | 55 | 7 | קריאת שמע וברכותיה תפילת העמידה | OVERLAPPING-PAGES |
+|  | shacharit | תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּשַׁבָּת | `shabbat_veyom_tov/shacharit/tefilat_haamidah_beshabat` | 349–361 | 14520 | 93 | 24 | קדיש תפילת העמידה | OVERLAPPING-PAGES |
+|  | shacharit | קְרִיאַת הַתּוֹרָה לְשַׁחֲרִית בְּשַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/shacharit/qeriat_hatorah_beshabat` | 361–389 | 24393 | 148 | 47 | פסוקי דזמרה קדיש קריאת התורה קריאת שמע וברכותיה תפילת העמידה |  |
+|  | musaf | תְּפִלַּת הָעֲמִידָה לְמוּסָף שֶׁל שַׁבָּת | `shabbat_veyom_tov/musaf/tefilat_haamidah` | 391–405 | 16298 | 103 | 26 | קדיש תפילת העמידה |  |
+|  | musaf | סוֹף תְּפִלַּת מוּסָף לְשַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/musaf/sof_tefilat_leshabat` | 405–423 | 8787 | 53 | 9 | ברכות השחר וקרבנות סוף התפילה קדיש קריאת התורה שיר השירים וקבלת שבת | OVERLAPPING-PAGES |
+|  |  | קִדּוּשָׁא רַבָּה לְיוֹם שַׁבָּת | `shabbat_veyom_tov/qidusha_rabah_leyom` | 423 | 1514 | 7 | 1 | ברכות קידוש והבדלה וסעודות שבת ויום טוב קריאת שמע וברכותיה |  |
+|  |  | זְמִירוֹת לְיוֹם שַׁבָּת | `shabbat_veyom_tov/zemirot_leyom` | 425–435 | 9080 | 48 | 1 | קידוש והבדלה וסעודות שבת ויום טוב |  |
+|  | minchah | מִנְחָה לְשַׁבָּת וְיוֹם טוֹב | `shabbat_veyom_tov/minchah/leshabat` | 437–475 | 28361 | 186 | 35 | סוף התפילה פסוקי דזמרה קדיש קריאת התורה קריאת שמע וברכותיה תחנון תפילת העמידה |  |
+|  | minchah | פִּרְקֵי אָבוֹת | `shabbat_veyom_tov/minchah/pirkei_avot` | 477–533 | 8264 | 51 |  | סוף התפילה |  |
+|  | arvit | תְּפִלַּת עַרְבִית לְמוֹצָאֵי שַׁבָּת | `shabbat_veyom_tov/arvit/tefilat_lemotzaay` | 535–549 | 8375 | 52 | 7 | ברכות סוף התפילה פסוקי דזמרה קדיש קידוש והבדלה וסעודות שבת ויום טוב קריאת התורה קריאת שמע וברכותיה |  |
+|  |  | בִּרְכַּת הַלְּבָנָה | `shabbat_veyom_tov/birkat_halevanah` | 561–565 | 4598 | 29 | 3 | סוף התפילה פסוקי דזמרה | LISTED-TWICE OVERLAPPING-PAGES |
+|  |  | הַבְדָּלָה | `shabbat_veyom_tov/havdalah` | 551 | 3011 | 16 | 4 | ברכות סוף התפילה פסוקי דזמרה קידוש והבדלה וסעודות שבת ויום טוב |  |
+|  |  | זְמִירוֹת לְמוֹצָאֵי שַׁבָּת | `shabbat_veyom_tov/zemirot_lemotzaay` | 553–561 | 2402 | 10 |  | קידוש והבדלה וסעודות שבת ויום טוב |  |
+| סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | hallel | הַלֵּל | `shalosh_regalim/hallel` | 565–573 | 5319 | 35 | 8 | הלל |  |
+|  | musaf | מוּסָף לְרֹאשׁ חֹֽדֶשׁ | `rosh_chodesh/musaf` | 575–583 | 9737 | 60 | 14 | תפילת העמידה |  |
+|  |  | עֲמִידָה לְשָׁלוֹשׁ רְגָלִים | `shalosh_regalim/amidah` | 585–597 | 13185 | 84 | 16 | תפילת העמידה | OVERLAPPING-PAGES |
+|  |  | קִדּוּשׁ לְשָׁלוֹשׁ רְגָלִים | `shalosh_regalim/qidush` | 597–599 | 3730 | 17 | 4 | ברכות כניסת שבת ויום טוב קידוש והבדלה וסעודות שבת ויום טוב תפילת העמידה |  |
+|  |  | הַזְכָּרַת נְשָׁמוֹת | `shalosh_regalim/yizkor` | 601–607 | 6749 | 38 | 17 | קריאת התורה |  |
+|  | musaf | מוּסָף לְשָׁלוֹשׁ רְגָלִים | `shalosh_regalim/musaf` | 609–625 | 15099 | 93 | 22 | תפילת העמידה |  |
+|  |  | בִּרְכַּת כֹּהֲנִים | `shalosh_regalim/birkat_kohanim` | 625–631 | 6034 | 35 | 13 | תפילת העמידה | OVERLAPPING-PAGES |
+|  |  | קִדּוּשָׁא רַבָּה לְשָׁלוֹשׁ רְגָלִים | `shalosh_regalim/qidusha_rabah` | 631 | 2073 | 10 | 2 | ברכות קידוש והבדלה וסעודות שבת ויום טוב קריאת שמע וברכותיה |  |
+|  |  | תְּפִלַּת טַל | `shalosh_regalim/tefilat_tal` | 633–635 | 2553 | 15 | 2 | תפילת העמידה |  |
+|  |  | אַקְדָּמוּת | `shavuot/aqdamut` | 647–653 | 1469 | 6 | 1 | קריאת התורה |  |
+|  |  | אֻשְׁפִּיזִין | `sukkot/ushpizin` | 675–677 | 3853 | 18 | 8 | קידוש והבדלה וסעודות שבת ויום טוב |  |
+|  |  | נְטִילַת לוּלָב | `sukkot/netilat_lulav` | 677 | 1342 | 7 | 3 | הלל כניסת שבת ויום טוב |  |
+|  |  | הוֹשַׁעְנוֹת | `sukkot/hoshanot` | 679–696 | 13397 | 86 | 25 | הלל |  |
+|  |  | תְּפִלַּת גֶּֽשֶׁם | `shalosh_regalim/tefilat_geshem` | 697–701 | 4223 | 26 | 9 | תפילת העמידה |  |
+|  |  | הַקָּפוֹת לְשִׂמְחַת תּוֹרָה | `sukkot/haqafot_lesimchat_torah` | 703–707 | 4832 | 29 | 12 | קריאת התורה קריאת שמע וברכותיה |  |
+|  |  | הַדְלָקַת נֵר שֶׁל חֲנֻכָּה | `chanukah/hadlaqat_nayr` | 709–711 | 2012 | 11 | 3 | ימי הודאה כניסת שבת ויום טוב |  |
+|  |  | מְגִלַּת הַחַשְׁמוֹנָאִים | `shalosh_regalim/megilat_hachashmonaim` | 713–725 | 1782 | 8 |  | ימי הודאה |  |
+|  |  | קְרִיאַת הַמְּגִלָּה בְּפוּרִים | `purim/qeriat_hamegilah` | 725–729 | 3026 | 18 | 4 | ימי הודאה כניסת שבת ויום טוב |  |
+| הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה |  | קִדּוּשׁ לְלֵיל רֹאשׁ הַשָּׁנָה | `rosh_hashanah/qidush_lelayl` | 665–667 | 3037 | 14 | 3 | ברכות כניסת שבת ויום טוב קידוש והבדלה וסעודות שבת ויום טוב תפילת העמידה |  |
+|  |  | שִׁיר הַכָּבוֹד | `rosh_hashanah/shir_hakavod` | 415–419 | 1479 | 8 | 2 | סוף התפילה קריאת התורה | OVERLAPPING-PAGES |
+|  | minchah | תַּשְׁלִיךְ | `rosh_hashanah/minchah/tashlikh` | 669–671 | 1968 | 12 | 1 | סוף התפילה פסוקי דזמרה ראש השנה |  |
+| הַמַּחֲזוֹר הַשָּׁלֵם לְיוֹם הַכִּפּוּרִים |  | כַּפָּרוֹת | `yom_kippur/kaparot` | 673 | 1379 | 7 | 3 | יום הכיפורים |  |
+| (not in the table of contents) |  | ברכת המזון | `hosafot/vrkht_hmzvn` | 171, 757–769 | 18638 | 18 | 17 |  | NEEDS-NAME NOT-IN-TOC OVERLAPPING-PAGES |
+|  |  | תפילה לשלום מדינת ישראל | `hosafot/tfylh_lshlvm_mdynt_yshrl` | 789 | 1051 | 6 |  | קריאת התורה | NEEDS-NAME NOT-IN-TOC |
+|  |  | תפילת העמידה לראש השנה | `hosafot/tfylt_hmydh_lrsh_hshnh` | 655–665 | 8772 | 57 | 6 | תפילת העמידה | NEEDS-NAME NOT-IN-TOC |
 
 ## Excluded
 
@@ -111,46 +115,54 @@ gaps are visible rather than silent.
 
 | Title | Group | Why |
 |---|---|---|
-| תְּפִלָּה לִפְנֵי יְצִיאָה לַקְּרָב לְחַיָּלֵי צַהַ"ל | ב. סֵֽדֶר בְּרָכוֹת | no printed page in the 1949 edition |
-| יוֹם הַשּׁוֹאָה | ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
-| יוֹם הַזִּכָּרוֹן | ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
-| יוֹם הָעַצְמָאוּת | ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
-| לָ"ג בָּעֹֽמֶר | ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
-| יוֹם יְרוּשָׁלַֽיִם | ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
-| הַגָּדָה שֶׁל פֶּֽסַח | ד. סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
-| הַדְלָקַת נֵר שֶׁל רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| מִנְחָה לְעֶֽרֶב רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תְּפִלַּת הָעֲמִידָה לְרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| סוֹף תְּפִלַּת עַרְבִית לְרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| בִּרְכַּת אִישׁ לְרֵעֵהוּ בְּלֵיל רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| קִדּוּשׁ לְלֵיל רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| סִימָנִים לִסְעוּדַת לֵיל רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| שִׁיר שֶׁל יוֹם | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| שִׁיר הַיִּחוּד | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| שִׁיר הַכָּבוֹד | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| פְּסוּקֵי דְּזִמְרָה לְרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּרֹאשׁ הַשָּׁנָה (בְּלִי פִּיּוּטֵי "יוֹצֵר") | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| בִּרְכַּת יוֹצֵר עִם פִּיּוּטִים לַיּוֹם הָרִאשׁוֹן | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| בִּרְכַּת יוֹצֵר עִם פִּיּוּטִים לַיּוֹם הַשֵּׁנִי | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית שֶׁל רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| חֲזָרַת הַשָּׁ"ץ לְשַׁחֲרִית בַּיּוֹם הָרִאשׁוֹן | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| חֲזָרַת הַשָּׁ"ץ לְשַׁחֲרִית בַּיּוֹם הַשֵּׁנִי | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| קְרִיאַת הַתּוֹרָה לְשַׁחֲרִית בְּרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| סֵֽדֶר תְּקִיעַת שׁוֹפָר | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תְּפִלָּה לִשְׁלִֽיחַ צִבּוּר | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תְּפִלַּת הָעֲמִידָה לְמוּסָף שֶׁל רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| חֲזָרַת הַשָּׁ"ץ לְמוּסָף בַּיּוֹם הָרִאשׁוֹן | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| חֲזָרַת הַשָּׁ"ץ לְמוּסָף בַּיּוֹם הַשֵּׁנִי | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| סוֹף תְּפִלַּת מוּסָף לְרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| קִדּוּשָׁא רַבָּה לְרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תְּפִלַּת מִנְחָה לְרֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תַּשְׁלִיךְ | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| תְּפִלַּת עַרְבִית לְמוֹצָאֵי רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| הַבְדָּלָה לְמוֹצָאֵי רֹאשׁ הַשָּׁנָה | ה. הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | machzor: a separate book |
-| כַּפָּרוֹת | ו. הַמַּחֲזוֹר הַשָּׁלֵם לְיוֹם הַכִּפּוּרִים | machzor: a separate book |
+| תְּפִלָּה לִפְנֵי יְצִיאָה לַקְּרָב לְחַיָּלֵי צַהַ"ל | סֵֽדֶר בְּרָכוֹת | no printed page in the 1949 edition |
+| יוֹם הַשּׁוֹאָה | סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
+| יוֹם הַזִּכָּרוֹן | סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
+| יוֹם הָעַצְמָאוּת | סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
+| לָ"ג בָּעֹֽמֶר | סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
+| יוֹם יְרוּשָׁלַֽיִם | סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
+| הַגָּדָה שֶׁל פֶּֽסַח | סֵֽדֶר מוֹעֲדִים וּזְמַנִּים | no printed page in the 1949 edition |
+| הַדְלָקַת נֵר שֶׁל רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| מִנְחָה לְעֶֽרֶב רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| תְּפִלַּת הָעֲמִידָה לְרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | no printed page in the 1949 edition |
+| סוֹף תְּפִלַּת עַרְבִית לְרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| בִּרְכַּת אִישׁ לְרֵעֵהוּ בְּלֵיל רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| סִימָנִים לִסְעוּדַת לֵיל רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| שִׁיר שֶׁל יוֹם | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| שִׁיר הַיִּחוּד | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| פְּסוּקֵי דְּזִמְרָה לְרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּרֹאשׁ הַשָּׁנָה (בְּלִי פִּיּוּטֵי "יוֹצֵר") | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| בִּרְכַּת יוֹצֵר עִם פִּיּוּטִים לַיּוֹם הָרִאשׁוֹן | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| בִּרְכַּת יוֹצֵר עִם פִּיּוּטִים לַיּוֹם הַשֵּׁנִי | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית שֶׁל רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| חֲזָרַת הַשָּׁ"ץ לְשַׁחֲרִית בַּיּוֹם הָרִאשׁוֹן | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| חֲזָרַת הַשָּׁ"ץ לְשַׁחֲרִית בַּיּוֹם הַשֵּׁנִי | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| קְרִיאַת הַתּוֹרָה לְשַׁחֲרִית בְּרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| סֵֽדֶר תְּקִיעַת שׁוֹפָר | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| תְּפִלָּה לִשְׁלִֽיחַ צִבּוּר | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| תְּפִלַּת הָעֲמִידָה לְמוּסָף שֶׁל רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| חֲזָרַת הַשָּׁ"ץ לְמוּסָף בַּיּוֹם הָרִאשׁוֹן | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| חֲזָרַת הַשָּׁ"ץ לְמוּסָף בַּיּוֹם הַשֵּׁנִי | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| סוֹף תְּפִלַּת מוּסָף לְרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| קִדּוּשָׁא רַבָּה לְרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| תְּפִלַּת מִנְחָה לְרֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| תְּפִלַּת עַרְבִית לְמוֹצָאֵי רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
+| הַבְדָּלָה לְמוֹצָאֵי רֹאשׁ הַשָּׁנָה | הַמַּחֲזוֹר הַשָּׁלֵם לְרֹאשׁ הַשָּׁנָה | advertised by the table of contents but never written |
 | חסר בוויקיטקסט | הוֹסָפוֹת | no printed page in the 1949 edition |
 | פיוטים מחודש אדר עד פסח | (not in the table of contents) | no printed page in the 1949 edition |
+
+## Units needing a title
+
+Reached from disk rather than the table of contents, so there is no
+vocalised title to transliterate and the proposed slug is meaningless.
+Each needs a name and a place in the hierarchy.
+
+| Page title | Printed pages |
+|---|---|
+| ברכת המזון | 171, 757–769 |
+| תפילה לשלום מדינת ישראל | 789 |
+| תפילת העמידה לראש השנה | 655–665 |
 
 ## Names needing a second look
 
@@ -160,35 +172,36 @@ are a guess. Everything else followed a rule.
 | Title | Proposed slug |
 |---|---|
 | בִּרְכוֹת הַשַּֽׁחַר וְקׇרְבָּנוֹת | `birkhot_hashachar_veqorbanot` |
-| פְּסוּקֵי דְּזִמְרָה לְחוֹל | `pesuqay_dezimrah_lechol` |
-| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּחוֹל | `qeriat_shema_uvirkhoteha_leshacharit_bechol` |
+| פְּסוּקֵי דְּזִמְרָה לְחוֹל | `pesuqay_dezimrah` |
+| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּחוֹל | `qeriat_shema_uvirkhoteyha` |
 | קְדוּשָׁה דְּסִדְרָא | `qedushah_desidra` |
-| תְּפִלַּת מִנְחָה לְחוֹל | `tefilat_minchah_lechol` |
-| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּחוֹל | `qeriat_shema_uvirkhoteha_learvit_bechol` |
-| תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּחוֹל | `tefilat_haamidah_learvit_bechol` |
-| סוֹף תְּפִלַּת עַרְבִית לְחוֹל | `sof_tefilat_arvit_lechol` |
+| תְּפִלַּת מִנְחָה לְחוֹל | `tefilat` |
+| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּחוֹל | `qeriat_shema_uvirkhoteyha` |
+| תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּחוֹל | `tefilat_haamidah` |
+| סוֹף תְּפִלַּת עַרְבִית לְחוֹל | `sof_tefilat` |
 | תְּפִלַּת הַדֶּֽרֶךְ | `tefilat_haderekh` |
 | פִּדְיוֹן הַבֵּן | `pidyon_habayn` |
 | בִּרְכוֹת הָרְאִיָּה וְהַשְּׁמִיעָה | `birkhot_hareiyah_vehashemiah` |
-| בִּרְכוֹת הַמִּצְוֹת | `birkhot_hamitzot` |
+| בִּרְכוֹת הַמִּצְוֹת | `birkhot_hamitzvot` |
 | בִּרְכוֹת הַנֶּהֱנִין | `birkhot_hanehenin` |
 | סְעוּדָה וּבִרְכַּת הַמָּזוֹן | `seudah_uvirkat_hamazon` |
-| הַדְלָקַת נֵר שֶׁל שַׁבָּת וְיוֹם טוֹב | `hadlaqat_nayr_shel_shabat_veom_tov` |
-| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּשַׁבָּת וְיוֹם טוֹב | `qeriat_shema_uvirkhoteha_learvit_beshabat_veom_tov` |
-| תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּשַׁבָּת | `tefilat_haamidah_learvit_beshabat` |
-| סוֹף תְּפִלַּת עַרְבִית לְשַׁבָּת | `sof_tefilat_arvit_leshabat` |
-| פְּסוּקֵי דְּזִמְרָה לְשַׁבָּת וְיוֹם טוֹב | `pesuqay_dezimrah_leshabat_veom_tov` |
-| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּשַׁבָּת וְיוֹם טוֹב | `qeriat_shema_uvirkhoteha_leshacharit_beshabat_veom_tov` |
-| מִנְחָה לְשַׁבָּת וְיוֹם טוֹב | `minchah_leshabat_veom_tov` |
-| פִּרְקֵי אָבוֹת | `pirqay_avot` |
-| תְּפִלַּת עַרְבִית לְמוֹצָאֵי שַׁבָּת | `tefilat_arvit_lemotzaay_shabat` |
+| הַדְלָקַת נֵר שֶׁל שַׁבָּת וְיוֹם טוֹב | `hadlaqat_nayr` |
+| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְעַרְבִית בְּשַׁבָּת וְיוֹם טוֹב | `qeriat_shema_uvirkhoteyha_beshabat` |
+| תְּפִלַּת הָעֲמִידָה לְעַרְבִית בְּשַׁבָּת | `tefilat_haamidah_beshabat` |
+| סוֹף תְּפִלַּת עַרְבִית לְשַׁבָּת | `sof_tefilat_leshabat` |
+| פְּסוּקֵי דְּזִמְרָה לְשַׁבָּת וְיוֹם טוֹב | `pesuqay_dezimrah_leshabat` |
+| קְרִיאַת שְׁמַע וּבִרְכוֹתֶֽיהָ לְשַׁחֲרִית בְּשַׁבָּת וְיוֹם טוֹב | `qeriat_shema_uvirkhoteyha_beshabat` |
+| מִנְחָה לְשַׁבָּת וְיוֹם טוֹב | `leshabat` |
+| פִּרְקֵי אָבוֹת | `pirkei_avot` |
+| תְּפִלַּת עַרְבִית לְמוֹצָאֵי שַׁבָּת | `tefilat_lemotzaay` |
 | בִּרְכַּת הַלְּבָנָה | `birkat_halevanah` |
 | הַבְדָּלָה | `havdalah` |
-| הַזְכָּרַת נְשָׁמוֹת | `hazkarat_neshamot` |
+| הַזְכָּרַת נְשָׁמוֹת | `yizkor` |
 | בִּרְכַּת כֹּהֲנִים | `birkat_kohanim` |
 | אַקְדָּמוּת | `aqdamut` |
 | אֻשְׁפִּיזִין | `ushpizin` |
 | הוֹשַׁעְנוֹת | `hoshanot` |
 | הַקָּפוֹת לְשִׂמְחַת תּוֹרָה | `haqafot_lesimchat_torah` |
-| הַדְלָקַת נֵר שֶׁל חֲנֻכָּה | `hadlaqat_nayr_shel_chanukah` |
+| הַדְלָקַת נֵר שֶׁל חֲנֻכָּה | `hadlaqat_nayr` |
 | מְגִלַּת הַחַשְׁמוֹנָאִים | `megilat_hachashmonaim` |
+| תַּשְׁלִיךְ | `tashlikh` |

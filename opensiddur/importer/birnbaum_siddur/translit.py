@@ -114,9 +114,34 @@ def _sheva_is_na(word: str, index: int) -> tuple[bool, bool]:
     return False, True                          # short vowel: the ambiguous case
 
 
+#: Names with a settled English spelling. The table is a fallback, not an authority:
+#: nobody writes "halayl" or "hazkarat_neshamot", and a scheme that produced them would
+#: be quietly ignored. Keyed on what the table produces, so the override is visible.
+COMMON_SPELLINGS = {
+    "halayl": "hallel",
+    "hazkarat_neshamot": "yizkor",
+    "alaynu": "aleinu",
+    "qadish": "kaddish",
+    "pirqay": "pirkei",
+    "shemoneh_esrayh": "shemoneh_esreh",
+    "qabalat": "kabbalat",
+    "shabat": "shabbat",
+    # Whole-name overrides, where the settled English is not a transliteration at all.
+    "hazkarat_neshamot": "yizkor",
+}
+
+
 def transliterate(text: str) -> str:
-    """A URN-safe Latin name for vocalised Hebrew."""
-    return _transliterate(text)[0]
+    """A URN-safe Latin name for vocalised Hebrew.
+
+    Applies :data:`COMMON_SPELLINGS` word by word, so a settled English spelling wins
+    wherever the text has one.
+    """
+    name = _transliterate(text)[0]
+    # Whole name first: some settled spellings replace the phrase, not a word in it.
+    if name in COMMON_SPELLINGS:
+        return COMMON_SPELLINGS[name]
+    return "_".join(COMMON_SPELLINGS.get(word, word) for word in name.split("_"))
 
 
 def uncertain(text: str) -> bool:
@@ -165,12 +190,34 @@ def _transliterate(text: str) -> tuple[str, bool]:
                 last_vowel = None
                 continue
             if char == "ו" and own_vowel in ("ֹ", "ֺ"):
-                piece.append("o")               # vav carrying the holam
+                # A vav carrying a holam is written the same way whether it spells the
+                # previous letter's vowel or sounds as a consonant of its own. What
+                # separates them is the previous letter: if it has no vowel at all the
+                # vav supplies one and is silent; if it has a vowel or a sheva closing
+                # its syllable, the vav is a consonant. Without the distinction
+                # "מצוות" comes out "mitzot".
+                previous = next(
+                    (word[i] for i in range(index - 1, -1, -1)
+                     if word[i] in CONSONANTS), None
+                )
+                if previous is not None:
+                    previous_index = "".join(word).rindex(previous, 0, index)
+                    previous_marks = _marks_after(word, previous_index)
+                else:
+                    previous_marks = ""
+                # Only a vowel or a sheva shows the previous letter's syllable is
+                # already supplied. A dagesh or a shin dot says nothing about it, and
+                # counting them turned "שופר" into "shvofar".
+                if any(m in VOWELS or m == SHEVA for m in previous_marks):
+                    piece.append("v")           # consonantal vav
+                piece.append("o")
                 last_vowel = "o"
                 continue
             if char == "י" and own_vowel is None and SHEVA not in marks:
-                if last_vowel in ("i", "ay", "e"):
-                    continue                    # hiriq/tsere male
+                # Only after hiriq or tsere. A yod after a sheva is a consonant, so
+                # "ויום טוב" is veyom_tov, not veom_tov.
+                if last_vowel in ("i", "ay"):
+                    continue                    # hiriq male / tsere male
                 piece.append("y")
                 last_vowel = None
                 continue

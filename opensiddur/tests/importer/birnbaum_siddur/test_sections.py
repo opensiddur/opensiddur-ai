@@ -71,10 +71,20 @@ class ParseTocTestCase(unittest.TestCase):
         self.assertIsNone(self.by_title["ברכות"].service)
 
     def test_a_bolded_link_is_its_own_service(self):
+        # No sub-group heading, so the link's own title names the service.
         self.assertEqual(self.by_title["מנחה"].service, "minchah")
 
-    def test_machzor_units_are_marked(self):
-        self.assertIn("MACHZOR", self.by_title["שופר"].flags)
+    def test_a_service_is_never_taken_from_the_whole_line(self):
+        # The festivals group is one unbulleted run of links, one of which mentions
+        # Musaf. Matching the line gave all 26 of them service=musaf.
+        line = f"{link('אושפיזין', 'אֻשְׁפִּיזִין')} · {link('מוסף', 'מוּסָף לְשָׁלוֹשׁ רְגָלִים')}"
+        units = {u.title.split("/")[-1]: u for u in parse_toc(f"==ד. מוֹעֲדִים==\n\n{line}\n")}
+        self.assertIsNone(units["אושפיזין"].service)
+
+    def test_a_machzor_group_supplies_its_own_occasion(self):
+        # The machzorim are separate books, but the parts printed in this one belong to
+        # it, so their group names an occasion rather than marking an exclusion.
+        self.assertEqual(self.by_title["שופר"].occasion, "rosh_hashanah")
 
     def test_links_outside_the_siddur_are_not_units(self):
         # The additions link out to other projects; those are references, not units.
@@ -143,8 +153,10 @@ class GatherTestCase(unittest.TestCase):
         self.assertIn("STUB", self.by["חסר"].flags)
         self.assertFalse(self.by["חסר"].in_scope)
 
-    def test_machzor_units_are_out_of_scope(self):
-        self.assertFalse(self.by["שופר"].in_scope)
+    def test_machzor_material_printed_in_this_book_is_in_scope(self):
+        # Pagination is the only test. A Rosh Hashanah unit the 1949 siddur prints is
+        # part of this book even though the full machzor is another.
+        self.assertTrue(self.by["שופר"].in_scope)
 
     def test_work_in_progress_is_marked_but_stays_in_scope(self):
         self.assertIn("WIP", self.by["בעבודה"].flags)
@@ -184,8 +196,8 @@ class ReportTestCase(GatherTestCase):
         text = report_units(self.units)
         self.assertIn("## Units in scope", text)
         self.assertIn("## Excluded", text)
-        self.assertIn("machzor: a separate book", text)
         self.assertIn("no printed page in the 1949 edition", text)
+        self.assertIn("never written", text)
 
     def test_the_report_has_no_variant_column(self):
         # Variant sites live in the foundation pages, so the column would be empty.
