@@ -9,8 +9,14 @@ labelled sections by name with their role markers stripped, since a prayer is
 spread over several sections that differ in role -- heading, rubric, the words,
 a note -- rather than in content.
 
-**317 need a person to look at them.** The rest derive mechanically
+**1183 need a person to look at them.** The rest derive mechanically
 and are listed at the end for spot-checking.
+
+A name comes from the group's heading where it has one, otherwise from the
+opening words of its text -- which is what the URN scheme means by naming a
+prayer by its incipit. It does **not** come from the section label: 1,559 of the
+labels carry no pointing, and transliterating one yields consonants rather than
+a word.
 
 ## Named by a heading in the source
 
@@ -237,7 +243,7 @@ edition rather than this source.
 
 ## Scriptural citations
 
-113 groups cite scripture, and each needs its `bible:` URN checked.
+111 groups cite scripture, and each needs its `bible:` URN checked.
 
 The **visible text is the citation**; the wiki link beside it only corroborates.
 The text carries book, chapter and verses, which is what a URN needs, while the
@@ -257,8 +263,8 @@ Formatting differences between the two, which are common, are not.
 | ברכות השחר וקרבנות | מוסף של שבת | במדבר כח, ט-י |
 | ברכות השחר וקרבנות | פרשות קדש לי כל בכור, והיה כי יביאך | שמות יג, א-טז |
 | ברכות השחר וקרבנות | פרשת הכיור | שמות ל, יז-כא |
-| ברכות השחר וקרבנות | פרשת העקידה | בראשית כב, א-יט |
-| ברכות השחר וקרבנות | פרשת התמיד | במדבר כח, א-ח |
+| ברכות השחר וקרבנות | וַיְהִי אַחַר הַדְּבָרִים | בראשית כב, א-יט |
+| ברכות השחר וקרבנות | וַיְדַבֵּר יְיָ אֶל | במדבר כח, א-ח |
 | ברכות השחר וקרבנות | פרשת והיה כי יביאך | שמות יג, יא-טז |
 | ברכות השחר וקרבנות | פרשת קדש לי כל בכור | שמות יג, א-י |
 | הגדה של פסח | וידוי מעשרות | מִתּוֹךְ פָּרָשַׁת "וְהָיָה כִּי־תָבוֹא אֶל־הָאָֽרֶץ" (דְּבָרִים כו, יב-טו) |
@@ -271,11 +277,11 @@ Formatting differences between the two, which are common, are not.
 | הלל | אהבתי | תהלים קטז, א-יא |
 | הלל | בצאת ישראל | תהלים קיד |
 | הלל | ה' זכרנו יברך | תהלים קטו, יב-יח |
-| הלל | הודו לה' כי טוב | תהלים קיח |
+| הלל | "הוֹדוּ לַה' כִּי | תהלים קיח |
 | הלל | הללו את ה' כל גוים | תהלים קיז |
-| הלל | הללו עבדי ה | תהלים קיג |
-| הלל | לא לנו | תהלים קטו, א-יא |
-| הלל | מה אשיב | תהלים קטז, יב-יט |
+| הלל | הַלְלוּ, עַבְדֵי יְיָ, | תהלים קיג |
+| הלל | לֹא לָנוּ, יְיָ, | תהלים קטו, א-יא |
+| הלל | מָה אָשִׁיב לַייָ | תהלים קטז, יב-יט |
 | ימי הודאה | וכי תבואו | במדבר י, ט-י |
 | ימי הודאה | מזמור ק"ז | תהלים קז |
 | ימי הודאה | מזמור קכ"ב | תהלים קכב |
@@ -283,33 +289,32 @@ Formatting differences between the two, which are common, are not.
 | כניסת שבת ויום טוב | מזמור צ"ב | תהלים צב |
 | כניסת שבת ויום טוב | מזמור צ"ג | תהלים צג |
 | כניסת שבת ויום טוב | מזמור צ"ה | תהלים צה |
-| כניסת שבת ויום טוב | מזמור צ"ו | תהלים צו |
+| כניסת שבת ויום טוב | שִֽׁירוּ לַייָ שִׁיר | תהלים צו |
 | כניסת שבת ויום טוב | מזמור צ"ז | תהלים צז |
 | כניסת שבת ויום טוב | מזמור צ"ח | תהלים צח |
 | כניסת שבת ויום טוב | מזמור צ"ט | תהלים צט |
-| כניסת שבת ויום טוב | [א] | תהלים צה; תהלים צו; תהלים צז |
 | סוף התפילה | אל נקמות | תהלים צד; צה, א-ג |
 | סוף התפילה | הללו את ה' מן השמים | תהלים קמח, א-ו |
 | סוף התפילה | מזמור ט"ז | תהלים טז |
 | סוף התפילה | מזמור כ"ד | תהלים כד |
 | סוף התפילה | מזמור כ"ז | תהלים כז |
-| סוף התפילה | מזמור מ"ח | תהלים מח |
+| סוף התפילה | שִׁיר מִזְמוֹר לִבְנֵי | תהלים מח |
 | סוף התפילה | מזמור מ"ט | תהלים מט |
 | סוף התפילה | מזמור ס"ז | תהלים סז |
 | סוף התפילה | מזמור פ"א | תהלים פא |
 | סוף התפילה | מזמור פ"ב | תהלים פב |
 | סוף התפילה | מזמור צ"ג | תהלים צג |
-| סוף התפילה | מזמור ק"ד | תהלים קד |
+| סוף התפילה | בָּרְכִי נַפְשִׁי אֶת | תהלים קד |
 | סוף התפילה | מזמור ק"כ | תהלים קכ |
 | סוף התפילה | מזמור ק"ל | תהלים קל |
-| סוף התפילה | מזמור קכ"א | תהלים קכא |
+| סוף התפילה | שִׁיר לַמַּעֲלוֹת. אֶשָּׂא | תהלים קכא |
 | סוף התפילה | מזמור קכ"ב | תהלים קכב |
 | סוף התפילה | מזמור קכ"ג | תהלים קכג |
 | סוף התפילה | מזמור קכ"ד | תהלים קכד |
 | סוף התפילה | מזמור קכ"ה | תהלים קכה |
 | סוף התפילה | מזמור קכ"ו | תהלים קכו |
 | סוף התפילה | מזמור קכ"ז | תהלים קכז |
-| סוף התפילה | מזמור קכ"ח | תהלים קכח |
+| סוף התפילה | שִׁיר הַמַּעֲלוֹת. אַשְׁרֵי | תהלים קכח |
 | סוף התפילה | מזמור קכ"ט | תהלים קכט |
 | סוף התפילה | מזמור קל"א | תהלים קלא |
 | סוף התפילה | מזמור קל"ב | תהלים קלב |
@@ -317,65 +322,72 @@ Formatting differences between the two, which are common, are not.
 | סוף התפילה | מזמור קל"ד | תהלים קלד |
 | סוף התפילה | עֲשֶֽׂרֶת הַדִּבְּרוֹת | שמות כ, א-יז |
 | פסוקי דזמרה | אתה הוא ה' לבדך | נחמיה ט, ו-יא |
-| פסוקי דזמרה | הודו | דברי הימים א טז, ח-לו |
+| פסוקי דזמרה | הוֹדוּ לַייָ קִרְאוֹ | דברי הימים א טז, ח-לו |
 | פסוקי דזמרה | ויברך דוד | דברי הימים א כט, י-יג |
 | פסוקי דזמרה | ויושע ה' ביום ההוא | שמות יד, ל-לא |
 | פסוקי דזמרה | מזמור י"ט | תהלים יט |
-| פסוקי דזמרה | מזמור ל"ג | תהלים לג |
-| פסוקי דזמרה | מזמור ל"ד | תהלים לד |
+| פסוקי דזמרה | רַנְּנוּ צַדִּיקִים בַּייָ, | תהלים לג |
+| פסוקי דזמרה | לְדָוִד, בְּשַׁנּוֹתוֹ אֶת | תהלים לד |
 | פסוקי דזמרה | מזמור לתודה | תהלים ק |
 | פסוקי דזמרה | מזמור צ | תהלים צ |
-| פסוקי דזמרה | מזמור צ"א | תהלים צא |
-| פסוקי דזמרה | מזמור צ"ב | תהלים צב |
+| פסוקי דזמרה | יֹשֵׁב בְּסֵֽתֶר עֶלְיוֹן, | תהלים צא |
+| פסוקי דזמרה | מִזְמוֹר שִׁיר לְיוֹם | תהלים צב |
 | פסוקי דזמרה | מזמור צ"ג | תהלים צג |
-| פסוקי דזמרה | מזמור ק"נ | תהלים קנ |
-| פסוקי דזמרה | מזמור קל"ה | תהלים קלה |
-| פסוקי דזמרה | מזמור קל"ו | תהלים קלו |
+| פסוקי דזמרה | הַלְלוּ אֵל בְּקׇדְשׁוֹ, | תהלים קנ |
+| פסוקי דזמרה | הַלְלוּ אֶת שֵׁם | תהלים קלה |
+| פסוקי דזמרה | הוֹדוּ לַייָ כִּי | תהלים קלו |
 | פסוקי דזמרה | מזמור קמ"ה | תהלים קמה |
 | פסוקי דזמרה | מזמור קמ"ו | תהלים קמו |
 | פסוקי דזמרה | מזמור קמ"ז | תהלים קמז |
-| פסוקי דזמרה | מזמור קמ"ח | תהלים קמח |
+| פסוקי דזמרה | הַלְלוּ אֶת יְיָ | תהלים קמח |
 | פסוקי דזמרה | מזמור קמ"ט | תהלים קמט |
 | פסוקי דזמרה | מזמור שיר חנוכת הבית | תהלים ל |
-| פסוקי דזמרה | שירת הים | שמות טו, א-יח |
-| קידוש והבדלה וסעודות שבת ויום טוב | אשת חיל | משלי לא, י-לא |
+| פסוקי דזמרה | אָז יָשִׁיר מֹשֶׁה | שמות טו, א-יח |
+| קידוש והבדלה וסעודות שבת ויום טוב | אֵֽשֶׁת חַֽיִל מִי | משלי לא, י-לא |
 | קידוש והבדלה וסעודות שבת ויום טוב | ושמרו | שמות לא, טז-יז |
 | קידוש והבדלה וסעודות שבת ויום טוב | זכור את יום השבת | שמות כ, ח-יא **link contradicts it — use the text** |
 | קריאת התורה | ברכת ההפטרה | דה"א כט,י |
 | קריאת התורה | והיטבך והרבך מאבותיך | הפסוק |
-| קריאת התורה | לדוד מזמור | תהלים כד |
+| קריאת התורה | לְדָוִד מִזְמוֹר. לַייָ | תהלים כד |
 | קריאת התורה | מזמור ט | תהלים ט |
 | קריאת התורה | מזמור כ | תהלים כ |
-| קריאת התורה | מזמור כ"ט | תהלים כט |
+| קריאת התורה | מִזְמוֹר לְדָוִד. הָבוּ | תהלים כט |
 | קריאת התורה | מזמור פ"ג | תהלים פג |
 | קריאת התורה | מזמור צ"א | תהלים צא |
 | קריאת התורה | מזמורים נוספים ליום השואה | תהלים ב'; תהלים כ"ב; תהלים מ"ד |
-| קריאת התורה | מי שברך ליולדת זכר | דה"א כט,י; הפסוק; תהלים כט |
-| קריאת שמע וברכותיה | והיה אם שמוע | דברים יא, יג-כא |
+| קריאת שמע וברכותיה | וְהָיָה אִם שָׁמֹֽעַ | דברים יא, יג-כא |
 | קריאת שמע וברכותיה | מזמור ג | תהלים ג |
 | קריאת שמע וברכותיה | מזמור ס"ז | תהלים סז |
 | קריאת שמע וברכותיה | מזמור קכ"ח | תהלים קכח |
 | קריאת שמע וברכותיה | מזמור קל"ד | תהלים קלד |
 | קריאת שמע וברכותיה | מזמור קמ"ד | תהלים קמד |
-| קריאת שמע וברכותיה | פרשת ציצית | במדבר טו, לז-מא |
+| קריאת שמע וברכותיה | וַיֹּֽאמֶר יְיָ אֶל | במדבר טו, לז-מא |
 | קריאת שמע וברכותיה | פרשת שמע | דברים ו, ד-ט |
 | תחנון | תהלים ו | תהלים ו |
 
 ## Malformed sections in the source
 
 64 sections across 11 pages either overlap a sibling or
-are never closed. The grouping recovers from each, but the nesting it infers
-around them is a guess, and these are worth fixing upstream on Wikisource.
+are never closed. Each is recovered rather than fatal, but the boundary is a
+guess, and these are worth fixing upstream on Wikisource.
+
+An unclosed section ends at the next section rather than at the end of the
+page. Both figures are given below, so the size of the guess is visible.
+Closing at the next *heading* would often be the truer answer, but the next
+heading is frequently thousands of characters away and in a third of these
+cases there is none at all, so the printed pagination or a person is what
+would settle it.
 
 | Page | Problem |
 |---|---|
-| ברכות השחר וקרבנות | הוראה לשבת ויום טוב: never closed |
+| ברכות השחר וקרבנות | הוראה לשבת ויום טוב: never closed; ended at the next section (254 chars in, of 533 to the end of the page) |
 | הגדה של פסח | ברכה אחרונה: closed without being opened |
 | הגדה של פסח | סדר ליל פסח: closed without being opened |
 | הגדה של פסח | עירוב תבשילין להגדה של פסח: closed without being opened |
-| הלל | תתננו לשם ולתהילה מילים הכל: never closed |
+| הלל | תתננו לשם ולתהילה מילים הכל: never closed; ended at the next section (32 chars in, of 17980 to the end of the page) |
+| הלל | תתננו לשם ולתהילה מילים הכל: never closed; ended at the next section (39 chars in, of 16718 to the end of the page) |
 | הלל | תתננו לשם ולתהילה מילים הכל: opened again before it closed |
-| כניסת שבת ויום טוב | פרק א הכל: never closed |
+| כניסת שבת ויום טוב | פרק א הכל: never closed; ended at the next section (20 chars in, of 34699 to the end of the page) |
 | פסוקי דזמרה | היושב לימים הנוראים: closed without being opened |
 | פסוקי דזמרה | מזמור קמ"ה א-ת בלבד: overlaps a sibling instead of nesting |
 | פסוקי דזמרה | תהלה לדוד ה-מ: overlaps a sibling instead of nesting |
@@ -384,9 +396,9 @@ around them is a guess, and these are worth fixing upstream on Wikisource.
 | פסוקי דזמרה | תהלה לדוד ה-ת ואנחנו: overlaps a sibling instead of nesting |
 | פסוקי דזמרה | תהלה לדוד ז-ת בלבד: overlaps a sibling instead of nesting |
 | פסוקי דזמרה | תהלה לדוד ז-ת ואנחנו: overlaps a sibling instead of nesting |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברוך ה' יום יום מילים הכל: never closed |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברוך ה' יום יום מילים הכל: never closed; ended at the next section (30 chars in, of 30467 to the end of the page) |
 | קידוש והבדלה וסעודות שבת ויום טוב | הוראה לפני זמירות ליום שבת: closed without being opened |
-| קריאת התורה | הערה על מי שברך ליולדת זכר: never closed |
+| קריאת התורה | הערה על מי שברך ליולדת זכר: never closed; ended at the next section (39 chars in, of 78590 to the end of the page) |
 | קריאת התורה | הערה על מי שברך ליולדת זכר: opened again before it closed |
 | קריאת התורה | מזמור כ"ט א: overlaps a sibling instead of nesting |
 | קריאת שמע וברכותיה | אהבה רבה 2: overlaps a sibling instead of nesting |
@@ -397,1465 +409,1228 @@ around them is a guess, and these are worth fixing upstream on Wikisource.
 | קריאת שמע וברכותיה | הכל יודוך א: overlaps a sibling instead of nesting |
 | קריאת שמע וברכותיה | לאל ברוך 2: overlaps a sibling instead of nesting |
 | קריאת שמע וברכותיה | לאל ברוך א: overlaps a sibling instead of nesting |
-| קריאת שמע וברכותיה | על הראשונים ב: never closed |
+| קריאת שמע וברכותיה | על הראשונים ב: never closed; ended at the next section (259 chars in, of 2838 to the end of the page) |
+| קריאת שמע וברכותיה | על הראשונים ב: never closed; ended at the next section (57 chars in, of 2579 to the end of the page) |
 | קריאת שמע וברכותיה | על הראשונים ב: opened again before it closed |
 | קריאת שמע וברכותיה | על הראשונים הכל: overlaps a sibling instead of nesting |
 | קריאת שמע וברכותיה | תתברך צורנו 1: overlaps a sibling instead of nesting |
 | קריאת שמע וברכותיה | תתברך צורנו 2: overlaps a sibling instead of nesting |
 | קריאת שמע וברכותיה | תתברך צורנו א: overlaps a sibling instead of nesting |
 | ראש השנה | ברכת איש לרעהו בראש השנה: closed without being opened |
-| ראש השנה | סימנים לסעודת ליל ראש השנה: never closed |
-| ראש השנה | קידוש לליל ראש השנה: never closed |
+| ראש השנה | סימנים לסעודת ליל ראש השנה: never closed; ended at the next section (428 chars in, of 4803 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (280 chars in, of 3500 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (283 chars in, of 3783 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (287 chars in, of 2343 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (287 chars in, of 3220 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (294 chars in, of 2637 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (295 chars in, of 4078 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (296 chars in, of 2933 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (297 chars in, of 4375 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (406 chars in, of 5209 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (406 chars in, of 6410 to the end of the page) |
+| ראש השנה | קידוש לליל ראש השנה: never closed; ended at the next section (459 chars in, of 2056 to the end of the page) |
 | ראש השנה | קידוש לליל ראש השנה: opened again before it closed |
-| תחנון | אל רחום וחנון הכל: never closed |
+| תחנון | אל רחום וחנון הכל: never closed; ended at the next section (23 chars in, of 8488 to the end of the page) |
+| תחנון | אל רחום וחנון הכל: never closed; ended at the next section (28 chars in, of 9427 to the end of the page) |
 | תחנון | אל רחום וחנון הכל: opened again before it closed |
 | תפילת העמידה | ברכת ירושלים חתימה: closed without being opened |
 | תפילת העמידה | יהי רצון עד קדמוניות: overlaps a sibling instead of nesting |
 
+## Names that could not be derived
+
+604 groups whose label and text both lack pointing, so
+there is nothing to transliterate into a pronounceable name and the slug
+below is consonants only.
+
+378 of them are instruction sections, which belong to
+`he_wikisource_siddur_hashalem` and need no `prayer:` URN at all, so the
+real shortfall is smaller than the count suggests.
+
+| Page | Label | Consonant slug | Roles |
+|---|---|---|---|
+| ברכות | אב לפני הנני מוכן | `v_lfny_hnny_mvkhn` | instruction |
+| ברכות | בילע המוות | `vyl_hmvvt` | instruction words |
+| ברכות | ברוך הבא | `vrvkh_hv` | instruction words |
+| ברכות | ברוך הוא וברוך שמו | `vrvkh_hv_vvrvkh_shmv` | instruction words |
+| ברכות | ברכת בורא מיני בשמים | `vrkht_vvr_myny_vshmym` | instruction words |
+| ברכות | ברכת בורא עצי בשמים | `vrkht_vvr_tzy_vshmym` | instruction words |
+| ברכות | ברכת בורא עשבי בשמים | `vrkht_vvr_shvy_vshmym` | instruction words |
+| ברכות | ברכת בורא פרי האדמה | `vrkht_vvr_fry_hdmh` | instruction words |
+| ברכות | ברכת בורא פרי הגפן | `vrkht_vvr_fry_hgfn` | instruction |
+| ברכות | ברכת בורא פרי העץ | `vrkht_vvr_fry_htz` | instruction words |
+| ברכות | ברכת בורא שמן ערב | `vrkht_vvr_shmn_rv` | instruction words |
+| ברכות | ברכת דיין האמת | `vrkht_dyyn_hmt` | instruction words |
+| ברכות | ברכת הטוב והמטיב | `vrkht_htvv_vhmtyv` | instruction words |
+| ברכות | ברכת המוציא | `vrkht_hmvtzy` | words |
+| ברכות | ברכת המוציא בסעודה | `vrkht_hmvtzy_vsvdh` | instruction |
+| ברכות | ברכת הנותן ריח טוב בפירות | `vrkht_hnvtn_rych_tvv_vfyrvt` | instruction words |
+| ברכות | ברכת וצונו להכניסו | `vrkht_vtzvnv_lhkhnysv` | instruction words |
+| ברכות | ברכת וצונו על המילה | `vrkht_vtzvnv_l_hmylh` | instruction words |
+| ברכות | ברכת זוכר הברית | `vrkht_zvkhr_hvryt` | instruction words |
+| ברכות | ברכת כהנים | `vrkht_khhnym` | instruction |
+| ברכות | ברכת להפריש חלה מן העיסה | `vrkht_lhfrysh_chlh_mn_hysh` | instruction words |
+| ברכות | ברכת להפריש תרומות ומעשרות | `vrkht_lhfrysh_trvmvt_vmshrvt` | instruction words |
+| ברכות | ברכת לעשות מעקה | `vrkht_lshvt_mqh` | instruction words |
+| ברכות | ברכת לקבוע מזוזה | `vrkht_lqvv_mzvzh` | instruction words |
+| ברכות | ברכת מזונות | `vrkht_mzvnvt` | instruction words |
+| ברכות | ברכת משנה הבריות | `vrkht_mshnh_hvryvt` | instruction words |
+| ברכות | ברכת עושה מעשה בראשית | `vrkht_vshh_mshh_vrshyt` | instruction words |
+| ברכות | ברכת על הטבילה | `vrkht_l_htvylh` | instruction words |
+| ברכות | ברכת על טבילת כלים | `vrkht_l_tvylt_khlym` | instruction words |
+| ברכות | ברכת על נטילת ידיים לסעודה | `vrkht_l_ntylt_ydyym_lsvdh` | instruction |
+| ברכות | ברכת על פדיון מעשר שני | `vrkht_l_fdyvn_mshr_shny` | instruction words |
+| ברכות | ברכת שהכל | `vrkht_shhkhl` | instruction words |
+| ברכות | ברכת שחלק מחכמתו ליראיו | `vrkht_shchlq_mchkhmtv_lyryv` | instruction words |
+| ברכות | ברכת שכוחו וגבורתו מלא עולם | `vrkht_shkhvchv_vgvvrtv_ml_vlm` | instruction words |
+| ברכות | ברכת שככה לו בעולמו | `vrkht_shkhkhh_lv_vvlmv` | instruction words |
+| ברכות | ברכת שלא חיסר בעולמו דבר | `vrkht_shl_chysr_vvlmv_dvr` | instruction words |
+| ברכות | ברכת שנתן מחכמתו לבשר ודם | `vrkht_shntn_mchkhmtv_lvshr_vdm` | instruction words |
+| ברכות | ברכת שנתן מכבודו לבשר ודם | `vrkht_shntn_mkhvvdv_lvshr_vdm` | instruction words |
+| ברכות | ברכת שעשה את הים הגדול | `vrkht_shshh_t_hym_hgdvl` | instruction words |
+| ברכות | ברשות אל איום | `vrshvt_l_yvm` | words |
+| ברכות | ה' מה אדם | `h_mh_dm` | instruction words |
+| ברכות | הנני מוכן | `hnny_mvkhn` | words |
+| ברכות | הרחמן ליום טוב | `hrchmn_lyvm_tvv` | instruction words |
+| ברכות | הרחמן לנסיבות שונות | `hrchmn_lnsyvvt_shvnvt` | instruction |
+| ברכות | הרחמן לסוכות | `hrchmn_lsvkhvt` | instruction words |
+| ברכות | הרחמן לראש השנה | `hrchmn_lrsh_hshnh` | instruction words |
+| ברכות | הרחמן לראש חודש | `hrchmn_lrsh_chvdsh` | instruction words |
+| ברכות | הרחמן לשבת | `hrchmn_lshvt` | instruction words |
+| ברכות | זה הכסא | `zh_hkhs` | instruction words |
+| ברכות | זה תחת זה | `zh_tcht_zh` | instruction words |
+| ברכות | חדשה לפני צידוק הדין | `chdshh_lfny_tzydvq_hdyn` | instruction |
+| ברכות | יהי שם ה' מבורך | `yhy_shm_h_mvvrkh` | instruction words |
+| ברכות | יעלה ויבוא בברכת המזון | `ylh_vyvv_vvrkht_hmzvn` | instruction |
+| ברכות | יעלה ויבוא לברכת המזון | `ylh_vyvv_lvrkht_hmzvn` | words |
+| ברכות | כללית לפני ברכות המצוות | `khllyt_lfny_vrkhvt_hmtzvvt` | instruction |
+| ברכות | כללית לפני ברכת המוציא | `khllyt_lfny_vrkht_hmvtzy` | instruction |
+| ברכות | כללית על פדיון הבן | `khllyt_l_fdyvn_hvn` | instruction |
+| ברכות | כשם שנכנס | `khshm_shnkhns` | words |
+| ברכות | מזמור כ"ג | `mzmvr_khg` | source whole words |
+| ברכות | מזמור קל"ז | `mzmvr_qlz` | source whole words |
+| ברכות | מזמן | `mzmn` | instruction |
+| ברכות | מטעם הרבנות הראשית הצבאית | `mtm_hrvnvt_hrshyt_htzvyt` | note words |
+| ברכות | מי אדיר | `my_dyr` | instruction words |
+| ברכות | מסובים ולמזמן | `msvvym_vlmzmn` | instruction |
+| ברכות | מענה האב | `mnh_hv` | instruction words |
+| ברכות | משולבת לברכות | `mshvlvt_lvrkhvt` | heading |
+| ברכות | נודה לשמך | `nvdh_lshmkh` | instruction words |
+| ברכות | נשבעה בטוב | `nshvh_vtvv` | words |
+| ברכות | על נהרות בבל | `l_nhrvt_vvl` | instruction |
+| ברכות | קהל לפני כשם שנכנס | `qhl_lfny_khshm_shnkhns` | instruction |
+| ברכות | קהל לפני נשבעה בטוב | `qhl_lfny_nshvh_vtvv` | instruction |
+| ברכות | קידושין | `qydvshyn` | instruction |
+| ברכות | קרוא את מזמור כ"ג | `qrv_t_mzmvr_khg` | instruction |
+| ברכות | רבותי נברך | `rvvty_nvrkh` | words |
+| ברכות | רצה והחליצנו | `rtzh_vhchlytznv` | instruction words |
+| ברכות | שאלת הכהן | `shlt_hkhhn` | instruction words |
+| ברכות | שבע ברכות | `shv_vrkhvt` | instruction |
+| ברכות | שיר המעלות בברכת המזון | `shyr_hmlvt_vvrkht_hmzvn` | instruction |
+| ברכות | תפילה לפני יציאה לקרב | `tfylh_lfny_ytzyh_lqrv` | words |
+| ברכות השחר וקרבנות | איזהו מקומן | `yzhv_mqvmn` | source |
+| ברכות השחר וקרבנות | אלו דברים | `lv_dvrym` | source words |
+| ברכות השחר וקרבנות | אלוהי נשמה | `lvhy_nshmh` | source words |
+| ברכות השחר וקרבנות | ברכות הבאות | `vrkhvt_hvvt` | source |
+| ברכות השחר וקרבנות | ברכת כהנים | `vrkht_khhnym` | source |
+| ברכות השחר וקרבנות | ברכת להניח תפילין | `vrkht_lhnych_tfylyn` | instruction words |
+| ברכות השחר וקרבנות | ברכת להתעטף בציצית | `vrkht_lhttf_vtzytzyt` | instruction words |
+| ברכות השחר וקרבנות | ברכת על מצות תפילין | `vrkht_l_mtzvt_tfylyn` | instruction words |
+| ברכות השחר וקרבנות | ברכת ציצית | `vrkht_tzytzyt` | words |
+| ברכות השחר וקרבנות | הקטורת | `hqtvrt` | source |
+| ברכות השחר וקרבנות | וארשתיך | `vrshtykh` | instruction words |
+| ברכות השחר וקרבנות | ושחט אותו | `vshcht_vtv` | source words |
+| ברכות השחר וקרבנות | חדשה להמשך בפסוקי דזמרה | `chdshh_lhmshkh_vfsvqy_dzmrh` | instruction |
+| ברכות השחר וקרבנות | יתומים | `ytvmym` | instruction |
+| ברכות השחר וקרבנות | כשמלובשים | `khshmlvvshym` | instruction |
+| ברכות השחר וקרבנות | כשמתעוררים בבוקר | `khshmtvrrym_vvvqr` | instruction |
+| ברכות השחר וקרבנות | כשנוטלים את הידיים | `khshnvtlym_t_hydyym` | instruction |
+| ברכות השחר וקרבנות | כשנכנסים לבית הכנסת | `khshnkhnsym_lvyt_hkhnst` | instruction |
+| ברכות השחר וקרבנות | מה יקר | `mh_yqr` | source words |
+| ברכות השחר וקרבנות | מוסף של ראש חודש | `mvsf_shl_rsh_chvdsh` | instruction source |
+| ברכות השחר וקרבנות | מוסף של שבת | `mvsf_shl_shvt` | instruction source |
+| ברכות השחר וקרבנות | סדר המערכה | `sdr_hmrkhh` | source words |
+| ברכות השחר וקרבנות | על ברכת ציצית למי שאינו מתעטף בטלית גדול | `l_vrkht_tzytzyt_lmy_shynv_mttf_vtlyt_gdvl` | instruction |
+| ברכות השחר וקרבנות | על ברכת ציצית לקטן | `l_vrkht_tzytzyt_lqtn` | instruction |
+| ברכות השחר וקרבנות | פיטום הקטורת מקורות | `fytvm_hqtvrt_mqvrvt` | plain |
+| ברכות השחר וקרבנות | פרשות קדש לי כל בכור, והיה כי יביאך | `frshvt_qdsh_ly_khl_vkhvr_vhyh_khy_yvykh` | source |
+| ברכות השחר וקרבנות | פרשת הכיור | `frsht_hkhyvr` | source words |
+| ברכות השחר וקרבנות | פרשת והיה כי יביאך | `frsht_vhyh_khy_yvykh` | source |
+| ברכות השחר וקרבנות | פרשת קדש לי כל בכור | `frsht_qdsh_ly_khl_vkhvr` | source |
+| ברכות השחר וקרבנות | קדש לי כל בכור | `qdsh_ly_khl_vkhvr` | words |
+| ברכות השחר וקרבנות | רבי ישמעאל | `rvy_yshml` | chunk source whole words |
+| ברכות השחר וקרבנות | שבת ויום טוב | `shvt_vyvm_tvv` | instruction |
+| ברכות השחר וקרבנות | שיבנה בית המקדש | `shyvnh_vyt_hmqdsh` | source |
+| ברכות השחר וקרבנות | תפילה לפני הנחת תפילין | `tfylh_lfny_hncht_tfylyn` | instruction |
+| ברכות השחר וקרבנות | תפילה לפני שמתעטפים בטלית | `tfylh_lfny_shmttfym_vtlyt` | instruction |
+| הגדה של פסח | אחרי והיא שעמדה | `chry_vhy_shmdh` | instruction |
+| הגדה של פסח | ברך על הכרפס | `vrkh_l_hkhrfs` | instruction |
+| הגדה של פסח | ברכה אחרונה | `vrkhh_chrvnh` | instruction |
+| הגדה של פסח | ברכת גאל ישראל | `vrkht_gl_yshrl` | instruction words |
+| הגדה של פסח | ברכת על אכילת מרור | `vrkht_l_khylt_mrvr` | instruction words |
+| הגדה של פסח | ברכת על נטילת ידיים | `vrkht_l_ntylt_ydyym` | instruction |
+| הגדה של פסח | דם ואש | `dm_vsh` | instruction words |
+| הגדה של פסח | דצ"ך עד"ש באח"ב | `dtzkh_dsh_vchv` | instruction words |
+| הגדה של פסח | הא לחמא עניא | `h_lchm_ny` | instruction words |
+| הגדה של פסח | הברכות על המצה | `hvrkhvt_l_hmtzh` | instruction |
+| הגדה של פסח | הללו עבדי ה | `hllv_vdy_h` | instruction |
+| הגדה של פסח | וידוי מעשרות | `vydvy_mshrvt` | source words |
+| הגדה של פסח | זכר למקדש כהלל | `zkhr_lmqdsh_khhll` | instruction words |
+| הגדה של פסח | חתימת הלל | `chtymt_hll` | note |
+| הגדה של פסח | חתימת ישתבח | `chtymt_yshtvch` | instruction |
+| הגדה של פסח | כל חמירא בבוקר | `khl_chmyr_vvvqr` | instruction words |
+| הגדה של פסח | כל חמירא בערב | `khl_chmyr_vrv` | instruction words |
+| הגדה של פסח | לא לנו | `l_lnv` | instruction |
+| הגדה של פסח | לגבי השותים חמש כוסות | `lgvy_hshvtym_chmsh_khvsvt` | note |
+| הגדה של פסח | לפיכך | `lfykhkh` | instruction words |
+| הגדה של פסח | מברכים ואז שותים בהסיבה | `mvrkhym_vz_shvtym_vhsyvh` | plain |
+| הגדה של פסח | מה נשתנה | `mh_nshtnh` | instruction words |
+| הגדה של פסח | מזיגת כוס חמישי | `mzygt_khvs_chmyshy` | instruction |
+| הגדה של פסח | מזיגת כוס שלישי | `mzygt_khvs_shlyshy` | instruction |
+| הגדה של פסח | מזיגת כוסות בתחילת הסדר | `mzygt_khvsvt_vtchylt_hsdr` | instruction |
+| הגדה של פסח | מעל פסגת הר הצופים מילים לפתיחה | `ml_fsgt_hr_htzvfym_mylym_lftychh` | words |
+| הגדה של פסח | מצה זו | `mtzh_zv` | instruction words |
+| הגדה של פסח | מקרא ביכורים | `mqr_vykhvrym` | source words |
+| הגדה של פסח | מרור זה | `mrvr_zh` | instruction words |
+| הגדה של פסח | ספירת העומר | `sfyrt_hvmr` | instruction |
+| הגדה של פסח | עבדים היינו | `vdym_hyynv` | instruction words |
+| הגדה של פסח | עירוב תבשילין | `yrvv_tvshylyn` | instruction |
+| הגדה של פסח | על שתיית הכוס האחרון | `l_shtyyt_hkhvs_hchrvn` | instruction |
+| הגדה של פסח | עשר מכות | `shr_mkhvt` | instruction words |
+| הגדה של פסח | פנ בדיקת חמץ | `fn_vdyqt_chmtz` | instruction |
+| הגדה של פסח | פרשה ראשונה | `frshh_rshvnh` | source words |
+| הגדה של פסח | פרשה רביעית | `frshh_rvyyt` | source words |
+| הגדה של פסח | פרשה שלישית | `frshh_shlyshyt` | source words |
+| הגדה של פסח | פרשה שנייה | `frshh_shnyyh` | source words |
+| הגדה של פסח | פרשת לשונות גאולה | `frsht_lshvnvt_gvlh` | source words |
+| הגדה של פסח | צא ולמד | `tz_vlmd` | words |
+| הגדה של פסח | קערת הסדר תמונה | `qrt_hsdr_tmvnh` | plain |
+| הגדה של פסח | שתיית כוס ראשון | `shtyyt_khvs_rshvn` | instruction |
+| הלל | אהבתי | `hvty` | instruction source words |
+| הלל | אודך | `vdkh` | instruction words |
+| הלל | אחרי הפיוט קול מבשר | `chry_hfyvt_qvl_mvshr` | instruction |
+| הלל | אנא אל נא הושע נא והושיעה נא | `n_l_n_hvsh_n_vhvshyh_n` | words |
+| הלל | אנא אל נא הושע נא והושיעה נא אבינו אתה | `n_l_n_hvsh_n_vhvshyh_n_vynv_th` | instruction words |
+| הלל | אנא אל נא הושע נא והושיעה נא. | `n_l_n_hvsh_n_vhvshyh_n` | instruction |
+| הלל | אנא ה | `n_h` | instruction words |
+| הלל | אנא הושיעה נא | `n_hvshyh_n` | instruction words |
+| הלל | אני והו הושיעה נא | `ny_vhv_hvshyh_n` | instruction words |
+| הלל | בצאת ישראל | `vtzt_yshrl` | source words |
+| הלל | ברוך הבא | `vrvkh_hv` | instruction words |
+| הלל | ה' זכרנו יברך | `h_zkhrnv_yvrkh` | source words |
+| הלל | הוספת פסוק בהושענא רבה | `hvsft_fsvq_vhvshn_rvh` | instruction verse |
+| הלל | הושע נא אל נא | `hvsh_n_l_n` | instruction words |
+| הלל | הללו את ה' כל גוים | `hllv_t_h_khl_gvym` | source words |
+| הלל | הפיוט קול מבשר | `hfyvt_qvl_mvshr` | instruction |
+| הלל | הריני מוכן לנטילת לולב | `hryny_mvkhn_lntylt_lvlv` | instruction |
+| הלל | חדשה בשבת להמשיך אום נצורה כבבת | `chdshh_vshvt_lhmshykh_vm_ntzvrh_khvvt` | instruction |
+| הלל | חדשה להמשיך ב"אני והו הושיעה נא | `chdshh_lhmshykh_vny_vhv_hvshyh_n` | instruction |
+| הלל | חדשה על המשך אחרי חבטת הערבות | `chdshh_l_hmshkh_chry_chvtt_hrvvt` | continuation instruction |
+| הלל | חדשה על המשך בקריאת התורה לחול | `chdshh_l_hmshkh_vqryt_htvrh_lchvl` | continuation instruction |
+| הלל | חדשה על המשך בקריאת התורה ליום טוב | `chdshh_l_hmshkh_vqryt_htvrh_lyvm_tvv` | continuation instruction |
+| הלל | יהללוך | `yhllvkh` | whole words |
+| הלל | נענע | `nn` | instruction |
+| הלל | על המשך אחרי חבטת הערבות | `l_hmshkh_chry_chvtt_hrvvt` | continuation instruction |
+| הלל | על המשך בקריאת התורה ליום טוב | `l_hmshkh_vqryt_htvrh_lyvm_tvv` | continuation instruction |
+| הלל | על חבטת הערבות | `l_chvtt_hrvvt` | instruction |
+| הלל | על קדיש | `l_qdysh` | instruction |
+| הלל | קול מבשר מבשר ואומר | `qvl_mvshr_mvshr_vvmr` | words |
+| הלל | רחם נא קהל עדת ישורון | `rchm_n_qhl_dt_yshvrvn` | words |
+| הלל | שהחיינו על נטילת לולב | `shhchyynv_l_ntylt_lvlv` | instruction |
+| יום הכיפורים | זאת חליפתנו | `zt_chlyftnv` | instruction words |
+| יום הכיפורים | זה חליפתנו | `zh_chlyftnv` | instruction words |
+| ימי הודאה | 1 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | instruction |
+| ימי הודאה | 1 לפני תפילת ערבית ביום העצמאות | `lfny_tfylt_rvyt_vyvm_htzmvt` | instruction |
+| ימי הודאה | 2 לפני תפילת ערבית ביום העצמאות | `lfny_tfylt_rvyt_vyvm_htzmvt` | instruction |
+| ימי הודאה | 3 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | instruction |
+| ימי הודאה | אני מאמין | `ny_mmyn` | instruction |
+| ימי הודאה | בסוף תפילת ערבית לפני אם אשכחך | `vsvf_tfylt_rvyt_lfny_m_shkhchkh` | instruction |
+| ימי הודאה | ברך לפני קריאת המגילה | `vrkh_lfny_qryt_hmgylh` | instruction |
+| ימי הודאה | ברכת הרב את ריבנו | `vrkht_hrv_t_ryvnv` | instruction words |
+| ימי הודאה | ברכת שהחיינו בחנוכה | `vrkht_shhchyynv_vchnvkhh` | instruction |
+| ימי הודאה | גבי מזמורים נוספים ביום ירושלים | `gvy_mzmvrym_nvsfym_vyvm_yrvshlym` | instruction |
+| ימי הודאה | ה' הוא האלהים | `h_hv_hlhym` | instruction |
+| ימי הודאה | הבתים מ"לכה דודי | `hvtym_mlkhh_dvdy` | instruction |
+| ימי הודאה | הבתים מ"לכה דודי" ביום ירושלים | `hvtym_mlkhh_dvdy_vyvm_yrvshlym` | note |
+| ימי הודאה | ההוראה לפני תפילת ערבית ביום ירושלים | `hhvrh_lfny_tfylt_rvyt_vyvm_yrvshlym` | note |
+| ימי הודאה | המזמורים צ"ז-צ"ח | `hmzmvrym_tzztzch` | instruction |
+| ימי הודאה | הנרות הללו | `hnrvt_hllv` | instruction words |
+| ימי הודאה | הפטרת עוד היום בנוב לעמוד | `hftrt_vd_hyvm_vnvv_lmvd` | instruction |
+| ימי הודאה | השיר בר יוחאי | `hshyr_vr_yvchy` | note whole words |
+| ימי הודאה | וכי תבואו | `vkhy_tvvv` | instruction source words |
+| ימי הודאה | חשוף זרוע | `chshvf_zrv` | instruction |
+| ימי הודאה | יהי רצון שכשם שזכינו | `yhy_rtzvn_shkhshm_shzkhynv` | instruction words |
+| ימי הודאה | לשנה הבאה | `lshnh_hvh` | instruction |
+| ימי הודאה | מועדים לשמחה | `mvdym_lshmchh` | instruction words |
+| ימי הודאה | מזמור ק"ז | `mzmvr_qz` | instruction source whole words |
+| ימי הודאה | מזמור קכ"ב | `mzmvr_qkhv` | source words |
+| ימי הודאה | מי שעשה ניסים | `my_shshh_nysym` | instruction |
+| ימי הודאה | על הפטרה ליום ירושלים | `l_hftrh_lyvm_yrvshlym` | instruction |
+| ימי הודאה | על סוף תפילת ערבית ביום ירושלים | `l_svf_tfylt_rvyt_vyvm_yrvshlym` | instruction |
+| ימי הודאה | שושנת יעקב | `shvshnt_yqv` | instruction words |
+| ימי הודאה | שיר המעלות | `shyr_hmlvt` | instruction |
+| ימי הודאה | תפילת ערבית ביום העצמאות | `tfylt_rvyt_vyvm_htzmvt` | instruction |
+| ימי הודאה | תפילת ערבית ביום ירושלים | `tfylt_rvyt_vyvm_yrvshlym` | instruction |
+| כניסת שבת ויום טוב | בקריאת שמע וברכותיה לערבית בשבת ויום טוב | `vqryt_shm_vvrkhvtyh_lrvyt_vshvt_vyvm_tvv` | continuation |
+| כניסת שבת ויום טוב | ברכת שהחיינו | `vrkht_shhchyynv` | instruction words |
+| כניסת שבת ויום טוב | חדשה לפני קבלת שבת | `chdshh_lfny_qvlt_shvt` | instruction |
+| כניסת שבת ויום טוב | יום טוב שחל בשבת | `yvm_tvv_shchl_vshvt` | instruction |
+| כניסת שבת ויום טוב | לכה דודי | `lkhh_dvdy` | instruction |
+| כניסת שבת ויום טוב | מזמור צ"ב | `mzmvr_tzv` | source |
+| כניסת שבת ויום טוב | מזמור צ"ג | `mzmvr_tzg` | source whole words |
+| כניסת שבת ויום טוב | מזמור צ"ה | `mzmvr_tzh` | source whole words |
+| כניסת שבת ויום טוב | מזמור צ"ז | `mzmvr_tzz` | source whole words |
+| כניסת שבת ויום טוב | מזמור צ"ח | `mzmvr_tzch` | source whole words |
+| כניסת שבת ויום טוב | מזמור צ"ט | `mzmvr_tzt` | source whole words |
+| כניסת שבת ויום טוב | נוסח ידיד נפש שבסידורים | `ydyd_nfsh_nvsch_chr_shndfs_vtvkh_sydvrym_rvym` | heading |
+| כניסת שבת ויום טוב | ניחום אבלים אחרי לכה דודי | `nychvm_vlym_chry_lkhh_dvdy` | instruction words |
+| כניסת שבת ויום טוב | עירוב תשבילין | `yrvv_tshvylyn` | instruction |
+| כניסת שבת ויום טוב | פרק א | `` | chunk heading whole |
+| כניסת שבת ויום טוב | פרק ב | `v` | chunk heading |
+| כניסת שבת ויום טוב | פרק ג | `g` | chunk heading |
+| כניסת שבת ויום טוב | פרק ד | `d` | chunk heading |
+| כניסת שבת ויום טוב | פרק ה | `h` | chunk heading |
+| כניסת שבת ויום טוב | פרק ו | `v` | chunk heading |
+| כניסת שבת ויום טוב | פרק ז | `z` | heading whole |
+| כניסת שבת ויום טוב | פרק ח | `ch` | chunk heading |
+| כניסת שבת ויום טוב | שמור וזכור | `shmvr_vzkhvr` | words |
+| סוף התפילה | אל נקמות | `l_nqmvt` | source words |
+| סוף התפילה | בקידוש לליל שבת | `vqydvsh_llyl_shvt` | continuation |
+| סוף התפילה | בקידושא רבה ליום שבת | `vqydvsh_rvh_lyvm_shvt` | continuation |
+| סוף התפילה | ברוך ה' המבורך | `vrvkh_h_hmvvrkh` | instruction |
+| סוף התפילה | ברכי נפשי | `vrkhy_nfshy` | instruction |
+| סוף התפילה | ברכת איש את רעהו | `vrkht_ysh_t_rhv` | instruction whole words |
+| סוף התפילה | הבדלה בבית הכנסת | `hvdlh_vvyt_hkhnst` | instruction |
+| סוף התפילה | הללו את ה' מן השמים | `hllv_t_h_mn_hshmym` | source |
+| סוף התפילה | הרחמן | `hrchmn` | instruction |
+| סוף התפילה | השיר שהיו הלויים אומרים | `hshyr_shhyv_hlvyym_vmrym` | source |
+| סוף התפילה | חדשה אחרי הבדלה בבית הכנסת | `chdshh_chry_hvdlh_vvyt_hkhnst` | instruction |
+| סוף התפילה | חדשה לספירת העומר והדלקת נרות חנוכה במוצ"ש | `chdshh_lsfyrt_hvmr_vhdlqt_nrvt_chnvkhh_vmvtzsh` | instruction |
+| סוף התפילה | חדשה לספירת העומר לפני עלינו לשבח | `chdshh_lsfyrt_hvmr_lfny_lynv_lshvch` | instruction |
+| סוף התפילה | חדשה לפני פרקי אבות | `chdshh_lfny_frqy_vvt` | instruction |
+| סוף התפילה | חדשה שנייה אחרי הבדלה בבית הכנסת | `chdshh_shnyyh_chry_hvdlh_vvyt_hkhnst` | instruction |
+| סוף התפילה | כל השונה הלכות | `khl_hshvnh_hlkhvt` | source words |
+| סוף התפילה | מזמור ט"ז | `mzmvr_tz` | source |
+| סוף התפילה | מזמור כ"ד | `mzmvr_khd` | source whole words |
+| סוף התפילה | מזמור כ"ז | `mzmvr_khz` | source |
+| סוף התפילה | מזמור מ"ט | `mzmvr_mt` | source |
+| סוף התפילה | מזמור ס"ז | `mzmvr_sz` | source words |
+| סוף התפילה | מזמור פ"א | `mzmvr_f` | source whole words |
+| סוף התפילה | מזמור פ"ב | `mzmvr_fv` | source whole words |
+| סוף התפילה | מזמור צ"ג | `mzmvr_tzg` | source whole words |
+| סוף התפילה | מזמור ק"כ | `mzmvr_qkh` | source whole words |
+| סוף התפילה | מזמור ק"ל | `mzmvr_ql` | source whole words |
+| סוף התפילה | מזמור קכ"ב | `mzmvr_qkhv` | source whole words |
+| סוף התפילה | מזמור קכ"ג | `mzmvr_qkhg` | source whole words |
+| סוף התפילה | מזמור קכ"ד | `mzmvr_qkhd` | source whole words |
+| סוף התפילה | מזמור קכ"ה | `mzmvr_qkhh` | source whole words |
+| סוף התפילה | מזמור קכ"ו | `mzmvr_qkhv` | source whole words |
+| סוף התפילה | מזמור קכ"ז | `mzmvr_qkhz` | source whole words |
+| סוף התפילה | מזמור קכ"ט | `mzmvr_qkht` | source whole words |
+| סוף התפילה | מזמור קל"א | `mzmvr_ql` | source whole words |
+| סוף התפילה | מזמור קל"ב | `mzmvr_qlv` | source whole words |
+| סוף התפילה | מזמור קל"ג | `mzmvr_qlg` | source whole words |
+| סוף התפילה | מזמור קל"ד | `mzmvr_qld` | source whole words |
+| סוף התפילה | ספירת העומר לפני עלינו לשבח | `sfyrt_hvmr_lfny_lynv_lshvch` | instruction |
+| סוף התפילה | על קדיש אחרי לדוד | `l_qdysh_chry_ldvd` | instruction |
+| סוף התפילה | על קדיש אחרי מכתם לדוד | `l_qdysh_chry_mkhtm_ldvd` | instruction |
+| סוף התפילה | על קדיש אחרי שמעו זאת | `l_qdysh_chry_shmv_zt` | instruction |
+| סוף התפילה | על קדיש יתום אחרי מזמור שיר ליום השבת | `l_qdysh_ytvm_chry_mzmvr_shyr_lyvm_hshvt` | instruction |
+| סוף התפילה | על קדיש יתום אחרי שיר הכבוד | `l_qdysh_ytvm_chry_shyr_hkhvvd` | instruction |
+| סוף התפילה | על קדיש יתום אחרי שיר של יום | `l_qdysh_ytvm_chry_shyr_shl_yvm` | instruction |
+| סוף התפילה | על שיר ליום חמישי | `l_shyr_lyvm_chmyshy` | instruction |
+| סוף התפילה | על שיר ליום רביעי | `l_shyr_lyvm_rvyy` | instruction |
+| סוף התפילה | על שיר ליום שישי | `l_shyr_lyvm_shyshy` | instruction |
+| סוף התפילה | על שיר ליום שלישי | `l_shyr_lyvm_shlyshy` | instruction |
+| סוף התפילה | על שיר ליום שני | `l_shyr_lyvm_shny` | instruction |
+| סוף התפילה | על שיר של יום | `l_shyr_shl_yvm` | instruction |
+| סוף התפילה | פיטום הקטורת | `fytvm_hqtvrt` | source words |
+| סוף התפילה | קדיש יתום אחרי ברכת הלבנה | `qdysh_ytvm_chry_vrkht_hlvnh` | instruction |
+| סוף התפילה | קידוש בבית הכנסת | `qydvsh_vvyt_hkhnst` | instruction |
+| סוף התפילה | שהם משתחווים | `shhm_mshtchvvym` | note words |
+| סוף התפילה | שיר של יום ביום טוב שלא בשבת | `shyr_shl_yvm_vyvm_tvv_shl_vshvt` | instruction |
+| סוף התפילה | תנא דבי רבי ישמעאל | `tn_dvy_rvy_yshml` | source words |
+| סוף התפילה | תקוע בשופר | `tqv_vshvfr` | instruction |
+| פסוקי דזמרה | אתה הוא ה' לבדך | `th_hv_h_lvdkh` | source whole words |
+| פסוקי דזמרה | אתה הוא ה' לבדך מילים א | `th_hv_h_lvdkh_mylym` | words |
+| פסוקי דזמרה | אתה הוא ה' לבדך מילים ב | `th_hv_h_lvdkh_mylym_v` | words |
+| פסוקי דזמרה | בקריאת שמע וברכותיה לשחרית ביום חול | `vqryt_shm_vvrkhvtyh_lshchryt_vyvm_chvl` | continuation |
+| פסוקי דזמרה | בקריאת שמע וברכותיה לשחרית בשבת ויום טוב | `vqryt_shm_vvrkhvtyh_lshchryt_vshvt_vyvm_tvv` | continuation |
+| פסוקי דזמרה | האל בתעצומות | `hl_vttzvmvt` | words |
+| פסוקי דזמרה | המשיך בישתבח בהושענא רבה, ביום העצמאות וביום ירושלים | `hmshykh_vyshtvch_vhvshn_rvh_vyvm_htzmvt_vvyvm_yrvshlym` | instruction |
+| פסוקי דזמרה | ויברך דוד | `vyvrkh_dvd` | source words |
+| פסוקי דזמרה | ויושע ה' ביום ההוא | `vyvsh_h_vyvm_hhv` | source whole words |
+| פסוקי דזמרה | ומר את ברכות השחר | `vmr_t_vrkhvt_hshchr` | instruction |
+| פסוקי דזמרה | חדשה לומר את ברכות השחר | `chdshh_lvmr_t_vrkhvt_hshchr` | instruction |
+| פסוקי דזמרה | ישתבח לש"ץ לתפילת שחרית | `yshtvch_lshtz_ltfylt_shchryt` | instruction |
+| פסוקי דזמרה | מזמור י"ט | `mzmvr_yt` | source whole words |
+| פסוקי דזמרה | מזמור י"ט מילים א | `mzmvr_yt_mylym` | words |
+| פסוקי דזמרה | מזמור י"ט מילים ב | `mzmvr_yt_mylym_v` | words |
+| פסוקי דזמרה | מזמור ל"ג מילים א | `mzmvr_lg_mylym` | words |
+| פסוקי דזמרה | מזמור ל"ג מילים ב | `mzmvr_lg_mylym_v` | words |
+| פסוקי דזמרה | מזמור ל"ד מילים א | `mzmvr_ld_mylym` | words |
+| פסוקי דזמרה | מזמור ל"ד מילים ב | `mzmvr_ld_mylym_v` | words |
+| פסוקי דזמרה | מזמור לתודה | `mzmvr_ltvdh` | source whole words |
+| פסוקי דזמרה | מזמור לתודה מילים א | `mzmvr_ltvdh_mylym` | words |
+| פסוקי דזמרה | מזמור לתודה מילים ב | `mzmvr_ltvdh_mylym_v` | words |
+| פסוקי דזמרה | מזמור צ | `mzmvr_tz` | source whole words |
+| פסוקי דזמרה | מזמור צ"ב מילים א | `mzmvr_tzv_mylym` | words |
+| פסוקי דזמרה | מזמור צ"ב מילים ב | `mzmvr_tzv_mylym_v` | words |
+| פסוקי דזמרה | מזמור צ"ג | `mzmvr_tzg` | source whole words |
+| פסוקי דזמרה | מזמור צ"ג מילים א | `mzmvr_tzg_mylym` | words |
+| פסוקי דזמרה | מזמור צ"ג מילים ב | `mzmvr_tzg_mylym_v` | words |
+| פסוקי דזמרה | מזמור צ' מילים א | `mzmvr_tz_mylym` | words |
+| פסוקי דזמרה | מזמור צ' מילים ב | `mzmvr_tz_mylym_v` | words |
+| פסוקי דזמרה | מזמור ק"נ מילים א | `mzmvr_qn_mylym` | words |
+| פסוקי דזמרה | מזמור ק"נ מילים ב | `mzmvr_qn_mylym_v` | words |
+| פסוקי דזמרה | מזמור קל"ה מילים א | `mzmvr_qlh_mylym` | words |
+| פסוקי דזמרה | מזמור קל"ה מילים ב | `mzmvr_qlh_mylym_v` | words |
+| פסוקי דזמרה | מזמור קמ"ה | `mzmvr_qmh` | source |
+| פסוקי דזמרה | מזמור קמ"ו | `mzmvr_qmv` | chunk source whole words |
+| פסוקי דזמרה | מזמור קמ"ו מילים א | `mzmvr_qmv_mylym` | words |
+| פסוקי דזמרה | מזמור קמ"ו מילים ב | `mzmvr_qmv_mylym_v` | words |
+| פסוקי דזמרה | מזמור קמ"ז | `mzmvr_qmz` | source whole words |
+| פסוקי דזמרה | מזמור קמ"ז מילים א | `mzmvr_qmz_mylym` | words |
+| פסוקי דזמרה | מזמור קמ"ז מילים ב | `mzmvr_qmz_mylym_v` | words |
+| פסוקי דזמרה | מזמור קמ"ח מילים א | `mzmvr_qmch_mylym` | words |
+| פסוקי דזמרה | מזמור קמ"ח מילים ב | `mzmvr_qmch_mylym_v` | words |
+| פסוקי דזמרה | מזמור קמ"ט | `mzmvr_qmt` | source whole words |
+| פסוקי דזמרה | מזמור שיר חנוכת הבית | `mzmvr_shyr_chnvkht_hvyt` | source whole words |
+| פסוקי דזמרה | סיום פסוקי דזמרה בימים הנוראים | `syvm_fsvqy_dzmrh_vymym_hnvrym` | instruction |
+| פסוקי דזמרה | פסוקי דזמרה בהושענא רבה, ביום העצמאות וביום ירושלים | `fsvqy_dzmrh_vhvshn_rvh_vyvm_htzmvt_vvyvm_yrvshlym` | instruction |
+| פסוקי דזמרה | ש"ץ ביום טוב האל בתעצומות | `shtz_vyvm_tvv_hl_vttzvmvt` | instruction |
+| פסוקי דזמרה | ש"ץ בימים הנוראים המלך | `shtz_vymym_hnvrym_hmlkh` | instruction |
+| פסוקי דזמרה | ש"ץ בשבת שוכן עד | `shtz_vshvt_shvkhn_d` | instruction |
+| פסוקי דזמרה | שוכן עד | `shvkhn_d` | words |
+| פסוקי דזמרה | שיר המעלות | `shyr_hmlvt` | instruction |
+| קדיש | אבלים לפני קדיש | `vlym_lfny_qdysh` | instruction |
+| קדיש | ש"ץ לפני קדיש | `shtz_lfny_qdysh` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | בזמירות ליום שבת | `vzmyrvt_lyvm_shvt` | continuation |
+| קידוש והבדלה וסעודות שבת ויום טוב | בזמירות לליל שבת | `vzmyrvt_llyl_shvt` | continuation |
+| קידוש והבדלה וסעודות שבת ויום טוב | בזמירות למוצאי שבת | `vzmyrvt_lmvtzy_shvt` | continuation |
+| קידוש והבדלה וסעודות שבת ויום טוב | בקידוש ליום טוב לפני בורא מאורי האש | `vqydvsh_lyvm_tvv_lfny_vvr_mvry_hsh` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | בקידוש לשלוש רגלים לפני ברכת לישב בסוכה | `vqydvsh_lshlvsh_rglym_lfny_vrkht_lyshv_vsvkhh` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | בקידוש לשלוש רגלים לפני ברכת שהחיינו | `vqydvsh_lshlvsh_rglym_lfny_vrkht_shhchyynv` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת לישב בסוכה | `vrkht_lyshv_vsvkhh` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | הבדלה בבית הכנסת | `hvdlh_vvyt_hkhnst` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | הזמירות לליל שבת | `hzmyrvt_llyl_shvt` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | ויהי ערב ויהי בוקר בקידוש לליל יום טוב | `vyhy_rv_vyhy_vvqr_vqydvsh_llyl_yvm_tvv` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | ושמרו | `vshmrv` | source |
+| קידוש והבדלה וסעודות שבת ויום טוב | ושמרו בקידושא רבה לשלוש רגלים | `vshmrv_vqydvsh_rvh_lshlvsh_rglym` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | זכור את יום השבת | `zkhvr_t_yvm_hshvt` | source |
+| קידוש והבדלה וסעודות שבת ויום טוב | זמירות ליום שבת כותרת משולבת | `zmyrvt_lyvm_shvt_khvtrt_mshvlvt` | heading |
+| קידוש והבדלה וסעודות שבת ויום טוב | יהי רצון לאושפיזין | `yhy_rtzvn_lvshfyzyn` | instruction words |
+| קידוש והבדלה וסעודות שבת ויום טוב | יהי רצון על תפוח בדבש | `yhy_rtzvn_l_tfvch_vdvsh` | instruction words |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום החמישי | `yvm_hchmyshy` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום הראשון | `yvm_hrshvn` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום הרביעי | `yvm_hrvyy` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום השביעי | `yvm_hshvyy` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום השישי | `yvm_hshyshy` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום השלישי | `yvm_hshlyshy` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום השני | `yvm_hshny` | instruction |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום החמישי | `mylym_lyvm_hchmyshy` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום הראשון | `mylym_lyvm_hrshvn` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום הרביעי | `mylym_lyvm_hrvyy` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השביעי | `mylym_lyvm_hshvyy` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השישי | `mylym_lyvm_hshyshy` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השלישי | `mylym_lyvm_hshlyshy` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השני | `mylym_lyvm_hshny` | words |
+| קידוש והבדלה וסעודות שבת ויום טוב | משולבת לזמירות למוצאי שבת | `mshvlvt_lzmyrvt_lmvtzy_shvt` | heading |
+| קידוש והבדלה וסעודות שבת ויום טוב | פשוטה "זמירות" למוצ"ש | `fshvth_zmyrvt_lmvtzsh` | heading |
+| קידוש והבדלה וסעודות שבת ויום טוב | שלום עליכם | `shlvm_lykhm` | instruction whole words |
+| קריאת התורה | אב הרחמים בסוף יזכור | `v_hrchmym_vsvf_yzkhvr` | instruction |
+| קריאת התורה | אב הרחמים שוכן מרומים | `v_hrchmym_shvkhn_mrvmym` | instruction |
+| קריאת התורה | אבינו שבשמים אל אלוהי הרוחות לכל בשר | `vynv_shvshmym_l_lvhy_hrvchvt_lkhl_vshr` | words |
+| קריאת התורה | אחד אלהינו | `chd_lhynv` | instruction words |
+| קריאת התורה | אחד אלוהינו בהקפות | `chd_lvhynv_vhqfvt` | instruction |
+| קריאת התורה | אחרי ובנוחה יאמר | `chry_vvnvchh_ymr` | instruction |
+| קריאת התורה | אין כמוך באלהים | `yn_khmvkh_vlhym` | instruction words |
+| קריאת התורה | אתה הראת | `th_hrt` | instruction words |
+| קריאת התורה | בסוף ההקפות לפני שמע ישראל | `vsvf_hhqfvt_lfny_shm_yshrl` | instruction |
+| קריאת התורה | בסוף תפילת ערבית ליום הזיכרון | `vsvf_tfylt_rvyt_lyvm_hzykhrvn` | instruction |
+| קריאת התורה | בסוף תפילת שחרית לחול | `vsvf_tfylt_shchryt_lchvl` | continuation |
+| קריאת התורה | בסוף תפילת שחרית ליום הזיכרון | `vsvf_tfylt_shchryt_lyvm_hzykhrvn` | instruction |
+| קריאת התורה | בקדושה דסדרא לשחרית בחול | `vqdvshh_dsdr_lshchryt_vchvl` | continuation |
+| קריאת התורה | ברוך שפטרנו | `vrvkh_shftrnv` | instruction words |
+| קריאת התורה | ברך לאחר הקריאה | `vrkh_lchr_hqryh` | instruction |
+| קריאת התורה | ברכות אחרי קריאת ההפטרה | `vrkhvt_chry_qryt_hhftrh` | instruction |
+| קריאת התורה | ברכת ההפטרה | `vrkht_hhftrh` | instruction note |
+| קריאת התורה | ברכת על התורה ליום טוב | `vrkht_l_htvrh_lyvm_tvv` | instruction |
+| קריאת התורה | ברכת על התורה לשבת | `vrkht_l_htvrh_lshvt` | instruction |
+| קריאת התורה | בתפילת העמידה למוסף של שבת | `vtfylt_hmydh_lmvsf_shl_shvt` | continuation |
+| קריאת התורה | גבי אבינו שבשמים אל אלוהי הרוחות לכל בשר | `gvy_vynv_shvshmym_l_lvhy_hrvchvt_lkhl_vshr` | instruction |
+| קריאת התורה | גדלו בהקפות | `gdlv_vhqfvt` | instruction |
+| קריאת התורה | גדלו בשבת ויום טוב | `gdlv_vshvt_vyvm_tvv` | instruction |
+| קריאת התורה | ההקפות | `hhqfvt` | instruction |
+| קריאת התורה | הודו על ארץ ושמים | `hvdv_l_rtz_vshmym` | instruction words |
+| קריאת התורה | הכרזת החודש | `hkhrzt_hchvdsh` | instruction words |
+| קריאת התורה | הנותן תשועה בארה"ב | `hnvtn_tshvh_vrhv` | instruction |
+| קריאת התורה | הניח את ספר התורה | `hnych_t_sfr_htvrh` | instruction |
+| קריאת התורה | התפילה בשלומה של מלכות בארצות הברית | `htfylh_vshlvmh_shl_mlkhvt_vrtzvt_hvryt` | note |
+| קריאת התורה | התפילה לשבויים | `htfylh_lshvvyym` | note |
+| קריאת התורה | התפילה לשלום המדינה | `htfylh_lshlvm_hmdynh` | note |
+| קריאת התורה | התפילה לשלום חיילי צה"ל | `htfylh_lshlvm_chyyly_tzhl` | note |
+| קריאת התורה | ואתם הדבקים | `vtm_hdvqym` | instruction words |
+| קריאת התורה | ובנוחה יאמר | `vvnvchh_ymr` | instruction words |
+| קריאת התורה | והיטבך והרבך מאבותיך | `vhytvkh_vhrvkh_mvvtykh` | note |
+| קריאת התורה | וזאת התורה | `vzt_htvrh` | instruction words |
+| קריאת התורה | זכרון אב | `zkhrvn_v` | instruction |
+| קריאת התורה | זכרון אישה | `zkhrvn_yshh` | instruction |
+| קריאת התורה | זכרון אם | `zkhrvn_m` | instruction |
+| קריאת התורה | זכרון בעל | `zkhrvn_vl` | instruction |
+| קריאת התורה | זכרון חללי צה"ל | `zkhrvn_chlly_tzhl` | instruction |
+| קריאת התורה | זכרון קדושי השואה יד ושם ארוך | `zkhrvn_qdvshy_hshvh_yd_vshm_rvkh` | instruction |
+| קריאת התורה | זכרון קדושי השואה יד ושם קצר | `zkhrvn_qdvshy_hshvh_yd_vshm_qtzr` | instruction |
+| קריאת התורה | זכרון קדושים | `zkhrvn_qdvshym` | instruction |
+| קריאת התורה | חדשה אחרי ההקפות | `chdshh_chry_hhqfvt` | instruction |
+| קריאת התורה | חדשה למוסף של יום טוב | `chdshh_lmvsf_shl_yvm_tvv` | instruction |
+| קריאת התורה | חדשה למנחה ביום טוב | `chdshh_lmnchh_vyvm_tvv` | instruction |
+| קריאת התורה | חדשה על מוסף לראש חודש וחול המועד | `chdshh_l_mvsf_lrsh_chvdsh_vchvl_hmvd` | instruction |
+| קריאת התורה | חצי קדיש אחרי קריאת התורה | `chtzy_qdysh_chry_qryt_htvrh` | instruction |
+| קריאת התורה | י"ג מידות | `yg_mydvt` | words |
+| קריאת התורה | י"ג מידות ביום טוב | `yg_mydvt_vyvm_tvv` | instruction |
+| קריאת התורה | יהי רצון | `yhy_rtzvn` | instruction |
+| קריאת התורה | יהללו | `yhllv` | instruction |
+| קריאת התורה | יזכור לחללי צה"ל | `yzkhvr_lchlly_tzhl` | words |
+| קריאת התורה | יחדשהו בנוסח ארץ ישראל | `ychdshhv_vnvsch_rtz_yshrl` | instruction words |
+| קריאת התורה | יחדשהו בנוסח חוץ לארץ | `ychdshhv_vnvsch_chvtz_lrtz` | instruction words |
+| קריאת התורה | כללית לפני הנותן תשועה | `khllyt_lfny_hnvtn_tshvh` | instruction |
+| קריאת התורה | לך ה | `lkh_h` | instruction |
+| קריאת התורה | מאת הרב הצבאי הראשי | `mt_hrv_htzvy_hrshy` | plain |
+| קריאת התורה | מאת הרבנים הראשיים לישראל | `mt_hrvnym_hrshyym_lyshrl` | plain |
+| קריאת התורה | מאת הרבנים הראשיים שבארץ ישראל | `mt_hrvnym_hrshyym_shvrtz_yshrl` | plain |
+| קריאת התורה | מוסף של יום טוב | `mvsf_shl_yvm_tvv` | instruction |
+| קריאת התורה | מזמור ט | `mzmvr_t` | source words |
+| קריאת התורה | מזמור ט' בערבית | `mzmvr_t_vrvyt` | instruction |
+| קריאת התורה | מזמור ט' בשחרית | `mzmvr_t_vshchryt` | instruction |
+| קריאת התורה | מזמור כ | `mzmvr_kh` | source |
+| קריאת התורה | מזמור לדוד | `mzmvr_ldvd` | instruction |
+| קריאת התורה | מזמור פ"ג | `mzmvr_fg` | source words |
+| קריאת התורה | מזמור צ"א | `mzmvr_tz` | source |
+| קריאת התורה | מזמור קמ"ד | `mzmvr_qmd` | instruction |
+| קריאת התורה | מזמורים נוספים ליום השואה | `mzmvrym_nvsfym_lyvm_hshvh` | plain |
+| קריאת התורה | מי שעשה ניסים | `my_shshh_nysym` | instruction words |
+| קריאת התורה | מנחה ביום טוב | `mnchh_vyvm_tvv` | instruction |
+| קריאת התורה | נכתבה על ידי הרב שלמה גורן | `nkhtvh_l_ydy_hrv_shlmh_gvrn` | plain |
+| קריאת התורה | עולה לתורה ברכו | `vlh_ltvrh_vrkhv` | instruction |
+| קריאת התורה | עולה לתורה לברך | `vlh_ltvrh_lvrkh` | instruction |
+| קריאת התורה | על הוצאת ספר תורה | `l_hvtzt_sfr_tvrh` | instruction |
+| קריאת התורה | על התורה ליום טוב | `l_htvrh_lyvm_tvv` | words |
+| קריאת התורה | על התורה לשבת | `l_htvrh_lshvt` | words |
+| קריאת התורה | על מוסף לראש חודש וחול המועד | `l_mvsf_lrsh_chvdsh_vchvl_hmvd` | instruction |
+| קריאת התורה | על קריאת התורה בימי חול | `l_qryt_htvrh_vymy_chvl` | instruction |
+| קריאת התורה | קדיש יתום בערבית ליום הזיכרון | `qdysh_ytvm_vrvyt_lyvm_hzykhrvn` | instruction |
+| קריאת התורה | קהל לענות ברוך ה' המבורך | `qhl_lnvt_vrvkh_h_hmvvrkh` | instruction |
+| קריאת התורה | קהל לענות לברכת הגומל | `qhl_lnvt_lvrkht_hgvml` | instruction |
+| קריאת התורה | ש"ץ לחצי קדיש לפני מוסף | `shtz_lchtzy_qdysh_lfny_mvsf` | instruction |
+| קריאת התורה | שמע ישראל | `shm_yshrl` | instruction |
+| קריאת שמע וברכותיה | אל מלך נאמן | `l_mlkh_nmn` | instruction words |
+| קריאת שמע וברכותיה | ברוך ה' המבורך | `vrvkh_h_hmvvrkh` | words |
+| קריאת שמע וברכותיה | ברוך ה' לעולם | `vrvkh_h_lvlm` | whole words |
+| קריאת שמע וברכותיה | ברוך ה' לעולם הוראה חדשה עם | `vrvkh_h_lvlm_hvrh_chdshh_m` | instruction note |
+| קריאת שמע וברכותיה | ברוך ה' לעולם הוראה עם | `vrvkh_h_lvlm_hvrh_m` | instruction note |
+| קריאת שמע וברכותיה | ברכת המפיל | `vrkht_hmfyl` | instruction words |
+| קריאת שמע וברכותיה | ברכת יוצר בשבת | `vrkht_yvtzr_vshvt` | instruction |
+| קריאת שמע וברכותיה | בתפילת העמידה לערבית בחול | `vtfylt_hmydh_lrvyt_vchvl` | continuation |
+| קריאת שמע וברכותיה | בתפילת העמידה לערבית בשבת | `vtfylt_hmydh_lrvyt_vshvt` | continuation |
+| קריאת שמע וברכותיה | בתפילת העמידה לשחרית בחול | `vtfylt_hmydh_lshchryt_vchvl` | continuation |
+| קריאת שמע וברכותיה | בתפילת העמידה לשחרית בשבת | `vtfylt_hmydh_lshchryt_vshvt` | continuation |
+| קריאת שמע וברכותיה | הוראת ברוך ה' המבורך | `hvrt_vrvkh_h_hmvvrkh` | plain |
+| קריאת שמע וברכותיה | הוראת ברכו לש"ץ | `hvrt_vrkhv_lshtz` | plain |
+| קריאת שמע וברכותיה | הוראת יתברך וישתבח עם | `hvrt_ytvrkh_vyshtvch_m` | note |
+| קריאת שמע וברכותיה | המשיך ב"והוא רחום" במוצאי שבת | `hmshykh_vvhv_rchvm_vmvtzy_shvt` | instruction |
+| קריאת שמע וברכותיה | המשיך בתתברך ביום טוב שחל במשך השבוע | `hmshykh_vttvrkh_vyvm_tvv_shchl_vmshkh_hshvv` | instruction |
+| קריאת שמע וברכותיה | והוא רחום | `vhv_rchvm` | instruction words |
+| קריאת שמע וברכותיה | ושמרו | `vshmrv` | instruction |
+| קריאת שמע וברכותיה | חדשה להמשך ביום טוב שחל במשך השבוע | `chdshh_lhmshkh_vyvm_tvv_shchl_vmshkh_hshvv` | instruction |
+| קריאת שמע וברכותיה | חדשה לתפילת העמידה בשלוש רגלים | `chdshh_ltfylt_hmydh_vshlvsh_rglym` | instruction |
+| קריאת שמע וברכותיה | חדשה על מזמורים לפתיחה במוצאי שבת | `chdshh_l_mzmvrym_lftychh_vmvtzy_shvt` | instruction |
+| קריאת שמע וברכותיה | חדשה על פסוקים לפתיחה בימי חול | `chdshh_l_fsvqym_lftychh_vymy_chvl` | instruction |
+| קריאת שמע וברכותיה | יום טוב שחל במשך השבוע | `yvm_tvv_shchl_vmshkh_hshvv` | instruction |
+| קריאת שמע וברכותיה | יתברך וישתבח | `ytvrkh_vyshtvch` | words |
+| קריאת שמע וברכותיה | מזמור ג | `mzmvr_g` | source words |
+| קריאת שמע וברכותיה | מזמור ס"ז | `mzmvr_sz` | source words |
+| קריאת שמע וברכותיה | מזמור קכ"ח | `mzmvr_qkhch` | source words |
+| קריאת שמע וברכותיה | מזמור קל"ד | `mzmvr_qld` | source words |
+| קריאת שמע וברכותיה | מזמור קמ"ד | `mzmvr_qmd` | source words |
+| קריאת שמע וברכותיה | מיוחדת לערבית במוצאי שבת | `myvchdt_lrvyt_vmvtzy_shvt` | heading |
+| קריאת שמע וברכותיה | על פסוקים לפתיחה בימי חול | `l_fsvqym_lftychh_vymy_chvl` | instruction |
+| קריאת שמע וברכותיה | על פסוקים לפתיחה במוצאי שבת | `l_fsvqym_lftychh_vmvtzy_shvt` | instruction |
+| קריאת שמע וברכותיה | פסוק ביום הכיפורים | `fsvq_vyvm_hkhyfvrym` | instruction |
+| קריאת שמע וברכותיה | פסוק בשלוש רגלים | `fsvq_vshlvsh_rglym` | instruction |
+| קריאת שמע וברכותיה | פסוקים בראש השנה | `fsvqym_vrsh_hshnh` | instruction |
+| קריאת שמע וברכותיה | פרשת שמע | `frsht_shm` | source |
+| קריאת שמע וברכותיה | תפילת העמידה בשלוש רגלים | `tfylt_hmydh_vshlvsh_rglym` | instruction |
+| ראש השנה | ברכת איש לרעהו בליל ראש השנה | `vrkht_ysh_lrhv_vlyl_rsh_hshnh` | instruction words |
+| ראש השנה | סימנים לסעודת ליל ראש השנה | `symnym_lsvdt_lyl_rsh_hshnh` | plain |
+| ראש השנה | קידוש לליל ראש השנה | `qydvsh_llyl_rsh_hshnh` | plain |
+| תחנון | אבינו מלכנו הוראה לעשרת ימי תשובה | `vynv_mlkhnv_hvrh_lshrt_ymy_tshvvh` | instruction |
+| תחנון | אבינו מלכנו הוראה לתעניות | `vynv_mlkhnv_hvrh_ltnyvt` | instruction |
+| תחנון | אחרי תחנון | `chry_tchnvn` | continuation |
+| תחנון | אחרי תחנון בשחרית | `chry_tchnvn_vshchryt` | instruction |
+| תחנון | וידוי בימי שני וחמישי | `vydvy_vymy_shny_vchmyshy` | note |
+| תחנון | חדשה לפני צדקתך צדק | `chdshh_lfny_tzdqtkh_tzdq` | instruction |
+| תחנון | חדשה לתחנון ארוך | `chdshh_ltchnvn_rvkh` | instruction |
+| תחנון | חדשה לתחנון הקצר בשחרית | `chdshh_ltchnvn_hqtzr_vshchryt` | instruction |
+| תחנון | ימים שאין אומרים בהם תחנון במנחה | `ymym_shyn_vmrym_vhm_tchnvn_vmnchh` | plain |
+| תחנון | ימים שאין אומרים בהם תחנון בשחרית | `ymym_shyn_vmrym_vhm_tchnvn_vshchryt` | plain |
+| תחנון | תהלים ו | `thlym_v` | source |
+| תחנון | תחנון הקצר בשחרית | `tchnvn_hqtzr_vshchryt` | instruction |
+| תפילת העמידה | אדיר אדירנו | `dyr_dyrnv` | words |
+| תפילת העמידה | אדיר אדירנו הוראה לש"ץ | `dyr_dyrnv_hvrh_lshtz` | instruction |
+| תפילת העמידה | אדיר במרום | `dyr_vmrvm` | instruction words |
+| תפילת העמידה | אחרי תפילת העמידה בערבית במוצאי שבת | `chry_tfylt_hmydh_vrvyt_vmvtzy_shvt` | instruction |
+| תפילת העמידה | אתה חוננתנו | `th_chvnntnv` | instruction words |
+| תפילת העמידה | ב"רצה" במוסף של שבת רגילה | `vrtzh_vmvsf_shl_shvt_rgylh` | continuation |
+| תפילת העמידה | בכל המועדים | `vkhl_hmvdym` | continuation instruction |
+| תפילת העמידה | בסוף תפילת מוסף לשבת ויום טוב | `vsvf_tfylt_mvsf_lshvt_vyvm_tvv` | continuation |
+| תפילת העמידה | בסוף תפילת ערבית לחול | `vsvf_tfylt_rvyt_lchvl` | continuation |
+| תפילת העמידה | בסוף תפילת ערבית לשבת | `vsvf_tfylt_rvyt_lshvt` | continuation |
+| תפילת העמידה | בסוף תפילת שחרית לשבת | `vsvf_tfylt_shchryt_lshvt` | continuation |
+| תפילת העמידה | ברכת המצווה של הכהנים | `vrkht_hmtzvvh_shl_hkhhnym` | instruction |
+| תפילת העמידה | ברכת כהנים בארץ ישראל | `vrkht_khhnym_vrtz_yshrl` | instruction |
+| תפילת העמידה | ברכת פתיחה למעין שבע | `vrkht_ftychh_lmyn_shv` | words |
+| תפילת העמידה | ברכת פתיחה למעין שבע הוראה לש"ץ | `vrkht_ftychh_lmyn_shv_hvrh_lshtz` | instruction |
+| תפילת העמידה | בשבועות | `vshvvvt` | instruction |
+| תפילת העמידה | בתחנון לשחרית | `vtchnvn_lshchryt` | continuation |
+| תפילת העמידה | הוראת המשך חדשה למוסף של ראש חודש | `hvrt_hmshkh_chdshh_lmvsf_shl_rsh_chvdsh` | continuation |
+| תפילת העמידה | הוראת הקראה לכהנים | `hvrt_hqrh_lkhhnym` | plain |
+| תפילת העמידה | המשיך בשים שלום בעמוד | `hmshykh_vshym_shlvm_vmvd` | chunk instruction |
+| תפילת העמידה | ובדברי קדשך | `vvdvry_qdshkh` | words |
+| תפילת העמידה | וכתוב לחיים טובים | `vkhtvv_lchyym_tvvym` | instruction |
+| תפילת העמידה | ומנחתם | `vmnchtm` | continuation instruction |
+| תפילת העמידה | ותודיענו במוצ"ש | `vtvdynv_vmvtzsh` | chunk instruction whole words |
+| תפילת העמידה | ותערב | `vtrv` | chunk whole words |
+| תפילת העמידה | ותערב הוראה בארץ ישראל | `vtrv_hvrh_vrtz_yshrl` | instruction |
+| תפילת העמידה | ותערב הוראה בחו"ל | `vtrv_hvrh_vchvl` | instruction |
+| תפילת העמידה | חדשה אחרי תפילת העמידה בערבית במוצאי שבת | `chdshh_chry_tfylt_hmydh_vrvyt_vmvtzy_shvt` | instruction |
+| תפילת העמידה | חדשה ל"ותערב עליך | `chdshh_lvtrv_lykh` | instruction |
+| תפילת העמידה | חדשה להמשיך ב"ומנחתם | `chdshh_lhmshykh_vvmnchtm` | instruction |
+| תפילת העמידה | חדשה להמשיך ב"רצה" אחרי ברכת הזמן במוסף של שבת | `chdshh_lhmshykh_vrtzh_chry_vrkht_hzmn_vmvsf_shl_shvt` | instruction |
+| תפילת העמידה | חדשה להמשך אחרי תפילות טל וגשם | `chdshh_lhmshkh_chry_tfylvt_tl_vgshm` | instruction |
+| תפילת העמידה | חדשה להמשך מוסף של שבת רגילה | `chdshh_lhmshkh_mvsf_shl_shvt_rgylh` | instruction |
+| תפילת העמידה | יהי רצון" של הקהל | `yhy_rtzvn_shl_hqhl` | instruction words |
+| תפילת העמידה | יום ראשון של סוכות | `yvm_rshvn_shl_svkhvt` | instruction |
+| תפילת העמידה | יעלה ויבוא הוראה לימי חול ושבת | `ylh_vyvv_hvrh_lymy_chvl_vshvt` | instruction |
+| תפילת העמידה | ישמחו במלכותך | `yshmchv_vmlkhvtkh` | instruction words |
+| תפילת העמידה | כהנים לברך על המצווה | `khhnym_lvrkh_l_hmtzvvh` | instruction |
+| תפילת העמידה | לדור ודור | `ldvr_vdvr` | words |
+| תפילת העמידה | לעומתם | `lvmtm` | words |
+| תפילת העמידה | לתפילות טל וגשם | `ltfylvt_tl_vgshm` | note |
+| תפילת העמידה | מגן אבות | `mgn_vvt` | chunk instruction whole words |
+| תפילת העמידה | מוריד הטל | `mvryd_htl` | note |
+| תפילת העמידה | מוריד הטל במוסף לשלוש רגלים | `mvryd_htl_vmvsf_lshlvsh_rglym` | instruction |
+| תפילת העמידה | מוריד הטל בשלוש רגלים | `mvryd_htl_vshlvsh_rglym` | instruction |
+| תפילת העמידה | מילים מוריד הטל | `mylym_mvryd_htl` | words |
+| תפילת העמידה | מילים משיב הרוח ומוריד הגשם | `mylym_mshyv_hrvch_vmvryd_hgshm` | words |
+| תפילת העמידה | משיב הרוח במוסף לשלוש רגלים | `mshyv_hrvch_vmvsf_lshlvsh_rglym` | instruction |
+| תפילת העמידה | משיב הרוח בשלוש רגלים | `mshyv_hrvch_vshlvsh_rglym` | instruction |
+| תפילת העמידה | משיב הרוח ומוריד הגשם | `mshyv_hrvch_vmvryd_hgshm` | note |
+| תפילת העמידה | עושה השלום | `vshh_hshlvm` | note words |
+| תפילת העמידה | על ברכת קדושה ליחיד בתפילת הלחש | `l_vrkht_qdvshh_lychyd_vtfylt_hlchsh` | instruction |
+| תפילת העמידה | על הלל אחרי תפילת העמידה של שחרית בחול ושבת | `l_hll_chry_tfylt_hmydh_shl_shchryt_vchvl_vshvt` | instruction |
+| תפילת העמידה | על הניסים לשושן פורים | `l_hnysym_lshvshn_fvrym` | instruction |
+| תפילת העמידה | עננו בברכת הגאולה | `nnv_vvrkht_hgvlh` | instruction |
+| תפילת העמידה | עננו בברכת שומע תפילה | `nnv_vvrkht_shvm_tfylh` | instruction |
+| תפילת העמידה | קדושה בחזרת הש"ץ | `qdvshh_vchzrt_hshtz` | instruction |
+| תפילת העמידה | קרבן לשבת | `qrvn_lshvt` | instruction |
+| תפילת העמידה | ראש השנה במוצאי שבת | `rsh_hshnh_vmvtzy_shvt` | instruction |
+| תפילת העמידה | ראשון של פסח | `rshvn_shl_fsch` | instruction |
+| תפילת העמידה | ריבונו של עולם לכהנים | `ryvvnv_shl_vlm_lkhhnym` | instruction words |
+| תפילת העמידה | רצה במנוחתנו | `rtzh_vmnvchtnv` | words |
+| תפילת העמידה | רצה במנוחתנו הוראה לש"ץ | `rtzh_vmnvchtnv_hvrh_lshtz` | instruction |
+| תפילת העמידה | ש"ץ במוסף של מועדים "ותחזינה עינינו | `shtz_vmvsf_shl_mvdym_vtchzynh_ynynv` | instruction |
+| תפילת העמידה | ש"ץ במועדים עם אין כהנים העולים לדוכן | `shtz_vmvdym_m_yn_khhnym_hvlym_ldvkhn` | instruction |
+| תפילת העמידה | ש"ץ לפני ברכת כהנים | `shtz_lfny_vrkht_khhnym` | instruction |
+| תפילת העמידה | ש"ץ לפני תפילות טל וגשם | `shtz_lfny_tfylvt_tl_vgshm` | instruction |
+| תפילת העמידה | שאותך לבדך | `shvtkh_lvdkh` | instruction words |
+| תפילת העמידה | שבת ראש חודש | `shvt_rsh_chvdsh` | instruction |
+| תפילת העמידה | שים שלום בשחרית | `shym_shlvm_vshchryt` | instruction |
+| תפילת העמידה | שלום רב במנחה וערבית | `shlvm_rv_vmnchh_vrvyt` | instruction |
+| תפילת העמידה | שמיני עצרת ושמחת תורה | `shmyny_tzrt_vshmcht_tvrh` | instruction |
+| תפילת העמידה | תיקנת שבת | `tyqnt_shvt` | instruction words |
+| תפילת העמידה | תפילת העמידה א | `tfylt_hmydh` | instruction |
+| תפילת העמידה | תפילת העמידה ב | `tfylt_hmydh_v` | instruction |
+| תפילת העמידה | תפילת העמידה ג | `tfylt_hmydh_g` | instruction |
+| תפילת העמידה | תפילת העמידה ד | `tfylt_hmydh_d` | instruction |
+
 ## Derived mechanically
 
-1439 groups with no heading and no citation. Their names come
+573 groups with no heading and no citation. Their names come
 straight from the section name, and they are listed for spot-checking rather
 than review.
 
 | Page | Prayer | Proposed slug | Parts |
 |---|---|---|---:|
-| ברכות | אב לפני הנני מוכן | `v_lfny_hnny_mvkhn` | 1 |
-| ברכות | אם אשכחך | `m_shkhchkh` | 1 |
-| ברכות | בילע המוות | `vyl_hmvvt` | 2 |
-| ברכות | במרום ילמדו | `vmrvm_ylmdv` | 1 |
-| ברכות | ברוך הבא | `vrvkh_hv` | 2 |
-| ברכות | ברוך הוא וברוך שמו | `vrvkh_hv_vvrvkh_shmv` | 2 |
-| ברכות | ברוך שאכלנו משלו | `vrvkh_shkhlnv_mshlv` | 1 |
-| ברכות | ברוך שהשמחה במעונו | `vrvkh_shhshmchh_vmvnv` | 3 |
-| ברכות | ברכת אשר ברא | `vrkht_shr_vr` | 1 |
-| ברכות | ברכת אשר יצר את האדם בצלמו | `vrkht_shr_ytzr_t_hdm_vtzlmv` | 1 |
-| ברכות | ברכת בורא מיני בשמים | `vrkht_vvr_myny_vshmym` | 2 |
-| ברכות | ברכת בורא עצי בשמים | `vrkht_vvr_tzy_vshmym` | 2 |
-| ברכות | ברכת בורא עשבי בשמים | `vrkht_vvr_shvy_vshmym` | 2 |
-| ברכות | ברכת בורא פרי האדמה | `vrkht_vvr_fry_hdmh` | 2 |
-| ברכות | ברכת בורא פרי הגפן | `vrkht_vvr_fry_hgfn` | 1 |
-| ברכות | ברכת בורא פרי העץ | `vrkht_vvr_fry_htz` | 2 |
-| ברכות | ברכת בורא שמן ערב | `vrkht_vvr_shmn_rv` | 2 |
-| ברכות | ברכת דיין האמת | `vrkht_dyyn_hmt` | 2 |
-| ברכות | ברכת הגפן | `vrkht_hgfn` | 2 |
-| ברכות | ברכת הזן את | `vrkht_hzn_t` | 1 |
-| ברכות | ברכת הטוב והמטיב | `vrkht_htvv_vhmtyv` | 2 |
-| ברכות | ברכת הטוב והמטיב לברכת המזון | `vrkht_htvv_vhmtyv_lvrkht_hmzvn` | 1 |
-| ברכות | ברכת המוציא | `vrkht_hmvtzy` | 1 |
-| ברכות | ברכת המוציא בסעודה | `vrkht_hmvtzy_vsvdh` | 1 |
-| ברכות | ברכת המזון | `vrkht_hmzvn` | 1 |
-| ברכות | ברכת הנותן ריח טוב בפירות | `vrkht_hnvtn_rych_tvv_vfyrvt` | 2 |
-| ברכות | ברכת וצונו להכניסו | `vrkht_vtzvnv_lhkhnysv` | 2 |
-| ברכות | ברכת וצונו על המילה | `vrkht_vtzvnv_l_hmylh` | 2 |
-| ברכות | ברכת זוכר הברית | `vrkht_zvkhr_hvryt` | 2 |
-| ברכות | ברכת יוצר האדם | `vrkht_yvtzr_hdm` | 1 |
-| ברכות | ברכת כהנים | `vrkht_khhnym` | 1 |
-| ברכות | ברכת כורת הברית | `vrkht_khvrt_hvryt` | 1 |
-| ברכות | ברכת להפריש חלה מן העיסה | `vrkht_lhfrysh_chlh_mn_hysh` | 2 |
-| ברכות | ברכת להפריש תרומות ומעשרות | `vrkht_lhfrysh_trvmvt_vmshrvt` | 2 |
-| ברכות | ברכת לעשות מעקה | `vrkht_lshvt_mqh` | 2 |
-| ברכות | ברכת לקבוע מזוזה | `vrkht_lqvv_mzvzh` | 2 |
-| ברכות | ברכת מזונות | `vrkht_mzvnvt` | 2 |
-| ברכות | ברכת מעין שלוש | `vrkht_myn_shlvsh` | 5 |
-| ברכות | ברכת משנה הבריות | `vrkht_mshnh_hvryvt` | 2 |
-| ברכות | ברכת עושה מעשה בראשית | `vrkht_vshh_mshh_vrshyt` | 2 |
-| ברכות | ברכת על הטבילה | `vrkht_l_htvylh` | 2 |
-| ברכות | ברכת על טבילת כלים | `vrkht_l_tvylt_khlym` | 2 |
-| ברכות | ברכת על נטילת ידיים לסעודה | `vrkht_l_ntylt_ydyym_lsvdh` | 1 |
-| ברכות | ברכת על פדיון הבן | `vrkht_l_fdyvn_hvn` | 1 |
-| ברכות | ברכת על פדיון כרם רבעי | `vrkht_l_fdyvn_khrm_rvy` | 2 |
-| ברכות | ברכת על פדיון מעשר שני | `vrkht_l_fdyvn_mshr_shny` | 2 |
-| ברכות | ברכת קידושין | `vrkht_qydvshyn` | 1 |
-| ברכות | ברכת שהחיינו | `vrkht_shhchyynv` | 1 |
-| ברכות | ברכת שהכל | `vrkht_shhkhl` | 2 |
-| ברכות | ברכת שהכל ברא לכבודו | `vrkht_shhkhl_vr_lkhvvdv` | 1 |
-| ברכות | ברכת שוש תשיש | `vrkht_shvsh_tshysh` | 1 |
-| ברכות | ברכת שחלק מחכמתו ליראיו | `vrkht_shchlq_mchkhmtv_lyryv` | 2 |
-| ברכות | ברכת שכוחו וגבורתו מלא עולם | `vrkht_shkhvchv_vgvvrtv_ml_vlm` | 2 |
-| ברכות | ברכת שככה לו בעולמו | `vrkht_shkhkhh_lv_vvlmv` | 2 |
-| ברכות | ברכת שלא חיסר בעולמו דבר | `vrkht_shl_chysr_vvlmv_dvr` | 2 |
-| ברכות | ברכת שמח תשמח | `vrkht_shmch_tshmch` | 1 |
-| ברכות | ברכת שנתן מחכמתו לבשר ודם | `vrkht_shntn_mchkhmtv_lvshr_vdm` | 2 |
-| ברכות | ברכת שנתן מכבודו לבשר ודם | `vrkht_shntn_mkhvvdv_lvshr_vdm` | 2 |
-| ברכות | ברכת שעשה את הים הגדול | `vrkht_shshh_t_hym_hgdvl` | 2 |
-| ברכות | ברכת תפילת הדרך | `vrkht_tfylt_hdrkh` | 1 |
-| ברכות | ברשות אל איום | `vrshvt_l_yvm` | 1 |
-| ברכות | ברשות הכהנים והלויים | `vrshvt_hkhhnym_vhlvyym` | 1 |
-| ברכות | ברשות התורה הקדושה | `vrshvt_htvrh_hqdvshh` | 1 |
-| ברכות | ברשות מורי ורבותי | `vrshvt_mvry_vrvvty` | 1 |
-| ברכות | ברשות מרנן | `vrshvt_mrnn` | 1 |
-| ברכות | ברשות נברך שהשמחה במעונו | `vrshvt_nvrkh_shhshmchh_vmvnv` | 1 |
-| ברכות | דוי הסר | `dvy_hsr` | 1 |
-| ברכות | ה' מה אדם | `h_mh_dm` | 2 |
-| ברכות | ה' שומריך | `h_shvmrykh` | 1 |
-| ברכות | המצות הזה | `hmtzvt_hzh` | 1 |
-| ברכות | המשיך בברכת המזון | `hmshykh_vvrkht_hmzvn` | 1 |
-| ברכות | הנה אנוכי שולח מלאך | `hnh_nvkhy_shvlch_mlkh` | 1 |
-| ברכות | הנני מוכן | `hnny_mvkhn` | 1 |
-| ברכות | הצור תמים פעלו | `htzvr_tmym_flv` | 3 |
-| ברכות | הרחמן הוא יברך אותי ואת | `hrchmn_hv_yvrkh_vty_vt` | 1 |
-| ברכות | הרחמן הוא יברך את בעל הבית | `hrchmn_hv_yvrkh_t_vl_hvyt` | 1 |
-| ברכות | הרחמן הוא יזכנו | `hrchmn_hv_yzkhnv` | 3 |
-| ברכות | הרחמן הוא ימלוך | `hrchmn_hv_ymlvkh` | 1 |
-| ברכות | הרחמן הוא יפרנסנו | `hrchmn_hv_yfrnsnv` | 1 |
-| ברכות | הרחמן הוא ישבור עולנו | `hrchmn_hv_yshvvr_vlnv` | 1 |
-| ברכות | הרחמן הוא ישלח ברכה | `hrchmn_hv_yshlch_vrkhh` | 1 |
-| ברכות | הרחמן הוא ישלח לנו את אליהו | `hrchmn_hv_yshlch_lnv_t_lyhv` | 1 |
-| ברכות | הרחמן הוא ישתבח | `hrchmn_hv_yshtvch` | 1 |
-| ברכות | הרחמן הוא יתברך | `hrchmn_hv_ytvrkh` | 1 |
-| ברכות | הרחמן לברית מילה | `hrchmn_lvryt_mylh` | 3 |
-| ברכות | הרחמן ליום טוב | `hrchmn_lyvm_tvv` | 2 |
-| ברכות | הרחמן לנסיבות שונות | `hrchmn_lnsyvvt_shvnvt` | 1 |
-| ברכות | הרחמן לסוכות | `hrchmn_lsvkhvt` | 2 |
-| ברכות | הרחמן לראש השנה | `hrchmn_lrsh_hshnh` | 2 |
-| ברכות | הרחמן לראש חודש | `hrchmn_lrsh_chvdsh` | 2 |
-| ברכות | הרחמן לשבת | `hrchmn_lshvt` | 2 |
-| ברכות | הרי את מקודשת | `hry_t_mqvdsht` | 1 |
-| ברכות | ובנה ירושלים | `vvnh_yrvshlym` | 1 |
-| ברכות | ויעקב הלך לדרכו | `vyqv_hlkh_ldrkhv` | 1 |
-| ברכות | ועל הכל עד ועל המזון | `vl_hkhl_d_vl_hmzvn` | 1 |
-| ברכות | ועל פרי גפנה | `vl_fry_gfnh` | 1 |
-| ברכות | ושמחנו ביום חג | `vshmchnv_vyvm_chg` | 1 |
-| ברכות | זה בני בכורי | `zh_vny_vkhvry` | 2 |
-| ברכות | זה הכסא | `zh_hkhs` | 2 |
-| ברכות | זה תחת זה | `zh_tcht_zh` | 2 |
-| ברכות | חדשה להמשיך בברכת המזון | `chdshh_lhmshykh_vvrkht_hmzvn` | 1 |
-| ברכות | חדשה לפני צידוק הדין | `chdshh_lfny_tzydvq_hdyn` | 1 |
-| ברכות | חדשה על שבע ברכות לאחר ברכת המזון | `chdshh_l_shv_vrkhvt_lchr_vrkht_hmzvn` | 1 |
-| ברכות | יהי שם ה' מבורך | `yhy_shm_h_mvvrkh` | 2 |
-| ברכות | יעלה ויבוא בברכת המזון | `ylh_vyvv_vvrkht_hmzvn` | 1 |
-| ברכות | יעלה ויבוא לברכת המזון | `ylh_vyvv_lvrkht_hmzvn` | 1 |
-| ברכות | יראו את ה' קדושיו | `yrv_t_h_qdvshyv` | 1 |
-| ברכות | כי אתה | `khy_th` | 1 |
-| ברכות | כללית לפני ברכות המצוות | `khllyt_lfny_vrkhvt_hmtzvvt` | 1 |
-| ברכות | כללית לפני ברכת המוציא | `khllyt_lfny_vrkht_hmvtzy` | 1 |
-| ברכות | כללית על פדיון הבן | `khllyt_l_fdyvn_hvn` | 1 |
-| ברכות | כשם שנכנס | `khshm_shnkhns` | 1 |
-| ברכות | לישועתך עד ישכון חצריך | `lyshvtkh_d_yshkhvn_chtzrykh` | 1 |
-| ברכות | מגדול | `mgdvl` | 1 |
-| ברכות | מגדיל | `mgdyl` | 1 |
-| ברכות | מזמן | `mzmn` | 1 |
-| ברכות | מטעם הרבנות הראשית הצבאית | `mtm_hrvnvt_hrshyt_htzvyt` | 2 |
-| ברכות | מי אדיר | `my_dyr` | 2 |
-| ברכות | מסובים ולמזמן | `msvvym_vlmzmn` | 1 |
-| ברכות | מענה האב | `mnh_hv` | 2 |
-| ברכות | מענה האב תרגום | `mnh_hv_trgvm` | 1 |
-| ברכות | משולבת לברכות | `mshvlvt_lvrkhvt` | 1 |
-| ברכות | נודה לך | `nvdh_lkh` | 2 |
-| ברכות | נודה לך עד ובכל שעה | `nvdh_lkh_d_vvkhl_shh` | 1 |
-| ברכות | נודה לשמך | `nvdh_lshmkh` | 2 |
-| ברכות | נשבעה בטוב | `nshvh_vtvv` | 1 |
-| ברכות | על הגפן ועל פרי הגפן | `l_hgfn_vl_fry_hgfn` | 1 |
-| ברכות | על המחיה ועל הכלכלה בלבד | `l_hmchyh_vl_hkhlkhlh_vlvd` | 1 |
-| ברכות | על המחיה ועל הכלכלה ועל הגפן ועל פרי הגפן | `l_hmchyh_vl_hkhlkhlh_vl_hgfn_vl_fry_hgfn` | 1 |
-| ברכות | על העץ ועל פרי העץ | `l_htz_vl_fry_htz` | 1 |
-| ברכות | על נהרות בבל | `l_nhrvt_vvl` | 1 |
-| ברכות | על שבע ברכות לאחר ברכת המזון | `l_shv_vrkhvt_lchr_vrkht_hmzvn` | 1 |
-| ברכות | קהל לפני כשם שנכנס | `qhl_lfny_khshm_shnkhns` | 1 |
-| ברכות | קהל לפני נשבעה בטוב | `qhl_lfny_nshvh_vtvv` | 1 |
-| ברכות | קידושין | `qydvshyn` | 1 |
-| ברכות | קיים את הילד הזה | `qyym_t_hyld_hzh` | 1 |
-| ברכות | קרוא את מזמור כ"ג | `qrv_t_mzmvr_khg` | 1 |
-| ברכות | רבותי נברך | `rvvty_nvrkh` | 1 |
-| ברכות | רחם עד לעולם ועד | `rchm_d_lvlm_vd` | 1 |
-| ברכות | רצה והחליצנו | `rtzh_vhchlytznv` | 2 |
-| ברכות | רצה והחליצנו למעין שלוש | `rtzh_vhchlytznv_lmyn_shlvsh` | 1 |
-| ברכות | שאלת הכהן | `shlt_hkhhn` | 2 |
-| ברכות | שאלת הכהן תרגום | `shlt_hkhhn_trgvm` | 1 |
-| ברכות | שבע ברכות | `shv_vrkhvt` | 1 |
-| ברכות | שיר המעלות בברכת המזון | `shyr_hmlvt_vvrkht_hmzvn` | 1 |
-| ברכות | תפילה לפני יציאה לקרב | `tfylh_lfny_ytzyh_lqrv` | 1 |
-| ברכות השחר וקרבנות | אבל אנחנו עמך | `vl_nchnv_mkh` | 1 |
-| ברכות השחר וקרבנות | אדון עולם | `dvn_vlm` | 3 |
-| ברכות השחר וקרבנות | איזהו מקומן | `yzhv_mqvmn` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן א | `yzhv_mqvmn` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ב | `yzhv_mqvmn_v` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ג | `yzhv_mqvmn_g` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ד | `yzhv_mqvmn_d` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ה | `yzhv_mqvmn_h` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ו | `yzhv_mqvmn_v` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ז | `yzhv_mqvmn_z` | 1 |
-| ברכות השחר וקרבנות | איזהו מקומן ח | `yzhv_mqvmn_ch` | 3 |
-| ברכות השחר וקרבנות | אלו דברים | `lv_dvrym` | 2 |
-| ברכות השחר וקרבנות | אלוהי נשמה | `lvhy_nshmh` | 2 |
-| ברכות השחר וקרבנות | אנא בכוח | `n_vkhvch` | 3 |
-| ברכות השחר וקרבנות | אתה הוא בשמים ובארץ | `th_hv_vshmym_vvrtz` | 1 |
-| ברכות השחר וקרבנות | אתה הוא לפני הקטורת | `th_hv_lfny_hqtvrt` | 1 |
-| ברכות השחר וקרבנות | אתה הוא עד שלא נברא | `th_hv_d_shl_nvr` | 1 |
-| ברכות השחר וקרבנות | אתה הוא עד שלא נברא א | `th_hv_d_shl_nvr` | 1 |
-| ברכות השחר וקרבנות | אתה הוא עד שלא נברא ב | `th_hv_d_shl_nvr_v` | 1 |
-| ברכות השחר וקרבנות | אתה סתר לי | `th_str_ly` | 1 |
-| ברכות השחר וקרבנות | אתה ציויתנו להקריב | `th_tzyvytnv_lhqryv` | 1 |
-| ברכות השחר וקרבנות | בר קפרא | `vr_qfr` | 3 |
-| ברכות השחר וקרבנות | ברכות הבאות | `vrkhvt_hvvt` | 1 |
-| ברכות השחר וקרבנות | ברכי נפשי | `vrkhy_nfshy` | 1 |
-| ברכות השחר וקרבנות | ברכת אשר בחר בנו | `vrkht_shr_vchr_vnv` | 1 |
-| ברכות השחר וקרבנות | ברכת אשר יצר | `vrkht_shr_ytzr` | 1 |
-| ברכות השחר וקרבנות | ברכת להניח תפילין | `vrkht_lhnych_tfylyn` | 2 |
-| ברכות השחר וקרבנות | ברכת להתעטף בציצית | `vrkht_lhttf_vtzytzyt` | 2 |
-| ברכות השחר וקרבנות | ברכת לעסוק בדברי תורה | `vrkht_lsvq_vdvry_tvrh` | 1 |
-| ברכות השחר וקרבנות | ברכת על מצות תפילין | `vrkht_l_mtzvt_tfylyn` | 2 |
-| ברכות השחר וקרבנות | ברכת על נטילת ידיים | `vrkht_l_ntylt_ydyym` | 1 |
-| ברכות השחר וקרבנות | ברכת ציצית | `vrkht_tzytzyt` | 1 |
-| ברכות השחר וקרבנות | הנני מוכן לפני הנחת תפילין | `hnny_mvkhn_lfny_hncht_tfylyn` | 3 |
-| ברכות השחר וקרבנות | הנני מתעטף | `hnny_mttf` | 1 |
-| ברכות השחר וקרבנות | הקטורת פסוקים | `hqtvrt_fsvqym` | 1 |
-| ברכות השחר וקרבנות | וארשתיך | `vrshtykh` | 2 |
-| ברכות השחר וקרבנות | והיה כי יביאך | `vhyh_khy_yvykh` | 3 |
-| ברכות השחר וקרבנות | והערב נא | `vhrv_n` | 1 |
-| ברכות השחר וקרבנות | ויהי רצון אחרי הנחת תפילין | `vyhy_rtzvn_chry_hncht_tfylyn` | 3 |
-| ברכות השחר וקרבנות | ומחכמתך | `vmchkhmtkh` | 1 |
-| ברכות השחר וקרבנות | זכרנו בזיכרון | `zkhrnv_vzykhrvn` | 1 |
-| ברכות השחר וקרבנות | חדשה להמשך בפסוקי דזמרה | `chdshh_lhmshkh_vfsvqy_dzmrh` | 1 |
-| ברכות השחר וקרבנות | יגדל | `ygdl` | 3 |
-| ברכות השחר וקרבנות | יהי רצון אחרי העטיפה | `yhy_rtzvn_chry_htyfh` | 1 |
-| ברכות השחר וקרבנות | יהי רצון אחרי פרשת התמיד | `yhy_rtzvn_chry_frsht_htmyd` | 1 |
-| ברכות השחר וקרבנות | יהי רצון שתרחם עלינו | `yhy_rtzvn_shtrchm_lynv` | 1 |
-| ברכות השחר וקרבנות | יתומים | `ytvmym` | 1 |
-| ברכות השחר וקרבנות | כשמלובשים | `khshmlvvshym` | 1 |
-| ברכות השחר וקרבנות | כשמתעוררים בבוקר | `khshmtvrrym_vvvqr` | 1 |
-| ברכות השחר וקרבנות | כשנוטלים את הידיים | `khshnvtlym_t_hydyym` | 1 |
-| ברכות השחר וקרבנות | כשנכנסים לבית הכנסת | `khshnkhnsym_lvyt_hkhnst` | 1 |
-| ברכות השחר וקרבנות | לעולם יהא אדם | `lvlm_yh_dm` | 1 |
-| ברכות השחר וקרבנות | לפיכך אנחנו חייבים | `lfykhkh_nchnv_chyyvym` | 1 |
-| ברכות השחר וקרבנות | לפיכך אנחנו חייבים א | `lfykhkh_nchnv_chyyvym` | 1 |
-| ברכות השחר וקרבנות | לפיכך אנחנו חייבים ב | `lfykhkh_nchnv_chyyvym_v` | 1 |
-| ברכות השחר וקרבנות | מה טובו | `mh_tvvv` | 1 |
-| ברכות השחר וקרבנות | מודה אני | `mvdh_ny` | 1 |
-| ברכות השחר וקרבנות | מוסף של ראש חודש פסוקים | `mvsf_shl_rsh_chvdsh_fsvqym` | 3 |
-| ברכות השחר וקרבנות | מוסף של שבת פסוקים | `mvsf_shl_shvt_fsvqym` | 1 |
-| ברכות השחר וקרבנות | סדר המערכה | `sdr_hmrkhh` | 2 |
-| ברכות השחר וקרבנות | על ברכת ציצית למי שאינו מתעטף בטלית גדול | `l_vrkht_tzytzyt_lmy_shynv_mttf_vtlyt_gdvl` | 1 |
-| ברכות השחר וקרבנות | על ברכת ציצית לקטן | `l_vrkht_tzytzyt_lqtn` | 1 |
-| ברכות השחר וקרבנות | פיטום הקטורת | `fytvm_hqtvrt` | 3 |
-| ברכות השחר וקרבנות | פיטום הקטורת מקורות | `fytvm_hqtvrt_mqvrvt` | 1 |
-| ברכות השחר וקרבנות | קדש לי כל בכור | `qdsh_ly_khl_vkhvr` | 1 |
-| ברכות השחר וקרבנות | רבי ישמעאל | `rvy_yshml` | 5 |
-| ברכות השחר וקרבנות | רבי נתן | `rvy_ntn` | 1 |
-| ברכות השחר וקרבנות | רבן שמעון בן גמליאל | `rvn_shmvn_vn_gmlyl` | 1 |
-| ברכות השחר וקרבנות | ריבון כל העולמים | `ryvvn_khl_hvlmym` | 1 |
-| ברכות השחר וקרבנות | ריבונו של עולם אחרי פרשת העקידה | `ryvvnv_shl_vlm_chry_frsht_hqydh` | 3 |
-| ברכות השחר וקרבנות | שבת ויום טוב | `shvt_vyvm_tvv` | 1 |
-| ברכות השחר וקרבנות | שיבנה בית המקדש | `shyvnh_vyt_hmqdsh` | 1 |
-| ברכות השחר וקרבנות | שתצילני היום | `shttzylny_hyvm` | 1 |
-| ברכות השחר וקרבנות | שתרגילנו בתורתך | `shtrgylnv_vtvrtkh` | 3 |
-| ברכות השחר וקרבנות | שתרגילנו בתורתך א | `shtrgylnv_vtvrtkh` | 1 |
-| ברכות השחר וקרבנות | שתרגילנו בתורתך ב | `shtrgylnv_vtvrtkh_v` | 1 |
-| ברכות השחר וקרבנות | תורה צוה לנו | `tvrh_tzvh_lnv` | 1 |
-| ברכות השחר וקרבנות | תפילה לפני הנחת תפילין | `tfylh_lfny_hncht_tfylyn` | 1 |
-| ברכות השחר וקרבנות | תפילה לפני שמתעטפים בטלית | `tfylh_lfny_shmttfym_vtlyt` | 1 |
-| הגדה של פסח | אדיר במלוכה | `dyr_vmlvkhh` | 3 |
-| הגדה של פסח | אחרי והיא שעמדה | `chry_vhy_shmdh` | 1 |
-| הגדה של פסח | אמר רבי אלעזר בן עזריה | `mr_rvy_lzr_vn_zryh` | 3 |
-| הגדה של פסח | ארץ זבת חלב ודבש רבי אליעזר אומר | `rtz_zvt_chlv_vdvsh_rvy_lyzr_vmr` | 1 |
-| הגדה של פסח | ביד חזקה | `vyd_chzqh` | 1 |
-| הגדה של פסח | בכל דור ודור | `vkhl_dvr_vdvr` | 1 |
-| הגדה של פסח | במתי מעט | `vmty_mt` | 1 |
-| הגדה של פסח | ברוך המקום | `vrvkh_hmqvm` | 1 |
-| הגדה של פסח | ברוך שומר הבטחתו | `vrvkh_shvmr_hvtchtv` | 1 |
-| הגדה של פסח | ברך על הכרפס | `vrkh_l_hkhrfs` | 1 |
-| הגדה של פסח | ברכה אחרונה | `vrkhh_chrvnh` | 1 |
-| הגדה של פסח | ברכת גאל ישראל | `vrkht_gl_yshrl` | 2 |
-| הגדה של פסח | ברכת על אכילת מצה | `vrkht_l_khylt_mtzh` | 1 |
-| הגדה של פסח | ברכת על אכילת מרור | `vrkht_l_khylt_mrvr` | 2 |
-| הגדה של פסח | ברכת על ביאור חמץ | `vrkht_l_vyvr_chmtz` | 1 |
-| הגדה של פסח | ברכת על נטילת ידיים | `vrkht_l_ntylt_ydyym` | 1 |
-| הגדה של פסח | גדול עצום | `gdvl_tzvm` | 1 |
-| הגדה של פסח | דבר אחר ארץ זבת חלב השקיפה | `dvr_chr_rtz_zvt_chlv_hshqyfh` | 1 |
-| הגדה של פסח | דבר אחר ארץ זבת חלב ודבש כרם | `dvr_chr_rtz_zvt_chlv_vdvsh_khrm` | 1 |
-| הגדה של פסח | דבר אחר ביד חזקה | `dvr_chr_vyd_chzqh` | 1 |
-| הגדה של פסח | דיינו | `dyynv` | 1 |
-| הגדה של פסח | דם ואש | `dm_vsh` | 2 |
-| הגדה של פסח | דצ"ך עד"ש באח"ב | `dtzkh_dsh_vchv` | 2 |
-| הגדה של פסח | הא לחמא עניא | `h_lchm_ny` | 2 |
-| הגדה של פסח | הברכות על המצה | `hvrkhvt_l_hmtzh` | 1 |
-| הגדה של פסח | הללו עבדי ה | `hllv_vdy_h` | 1 |
-| הגדה של פסח | ואת לחצנו | `vt_lchtznv` | 1 |
-| הגדה של פסח | ואת עמלנו | `vt_mlnv` | 1 |
-| הגדה של פסח | ובאותות | `vvvtvt` | 1 |
-| הגדה של פסח | ובזרוע נטויה | `vvzrv_ntvyh` | 1 |
-| הגדה של פסח | ובמופתים | `vvmvftym` | 1 |
-| הגדה של פסח | ובמורא גדול | `vvmvr_gdvl` | 1 |
-| הגדה של פסח | והיא שעמדה | `vhy_shmdh` | 4 |
-| הגדה של פסח | ויביאנו אל המקום הזה זה בית המקדש | `vyvynv_l_hmqvm_hzh_zh_vyt_hmqdsh` | 1 |
-| הגדה של פסח | ויהי שם | `vyhy_shm` | 1 |
-| הגדה של פסח | ויוציאנו ה' ממצרים | `vyvtzynv_h_mmtzrym` | 1 |
-| הגדה של פסח | ויענונו | `vynvnv` | 1 |
-| הגדה של פסח | וירא את ענינו | `vyr_t_nynv` | 1 |
-| הגדה של פסח | וירד מצרימה | `vyrd_mtzrymh` | 1 |
-| הגדה של פסח | וירעו אותנו המצרים | `vyrv_vtnv_hmtzrym` | 1 |
-| הגדה של פסח | וישמע ה' את קולנו | `vyshm_h_t_qvlnv` | 1 |
-| הגדה של פסח | ויתן לנו את הארץ הזאת | `vytn_lnv_t_hrtz_hzt` | 1 |
-| הגדה של פסח | ויתנו עלינו עבודה קשה | `vytnv_lynv_vvdh_qshh` | 1 |
-| הגדה של פסח | ונצעק אל ה | `vntzq_l_h` | 1 |
-| הגדה של פסח | ועברתי בארץ מצרים | `vvrty_vrtz_mtzrym` | 1 |
-| הגדה של פסח | ורב | `vrv` | 1 |
-| הגדה של פסח | ושאינו יודע לשאול | `vshynv_yvd_lshvl` | 1 |
-| הגדה של פסח | זכר למקדש כהלל | `zkhr_lmqdsh_khhll` | 2 |
-| הגדה של פסח | חכם מה הוא אומר | `chkhm_mh_hv_vmr` | 1 |
-| הגדה של פסח | חסל סידור פסח כהלכתו א | `chsl_sydvr_fsch_khhlkhtv` | 1 |
-| הגדה של פסח | חסל סידור פסח כהלכתו ב | `chsl_sydvr_fsch_khhlkhtv_v` | 1 |
-| הגדה של פסח | חתימת הלל | `chtymt_hll` | 1 |
-| הגדה של פסח | חתימת ישתבח | `chtymt_yshtvch` | 1 |
-| הגדה של פסח | טקסט פשוט לשנה הבאה בירושלים בחו"ל | `tqst_fshvt_lshnh_hvh_vyrvshlym_vchvl` | 1 |
-| הגדה של פסח | טקסט פשוט לשנה הבאה בירושלים הבנויה | `tqst_fshvt_lshnh_hvh_vyrvshlym_hvnvyh` | 1 |
-| הגדה של פסח | יכול מראש חודש | `ykhvl_mrsh_chvdsh` | 3 |
-| הגדה של פסח | כוס חמישי | `khvs_chmyshy` | 1 |
-| הגדה של פסח | כוס ראשון | `khvs_rshvn` | 1 |
-| הגדה של פסח | כוס רביעי | `khvs_rvyy` | 1 |
-| הגדה של פסח | כוס שלישי | `khvs_shlyshy` | 1 |
-| הגדה של פסח | כוס שני | `khvs_shny` | 1 |
-| הגדה של פסח | כי לו יאה כי לו נאה | `khy_lv_yh_khy_lv_nh` | 1 |
-| הגדה של פסח | כל חמירא בבוקר | `khl_chmyr_vvvqr` | 2 |
-| הגדה של פסח | כל חמירא בבוקר תרגום | `khl_chmyr_vvvqr_trgvm` | 1 |
-| הגדה של פסח | כל חמירא בערב | `khl_chmyr_vrv` | 2 |
-| הגדה של פסח | כל חמירא בערב תרגום | `khl_chmyr_vrv_trgvm` | 1 |
-| הגדה של פסח | כמה מעלות | `khmh_mlvt` | 1 |
-| הגדה של פסח | כנגד ארבעה בנים | `khngd_rvh_vnym` | 1 |
-| הגדה של פסח | לא לנו | `l_lnv` | 1 |
-| הגדה של פסח | לגבי השותים חמש כוסות | `lgvy_hshvtym_chmsh_khvsvt` | 1 |
-| הגדה של פסח | לפיכך | `lfykhkh` | 2 |
-| הגדה של פסח | לשנה הבאה בירושלים בחו"ל | `lshnh_hvh_vyrvshlym_vchvl` | 1 |
-| הגדה של פסח | לשנה הבאה בירושלים הבנויה | `lshnh_hvh_vyrvshlym_hvnvyh` | 1 |
-| הגדה של פסח | מברכים ואז שותים בהסיבה | `mvrkhym_vz_shvtym_vhsyvh` | 1 |
-| הגדה של פסח | מה נשתנה | `mh_nshtnh` | 2 |
-| הגדה של פסח | מזיגת כוס חמישי | `mzygt_khvs_chmyshy` | 1 |
-| הגדה של פסח | מזיגת כוס שלישי | `mzygt_khvs_shlyshy` | 1 |
-| הגדה של פסח | מזיגת כוסות בתחילת הסדר | `mzygt_khvsvt_vtchylt_hsdr` | 1 |
-| הגדה של פסח | מעל פסגת הר הצופים | `ml_fsgt_hr_htzvfym` | 1 |
-| הגדה של פסח | מעל פסגת הר הצופים מילים לפתיחה | `ml_fsgt_hr_htzvfym_mylym_lftychh` | 1 |
-| הגדה של פסח | מעשה ברבי אליעזר | `mshh_vrvy_lyzr` | 3 |
-| הגדה של פסח | מצה זו | `mtzh_zv` | 2 |
-| הגדה של פסח | מרור זה | `mrvr_zh` | 2 |
-| הגדה של פסח | מתחילה | `mtchylh` | 1 |
-| הגדה של פסח | סימני הסדר | `symny_hsdr` | 1 |
-| הגדה של פסח | ספירת העומר | `sfyrt_hvmr` | 1 |
-| הגדה של פסח | עבדים היינו | `vdym_hyynv` | 2 |
-| הגדה של פסח | עירוב תבשילין | `yrvv_tvshylyn` | 1 |
-| הגדה של פסח | על אחת כמה וכמה | `l_cht_khmh_vkhmh` | 1 |
-| הגדה של פסח | על שתיית הכוס האחרון | `l_shtyyt_hkhvs_hchrvn` | 1 |
-| הגדה של פסח | עשר מכות | `shr_mkhvt` | 2 |
-| הגדה של פסח | פנ בדיקת חמץ | `fn_vdyqt_chmtz` | 1 |
-| הגדה של פסח | פסוק ארמי אובד אבי | `fsvq_rmy_vvd_vy` | 3 |
-| הגדה של פסח | פסוק ויביאנו אל המקום הזה | `fsvq_vyvynv_l_hmqvm_hzh` | 3 |
-| הגדה של פסח | פסוק ויוציאנו | `fsvq_vyvtzynv` | 3 |
-| הגדה של פסח | פסוק וירעו | `fsvq_vyrv` | 3 |
-| הגדה של פסח | פסוק ונצעק | `fsvq_vntzq` | 3 |
-| הגדה של פסח | פסח מצה ומרור | `fsch_mtzh_vmrvr` | 1 |
-| הגדה של פסח | פסח שהיו אבותינו | `fsch_shhyv_vvtynv` | 3 |
-| הגדה של פסח | צא ולמד | `tz_vlmd` | 1 |
-| הגדה של פסח | קערת הסדר תמונה | `qrt_hsdr_tmvnh` | 1 |
-| הגדה של פסח | רבי אליעזר אומר | `rvy_lyzr_vmr` | 1 |
-| הגדה של פסח | רבי יוסי הגלילי אומר | `rvy_yvsy_hglyly_vmr` | 1 |
-| הגדה של פסח | רבי עקיבא אומר | `rvy_qyv_vmr` | 1 |
-| הגדה של פסח | רבן גמליאל היה אומר | `rvn_gmlyl_hyh_vmr` | 1 |
-| הגדה של פסח | רשע מה הוא אומר | `rsh_mh_hv_vmr` | 1 |
-| הגדה של פסח | שבכל הלילות | `shvkhl_hlylvt` | 1 |
-| הגדה של פסח | שבכל הלילות כולו מצה | `shvkhl_hlylvt_khvlv_mtzh` | 1 |
-| הגדה של פסח | שבכל הלילות כולנו מסובין | `shvkhl_hlylvt_khvlnv_msvvyn` | 1 |
-| הגדה של פסח | שבכל הלילות מרור | `shvkhl_hlylvt_mrvr` | 1 |
-| הגדה של פסח | שבכל הלילות שתי פעמים | `shvkhl_hlylvt_shty_fmym` | 1 |
-| הגדה של פסח | שותים חמש כוסות | `shvtym_chmsh_khvsvt` | 1 |
-| הגדה של פסח | שפוך חמתך | `shfvkh_chmtkh` | 7 |
-| הגדה של פסח | שתיית כוס ראשון | `shtyyt_khvs_rshvn` | 1 |
-| הגדה של פסח | תם מה הוא אומר | `tm_mh_hv_vmr` | 1 |
-| הלל | אבן שתייה | `vn_shtyyh` | 1 |
-| הלל | אדון המושיע | `dvn_hmvshy` | 3 |
-| הלל | אדם ובהמה | `dm_vvhmh` | 1 |
-| הלל | אדמה מארר | `dmh_mrr` | 1 |
-| הלל | אודך | `vdkh` | 2 |
-| הלל | אום אני חומה | `vm_ny_chvmh` | 1 |
-| הלל | אום נצורה כבבת | `vm_ntzvrh_khvvt` | 3 |
-| הלל | אומץ ישעך בא | `vmtz_yshkh_v` | 3 |
-| הלל | אז כעיני עבדים | `z_khyny_vdym` | 4 |
-| הלל | אז כעיני עבדים 3א | `z_khyny_vdym` | 1 |
-| הלל | אז כעיני עבדים 3ב | `z_khyny_vdym_v` | 1 |
-| הלל | אז כעיני עבדים 3ג | `z_khyny_vdym_g` | 1 |
-| הלל | אחרי הפיוט קול מבשר | `chry_hfyvt_qvl_mvshr` | 1 |
-| הלל | אל למושעות | `l_lmvshvt` | 1 |
-| הלל | אל נא תעינו | `l_n_tynv` | 3 |
-| הלל | אנא אזון חין | `n_zvn_chyn` | 3 |
-| הלל | אנא אל נא הושע נא והושיעה נא | `n_l_n_hvsh_n_vhvshyh_n` | 1 |
-| הלל | אנא אל נא הושע נא והושיעה נא אבינו אתה | `n_l_n_hvsh_n_vhvshyh_n_vynv_th` | 2 |
-| הלל | אנא אל נא הושע נא והושיעה נא. | `n_l_n_hvsh_n_vhvshyh_n` | 1 |
-| הלל | אנא ה | `n_h` | 2 |
-| הלל | אנא הושיעה נא | `n_hvshyh_n` | 2 |
-| הלל | אני והו הושיעה נא | `ny_vhv_hvshyh_n` | 2 |
-| הלל | אערוך שועי | `rvkh_shvy` | 4 |
-| הלל | ברוך הבא | `vrvkh_hv` | 2 |
-| הלל | ברכת לקרוא את ההלל | `vrkht_lqrv_t_hhll` | 1 |
-| הלל | ברכת על נטילת לולב | `vrkht_l_ntylt_lvlv` | 1 |
-| הלל | בשבת להמשיך אום נצורה כבבת | `vshvt_lhmshykh_vm_ntzvrh_khvvt` | 1 |
-| הלל | הוספת פסוק בהושענא רבה | `hvsft_fsvq_vhvshn_rvh` | 1 |
-| הלל | הושיעה את עמך | `hvshyh_t_mkh` | 1 |
-| הלל | הושע נא אל נא | `hvsh_n_l_n` | 2 |
-| הלל | הושע נא למענך | `hvsh_n_lmnkh` | 1 |
-| הלל | המשיך ב"אני והו הושיעה נא | `hmshykh_vny_vhv_hvshyh_n` | 1 |
-| הלל | הפיוט קול מבשר | `hfyvt_qvl_mvshr` | 1 |
-| הלל | הריני מוכן לנטילת לולב | `hryny_mvkhn_lntylt_lvlv` | 1 |
-| הלל | הריני מוכן לפני נטילת לולב | `hryny_mvkhn_lfny_ntylt_lvlv` | 1 |
-| הלל | זה היום | `zh_hyvm` | 1 |
-| הלל | חדשה בשבת להמשיך אום נצורה כבבת | `chdshh_vshvt_lhmshykh_vm_ntzvrh_khvvt` | 1 |
-| הלל | חדשה להמשיך ב"אני והו הושיעה נא | `chdshh_lhmshykh_vny_vhv_hvshyh_n` | 1 |
-| הלל | חדשה על המשך אחרי חבטת הערבות | `chdshh_l_hmshkh_chry_chvtt_hrvvt` | 1 |
-| הלל | חדשה על המשך בקריאת התורה לחול | `chdshh_l_hmshkh_vqryt_htvrh_lchvl` | 1 |
-| הלל | חדשה על המשך בקריאת התורה ליום טוב | `chdshh_l_hmshkh_vqryt_htvrh_lyvm_tvv` | 1 |
-| הלל | יהי רצון אחרי חבטת הערבות | `yhy_rtzvn_chry_chvtt_hrvvt` | 1 |
-| הלל | יהללוך | `yhllvkh` | 1 |
-| הלל | יהללוך א | `yhllvkh` | 1 |
-| הלל | יהללוך ב | `yhllvkh_v` | 1 |
-| הלל | יהללוך ב1 | `yhllvkh_v` | 1 |
-| הלל | יהללוך ב2 | `yhllvkh_v` | 1 |
-| הלל | כהושעת אדם יציר כפיך | `khhvsht_dm_ytzyr_khfykh` | 3 |
-| הלל | כהושעת אלים | `khhvsht_lym` | 3 |
-| הלל | לך ה' הגדולה | `lkh_h_hgdvlh` | 1 |
-| הלל | למען איתן | `lmn_ytn` | 1 |
-| הלל | למען אמיתך | `lmn_mytkh` | 1 |
-| הלל | למען תמים בדורותיו | `lmn_tmym_vdvrvtyv` | 5 |
-| הלל | מן המצר | `mn_hmtzr` | 3 |
-| הלל | נענע | `nn` | 1 |
-| הלל | על המשך אחרי חבטת הערבות | `l_hmshkh_chry_chvtt_hrvvt` | 1 |
-| הלל | על המשך בקריאת התורה לחול | `l_hmshkh_vqryt_htvrh_lchvl` | 1 |
-| הלל | על המשך בקריאת התורה ליום טוב | `l_hmshkh_vqryt_htvrh_lyvm_tvv` | 1 |
-| הלל | על חבטת הערבות | `l_chvtt_hrvvt` | 1 |
-| הלל | על קדיש | `l_qdysh` | 1 |
-| הלל | פסוק ה' אדונינו מה אדיר | `fsvq_h_dvnynv_mh_dyr` | 1 |
-| הלל | פסוק כי אמרתי | `fsvq_khy_mrty` | 1 |
-| הלל | פסוק לך זרוע | `fsvq_lkh_zrv` | 1 |
-| הלל | פסוק נעימות בימינך | `fsvq_nymvt_vymynkh` | 1 |
-| הלל | פסוק צדיק ה | `fsvq_tzdyq_h` | 1 |
-| הלל | פסוק תתן אמת | `fsvq_ttn_mt` | 1 |
-| הלל | קול מבשר מבשר ואומר | `qvl_mvshr_mvshr_vvmr` | 1 |
-| הלל | רחם נא קהל עדת ישורון | `rchm_n_qhl_dt_yshvrvn` | 1 |
-| הלל | שהחיינו על נטילת לולב | `shhchyynv_l_ntylt_lvlv` | 1 |
-| הלל | תענה אמונים | `tnh_mvnym` | 4 |
-| הלל | תתננו לשם ולתהילה | `ttnnv_lshm_vlthylh` | 4 |
-| יום הכיפורים | בני אדם | `vny_dm` | 1 |
-| יום הכיפורים | ה' הוא האלהים | `h_hv_hlhym` | 1 |
-| יום הכיפורים | זאת חליפתנו | `zt_chlyftnv` | 2 |
-| יום הכיפורים | זה חליפתנו | `zh_chlyftnv` | 2 |
-| ימי הודאה | 1 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | 1 |
-| ימי הודאה | 1 לפני תפילת ערבית ביום העצמאות | `lfny_tfylt_rvyt_vyvm_htzmvt` | 1 |
-| ימי הודאה | 2 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | 1 |
-| ימי הודאה | 2 לפני תפילת ערבית ביום העצמאות | `lfny_tfylt_rvyt_vyvm_htzmvt` | 1 |
-| ימי הודאה | 3 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | 1 |
-| ימי הודאה | 4 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | 1 |
-| ימי הודאה | 5 לפני ברכו ביום העצמאות | `lfny_vrkhv_vyvm_htzmvt` | 1 |
-| ימי הודאה | אני מאמין | `ny_mmyn` | 1 |
-| ימי הודאה | ארור המן ברוך מרדכי | `rvr_hmn_vrvkh_mrdkhy` | 1 |
-| ימי הודאה | ארורה זרש ברוכה אסתר | `rvrh_zrsh_vrvkhh_str` | 1 |
-| ימי הודאה | אשר הניא | `shr_hny` | 4 |
-| ימי הודאה | ביום ירושלים לפני הבתים מ"לכה דודי | `vyvm_yrvshlym_lfny_hvtym_mlkhh_dvdy` | 1 |
-| ימי הודאה | בסוף תפילת ערבית לפני אם אשכחך | `vsvf_tfylt_rvyt_lfny_m_shkhchkh` | 1 |
-| ימי הודאה | בסוף תפילת ערבית על מזמור קכ"ו ביום ירושלים | `vsvf_tfylt_rvyt_l_mzmvr_qkhv_vyvm_yrvshlym` | 1 |
-| ימי הודאה | ברך לפני קריאת המגילה | `vrkh_lfny_qryt_hmgylh` | 1 |
-| ימי הודאה | ברכו ביום העצמאות | `vrkhv_vyvm_htzmvt` | 1 |
-| ימי הודאה | ברכת הרב את ריבנו | `vrkht_hrv_t_ryvnv` | 2 |
-| ימי הודאה | ברכת להדליק נר של חנוכה | `vrkht_lhdlyq_nr_shl_chnvkhh` | 1 |
-| ימי הודאה | ברכת על מקרא מגילה | `vrkht_l_mqr_mgylh` | 1 |
-| ימי הודאה | ברכת שהחיינו בחנוכה | `vrkht_shhchyynv_vchnvkhh` | 1 |
-| ימי הודאה | ברכת שעשה ניסים | `vrkht_shshh_nysym` | 1 |
-| ימי הודאה | גבי מזמורים נוספים ביום ירושלים | `gvy_mzmvrym_nvsfym_vyvm_yrvshlym` | 1 |
-| ימי הודאה | גבי תפילת שחרית ביום העצמאות | `gvy_tfylt_shchryt_vyvm_htzmvt` | 1 |
-| ימי הודאה | גבי תפילת שחרית ביום ירושלים | `gvy_tfylt_shchryt_vyvm_yrvshlym` | 2 |
-| ימי הודאה | ה' הוא האלהים | `h_hv_hlhym` | 1 |
-| ימי הודאה | הבתים מ"לכה דודי | `hvtym_mlkhh_dvdy` | 1 |
-| ימי הודאה | הבתים מ"לכה דודי" ביום ירושלים | `hvtym_mlkhh_dvdy_vyvm_yrvshlym` | 1 |
-| ימי הודאה | ההוראה לפני תפילת ערבית ביום ירושלים | `hhvrh_lfny_tfylt_rvyt_vyvm_yrvshlym` | 1 |
-| ימי הודאה | המזמורים צ"ז-צ"ח | `hmzmvrym_tzztzch` | 1 |
-| ימי הודאה | הנרות הללו | `hnrvt_hllv` | 2 |
-| ימי הודאה | הפטרת עוד היום בנוב לעמוד | `hftrt_vd_hyvm_vnvv_lmvd` | 1 |
-| ימי הודאה | השיר בר יוחאי | `hshyr_vr_yvchy` | 2 |
-| ימי הודאה | וגם חרבונה | `vgm_chrvvnh` | 1 |
-| ימי הודאה | חשוף זרוע | `chshvf_zrv` | 1 |
-| ימי הודאה | יהי רצון שכשם שזכינו | `yhy_rtzvn_shkhshm_shzkhynv` | 2 |
-| ימי הודאה | להודיע | `lhvdy` | 3 |
-| ימי הודאה | לשנה הבאה | `lshnh_hvh` | 1 |
-| ימי הודאה | מועדים לשמחה | `mvdym_lshmchh` | 2 |
-| ימי הודאה | מי שעשה ניסים | `my_shshh_nysym` | 1 |
-| ימי הודאה | מי שעשה ניסים ליום העצמאות | `my_shshh_nysym_lyvm_htzmvt` | 1 |
-| ימי הודאה | מעוז צור | `mvz_tzvr` | 4 |
-| ימי הודאה | משולבת לפני מעוז צור | `mshvlvt_lfny_mvz_tzvr` | 1 |
-| ימי הודאה | על סוף תפילת ערבית ביום ירושלים | `l_svf_tfylt_rvyt_vyvm_yrvshlym` | 1 |
-| ימי הודאה | פשוטה לפני מעוז צור | `fshvth_lfny_mvz_tzvr` | 1 |
-| ימי הודאה | שהחיינו | `shhchyynv` | 2 |
-| ימי הודאה | שושנת יעקב | `shvshnt_yqv` | 2 |
-| ימי הודאה | שיר המעלות | `shyr_hmlvt` | 1 |
-| ימי הודאה | תפילה ערבית על מזמור קכ"ו ביום ירושלים | `tfylh_rvyt_l_mzmvr_qkhv_vyvm_yrvshlym` | 1 |
-| ימי הודאה | תפילת ערבית ביום העצמאות | `tfylt_rvyt_vyvm_htzmvt` | 1 |
-| ימי הודאה | תפילת ערבית ביום ירושלים | `tfylt_rvyt_vyvm_yrvshlym` | 1 |
-| ימי הודאה | תשועתם | `tshvtm` | 1 |
-| כניסת שבת ויום טוב | בואי בשלום | `vvy_vshlvm` | 2 |
-| כניסת שבת ויום טוב | במה מדליקין | `vmh_mdlyqyn` | 5 |
-| כניסת שבת ויום טוב | בקריאת שמע וברכותיה לערבית בשבת ויום טוב | `vqryt_shm_vvrkhvtyh_lrvyt_vshvt_vyvm_tvv` | 1 |
-| כניסת שבת ויום טוב | ברכה על הדלקת נר של יום הכיפורים | `vrkhh_l_hdlqt_nr_shl_yvm_hkhyfvrym` | 1 |
-| כניסת שבת ויום טוב | ברכה על הדלקת נר של יום טוב | `vrkhh_l_hdlqt_nr_shl_yvm_tvv` | 1 |
-| כניסת שבת ויום טוב | ברכה על הדלקת נר של שבת | `vrkhh_l_hdlqt_nr_shl_shvt` | 1 |
-| כניסת שבת ויום טוב | ברכה על עירובין | `vrkhh_l_yrvvyn` | 1 |
-| כניסת שבת ויום טוב | ברכת שהחיינו | `vrkht_shhchyynv` | 2 |
-| כניסת שבת ויום טוב | הנוסח המקורי של ידיד נפש | `hnvsch_hmqvry_shl_ydyd_nfsh` | 1 |
-| כניסת שבת ויום טוב | הנוסח של ידיד נפש בסידורים | `hnvsch_shl_ydyd_nfsh_vsydvrym` | 1 |
-| כניסת שבת ויום טוב | התנערי | `htnry` | 1 |
-| כניסת שבת ויום טוב | התעוררי | `htvrry` | 1 |
-| כניסת שבת ויום טוב | והיו למשיסה | `vhyv_lmshysh` | 1 |
-| כניסת שבת ויום טוב | חדשה לפני לכה דודי | `chdshh_lfny_lkhh_dvdy` | 1 |
-| כניסת שבת ויום טוב | חדשה לפני קבלת שבת | `chdshh_lfny_qvlt_shvt` | 1 |
-| כניסת שבת ויום טוב | ידיד נפש | `ydyd_nfsh` | 2 |
-| כניסת שבת ויום טוב | יום טוב שחל בשבת | `yvm_tvv_shchl_vshvt` | 1 |
-| כניסת שבת ויום טוב | ימין ושמאל | `ymyn_vshml` | 1 |
-| כניסת שבת ויום טוב | לא תבושי | `l_tvvshy` | 1 |
-| כניסת שבת ויום טוב | לכה דודי | `lkhh_dvdy` | 1 |
-| כניסת שבת ויום טוב | לכה דודי לקראת כלה | `lkhh_dvdy_lqrt_khlh` | 1 |
-| כניסת שבת ויום טוב | לקראת שבת | `lqrt_shvt` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ג א | `mzmvr_tzg` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ג ב | `mzmvr_tzg_v` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ה א | `mzmvr_tzh` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ה ב | `mzmvr_tzh_v` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ו א | `mzmvr_tzv` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ו ב | `mzmvr_tzv_v` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ז א | `mzmvr_tzz` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ז ב | `mzmvr_tzz_v` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ח א | `mzmvr_tzch` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ח ב | `mzmvr_tzch_v` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ט א | `mzmvr_tzt` | 1 |
-| כניסת שבת ויום טוב | מזמור צ"ט ב | `mzmvr_tzt_v` | 1 |
-| כניסת שבת ויום טוב | מזמור שיר ליום השבת | `mzmvr_shyr_lyvm_hshvt` | 3 |
-| כניסת שבת ויום טוב | מזמור שיר ליום השבת א | `mzmvr_shyr_lyvm_hshvt` | 1 |
-| כניסת שבת ויום טוב | מזמור שיר ליום השבת ב | `mzmvr_shyr_lyvm_hshvt_v` | 1 |
-| כניסת שבת ויום טוב | מקדש מלך | `mqdsh_mlkh` | 1 |
-| כניסת שבת ויום טוב | ניחום אבלים אחרי לכה דודי | `nychvm_vlym_chry_lkhh_dvdy` | 2 |
-| כניסת שבת ויום טוב | עירוב חצרות תרגום | `yrvv_chtzrvt_trgvm` | 1 |
-| כניסת שבת ויום טוב | עירוב תבשילין תרגום | `yrvv_tvshylyn_trgvm` | 1 |
-| כניסת שבת ויום טוב | עירוב תחומין תרגום | `yrvv_tchvmyn_trgvm` | 1 |
-| כניסת שבת ויום טוב | עירוב תשבילין | `yrvv_tshvylyn` | 1 |
-| כניסת שבת ויום טוב | שמור וזכור | `shmvr_vzkhvr` | 1 |
-| סוף התפילה | אחרי הבדלה בבית הכנסת | `chry_hvdlh_vvyt_hkhnst` | 1 |
-| סוף התפילה | אין כאלהינו | `yn_khlhynv` | 1 |
-| סוף התפילה | אל תירא | `l_tyr` | 3 |
-| סוף התפילה | אמר רבי יוחנן | `mr_rvy_yvchnn` | 4 |
-| סוף התפילה | אני מאמין בביאת המשיח | `ny_mmyn_vvyt_hmshych` | 1 |
-| סוף התפילה | בורא ניב שפתים | `vvr_nyv_shftym` | 1 |
-| סוף התפילה | בית יעקב | `vyt_yqv` | 3 |
-| סוף התפילה | בקידוש לליל שבת | `vqydvsh_llyl_shvt` | 1 |
-| סוף התפילה | בקידושא רבה ליום שבת | `vqydvsh_rvh_lyvm_shvt` | 1 |
-| סוף התפילה | ברוך אתה בעיר | `vrvkh_th_vyr` | 1 |
-| סוף התפילה | ברוך ה' המבורך | `vrvkh_h_hmvvrkh` | 1 |
-| סוף התפילה | ברוך יוצרך | `vrvkh_yvtzrkh` | 1 |
-| סוף התפילה | ברכה על ספירת העומר | `vrkhh_l_sfyrt_hvmr` | 1 |
-| סוף התפילה | ברכי נפשי | `vrkhy_nfshy` | 1 |
-| סוף התפילה | ברכת איש את רעהו | `vrkht_ysh_t_rhv` | 2 |
-| סוף התפילה | דוד מלך ישראל | `dvd_mlkh_yshrl` | 1 |
-| סוף התפילה | הבדלה בבית הכנסת | `hvdlh_vvyt_hkhnst` | 1 |
-| סוף התפילה | היום יום אחד לעומר | `hyvm_yvm_chd_lvmr` | 1 |
-| סוף התפילה | היום יום חמישי בשבת | `hyvm_yvm_chmyshy_vshvt` | 1 |
-| סוף התפילה | היום יום ראשון בשבת | `hyvm_yvm_rshvn_vshvt` | 1 |
-| סוף התפילה | היום יום רביעי בשבת | `hyvm_yvm_rvyy_vshvt` | 1 |
-| סוף התפילה | היום יום שבת קודש | `hyvm_yvm_shvt_qvdsh` | 1 |
-| סוף התפילה | היום יום שישי בשבת | `hyvm_yvm_shyshy_vshvt` | 1 |
-| סוף התפילה | היום יום שלישי בשבת | `hyvm_yvm_shlyshy_vshvt` | 1 |
-| סוף התפילה | היום יום שני בשבת | `hyvm_yvm_shny_vshvt` | 1 |
-| סוף התפילה | המלאך הגואל אותי | `hmlkh_hgvl_vty` | 1 |
-| סוף התפילה | הנה אל ישועתי | `hnh_l_yshvty` | 1 |
-| סוף התפילה | הנני מוכן ומזומן | `hnny_mvkhn_vmzvmn` | 1 |
-| סוף התפילה | הרחמן | `hrchmn` | 1 |
-| סוף התפילה | הרחמן הוא יחזיר | `hrchmn_hv_ychzyr` | 1 |
-| סוף התפילה | השיר שהיו הלויים אומרים | `hshyr_shhyv_hlvyym_vmrym` | 1 |
-| סוף התפילה | השיר שהיו הלויים אומרים ימים | `hshyr_shhyv_hlvyym_vmrym_ymym` | 1 |
-| סוף התפילה | השיר שהיו הלויים אומרים פתיחה | `hshyr_shhyv_hlvyym_vmrym_ftychh` | 1 |
-| סוף התפילה | ואנחנו כורעים עד אין עוד | `vnchnv_khvrym_d_yn_vd` | 1 |
-| סוף התפילה | וידבר | `vydvr` | 1 |
-| סוף התפילה | ויהי נועם | `vyhy_nvm` | 1 |
-| סוף התפילה | ויהי רצון למלאות | `vyhy_rtzvn_lmlvt` | 1 |
-| סוף התפילה | ויתן לך | `vytn_lkh` | 3 |
-| סוף התפילה | חדשה אחרי הבדלה בבית הכנסת | `chdshh_chry_hvdlh_vvyt_hkhnst` | 1 |
-| סוף התפילה | חדשה לספירת העומר והדלקת נרות חנוכה במוצ"ש | `chdshh_lsfyrt_hvmr_vhdlqt_nrvt_chnvkhh_vmvtzsh` | 1 |
-| סוף התפילה | חדשה לספירת העומר לפני עלינו לשבח | `chdshh_lsfyrt_hvmr_lfny_lynv_lshvch` | 1 |
-| סוף התפילה | חדשה לפני פרקי אבות | `chdshh_lfny_frqy_vvt` | 1 |
-| סוף התפילה | חדשה שנייה אחרי הבדלה בבית הכנסת | `chdshh_shnyyh_chry_hvdlh_vvyt_hkhnst` | 1 |
-| סוף התפילה | יהי ה' אלהינו עמנו | `yhy_h_lhynv_mnv` | 1 |
-| סוף התפילה | ישראל נושע בה | `yshrl_nvsh_vh` | 1 |
-| סוף התפילה | כאבן ידמו | `khvn_ydmv` | 1 |
-| סוף התפילה | כל השונה הלכות | `khl_hshvnh_hlkhvt` | 2 |
-| סוף התפילה | כל ישראל | `khl_yshrl` | 1 |
-| סוף התפילה | כשם שאני | `khshm_shny` | 1 |
-| סוף התפילה | לדוד | `ldvd` | 4 |
-| סוף התפילה | לדוד א | `ldvd` | 1 |
-| סוף התפילה | לדוד ב | `ldvd_v` | 1 |
-| סוף התפילה | לכו נרננה | `lkhv_nrnnh` | 3 |
-| סוף התפילה | לכו נרננה א | `lkhv_nrnnh` | 1 |
-| סוף התפילה | לכו נרננה ב | `lkhv_nrnnh_v` | 1 |
-| סוף התפילה | לפורקנך | `lfvrqnkh` | 1 |
-| סוף התפילה | מזמור כ"ד א | `mzmvr_khd` | 1 |
-| סוף התפילה | מזמור כ"ד ב | `mzmvr_khd_v` | 1 |
-| סוף התפילה | מזמור מ"ח א | `mzmvr_mch` | 1 |
-| סוף התפילה | מזמור מ"ח ב | `mzmvr_mch_v` | 1 |
-| סוף התפילה | מזמור פ"א א | `mzmvr_f` | 1 |
-| סוף התפילה | מזמור פ"א ב | `mzmvr_f_v` | 1 |
-| סוף התפילה | מזמור פ"ב א | `mzmvr_fv` | 1 |
-| סוף התפילה | מזמור פ"ב ב | `mzmvr_fv_v` | 1 |
-| סוף התפילה | מזמור צ"ג א | `mzmvr_tzg` | 1 |
-| סוף התפילה | מזמור צ"ג ב | `mzmvr_tzg_v` | 1 |
-| סוף התפילה | מחיתי כעב פשעיך | `mchyty_khv_fshykh` | 1 |
-| סוף התפילה | מי זאת עולה | `my_zt_vlh` | 1 |
-| סוף התפילה | מי ימלל | `my_ymll` | 1 |
-| סוף התפילה | מכתם לדוד | `mkhtm_ldvd` | 1 |
-| סוף התפילה | מכתם לדוד א | `mkhtm_ldvd` | 1 |
-| סוף התפילה | מכתם לדוד ב | `mkhtm_ldvd_v` | 1 |
-| סוף התפילה | סימן טוב | `symn_tvv` | 1 |
-| סוף התפילה | ספירת העומר והדלקת נרות חנוכה במוצ"ש | `sfyrt_hvmr_vhdlqt_nrvt_chnvkhh_vmvtzsh` | 1 |
-| סוף התפילה | ספירת העומר לפני עלינו לשבח | `sfyrt_hvmr_lfny_lynv_lshvch` | 1 |
-| סוף התפילה | על ברכו בתרא | `l_vrkhv_vtr` | 1 |
-| סוף התפילה | על כן נקוה | `l_khn_nqvh` | 4 |
-| סוף התפילה | על כן נקוה א | `l_khn_nqvh` | 1 |
-| סוף התפילה | על כן נקוה ב | `l_khn_nqvh_v` | 1 |
-| סוף התפילה | על לדוד | `l_ldvd` | 1 |
-| סוף התפילה | על מכתם לדוד | `l_mkhtm_ldvd` | 1 |
-| סוף התפילה | על קדיש אחרי לדוד | `l_qdysh_chry_ldvd` | 1 |
-| סוף התפילה | על קדיש אחרי מכתם לדוד | `l_qdysh_chry_mkhtm_ldvd` | 1 |
-| סוף התפילה | על קדיש אחרי שמעו זאת | `l_qdysh_chry_shmv_zt` | 1 |
-| סוף התפילה | על קדיש יתום אחרי מזמור שיר ליום השבת | `l_qdysh_ytvm_chry_mzmvr_shyr_lyvm_hshvt` | 1 |
-| סוף התפילה | על קדיש יתום אחרי שיר הכבוד | `l_qdysh_ytvm_chry_shyr_hkhvvd` | 1 |
-| סוף התפילה | על קדיש יתום אחרי שיר של יום | `l_qdysh_ytvm_chry_shyr_shl_yvm` | 1 |
-| סוף התפילה | על שיר ליום חמישי | `l_shyr_lyvm_chmyshy` | 1 |
-| סוף התפילה | על שיר ליום רביעי | `l_shyr_lyvm_rvyy` | 1 |
-| סוף התפילה | על שיר ליום שישי | `l_shyr_lyvm_shyshy` | 1 |
-| סוף התפילה | על שיר ליום שלישי | `l_shyr_lyvm_shlyshy` | 1 |
-| סוף התפילה | על שיר ליום שני | `l_shyr_lyvm_shny` | 1 |
-| סוף התפילה | על שיר של יום | `l_shyr_shl_yvm` | 1 |
-| סוף התפילה | על שמעו זאת | `l_shmv_zt` | 1 |
-| סוף התפילה | עלינו לשבח עד המונם | `lynv_lshvch_d_hmvnm` | 1 |
-| סוף התפילה | עלינו לשבח עד יושיע | `lynv_lshvch_d_yvshy` | 1 |
-| סוף התפילה | פיטום הקטורת | `fytvm_hqtvrt` | 2 |
-| סוף התפילה | קדיש יתום אחרי ברכת הלבנה | `qdysh_ytvm_chry_vrkht_hlvnh` | 1 |
-| סוף התפילה | קוה אל ה | `qvh_l_h` | 1 |
-| סוף התפילה | קול דודי | `qvl_dvdy` | 1 |
-| סוף התפילה | קידוש בבית הכנסת | `qydvsh_vvyt_hkhnst` | 1 |
-| סוף התפילה | רבי חנניא | `rvy_chnny` | 1 |
-| סוף התפילה | ריבונו של עולם אחרי ספירת העומר | `ryvvnv_shl_vlm_chry_sfyrt_hvmr` | 1 |
-| סוף התפילה | שהם משתחווים | `shhm_mshtchvvym` | 2 |
-| סוף התפילה | שיר של יום ביום טוב שלא בשבת | `shyr_shl_yvm_vyvm_tvv_shl_vshvt` | 1 |
-| סוף התפילה | שמעו זאת | `shmv_zt` | 4 |
-| סוף התפילה | שמעו זאת א | `shmv_zt` | 1 |
-| סוף התפילה | שמעו זאת ב | `shmv_zt_v` | 1 |
-| סוף התפילה | תיפול עליהם | `tyfvl_lyhm` | 1 |
-| סוף התפילה | תלמידי חכמים מרבים שלום | `tlmydy_chkhmym_mrvym_shlvm` | 5 |
-| סוף התפילה | תלמידי חכמים מרבים שלום א | `tlmydy_chkhmym_mrvym_shlvm` | 1 |
-| סוף התפילה | תלמידי חכמים מרבים שלום ב | `tlmydy_chkhmym_mrvym_shlvm_v` | 1 |
-| סוף התפילה | תנא דבי רבי ישמעאל | `tn_dvy_rvy_yshml` | 2 |
-| סוף התפילה | תקוע בשופר | `tqv_vshvfr` | 1 |
-| פסוקי דזמרה | אילו פינו | `ylv_fynv` | 4 |
-| פסוקי דזמרה | אילו פינו ב | `ylv_fynv_v` | 1 |
-| פסוקי דזמרה | אשרי העם | `shry_hm` | 1 |
-| פסוקי דזמרה | אשרי יושבי | `shry_yvshvy` | 1 |
-| פסוקי דזמרה | אתה הוא ה' לבדך מילים א | `th_hv_h_lvdkh_mylym` | 1 |
-| פסוקי דזמרה | אתה הוא ה' לבדך מילים ב | `th_hv_h_lvdkh_mylym_v` | 1 |
-| פסוקי דזמרה | בפי ישרים לימים הנוראים | `vfy_yshrym_lymym_hnvrym` | 1 |
-| פסוקי דזמרה | בפי ישרים לכל השנה | `vfy_yshrym_lkhl_hshnh` | 1 |
-| פסוקי דזמרה | בקריאת שמע וברכותיה לשחרית ביום חול | `vqryt_shm_vvrkhvtyh_lshchryt_vyvm_chvl` | 1 |
-| פסוקי דזמרה | בקריאת שמע וברכותיה לשחרית בשבת ויום טוב | `vqryt_shm_vvrkhvtyh_lshchryt_vshvt_vyvm_tvv` | 1 |
-| פסוקי דזמרה | ברוך ה' לעולם | `vrvkh_h_lvlm` | 1 |
-| פסוקי דזמרה | ברוך ה' לעולם א | `vrvkh_h_lvlm` | 1 |
-| פסוקי דזמרה | ברוך ה' לעולם ב | `vrvkh_h_lvlm_v` | 1 |
-| פסוקי דזמרה | ברוך שאמר | `vrvkh_shmr` | 1 |
-| פסוקי דזמרה | ברוך שאמר א | `vrvkh_shmr` | 1 |
-| פסוקי דזמרה | ברוך שאמר ב | `vrvkh_shmr_v` | 1 |
-| פסוקי דזמרה | ברכות והודעות | `vrkhvt_vhvdvt` | 1 |
-| פסוקי דזמרה | ה' הושיע המלך יעננו | `h_hvshy_hmlkh_ynnv` | 1 |
-| פסוקי דזמרה | ה' צבאות אשרי אדם | `h_tzvvt_shry_dm` | 1 |
-| פסוקי דזמרה | ה' צבאות עמנו | `h_tzvvt_mnv` | 1 |
-| פסוקי דזמרה | האל בתעצומות | `hl_vttzvmvt` | 1 |
-| פסוקי דזמרה | האל בתעצומות עד בנוראותיך לימים הנוראים | `hl_vttzvmvt_d_vnvrvtykh_lymym_hnvrym` | 1 |
-| פסוקי דזמרה | הודו עד אל תרעו | `hvdv_d_l_trv` | 1 |
-| פסוקי דזמרה | הודו עד כי גמל עלי | `hvdv_d_khy_gml_ly` | 1 |
-| פסוקי דזמרה | הושיע את עמך | `hvshy_t_mkh` | 1 |
-| פסוקי דזמרה | הושיע את עמך א | `hvshy_t_mkh` | 1 |
-| פסוקי דזמרה | הושיע את עמך ב | `hvshy_t_mkh_v` | 1 |
-| פסוקי דזמרה | המלך לימים הנוראים | `hmlkh_lymym_hnvrym` | 1 |
-| פסוקי דזמרה | המשיך בישתבח בהושענא רבה, ביום העצמאות וביום ירושלים | `hmshykh_vyshtvch_vhvshn_rvh_vyvm_htzmvt_vvyvm_yrvshlym` | 1 |
-| פסוקי דזמרה | הרינו מזמן לפני ברוך שאמר | `hrynv_mzmn_lfny_vrvkh_shmr` | 1 |
-| פסוקי דזמרה | ואנחנו | `vnchnv` | 1 |
-| פסוקי דזמרה | ובמקהלות רבבות | `vvmqhlvt_rvvvt` | 3 |
-| פסוקי דזמרה | ובמקהלות רבבות א | `vvmqhlvt_rvvvt` | 1 |
-| פסוקי דזמרה | ובמקהלות רבבות ב | `vvmqhlvt_rvvvt_v` | 1 |
-| פסוקי דזמרה | והוא רחום | `vhv_rchvm` | 4 |
-| פסוקי דזמרה | והוא רחום א | `vhv_rchvm` | 1 |
-| פסוקי דזמרה | והוא רחום ב | `vhv_rchvm_v` | 1 |
-| פסוקי דזמרה | ויושע ה' ביום ההוא א | `vyvsh_h_vyvm_hhv` | 1 |
-| פסוקי דזמרה | ויושע ה' ביום ההוא ב | `vyvsh_h_vyvm_hhv_v` | 1 |
-| פסוקי דזמרה | וכרות עמו הברית | `vkhrvt_mv_hvryt` | 3 |
-| פסוקי דזמרה | וכרות עמו הברית א | `vkhrvt_mv_hvryt` | 1 |
-| פסוקי דזמרה | וכרות עמו הברית ב | `vkhrvt_mv_hvryt_v` | 1 |
-| פסוקי דזמרה | ומר את ברכות השחר | `vmr_t_vrkhvt_hshchr` | 1 |
-| פסוקי דזמרה | חדשה לומר את ברכות השחר | `chdshh_lvmr_t_vrkhvt_hshchr` | 1 |
-| פסוקי דזמרה | יהי כבוד | `yhy_khvvd` | 3 |
-| פסוקי דזמרה | יהי כבוד א | `yhy_khvvd` | 1 |
-| פסוקי דזמרה | יהי כבוד ב | `yhy_khvvd_v` | 1 |
-| פסוקי דזמרה | יושב על כסא רם ונשא לימים הנוראים | `yvshv_l_khs_rm_vnsh_lymym_hnvrym` | 1 |
-| פסוקי דזמרה | ישתבח | `yshtvch` | 2 |
-| פסוקי דזמרה | ישתבח א | `yshtvch` | 1 |
-| פסוקי דזמרה | ישתבח ב | `yshtvch_v` | 1 |
-| פסוקי דזמרה | ישתבח לש"ץ לתפילת שחרית | `yshtvch_lshtz_ltfylt_shchryt` | 1 |
-| פסוקי דזמרה | כי לה' המלוכה | `khy_lh_hmlvkhh` | 1 |
-| פסוקי דזמרה | כי לה' המלוכה א | `khy_lh_hmlvkhh` | 1 |
-| פסוקי דזמרה | כי לה' המלוכה ב | `khy_lh_hmlvkhh_v` | 1 |
-| פסוקי דזמרה | מזמור י"ט מילים א | `mzmvr_yt_mylym` | 1 |
-| פסוקי דזמרה | מזמור י"ט מילים ב | `mzmvr_yt_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור ל"ג מילים א | `mzmvr_lg_mylym` | 1 |
-| פסוקי דזמרה | מזמור ל"ג מילים ב | `mzmvr_lg_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור ל"ד מילים א | `mzmvr_ld_mylym` | 1 |
-| פסוקי דזמרה | מזמור ל"ד מילים ב | `mzmvr_ld_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור לתודה בהושענא רבה, ביום העצמאות וביום ירושלים | `mzmvr_ltvdh_vhvshn_rvh_vyvm_htzmvt_vvyvm_yrvshlym` | 1 |
-| פסוקי דזמרה | מזמור לתודה בחול | `mzmvr_ltvdh_vchvl` | 1 |
-| פסוקי דזמרה | מזמור לתודה מילים א | `mzmvr_ltvdh_mylym` | 1 |
-| פסוקי דזמרה | מזמור לתודה מילים ב | `mzmvr_ltvdh_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור צ"א א | `mzmvr_tz` | 1 |
-| פסוקי דזמרה | מזמור צ"א ב | `mzmvr_tz_v` | 1 |
-| פסוקי דזמרה | מזמור צ"ב מילים א | `mzmvr_tzv_mylym` | 1 |
-| פסוקי דזמרה | מזמור צ"ב מילים ב | `mzmvr_tzv_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור צ"ג מילים א | `mzmvr_tzg_mylym` | 1 |
-| פסוקי דזמרה | מזמור צ"ג מילים ב | `mzmvr_tzg_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור צ' מילים א | `mzmvr_tz_mylym` | 1 |
-| פסוקי דזמרה | מזמור צ' מילים ב | `mzmvr_tz_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור ק"נ מילים א | `mzmvr_qn_mylym` | 1 |
-| פסוקי דזמרה | מזמור ק"נ מילים ב | `mzmvr_qn_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור קל"ה מילים א | `mzmvr_qlh_mylym` | 1 |
-| פסוקי דזמרה | מזמור קל"ה מילים ב | `mzmvr_qlh_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור קמ"ה א-ת בלבד | `mzmvr_qmh_t_vlvd` | 1 |
-| פסוקי דזמרה | מזמור קמ"ו מילים א | `mzmvr_qmv_mylym` | 1 |
-| פסוקי דזמרה | מזמור קמ"ו מילים ב | `mzmvr_qmv_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור קמ"ז מילים א | `mzmvr_qmz_mylym` | 1 |
-| פסוקי דזמרה | מזמור קמ"ז מילים ב | `mzmvr_qmz_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור קמ"ח מילים א | `mzmvr_qmch_mylym` | 1 |
-| פסוקי דזמרה | מזמור קמ"ח מילים ב | `mzmvr_qmch_mylym_v` | 1 |
-| פסוקי דזמרה | מזמור קמ"ט א | `mzmvr_qmt` | 1 |
-| פסוקי דזמרה | מזמור קמ"ט ב | `mzmvr_qmt_v` | 1 |
-| פסוקי דזמרה | מזמור שיר חנוכת הבית א | `mzmvr_shyr_chnvkht_hvyt` | 1 |
-| פסוקי דזמרה | מזמור שיר חנוכת הבית ב | `mzmvr_shyr_chnvkht_hvyt_v` | 1 |
-| פסוקי דזמרה | נשמת כל חי | `nshmt_khl_chy` | 1 |
-| פסוקי דזמרה | סיום פסוקי דזמרה בימים הנוראים | `syvm_fsvqy_dzmrh_vymym_hnvrym` | 1 |
-| פסוקי דזמרה | פסוק אורך ימים | `fsvq_vrkh_ymym` | 1 |
-| פסוקי דזמרה | פסוק ה' ימלוך | `fsvq_h_ymlvkh` | 1 |
-| פסוקי דזמרה | פסוק ויהי נועם | `fsvq_vyhy_nvm` | 1 |
-| פסוקי דזמרה | פסוק יהיו לרצון | `fsvq_yhyv_lrtzvn` | 1 |
-| פסוקי דזמרה | פסוקי דזמרה בהושענא רבה, ביום העצמאות וביום ירושלים | `fsvqy_dzmrh_vhvshn_rvh_vyvm_htzmvt_vvyvm_yrvshlym` | 1 |
-| פסוקי דזמרה | רוממו | `rvmmv` | 1 |
-| פסוקי דזמרה | רוממו א | `rvmmv` | 1 |
-| פסוקי דזמרה | רוממו ב | `rvmmv_v` | 1 |
-| פסוקי דזמרה | ש"ץ ביום טוב האל בתעצומות | `shtz_vyvm_tvv_hl_vttzvmvt` | 1 |
-| פסוקי דזמרה | ש"ץ בימים הנוראים המלך | `shtz_vymym_hnvrym_hmlkh` | 1 |
-| פסוקי דזמרה | ש"ץ בשבת שוכן עד | `shtz_vshvt_shvkhn_d` | 1 |
-| פסוקי דזמרה | שוכן עד | `shvkhn_d` | 1 |
-| פסוקי דזמרה | שיר המעלות | `shyr_hmlvt` | 1 |
-| פסוקי דזמרה | שירו לה' עד והלל לה | `shyrv_lh_d_vhll_lh` | 1 |
-| פסוקי דזמרה | תהילה לדוד | `thylh_ldvd` | 1 |
-| פסוקי דזמרה | תהילת | `thylt` | 1 |
-| פסוקי דזמרה | תהלה לדוד ב-ד | `thlh_ldvd_vd` | 1 |
-| פסוקי דזמרה | תהלה לדוד ה-ו | `thlh_ldvd_hv` | 1 |
-| פסוקי דזמרה | תהלה לדוד ה-מ | `thlh_ldvd_hm` | 1 |
-| פסוקי דזמרה | תהלה לדוד ה-ע | `thlh_ldvd_h` | 1 |
-| פסוקי דזמרה | תהלה לדוד ה-ת בלבד | `thlh_ldvd_ht_vlvd` | 1 |
-| פסוקי דזמרה | תהלה לדוד ה-ת ואנחנו | `thlh_ldvd_ht_vnchnv` | 1 |
-| פסוקי דזמרה | תהלה לדוד ז-ת בלבד | `thlh_ldvd_zt_vlvd` | 1 |
-| פסוקי דזמרה | תהלה לדוד ז-ת ואנחנו | `thlh_ldvd_zt_vnchnv` | 1 |
-| פסוקי דזמרה | תהלה לדוד ס-ת בלבד | `thlh_ldvd_st_vlvd` | 1 |
-| פסוקי דזמרה | תהלה לדוד ס-ת ואנחנו | `thlh_ldvd_st_vnchnv` | 1 |
-| פסוקי דזמרה | תהלה לדוד פ-ש | `thlh_ldvd_fsh` | 1 |
-| פסוקי דזמרה | תהלה לדוד פסוק א | `thlh_ldvd_fsvq` | 1 |
-| קדיש | אבלים לפני קדיש | `vlym_lfny_qdysh` | 1 |
-| קדיש | קדיש יהא שמה רבא | `qdysh_yh_shmh_rv` | 1 |
-| קדיש | קדיש יתברך | `qdysh_ytvrkh` | 1 |
-| קדיש | קדיש יתגדל | `qdysh_ytgdl` | 1 |
-| קדיש | קדיש ל(את)חדתא | `qdysh_ltchdt` | 2 |
-| קדיש | קדיש תתקבל | `qdysh_ttqvl` | 1 |
-| קדיש | ש"ץ לפני קדיש | `shtz_lfny_qdysh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | אזמן לסעודתי | `zmn_lsvdty` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | אכול משמנים | `khvl_mshmnym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | אלה מועדי ה | `lh_mvdy_h` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | אלהא די ליה | `lh_dy_lyh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | אמר ה' ליעקב | `mr_h_lyqv` | 3 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בזמירות ליום שבת | `vzmyrvt_lyvm_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בזמירות לליל שבת | `vzmyrvt_llyl_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בזמירות למוצאי שבת | `vzmyrvt_lmvtzy_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | במוצאי יום מנוחה | `vmvtzy_yvm_mnvchh` | 3 |
-| קידוש והבדלה וסעודות שבת ויום טוב | במצות שבת | `vmtzvt_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | במשנה לחם | `vmshnh_lchm` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בקידוש ליום טוב לפני בורא מאורי האש | `vqydvsh_lyvm_tvv_lfny_vvr_mvry_hsh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בקידוש לשלוש רגלים לפני ברכת לישב בסוכה | `vqydvsh_lshlvsh_rglym_lfny_vrkht_lyshv_vsvkhh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בקידוש לשלוש רגלים לפני ברכת שהחיינו | `vqydvsh_lshlvsh_rglym_lfny_vrkht_shhchyynv` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברוך אל עליון | `vrvkh_l_lyvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברוך ה' יום יום | `vrvkh_h_yvm_yvm` | 3 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת אשר בחר בנו בקידוש לליל ראש השנה | `vrkht_shr_vchr_vnv_vqydvsh_llyl_rsh_hshnh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת אשר בחר בנו בקידוש לשלוש רגלים | `vrkht_shr_vchr_vnv_vqydvsh_lshlvsh_rglym` | 4 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת בורא מאורי האש | `vrkht_vvr_mvry_hsh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת הזמן לקידוש בשבת | `vrkht_hzmn_lqydvsh_vshvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת המבדיל בין קודש לחול | `vrkht_hmvdyl_vyn_qvdsh_lchvl` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת המבדיל בין קודש לקודש | `vrkht_hmvdyl_vyn_qvdsh_lqvdsh` | 3 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ברכת לישב בסוכה | `vrkht_lyshv_vsvkhh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | בשיר וקול תודה | `vshyr_vqvl_tvdh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | הבדלה בבית הכנסת | `hvdlh_vvyt_hkhnst` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | הוא אשר דיבר | `hv_shr_dyvr` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | הזמירות לליל שבת | `hzmyrvt_llyl_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | הזן את עולמו | `hzn_t_vlmv` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | המבדיל בין קודש לחול | `hmvdyl_vyn_qvdsh_lchvl` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | השומר שבת פזמון | `hshvmr_shvt_fzmvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | השמים מספרים | `hshmym_msfrym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ואשרי כל חוכה | `vshry_khl_chvkhh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | וידבר משה | `vydvr_mshh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ויהי ערב ויהי בוקר | `vyhy_rv_vyhy_vvqr` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ויהי ערב ויהי בוקר בקידוש לליל יום טוב | `vyhy_rv_vyhy_vvqr_vqydvsh_llyl_yvm_tvv` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ופתח לנו | `vftch_lnv` | 4 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ושמרו בקידושא רבה לשלוש רגלים | `vshmrv_vqydvsh_rvh_lshlvsh_rglym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | זכור לפיוט השומר שבת | `zkhvr_lfyvt_hshvmr_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | זמירות ליום שבת כותרת משולבת | `zmyrvt_lyvm_shvt_khvtrt_mshvlvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | חמדת הימים | `chmdt_hymym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יבנה המקדש | `yvnh_hmqdsh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יה ריבון עלם | `yh_ryvvn_lm` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יה ריבון פזמון | `yh_ryvvn_fzmvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יהי רצון לאושפיזין | `yhy_rtzvn_lvshfyzyn` | 2 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יהי רצון על תפוח בדבש | `yhy_rtzvn_l_tfvch_vdvsh` | 2 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום החמישי | `yvm_hchmyshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום הראשון | `yvm_hrshvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום הרביעי | `yvm_hrvyy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום השביעי | `yvm_hshvyy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום השישי | `yvm_hshyshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום השלישי | `yvm_hshlyshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום השני | `yvm_hshny` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום הששי | `yvm_hshshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | יום זה מכובד פזמון | `yvm_zh_mkhvvd_fzmvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | כי מלאכיו | `khy_mlkhyv` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | כל מקדש שביעי | `khl_mqdsh_shvyy` | 4 |
-| קידוש והבדלה וסעודות שבת ויום טוב | כל שומר שבת | `khl_shvmr_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | לא תחסר | `l_tchsr` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | לה' הישועה | `lh_hyshvh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ליהודים עד אקרא | `lyhvdym_d_qr` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | למקדשך תוב | `lmqdshkh_tvv` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מודה אני על כל החסד | `mvdh_ny_l_khl_hchsd` | 3 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום החמישי | `mylym_lyvm_hchmyshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום הראשון | `mylym_lyvm_hrshvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום הרביעי | `mylym_lyvm_hrvyy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השביעי | `mylym_lyvm_hshvyy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השישי | `mylym_lyvm_hshyshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השלישי | `mylym_lyvm_hshlyshy` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מילים ליום השני | `mylym_lyvm_hshny` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | מנוחה ושמחה | `mnvchh_vshmchh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | משולבת לזמירות למוצאי שבת | `mshvlvt_lzmyrvt_lmvtzy_shvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | סברי מרנן | `svry_mrnn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | פשוטה "זמירות" למוצ"ש | `fshvth_zmyrvt_lmvtzsh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | צור משלו פזמון | `tzvr_mshlv_fzmvn` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | קודש היא לכם | `qvdsh_hy_lkhm` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | קידוש לפסח | `qydvsh_lfsch` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ראשון הוא | `rshvn_hv` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | רברבין עובדיך | `rvrvyn_vvdykh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | רוכב בערבות | `rvkhv_vrvvt` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | רחם בחסדך | `rchm_vchsdkh` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ריבון העולמים | `ryvvn_hvlmym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ריבון כל העולמים | `ryvvn_khl_hvlmym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | שבחין אסדר | `shvchyn_sdr` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | שלום עליכם | `shlvm_lykhm` | 2 |
-| קידוש והבדלה וסעודות שבת ויום טוב | שמי שמים | `shmy_shmym` | 1 |
-| קידוש והבדלה וסעודות שבת ויום טוב | ששת ימים | `shsht_ymym` | 1 |
-| קריאת התורה | אב הרחמים | `v_hrchmym` | 1 |
-| קריאת התורה | אב הרחמים א | `v_hrchmym` | 1 |
-| קריאת התורה | אב הרחמים ב | `v_hrchmym_v` | 1 |
-| קריאת התורה | אב הרחמים בסוף יזכור | `v_hrchmym_vsvf_yzkhvr` | 1 |
-| קריאת התורה | אב הרחמים הוא ירחם | `v_hrchmym_hv_yrchm` | 2 |
-| קריאת התורה | אב הרחמים היטיבה | `v_hrchmym_hytyvh` | 1 |
-| קריאת התורה | אב הרחמים שוכן מרומים | `v_hrchmym_shvkhn_mrvmym` | 1 |
-| קריאת התורה | אבינו שבשמים אל אלוהי הרוחות לכל בשר | `vynv_shvshmym_l_lvhy_hrvchvt_lkhl_vshr` | 1 |
-| קריאת התורה | אבינו שבשמים צור ישראל וגואלו | `vynv_shvshmym_tzvr_yshrl_vgvlv` | 1 |
-| קריאת התורה | אחד אלהינו | `chd_lhynv` | 2 |
-| קריאת התורה | אחד אלוהינו בהקפות | `chd_lvhynv_vhqfvt` | 1 |
-| קריאת התורה | אחינו כל בית ישראל | `chynv_khl_vyt_yshrl` | 1 |
-| קריאת התורה | אחרי ההקפות | `chry_hhqfvt` | 1 |
-| קריאת התורה | אחרי ובנוחה יאמר | `chry_vvnvchh_ymr` | 1 |
-| קריאת התורה | אין כמוך באלהים | `yn_khmvkh_vlhym` | 2 |
-| קריאת התורה | אל ארך אפיים | `l_rkh_fyym` | 2 |
-| קריאת התורה | אל מלא רחמים לחללי צה"ל | `l_ml_rchmym_lchlly_tzhl` | 2 |
-| קריאת התורה | אל מלא רחמים לקדושי השואה יד ושם | `l_ml_rchmym_lqdvshy_hshvh_yd_vshm` | 2 |
-| קריאת התורה | אל מלא רחמים לקדושי השואה רבנות | `l_ml_rchmym_lqdvshy_hshvh_rvnvt` | 2 |
-| קריאת התורה | אלוהי הרוחות | `lvhy_hrvchvt` | 1 |
-| קריאת התורה | אנא ה' להקפות | `n_h_lhqfvt` | 1 |
-| קריאת התורה | אקדמות א-ט | `qdmvt_t` | 1 |
-| קריאת התורה | אקדמות אות ת עד רקיעא | `qdmvt_vt_t_d_rqy` | 1 |
-| קריאת התורה | אקדמות הדרא עד הסוף | `qdmvt_hdr_d_hsvf` | 1 |
-| קריאת התורה | אקדמות י-ש | `qdmvt_ysh` | 1 |
-| קריאת התורה | את הנשיא ואת משנהו | `t_hnshy_vt_mshnhv` | 1 |
-| קריאת התורה | את כל שרי הארץ הזאת | `t_khl_shry_hrtz_hzt` | 1 |
-| קריאת התורה | אתה הראת | `th_hrt` | 2 |
-| קריאת התורה | בסוף ההקפות לפני שמע ישראל | `vsvf_hhqfvt_lfny_shm_yshrl` | 1 |
-| קריאת התורה | בסוף תפילת ערבית ליום הזיכרון | `vsvf_tfylt_rvyt_lyvm_hzykhrvn` | 1 |
-| קריאת התורה | בסוף תפילת שחרית לחול | `vsvf_tfylt_shchryt_lchvl` | 1 |
-| קריאת התורה | בסוף תפילת שחרית ליום הזיכרון | `vsvf_tfylt_shchryt_lyvm_hzykhrvn` | 1 |
-| קריאת התורה | בקדושה דסדרא לשחרית בחול | `vqdvshh_dsdr_lshchryt_vchvl` | 1 |
-| קריאת התורה | ברוך צור כל העולמים | `vrvkh_tzvr_khl_hvlmym` | 1 |
-| קריאת התורה | ברוך שנתן תורה | `vrvkh_shntn_tvrh` | 1 |
-| קריאת התורה | ברוך שפטרנו | `vrvkh_shftrnv` | 2 |
-| קריאת התורה | בריך שמיה | `vrykh_shmyh` | 5 |
-| קריאת התורה | ברך לאחר הקריאה | `vrkh_lchr_hqryh` | 1 |
-| קריאת התורה | ברכות אחרי קריאת ההפטרה | `vrkhvt_chry_qryt_hhftrh` | 1 |
-| קריאת התורה | ברכת אשר בחר בנו | `vrkht_shr_vchr_vnv` | 1 |
-| קריאת התורה | ברכת אשר נתן לנו | `vrkht_shr_ntn_lnv` | 1 |
-| קריאת התורה | ברכת על התורה ליום טוב | `vrkht_l_htvrh_lyvm_tvv` | 1 |
-| קריאת התורה | ברכת על התורה לשבת | `vrkht_l_htvrh_lshvt` | 1 |
-| קריאת התורה | בתפילת העמידה למוסף של שבת | `vtfylt_hmydh_lmvsf_shl_shvt` | 1 |
-| קריאת התורה | גבי אבינו שבשמים אל אלוהי הרוחות לכל בשר | `gvy_vynv_shvshmym_l_lvhy_hrvchvt_lkhl_vshr` | 1 |
-| קריאת התורה | גדלו בהקפות | `gdlv_vhqfvt` | 1 |
-| קריאת התורה | גדלו בשבת ויום טוב | `gdlv_vshvt_vyvm_tvv` | 1 |
-| קריאת התורה | גדלו לה' איתי | `gdlv_lh_yty` | 1 |
-| קריאת התורה | דובר צדקות | `dvvr_tzdqvt` | 1 |
-| קריאת התורה | ה' מה אדם ותדעהו | `h_mh_dm_vtdhv` | 1 |
-| קריאת התורה | הברכה לפני ההפטרה | `hvrkhh_lfny_hhftrh` | 1 |
-| קריאת התורה | ההקפות | `hhqfvt` | 1 |
-| קריאת התורה | הוא יברך את חיילי צה"ל | `hv_yvrkh_t_chyyly_tzhl` | 1 |
-| קריאת התורה | הודו על ארץ ושמים | `hvdv_l_rtz_vshmym` | 2 |
-| קריאת התורה | הכרזת החודש | `hkhrzt_hchvdsh` | 2 |
-| קריאת התורה | הנותן תשועה | `hnvtn_tshvh` | 1 |
-| קריאת התורה | הנותן תשועה בארה"ב | `hnvtn_tshvh_vrhv` | 1 |
-| קריאת התורה | הניח את ספר התורה | `hnych_t_sfr_htvrh` | 1 |
-| קריאת התורה | התפילה בשלומה של מלכות בארצות הברית | `htfylh_vshlvmh_shl_mlkhvt_vrtzvt_hvryt` | 1 |
-| קריאת התורה | התפילה לשבויים | `htfylh_lshvvyym` | 1 |
-| קריאת התורה | התפילה לשלום המדינה | `htfylh_lshlvm_hmdynh` | 1 |
-| קריאת התורה | התפילה לשלום חיילי צה"ל | `htfylh_lshlvm_chyyly_tzhl` | 1 |
-| קריאת התורה | ואני תפילתי | `vny_tfylty` | 1 |
-| קריאת התורה | ואת אחינו כל בית ישראל | `vt_chynv_khl_vyt_yshrl` | 1 |
-| קריאת התורה | ואת אחינו כל בית ישראל עד וירישתה | `vt_chynv_khl_vyt_yshrl_d_vyryshth` | 1 |
-| קריאת התורה | ואת כל שרי הארץ הזאת | `vt_khl_shry_hrtz_hzt` | 1 |
-| קריאת התורה | ואתה קדוש | `vth_qdvsh` | 4 |
-| קריאת התורה | ואתה קדוש יושב תהילות | `vth_qdvsh_yvshv_thylvt` | 1 |
-| קריאת התורה | ואתם הדבקים | `vtm_hdvqym` | 2 |
-| קריאת התורה | ובא לציון גואל | `vv_ltzyvn_gvl` | 1 |
-| קריאת התורה | ובנוחה יאמר | `vvnvchh_ymr` | 2 |
-| קריאת התורה | וזאת התורה | `vzt_htvrh` | 2 |
-| קריאת התורה | ויבטחו בך | `vyvtchv_vkh` | 1 |
-| קריאת התורה | ויהי בנסוע | `vyhy_vnsv` | 2 |
-| קריאת התורה | ויחד לבבנו | `vychd_lvvnv` | 1 |
-| קריאת התורה | ויעזור ויגן | `vyzvr_vygn` | 1 |
-| קריאת התורה | ותגלה ותראה עד בקדושתו | `vtglh_vtrh_d_vqdvshtv` | 1 |
-| קריאת התורה | זך וישר | `zkh_vyshr` | 1 |
-| קריאת התורה | זכרון אב | `zkhrvn_v` | 1 |
-| קריאת התורה | זכרון איש זכר | `zkhrvn_ysh_zkhr` | 1 |
-| קריאת התורה | זכרון אישה | `zkhrvn_yshh` | 1 |
-| קריאת התורה | זכרון אם | `zkhrvn_m` | 1 |
-| קריאת התורה | זכרון בעל | `zkhrvn_vl` | 1 |
-| קריאת התורה | זכרון חללי צה"ל | `zkhrvn_chlly_tzhl` | 1 |
-| קריאת התורה | זכרון נקבה | `zkhrvn_nqvh` | 1 |
-| קריאת התורה | זכרון קדושי השואה יד ושם ארוך | `zkhrvn_qdvshy_hshvh_yd_vshm_rvkh` | 1 |
-| קריאת התורה | זכרון קדושי השואה יד ושם קצר | `zkhrvn_qdvshy_hshvh_yd_vshm_qtzr` | 1 |
-| קריאת התורה | זכרון קדושים | `zkhrvn_qdvshym` | 1 |
-| קריאת התורה | חדשה אחרי ההקפות | `chdshh_chry_hhqfvt` | 1 |
-| קריאת התורה | חדשה למוסף של יום טוב | `chdshh_lmvsf_shl_yvm_tvv` | 1 |
-| קריאת התורה | חדשה למנחה ביום טוב | `chdshh_lmnchh_vyvm_tvv` | 1 |
-| קריאת התורה | חדשה לפני אב הרחמים שוכן מרומים | `chdshh_lfny_v_hrchmym_shvkhn_mrvmym` | 1 |
-| קריאת התורה | חדשה על מוסף לראש חודש וחול המועד | `chdshh_l_mvsf_lrsh_chvdsh_vchvl_hmvd` | 1 |
-| קריאת התורה | חזק את ידי | `chzq_t_ydy` | 1 |
-| קריאת התורה | חצי קדיש אחרי קריאת התורה | `chtzy_qdysh_chry_qryt_htvrh` | 1 |
-| קריאת התורה | י"ג מידות | `yg_mydvt` | 1 |
-| קריאת התורה | י"ג מידות ביום טוב | `yg_mydvt_vyvm_tvv` | 1 |
-| קריאת התורה | יהי רצון | `yhy_rtzvn` | 1 |
-| קריאת התורה | יהי רצון מלפני אבינו שבשמים | `yhy_rtzvn_mlfny_vynv_shvshmym` | 1 |
-| קריאת התורה | יהי רצון שתחדש עלינו | `yhy_rtzvn_shtchdsh_lynv` | 1 |
-| קריאת התורה | יהללו | `yhllv` | 1 |
-| קריאת התורה | יהללו את שם ה | `yhllv_t_shm_h` | 1 |
-| קריאת התורה | יודע מחשבות | `yvd_mchshvvt` | 1 |
-| קריאת התורה | יושב בסתר עליון | `yvshv_vstr_lyvn` | 3 |
-| קריאת התורה | יזכור לאב | `yzkhvr_lv` | 1 |
-| קריאת התורה | יזכור לאיש זכר | `yzkhvr_lysh_zkhr` | 1 |
-| קריאת התורה | יזכור לאישה | `yzkhvr_lyshh` | 1 |
-| קריאת התורה | יזכור לאם | `yzkhvr_lm` | 1 |
-| קריאת התורה | יזכור לבעל | `yzkhvr_lvl` | 1 |
-| קריאת התורה | יזכור לחללי צה"ל | `yzkhvr_lchlly_tzhl` | 1 |
-| קריאת התורה | יזכור לנקבה | `yzkhvr_lnqvh` | 1 |
-| קריאת התורה | יזכור לקדושי השואה יד ושם ארוך | `yzkhvr_lqdvshy_hshvh_yd_vshm_rvkh` | 1 |
-| קריאת התורה | יזכור לקדושי השואה יד ושם קצר | `yzkhvr_lqdvshy_hshvh_yd_vshm_qtzr` | 1 |
-| קריאת התורה | יזכור לקדושים | `yzkhvr_lqdvshym` | 1 |
-| קריאת התורה | יחדשהו בנוסח ארץ ישראל | `ychdshhv_vnvsch_rtz_yshrl` | 2 |
-| קריאת התורה | יחדשהו בנוסח חוץ לארץ | `ychdshhv_vnvsch_chvtz_lrtz` | 2 |
-| קריאת התורה | יקום פורקן הראשון | `yqvm_fvrqn_hrshvn` | 2 |
-| קריאת התורה | יקום פורקן השני | `yqvm_fvrqn_hshny` | 2 |
-| קריאת התורה | יתן ה' את אויבנו | `ytn_h_t_vyvnv` | 1 |
-| קריאת התורה | כללית לפני הנותן תשועה | `khllyt_lfny_hnvtn_tshvh` | 1 |
-| קריאת התורה | לך ה | `lkh_h` | 1 |
-| קריאת התורה | לך ה' הגדולה | `lkh_h_hgdvlh` | 3 |
-| קריאת התורה | למנצח | `lmntzch` | 1 |
-| קריאת התורה | למנצח מזמור לדוד | `lmntzch_mzmvr_ldvd` | 1 |
-| קריאת התורה | למנצח מזמור לדוד א | `lmntzch_mzmvr_ldvd` | 1 |
-| קריאת התורה | למנצח מזמור לדוד ב | `lmntzch_mzmvr_ldvd_v` | 1 |
-| קריאת התורה | מאת הרב הצבאי הראשי | `mt_hrv_htzvy_hrshy` | 1 |
-| קריאת התורה | מאת הרבנים הראשיים לישראל | `mt_hrvnym_hrshyym_lyshrl` | 1 |
-| קריאת התורה | מאת הרבנים הראשיים שבארץ ישראל | `mt_hrvnym_hrshyym_shvrtz_yshrl` | 1 |
-| קריאת התורה | מוסף של יום טוב | `mvsf_shl_yvm_tvv` | 1 |
-| קריאת התורה | מזמור ט' בערבית | `mzmvr_t_vrvyt` | 1 |
-| קריאת התורה | מזמור ט' בשחרית | `mzmvr_t_vshchryt` | 1 |
-| קריאת התורה | מזמור כ"ט א | `mzmvr_kht` | 1 |
-| קריאת התורה | מזמור כ"ט ב | `mzmvr_kht_v` | 1 |
-| קריאת התורה | מזמור לדוד | `mzmvr_ldvd` | 1 |
-| קריאת התורה | מזמור קמ"ד | `mzmvr_qmd` | 1 |
-| קריאת התורה | מי שברך לחולה זכר | `my_shvrkh_lchvlh_zkhr` | 2 |
-| קריאת התורה | מי שברך לחולה נקבה | `my_shvrkh_lchvlh_nqvh` | 2 |
-| קריאת התורה | מי שברך ליולדת נקבה | `my_shvrkh_lyvldt_nqvh` | 2 |
-| קריאת התורה | מי שברך לעולה לתורה | `my_shvrkh_lvlh_ltvrh` | 2 |
-| קריאת התורה | מי שברך לקהל | `my_shvrkh_lqhl` | 1 |
-| קריאת התורה | מי שברך לקהל א | `my_shvrkh_lqhl` | 1 |
-| קריאת התורה | מי שברך לקהל ב | `my_shvrkh_lqhl_v` | 1 |
-| קריאת התורה | מי שגמלך כל טוב | `my_shgmlkh_khl_tvv` | 1 |
-| קריאת התורה | מי שעשה ניסים | `my_shshh_nysym` | 2 |
-| קריאת התורה | מלך מלכי המלכים | `mlkh_mlkhy_hmlkhym` | 1 |
-| קריאת התורה | מלך עולמים | `mlkh_vlmym` | 1 |
-| קריאת התורה | מנחה ביום טוב | `mnchh_vyvm_tvv` | 1 |
-| קריאת התורה | נאמן אתה הוא | `nmn_th_hv` | 1 |
-| קריאת התורה | נכתבה על ידי הרב שלמה גורן | `nkhtvh_l_ydy_hrv_shlmh_gvrn` | 1 |
-| קריאת התורה | עוזר דלים | `vzr_dlym` | 1 |
-| קריאת התורה | עולה לתורה ברכו | `vlh_ltvrh_vrkhv` | 1 |
-| קריאת התורה | עולה לתורה לברך | `vlh_ltvrh_lvrkh` | 1 |
-| קריאת התורה | על הוצאת ספר תורה | `l_hvtzt_sfr_tvrh` | 1 |
-| קריאת התורה | על הכל יתגדל ויתקדש | `l_hkhl_ytgdl_vytqdsh` | 1 |
-| קריאת התורה | על הכל ליום טוב | `l_hkhl_lyvm_tvv` | 1 |
-| קריאת התורה | על הכל לשבת | `l_hkhl_lshvt` | 1 |
-| קריאת התורה | על התורה ליום טוב | `l_htvrh_lyvm_tvv` | 1 |
-| קריאת התורה | על התורה לשבת | `l_htvrh_lshvt` | 1 |
-| קריאת התורה | על מוסף לראש חודש וחול המועד | `l_mvsf_lrsh_chvdsh_vchvl_hmvd` | 1 |
-| קריאת התורה | על קריאת התורה בימי חול | `l_qryt_htvrh_vymy_chvl` | 1 |
-| קריאת התורה | עץ חיים היא | `tz_chyym_hy` | 1 |
-| קריאת התורה | ציון של תרגום | `tzyvn_shl_trgvm` | 1 |
-| קריאת התורה | קדוש ונורא | `qdvsh_vnvr` | 1 |
-| קריאת התורה | קדיש יתום בערבית ליום הזיכרון | `qdysh_ytvm_vrvyt_lyvm_hzykhrvn` | 1 |
-| קריאת התורה | קהל לענות ברוך ה' המבורך | `qhl_lnvt_vrvkh_h_hmvvrkh` | 1 |
-| קריאת התורה | קהל לענות לברכת הגומל | `qhl_lnvt_lvrkht_hgvml` | 1 |
-| קריאת התורה | רחם על ציון | `rchm_l_tzyvn` | 1 |
-| קריאת התורה | ריבון העולם לימים הנוראים | `ryvvn_hvlm_lymym_hnvrym` | 1 |
-| קריאת התורה | ריבונו של עולם מלא משאלות | `ryvvnv_shl_vlm_ml_mshlvt` | 1 |
-| קריאת התורה | ש"ץ לחצי קדיש לפני מוסף | `shtz_lchtzy_qdysh_lfny_mvsf` | 1 |
-| קריאת התורה | שישו ושמחו | `shyshv_vshmchv` | 1 |
-| קריאת התורה | שמחנו באליהו הנביא | `shmchnv_vlyhv_hnvy` | 1 |
-| קריאת התורה | שמע ישראל | `shm_yshrl` | 1 |
-| קריאת התורה | תומך תמימים | `tvmkh_tmymym` | 1 |
-| קריאת התורה | תורת ה' תמימה | `tvrt_h_tmymh` | 1 |
-| קריאת התורה | תפילה בשלומה של מלכות | `tfylh_vshlvmh_shl_mlkhvt` | 2 |
-| קריאת התורה | תרגום ליקום פורקן הראשון | `trgvm_lyqvm_fvrqn_hrshvn` | 1 |
-| קריאת התורה | תרגום ליקום פורקן השני | `trgvm_lyqvm_fvrqn_hshny` | 1 |
-| קריאת שמע וברכותיה | אהבה רבה | `hvh_rvh` | 3 |
-| קריאת שמע וברכותיה | אהבה רבה א | `hvh_rvh` | 1 |
-| קריאת שמע וברכותיה | אהבה רבה ב | `hvh_rvh_v` | 1 |
-| קריאת שמע וברכותיה | אל אדון | `l_dvn` | 1 |
-| קריאת שמע וברכותיה | אל ברוך | `l_vrvkh` | 1 |
-| קריאת שמע וברכותיה | אל מלך נאמן | `l_mlkh_nmn` | 2 |
-| קריאת שמע וברכותיה | אמת ואמונה | `mt_vmvnh` | 1 |
-| קריאת שמע וברכותיה | אמת ויציב | `mt_vytzyv` | 3 |
-| קריאת שמע וברכותיה | אני ה' תחילת הפסוק | `ny_h_tchylt_hfsvq` | 1 |
-| קריאת שמע וברכותיה | את שם | `t_shm` | 1 |
-| קריאת שמע וברכותיה | את שם א | `t_shm` | 1 |
-| קריאת שמע וברכותיה | את שם ב | `t_shm_v` | 1 |
-| קריאת שמע וברכותיה | בידך אפקיד רוחי | `vydkh_fqyd_rvchy` | 1 |
-| קריאת שמע וברכותיה | ביום טוב שחל במשך השבוע | `vyvm_tvv_shchl_vmshkh_hshvv` | 1 |
-| קריאת שמע וברכותיה | ברוך ה' ביום | `vrvkh_h_vyvm` | 3 |
-| קריאת שמע וברכותיה | ברוך ה' ביום לקריאת שמע לילדים | `vrvkh_h_vyvm_lqryt_shm_lyldym` | 1 |
-| קריאת שמע וברכותיה | ברוך ה' המבורך | `vrvkh_h_hmvvrkh` | 1 |
-| קריאת שמע וברכותיה | ברוך ה' לעולם | `vrvkh_h_lvlm` | 1 |
-| קריאת שמע וברכותיה | ברוך ה' לעולם הוראה חדשה עם | `vrvkh_h_lvlm_hvrh_chdshh_m` | 1 |
-| קריאת שמע וברכותיה | ברוך ה' לעולם הוראה עם | `vrvkh_h_lvlm_hvrh_m` | 1 |
-| קריאת שמע וברכותיה | ברוך ה' לעולם עד נספר תהילתך | `vrvkh_h_lvlm_d_nsfr_thyltkh` | 1 |
-| קריאת שמע וברכותיה | ברוך שם כבוד מלכותו לעולם ועד | `vrvkh_shm_khvvd_mlkhvtv_lvlm_vd` | 1 |
-| קריאת שמע וברכותיה | ברכו את ה' המבורך | `vrkhv_t_h_hmvvrkh` | 1 |
-| קריאת שמע וברכותיה | ברכת אהבת עולם | `vrkht_hvt_vlm` | 1 |
-| קריאת שמע וברכותיה | ברכת אהבת עולם א | `vrkht_hvt_vlm` | 1 |
-| קריאת שמע וברכותיה | ברכת אהבת עולם ב | `vrkht_hvt_vlm_v` | 1 |
-| קריאת שמע וברכותיה | ברכת המעריב ערבים | `vrkht_hmryv_rvym` | 1 |
-| קריאת שמע וברכותיה | ברכת המעריב ערבים א | `vrkht_hmryv_rvym` | 1 |
-| קריאת שמע וברכותיה | ברכת המעריב ערבים ב | `vrkht_hmryv_rvym_v` | 1 |
-| קריאת שמע וברכותיה | ברכת המפיל | `vrkht_hmfyl` | 2 |
-| קריאת שמע וברכותיה | ברכת המפיל לילדים א | `vrkht_hmfyl_lyldym` | 1 |
-| קריאת שמע וברכותיה | ברכת המפיל לילדים ב | `vrkht_hmfyl_lyldym_v` | 1 |
-| קריאת שמע וברכותיה | ברכת השכיבנו | `vrkht_hshkhyvnv` | 2 |
-| קריאת שמע וברכותיה | ברכת השכיבנו א | `vrkht_hshkhyvnv` | 1 |
-| קריאת שמע וברכותיה | ברכת השכיבנו ב | `vrkht_hshkhyvnv_v` | 1 |
-| קריאת שמע וברכותיה | ברכת השכיבנו לימי חול | `vrkht_hshkhyvnv_lymy_chvl` | 1 |
-| קריאת שמע וברכותיה | ברכת השכיבנו לימי חול ג | `vrkht_hshkhyvnv_lymy_chvl_g` | 1 |
-| קריאת שמע וברכותיה | ברכת יוצר בשבת | `vrkht_yvtzr_vshvt` | 1 |
-| קריאת שמע וברכותיה | בשם ה' אלהי ישראל | `vshm_h_lhy_yshrl` | 1 |
-| קריאת שמע וברכותיה | בתפילת העמידה לערבית בחול | `vtfylt_hmydh_lrvyt_vchvl` | 1 |
-| קריאת שמע וברכותיה | בתפילת העמידה לערבית בשבת | `vtfylt_hmydh_lrvyt_vshvt` | 1 |
-| קריאת שמע וברכותיה | בתפילת העמידה לשחרית בחול | `vtfylt_hmydh_lshchryt_vchvl` | 1 |
-| קריאת שמע וברכותיה | בתפילת העמידה לשחרית בשבת | `vtfylt_hmydh_lshchryt_vshvt` | 1 |
-| קריאת שמע וברכותיה | ה' אלוהיכם | `h_lvhykhm` | 1 |
-| קריאת שמע וברכותיה | ה' ימלוך לעולם ועד | `h_ymlvkh_lvlm_vd` | 1 |
-| קריאת שמע וברכותיה | הוראת ברוך ה' המבורך | `hvrt_vrvkh_h_hmvvrkh` | 1 |
-| קריאת שמע וברכותיה | הוראת ברכו לש"ץ | `hvrt_vrkhv_lshtz` | 1 |
-| קריאת שמע וברכותיה | הוראת יתברך וישתבח עם | `hvrt_ytvrkh_vyshtvch_m` | 1 |
-| קריאת שמע וברכותיה | הכל יודוך | `hkhl_yvdvkh` | 3 |
-| קריאת שמע וברכותיה | הכל יודוך א | `hkhl_yvdvkh` | 1 |
-| קריאת שמע וברכותיה | הכל יודוך ב | `hkhl_yvdvkh_v` | 1 |
-| קריאת שמע וברכותיה | המאיר לארץ | `hmyr_lrtz` | 1 |
-| קריאת שמע וברכותיה | המילה אמת | `hmylh_mt` | 1 |
-| קריאת שמע וברכותיה | המלאך הגואל אותי | `hmlkh_hgvl_vty` | 1 |
-| קריאת שמע וברכותיה | המשיך ב"והוא רחום" במוצאי שבת | `hmshykh_vvhv_rchvm_vmvtzy_shvt` | 1 |
-| קריאת שמע וברכותיה | המשיך בתתברך ביום טוב שחל במשך השבוע | `hmshykh_vttvrkh_vyvm_tvv_shchl_vmshkh_hshvv` | 1 |
-| קריאת שמע וברכותיה | המתגאה | `hmtgh` | 1 |
-| קריאת שמע וברכותיה | הנה לא ינום | `hnh_l_ynvm` | 1 |
-| קריאת שמע וברכותיה | ואהבת | `vhvt` | 4 |
-| קריאת שמע וברכותיה | והאופנים | `vhvfnym` | 1 |
-| קריאת שמע וברכותיה | והאופנים א | `vhvfnym` | 1 |
-| קריאת שמע וברכותיה | והאופנים ב | `vhvfnym_v` | 1 |
-| קריאת שמע וברכותיה | והוא רחום | `vhv_rchvm` | 2 |
-| קריאת שמע וברכותיה | והיה אם שמוע עד ובשעריך | `vhyh_m_shmv_d_vvshrykh` | 1 |
-| קריאת שמע וברכותיה | והיה אם שמוע עונש | `vhyh_m_shmv_vnsh` | 1 |
-| קריאת שמע וברכותיה | והיה אם שמוע שכר | `vhyh_m_shmv_shkhr` | 1 |
-| קריאת שמע וברכותיה | וידבר משה | `vydvr_mshh` | 1 |
-| קריאת שמע וברכותיה | ונאמר כי פדה ה' את יעקב | `vnmr_khy_fdh_h_t_yqv` | 1 |
-| קריאת שמע וברכותיה | ופרוש עלינו וחתימה | `vfrvsh_lynv_vchtymh` | 1 |
-| קריאת שמע וברכותיה | ושמרו | `vshmrv` | 1 |
-| קריאת שמע וברכותיה | ושמרו פסוקים | `vshmrv_fsvqym` | 1 |
-| קריאת שמע וברכותיה | ושמתם את דברי אלה | `vshmtm_t_dvry_lh` | 1 |
-| קריאת שמע וברכותיה | חדשה להמשך ביום טוב שחל במשך השבוע | `chdshh_lhmshkh_vyvm_tvv_shchl_vmshkh_hshvv` | 1 |
-| קריאת שמע וברכותיה | חדשה לתפילת העמידה בשלוש רגלים | `chdshh_ltfylt_hmydh_vshlvsh_rglym` | 1 |
-| קריאת שמע וברכותיה | חדשה על מזמורים לפתיחה במוצאי שבת | `chdshh_l_mzmvrym_lftychh_vmvtzy_shvt` | 1 |
-| קריאת שמע וברכותיה | חדשה על פסוקים לפתיחה בימי חול | `chdshh_l_fsvqym_lftychh_vymy_chvl` | 1 |
-| קריאת שמע וברכותיה | חתימת המלך בכבודו | `chtymt_hmlkh_vkhvvdv` | 1 |
-| קריאת שמע וברכותיה | טובים מאורות | `tvvym_mvrvt` | 1 |
-| קריאת שמע וברכותיה | יום טוב שחל במשך השבוע | `yvm_tvv_shchl_vmshkh_hshvv` | 1 |
-| קריאת שמע וברכותיה | יוצר אור | `yvtzr_vr` | 1 |
-| קריאת שמע וברכותיה | יראו עינינו | `yrv_ynynv` | 1 |
-| קריאת שמע וברכותיה | יראו עינינו א | `yrv_ynynv` | 1 |
-| קריאת שמע וברכותיה | יראו עינינו ב | `yrv_ynynv_v` | 1 |
-| קריאת שמע וברכותיה | יתברך וישתבח | `ytvrkh_vyshtvch` | 1 |
-| קריאת שמע וברכותיה | כי ביום הזה | `khy_vyvm_hzh` | 1 |
-| קריאת שמע וברכותיה | לאל אשר שבת | `ll_shr_shvt` | 3 |
-| קריאת שמע וברכותיה | לאל ברוך | `ll_vrvkh` | 3 |
-| קריאת שמע וברכותיה | לאל ברוך א | `ll_vrvkh` | 1 |
-| קריאת שמע וברכותיה | לאל ברוך ב | `ll_vrvkh_v` | 1 |
-| קריאת שמע וברכותיה | לישועתך קויתי | `lyshvtkh_qvyty` | 1 |
-| קריאת שמע וברכותיה | לישועתך קויתי ה | `lyshvtkh_qvyty_h` | 1 |
-| קריאת שמע וברכותיה | למען ירבו ימיכם | `lmn_yrvv_ymykhm` | 1 |
-| קריאת שמע וברכותיה | מי כמכה | `my_khmkhh` | 1 |
-| קריאת שמע וברכותיה | מיוחדת לערבית במוצאי שבת | `myvchdt_lrvyt_vmvtzy_shvt` | 1 |
-| קריאת שמע וברכותיה | מלאים זיו | `mlym_zyv` | 1 |
-| קריאת שמע וברכותיה | מלכותך ראו בניך | `mlkhvtkh_rv_vnykh` | 1 |
-| קריאת שמע וברכותיה | משה ובני ישראל | `mshh_vvny_yshrl` | 1 |
-| קריאת שמע וברכותיה | עזרת אבותינו | `zrt_vvtynv` | 3 |
-| קריאת שמע וברכותיה | על הראשונים | `l_hrshvnym` | 1 |
-| קריאת שמע וברכותיה | על הראשונים א | `l_hrshvnym` | 1 |
-| קריאת שמע וברכותיה | על הראשונים ב | `l_hrshvnym_v` | 2 |
-| קריאת שמע וברכותיה | על פסוקים לפתיחה בימי חול | `l_fsvqym_lftychh_vymy_chvl` | 1 |
-| קריאת שמע וברכותיה | על פסוקים לפתיחה במוצאי שבת | `l_fsvqym_lftychh_vmvtzy_shvt` | 1 |
-| קריאת שמע וברכותיה | פאר וכבוד | `fr_vkhvvd` | 1 |
-| קריאת שמע וברכותיה | פסוק ביום הכיפורים | `fsvq_vyvm_hkhyfvrym` | 1 |
-| קריאת שמע וברכותיה | פסוק בשלוש רגלים | `fsvq_vshlvsh_rglym` | 1 |
-| קריאת שמע וברכותיה | פסוק שמע ישראל | `fsvq_shm_yshrl` | 1 |
-| קריאת שמע וברכותיה | פסוקים בראש השנה | `fsvqym_vrsh_hshnh` | 1 |
-| קריאת שמע וברכותיה | צור ישראל | `tzvr_yshrl` | 1 |
-| קריאת שמע וברכותיה | צור ישראל א | `tzvr_yshrl` | 1 |
-| קריאת שמע וברכותיה | צור ישראל ב | `tzvr_yshrl_v` | 1 |
-| קריאת שמע וברכותיה | רגזו ואל תחטאו | `rgzv_vl_tchtv` | 1 |
-| קריאת שמע וברכותיה | שבח נותנים לו | `shvch_nvtnym_lv` | 1 |
-| קריאת שמע וברכותיה | שירה חדשה | `shyrh_chdshh` | 1 |
-| קריאת שמע וברכותיה | תפילת העמידה בשלוש רגלים | `tfylt_hmydh_vshlvsh_rglym` | 1 |
-| קריאת שמע וברכותיה | תקעו בחודש שופר | `tqv_vchvdsh_shvfr` | 1 |
-| קריאת שמע וברכותיה | תתברך צורנו | `ttvrkh_tzvrnv` | 3 |
-| קריאת שמע וברכותיה | תתברך צורנו א | `ttvrkh_tzvrnv` | 1 |
-| קריאת שמע וברכותיה | תתברך צורנו ב | `ttvrkh_tzvrnv_v` | 1 |
-| ראש השנה | ברכת איש לרעהו בליל ראש השנה | `vrkht_ysh_lrhv_vlyl_rsh_hshnh` | 2 |
-| ראש השנה | לא ירעו | `l_yrv` | 1 |
-| ראש השנה | מי אל כמוך | `my_l_khmvkh` | 1 |
-| ראש השנה | מן המצר | `mn_hmtzr` | 1 |
-| ראש השנה | סימנים לסעודת ליל ראש השנה | `symnym_lsvdt_lyl_rsh_hshnh` | 1 |
-| ראש השנה | קידוש לליל ראש השנה | `qydvsh_llyl_rsh_hshnh` | 11 |
-| תחנון | אבינו מלכנו ברך | `vynv_mlkhnv_vrkh` | 2 |
-| תחנון | אבינו מלכנו הוראה לעשרת ימי תשובה | `vynv_mlkhnv_hvrh_lshrt_ymy_tshvvh` | 1 |
-| תחנון | אבינו מלכנו הוראה לתעניות | `vynv_mlkhnv_hvrh_ltnyvt` | 1 |
-| תחנון | אבינו מלכנו חדש | `vynv_mlkhnv_chdsh` | 2 |
-| תחנון | אבינו מלכנו חדש וברך | `vynv_mlkhnv_chdsh_vvrkh` | 1 |
-| תחנון | אבינו מלכנו לעשרות ימי תשובה | `vynv_mlkhnv_lshrvt_ymy_tshvvh` | 1 |
-| תחנון | אבינו מלכנו לתעניות | `vynv_mlkhnv_ltnyvt` | 1 |
-| תחנון | אחרי תחנון | `chry_tchnvn` | 1 |
-| תחנון | אחרי תחנון בשחרית | `chry_tchnvn_vshchryt` | 1 |
-| תחנון | אין כמוך | `yn_khmvkh` | 1 |
-| תחנון | אל ארך אפיים | `l_rkh_fyym` | 1 |
-| תחנון | אל רחום וחנון | `l_rchvm_vchnvn` | 4 |
-| תחנון | אנא מלך | `n_mlkh` | 1 |
-| תחנון | אנא שוב | `n_shvv` | 1 |
-| תחנון | אשמנו | `shmnv` | 1 |
-| תחנון | ה' אל באפך | `h_l_vfkh` | 1 |
-| תחנון | ה' אלוהי ישראל | `h_lvhy_yshrl` | 1 |
-| תחנון | הבט משמים וראה | `hvt_mshmym_vrh` | 1 |
-| תחנון | הבט נא | `hvt_n` | 1 |
-| תחנון | הטה | `hth` | 3 |
-| תחנון | הפותח יד | `hfvtch_yd` | 3 |
-| תחנון | ואנחנו לא נדע | `vnchnv_l_nd` | 1 |
-| תחנון | ובכל זאת | `vvkhl_zt` | 1 |
-| תחנון | והוא רחום | `vhv_rchvm` | 3 |
-| תחנון | ויאמר דוד אל גד | `vymr_dvd_l_gd` | 1 |
-| תחנון | וידוי | `vydvy` | 1 |
-| תחנון | וידוי בימי שני וחמישי | `vydvy_vymy_shny_vchmyshy` | 1 |
-| תחנון | ויעבור | `vyvvr` | 1 |
-| תחנון | וסלחת | `vslcht` | 1 |
-| תחנון | זרים אומרים | `zrym_vmrym` | 1 |
-| תחנון | חדשה לפני צדקתך צדק | `chdshh_lfny_tzdqtkh_tzdq` | 1 |
-| תחנון | חדשה לתחנון ארוך | `chdshh_ltchnvn_rvkh` | 1 |
-| תחנון | חדשה לתחנון הקצר בשחרית | `chdshh_ltchnvn_hqtzr_vshchryt` | 1 |
-| תחנון | חוסה ה | `chvsh_h` | 1 |
-| תחנון | י"ג מידות | `yg_mydvt` | 1 |
-| תחנון | ימים שאין אומרים בהם תחנון במנחה | `ymym_shyn_vmrym_vhm_tchnvn_vmnchh` | 1 |
-| תחנון | ימים שאין אומרים בהם תחנון בשחרית | `ymym_shyn_vmrym_vhm_tchnvn_vshchryt` | 1 |
-| תחנון | כי אתה | `khy_th` | 1 |
-| תחנון | כללית לאבינו מלכנו | `khllyt_lvynv_mlkhnv` | 1 |
-| תחנון | כללית לגבי צדקתך צדק | `khllyt_lgvy_tzdqtkh_tzdq` | 1 |
-| תחנון | מתרצה ברחמים | `mtrtzh_vrchmym` | 1 |
-| תחנון | סלח לנו | `slch_lnv` | 1 |
-| תחנון | סרנו | `srnv` | 1 |
-| תחנון | עזרנו | `zrnv` | 1 |
-| תחנון | צדקתך צדק | `tzdqtkh_tzdq` | 2 |
-| תחנון | קולנו תשמע | `qvlnv_tshm` | 1 |
-| תחנון | רחום וחנון | `rchvm_vchnvn` | 1 |
-| תחנון | שומר גוי אחד | `shvmr_gvy_chd` | 1 |
-| תחנון | שומר גוי קדוש | `shvmr_gvy_qdvsh` | 1 |
-| תחנון | שומר ישראל | `shvmr_yshrl` | 1 |
-| תחנון | תבוא לפניך תפילתנו | `tvv_lfnykh_tfyltnv` | 1 |
-| תחנון | תחנון הקצר בשחרית | `tchnvn_hqtzr_vshchryt` | 1 |
-| תפילת העמידה | אדיר אדירנו | `dyr_dyrnv` | 1 |
-| תפילת העמידה | אדיר אדירנו הוראה לש"ץ | `dyr_dyrnv_hvrh_lshtz` | 1 |
-| תפילת העמידה | אדיר במרום | `dyr_vmrvm` | 2 |
-| תפילת העמידה | אז בקול | `z_vqvl` | 1 |
-| תפילת העמידה | אחרי שאותך לבדך | `chry_shvtkh_lvdkh` | 1 |
-| תפילת העמידה | אחרי תפילות טל וגשם | `chry_tfylvt_tl_vgshm` | 1 |
-| תפילת העמידה | אחרי תפילת העמידה בערבית במוצאי שבת | `chry_tfylt_hmydh_vrvyt_vmvtzy_shvt` | 1 |
-| תפילת העמידה | אלוהי נצור | `lvhy_ntzvr` | 4 |
-| תפילת העמידה | אלוהי עד מדבר מרמה | `lvhy_d_mdvr_mrmh` | 1 |
-| תפילת העמידה | אמירה לש"ץ לפני ברכת כהנים | `myrh_lshtz_lfny_vrkht_khhnym` | 1 |
-| תפילת העמידה | אמן | `mn` | 1 |
-| תפילת העמידה | אני ה' אלהיכם | `ny_h_lhykhm` | 1 |
-| תפילת העמידה | אף ברי | `f_vry` | 1 |
-| תפילת העמידה | את החודש הזה עד ולכפרת פשע | `t_hchvdsh_hzh_d_vlkhfrt_fsh` | 1 |
-| תפילת העמידה | אתה אחד | `th_chd` | 1 |
-| תפילת העמידה | אתה בחרתנו | `th_vchrtnv` | 1 |
-| תפילת העמידה | אתה גיבור | `th_gyvvr` | 1 |
-| תפילת העמידה | אתה חוננתנו | `th_chvnntnv` | 2 |
-| תפילת העמידה | אתה יצרת | `th_ytzrt` | 1 |
-| תפילת העמידה | אתה קידשת | `th_qydsht` | 1 |
-| תפילת העמידה | ב"רצה" במוסף של שבת רגילה | `vrtzh_vmvsf_shl_shvt_rgylh` | 1 |
-| תפילת העמידה | בדעתו אביעה חידות | `vdtv_vyh_chydvt` | 1 |
-| תפילת העמידה | ביום | `vyvm` | 1 |
-| תפילת העמידה | בכל המועדים | `vkhl_hmvdym` | 1 |
-| תפילת העמידה | בכל ימי הפסח | `vkhl_ymy_hfsch` | 2 |
-| תפילת העמידה | בסוף תפילת מוסף לשבת ויום טוב | `vsvf_tfylt_mvsf_lshvt_vyvm_tvv` | 1 |
-| תפילת העמידה | בסוף תפילת ערבית לחול | `vsvf_tfylt_rvyt_lchvl` | 1 |
-| תפילת העמידה | בסוף תפילת ערבית לשבת | `vsvf_tfylt_rvyt_lshvt` | 1 |
-| תפילת העמידה | בסוף תפילת שחרית לשבת | `vsvf_tfylt_shchryt_lshvt` | 1 |
-| תפילת העמידה | בספר חיים | `vsfr_chyym` | 4 |
-| תפילת העמידה | בעבורו | `vvvrv` | 1 |
-| תפילת העמידה | בצדקו | `vtzdqv` | 1 |
-| תפילת העמידה | בצדקם | `vtzdqm` | 1 |
-| תפילת העמידה | ברכה בסוף תפילות טל וגשם | `vrkhh_vsvf_tfylvt_tl_vgshm` | 1 |
-| תפילת העמידה | ברכת אבות | `vrkht_vvt` | 2 |
-| תפילת העמידה | ברכת אבות כל גוף הברכה | `vrkht_vvt_khl_gvf_hvrkhh` | 1 |
-| תפילת העמידה | ברכת בית דוד | `vrkht_vyt_dvd` | 1 |
-| תפילת העמידה | ברכת הגאולה | `vrkht_hgvlh` | 1 |
-| תפילת העמידה | ברכת הדעת | `vrkht_hdt` | 2 |
-| תפילת העמידה | ברכת המינים | `vrkht_hmynym` | 1 |
-| תפילת העמידה | ברכת המצווה של הכהנים | `vrkht_hmtzvvh_shl_hkhhnym` | 1 |
-| תפילת העמידה | ברכת הסליחה | `vrkht_hslychh` | 1 |
-| תפילת העמידה | ברכת הצדיקים | `vrkht_htzdyqym` | 3 |
-| תפילת העמידה | ברכת הרפואה | `vrkht_hrfvh` | 3 |
-| תפילת העמידה | ברכת השנים | `vrkht_hshnym` | 1 |
-| תפילת העמידה | ברכת התשובה | `vrkht_htshvvh` | 1 |
-| תפילת העמידה | ברכת ירושלים | `vrkht_yrvshlym` | 1 |
-| תפילת העמידה | ברכת כהנים בארץ ישראל | `vrkht_khhnym_vrtz_yshrl` | 1 |
-| תפילת העמידה | ברכת כהנים לש"ץ | `vrkht_khhnym_lshtz` | 4 |
-| תפילת העמידה | ברכת כהנים פסוקים בכל יום | `vrkht_khhnym_fsvqym_vkhl_yvm` | 1 |
-| תפילת העמידה | ברכת כהנים פסוקים לש"ץ | `vrkht_khhnym_fsvqym_lshtz` | 1 |
-| תפילת העמידה | ברכת נחם | `vrkht_nchm` | 2 |
-| תפילת העמידה | ברכת עננו | `vrkht_nnv` | 2 |
-| תפילת העמידה | ברכת עננו גוף הברכה | `vrkht_nnv_gvf_hvrkhh` | 1 |
-| תפילת העמידה | ברכת פתיחה למעין שבע | `vrkht_ftychh_lmyn_shv` | 1 |
-| תפילת העמידה | ברכת פתיחה למעין שבע הוראה לש"ץ | `vrkht_ftychh_lmyn_shv_hvrh_lshtz` | 1 |
-| תפילת העמידה | ברכת קדושה | `vrkht_qdvshh` | 1 |
-| תפילת העמידה | ברכת קדושה ליחיד | `vrkht_qdvshh_lychyd` | 1 |
-| תפילת העמידה | ברכת קדושה לימים הנוראים | `vrkht_qdvshh_lymym_hnvrym` | 1 |
-| תפילת העמידה | ברכת קיבוץ גלויות | `vrkht_qyvvtz_glvyvt` | 1 |
-| תפילת העמידה | ברכת שלום | `vrkht_shlvm` | 1 |
-| תפילת העמידה | בשבועות | `vshvvvt` | 1 |
-| תפילת העמידה | בתחנון לשחרית | `vtchnvn_lshchryt` | 1 |
-| תפילת העמידה | ה' שפתי תפתח | `h_shfty_tftch` | 1 |
-| תפילת העמידה | הוא אלהינו | `hv_lhynv` | 1 |
-| תפילת העמידה | הוראת המשך חדשה למוסף של ראש חודש | `hvrt_hmshkh_chdshh_lmvsf_shl_rsh_chvdsh` | 1 |
-| תפילת העמידה | הוראת המשך למוסף של ראש חודש | `hvrt_hmshkh_lmvsf_shl_rsh_chvdsh` | 1 |
-| תפילת העמידה | הוראת הקראה לכהנים | `hvrt_hqrh_lkhhnym` | 1 |
-| תפילת העמידה | הזה | `hzh` | 1 |
-| תפילת העמידה | המלך המשפט | `hmlkh_hmshft` | 2 |
-| תפילת העמידה | המלך הקדוש | `hmlkh_hqdvsh` | 2 |
-| תפילת העמידה | המלך הקדוש משולב בלי כוכבית | `hmlkh_hqdvsh_mshvlv_vly_khvkhvyt` | 1 |
-| תפילת העמידה | המלך הקדוש משולב עם כוכבית | `hmlkh_hqdvsh_mshvlv_m_khvkhvyt` | 2 |
-| תפילת העמידה | המשיך בשים שלום בעמוד | `hmshykh_vshym_shlvm_vmvd` | 1 |
-| תפילת העמידה | השיבה שופטינו | `hshyvh_shvftynv` | 1 |
-| תפילת העמידה | ובדברי קדשך | `vvdvry_qdshkh` | 1 |
-| תפילת העמידה | ובדברי קדשך עם | `vvdvry_qdshkh_m` | 1 |
-| תפילת העמידה | וביום השבת | `vvyvm_hshvt` | 1 |
-| תפילת העמידה | ובכן צדיקים | `vvkhn_tzdyqym` | 1 |
-| תפילת העמידה | ובכן תן כבוד | `vvkhn_tn_khvvd` | 1 |
-| תפילת העמידה | ובכן תן פחדך | `vvkhn_tn_fchdkh` | 1 |
-| תפילת העמידה | ובראשי חודשיכם | `vvrshy_chvdshykhm` | 1 |
-| תפילת העמידה | והשיאנו לשלוש רגלים | `vhshynv_lshlvsh_rglym` | 3 |
-| תפילת העמידה | וי"ו החיבור | `vyv_hchyvvr` | 1 |
-| תפילת העמידה | ויכולו | `vykhvlv` | 4 |
-| תפילת העמידה | וכל החיים | `vkhl_hchyym` | 1 |
-| תפילת העמידה | וכתוב לחיים טובים | `vkhtvv_lchyym_tvvym` | 1 |
-| תפילת העמידה | וכתוב לחיים טובים כל בני בריתך | `vkhtvv_lchyym_tvvym_khl_vny_vrytkh` | 1 |
-| תפילת העמידה | ולא נתתו | `vl_nttv` | 1 |
-| תפילת העמידה | ולירושלים עירך | `vlyrvshlym_yrkh` | 1 |
-| תפילת העמידה | ומנחתם | `vmnchtm` | 1 |
-| תפילת העמידה | ומנחתם ונסכיהם | `vmnchtm_vnskhyhm` | 1 |
-| תפילת העמידה | ומפני חטאינו | `vmfny_chtynv` | 3 |
-| תפילת העמידה | ועל כולם | `vl_khvlm` | 1 |
-| תפילת העמידה | ושמרו | `vshmrv` | 1 |
-| תפילת העמידה | ותודיענו במוצ"ש | `vtvdynv_vmvtzsh` | 4 |
-| תפילת העמידה | ותחזינה עינינו | `vtchzynh_ynynv` | 1 |
-| תפילת העמידה | ותמלוך אתה לבדך | `vtmlvkh_th_lvdkh` | 1 |
-| תפילת העמידה | ותערב | `vtrv` | 3 |
-| תפילת העמידה | ותערב הוראה בארץ ישראל | `vtrv_hvrh_vrtz_yshrl` | 1 |
-| תפילת העמידה | ותערב הוראה בחו"ל | `vtrv_hvrh_vchvl` | 1 |
-| תפילת העמידה | ותערב עליך | `vtrv_lykh` | 1 |
-| תפילת העמידה | ותערב עליך בארץ ישראל | `vtrv_lykh_vrtz_yshrl` | 1 |
-| תפילת העמידה | ותתן לנו לראש השנה | `vttn_lnv_lrsh_hshnh` | 1 |
-| תפילת העמידה | ותתן לנו לשלוש רגלים | `vttn_lnv_lshlvsh_rglym` | 1 |
-| תפילת העמידה | זכור אב נמשך | `zkhvr_v_nmshkh` | 3 |
-| תפילת העמידה | זכור הנולד | `zkhvr_hnvld` | 1 |
-| תפילת העמידה | זכור טען | `zkhvr_tn` | 1 |
-| תפילת העמידה | זכור משוי | `zkhvr_mshvy` | 1 |
-| תפילת העמידה | זכור פקיד | `zkhvr_fqyd` | 1 |
-| תפילת העמידה | זכור שנים עשר | `zkhvr_shnym_shr` | 1 |
-| תפילת העמידה | זכרנו לחיים | `zkhrnv_lchyym` | 4 |
-| תפילת העמידה | חדש עלינו את החודש הזה | `chdsh_lynv_t_hchvdsh_hzh` | 1 |
-| תפילת העמידה | חדשה אחרי תפילת העמידה בערבית במוצאי שבת | `chdshh_chry_tfylt_hmydh_vrvyt_vmvtzy_shvt` | 1 |
-| תפילת העמידה | חדשה ל"ותערב עליך | `chdshh_lvtrv_lykh` | 1 |
-| תפילת העמידה | חדשה להמשיך ב"ומנחתם | `chdshh_lhmshykh_vvmnchtm` | 1 |
-| תפילת העמידה | חדשה להמשיך ב"רצה" אחרי ברכת הזמן במוסף של שבת | `chdshh_lhmshykh_vrtzh_chry_vrkht_hzmn_vmvsf_shl_shvt` | 1 |
-| תפילת העמידה | חדשה להמשך אחרי שאותך לבדך | `chdshh_lhmshkh_chry_shvtkh_lvdkh` | 1 |
-| תפילת העמידה | חדשה להמשך אחרי תפילות טל וגשם | `chdshh_lhmshkh_chry_tfylvt_tl_vgshm` | 1 |
-| תפילת העמידה | חדשה להמשך מוסף של שבת רגילה | `chdshh_lhmshkh_mvsf_shl_shvt_rgylh` | 1 |
-| תפילת העמידה | חדשה לש"ץ להמשיך בשים שלום אחרי ברכת כהנים | `chdshh_lshtz_lhmshykh_vshym_shlvm_chry_vrkht_khhnym` | 1 |
-| תפילת העמידה | חדשה לשלום רב במנחה של חול | `chdshh_lshlvm_rv_vmnchh_shl_chvl` | 1 |
-| תפילת העמידה | חתימה משולבת לברכת השלום | `chtymh_mshvlvt_lvrkht_hshlvm` | 1 |
-| תפילת העמידה | חתימת העונה בעת צרה | `chtymt_hvnh_vt_tzrh` | 1 |
-| תפילת העמידה | טל תן לרצות ארצך | `tl_tn_lrtzvt_rtzkh` | 3 |
-| תפילת העמידה | יהי רצון | `yhy_rtzvn` | 3 |
-| תפילת העמידה | יהי רצון עד קדמוניות | `yhy_rtzvn_d_qdmvnyvt` | 1 |
-| תפילת העמידה | יהי רצון" של הקהל | `yhy_rtzvn_shl_hqhl` | 2 |
-| תפילת העמידה | יהיו לרצון | `yhyv_lrtzvn` | 1 |
-| תפילת העמידה | יום חמישי של סוכות | `yvm_chmyshy_shl_svkhvt` | 2 |
-| תפילת העמידה | יום ראשון של סוכות | `yvm_rshvn_shl_svkhvt` | 1 |
-| תפילת העמידה | יום ראשון של סוכות פסוקים | `yvm_rshvn_shl_svkhvt_fsvqym` | 1 |
-| תפילת העמידה | יום רביעי של סוכות | `yvm_rvyy_shl_svkhvt` | 2 |
-| תפילת העמידה | יום שביעי של סוכות | `yvm_shvyy_shl_svkhvt` | 2 |
-| תפילת העמידה | יום שישי של סוכות | `yvm_shyshy_shl_svkhvt` | 2 |
-| תפילת העמידה | יום שלישי של סוכות | `yvm_shlyshy_shl_svkhvt` | 2 |
-| תפילת העמידה | יום שני של סוכות | `yvm_shny_shl_svkhvt` | 2 |
-| תפילת העמידה | יטריח לפלג | `ytrych_lflg` | 1 |
-| תפילת העמידה | יעלה ויבוא | `ylh_vyvv` | 6 |
-| תפילת העמידה | יעלה ויבוא 5 לימי חול ושבת | `ylh_vyvv_lymy_chvl_vshvt` | 1 |
-| תפילת העמידה | יעלה ויבוא 5 לראש השנה | `ylh_vyvv_lrsh_hshnh` | 1 |
-| תפילת העמידה | יעלה ויבוא 5 לשלוש רגלים | `ylh_vyvv_lshlvsh_rglym` | 1 |
-| תפילת העמידה | יעלה ויבוא הוראה לימי חול ושבת | `ylh_vyvv_hvrh_lymy_chvl_vshvt` | 1 |
-| תפילת העמידה | יעלה ויבוא התחלה | `ylh_vyvv_htchlh` | 1 |
-| תפילת העמידה | יעלה ויבוא חג המצות | `ylh_vyvv_chg_hmtzvt` | 1 |
-| תפילת העמידה | יעלה ויבוא ימים | `ylh_vyvv_ymym` | 1 |
-| תפילת העמידה | יעלה ויבוא סוף | `ylh_vyvv_svf` | 1 |
-| תפילת העמידה | ישמח משה | `yshmch_mshh` | 1 |
-| תפילת העמידה | ישמחו במלכותך | `yshmchv_vmlkhvtkh` | 2 |
-| תפילת העמידה | כבודו מלא עולם | `khvvdv_ml_vlm` | 1 |
-| תפילת העמידה | כהנים לברך על המצווה | `khhnym_lvrkh_l_hmtzvvh` | 1 |
-| תפילת העמידה | כי אתה שומע | `khy_th_shvm` | 1 |
-| תפילת העמידה | כי שם ה' אקרא | `khy_shm_h_qr` | 1 |
-| תפילת העמידה | לברך את עמו ישראל באהבה | `lvrkh_t_mv_yshrl_vhvh` | 1 |
-| תפילת העמידה | לדור ודור | `ldvr_vdvr` | 1 |
-| תפילת העמידה | לדור ודור עם | `ldvr_vdvr_m` | 1 |
-| תפילת העמידה | לעומתם | `lvmtm` | 1 |
-| תפילת העמידה | לעומתם עם | `lvmtm_m` | 1 |
-| תפילת העמידה | לתפילות טל וגשם | `ltfylvt_tl_vgshm` | 1 |
-| תפילת העמידה | מגן אבות | `mgn_vvt` | 4 |
-| תפילת העמידה | מגן אברהם | `mgn_vrhm` | 1 |
-| תפילת העמידה | מודים | `mvdym` | 2 |
-| תפילת העמידה | מודים אנחנו לך | `mvdym_nchnv_lkh` | 1 |
-| תפילת העמידה | מודים דרבנן | `mvdym_drvnn` | 4 |
-| תפילת העמידה | מוסף של שבת רגילה | `mvsf_shl_shvt_rgylh` | 1 |
-| תפילת העמידה | מוריד הטל | `mvryd_htl` | 1 |
-| תפילת העמידה | מוריד הטל במוסף לשלוש רגלים | `mvryd_htl_vmvsf_lshlvsh_rglym` | 1 |
-| תפילת העמידה | מוריד הטל בשלוש רגלים | `mvryd_htl_vshlvsh_rglym` | 1 |
-| תפילת העמידה | מי כמוך | `my_khmvkh` | 4 |
-| תפילת העמידה | מילים מוריד הטל | `mylym_mvryd_htl` | 1 |
-| תפילת העמידה | מילים משיב הרוח ומוריד הגשם | `mylym_mshyv_hrvch_vmvryd_hgshm` | 1 |
-| תפילת העמידה | מכלכל חיים | `mkhlkhl_chyym` | 1 |
-| תפילת העמידה | מלוך על כל העולם | `mlvkh_l_khl_hvlm` | 1 |
-| תפילת העמידה | מלך אוהב צדקה ומשפט | `mlkh_vhv_tzdqh_vmshft` | 1 |
-| תפילת העמידה | מלך עוזר | `mlkh_vzr` | 1 |
-| תפילת העמידה | מלך רחמן | `mlkh_rchmn` | 1 |
-| תפילת העמידה | ממקומו | `mmqvmv` | 1 |
-| תפילת העמידה | ממקומך מלכנו | `mmqvmkh_mlkhnv` | 1 |
-| תפילת העמידה | מענה של הקהל לקריאה | `mnh_shl_hqhl_lqryh` | 2 |
-| תפילת העמידה | משיב הרוח במוסף לשלוש רגלים | `mshyv_hrvch_vmvsf_lshlvsh_rglym` | 1 |
-| תפילת העמידה | משיב הרוח בשלוש רגלים | `mshyv_hrvch_vshlvsh_rglym` | 1 |
-| תפילת העמידה | משיב הרוח ומוריד הגשם | `mshyv_hrvch_vmvryd_hgshm` | 1 |
-| תפילת העמידה | משיב הרוח ומוריד הטל | `mshyv_hrvch_vmvryd_htl` | 1 |
-| תפילת העמידה | נעריצך | `nrytzkh` | 1 |
-| תפילת העמידה | נקדש את שמך | `nqdsh_t_shmkh` | 1 |
-| תפילת העמידה | סוף ברכת אבות | `svf_vrkht_vvt` | 1 |
-| תפילת העמידה | סוף ברכת גבורות | `svf_vrkht_gvvrvt` | 1 |
-| תפילת העמידה | סוף ברכת הזמן לראש השנה | `svf_vrkht_hzmn_lrsh_hshnh` | 1 |
-| תפילת העמידה | סוף פסוק קדוש קדוש | `svf_fsvq_qdvsh_qdvsh` | 1 |
-| תפילת העמידה | עושה השלום | `vshh_hshlvm` | 2 |
-| תפילת העמידה | עושה השלום עם | `vshh_hshlvm_m` | 1 |
-| תפילת העמידה | על ברכת קדושה ליחיד בתפילת הלחש | `l_vrkht_qdvshh_lychyd_vtfylt_hlchsh` | 1 |
-| תפילת העמידה | על הלל אחרי תפילת העמידה של שחרית בחול ושבת | `l_hll_chry_tfylt_hmydh_shl_shchryt_vchvl_vshvt` | 1 |
-| תפילת העמידה | על הניסים לחנוכה | `l_hnysym_lchnvkhh` | 7 |
-| תפילת העמידה | על הניסים לפורים | `l_hnysym_lfvrym` | 4 |
-| תפילת העמידה | על הניסים לשושן פורים | `l_hnysym_lshvshn_fvrym` | 1 |
-| תפילת העמידה | על הניסים פתיחה | `l_hnysym_ftychh` | 1 |
-| תפילת העמידה | עננו בברכת הגאולה | `nnv_vvrkht_hgvlh` | 1 |
-| תפילת העמידה | עננו בברכת שומע תפילה | `nnv_vvrkht_shvm_tfylh` | 1 |
-| תפילת העמידה | פסוק ברוך כבוד | `fsvq_vrvkh_khvvd` | 1 |
-| תפילת העמידה | פסוק וערבה לה | `fsvq_vrvh_lh` | 1 |
-| תפילת העמידה | פסוק ימלוך | `fsvq_ymlvkh` | 1 |
-| תפילת העמידה | פסוק קדוש קדוש | `fsvq_qdvsh_qdvsh` | 1 |
-| תפילת העמידה | פסוק ראשון | `fsvq_rshvn` | 1 |
-| תפילת העמידה | פסוק שלישי | `fsvq_shlyshy` | 1 |
-| תפילת העמידה | פסוק שמע | `fsvq_shm` | 1 |
-| תפילת העמידה | פסוק שני | `fsvq_shny` | 1 |
-| תפילת העמידה | פתח ליבי עד נפשי | `ftch_lyvy_d_nfshy` | 1 |
-| תפילת העמידה | קדוש אתה ונורא שמך | `qdvsh_th_vnvr_shmkh` | 1 |
-| תפילת העמידה | קדושה בחזרת הש"ץ | `qdvshh_vchzrt_hshtz` | 1 |
-| תפילת העמידה | קרבן לשבת | `qrvn_lshvt` | 1 |
-| תפילת העמידה | קריאה לכהנים | `qryh_lkhhnym` | 1 |
-| תפילת העמידה | ראש השנה במוצאי שבת | `rsh_hshnh_vmvtzy_shvt` | 1 |
-| תפילת העמידה | ראשון של פסח | `rshvn_shl_fsch` | 1 |
-| תפילת העמידה | ראשון של פסח פסוקים | `rshvn_shl_fsch_fsvqym` | 1 |
-| תפילת העמידה | ראשי חודשים לעמך נתת | `rshy_chvdshym_lmkh_ntt` | 1 |
-| תפילת העמידה | ריבונו של עולם | `ryvvnv_shl_vlm` | 3 |
-| תפילת העמידה | ריבונו של עולם לכהנים | `ryvvnv_shl_vlm_lkhhnym` | 2 |
-| תפילת העמידה | רצה במנוחתנו | `rtzh_vmnvchtnv` | 1 |
-| תפילת העמידה | רצה במנוחתנו הוראה לש"ץ | `rtzh_vmnvchtnv_hvrh_lshtz` | 1 |
-| תפילת העמידה | רצה במנוחתנו לשבת ראש חודש | `rtzh_vmnvchtnv_lshvt_rsh_chvdsh` | 2 |
-| תפילת העמידה | רצה בעמך ישראל | `rtzh_vmkh_yshrl` | 1 |
-| תפילת העמידה | ש"ץ במוסף של מועדים "ותחזינה עינינו | `shtz_vmvsf_shl_mvdym_vtchzynh_ynynv` | 1 |
-| תפילת העמידה | ש"ץ במועדים עם אין כהנים העולים לדוכן | `shtz_vmvdym_m_yn_khhnym_hvlym_ldvkhn` | 1 |
-| תפילת העמידה | ש"ץ להמשיך בשים שלום | `shtz_lhmshykh_vshym_shlvm` | 1 |
-| תפילת העמידה | ש"ץ לפני ברכת כהנים | `shtz_lfny_vrkht_khhnym` | 1 |
-| תפילת העמידה | ש"ץ לפני תפילות טל וגשם | `shtz_lfny_tfylvt_tl_vgshm` | 1 |
-| תפילת העמידה | שאותך לבדך | `shvtkh_lvdkh` | 2 |
-| תפילת העמידה | שאתה הוא מוריד הגשם | `shth_hv_mvryd_hgshm` | 1 |
-| תפילת העמידה | שאתה הוא מוריד הטל | `shth_hv_mvryd_htl` | 1 |
-| תפילת העמידה | שבועות פסוקים | `shvvvt_fsvqym` | 1 |
-| תפילת העמידה | שבת ראש חודש | `shvt_rsh_chvdsh` | 1 |
-| תפילת העמידה | שים שלום | `shym_shlvm` | 1 |
-| תפילת העמידה | שים שלום בשחרית | `shym_shlvm_vshchryt` | 1 |
-| תפילת העמידה | שלום רב | `shlvm_rv` | 1 |
-| תפילת העמידה | שלום רב במנחה וערבית | `shlvm_rv_vmnchh_vrvyt` | 1 |
-| תפילת העמידה | שלום רב במנחה של חול | `shlvm_rv_vmnchh_shl_chvl` | 1 |
-| תפילת העמידה | שמיני עצרת ושמחת תורה | `shmyny_tzrt_vshmcht_tvrh` | 1 |
-| תפילת העמידה | שמיני עצרת ושמחת תורה פסוקים | `shmyny_tzrt_vshmcht_tvrh_fsvqym` | 1 |
-| תפילת העמידה | שמע קולנו | `shm_qvlnv` | 1 |
-| תפילת העמידה | תהומות הדום | `thvmvt_hdvm` | 1 |
-| תפילת העמידה | תחילת פסוק קדוש קדוש | `tchylt_fsvq_qdvsh_qdvsh` | 1 |
-| תפילת העמידה | תיקנת שבת | `tyqnt_shvt` | 2 |
-| תפילת העמידה | תפילת הביננו | `tfylt_hvynnv` | 1 |
-| תפילת העמידה | תפילת העמידה א | `tfylt_hmydh` | 1 |
-| תפילת העמידה | תפילת העמידה ב | `tfylt_hmydh_v` | 1 |
-| תפילת העמידה | תפילת העמידה ג | `tfylt_hmydh_g` | 1 |
-| תפילת העמידה | תפילת העמידה ד | `tfylt_hmydh_d` | 1 |
+| ברכות | במרום ילמדו | `bamarom_yelamedu_alayhem` | 1 |
+| ברכות | ברכת אשר ברא | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת אשר יצר את האדם בצלמו | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת הגפן | `barukhe_atah_yeya` | 2 |
+| ברכות | ברכת הזן את | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת הטוב והמטיב לברכת המזון | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת המזון | `elohaynu` | 1 |
+| ברכות | ברכת יוצר האדם | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת כורת הברית | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת מעין שלוש | `barukhe_atah_yeya` | 5 |
+| ברכות | ברכת על פדיון הבן | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת על פדיון כרם רבעי | `rvay_rvay` | 2 |
+| ברכות | ברכת קידושין | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת שהכל ברא לכבודו | `barukhe_atah_yeya` | 1 |
+| ברכות | ברכת שוש תשיש | `sos_tasis_vetagayl` | 1 |
+| ברכות | ברכת שמח תשמח | `samaycha_tesamach_rayim` | 1 |
+| ברכות | דוי הסר | `devay_hasayr_vegam` | 1 |
+| ברכות | ה' שומריך | `yeya_yeya_tzilekha` | 1 |
+| ברכות | המצות הזה | `hamatzot_hazeh` | 1 |
+| ברכות | המשיך בברכת המזון | `beaynay_elohim_veadam` | 1 |
+| ברכות | הנה אנוכי שולח מלאך | `hinayh_anokhi_sholaycha` | 1 |
+| ברכות | הצור תמים פעלו | `hatzur_tamim_poolo` | 3 |
+| ברכות | הרחמן הוא יברך אותי ואת | `harachaman_hu_yevaraykhe` | 1 |
+| ברכות | הרחמן הוא יברך את בעל הבית | `harachaman_hu_yevaraykheet` | 1 |
+| ברכות | הרחמן הוא יזכנו | `harachaman_hu_yezakaynu` | 3 |
+| ברכות | הרחמן הוא ישלח ברכה | `harachaman_hu_berakhah` | 1 |
+| ברכות | הרחמן הוא יתברך | `harachaman_hu_bashamayim` | 1 |
+| ברכות | הרחמן לברית מילה | `harachaman_hu_yevaraykhe` | 3 |
+| ברכות | הרי את מקודשת | `haray_ate_mequdeshet` | 1 |
+| ברכות | ועל הכל עד ועל המזון | `veal_hakol_yeya` | 1 |
+| ברכות | ושמחנו ביום חג | `beyom_chag` | 1 |
+| ברכות | זה בני בכורי | `zeh_beni_bekhori` | 2 |
+| ברכות | חדשה להמשיך בברכת המזון | `beaynay_elohim_veadam` | 1 |
+| ברכות | חדשה על שבע ברכות לאחר ברכת המזון | `boray_peri_hagafen` | 1 |
+| ברכות | יראו את ה' קדושיו | `yeru_et_yeya` | 1 |
+| ברכות | כי אתה | `ki_atah_yeya` | 1 |
+| ברכות | לישועתך עד ישכון חצריך | `lishuatekha_qiviti_yeya` | 1 |
+| ברכות | נודה לך | `nodeh_yeya_elohaynu` | 2 |
+| ברכות | נודה לך עד ובכל שעה | `nodeh_yeya_elohaynu` | 1 |
+| ברכות | על הגפן ועל פרי הגפן | `al_hagefen_veal` | 1 |
+| ברכות | על העץ ועל פרי העץ | `al_haaytz_veal` | 1 |
+| ברכות | על שבע ברכות לאחר ברכת המזון | `boray_peri_hagafen` | 1 |
+| ברכות | קיים את הילד הזה | `elohaynu_vaylohay_avotaynu` | 1 |
+| ברכות | רחם עד לעולם ועד | `rachaym_yeya_elohaynu` | 1 |
+| ברכות | רצה והחליצנו למעין שלוש | `vehachalitzaynu_beyom_hazeh` | 1 |
+| ברכות השחר וקרבנות | אדון עולם | `adon_olam_asher` | 3 |
+| ברכות השחר וקרבנות | איזהו מקומן א | `ayzehu_meqoman_shel` | 1 |
+| ברכות השחר וקרבנות | איזהו מקומן ג | `chatot_hatzibur_vehayachid` | 1 |
+| ברכות השחר וקרבנות | איזהו מקומן ד | `haolah_qodesh_qodashim` | 1 |
+| ברכות השחר וקרבנות | איזהו מקומן ו | `hatodah_veayl_nazir` | 1 |
+| ברכות השחר וקרבנות | איזהו מקומן ז | `shelamim_qodashim_qalim` | 1 |
+| ברכות השחר וקרבנות | איזהו מקומן ח | `habekhor_vehamaasayr_vehapesach` | 3 |
+| ברכות השחר וקרבנות | אנא בכוח | `ana_bekhocha_gedulat` | 3 |
+| ברכות השחר וקרבנות | אתה הוא בשמים ובארץ | `atah_hu_yeya` | 1 |
+| ברכות השחר וקרבנות | אתה הוא לפני הקטורת | `atah_hu_yeya` | 1 |
+| ברכות השחר וקרבנות | אתה הוא עד שלא נברא | `atah_hu_ad` | 1 |
+| ברכות השחר וקרבנות | אתה הוא עד שלא נברא א | `atah_hu_ad` | 1 |
+| ברכות השחר וקרבנות | אתה סתר לי | `atah_sayter_li` | 1 |
+| ברכות השחר וקרבנות | אתה ציויתנו להקריב | `ribon_haolamim_atah` | 1 |
+| ברכות השחר וקרבנות | ברכת אשר בחר בנו | `barukhe_atah_yeya` | 1 |
+| ברכות השחר וקרבנות | ברכת אשר יצר | `barukhe_atah_yeya` | 1 |
+| ברכות השחר וקרבנות | ברכת לעסוק בדברי תורה | `barukhe_atah_yeya` | 1 |
+| ברכות השחר וקרבנות | ברכת על נטילת ידיים | `barukhe_atah_yeya` | 1 |
+| ברכות השחר וקרבנות | הקטורת פסוקים | `vayomer_yeya_el` | 1 |
+| ברכות השחר וקרבנות | והיה כי יביאך | `yeya_el_eretz` | 3 |
+| ברכות השחר וקרבנות | והערב נא | `vehaarev_na_yeya_elohaynu` | 1 |
+| ברכות השחר וקרבנות | ויהי רצון אחרי הנחת תפילין | `vihi_ratzon_milefaneykha` | 3 |
+| ברכות השחר וקרבנות | זכרנו בזיכרון | `elohaynu_vaylohay_avotaynu` | 1 |
+| ברכות השחר וקרבנות | יהי רצון אחרי העטיפה | `yehi_ratzon_milefaneykha` | 1 |
+| ברכות השחר וקרבנות | יהי רצון אחרי פרשת התמיד | `yehi_ratzon_milefaneykha` | 1 |
+| ברכות השחר וקרבנות | יהי רצון שתרחם עלינו | `yehi_ratzon_milefaneykha` | 1 |
+| ברכות השחר וקרבנות | לעולם יהא אדם | `leolam_yehay_adam` | 1 |
+| ברכות השחר וקרבנות | מה טובו | `mah_tovu_ohaleykha` | 1 |
+| ברכות השחר וקרבנות | פיטום הקטורת | `tanu_rabanan_pitum` | 3 |
+| ברכות השחר וקרבנות | ריבון כל העולמים | `ribon_kol_haolamim` | 1 |
+| ברכות השחר וקרבנות | ריבונו של עולם אחרי פרשת העקידה | `ribono_shel_olam` | 3 |
+| ברכות השחר וקרבנות | שתצילני היום | `yehi_ratzon_milefaneykha` | 1 |
+| ברכות השחר וקרבנות | שתרגילנו בתורתך | `vihi_ratzon_milefaneykha` | 3 |
+| ברכות השחר וקרבנות | שתרגילנו בתורתך א | `vihi_ratzon_milefaneykha` | 1 |
+| ברכות השחר וקרבנות | תורה צוה לנו | `torah_tzivah_lanu` | 1 |
+| הגדה של פסח | אדיר במלוכה | `ki_lo_naeh` | 3 |
+| הגדה של פסח | ארץ זבת חלב ודבש רבי אליעזר אומר | `eretz_zavat_chalav` | 1 |
+| הגדה של פסח | ביד חזקה | `beyad_chazaqahzo_hadever` | 1 |
+| הגדה של פסח | בכל דור ודור | `bekhol_dor_vador` | 1 |
+| הגדה של פסח | ברוך המקום | `barukhe_hamaqom_barukhe` | 1 |
+| הגדה של פסח | ברכת על אכילת מצה | `barukhe_atah_yeya` | 1 |
+| הגדה של פסח | ברכת על ביאור חמץ | `barukhe_atah_yeya` | 1 |
+| הגדה של פסח | גדול עצום | `gadol_atzum_sheneemar` | 1 |
+| הגדה של פסח | דבר אחר ארץ זבת חלב השקיפה | `davar_achayr_eretz` | 1 |
+| הגדה של פסח | דבר אחר ארץ זבת חלב ודבש כרם | `davar_achayr_eretz` | 1 |
+| הגדה של פסח | דבר אחר ביד חזקה | `davar_achayr_beyad` | 1 |
+| הגדה של פסח | ואת לחצנו | `veet_lachatzaynuzeh_hadechaq` | 1 |
+| הגדה של פסח | ואת עמלנו | `veet_amalaynuaylu_habanim` | 1 |
+| הגדה של פסח | והיא שעמדה | `vehi` | 4 |
+| הגדה של פסח | ויתן לנו את הארץ הזאת | `vayiten_lanu_et_haaretz` | 1 |
+| הגדה של פסח | ויתנו עלינו עבודה קשה | `vayitenu_aleinu_avodah` | 1 |
+| הגדה של פסח | ורב | `varav_sheneemar_revavah` | 1 |
+| הגדה של פסח | חכם מה הוא אומר | `chakham_hu_omayr` | 1 |
+| הגדה של פסח | חסל סידור פסח כהלכתו א | `chasal_sidur_pesach` | 1 |
+| הגדה של פסח | חסל סידור פסח כהלכתו ב | `zakhe_shokhayn_meonahqomaym` | 1 |
+| הגדה של פסח | טקסט פשוט לשנה הבאה בירושלים בחו"ל | `habaah_birushalayim` | 1 |
+| הגדה של פסח | טקסט פשוט לשנה הבאה בירושלים הבנויה | `habaah_birushalayim_habenuyah` | 1 |
+| הגדה של פסח | יכול מראש חודש | `yakhol_mayrosh_chodesh` | 3 |
+| הגדה של פסח | כי לו יאה כי לו נאה | `ki_lo_naeh` | 1 |
+| הגדה של פסח | כמה מעלות | `kamah_maalot_tovot` | 1 |
+| הגדה של פסח | לשנה הבאה בירושלים בחו"ל | `habaah_birushalayim` | 1 |
+| הגדה של פסח | לשנה הבאה בירושלים הבנויה | `habaah_birushalayim_habenuyah` | 1 |
+| הגדה של פסח | מעשה ברבי אליעזר | `maaseh_berabi_eliezer` | 3 |
+| הגדה של פסח | מתחילה | `mitechilah_oveday_avodah` | 1 |
+| הגדה של פסח | על אחת כמה וכמה | `al_achat_kamah` | 1 |
+| הגדה של פסח | פסוק ארמי אובד אבי | `arami_ovayd_avi` | 3 |
+| הגדה של פסח | פסח מצה ומרור | `pesach_matzah_umaror` | 1 |
+| הגדה של פסח | פסח שהיו אבותינו | `pesach_shehayu_avotaynu` | 3 |
+| הגדה של פסח | רבי אליעזר אומר | `rabi_eliezer_omayr` | 1 |
+| הגדה של פסח | רבי יוסי הגלילי אומר | `rabi_yosay_hagelili` | 1 |
+| הגדה של פסח | רבי עקיבא אומר | `rabi_aqiva_omayr` | 1 |
+| הגדה של פסח | רשע מה הוא אומר | `rasha_hu_omayr` | 1 |
+| הגדה של פסח | שבכל הלילות | `shebekhol_halaylot_anu` | 1 |
+| הגדה של פסח | שבכל הלילות כולו מצה | `shebekhol_halaylot_anu` | 1 |
+| הגדה של פסח | שבכל הלילות כולנו מסובין | `shebekhol_halaylot_anu` | 1 |
+| הגדה של פסח | שבכל הלילות מרור | `shebekhol_halaylot_anu` | 1 |
+| הגדה של פסח | שבכל הלילות שתי פעמים | `shebekhol_halaylot_ayn` | 1 |
+| הגדה של פסח | שפוך חמתך | `shefokhe_chamatekha_el` | 7 |
+| הגדה של פסח | תם מה הוא אומר | `tam_hu_omayr` | 1 |
+| הלל | אבן שתייה | `even_shetiyah_bayt` | 1 |
+| הלל | אדמה מארר | `adamah_mayerer_behaymah` | 1 |
+| הלל | אום אני חומה | `om_ani_chomah` | 1 |
+| הלל | אום נצורה כבבת | `om_netzurah_kevavat` | 3 |
+| הלל | אז כעיני עבדים | `az_keaynay_avadim` | 4 |
+| הלל | אז כעיני עבדים 3א | `shaaray_shamayim_petach` | 1 |
+| הלל | אז כעיני עבדים 3ב | `toshiaynu_veriv_al` | 1 |
+| הלל | אל נא תעינו | `ayl_na_tainu` | 3 |
+| הלל | אנא אזון חין | `ana_ezon_chin` | 3 |
+| הלל | אערוך שועי | `eerokhe_shui_bevayt` | 4 |
+| הלל | ברכת לקרוא את ההלל | `barukhe_atah_yeya` | 1 |
+| הלל | ברכת על נטילת לולב | `barukhe_atah_yeya` | 1 |
+| הלל | בשבת להמשיך אום נצורה כבבת | `om_netzurah_kevavat` | 1 |
+| הלל | הושיעה את עמך | `hoshiah_et_amekha` | 1 |
+| הלל | המשיך ב"אני והו הושיעה נא | `ani_vaho_hoshiah` | 1 |
+| הלל | זה היום | `zeh_hayom_asah` | 1 |
+| הלל | יהללוך ב | `ki_lekha_tov` | 1 |
+| הלל | יהללוך ב1 | `ki_lekha_tov` | 1 |
+| הלל | יהללוך ב2 | `barukhe_atah_yeya` | 1 |
+| הלל | לך ה' הגדולה | `lekha_yeya_hagedulah` | 1 |
+| הלל | למען אמיתך | `lemaan_amitakhe_lemaan` | 1 |
+| הלל | למען תמים בדורותיו | `lemaan_tamim_bedorotayv` | 5 |
+| הלל | מן המצר | `min_hamaytzar_qarati` | 3 |
+| הלל | פסוק ה' אדונינו מה אדיר | `yeya_adonaynu_mah` | 1 |
+| הלל | פסוק לך זרוע | `lekha_zeroa_im` | 1 |
+| הלל | פסוק צדיק ה | `tzadiq_yeya_bekhol` | 1 |
+| הלל | פסוק תתן אמת | `titayn_emet_leyaaqov` | 1 |
+| הלל | תענה אמונים | `taaneh_emunim_shofekhim` | 4 |
+| יום הכיפורים | בני אדם | `benay_adam_yoshevay` | 1 |
+| יום הכיפורים | ה' הוא האלהים | `yeya_hu_haelohim` | 1 |
+| ימי הודאה | 2 לפני ברכו ביום העצמאות | `vehu_rachum` | 1 |
+| ימי הודאה | 4 לפני ברכו ביום העצמאות | `modim` | 1 |
+| ימי הודאה | ארור המן ברוך מרדכי | `arur_haman_asher` | 1 |
+| ימי הודאה | ארורה זרש ברוכה אסתר | `arurah_zeresh_ayshet` | 1 |
+| ימי הודאה | אשר הניא | `asher_hayni_atzat` | 4 |
+| ימי הודאה | ביום ירושלים לפני הבתים מ"לכה דודי | `lekhah_dodi` | 1 |
+| ימי הודאה | ברכו ביום העצמאות | `vehu_rachum_modim` | 1 |
+| ימי הודאה | ברכת להדליק נר של חנוכה | `barukhe_atah_yeya` | 1 |
+| ימי הודאה | ברכת על מקרא מגילה | `barukhe_atah_yeya` | 1 |
+| ימי הודאה | ברכת שעשה ניסים | `barukhe_atah_yeya` | 1 |
+| ימי הודאה | להודיע | `lehodia_shekal_qoveykha` | 3 |
+| ימי הודאה | מי שעשה ניסים ליום העצמאות | `mi_sheasah_nisim` | 1 |
+| ימי הודאה | מעוז צור | `maoz_tzur_yeshuati` | 4 |
+| ימי הודאה | משולבת לפני מעוז צור | `maoz_tzur` | 1 |
+| ימי הודאה | פשוטה לפני מעוז צור | `maoz_tzur` | 1 |
+| ימי הודאה | שהחיינו | `shehecheyanu_amayn` | 2 |
+| ימי הודאה | תשועתם | `teshuatam_hayita_lanetzach` | 1 |
+| כניסת שבת ויום טוב | בואי בשלום | `boi_veshalom_ateret` | 2 |
+| כניסת שבת ויום טוב | ברכה על הדלקת נר של יום הכיפורים | `barukhe_atah_yeya` | 1 |
+| כניסת שבת ויום טוב | ברכה על הדלקת נר של יום טוב | `barukhe_atah_yeya` | 1 |
+| כניסת שבת ויום טוב | ברכה על הדלקת נר של שבת | `barukhe_atah_yeya` | 1 |
+| כניסת שבת ויום טוב | ברכה על עירובין | `barukhe_atah_yeya` | 1 |
+| כניסת שבת ויום טוב | הנוסח המקורי של ידיד נפש | `yedid_nefesh_av` | 1 |
+| כניסת שבת ויום טוב | הנוסח של ידיד נפש בסידורים | `yedid_nefesh_av` | 1 |
+| כניסת שבת ויום טוב | חדשה לפני לכה דודי | `lekhah_dodi` | 1 |
+| כניסת שבת ויום טוב | ידיד נפש | `yedid_nefesh` | 2 |
+| כניסת שבת ויום טוב | לא תבושי | `lo_tayvoshi_velo` | 1 |
+| כניסת שבת ויום טוב | מזמור צ"ג א | `yeya_malakhe_gayut` | 1 |
+| כניסת שבת ויום טוב | מזמור צ"ה א | `lekhu_neranenah_layya` | 1 |
+| כניסת שבת ויום טוב | מזמור צ"ו א | `shiru_layya_shir` | 1 |
+| כניסת שבת ויום טוב | מזמור צ"ז א | `yeya_malakhe_tagayl` | 1 |
+| כניסת שבת ויום טוב | מזמור צ"ז ב | `or_zarua_latzadiq` | 1 |
+| כניסת שבת ויום טוב | מזמור צ"ט ב | `yeya_elohaynu_atah` | 1 |
+| כניסת שבת ויום טוב | מזמור שיר ליום השבת ב | `od_yenuvun_besayvah` | 1 |
+| סוף התפילה | אחרי הבדלה בבית הכנסת | `valaynu_leshabaycha` | 1 |
+| סוף התפילה | אין כאלהינו | `ayn_kaylohaynu_ayn` | 1 |
+| סוף התפילה | אל תירא | `al_tira_mipachad` | 3 |
+| סוף התפילה | אמר רבי יוחנן | `amar_rabi_yochanan` | 4 |
+| סוף התפילה | אני מאמין בביאת המשיח | `ani_maamin_beemunah` | 1 |
+| סוף התפילה | בורא ניב שפתים | `boray_niv_sefatayim` | 1 |
+| סוף התפילה | בית יעקב | `bayt_yaaqov_lekhu` | 3 |
+| סוף התפילה | ברוך אתה בעיר | `barukhe_atah_bair` | 1 |
+| סוף התפילה | ברוך יוצרך | `barukhe_yotzeraykhe_barukhe` | 1 |
+| סוף התפילה | ברכה על ספירת העומר | `barukhe_atah_yeya` | 1 |
+| סוף התפילה | היום יום אחד לעומר | `hayom_yom_echad` | 1 |
+| סוף התפילה | היום יום חמישי בשבת | `hayom_yom_chamishi` | 1 |
+| סוף התפילה | היום יום ראשון בשבת | `hayom_yom_rishon` | 1 |
+| סוף התפילה | היום יום רביעי בשבת | `hayom_yom_revii` | 1 |
+| סוף התפילה | היום יום שבת קודש | `hayom_yom_shabbat` | 1 |
+| סוף התפילה | היום יום שישי בשבת | `hayom_yom_shishi` | 1 |
+| סוף התפילה | היום יום שלישי בשבת | `hayom_yom_shelishi` | 1 |
+| סוף התפילה | היום יום שני בשבת | `hayom_yom_shayni` | 1 |
+| סוף התפילה | הנה אל ישועתי | `hinayh_ayl_yeshuati` | 1 |
+| סוף התפילה | הרחמן הוא יחזיר | `harachaman_hu_yachazir` | 1 |
+| סוף התפילה | השיר שהיו הלויים אומרים ימים | `bayom_harishon_hayu` | 1 |
+| סוף התפילה | השיר שהיו הלויים אומרים פתיחה | `hashir_omerim_bevayt` | 1 |
+| סוף התפילה | ויהי נועם | `vihi_noam_yoshayv` | 1 |
+| סוף התפילה | ויהי רצון למלאות | `vihi_ratzon_milefaneykha` | 1 |
+| סוף התפילה | ויתן לך | `veyiten_lekha_haelohim_mital` | 3 |
+| סוף התפילה | יהי ה' אלהינו עמנו | `yehi_yeya_elohaynu` | 1 |
+| סוף התפילה | כאבן ידמו | `kaaven_yidemu_zeroakha` | 1 |
+| סוף התפילה | כשם שאני | `keshaym_sheani_roqayd` | 1 |
+| סוף התפילה | לדוד | `ledavid_yeya_ori` | 4 |
+| סוף התפילה | לדוד א | `ledavid_yeya_ori` | 1 |
+| סוף התפילה | לדוד ב | `qavayh_el_yeya` | 1 |
+| סוף התפילה | לכו נרננה | `lekhu_neranenah_layya` | 3 |
+| סוף התפילה | לכו נרננה א | `lekhu_neranenah_layya` | 1 |
+| סוף התפילה | לכו נרננה ב | `ki_ayl_gadol` | 1 |
+| סוף התפילה | מזמור כ"ד ב | `mi_hu_zeh` | 1 |
+| סוף התפילה | מזמור מ"ח ב | `ki_zeh_elohim` | 1 |
+| סוף התפילה | מזמור פ"א ב | `vayaakhilayhu_maychaylev_chitah` | 1 |
+| סוף התפילה | מזמור צ"ג א | `yeya_malakhe_gayut` | 1 |
+| סוף התפילה | מחיתי כעב פשעיך | `machiti_khaav_peshaeykha` | 1 |
+| סוף התפילה | מי זאת עולה | `mi_zot_olah` | 1 |
+| סוף התפילה | מי ימלל | `mi_yemalayl_gevurot` | 1 |
+| סוף התפילה | מכתם לדוד ב | `todiayni_orach_chayim` | 1 |
+| סוף התפילה | סימן טוב | `siman_tov_umazal` | 1 |
+| סוף התפילה | ספירת העומר והדלקת נרות חנוכה במוצ"ש | `sefirat_haomer` | 1 |
+| סוף התפילה | על ברכו בתרא | `avayl_kaddish_derabanan` | 1 |
+| סוף התפילה | על כן נקוה | `al_kayn_neqaveh` | 4 |
+| סוף התפילה | על כן נקוה א | `al_kayn_neqaveh` | 1 |
+| סוף התפילה | על כן נקוה ב | `veneemar_vehayah_yeya` | 1 |
+| סוף התפילה | על לדוד | `ledavid_yeya_ori` | 1 |
+| סוף התפילה | עלינו לשבח עד המונם | `aleinu_leshabaycha_laadon` | 1 |
+| סוף התפילה | עלינו לשבח עד יושיע | `aleinu_leshabaycha_laadon` | 1 |
+| סוף התפילה | קוה אל ה | `qavayh_el_yeya` | 1 |
+| סוף התפילה | קול דודי | `qol_dodi_hinayh` | 1 |
+| סוף התפילה | ריבונו של עולם אחרי ספירת העומר | `ribono_shel_olam` | 1 |
+| סוף התפילה | שמעו זאת ב | `adam_biqar_velo` | 1 |
+| סוף התפילה | תיפול עליהם | `tipol_alayhem_aymatah` | 1 |
+| סוף התפילה | תלמידי חכמים מרבים שלום ב | `lemaan_achay_verayay` | 1 |
+| פסוקי דזמרה | אילו פינו | `ilu_finu_malay` | 4 |
+| פסוקי דזמרה | ברוך ה' לעולם | `barukhe_yeya_leolam` | 1 |
+| פסוקי דזמרה | ברוך ה' לעולם א | `barukhe_yeya_leolam` | 1 |
+| פסוקי דזמרה | ברוך ה' לעולם ב | `uvarukhe_shaym_kevodo` | 1 |
+| פסוקי דזמרה | ברוך שאמר | `barukhe_sheamar_vehayah` | 1 |
+| פסוקי דזמרה | ברוך שאמר א | `barukhe_sheamar_vehayah` | 1 |
+| פסוקי דזמרה | ברוך שאמר ב | `yachid_chay_haolamim` | 1 |
+| פסוקי דזמרה | ברכות והודעות | `berakhot_vehodaot_mayatah` | 1 |
+| פסוקי דזמרה | ה' צבאות עמנו | `yeya_tzevaot_imanu` | 1 |
+| פסוקי דזמרה | האל בתעצומות עד בנוראותיך לימים הנוראים | `haayl_betaatzumot_uzekha` | 1 |
+| פסוקי דזמרה | הושיע את עמך | `hoshiah_et_amekha` | 1 |
+| פסוקי דזמרה | הושיע את עמך א | `hoshiah_et_amekha` | 1 |
+| פסוקי דזמרה | הרינו מזמן לפני ברוך שאמר | `harayni_mezamayn_et` | 1 |
+| פסוקי דזמרה | ובמקהלות רבבות ב | `lehodot_lehalayl_leshabaycha` | 1 |
+| פסוקי דזמרה | והוא רחום | `vehu_rachum_yekhapayr` | 4 |
+| פסוקי דזמרה | והוא רחום א | `vehu_rachum_yekhapayr` | 1 |
+| פסוקי דזמרה | ויושע ה' ביום ההוא א | `vayosha_yeya_bayom` | 1 |
+| פסוקי דזמרה | וכרות עמו הברית | `vekharot_imo_haberit` | 3 |
+| פסוקי דזמרה | וכרות עמו הברית א | `vekharot_imo_haberit` | 1 |
+| פסוקי דזמרה | יהי כבוד | `yehi_khevod_yeya` | 3 |
+| פסוקי דזמרה | יהי כבוד א | `yehi_khevod_yeya` | 1 |
+| פסוקי דזמרה | יהי כבוד ב | `vehu_rachum_yekhapayr` | 1 |
+| פסוקי דזמרה | יושב על כסא רם ונשא לימים הנוראים | `yoshayv_al_kisay` | 1 |
+| פסוקי דזמרה | ישתבח ב | `berakhot_vehodaot_mayatah` | 1 |
+| פסוקי דזמרה | כי לה' המלוכה | `ki_layya_hamelukhah` | 1 |
+| פסוקי דזמרה | כי לה' המלוכה א | `ki_layya_hamelukhah` | 1 |
+| פסוקי דזמרה | כי לה' המלוכה ב | `vealu_behar_tzion` | 1 |
+| פסוקי דזמרה | מזמור קמ"ט א | `shiru_layya_shir` | 1 |
+| פסוקי דזמרה | פסוק ויהי נועם | `vihi_noam_adonay` | 1 |
+| פסוקי דזמרה | רוממו | `romemu_yeya_elohaynu` | 1 |
+| פסוקי דזמרה | רוממו א | `romemu_yeya_elohaynu` | 1 |
+| פסוקי דזמרה | רוממו ב | `romemu_yeya_elohaynu` | 1 |
+| פסוקי דזמרה | שירו לה' עד והלל לה | `layya_kol_haaretz` | 1 |
+| פסוקי דזמרה | תהילה לדוד | `tehilah_ledavid` | 1 |
+| פסוקי דזמרה | תהילת | `tehilat_yeya_yedaber_pi` | 1 |
+| פסוקי דזמרה | תהלה לדוד ב-ד | `bekhol_yom_avarekhekha` | 1 |
+| פסוקי דזמרה | תהלה לדוד ה-ו | `hadar_kevod_hodekha` | 1 |
+| פסוקי דזמרה | תהלה לדוד ה-מ | `hadar_kevod_hodekha` | 1 |
+| פסוקי דזמרה | תהלה לדוד ה-ע | `hadar_kevod_hodekha` | 1 |
+| פסוקי דזמרה | תהלה לדוד ה-ת בלבד | `hadar_kevod_hodekha` | 1 |
+| פסוקי דזמרה | תהלה לדוד ה-ת ואנחנו | `hadar_kevod_hodekha` | 1 |
+| פסוקי דזמרה | תהלה לדוד ס-ת בלבד | `somaykhe_yeya_lekhol` | 1 |
+| פסוקי דזמרה | תהלה לדוד ס-ת ואנחנו | `somaykhe_yeya_lekhol` | 1 |
+| פסוקי דזמרה | תהלה לדוד פ-ש | `potaycha_et_yadekha` | 1 |
+| קדיש | קדיש יהא שמה רבא | `yehay_shemayh_raba` | 1 |
+| קדיש | קדיש ל(את)חדתא | `kaddish_yatomchry` | 2 |
+| קידוש והבדלה וסעודות שבת ויום טוב | אלה מועדי ה | `ayleh_moaday_yeya` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | אלהא די ליה | `elaha_di_layh` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | אמר ה' ליעקב | `amar_yeya_leyaaqov` | 3 |
+| קידוש והבדלה וסעודות שבת ויום טוב | במוצאי יום מנוחה | `bemotzaay_yom_menuchah` | 3 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברוך ה' יום יום | `barukhe_adonay_yom` | 3 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת אשר בחר בנו בקידוש לליל ראש השנה | `barukhe_atah_yeya` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת אשר בחר בנו בקידוש לשלוש רגלים | `barukhe_atah_yeya` | 4 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת בורא מאורי האש | `barukhe_atah_yeya` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת הזמן לקידוש בשבת | `barukhe_atah_yeya` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת המבדיל בין קודש לחול | `barukhe_atah_yeya` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ברכת המבדיל בין קודש לקודש | `barukhe_atah_yeya` | 3 |
+| קידוש והבדלה וסעודות שבת ויום טוב | בשיר וקול תודה | `beshir_veqol_todah` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | הוא אשר דיבר | `hu_asher_diber` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | הזן את עולמו | `hazan_et_olamo` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | השומר שבת פזמון | `hashomayr_shabbat_habayn` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | השמים מספרים | `hashamayim_mesaperim_kevodo` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | זכור לפיוט השומר שבת | `zakhor_et_yom` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | יה ריבון עלם | `yah_ribon_alam` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | יה ריבון פזמון | `yah_ribon_alam` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום הששי | `yom_hashishi` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | יום זה מכובד פזמון | `yom_zeh_mekhubad` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | כל מקדש שביעי | `kol_meqadaysh_shevii` | 4 |
+| קידוש והבדלה וסעודות שבת ויום טוב | כל שומר שבת | `kol_shomayr_shabbat` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ליהודים עד אקרא | `layehudim_hayetah_orah` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | מודה אני על כל החסד | `modeh_ani_lefaneykha` | 3 |
+| קידוש והבדלה וסעודות שבת ויום טוב | סברי מרנן | `maranan_verabotay` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | קודש היא לכם | `qodesh_hi_lakhem` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | קידוש לפסח | `chag_hamatzot_hazeh` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ריבון העולמים | `ribon_haolamim_av` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | ריבון כל העולמים | `ribon_kol_haolamim` | 1 |
+| קידוש והבדלה וסעודות שבת ויום טוב | שמי שמים | `shemay_shamayim_eretz` | 1 |
+| קריאת התורה | אב הרחמים | `av_harachamim_shokhayn` | 1 |
+| קריאת התורה | אב הרחמים א | `av_harachamim_shokhayn` | 1 |
+| קריאת התורה | אב הרחמים ב | `veomayr_ki_doraysh` | 1 |
+| קריאת התורה | אב הרחמים הוא ירחם | `av_harachamim_hu` | 2 |
+| קריאת התורה | אב הרחמים היטיבה | `av_harachamim_haytivah` | 1 |
+| קריאת התורה | אבינו שבשמים צור ישראל וגואלו | `avinu_shebashamayim_tzur` | 1 |
+| קריאת התורה | אחינו כל בית ישראל | `achaynu_kol_bayt` | 1 |
+| קריאת התורה | אחרי ההקפות | `lekha_hagedulah` | 1 |
+| קריאת התורה | אל מלא רחמים לחללי צה"ל | `ayl_malay_rachamim` | 2 |
+| קריאת התורה | אל מלא רחמים לקדושי השואה יד ושם | `ayl_malay_rachamim` | 2 |
+| קריאת התורה | אל מלא רחמים לקדושי השואה רבנות | `ayl_malay_rachamim` | 2 |
+| קריאת התורה | אלוהי הרוחות | `elohay_haruchot_hoshiah` | 1 |
+| קריאת התורה | אנא ה' להקפות | `ana_yeya_hoshiah` | 1 |
+| קריאת התורה | אקדמות י-ש | `yeqabelun_dayn_min` | 1 |
+| קריאת התורה | את הנשיא ואת משנהו | `et_hanasi_veet` | 1 |
+| קריאת התורה | את כל שרי הארץ הזאת | `et_kol_saray` | 1 |
+| קריאת התורה | ברוך צור כל העולמים | `barukhe_atah_yeya` | 1 |
+| קריאת התורה | ברוך שנתן תורה | `barukhe_shenatan_torah` | 1 |
+| קריאת התורה | ברכת אשר בחר בנו | `barukhe_atah_yeya` | 1 |
+| קריאת התורה | ברכת אשר נתן לנו | `barukhe_atah_yeya` | 1 |
+| קריאת התורה | גדלו לה' איתי | `gadelu_layya_iti` | 1 |
+| קריאת התורה | דובר צדקות | `dovayr_tzedaqot_hoshiah` | 1 |
+| קריאת התורה | ה' מה אדם ותדעהו | `yeya_mah_adam` | 1 |
+| קריאת התורה | הברכה לפני ההפטרה | `barukhe_atah_yeya` | 1 |
+| קריאת התורה | הנותן תשועה | `hanotayn_teshuah_lamelakhim` | 1 |
+| קריאת התורה | ואני תפילתי | `vaani_yeya_ayt` | 1 |
+| קריאת התורה | ואת אחינו כל בית ישראל | `veet_achaynu_kol` | 1 |
+| קריאת התורה | ואת אחינו כל בית ישראל עד וירישתה | `veet_achaynu_kol` | 1 |
+| קריאת התורה | ואת כל שרי הארץ הזאת | `veet_kol_saray` | 1 |
+| קריאת התורה | ואתה קדוש | `veatah_qadosh_yoshayv` | 4 |
+| קריאת התורה | ואתה קדוש יושב תהילות | `veatah_qadosh_yoshayv` | 1 |
+| קריאת התורה | ובא לציון גואל | `uva_letzion_goayl` | 1 |
+| קריאת התורה | ויחד לבבנו | `veyachayd_levavaynu_leahavah` | 1 |
+| קריאת התורה | ויעזור ויגן | `veyaazor_veyagayn_veyoshia` | 1 |
+| קריאת התורה | זכרון איש זכר | `ayl_malay_rachamim` | 1 |
+| קריאת התורה | זכרון נקבה | `ayl_malay_rachamim` | 1 |
+| קריאת התורה | חזק את ידי | `chazayq_et_yeday` | 1 |
+| קריאת התורה | יהי רצון שתחדש עלינו | `yehi_ratzon_milefaneykha` | 1 |
+| קריאת התורה | יודע מחשבות | `yodaya_machashavot_hoshiah` | 1 |
+| קריאת התורה | יזכור לאיש זכר | `ayl_malay_rachamim` | 1 |
+| קריאת התורה | יזכור לנקבה | `ayl_malay_rachamim` | 1 |
+| קריאת התורה | יתן ה' את אויבנו | `yitayn_yeya_et` | 1 |
+| קריאת התורה | לך ה' הגדולה | `lekha_yeya_hagedulah` | 3 |
+| קריאת התורה | מזמור כ"ט ב | `yeya_lamabul_yashav` | 1 |
+| קריאת התורה | מי שברך לקהל ב | `vekhol_mi_sheoseqim` | 1 |
+| קריאת התורה | מי שגמלך כל טוב | `mi_shegemalekha_kol` | 1 |
+| קריאת התורה | נאמן אתה הוא | `neeman_atah_hu` | 1 |
+| קריאת התורה | עוזר דלים | `ozayr_dalim_hoshiah` | 1 |
+| קריאת התורה | על הכל ליום טוב | `al_hakol_yeya` | 1 |
+| קריאת התורה | על הכל לשבת | `al_hakol_yeya` | 1 |
+| קריאת התורה | עץ חיים היא | `aytz_chayim_hi` | 1 |
+| קריאת התורה | קדוש ונורא | `qadosh_venora_hoshiah` | 1 |
+| קריאת התורה | רחם על ציון | `rachaym_al_tzion` | 1 |
+| קריאת התורה | ריבון העולם לימים הנוראים | `ribon_haolam_malay` | 1 |
+| קריאת התורה | ריבונו של עולם מלא משאלות | `ribono_shel_olam` | 1 |
+| קריאת התורה | שמחנו באליהו הנביא | `samechaynu_yeya_elohaynu` | 1 |
+| קריאת התורה | תומך תמימים | `tomaykhe_temimim_hoshiah` | 1 |
+| קריאת התורה | תורת ה' תמימה | `torat_yeya_temimah` | 1 |
+| קריאת התורה | תפילה בשלומה של מלכות | `hanotayn_teshuah_lamelakhim` | 2 |
+| קריאת התורה | תרגום ליקום פורקן הראשון | `taamod_yeshuah_min` | 1 |
+| קריאת התורה | תרגום ליקום פורקן השני | `taamod_yeshuah_min` | 1 |
+| קריאת שמע וברכותיה | אל אדון | `ayl_adon_al` | 1 |
+| קריאת שמע וברכותיה | אל ברוך | `ayl_barukhe_gedol` | 1 |
+| קריאת שמע וברכותיה | אמת ואמונה | `emet_veemunah_kol` | 1 |
+| קריאת שמע וברכותיה | אמת ויציב | `emet_veyatziv_venakhon` | 3 |
+| קריאת שמע וברכותיה | אני ה' תחילת הפסוק | `ani_yeya_elohaykhem` | 1 |
+| קריאת שמע וברכותיה | את שם | `et_shaym_haayl` | 1 |
+| קריאת שמע וברכותיה | את שם א | `et_shaym_haayl` | 1 |
+| קריאת שמע וברכותיה | ברוך ה' ביום | `barukhe_yeya_bayom` | 3 |
+| קריאת שמע וברכותיה | ברוך ה' ביום לקריאת שמע לילדים | `barukhe_yeya_bayom` | 1 |
+| קריאת שמע וברכותיה | ברוך ה' לעולם עד נספר תהילתך | `barukhe_yeya_leolam` | 1 |
+| קריאת שמע וברכותיה | ברוך שם כבוד מלכותו לעולם ועד | `barukhe_shaym_kevod` | 1 |
+| קריאת שמע וברכותיה | ברכו את ה' המבורך | `barekhu_et_yeya` | 1 |
+| קריאת שמע וברכותיה | ברכת אהבת עולם | `ahavat_olam_bayt` | 1 |
+| קריאת שמע וברכותיה | ברכת אהבת עולם א | `ahavat_olam_bayt` | 1 |
+| קריאת שמע וברכותיה | ברכת אהבת עולם ב | `veahavatekha_al_tasir` | 1 |
+| קריאת שמע וברכותיה | ברכת המעריב ערבים | `barukhe_atah_yeya` | 1 |
+| קריאת שמע וברכותיה | ברכת המעריב ערבים א | `barukhe_atah_yeya` | 1 |
+| קריאת שמע וברכותיה | ברכת המעריב ערבים ב | `ayl_chay_veqayam` | 1 |
+| קריאת שמע וברכותיה | ברכת המפיל לילדים א | `barukhe_atah_yeya` | 1 |
+| קריאת שמע וברכותיה | ברכת המפיל לילדים ב | `vihi_ratzon_milefaneykha` | 1 |
+| קריאת שמע וברכותיה | ברכת השכיבנו לימי חול ג | `barukhe_atah_yeya` | 1 |
+| קריאת שמע וברכותיה | בשם ה' אלהי ישראל | `beshaym_yeya_elohay` | 1 |
+| קריאת שמע וברכותיה | ה' אלוהיכם | `yeya_elohaykhem` | 1 |
+| קריאת שמע וברכותיה | הכל יודוך | `hakol_yodukha_vehakol` | 3 |
+| קריאת שמע וברכותיה | הכל יודוך א | `hakol_yodukha_vehakol` | 1 |
+| קריאת שמע וברכותיה | המאיר לארץ | `hamayir_laaretz_veladarim` | 1 |
+| קריאת שמע וברכותיה | המילה אמת | `emet` | 1 |
+| קריאת שמע וברכותיה | הנה לא ינום | `hinayh_lo_yanum` | 1 |
+| קריאת שמע וברכותיה | והאופנים | `vehaofanim_vechayot_haqodesh` | 1 |
+| קריאת שמע וברכותיה | והאופנים א | `vehaofanim_vechayot_haqodesh` | 1 |
+| קריאת שמע וברכותיה | והאופנים ב | `leumatam_meshabechim_veomerim` | 1 |
+| קריאת שמע וברכותיה | והיה אם שמוע עד ובשעריך | `vehayah_im_shamoa` | 1 |
+| קריאת שמע וברכותיה | והיה אם שמוע עונש | `hishameru_lakhem_pen` | 1 |
+| קריאת שמע וברכותיה | והיה אם שמוע שכר | `vehayah_im_shamoa` | 1 |
+| קריאת שמע וברכותיה | ונאמר כי פדה ה' את יעקב | `veneemar_ki_fadah` | 1 |
+| קריאת שמע וברכותיה | חתימת המלך בכבודו | `barukhe_atah_yeya` | 1 |
+| קריאת שמע וברכותיה | טובים מאורות | `tovim_meorot_shebara` | 1 |
+| קריאת שמע וברכותיה | יוצר אור | `barukhe_atah_yeya` | 1 |
+| קריאת שמע וברכותיה | כי ביום הזה | `ki_vayom_hazeh` | 1 |
+| קריאת שמע וברכותיה | לאל אשר שבת | `laayl_asher_shavat` | 3 |
+| קריאת שמע וברכותיה | לאל ברוך | `laayl_barukhe_neimot` | 3 |
+| קריאת שמע וברכותיה | לאל ברוך א | `laayl_barukhe_neimot` | 1 |
+| קריאת שמע וברכותיה | לאל ברוך ב | `or_chadash_al` | 1 |
+| קריאת שמע וברכותיה | לישועתך קויתי | `lishuatekha_qiviti_yeya` | 1 |
+| קריאת שמע וברכותיה | לישועתך קויתי ה | `lishuatekha_qiviti_yeya` | 1 |
+| קריאת שמע וברכותיה | מי כמכה | `mi_khamokhah_baaylim` | 1 |
+| קריאת שמע וברכותיה | על הראשונים | `al_harishonim_veal` | 1 |
+| קריאת שמע וברכותיה | על הראשונים א | `al_harishonim_veal` | 1 |
+| קריאת שמע וברכותיה | על הראשונים ב | `emet_shaatah_hu` | 2 |
+| קריאת שמע וברכותיה | פאר וכבוד | `peayr_vekhavod_notenim` | 1 |
+| קריאת שמע וברכותיה | פסוק שמע ישראל | `yeya_elohaynu_yeya` | 1 |
+| קריאת שמע וברכותיה | צור ישראל ב | `goalaynu_yeya_tzevaot` | 1 |
+| קריאת שמע וברכותיה | שבח נותנים לו | `shevach_notenim_lo` | 1 |
+| קריאת שמע וברכותיה | שירה חדשה | `shirah_chadashah_shibechu` | 1 |
+| קריאת שמע וברכותיה | תתברך צורנו ב | `vekhulam_potechim_et` | 1 |
+| ראש השנה | לא ירעו | `lo_yarayu_velo` | 1 |
+| ראש השנה | מי אל כמוך | `mi_ayl_kamokha` | 1 |
+| ראש השנה | מן המצר | `min_hamaytzar_qarati` | 1 |
+| תחנון | אין כמוך | `ayn_kamokha_chanun` | 1 |
+| תחנון | אל רחום וחנון | `ayl_rachum_vechanun` | 4 |
+| תחנון | אנא שוב | `ana_shuv_maycharonekha` | 1 |
+| תחנון | ה' אל באפך | `yeya_al_beapekha` | 1 |
+| תחנון | הבט נא | `habet_na_rachem_na_al` | 1 |
+| תחנון | והוא רחום | `vehu_rachum_yekhapayr` | 3 |
+| תחנון | ויאמר דוד אל גד | `vayomer_david_el` | 1 |
+| תחנון | וידוי | `viduy` | 1 |
+| תחנון | ויעבור | `vayaavor_yeya_al` | 1 |
+| תחנון | זרים אומרים | `zarim_omerim_ayn` | 1 |
+| תחנון | חוסה ה | `chusah_yeya_aleinu` | 1 |
+| תחנון | י"ג מידות | `yeya_yeya_ayl` | 1 |
+| תחנון | כי אתה | `ki_atah_adonay` | 1 |
+| תחנון | סלח לנו | `selach_lanu_avinu` | 1 |
+| תחנון | רחום וחנון | `rachum_vechanun_chatati` | 1 |
+| תחנון | שומר גוי אחד | `shomayr_goy_echad` | 1 |
+| תחנון | שומר גוי קדוש | `shomayr_goy_qadosh` | 1 |
+| תחנון | תבוא לפניך תפילתנו | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | אז בקול | `az_beqol_raash` | 1 |
+| תפילת העמידה | אחרי שאותך לבדך | `modim_lehodot` | 1 |
+| תפילת העמידה | אלוהי נצור | `elohay_netzor_leshoni` | 4 |
+| תפילת העמידה | אלוהי עד מדבר מרמה | `elohay_netzor_leshoni` | 1 |
+| תפילת העמידה | אמירה לש"ץ לפני ברכת כהנים | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | אמן | `amayn` | 1 |
+| תפילת העמידה | אני ה' אלהיכם | `ani_yeya_elohaykhem` | 1 |
+| תפילת העמידה | אף ברי | `af_beri_utat_shaym` | 1 |
+| תפילת העמידה | את החודש הזה עד ולכפרת פשע | `et_hachodesh_hazeh` | 1 |
+| תפילת העמידה | אתה גיבור | `atah_gibor_leolam` | 1 |
+| תפילת העמידה | ביום | `beyom` | 1 |
+| תפילת העמידה | בספר חיים | `besayfer_chayim_berakhah` | 4 |
+| תפילת העמידה | ברכת אבות | `barukhe_atah_yeya` | 2 |
+| תפילת העמידה | ברכת אבות כל גוף הברכה | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | ברכת בית דוד | `et_tzemach_david` | 1 |
+| תפילת העמידה | ברכת הדעת | `atah_chonayn_leadam` | 2 |
+| תפילת העמידה | ברכת הסליחה | `selach_lanu_avinu` | 1 |
+| תפילת העמידה | ברכת הצדיקים | `al_hatzadiqim_veal` | 3 |
+| תפילת העמידה | ברכת הרפואה | `refaaynu_yeya_venayrafay` | 3 |
+| תפילת העמידה | ברכת השנים | `baraykhe_aleinu_yeya` | 1 |
+| תפילת העמידה | ברכת התשובה | `hashivaynu_avinu_letoratekha` | 1 |
+| תפילת העמידה | ברכת ירושלים | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | ברכת כהנים לש"ץ | `elohaynu_vaylohay_avotaynu` | 4 |
+| תפילת העמידה | ברכת נחם | `nachaym_yeya_elohaynu` | 2 |
+| תפילת העמידה | ברכת עננו | `anaynu_yeya_anaynu` | 2 |
+| תפילת העמידה | ברכת עננו גוף הברכה | `anaynu_yeya_anaynu` | 1 |
+| תפילת העמידה | ברכת קדושה | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | ברכת קיבוץ גלויות | `teqa_beshofar_gadol` | 1 |
+| תפילת העמידה | ברכת שלום | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | הוא אלהינו | `hu_elohaynu_hu` | 1 |
+| תפילת העמידה | הזה | `hazeh` | 1 |
+| תפילת העמידה | המלך המשפט | `barukhe_atah_yeya` | 2 |
+| תפילת העמידה | המלך הקדוש | `barukhe_atah_yeya` | 2 |
+| תפילת העמידה | המלך הקדוש משולב בלי כוכבית | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | השיבה שופטינו | `hashivah_shofetaynu_kevarishonah` | 1 |
+| תפילת העמידה | והשיאנו לשלוש רגלים | `vehasiaynu_yeya_elohaynu` | 3 |
+| תפילת העמידה | וי"ו החיבור | `ve` | 1 |
+| תפילת העמידה | וכל החיים | `vekhol_hachayim_yodukha` | 1 |
+| תפילת העמידה | ולא נתתו | `velo_netato_yeya` | 1 |
+| תפילת העמידה | ומפני חטאינו | `umipenay_chataaynu_galinu` | 3 |
+| תפילת העמידה | ותחזינה עינינו | `vetechezeynah_aynaynu_beshuvekha` | 1 |
+| תפילת העמידה | ותערב עליך | `vetayarayv_aleykha` | 1 |
+| תפילת העמידה | ותערב עליך בארץ ישראל | `vetayarayv_atirataynu_keolah` | 1 |
+| תפילת העמידה | ותתן לנו לראש השנה | `vatiten_lanu_yeya` | 1 |
+| תפילת העמידה | ותתן לנו לשלוש רגלים | `yeya_elohaynu_beahavah` | 1 |
+| תפילת העמידה | זכור אב נמשך | `elohaynu_vaylohay_avotaynuzekhor` | 3 |
+| תפילת העמידה | זכור משוי | `zekhor_mashuy_betayvat` | 1 |
+| תפילת העמידה | זכור פקיד | `zekhor_peqid_shatot` | 1 |
+| תפילת העמידה | זכור שנים עשר | `zekhor_shenaym_asar` | 1 |
+| תפילת העמידה | חדש עלינו את החודש הזה | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | חדשה להמשך אחרי שאותך לבדך | `modim_lehodot` | 1 |
+| תפילת העמידה | חדשה לש"ץ להמשיך בשים שלום אחרי ברכת כהנים | `sim_shalom` | 1 |
+| תפילת העמידה | חדשה לשלום רב במנחה של חול | `shalom_rav_sim` | 1 |
+| תפילת העמידה | חתימה משולבת לברכת השלום | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | חתימת העונה בעת צרה | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | טל תן לרצות ארצך | `elohaynu_vaylohay_avotaynutal` | 3 |
+| תפילת העמידה | יהי רצון | `yehi_ratzon_milefaneykha` | 3 |
+| תפילת העמידה | יהי רצון עד קדמוניות | `yehi_ratzon_milefaneykha` | 1 |
+| תפילת העמידה | יום חמישי של סוכות | `uvayom_hachamishi_parim` | 2 |
+| תפילת העמידה | יום ראשון של סוכות פסוקים | `uvachamishah_asar_yom` | 1 |
+| תפילת העמידה | יום רביעי של סוכות | `uvayom_harevii_parim` | 2 |
+| תפילת העמידה | יום שביעי של סוכות | `uvayom_hashevii_parim` | 2 |
+| תפילת העמידה | יום שישי של סוכות | `uvayom_hashishi_parim` | 2 |
+| תפילת העמידה | יום שלישי של סוכות | `uvayom_hashelishi_parim` | 2 |
+| תפילת העמידה | יום שני של סוכות | `uvayom_hashayni_parim` | 2 |
+| תפילת העמידה | יעלה ויבוא | `elohaynu_vaylohay_avotaynu` | 6 |
+| תפילת העמידה | יעלה ויבוא 5 לימי חול ושבת | `beyom_rosh_hachodesh` | 1 |
+| תפילת העמידה | יעלה ויבוא 5 לראש השנה | `beyom_hazikaron_hazeh` | 1 |
+| תפילת העמידה | יעלה ויבוא 5 לשלוש רגלים | `beyom_chag_hamatzot` | 1 |
+| תפילת העמידה | יעלה ויבוא התחלה | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | יעלה ויבוא חג המצות | `chag_hamatzot` | 1 |
+| תפילת העמידה | יעלה ויבוא ימים | `beyom_rosh_hachodesh` | 1 |
+| תפילת העמידה | כבודו מלא עולם | `kevodo_malay_olam` | 1 |
+| תפילת העמידה | כי אתה שומע | `ki_atah_shomaya` | 1 |
+| תפילת העמידה | כי שם ה' אקרא | `ki_shaym_yeya` | 1 |
+| תפילת העמידה | לברך את עמו ישראל באהבה | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | לדור ודור עם | `ledor_vador_nagid` | 1 |
+| תפילת העמידה | לעומתם עם | `leumatam_barukhe_yomayru` | 1 |
+| תפילת העמידה | מגן אברהם | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | מוסף של שבת רגילה | `retzayh` | 1 |
+| תפילת העמידה | מי כמוך | `mi_khamokha_av` | 4 |
+| תפילת העמידה | מלוך על כל העולם | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | מלך אוהב צדקה ומשפט | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | מלך רחמן | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | ממקומו | `mimeqomo_hu_yifen` | 1 |
+| תפילת העמידה | מענה של הקהל לקריאה | `am_qedoshekha_kaamur` | 2 |
+| תפילת העמידה | משיב הרוח ומוריד הטל | `mashiv_harucha_umorid` | 1 |
+| תפילת העמידה | סוף ברכת גבורות | `veneeman_atah_lehachayot` | 1 |
+| תפילת העמידה | סוף ברכת הזמן לראש השנה | `elohaynu_vaylohay_avotaynu` | 1 |
+| תפילת העמידה | סוף פסוק קדוש קדוש | `melo_khol_haaretz` | 1 |
+| תפילת העמידה | עושה השלום עם | `barukhe_atah_yeya` | 1 |
+| תפילת העמידה | על הניסים פתיחה | `al_hanisim_veal` | 1 |
+| תפילת העמידה | פסוק ברוך כבוד | `barukhe_kevod_yeya` | 1 |
+| תפילת העמידה | פסוק קדוש קדוש | `qadosh_qadosh_qadosh` | 1 |
+| תפילת העמידה | פסוק שלישי | `yisa_yisa_verakhah` | 1 |
+| תפילת העמידה | פסוק שמע | `yeya_elohaynu_yeya` | 1 |
+| תפילת העמידה | פסוק שני | `yaayr_elohim_yechonaynu` | 1 |
+| תפילת העמידה | פתח ליבי עד נפשי | `petach_libi_betoratekha` | 1 |
+| תפילת העמידה | קדוש אתה ונורא שמך | `qadosh_atah_venora` | 1 |
+| תפילת העמידה | קריאה לכהנים | `kohanim` | 1 |
+| תפילת העמידה | ראשי חודשים לעמך נתת | `rashay_chodashim_leamekha` | 1 |
+| תפילת העמידה | ריבונו של עולם | `ribono_shel_olam` | 3 |
+| תפילת העמידה | רצה במנוחתנו לשבת ראש חודש | `elohaynu_vaylohay_avotaynu` | 2 |
+| תפילת העמידה | רצה בעמך ישראל | `retzayh_yeya_elohaynu` | 1 |
+| תפילת העמידה | ש"ץ להמשיך בשים שלום | `sim_shalom` | 1 |
+| תפילת העמידה | שאתה הוא מוריד הגשם | `shaatah_hu_yeya` | 1 |
+| תפילת העמידה | שאתה הוא מוריד הטל | `shaatah_hu_yeya` | 1 |
+| תפילת העמידה | שים שלום | `sim_shalom_tovah` | 1 |
+| תפילת העמידה | שלום רב | `shalom_rav_al` | 1 |
+| תפילת העמידה | שלום רב במנחה של חול | `shalom_rav_sim` | 1 |
+| תפילת העמידה | שמיני עצרת ושמחת תורה פסוקים | `bayom_hashemini_atzeret` | 1 |
+| תפילת העמידה | שמע קולנו | `shema_qolaynu_yeya` | 1 |
+| תפילת העמידה | תחילת פסוק קדוש קדוש | `qadosh_qadosh_qadosh` | 1 |
+| תפילת העמידה | תפילת הביננו | `havinaynu_yeya_elohaynu` | 1 |

@@ -62,10 +62,18 @@ ROLE_SUFFIXES = ("מילים", "הכל", "מקור", "הוראה", "הוראות
 # pairs are two halves of one blessing. Stripping it fused six chapters into a single
 # group called "chapter". Under-grouping is the safe error here -- a reviewer can merge
 # two rows, but cannot recover a row that silently swallowed six.
-#: Gershayim, geresh and ASCII quotes, which the source wraps a quoted incipit in.
-QUOTE_MARKS = '״׳"\''
-
 ORDINAL_SUFFIX_RE = re.compile(r"\s+\d+$")
+
+#: Gershayim, geresh and ASCII quotes, which the source wraps a quoted incipit in.
+QUOTE_MARKS = "\u05f4\u05f3\"'"
+
+#: Hebrew points. A name without any is unvocalised, and transliterating it yields
+#: consonants rather than a pronounceable word.
+NIQQUD_RE = re.compile(r"[\u0591-\u05c7]")
+
+#: How many words of a text to take as its incipit. Enough to identify a prayer, which
+#: is all a name has to do.
+INCIPIT_WORDS = 3
 
 # Wiki markup to drop when reading a heading's text.
 MARKUP_RE = re.compile(r"\{\{[^{}]*\}\}|\[\[[^\]]*\]\]|<[^>]+>|'''|''")
@@ -137,6 +145,8 @@ class Span:
     end: int
     depth: int
     parent: str | None = None
+    #: True when the source never closed this section and its end was guessed.
+    end_inferred: bool = False
 
 
 @dataclass
@@ -148,13 +158,27 @@ class Prayer:
     spans: list[Span] = field(default_factory=list)
     roles: set[str] = field(default_factory=set)
     heading: str | None = None
+    incipit: str | None = None
     citations: list[str] = field(default_factory=list)
     parent: str | None = None
 
     @property
     def display(self) -> str:
-        """The name a reader would know it by, if the page gives one."""
-        return self.heading or self.base
+        """The name a reader would know it by.
+
+        Section *labels* in this source are unvocalised -- 1,559 of 1,756 carry no
+        points at all -- while the text inside them is fully pointed. Transliterating a
+        label therefore produces consonants rather than a word: "ברכת ציצית" comes out
+        "vrkht_tzytzyt". So a heading is preferred, then the opening words of the text,
+        which is what the URN scheme means by naming a prayer by its incipit, and the
+        label is a last resort that gets flagged rather than trusted.
+        """
+        return self.heading or self.incipit or self.base
+
+    @property
+    def vocalised(self) -> bool:
+        """Whether the name it would be given is pointed, and so transliterable."""
+        return bool(NIQQUD_RE.search(self.display))
 
     @property
     def slug(self) -> str:
@@ -167,7 +191,12 @@ class Prayer:
         A heading is a name somebody chose, so it deserves confirming. A citation has to
         be checked against the verse it claims. Everything else derives mechanically.
         """
-        return bool(self.heading) or bool(self.citations) or uncertain(self.display)
+        return (
+            bool(self.heading)
+            or bool(self.citations)
+            or not self.vocalised
+            or uncertain(self.display)
+        )
 
     @property
     def size(self) -> int:
@@ -176,7 +205,6 @@ class Prayer:
 
 def strip_roles(name: str) -> str:
     """The prayer a section name belongs to, with its role marker removed."""
-    # The source quotes an incipit it is naming a section after.
     # The source quotes an incipit it names a section after.
     stripped = ORDINAL_SUFFIX_RE.sub("", name.strip()).strip(QUOTE_MARKS)
     changed = True
@@ -243,15 +271,40 @@ def parse_spans(wikitext: str) -> tuple[list[Span], list[str]]:
         else:
             problems.append(f"{name}: closed without being opened")
 
+    # An unclosed span used to run to the end of the file, which is wildly wrong: one
+    # unclosed note swallowed 78,590 characters of its page where the next section began
+    # 290 characters later. Bound it at the next section instead and record that the end
+    # was inferred. It is still a guess -- a genuinely nested parent would extend past
+    # its children -- so the problem text says how much room the guess leaves.
+    starts = sorted(
+        m.end() for m in SPAN_START_RE.finditer(wikitext)
+        if not PAGE_SPAN_RE.match(m.group(1).strip())
+    )
     for span in stack:
-        span.end = len(wikitext)
-        problems.append(f"{span.name}: never closed")
+        following = next((pos for pos in starts if pos > span.start), None)
+        span.end = following if following is not None else len(wikitext)
+        span.end_inferred = True
+        problems.append(
+            f"{span.name}: never closed; ended at the next section "
+            f"({span.end - span.start} chars in, of {len(wikitext) - span.start} "
+            "to the end of the page)"
+        )
     return order, problems
 
 
-def _heading_text(wikitext: str, span: Span) -> str:
-    """The plain text of a heading section."""
+def _plain_text(wikitext: str, span: Span) -> str:
+    """A section's text with wiki markup removed."""
     return re.sub(r"\s+", " ", MARKUP_RE.sub("", wikitext[span.start : span.end])).strip()
+
+
+def incipit_of(text: str) -> str | None:
+    """The opening words of a pointed text, as a name for it.
+
+    Returns None for text with no points: an unpointed incipit is no better as a name
+    than the unpointed label it would replace.
+    """
+    words = [w for w in text.split() if NIQQUD_RE.search(w)]
+    return " ".join(words[:INCIPIT_WORDS]) if words else None
 
 
 def gather(sourcetexts_root: Path | None = None) -> tuple[list[Prayer], dict[str, list[str]]]:
@@ -277,9 +330,11 @@ def gather(sourcetexts_root: Path | None = None) -> tuple[list[Prayer], dict[str
             prayer.spans.append(span)
             prayer.roles.update(classify_section_name(span.name))
             if "heading" in classify_section_name(span.name) and not prayer.heading:
-                text = _heading_text(wikitext, span)
+                text = _plain_text(wikitext, span)
                 if text:
                     prayer.heading = text
+            if prayer.incipit is None and "words" not in classify_section_name(span.name):
+                prayer.incipit = incipit_of(_plain_text(wikitext, span))
             body = wikitext[span.start : span.end]
             for target, shown in CITATION_RE.findall(body):
                 # The display is the citation; the link only corroborates it.
@@ -318,6 +373,12 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
         "",
         f"**{len(review)} need a person to look at them.** The rest derive mechanically",
         "and are listed at the end for spot-checking.",
+        "",
+        "A name comes from the group's heading where it has one, otherwise from the",
+        "opening words of its text -- which is what the URN scheme means by naming a",
+        "prayer by its incipit. It does **not** come from the section label: 1,559 of the",
+        "labels carry no pointing, and transliterating one yields consonants rather than",
+        "a word.",
         "",
         "## Named by a heading in the source",
         "",
@@ -367,8 +428,15 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
             "## Malformed sections in the source",
             "",
             f"{total} sections across {len(problems)} pages either overlap a sibling or",
-            "are never closed. The grouping recovers from each, but the nesting it infers",
-            "around them is a guess, and these are worth fixing upstream on Wikisource.",
+            "are never closed. Each is recovered rather than fatal, but the boundary is a",
+            "guess, and these are worth fixing upstream on Wikisource.",
+            "",
+            "An unclosed section ends at the next section rather than at the end of the",
+            "page. Both figures are given below, so the size of the guess is visible.",
+            "Closing at the next *heading* would often be the truer answer, but the next",
+            "heading is frequently thousands of characters away and in a third of these",
+            "cases there is none at all, so the printed pagination or a person is what",
+            "would settle it.",
             "",
             "| Page | Problem |",
             "|---|---|",
@@ -376,6 +444,29 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
         for page, found in sorted(problems.items()):
             for problem in sorted(set(found)):
                 lines.append(f"| {page} | {problem} |")
+
+    unvocalised = [p for p in prayers if not p.vocalised]
+    if unvocalised:
+        rubrics = sum(1 for p in unvocalised if "instruction" in p.roles)
+        lines += [
+            "",
+            "## Names that could not be derived",
+            "",
+            f"{len(unvocalised)} groups whose label and text both lack pointing, so",
+            "there is nothing to transliterate into a pronounceable name and the slug",
+            "below is consonants only.",
+            "",
+            f"{rubrics} of them are instruction sections, which belong to",
+            "`he_wikisource_siddur_hashalem` and need no `prayer:` URN at all, so the",
+            "real shortfall is smaller than the count suggests.",
+            "",
+            "| Page | Label | Consonant slug | Roles |",
+            "|---|---|---|---|",
+        ]
+        lines += [
+            f"| {u.page} | {u.base} | `{u.slug}` | {' '.join(sorted(u.roles))} |"
+            for u in sorted(unvocalised, key=lambda u: (u.page, u.base))
+        ]
 
     mechanical = [p for p in prayers if not p.needs_review]
     lines += [
