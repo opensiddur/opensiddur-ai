@@ -10,6 +10,7 @@ from pathlib import Path
 from opensiddur.importer.birnbaum_siddur.prayers import (
     FOUNDATION_DIR,
     gather,
+    load_boundary_fixes,
     main,
     parse_spans,
     report,
@@ -152,3 +153,53 @@ class ReportTestCase(GatherTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BoundaryFixTestCase(unittest.TestCase):
+    """A hand correction closes a section the source never closed."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        # An unclosed section, then a following one that would otherwise bound it.
+        self.text = ("<קטע התחלה=פתוח/>אָלֶף בֵּית גִּימֶל דָּלֶת"
+                     "<קטע התחלה=הבא/>x<קטע סוף=הבא/>")
+
+    def test_without_a_correction_the_end_is_guessed(self):
+        spans, problems = parse_spans(self.text)
+        span = next(s for s in spans if s.name == "פתוח")
+        self.assertTrue(span.end_inferred)
+        self.assertTrue(any("never closed" in p for p in problems))
+
+    def test_a_correction_closes_it_after_the_named_words(self):
+        spans, problems = parse_spans(self.text, {"פתוח": "אלף בית"})
+        span = next(s for s in spans if s.name == "פתוח")
+        self.assertFalse(span.end_inferred)
+        self.assertIn("בֵּית", self.text[span.start : span.end])
+        self.assertNotIn("גִּימֶל", self.text[span.start : span.end])
+        self.assertEqual(problems, [])
+
+    def test_a_correction_matches_through_different_pointing(self):
+        # Written from the printed page, which may point the words differently.
+        spans, _ = parse_spans(self.text, {"פתוח": "אָלֶף בֵּית"})
+        self.assertFalse(next(s for s in spans if s.name == "פתוח").end_inferred)
+
+    def test_a_correction_that_does_not_match_is_reported_not_silent(self):
+        spans, problems = parse_spans(self.text, {"פתוח": "nothing like this"})
+        self.assertTrue(next(s for s in spans if s.name == "פתוח").end_inferred)
+        self.assertTrue(any("not found" in p for p in problems))
+
+    def test_corrections_load_from_disk(self):
+        path = self.root / "fixes.jsonl"
+        path.write_text(
+            '{"page": "p", "section": "s", "ends_after": "words"}\n'
+            "\n"
+            "{not json}\n",
+            encoding="utf-8",
+        )
+        loaded = load_boundary_fixes(path)
+        self.assertEqual(loaded, {("p", "s"): "words"})
+
+    def test_a_missing_corrections_file_is_not_an_error(self):
+        self.assertEqual(load_boundary_fixes(self.root / "nope.jsonl"), {})

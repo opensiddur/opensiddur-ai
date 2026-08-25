@@ -22,6 +22,7 @@ Run as::
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import re
 import sys
@@ -31,6 +32,7 @@ from typing import Iterator
 
 from opensiddur.importer.birnbaum_siddur.templates import classify_section_name
 from opensiddur.importer.birnbaum_siddur.translit import transliterate, uncertain
+from opensiddur.importer.util.hebrew import normalize_hebrew
 from opensiddur.importer.util.pages import (
     birnbaum_siddur_source_text_directory,
     default_sourcetexts_root,
@@ -228,7 +230,47 @@ def strip_roles(name: str) -> str:
     return stripped or name.strip()
 
 
-def parse_spans(wikitext: str) -> tuple[list[Span], list[str]]:
+def load_boundary_fixes(path: Path | None = None) -> dict[tuple[str, str], str]:
+    """Hand corrections to section ends, keyed by (foundation page, section)."""
+    path = path or BOUNDARY_FIXES
+    if not path.is_file():
+        return {}
+    fixes: dict[tuple[str, str], str] = {}
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+            fixes[(record["page"], record["section"])] = record["ends_after"]
+        except (ValueError, KeyError) as exc:
+            logger.warning("%s:%d: ignoring unreadable correction (%s)", path, number, exc)
+    return fixes
+
+
+def _apply_fix(wikitext: str, span: Span, ends_after: str) -> bool:
+    """Close ``span`` just after ``ends_after``. Returns whether the words were found.
+
+    Matched on the consonant skeleton, so a correction written from the printed page
+    still lands when the source spells the same words with different pointing.
+    """
+    from opensiddur.importer.util.hebrew import normalize_with_offsets
+
+    body = wikitext[span.start:]
+    normalised, offsets = normalize_with_offsets(body)
+    target = normalize_hebrew(ends_after)
+    if not target:
+        return False
+    at = normalised.find(target)
+    if at < 0 or at + len(target) > len(offsets):
+        return False
+    span.end = span.start + offsets[at + len(target) - 1] + 1
+    span.end_inferred = False
+    return True
+
+
+def parse_spans(
+    wikitext: str, fixes: dict[str, str] | None = None
+) -> tuple[list[Span], list[str]]:
     """Read a page's labelled sections into a nesting, tolerantly.
 
     The sections are *almost* a tree: about one in sixty either overlaps a sibling or is
@@ -281,6 +323,11 @@ def parse_spans(wikitext: str) -> tuple[list[Span], list[str]]:
         if not PAGE_SPAN_RE.match(m.group(1).strip())
     )
     for span in stack:
+        corrected = (fixes or {}).get(span.name)
+        if corrected and _apply_fix(wikitext, span, corrected):
+            continue
+        if corrected:
+            problems.append(f"{span.name}: correction text not found in the source")
         following = next((pos for pos in starts if pos > span.start), None)
         span.end = following if following is not None else len(wikitext)
         span.end_inferred = True
@@ -313,13 +360,15 @@ def gather(sourcetexts_root: Path | None = None) -> tuple[list[Prayer], dict[str
     if not directory.is_dir():
         raise FileNotFoundError(f"No foundation pages at {directory}")
 
+    all_fixes = load_boundary_fixes()
     prayers: list[Prayer] = []
     problems: dict[str, list[str]] = {}
 
     for path in sorted(directory.glob("*.txt")):
         page = path.stem
         wikitext = path.read_text(encoding="utf-8")
-        spans, page_problems = parse_spans(wikitext)
+        spans, page_problems = parse_spans(
+            wikitext, {s: e for (pg, s), e in all_fixes.items() if pg == page})
         if page_problems:
             problems[page] = page_problems
 
@@ -486,12 +535,172 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
     return "\n".join(lines) + "\n"
 
 
+#: Where hand corrections to section boundaries live. One JSON object per line:
+#:
+#:     {"page": "תפילת העמידה", "section": "ברכת אבות", "ends_after": "<a few words>"}
+#:
+#: `ends_after` is the last words the section should contain. The parser closes the
+#: section immediately after them, so a correction survives the source being edited
+#: around it -- the same reason the haggadah's page breaks are anchored to words rather
+#: than to offsets.
+BOUNDARY_FIXES = Path("specs/birnbaum_section_boundaries.jsonl")
+
+ANCHOR_WORDS = 6
+
+
+def _anchor(text: str, at: int, *, before: bool) -> str:
+    """A few words of ``text`` on one side of ``at``, to locate a spot by eye."""
+    window = text[max(0, at - 400): at] if before else text[at: at + 400]
+    plain = re.sub(r"\s+", " ", MARKUP_RE.sub("", window)).strip()
+    words = plain.split()
+    chosen = words[-ANCHOR_WORDS:] if before else words[:ANCHOR_WORDS]
+    return " ".join(chosen)
+
+
+#: A labelled-section transclusion: {{#קטע:PAGE|SECTION}}.
+TRANSCLUSION_RE = re.compile(r"\{\{#קטע:([^|}]+)\|([^}]+)\}\}")
+
+
+def section_pages(sourcetexts_root: Path | None = None) -> dict[str, set[str]]:
+    """Printed pages for each foundation section, via the units that transclude it.
+
+    A foundation page carries almost no pagination of its own -- 506 of the 521 page
+    spans are in the unit pages, because a page number belongs to where a text is
+    *printed*, and a shared text is printed wherever a service uses it. So the page of a
+    section is the page of the transclusion that pulls it in, and a section used by two
+    services legitimately has two.
+
+    Only units in the 1949 book are consulted, so a section reachable only from the
+    unfinished machzor pages comes back with no page, which is the correct answer:
+    it is not in this book.
+    """
+    from opensiddur.importer.birnbaum_siddur.sections import RITE, gather as gather_units
+
+    in_scope = {u.title.split("/")[-1] for u in gather_units(sourcetexts_root) if u.in_scope}
+    unit_dir = birnbaum_siddur_source_text_directory(sourcetexts_root) / RITE
+
+    pages: dict[str, set[str]] = {}
+    for path in sorted(unit_dir.glob("*.txt")):
+        if path.stem not in in_scope:
+            continue
+        wikitext = path.read_text(encoding="utf-8")
+        # Walk the file, tracking the page span in force, and attribute every
+        # transclusion inside it to that page.
+        boundaries = [
+            (m.start(), re.search(r"\d+", m.group(1)).group(0))
+            for m in SPAN_START_RE.finditer(wikitext)
+            if PAGE_SPAN_RE.match(m.group(1).strip()) and re.search(r"\d+", m.group(1))
+        ]
+        for call in TRANSCLUSION_RE.finditer(wikitext):
+            page = next(
+                (number for offset, number in reversed(boundaries) if offset < call.start()),
+                None,
+            )
+            if page:
+                pages.setdefault(call.group(2).strip(), set()).add(page)
+    return pages
+
+
+def report_boundaries(sourcetexts_root: Path | None = None) -> str:
+    """Every section whose end had to be guessed, with the page and words to check.
+
+    A boundary cannot be settled from the wikitext -- that is what makes it a guess --
+    so this gives the printed page it starts on and the words on either side of the
+    guessed end, which is what a person needs to look it up and say where it really ends.
+    """
+    directory = birnbaum_siddur_source_text_directory(sourcetexts_root) / FOUNDATION_DIR
+    pages = section_pages(sourcetexts_root)
+    all_fixes = load_boundary_fixes()
+    rows, out_of_scope = [], []
+    for path in sorted(directory.glob("*.txt")):
+        wikitext = path.read_text(encoding="utf-8")
+        spans, _ = parse_spans(
+            wikitext, {s: e for (pg, s), e in all_fixes.items() if pg == path.stem})
+        for span in spans:
+            if not span.end_inferred:
+                continue
+            # A wrapper section is often not transcluded itself -- a unit pulls in its
+            # numbered parts instead -- so fall back to the pages of any section naming
+            # the same prayer.
+            group = strip_roles(span.name)
+            printed = sorted(
+                pages.get(span.name)
+                or {page for other in spans if strip_roles(other.name) == group
+                    for page in pages.get(other.name, ())},
+                key=int,
+            )
+            if not printed:
+                # No unit of the 1949 book pulls this in, so it is not in the book.
+                out_of_scope.append((path.stem, span.name))
+                continue
+            rows.append({
+                "page": path.stem,
+                "section": span.name,
+                "starts_on": ", ".join(printed),
+                "opens": _anchor(wikitext, span.start, before=False),
+                "ends_after": _anchor(wikitext, span.end, before=True),
+                "then": _anchor(wikitext, span.end, before=False),
+                "to_page_end": len(wikitext) - span.start,
+                "to_guess": span.end - span.start,
+            })
+
+    lines = [
+        "# Birnbaum siddur — section boundaries that need checking",
+        "",
+        "Generated by `birnbaum_siddur.prayers --report-boundaries`.",
+        "",
+        f"{len(rows)} sections are never closed in the Wikisource source. Each is bounded",
+        "at the next section, which is a guess: the wikitext does not say where it ends.",
+        "",
+        f"A further {len(out_of_scope)} unclosed sections are reachable only from pages",
+        "the 1949 edition does not contain -- the unfinished machzor, mostly -- and are",
+        "out of scope, so they are not listed.",
+        "",
+        "## How to correct one",
+        "",
+        f"Add a line to `{BOUNDARY_FIXES}`:",
+        "",
+        "```json",
+        '{"page": "תפילת העמידה", "section": "ברכת אבות", "ends_after": "the last few words"}',
+        "```",
+        "",
+        "`ends_after` is the last words the section should contain; the parser closes it",
+        "immediately after them. It is anchored to words rather than to a character",
+        "offset so that a correction survives the source being edited around it. If the",
+        "guess below is already right, no line is needed.",
+        "",
+        "Better still, fix it upstream on Wikisource by adding the missing closing tag,",
+        "and this file can then be deleted a line at a time.",
+        "",
+        "## The sections",
+        "",
+    ]
+    for row in rows:
+        lines += [
+            f"### {row['section']}",
+            "",
+            f"- **Foundation page** `{row['page']}`",
+            f"- **Printed page** {row['starts_on']}",
+            f"- **Opens**: {row['opens']}",
+            f"- **Guessed end** {row['to_guess']} characters in, "
+            f"of {row['to_page_end']} to the end of the source page",
+            f"- **…ends after**: {row['ends_after']}",
+            f"- **…then comes**: {row['then']}",
+            "",
+        ]
+    return "\n".join(lines) + "\n"
+
+
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Report the Birnbaum siddur's shared prayers for review."
     )
     parser.add_argument("--sourcetexts-root", type=Path, default=default_sourcetexts_root())
     parser.add_argument("--report", action="store_true", help="Write the review document.")
+    parser.add_argument("--report-boundaries", action="store_true",
+                        help="Write the list of section ends that had to be guessed.")
+    parser.add_argument("--boundaries-output", type=Path,
+                        default=Path("specs/BIRNBAUM_SECTION_BOUNDARIES.md"))
     parser.add_argument("--output", type=Path, default=Path("specs/BIRNBAUM_PRAYERS.md"))
     return parser
 
@@ -514,6 +723,11 @@ def main(argv: list[str] | None = None) -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report(prayers, problems), encoding="utf-8")
         logger.info("Wrote %s", args.output)
+    if args.report_boundaries:
+        args.boundaries_output.parent.mkdir(parents=True, exist_ok=True)
+        args.boundaries_output.write_text(
+            report_boundaries(args.sourcetexts_root), encoding="utf-8")
+        logger.info("Wrote %s", args.boundaries_output)
     return 0
 
 
