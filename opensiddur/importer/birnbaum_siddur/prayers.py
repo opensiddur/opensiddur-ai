@@ -50,7 +50,7 @@ PAGE_SPAN_RE = re.compile(r"^(?:מחזור\s+)?עמוד\s+\d+(?:\s+\S.*)?$")
 # Role markers, longest first so "כותרת ל…" is not eaten by "כותרת". Stripping these
 # from a section name leaves the prayer the section belongs to.
 ROLE_PREFIXES = ("כותרת ל", "כותרת", "הוראות ל", "הוראה לפני", "הוראה ל", "הוראות",
-                 "הוראה", "הערה על", "הערה", "המשך")
+                 "הוראה", "הערה על", "הערה", "המשך", "מקור ל", "מקור")
 ROLE_SUFFIXES = ("מילים", "הכל", "מקור", "הוראה", "הוראות", "הערה", "כותרת",
                  "חתימה", "פסוק")
 
@@ -62,6 +62,9 @@ ROLE_SUFFIXES = ("מילים", "הכל", "מקור", "הוראה", "הוראות
 # pairs are two halves of one blessing. Stripping it fused six chapters into a single
 # group called "chapter". Under-grouping is the safe error here -- a reviewer can merge
 # two rows, but cannot recover a row that silently swallowed six.
+#: Gershayim, geresh and ASCII quotes, which the source wraps a quoted incipit in.
+QUOTE_MARKS = '״׳"\''
+
 ORDINAL_SUFFIX_RE = re.compile(r"\s+\d+$")
 
 # Wiki markup to drop when reading a heading's text.
@@ -100,12 +103,19 @@ def _book_and_chapter(text: str) -> tuple[str, str | None]:
 
 
 def citation_disagrees(target: str, display: str) -> bool:
-    """Whether a citation's link and its visible text name different passages.
+    """Whether a citation's link contradicts its visible text.
+
+    **The visible text is the claim; the link is a cross-check.** The display carries
+    book, chapter and verses, which is what a `bible:` URN needs, while the link carries
+    only book and chapter. Where they differ it is the link that has gone wrong: in the
+    one case in this source, a citation's link was copied from the line above and its
+    chapter never updated, so deriving the URN from the link would have put the
+    Decalogue paragraph of Kiddush in the wrong chapter of Exodus.
 
     Most differences between the two are formatting, not disagreement: the display
     usually omits the book, spells a numeral with gershayim, or gives verses the link
     cannot carry. A parsha link addresses a reading rather than a chapter and cannot be
-    compared at all. Only a stated book-and-chapter that contradicts the link counts.
+    compared at all.
     """
     if target.strip().startswith("פרשת"):
         return False
@@ -166,7 +176,9 @@ class Prayer:
 
 def strip_roles(name: str) -> str:
     """The prayer a section name belongs to, with its role marker removed."""
-    stripped = ORDINAL_SUFFIX_RE.sub("", name.strip())
+    # The source quotes an incipit it is naming a section after.
+    # The source quotes an incipit it names a section after.
+    stripped = ORDINAL_SUFFIX_RE.sub("", name.strip()).strip(QUOTE_MARKS)
     changed = True
     while changed:
         changed = False
@@ -184,7 +196,7 @@ def strip_roles(name: str) -> str:
                 stripped = stripped[: -len(suffix)].strip()
                 changed = True
                 break
-        stripped = ORDINAL_SUFFIX_RE.sub("", stripped)
+        stripped = ORDINAL_SUFFIX_RE.sub("", stripped).strip(QUOTE_MARKS)
     return stripped or name.strip()
 
 
@@ -270,9 +282,10 @@ def gather(sourcetexts_root: Path | None = None) -> tuple[list[Prayer], dict[str
                     prayer.heading = text
             body = wikitext[span.start : span.end]
             for target, shown in CITATION_RE.findall(body):
-                note = " **link and display disagree**" if citation_disagrees(
-                    target, shown) else ""
-                prayer.citations.append(f"{target.strip()} — {shown.strip()}{note}")
+                # The display is the citation; the link only corroborates it.
+                note = (" **link contradicts it — use the text**"
+                        if citation_disagrees(target, shown) else "")
+                prayer.citations.append(f"{shown.strip()}{note}")
 
         # A prayer's parent is the prayer containing its outermost section.
         for prayer in grouped.values():
@@ -333,10 +346,13 @@ def report(prayers: list[Prayer], problems: dict[str, list[str]]) -> str:
         "",
         "## Scriptural citations",
         "",
-        f"{len(cited)} groups cite scripture. Each needs its `bible:` URN checked against",
-        "the verses it claims. A citation whose link contradicts its visible text is",
-        "marked; formatting differences between the two -- gershayim, an omitted book",
-        "name, verses the link cannot carry -- are not.",
+        f"{len(cited)} groups cite scripture, and each needs its `bible:` URN checked.",
+        "",
+        "The **visible text is the citation**; the wiki link beside it only corroborates.",
+        "The text carries book, chapter and verses, which is what a URN needs, while the",
+        "link carries book and chapter alone. Exactly one citation's link contradicts its",
+        "text -- copied from the line above and never updated -- and is marked below.",
+        "Formatting differences between the two, which are common, are not.",
         "",
         "| Page | Prayer | Cites |",
         "|---|---|---|",
