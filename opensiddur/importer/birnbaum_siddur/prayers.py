@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import urllib.parse
 import logging
 import re
 import sys
@@ -557,6 +558,17 @@ def _anchor(text: str, at: int, *, before: bool) -> str:
     return " ".join(chosen)
 
 
+WIKISOURCE = "https://he.wikisource.org/wiki/"
+ROOT_TITLE = "הסידור השלם (בירנבוים)"
+
+
+def wiki_url(page: str, *, edit: bool = False) -> str:
+    """The he.wikisource address of a foundation page."""
+    title = f"{ROOT_TITLE}/{FOUNDATION_DIR}/{page}".replace(" ", "_")
+    quoted = urllib.parse.quote(title, safe="/()_")
+    return f"{WIKISOURCE}{quoted}" + ("?action=edit" if edit else "")
+
+
 #: A labelled-section transclusion: {{#קטע:PAGE|SECTION}}.
 TRANSCLUSION_RE = re.compile(r"\{\{#קטע:([^|}]+)\|([^}]+)\}\}")
 
@@ -633,9 +645,13 @@ def report_boundaries(sourcetexts_root: Path | None = None) -> str:
                 # No unit of the 1949 book pulls this in, so it is not in the book.
                 out_of_scope.append((path.stem, span.name))
                 continue
+            opened_twice = sum(
+                1 for other in spans if other.name == span.name
+            ) > 1
             rows.append({
                 "page": path.stem,
                 "section": span.name,
+                "opened_twice": opened_twice,
                 "starts_on": ", ".join(printed),
                 "opens": _anchor(wikitext, span.start, before=False),
                 "ends_after": _anchor(wikitext, span.end, before=True),
@@ -675,17 +691,39 @@ def report_boundaries(sourcetexts_root: Path | None = None) -> str:
         "## The sections",
         "",
     ]
+    seen: set[tuple[str, str]] = set()
     for row in rows:
+        key = (row["page"], row["section"])
+        if key in seen:
+            continue                      # a doubly-opened section is one problem
+        seen.add(key)
+        tag = f"<קטע סוף={row['section']}/>"
+        if row["opened_twice"]:
+            problem = ("**opened twice and never closed** — two start tags compete for "
+                       "one name, so a single end tag would bind to only one of them")
+            solution = (
+                f"Most likely the start tag was pasted twice. Delete the stray "
+                f"`<קטע התחלה={row['section']}/>` and add one `{tag}` where the section "
+                "really ends. If both were intended, they need distinct names, not a "
+                "shared one."
+            )
+        else:
+            problem = "**never closed** — the start tag has no matching end tag"
+            solution = f"Add `{tag}` where the section ends."
         lines += [
             f"### {row['section']}",
             "",
-            f"- **Foundation page** `{row['page']}`",
+            f"- **Wikisource** [{row['page']}]({wiki_url(row['page'])}) "
+            f"· [edit]({wiki_url(row['page'], edit=True)})",
             f"- **Printed page** {row['starts_on']}",
+            f"- **Problem** {problem}",
+            f"- **Missing tag** `{tag}`",
+            f"- **Likely fix** {solution}",
             f"- **Opens**: {row['opens']}",
-            f"- **Guessed end** {row['to_guess']} characters in, "
-            f"of {row['to_page_end']} to the end of the source page",
-            f"- **…ends after**: {row['ends_after']}",
-            f"- **…then comes**: {row['then']}",
+            f"- **Best guess is that it ends after**: {row['ends_after']}",
+            f"- **…and the next section begins**: {row['then']}",
+            f"  ({row['to_guess']} characters in, of {row['to_page_end']} "
+            "to the end of the source page)",
             "",
         ]
     return "\n".join(lines) + "\n"

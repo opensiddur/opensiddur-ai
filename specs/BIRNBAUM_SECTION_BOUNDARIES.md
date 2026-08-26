@@ -29,64 +29,61 @@ and this file can then be deleted a line at a time.
 
 ### תתננו לשם ולתהילה מילים הכל
 
-- **Foundation page** `הלל`
+- **Wikisource** [הלל](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%94%D7%9C%D7%9C) · [edit](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%94%D7%9C%D7%9C?action=edit)
 - **Printed page** 686, 687
+- **Problem** **opened twice and never closed** — two start tags compete for one name, so a single end tag would bind to only one of them
+- **Missing tag** `<קטע סוף=תתננו לשם ולתהילה מילים הכל/>`
+- **Likely fix** Most likely the start tag was pasted twice. Delete the stray `<קטע התחלה=תתננו לשם ולתהילה מילים הכל/>` and add one `<קטע סוף=תתננו לשם ולתהילה מילים הכל/>` where the section really ends. If both were intended, they need distinct names, not a shared one.
 - **Opens**: תִּתְּנֵֽנוּ לְשֵׁם וְלִתְהִלָּה. תְּשִׁיבֵֽנוּ אֶל הַחֶֽבֶל
-- **Guessed end** 32 characters in, of 17980 to the end of the source page
-- **…ends after**: הוֹשַׁעְנוֹת לְהוֹשַׁעְנָא רַבָּה
-- **…then comes**: תִּתְּנֵֽנוּ לְשֵׁם וְלִתְהִלָּה. תְּשִׁיבֵֽנוּ אֶל הַחֶֽבֶל
-
-### תתננו לשם ולתהילה מילים הכל
-
-- **Foundation page** `הלל`
-- **Printed page** 686, 687
-- **Opens**: ש"ץ וקהל: אָנָּא הוֹשִֽׁיעָה נָּא. אָנָּא
-- **Guessed end** 39 characters in, of 16718 to the end of the source page
-- **…ends after**: תְּחַזְקֵֽנוּ אֱלֹהֵי יַעֲקֹב סֶֽלָה. הוֹשַׁע נָא.
-- **…then comes**: ש"ץ וקהל: אָנָּא הוֹשִֽׁיעָה נָּא. אָנָּא
+- **Best guess is that it ends after**: הוֹשַׁעְנוֹת לְהוֹשַׁעְנָא רַבָּה
+- **…and the next section begins**: תִּתְּנֵֽנוּ לְשֵׁם וְלִתְהִלָּה. תְּשִׁיבֵֽנוּ אֶל הַחֶֽבֶל
+  (32 characters in, of 17980 to the end of the source page)
 
 ### פרק א הכל
 
-- **Foundation page** `כניסת שבת ויום טוב`
+- **Wikisource** [כניסת שבת ויום טוב](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%9B%D7%A0%D7%99%D7%A1%D7%AA_%D7%A9%D7%91%D7%AA_%D7%95%D7%99%D7%95%D7%9D_%D7%98%D7%95%D7%91) · [edit](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%9B%D7%A0%D7%99%D7%A1%D7%AA_%D7%A9%D7%91%D7%AA_%D7%95%D7%99%D7%95%D7%9D_%D7%98%D7%95%D7%91?action=edit)
 - **Printed page** 221, 223
+- **Problem** **never closed** — the start tag has no matching end tag
+- **Missing tag** `<קטע סוף=פרק א הכל/>`
+- **Likely fix** Add `<קטע סוף=פרק א הכל/>` where the section ends.
 - **Opens**: שִׁיר הַשִּׁירִים אֲשֶׁר לִשְׁלֹמֹה. יִשָּׁקֵֽנִי מִנְּשִׁיקוֹת
-- **Guessed end** 20 characters in, of 34699 to the end of the source page
-- **…ends after**: שיר השירים לפני קבלת שבת. [א]
-- **…then comes**: שִׁיר הַשִּׁירִים אֲשֶׁר לִשְׁלֹמֹה. יִשָּׁקֵֽנִי מִנְּשִׁיקוֹת
+- **Best guess is that it ends after**: שיר השירים לפני קבלת שבת. [א]
+- **…and the next section begins**: שִׁיר הַשִּׁירִים אֲשֶׁר לִשְׁלֹמֹה. יִשָּׁקֵֽנִי מִנְּשִׁיקוֹת
+  (20 characters in, of 34699 to the end of the source page)
 
 ### ברוך ה' יום יום מילים הכל
 
-- **Foundation page** `קידוש והבדלה וסעודות שבת ויום טוב`
+- **Wikisource** [קידוש והבדלה וסעודות שבת ויום טוב](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%A7%D7%99%D7%93%D7%95%D7%A9_%D7%95%D7%94%D7%91%D7%93%D7%9C%D7%94_%D7%95%D7%A1%D7%A2%D7%95%D7%93%D7%95%D7%AA_%D7%A9%D7%91%D7%AA_%D7%95%D7%99%D7%95%D7%9D_%D7%98%D7%95%D7%91) · [edit](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%A7%D7%99%D7%93%D7%95%D7%A9_%D7%95%D7%94%D7%91%D7%93%D7%9C%D7%94_%D7%95%D7%A1%D7%A2%D7%95%D7%93%D7%95%D7%AA_%D7%A9%D7%91%D7%AA_%D7%95%D7%99%D7%95%D7%9D_%D7%98%D7%95%D7%91?action=edit)
 - **Printed page** 425, 427
+- **Problem** **never closed** — the start tag has no matching end tag
+- **Missing tag** `<קטע סוף=ברוך ה' יום יום מילים הכל/>`
+- **Likely fix** Add `<קטע סוף=ברוך ה' יום יום מילים הכל/>` where the section ends.
 - **Opens**: בָּרוּךְ אֲדֹנָי יוֹם יוֹם, יַעֲמׇס־לָֽנוּ יֶֽשַׁע
-- **Guessed end** 30 characters in, of 30467 to the end of the source page
-- **…ends after**: ת פשוטה/>זְמִירוֹת לְשַׁבָּת
-- **…then comes**: בָּרוּךְ אֲדֹנָי יוֹם יוֹם, יַעֲמׇס־לָֽנוּ יֶֽשַׁע
+- **Best guess is that it ends after**: ת פשוטה/>זְמִירוֹת לְשַׁבָּת
+- **…and the next section begins**: בָּרוּךְ אֲדֹנָי יוֹם יוֹם, יַעֲמׇס־לָֽנוּ יֶֽשַׁע
+  (30 characters in, of 30467 to the end of the source page)
 
 ### הערה על מי שברך ליולדת זכר
 
-- **Foundation page** `קריאת התורה`
+- **Wikisource** [קריאת התורה](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%A7%D7%A8%D7%99%D7%90%D7%AA_%D7%94%D7%AA%D7%95%D7%A8%D7%94) · [edit](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%A7%D7%A8%D7%99%D7%90%D7%AA_%D7%94%D7%AA%D7%95%D7%A8%D7%94?action=edit)
 - **Printed page** 371
+- **Problem** **opened twice and never closed** — two start tags compete for one name, so a single end tag would bind to only one of them
+- **Missing tag** `<קטע סוף=הערה על מי שברך ליולדת זכר/>`
+- **Likely fix** Most likely the start tag was pasted twice. Delete the stray `<קטע התחלה=הערה על מי שברך ליולדת זכר/>` and add one `<קטע סוף=הערה על מי שברך ליולדת זכר/>` where the section really ends. If both were intended, they need distinct names, not a shared one.
 - **Opens**: מִי שֶׁבֵּרַךְ אֲבוֹתֵֽינוּ, אַבְרָהָם יִצְחָק וְיַעֲקֹב,
-- **Guessed end** 39 characters in, of 78590 to the end of the source page
-- **…ends after**: וְנֹאמַר אָמֵן. "מִי שֶׁבֵּרַךְ" ליולדת זכר:
-- **…then comes**: מִי שֶׁבֵּרַךְ אֲבוֹתֵֽינוּ, אַבְרָהָם יִצְחָק וְיַעֲקֹב,
+- **Best guess is that it ends after**: וְנֹאמַר אָמֵן. "מִי שֶׁבֵּרַךְ" ליולדת זכר:
+- **…and the next section begins**: מִי שֶׁבֵּרַךְ אֲבוֹתֵֽינוּ, אַבְרָהָם יִצְחָק וְיַעֲקֹב,
+  (39 characters in, of 78590 to the end of the source page)
 
 ### אל רחום וחנון הכל
 
-- **Foundation page** `תחנון`
+- **Wikisource** [תחנון](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%AA%D7%97%D7%A0%D7%95%D7%9F) · [edit](https://he.wikisource.org/wiki/%D7%94%D7%A1%D7%99%D7%93%D7%95%D7%A8_%D7%94%D7%A9%D7%9C%D7%9D_(%D7%91%D7%99%D7%A8%D7%A0%D7%91%D7%95%D7%99%D7%9D)/%D7%90%D7%A9%D7%9B%D7%A0%D7%96/%D7%93%D7%A4%D7%99_%D7%99%D7%A1%D7%95%D7%93/%D7%AA%D7%97%D7%A0%D7%95%D7%9F?action=edit)
 - **Printed page** 109, 111
+- **Problem** **opened twice and never closed** — two start tags compete for one name, so a single end tag would bind to only one of them
+- **Missing tag** `<קטע סוף=אל רחום וחנון הכל/>`
+- **Likely fix** Most likely the start tag was pasted twice. Delete the stray `<קטע התחלה=אל רחום וחנון הכל/>` and add one `<קטע סוף=אל רחום וחנון הכל/>` where the section really ends. If both were intended, they need distinct names, not a shared one.
 - **Opens**: אֵל רַחוּם וְחַנּוּן, רַחֵם עָלֵֽינוּ וְעַל
-- **Guessed end** 28 characters in, of 9427 to the end of the source page
-- **…ends after**: כִּי אַתָּה שׁוֹמֵֽעַ תְּפִלַּת כׇּל פֶּה.
-- **…then comes**: אֵל רַחוּם וְחַנּוּן, רַחֵם עָלֵֽינוּ וְעַל
-
-### אל רחום וחנון הכל
-
-- **Foundation page** `תחנון`
-- **Printed page** 109, 111
-- **Opens**: אֵין כָּמֽוֹךָ חַנּוּן וְרַחוּם, יְיָ אֱלֹהֵֽינוּ;
-- **Guessed end** 23 characters in, of 8488 to the end of the source page
-- **…ends after**: כִּי אֵל מֶֽלֶךְ חַנּוּן וְרַחוּם אָֽתָּה.
-- **…then comes**: אֵין כָּמֽוֹךָ חַנּוּן וְרַחוּם, יְיָ אֱלֹהֵֽינוּ;
+- **Best guess is that it ends after**: כִּי אַתָּה שׁוֹמֵֽעַ תְּפִלַּת כׇּל פֶּה.
+- **…and the next section begins**: אֵל רַחוּם וְחַנּוּן, רַחֵם עָלֵֽינוּ וְעַל
+  (28 characters in, of 9427 to the end of the source page)
 
