@@ -8,6 +8,50 @@ Targets carry no ``@project`` suffix, so which edition supplies the text is deci
 time by ``priority.transclusion``. Every range is stated in the canonical verse division that
 the bible URN space uses (opensiddur.common.versification), so one range serves every edition;
 the sources are converted to it as they are read.
+
+The conditionals this emits
+===========================
+
+Four kinds, each on a feature the compiler decides from the volume's declarations. A feature
+left undeclared is undefined, and undefined keeps the text it guards, so a volume that
+declares nothing carries every variant. See ``doc/humash-settings.example.yaml`` for how a
+volume narrows them.
+
+``opensiddur:rite`` (binary, `_conditional`)
+    The haftarah of a rite whose custom differs. **Not exclusive**: several rites may be
+    declared true at once, and a volume that declares none prints them all, each under a
+    heading naming whose custom it is.
+
+``opensiddur:holiday`` (binary, `_conditional`)
+    A megillah, on the festival it is read. Exclusive per occasion — one date makes at most
+    one true — but nothing stops a volume declaring several, and one that declares none
+    carries all five.
+
+``opensiddur:reading-cycle`` (binary, `_cycle_condition`)
+    ``annual`` and ``triennial-year-{1,2,3}``, guarding haftarot. **Alternatives, not
+    additions**: the four haftarot of one Shabbat are the same slot read four ways, so a
+    volume that declares several prints several for that week. Each test is a single feature
+    (see `_cycle_condition`) so that the answer is decisive rather than undefined.
+
+``opensiddur:torah-reading`` / ``triennial-pattern-{pair}`` (string, `_pattern_conditional`)
+    The triennial aliyah divisions of each single inside a pair that is sometimes read
+    combined. The feature's value is one character per year of the cycle — ``T`` where the
+    pair was read together, ``S`` where apart — and `readings.triennial_patterns` maps each
+    such string to exactly one variation. **Mutually exclusive**: the pattern sets guarding
+    different variations of one pair are disjoint, so for any real cycle exactly one
+    variation's markers apply.
+
+    That exclusivity is what makes the same division name legitimately appear at two
+    different verses of one pair: in Behar–Bechukotai ``א׳ רְבִיעִי`` marks both 25:11 and
+    25:14, because year A's fourth aliyah begins at one or the other depending on how the
+    pair fell in that cycle. They are alternatives, never both read. Nothing in the marker's
+    own text says which pattern it belongs to — the condition carries that, and the exporter
+    does not print it (see ``f:governs-markers-only`` in ``exporter/tex/reledmac.xslt``), so
+    a printed volume compiled without a date shows both.
+
+    The combined reading's own divisions are unconditioned, which is why a marker suffixed
+    ``(מְחֻבָּרוֹת)`` can sit beside an unsuffixed one at the same verse: the two are the
+    same aliyah of two different readings that happen to begin together.
 """
 
 from __future__ import annotations
