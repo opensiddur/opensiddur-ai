@@ -1148,6 +1148,45 @@ class TestConditionalRendering(unittest.TestCase):
             f"blank line inside \\pstart: {stream!r}",
         )
 
+    def test_a_silent_milestone_between_markers_leaves_no_blank_line(self):
+        """A qualified parsha unit sets nothing -- the div's heading names the parshah.
+
+        Being invisible, it must not hold apart the whitespace around it: two whitespace
+        leaves meeting in the output are a blank line, and a blank line is a \\par.
+        """
+        out = self._transform_body(
+            """<tei:div>
+              <tei:head>בְּחֻקֹּתַי</tei:head>
+              <tei:milestone unit="aliyah.triennial.2" n="year two fifth"/>
+              <tei:milestone unit="parsha.annual" n="בְּחֻקֹּתַי"/>
+              <tei:milestone unit="aliyah.annual" n="first"/>
+              <tei:milestone unit="verse" n="3"/>verse text
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        # The head occupies a \pstart of its own; the labels are in the one after it.
+        stream = body.split(r"\pstart")[-1].split(r"\pend", 1)[0]
+        self.assertIsNone(
+            re.search(r"\n[ \t]*\n", stream),
+            f"blank line inside \\pstart: {stream!r}",
+        )
+        self.assertEqual(
+            ["year two fifth", "first"], re.findall(r"\\OSaliyah\{([^}]*)\}", stream)
+        )
+
+    def test_a_silent_milestone_does_not_break_a_run_of_labels(self):
+        """It sets nothing, so the labels either side are adjacent and still duplicates."""
+        out = self._transform_body(
+            """<tei:div>
+              <tei:milestone unit="aliyah.triennial.1" n="first"/>
+              <tei:milestone unit="edition-verse" n="14"/>
+              <tei:milestone unit="aliyah.triennial.2" n="first"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        labels = re.findall(r"\\OSaliyah\{([^}]*)\}", self._document_body(out))
+        self.assertEqual(["first"], labels)
+
     def test_conditional_around_markers_with_a_note_stays_visible(self):
         """Silencing the delimiters would take the note's explanation with them."""
         out = self._transform_body(

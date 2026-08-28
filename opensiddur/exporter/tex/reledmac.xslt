@@ -1734,6 +1734,24 @@
         <xsl:sequence select="exists($node/self::text()) and not(normalize-space($node))"/>
     </xsl:function>
 
+    <!-- True when the stream loop sets nothing for this leaf. Milestones are the only
+         leaves that can be silent: a qualified parsha unit is left to the div's heading,
+         and an unrecognised unit (edition-verse and friends) is skipped rather than given
+         a \pstart it would leave empty. A silent leaf is invisible in the output, so it
+         neither ends a run of markers nor separates the layout whitespace around it:
+         two such whitespace leaves meeting would be a blank line, i.e. a \par. Keep this
+         in step with the milestone branches of the stream loop. -->
+    <xsl:function name="f:renders-nothing" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:variable name="unit" select="string($node/@unit)"/>
+        <xsl:sequence select="exists($node/self::tei:milestone) and (
+            starts-with($unit, 'parsha.')
+            or not($unit = ('chapter', 'citation', 'verse', 'parsha')
+                   or starts-with($unit, 'aliyah')
+                   or starts-with($unit, 'maftir')
+                   or $node/@rend = '****'))"/>
+    </xsl:function>
+
     <!-- The endConditional that closes a conditional, and the nodes between the two.
          An unmatched conditional (no xml:id, or no matching end) governs nothing, and
          every test below then falls back to the conservative answer. -->
@@ -1865,11 +1883,14 @@
                     </xsl:next-iteration>
                 </xsl:when>
                 <xsl:otherwise>
+                    <!-- A leaf the stream loop sets nothing for is invisible, so it can
+                         neither end a run of markers nor keep whitespace apart. -->
+                    <xsl:variable name="invisible" select="f:renders-nothing(.)"/>
                     <xsl:sequence select="."/>
                     <xsl:next-iteration>
-                        <xsl:with-param name="run-labels" select="()"/>
+                        <xsl:with-param name="run-labels" select="if ($invisible) then $run-labels else ()"/>
                         <xsl:with-param name="silent-ids" select="$silent-ids"/>
-                        <xsl:with-param name="after-space" select="false()"/>
+                        <xsl:with-param name="after-space" select="$invisible and $after-space"/>
                     </xsl:next-iteration>
                 </xsl:otherwise>
             </xsl:choose>
