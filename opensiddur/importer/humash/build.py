@@ -37,17 +37,20 @@ volume narrows them.
     The triennial aliyah divisions of each single inside a pair that is sometimes read
     combined. The feature's value is one character per year of the cycle — ``T`` where the
     pair was read together, ``S`` where apart — and `readings.triennial_patterns` maps each
-    such string to exactly one variation. **Mutually exclusive**: the pattern sets guarding
-    different variations of one pair are disjoint, so for any real cycle exactly one
-    variation's markers apply.
+    such string to exactly one variation. **Exclusive for any one cycle, but not in a printed
+    book**: the pattern sets guarding different variations of one pair are disjoint, so a
+    volume that declares a cycle keeps exactly one variation's markers — but a volume that
+    declares none keeps them all, and a printed humash declares none, so that it serves the
+    whole cycle. Do not read the disjointness as licence to show only one.
 
-    That exclusivity is what makes the same division name legitimately appear at two
-    different verses of one pair: in Behar–Bechukotai ``א׳ רְבִיעִי`` marks both 25:11 and
-    25:14, because year A's fourth aliyah begins at one or the other depending on how the
-    pair fell in that cycle. They are alternatives, never both read. Nothing in the marker's
-    own text says which pattern it belongs to — the condition carries that, and the exporter
-    does not print it (see ``f:governs-markers-only`` in ``exporter/tex/reledmac.xslt``), so
-    a printed volume compiled without a date shows both.
+    So the same division name legitimately appears at two different verses of one pair: in
+    Behar–Bechukotai year A's fourth aliyah begins at 25:11 under a cycle that reads the pair
+    apart in years A and C, and at 25:14 under one that reads it apart in year A alone. The
+    reader has to be told which is which, and the condition cannot tell them — the exporter
+    does not print it (see ``f:governs-markers-only`` in ``exporter/tex/reledmac.xslt``). The
+    marker's own label carries it instead: `_cycle_qualifier` names the years that read the
+    pair apart, which identifies the cycle because the set of those years and the pattern
+    determine one another.
 
     The combined reading's own divisions are unconditioned, which is why a marker suffixed
     ``(מְחֻבָּרוֹת)`` can sit beside an unsuffixed one at the same verse: the two are the
@@ -191,12 +194,55 @@ COMBINED_SUFFIX = "מְחֻבָּרוֹת"
 HAFTARAH_TITLE = "הַפְטָרָה"
 
 
-def _triennial_title(label: str) -> str:
+# What the margin says of a division that belongs to one shape of the cycle: which years of it
+# read the pair apart. Naming those years names the cycle, because the set of them and the
+# combine/separate pattern determine one another.
+SEPARATE_PREFIX = "נִפְרָדוֹת"
+ALL_YEARS_SEPARATE = "בְּכָל הַשָּׁנִים"
+# Between the shapes of the cycle that divide the parshah the same way. A comma would read as
+# another year in a list of years.
+SHAPE_SEPARATOR = " · "
+
+
+def _shape_name(pattern: str) -> str:
+    """One shape of the cycle, named by the years that read the pair apart.
+
+    A pattern is one character per year, ``T`` where the pair was read together and ``S`` where
+    apart, so the ``S`` positions are the years the single is read on its own and has divisions
+    of its own. Naming those years names the shape, because the set of them and the pattern
+    determine one another.
+    """
+    years = [index + 1 for index, char in enumerate(pattern) if char == "S"]
+    if len(years) == len(TRIENNIAL_YEARS):
+        return ALL_YEARS_SEPARATE
+    named = [TRIENNIAL_YEARS.get(year, str(year)) for year in years]
+    if len(named) > 1:
+        # "א׳ וְג׳" — the conjunction is vocalized for the letter it precedes.
+        vav = "וּ" if named[-1].startswith(("ב", "ו")) else "וְ"
+        named = [*named[:-1], f"{vav}{named[-1]}"]
+    return " ".join(named)
+
+
+def _cycle_qualifier(patterns: list[str]) -> str:
+    """Every shape of the cycle that opens a division at one place, as the margin says it.
+
+    Several shapes often divide a parshah the same way, and where they do they are one marker
+    to the reader, not several: the shapes are listed together so that the label is identical
+    and the exporter sets it once. Where they divide it differently the labels differ, which
+    is the whole point — that is how a reader meeting the name twice knows which is theirs.
+    """
+    shapes = sorted({_shape_name(pattern) for pattern in patterns})
+    return f"{SEPARATE_PREFIX} {SHAPE_SEPARATOR.join(shapes)}"
+
+
+def _triennial_title(label: str, qualifier: str | None = None) -> str:
     """The margin text of a triennial marker.
 
     Labels are "<year>.<aliyah>", or "<variation>.<year>.<aliyah>" for a parshah that is
-    sometimes read combined. A variation letter is dropped: only one variation is ever read in
-    a given cycle, so naming it would say nothing to a reader of the volume it survives in.
+    sometimes read combined. The variation letter itself is never printed — it would say
+    nothing to a reader — but where the marker is conditional on the shape of the cycle, the
+    qualifier names that shape, so a reader meeting the same division name at two verses can
+    tell which one is theirs. Only a volume that declares no cycle sees more than one of them.
     The combined reading is called out, because it sits beside the singles in the same file.
     """
     parts = label.split(".")
@@ -205,10 +251,12 @@ def _triennial_title(label: str) -> str:
     title = f"{TRIENNIAL_YEARS.get(int(year), year)} {ALIYAH_TITLES.get(aliyah, aliyah)}"
     if variation == VARIATION_COMBINED:
         return f"{title} ({COMBINED_SUFFIX})"
+    if qualifier:
+        return f"{title} ({qualifier})"
     return title
 
 
-def _milestone_title(span: ReadingSpan) -> str:
+def _milestone_title(span: ReadingSpan, qualifier: str | None = None) -> str:
     label = span.label
     if span.unit == UNIT_ALIYAH:
         return ALIYAH_TITLES.get(label, label)
@@ -229,13 +277,17 @@ def _milestone_title(span: ReadingSpan) -> str:
         return f"{ALIYAH_TITLES['maftir']} ({COMBINED_SUFFIX})"
     if span.unit.startswith("aliyah.triennial") or span.unit.startswith("maftir.triennial"):
         # Labels arrive as "<year>.<aliyah>" or "<variation>.<year>.<aliyah>".
-        return _triennial_title(label)
+        return _triennial_title(label, qualifier)
     return label
 
 
-def _milestone(span: ReadingSpan, urn_base: str) -> str:
-    """The marker that opens a reading division. Its scope runs to the next of the same unit."""
-    title = _milestone_title(span)
+def _milestone(span: ReadingSpan, urn_base: str, qualifier: str | None = None) -> str:
+    """The marker that opens a reading division. Its scope runs to the next of the same unit.
+
+    `qualifier` names the shape of cycle this division belongs to, and is set only for a marker
+    that a condition guards — the triennial divisions of a single inside a pair's file.
+    """
+    title = _milestone_title(span, qualifier)
     if span.unit in (UNIT_PARSHA, UNIT_PARSHA_COMBINED):
         # A parshah's own URN, not one below the file's: inside a combined file the marker for
         # each single is what makes urn:...:parsha/<slug> resolve to that single's text.
@@ -396,8 +448,11 @@ def _segment_xml(
     """
     parts: list[str] = []
     for span in segment.opening:
-        marker = _milestone(span, urn_base)
         condition = (conditions or {}).get(span.unit)
+        # A conditioned marker names the shapes of the cycle it is for, since a volume that
+        # declares none keeps every variation and the division name alone would not tell them
+        # apart. Where every shape divides alike there is nothing to tell apart and no name.
+        marker = _milestone(span, urn_base, condition[2] if condition is not None else None)
         parts.append(
             _pattern_conditional(condition[0], condition[1], marker)
             if condition is not None else marker
@@ -409,6 +464,41 @@ def _segment_xml(
 
 
 TriennialDivisions = dict[tuple[str | None, int], list[ReadingSpan]]
+
+#: A marker's unit-space, the pair its condition names, the patterns that select it, and the
+#: text the label adds to say which shapes of the cycle it is for (None when every shape agrees).
+Conditions = dict[str, tuple[str, list[str], str | None]]
+
+
+def _division_key(span: ReadingSpan) -> tuple[str | None, str, str]:
+    """What makes two markers the same division to a reader: same parshah, year and aliyah,
+    opening at the same verse. The variation is left out — that is what varies."""
+    year, aliyah = span.label.split(".")[-2:]
+    return (span.owner, f"{year}.{aliyah}", str(span.start))
+
+
+def _shapes_by_division(
+    divisions: TriennialDivisions, patterns: dict[str, str]
+) -> dict[tuple[str | None, str, str], set[str]]:
+    """Which shapes of the cycle open each division where it opens.
+
+    Shapes often divide a parshah alike, and a reader has no use for the distinction where they
+    do. Grouping by where a division actually opens lets those shapes share one label, and lets
+    a division that every shape opens in one place carry no qualifier at all. Only the divisions
+    that really do fall in more than one place are qualified, which is where the reader needs it.
+    """
+    by_key: dict[tuple[str | None, str, str], set[str]] = {}
+    places: dict[tuple[str | None, str], set[str]] = {}
+    for (variation, _year), division in divisions.items():
+        shapes = {pattern for pattern, name in patterns.items() if name == variation}
+        if variation is None or not shapes:
+            continue
+        for span in division:
+            key = _division_key(span)
+            by_key.setdefault(key, set()).update(shapes)
+            places.setdefault(key[:2], set()).add(key[2])
+    # A division whose every shape opens it in the same verse is unambiguous as it stands.
+    return {key: shapes for key, shapes in by_key.items() if len(places[key[:2]]) > 1}
 
 
 def _reading_document(
@@ -484,7 +574,9 @@ def pair_file(
         spans.append(member.parsha_span)
         # The singles' divisions keep their own URN space: both parshiyot have a first aliyah.
         spans.extend(replace(span, owner=member.slug) for span in member.spans)
-        for (variation, _year), division in triennial_divisions.get(member.slug, {}).items():
+        member_divisions = triennial_divisions.get(member.slug, {})
+        shapes = _shapes_by_division(member_divisions, patterns)
+        for (variation, _year), division in member_divisions.items():
             matching = sorted(
                 pattern for pattern, name in patterns.items() if name == variation
             )
@@ -495,7 +587,16 @@ def pair_file(
                 )
             for span in division:
                 if variation is not None and matching:
-                    conditions[span.unit] = (pair.slug, matching)
+                    # Every shape that opens this division here, not just this variation's:
+                    # shapes that divide alike are one marker to a reader, and giving them
+                    # one label is what lets the exporter set it once. A division every shape
+                    # opens in the same place needs no qualifier at all.
+                    together = shapes.get(_division_key(span))
+                    conditions[span.unit] = (
+                        pair.slug,
+                        matching,
+                        _cycle_qualifier(sorted(together)) if together else None,
+                    )
             spans.extend(division)
 
     spans.extend(pair.spans)

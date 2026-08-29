@@ -20,6 +20,7 @@ from opensiddur.importer.humash.refs import (
     UNIT_MAFTIR,
     UNIT_PARSHA,
     UNIT_PARSHA_COMBINED,
+    VARIATION_COMBINED,
     ReadingSpan,
     VerseRef,
     triennial_unit,
@@ -587,6 +588,81 @@ class TestMaftirMilestoneTitle(unittest.TestCase):
             for day in (1, 2, 3, 4, 5)
         }
         self.assertEqual(len(titles), 5)
+
+
+class TestCycleQualifier(unittest.TestCase):
+    """A triennial division of a single inside a pair belongs to one shape of the cycle.
+
+    The volume declares no cycle, so every shape is kept and the division name alone does not
+    tell them apart: in Behar the year-one fourth aliyah opens at 25:11 under one shape and at
+    25:14 under another. The qualifier names the shape by the years that read the pair apart,
+    which identifies it because the set of those years and the pattern determine one another.
+    """
+
+    #: pattern -> the qualifier it should produce, one per shape a cycle can take.
+    EXPECTED = {
+        "STT": "נִפְרָדוֹת א׳",
+        "TST": "נִפְרָדוֹת ב׳",
+        "TTS": "נִפְרָדוֹת ג׳",
+        "STS": "נִפְרָדוֹת א׳ וְג׳",
+        "SST": "נִפְרָדוֹת א׳ וּב׳",
+        "TSS": "נִפְרָדוֹת ב׳ וְג׳",
+        "SSS": "נִפְרָדוֹת בְּכָל הַשָּׁנִים",
+    }
+
+    def test_each_pattern_names_the_years_read_apart(self):
+        for pattern, expected in self.EXPECTED.items():
+            with self.subTest(pattern):
+                self.assertEqual(expected, build._cycle_qualifier([pattern]))
+
+    def test_every_shape_gets_a_distinct_qualifier(self):
+        """Two divisions of one pair must never carry the same label."""
+        self.assertEqual(
+            len(self.EXPECTED),
+            len({build._cycle_qualifier([p]) for p in self.EXPECTED}),
+        )
+
+    def test_no_latin_digit_reaches_the_margin(self):
+        """A digit set in right-to-left text prints mirrored; see TRIENNIAL_YEARS."""
+        for pattern in self.EXPECTED:
+            with self.subTest(pattern):
+                self.assertFalse(
+                    any(c.isascii() and c.isalnum() for c in build._cycle_qualifier([pattern]))
+                )
+
+    def test_a_conditioned_triennial_marker_names_its_cycle(self):
+        qualifier = build._cycle_qualifier(["STS"])
+        self.assertEqual(
+            "א׳ רְבִיעִי (נִפְרָדוֹת א׳ וְג׳)", build._triennial_title("D.1.4", qualifier)
+        )
+
+    def test_shapes_that_divide_alike_are_named_together(self):
+        """So the label is identical and the exporter sets one marker, not three.
+
+        Behar's year-one fourth aliyah opens at 25:11 under three shapes of the cycle. A reader
+        has no use for the distinction between them there; they need it only against the fourth
+        shape, which opens the same aliyah three verses later.
+        """
+        qualifier = build._cycle_qualifier(["STS", "SST", "SSS"])
+        self.assertEqual(
+            "נִפְרָדוֹת א׳ וְג׳ · א׳ וּב׳ · בְּכָל הַשָּׁנִים", qualifier
+        )
+
+    def test_the_shape_list_does_not_depend_on_pattern_order(self):
+        """Two markers of one division must come out byte-identical to be deduplicated."""
+        self.assertEqual(
+            build._cycle_qualifier(["SSS", "STS", "SST"]),
+            build._cycle_qualifier(["STS", "SST", "SSS"]),
+        )
+
+    def test_an_unconditioned_triennial_marker_is_unchanged(self):
+        """A parshah always read alone has one division, so there is nothing to tell apart."""
+        self.assertEqual("א׳ רְבִיעִי", build._triennial_title("1.4"))
+
+    def test_the_combined_reading_keeps_its_own_suffix(self):
+        """Its divisions are unconditioned — the pair read together divides one way."""
+        title = build._triennial_title(f"{VARIATION_COMBINED}.1.4")
+        self.assertEqual(f"א׳ רְבִיעִי ({build.COMBINED_SUFFIX})", title)
 
 
 class TestHaftarahOrder(unittest.TestCase):

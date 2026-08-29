@@ -51,13 +51,16 @@ declarations:
   # rite's haftarah. The reading of the weeks the pair is read together is always kept, marked
   # מחוברות in the margin.
   #
-  # The pattern conditions over one pair are mutually exclusive — each pattern selects exactly
-  # one variation — so a volume compiled without a date shows alternatives side by side that no
-  # single cycle reads together. Expect the same division name at two different verses of a
-  # pair (in Behar–Bechukotai א׳ רביעי marks both 25:11 and 25:14), and an unsuffixed marker
-  # beside its מחוברות counterpart where the separate and combined readings begin at the same
-  # verse. Declaring a date resolves both. importer/humash/build.py enumerates every conditional
-  # the humash emits and which of them are exclusive.
+  # Each pattern selects exactly one variation, so declaring a date narrows a pair to a single
+  # division. Leaving it out keeps every variation — which is what a printed volume serving a
+  # whole cycle wants — and then the same division name falls at two different verses of a pair,
+  # once per shape the cycle can take. The marker says which shape it is for, by naming the years
+  # that read the pair apart: in Behar–Bechukotai the year-א׳ fourth aliyah is
+  # [א׳ רביעי (נפרדות א׳ וג׳)] at 25:11 and [א׳ רביעי (נפרדות א׳)] at 25:14.
+  #
+  # An unsuffixed marker beside its מחוברות counterpart is a different thing and is left alone:
+  # there the separate and the combined readings simply begin at the same verse. See
+  # importer/humash/build.py for every conditional the humash emits and how each behaves.
   #
   # opensiddur:gregorian-date:
   #   year: 2025
