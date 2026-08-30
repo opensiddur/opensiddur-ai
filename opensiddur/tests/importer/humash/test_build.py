@@ -599,27 +599,26 @@ class TestCycleQualifier(unittest.TestCase):
     which identifies it because the set of those years and the pattern determine one another.
     """
 
-    #: pattern -> the qualifier it should produce, one per shape a cycle can take.
+    #: pattern -> the years it reads the pair apart, one per shape a cycle can take.
     EXPECTED = {
-        "STT": "נִפְרָדוֹת א׳",
-        "TST": "נִפְרָדוֹת ב׳",
-        "TTS": "נִפְרָדוֹת ג׳",
-        "STS": "נִפְרָדוֹת א׳ וְג׳",
-        "SST": "נִפְרָדוֹת א׳ וּב׳",
-        "TSS": "נִפְרָדוֹת ב׳ וְג׳",
-        "SSS": "נִפְרָדוֹת בְּכָל הַשָּׁנִים",
+        "STT": "א׳",
+        "TST": "ב׳",
+        "TTS": "ג׳",
+        "STS": "א׳ וְג׳",
+        "SST": "א׳ וּב׳",
+        "TSS": "ב׳ וְג׳",
+        "SSS": "בְּכָל הַשָּׁנִים",
     }
 
     def test_each_pattern_names_the_years_read_apart(self):
         for pattern, expected in self.EXPECTED.items():
             with self.subTest(pattern):
-                self.assertEqual(expected, build._cycle_qualifier([pattern]))
+                self.assertEqual(expected, build._shape_name(pattern))
 
-    def test_every_shape_gets_a_distinct_qualifier(self):
+    def test_every_shape_gets_a_distinct_name(self):
         """Two divisions of one pair must never carry the same label."""
         self.assertEqual(
-            len(self.EXPECTED),
-            len({build._cycle_qualifier([p]) for p in self.EXPECTED}),
+            len(self.EXPECTED), len({build._shape_name(p) for p in self.EXPECTED})
         )
 
     def test_no_latin_digit_reaches_the_margin(self):
@@ -627,11 +626,41 @@ class TestCycleQualifier(unittest.TestCase):
         for pattern in self.EXPECTED:
             with self.subTest(pattern):
                 self.assertFalse(
-                    any(c.isascii() and c.isalnum() for c in build._cycle_qualifier([pattern]))
+                    any(c.isascii() and c.isalnum() for c in build._shape_name(pattern))
                 )
 
+    #: Every shape that reads Behar–Bechukotai apart in year one, and so has a year-one
+    #: division at all. Behar's fourth aliyah opens at 25:11 under three of them and at 25:14
+    #: under the fourth.
+    YEAR_ONE = {"STT", "STS", "SST", "SSS"}
+
+    def test_a_year_read_apart_alone_is_said_so_rather_than_spelled_out(self):
+        self.assertEqual(
+            "נִפְרָדוֹת א׳ בִּלְבַד", build._cycle_qualifier({"STT"}, 1, self.YEAR_ONE)
+        )
+
+    def test_every_other_shape_is_named_against_it(self):
+        """Three shapes named in three words rather than in a clause apiece."""
+        self.assertEqual(
+            "נִפְרָדוֹת א׳ וְעוֹד",
+            build._cycle_qualifier({"STS", "SST", "SSS"}, 1, self.YEAR_ONE),
+        )
+
+    def test_the_two_namings_stay_distinct(self):
+        """They are opposites, so a reader must never see one where the other belongs."""
+        self.assertNotEqual(
+            build._cycle_qualifier({"STT"}, 1, self.YEAR_ONE),
+            build._cycle_qualifier({"STS", "SST", "SSS"}, 1, self.YEAR_ONE),
+        )
+
+    def test_a_group_that_is_neither_is_listed(self):
+        self.assertEqual(
+            "נִפְרָדוֹת א׳ וְג׳; א׳ וּב׳",
+            build._cycle_qualifier({"STS", "SST"}, 1, self.YEAR_ONE),
+        )
+
     def test_a_conditioned_triennial_marker_names_its_cycle(self):
-        qualifier = build._cycle_qualifier(["STS"])
+        qualifier = build._cycle_qualifier({"STS"}, 1, self.YEAR_ONE)
         self.assertEqual(
             "א׳ רְבִיעִי (נִפְרָדוֹת א׳ וְג׳)", build._triennial_title("D.1.4", qualifier)
         )
@@ -643,16 +672,29 @@ class TestCycleQualifier(unittest.TestCase):
         has no use for the distinction between them there; they need it only against the fourth
         shape, which opens the same aliyah three verses later.
         """
-        qualifier = build._cycle_qualifier(["STS", "SST", "SSS"])
+        qualifier = build._cycle_qualifier({"STS", "SST", "SSS"}, 1, {"STS", "SST", "SSS", "TSS"})
         self.assertEqual(
-            "נִפְרָדוֹת א׳ וְג׳ · א׳ וּב׳ · בְּכָל הַשָּׁנִים", qualifier
+            "נִפְרָדוֹת א׳ וְג׳; א׳ וּב׳; בְּכָל הַשָּׁנִים", qualifier
         )
+
+    def test_the_label_uses_only_characters_the_hebrew_font_sets(self):
+        """A character the font lacks is set as a blank, not as a fallback glyph.
+
+        Frank Ruehl CLM has no middle dot, which separated the shapes until a build turned up
+        530 "Missing character" warnings and a row of gaps where the separators should be.
+        """
+        allowed = set(" ׳;()") | {chr(c) for c in range(0x0590, 0x0600)}
+        for patterns in ({"STS"}, {"STT"}, {"STS", "SST", "SSS"}):
+            with self.subTest(sorted(patterns)):
+                qualifier = build._cycle_qualifier(patterns, 1, self.YEAR_ONE)
+                stray = {c for c in qualifier if c not in allowed}
+                self.assertEqual(set(), stray, f"not in the Hebrew font: {stray}")
 
     def test_the_shape_list_does_not_depend_on_pattern_order(self):
         """Two markers of one division must come out byte-identical to be deduplicated."""
         self.assertEqual(
-            build._cycle_qualifier(["SSS", "STS", "SST"]),
-            build._cycle_qualifier(["STS", "SST", "SSS"]),
+            build._cycle_qualifier({"SSS", "STS", "SST"}, 1, {"STS", "SST", "SSS", "TSS"}),
+            build._cycle_qualifier({"STS", "SST", "SSS"}, 1, {"STS", "SST", "SSS", "TSS"}),
         )
 
     def test_an_unconditioned_triennial_marker_is_unchanged(self):

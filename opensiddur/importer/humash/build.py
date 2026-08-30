@@ -200,8 +200,15 @@ HAFTARAH_TITLE = "הַפְטָרָה"
 SEPARATE_PREFIX = "נִפְרָדוֹת"
 ALL_YEARS_SEPARATE = "בְּכָל הַשָּׁנִים"
 # Between the shapes of the cycle that divide the parshah the same way. A comma would read as
-# another year in a list of years.
-SHAPE_SEPARATOR = " · "
+# another year in the list of years each shape already is. Not a middle dot: Frank Ruehl CLM has
+# no glyph for one, and a character the Hebrew font lacks is set as a blank.
+SHAPE_SEPARATOR = "; "
+# A year's divisions exist only in the shapes that read the pair apart that year, so every shape
+# in play already reads it apart then. What is left to say is whether it is read apart that year
+# and no other, or that year and at least one more — which is the whole distinction wherever a
+# division falls in just two places, and shorter than naming three shapes to say it.
+ONLY_THAT_YEAR = "בִּלְבַד"
+THAT_YEAR_AND_MORE = "וְעוֹד"
 
 
 def _shape_name(pattern: str) -> str:
@@ -223,14 +230,28 @@ def _shape_name(pattern: str) -> str:
     return " ".join(named)
 
 
-def _cycle_qualifier(patterns: list[str]) -> str:
+def _cycle_qualifier(patterns: set[str], year: int, universe: set[str]) -> str:
     """Every shape of the cycle that opens a division at one place, as the margin says it.
 
     Several shapes often divide a parshah the same way, and where they do they are one marker
-    to the reader, not several: the shapes are listed together so that the label is identical
-    and the exporter sets it once. Where they divide it differently the labels differ, which
-    is the whole point — that is how a reader meeting the name twice knows which is theirs.
+    to the reader, not several: they are named together so that the label is identical and the
+    exporter sets it once. Where they divide it differently the labels differ, which is the
+    whole point — that is how a reader meeting the name twice knows which is theirs.
+
+    `universe` is every shape that has this division at all, which is every shape reading the
+    pair apart in `year`. Against that, a group is most often "this year alone" or its opposite,
+    and saying so is much shorter than naming the three shapes the opposite covers. Groups that
+    are neither are named by listing them.
     """
+    alone = {
+        pattern for pattern in universe
+        if [index for index, char in enumerate(pattern) if char == "S"] == [year - 1]
+    }
+    named_year = TRIENNIAL_YEARS.get(year, str(year))
+    if alone and patterns == alone:
+        return f"{SEPARATE_PREFIX} {named_year} {ONLY_THAT_YEAR}"
+    if alone and patterns == universe - alone:
+        return f"{SEPARATE_PREFIX} {named_year} {THAT_YEAR_AND_MORE}"
     shapes = sorted({_shape_name(pattern) for pattern in patterns})
     return f"{SEPARATE_PREFIX} {SHAPE_SEPARATOR.join(shapes)}"
 
@@ -477,15 +498,17 @@ def _division_key(span: ReadingSpan) -> tuple[str | None, str, str]:
     return (span.owner, f"{year}.{aliyah}", str(span.start))
 
 
-def _shapes_by_division(
+def _qualifiers_by_division(
     divisions: TriennialDivisions, patterns: dict[str, str]
-) -> dict[tuple[str | None, str, str], set[str]]:
-    """Which shapes of the cycle open each division where it opens.
+) -> dict[tuple[str | None, str, str], str]:
+    """What each division's marker adds to say which shapes of the cycle it is for.
 
     Shapes often divide a parshah alike, and a reader has no use for the distinction where they
-    do. Grouping by where a division actually opens lets those shapes share one label, and lets
-    a division that every shape opens in one place carry no qualifier at all. Only the divisions
-    that really do fall in more than one place are qualified, which is where the reader needs it.
+    do. Grouping by where a division actually opens lets those shapes share one label, so the
+    exporter sets one marker rather than three; and a division that every shape opens in the
+    same verse is left out entirely, since there is nothing there to tell apart. Only the
+    divisions that really do fall in more than one place are qualified, which is where the
+    reader needs it.
     """
     by_key: dict[tuple[str | None, str, str], set[str]] = {}
     places: dict[tuple[str | None, str], set[str]] = {}
@@ -497,8 +520,14 @@ def _shapes_by_division(
             key = _division_key(span)
             by_key.setdefault(key, set()).update(shapes)
             places.setdefault(key[:2], set()).add(key[2])
-    # A division whose every shape opens it in the same verse is unambiguous as it stands.
-    return {key: shapes for key, shapes in by_key.items() if len(places[key[:2]]) > 1}
+    universes: dict[tuple[str | None, str], set[str]] = {}
+    for key, shapes in by_key.items():
+        universes.setdefault(key[:2], set()).update(shapes)
+    return {
+        key: _cycle_qualifier(shapes, int(key[1].split(".")[0]), universes[key[:2]])
+        for key, shapes in by_key.items()
+        if len(places[key[:2]]) > 1
+    }
 
 
 def _reading_document(
@@ -575,7 +604,7 @@ def pair_file(
         # The singles' divisions keep their own URN space: both parshiyot have a first aliyah.
         spans.extend(replace(span, owner=member.slug) for span in member.spans)
         member_divisions = triennial_divisions.get(member.slug, {})
-        shapes = _shapes_by_division(member_divisions, patterns)
+        qualifiers = _qualifiers_by_division(member_divisions, patterns)
         for (variation, _year), division in member_divisions.items():
             matching = sorted(
                 pattern for pattern, name in patterns.items() if name == variation
@@ -591,11 +620,8 @@ def pair_file(
                     # shapes that divide alike are one marker to a reader, and giving them
                     # one label is what lets the exporter set it once. A division every shape
                     # opens in the same place needs no qualifier at all.
-                    together = shapes.get(_division_key(span))
                     conditions[span.unit] = (
-                        pair.slug,
-                        matching,
-                        _cycle_qualifier(sorted(together)) if together else None,
+                        pair.slug, matching, qualifiers.get(_division_key(span))
                     )
             spans.extend(division)
 
