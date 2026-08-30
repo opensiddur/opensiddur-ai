@@ -41,6 +41,7 @@ from opensiddur.importer.feinstein_haggadah.tei_builder import (
     page_break_anchors,
     printed_verse_body,
     read_header_stub,
+    require_project_source_bibl_id,
     tei_document,
     project_citation_bibl,
     transcription_bibl,
@@ -59,6 +60,7 @@ from opensiddur.importer.util.pages import (
     default_sourcetexts_root,
     feinstein_haggadah_data_directory,
 )
+from opensiddur.exporter.validate_urn_references import validate_project_urn_references
 
 INDEX_TITLES: dict[str, str] = {
     "index": "Haggadah",
@@ -161,6 +163,7 @@ def convert_project(
 
     validate_header_stub(header_stub, lang=lang)
     main_header = read_header_stub(header_stub)
+    require_project_source_bibl_id(main_header, header_stub=header_stub)
     # The title page belongs to the book as a whole, so it goes on the project index and
     # nowhere else. A project with no printed title page simply has no stub.
     title_page = read_front_stub(title_page_stub) if title_page_stub else ""
@@ -220,6 +223,23 @@ def convert_project(
     prune_stale_files(project_dir, written)
     verify_conditionals(project_dir, lang=lang)
     validate_project_directory(project_dir)
+
+    # Runs once, after every file in the project has been written -- individual files can be
+    # transiently unresolvable mid-write, so this check belongs at the project level, not
+    # per-file. Cross-project urn:x-opensiddur: resolution needs refdb already synced for
+    # every project a URN might resolve into (a separate, explicit step), so it's left out
+    # here; only the self-contained file/fragment (xml:id) references -- e.g. the bibl
+    # citation this check exists to catch -- are checked automatically.
+    urn_failures = validate_project_urn_references(
+        project_id, project_directory=project_dir.parent, check_urns=False
+    )
+    if urn_failures:
+        details = "; ".join(
+            f"{f.file_name}:{f.element_path} @{f.attribute_name}={f.urn}" for f in urn_failures
+        )
+        raise RuntimeError(
+            f"unresolved reference(s) in {project_dir.name}: {details}"
+        )
 
 
 def verify_conditionals(project_dir: Path, *, lang: str) -> None:

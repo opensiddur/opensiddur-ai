@@ -129,6 +129,47 @@ class TestValidateUrnReferences(unittest.TestCase):
             )
             self.assertEqual(failures, [])
 
+    def test_checks_target_on_elements_other_than_ptr_ref_transclude(self):
+        """@target/@targetEnd are checked wherever they appear, not just on tei:ptr, tei:ref,
+        and j:transclude -- a pointer on some other element must not be silently skipped."""
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            text = etree.SubElement(xml, f"{{{TEI_NS}}}text")
+            body = etree.SubElement(text, f"{{{TEI_NS}}}body")
+            etree.SubElement(body, f"{{{TEI_NS}}}note", target="urn:x-opensiddur:test:missing")
+
+            _write_project_xml(base, project, "a.xml", xml)
+
+            db_path = base / "ref.db"
+            ReferenceDatabase(db_path).close()
+
+            failures = validate_project_urn_references(
+                project, project_directory=base, reference_db_path=db_path
+            )
+            self.assertEqual(len(failures), 1)
+            self.assertEqual(failures[0].urn, "urn:x-opensiddur:test:missing")
+
+    def test_skips_same_file_id_targets_regardless_of_element(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            etree.SubElement(xml, f"{{{JLPTEI_NS}}}endConditional", target="#cond_x")
+
+            _write_project_xml(base, project, "a.xml", xml)
+
+            db_path = base / "ref.db"
+            ReferenceDatabase(db_path).close()
+
+            failures = validate_project_urn_references(
+                project, project_directory=base, reference_db_path=db_path
+            )
+            self.assertEqual(failures, [])
+
     def test_index_before_validate(self):
         with TemporaryDirectory() as td:
             base = Path(td)
@@ -290,6 +331,73 @@ class TestValidateUrnReferences(unittest.TestCase):
             )
             self.assertEqual(len(failures), 1)
             self.assertEqual(failures[0].attribute_name, "targetEnd")
+
+    def test_validates_resolvable_file_fragment_ref(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            index_xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            bibl = etree.SubElement(index_xml, f"{{{TEI_NS}}}bibl")
+            bibl.set("{http://www.w3.org/XML/1998/namespace}id", "project_source_bibl")
+            _write_project_xml(base, project, "index.xml", index_xml)
+
+            leaf_xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            etree.SubElement(
+                leaf_xml, f"{{{TEI_NS}}}ptr", target=f"/{project}/index#project_source_bibl"
+            )
+            _write_project_xml(base, project, "leaf.xml", leaf_xml)
+
+            db_path = base / "ref.db"
+            ReferenceDatabase(db_path).close()
+
+            failures = validate_project_urn_references(
+                project, project_directory=base, reference_db_path=db_path, check_urns=False
+            )
+            self.assertEqual(failures, [])
+
+    def test_reports_unresolvable_file_fragment_ref(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            index_xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            _write_project_xml(base, project, "index.xml", index_xml)
+
+            leaf_xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            etree.SubElement(
+                leaf_xml, f"{{{TEI_NS}}}ptr", target=f"/{project}/index#project_source_bibl"
+            )
+            _write_project_xml(base, project, "leaf.xml", leaf_xml)
+
+            db_path = base / "ref.db"
+            ReferenceDatabase(db_path).close()
+
+            failures = validate_project_urn_references(
+                project, project_directory=base, reference_db_path=db_path, check_urns=False
+            )
+            self.assertEqual(len(failures), 1)
+            self.assertEqual(failures[0].file_name, "leaf.xml")
+            self.assertEqual(
+                failures[0].urn, f"/{project}/index#project_source_bibl"
+            )
+
+    def test_check_urns_false_ignores_urn_targets_without_touching_refdb(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            etree.SubElement(xml, f"{{{TEI_NS}}}ptr", target="urn:x-opensiddur:test:missing")
+            _write_project_xml(base, project, "a.xml", xml)
+
+            # No reference.db is ever created at this path -- check_urns=False must not open it.
+            db_path = base / "does-not-exist" / "ref.db"
+
+            failures = validate_project_urn_references(
+                project, project_directory=base, reference_db_path=db_path, check_urns=False
+            )
+            self.assertEqual(failures, [])
 
     def test_format_failure(self):
         failure = UnresolvableUrnReference(
