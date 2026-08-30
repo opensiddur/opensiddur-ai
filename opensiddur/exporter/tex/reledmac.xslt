@@ -732,9 +732,12 @@
              the second column. See the mark declarations in the preamble. -->
         <xsl:param name="stream" as="xs:string" select="'primary'"/>
 
-        <xsl:variable name="leaves" as="node()*">
+        <xsl:variable name="flattened" as="node()*">
             <xsl:apply-templates select="$nodes" mode="leaves"/>
         </xsl:variable>
+        <!-- Silent conditional delimiters and repeated labels are decided here, where the
+             leaves either side of a marker are in view. See f:resolve-markers. -->
+        <xsl:variable name="leaves" as="node()*" select="f:resolve-markers($flattened)"/>
 
         <xsl:if test="exists($leaves)">
             <xsl:if test="$lang = 'he'">
@@ -1518,12 +1521,13 @@
     </xsl:template>
 
     <!-- A conditional whose condition was decided is resolved away by the compiler, so any
-         marker reaching here is one that could not be decided. Bracket it, so the passage it
-         governs is visibly set off from the text around it. Inside a paragraph that means
-         brackets; between paragraphs, a rule. -->
+         marker reaching here is one that could not be decided, and was not silenced by
+         f:resolve-markers. Bracket it, so the passage it governs is visibly set off from
+         the text around it. Within running text that means brackets; around whole blocks,
+         a rule, because brackets several lines apart do not read as a pair. -->
     <xsl:template match="j:conditional" mode="emit">
         <xsl:choose>
-            <xsl:when test="ancestor::tei:p or ancestor::tei:l">
+            <xsl:when test="f:is-inline-conditional(.)">
                 <xsl:text>\OSCondStartInline{}</xsl:text>
             </xsl:when>
             <xsl:otherwise>
@@ -1535,8 +1539,11 @@
     </xsl:template>
 
     <xsl:template match="j:endConditional" mode="emit">
+        <xsl:variable name="start" select="f:matching-start(.)"/>
         <xsl:choose>
-            <xsl:when test="ancestor::tei:p or ancestor::tei:l">
+            <xsl:when test="if (exists($start))
+                            then f:is-inline-conditional($start)
+                            else (ancestor::tei:p or ancestor::tei:l)">
                 <xsl:text>\OSCondEndInline{}</xsl:text>
             </xsl:when>
             <xsl:otherwise>
@@ -1708,6 +1715,186 @@
         <xsl:param name="level" as="xs:integer"/>
         <xsl:sequence select="('section', 'subsection', 'subsubsection', 'paragraph')[
             min((max(($level, 1)), 4))]"/>
+    </xsl:function>
+
+    <!-- ====================================================================
+         Marker resolution over the flattened leaf sequence
+         ==================================================================== -->
+
+    <!-- An aliyah, maftir, weekday or triennial marker: auto-generated label text that
+         \OSaliyah already sets off in brackets of its own. -->
+    <xsl:function name="f:is-aliyah-marker" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:sequence select="exists($node/self::tei:milestone[
+            starts-with(@unit, 'aliyah') or starts-with(@unit, 'maftir')])"/>
+    </xsl:function>
+
+    <xsl:function name="f:is-structural-space" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:sequence select="exists($node/self::text()) and not(normalize-space($node))"/>
+    </xsl:function>
+
+    <!-- True when the stream loop sets nothing for this leaf. Milestones are the only
+         leaves that can be silent: a qualified parsha unit is left to the div's heading,
+         and an unrecognised unit (edition-verse and friends) is skipped rather than given
+         a \pstart it would leave empty. A silent leaf is invisible in the output, so it
+         neither ends a run of markers nor separates the layout whitespace around it:
+         two such whitespace leaves meeting would be a blank line, i.e. a \par. Keep this
+         in step with the milestone branches of the stream loop. -->
+    <xsl:function name="f:renders-nothing" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:variable name="unit" select="string($node/@unit)"/>
+        <xsl:sequence select="exists($node/self::tei:milestone) and (
+            starts-with($unit, 'parsha.')
+            or not($unit = ('chapter', 'citation', 'verse', 'parsha')
+                   or starts-with($unit, 'aliyah')
+                   or starts-with($unit, 'maftir')
+                   or $node/@rend = '****'))"/>
+    </xsl:function>
+
+    <!-- The endConditional that closes a conditional, and the nodes between the two.
+         An unmatched conditional (no xml:id, or no matching end) governs nothing, and
+         every test below then falls back to the conservative answer. -->
+    <xsl:function name="f:matching-end" as="element()?">
+        <xsl:param name="start" as="element()"/>
+        <xsl:sequence select="if ($start/@xml:id)
+            then $start/following::j:endConditional[@target = '#' || $start/@xml:id][1]
+            else ()"/>
+    </xsl:function>
+
+    <xsl:function name="f:matching-start" as="element()?">
+        <xsl:param name="end" as="element()"/>
+        <xsl:sequence select="$end/preceding::j:conditional[
+            @xml:id and '#' || @xml:id = string($end/@target)][1]"/>
+    </xsl:function>
+
+    <xsl:function name="f:governed-nodes" as="node()*">
+        <xsl:param name="start" as="element()"/>
+        <xsl:variable name="end" select="f:matching-end($start)"/>
+        <xsl:sequence select="if (exists($end))
+            then ($start/following::node() intersect $end/preceding::node())
+            else ()"/>
+    </xsl:function>
+
+    <!-- True when a conditional governs nothing but aliyah markers. The markers are
+         auto-generated and \OSaliyah already brackets each one, so a delimiter around
+         them would only double the brackets; and a block delimiter is a full-measure
+         box, which is what was breaking each label onto a line of its own. A conditional
+         carrying an explanatory note is never silent — the note has to be shown. -->
+    <xsl:function name="f:governs-markers-only" as="xs:boolean">
+        <xsl:param name="start" as="element()"/>
+        <xsl:variable name="governed" select="f:governed-nodes($start)"/>
+        <xsl:sequence select="exists(f:matching-end($start))
+            and empty($start/tei:note)
+            and exists($governed[f:is-aliyah-marker(.)])
+            and (every $n in $governed
+                 satisfies (f:is-aliyah-marker($n) or f:is-structural-space($n)))"/>
+    </xsl:function>
+
+    <!-- True when a conditional governs no block content, so its delimiters can be the
+         inline brackets rather than a rule. The stylesheet's older test — is there a
+         tei:p or tei:l ancestor — answers this for prose, but not for a text whose verse
+         structure is milestone-based and whose divisions therefore sit directly in a
+         tei:div, as the humash's do. -->
+    <xsl:function name="f:is-inline-conditional" as="xs:boolean">
+        <xsl:param name="start" as="element()"/>
+        <xsl:sequence select="exists($start/ancestor::tei:p) or exists($start/ancestor::tei:l)
+            or (exists(f:matching-end($start))
+                and empty(f:governed-nodes($start)[
+                    self::tei:p or self::tei:ab or self::tei:l or self::tei:lg
+                    or self::tei:div or self::tei:head]))"/>
+    </xsl:function>
+
+    <!-- One pass over the flattened leaves, dropping two kinds of noise that only become
+         visible once a text carries many overlapping reading divisions:
+
+         (1) the delimiters of a conditional that governs nothing but aliyah markers, and
+         (2) a marker repeating a label already shown at the same point.
+
+         (2) arises for the combined parshiyot, where the same triennial aliyah is reached
+         under several patterns: the conditions differ, so the compiled TEI rightly keeps
+         every marker, but they all print the same label and the reader needs it once.
+         A "point" is a run of consecutive markers, so identical labels separated by text
+         are both kept.
+
+         Node identity is preserved throughout: what survives is the original leaf, not a
+         copy, because the emit templates read the ancestor and preceding axes. -->
+    <xsl:function name="f:resolve-markers" as="node()*">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:iterate select="$leaves">
+            <!-- Labels already shown in the run of markers currently being emitted. -->
+            <xsl:param name="run-labels" as="xs:string*" select="()"/>
+            <!-- xml:ids of conditionals dropped by (1), so their ends go with them. -->
+            <xsl:param name="silent-ids" as="xs:string*" select="()"/>
+            <!-- Whether the last leaf emitted was layout whitespace. Dropping a leaf
+                 leaves the whitespace that surrounded it back to back, and two of those
+                 in the output are a blank line, which TeX reads as \par: inside a
+                 \pstart, the very break these markers were making. -->
+            <xsl:param name="after-space" as="xs:boolean" select="false()"/>
+            <xsl:choose>
+                <xsl:when test="self::j:conditional">
+                    <xsl:variable name="silent" select="f:governs-markers-only(.)"/>
+                    <xsl:if test="not($silent)">
+                        <xsl:sequence select="."/>
+                    </xsl:if>
+                    <xsl:next-iteration>
+                        <!-- A silent conditional is invisible, so it does not interrupt the
+                             run of markers it sits among; a visible one does. -->
+                        <xsl:with-param name="run-labels" select="if ($silent) then $run-labels else ()"/>
+                        <xsl:with-param name="silent-ids"
+                                        select="if ($silent) then ($silent-ids, string(@xml:id)) else $silent-ids"/>
+                        <xsl:with-param name="after-space" select="$silent and $after-space"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::j:endConditional">
+                    <xsl:variable name="silent" select="substring(string(@target), 2) = $silent-ids"/>
+                    <xsl:if test="not($silent)">
+                        <xsl:sequence select="."/>
+                    </xsl:if>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="run-labels" select="if ($silent) then $run-labels else ()"/>
+                        <xsl:with-param name="silent-ids" select="$silent-ids"/>
+                        <xsl:with-param name="after-space" select="$silent and $after-space"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="f:is-aliyah-marker(.)">
+                    <xsl:variable name="label" select="string(@n)"/>
+                    <xsl:variable name="duplicate" select="$label = $run-labels"/>
+                    <xsl:if test="not($duplicate)">
+                        <xsl:sequence select="."/>
+                    </xsl:if>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="run-labels" select="distinct-values(($run-labels, $label))"/>
+                        <xsl:with-param name="silent-ids" select="$silent-ids"/>
+                        <xsl:with-param name="after-space" select="$duplicate and $after-space"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="f:is-structural-space(.)">
+                    <!-- Layout whitespace between markers; it does not end the run. Only
+                         the first of a run of it is kept, so that what a dropped leaf
+                         used to separate does not become a blank line. -->
+                    <xsl:if test="not($after-space)">
+                        <xsl:sequence select="."/>
+                    </xsl:if>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="run-labels" select="$run-labels"/>
+                        <xsl:with-param name="silent-ids" select="$silent-ids"/>
+                        <xsl:with-param name="after-space" select="true()"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:otherwise>
+                    <!-- A leaf the stream loop sets nothing for is invisible, so it can
+                         neither end a run of markers nor keep whitespace apart. -->
+                    <xsl:variable name="invisible" select="f:renders-nothing(.)"/>
+                    <xsl:sequence select="."/>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="run-labels" select="if ($invisible) then $run-labels else ()"/>
+                        <xsl:with-param name="silent-ids" select="$silent-ids"/>
+                        <xsl:with-param name="after-space" select="$invisible and $after-space"/>
+                    </xsl:next-iteration>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:iterate>
     </xsl:function>
 
     <!-- Nearest xml:lang in scope for any element, falling back to the document language. -->

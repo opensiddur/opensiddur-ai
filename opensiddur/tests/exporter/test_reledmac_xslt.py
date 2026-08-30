@@ -1071,6 +1071,138 @@ class TestConditionalRendering(unittest.TestCase):
         )
         self.assertIn("On Shabbat add:", out)
 
+    def test_conditional_around_inline_content_outside_a_paragraph_is_bracketed(self):
+        """A milestone-structured text has no tei:p, but its runs are still inline.
+
+        The rule is for content set off as a block; used inside a line of text it is a
+        full-measure box, which breaks the line.
+        """
+        out = self._transform_body(
+            f"""<tei:div>
+              <tei:milestone unit="verse" n="1"/>before <j:conditional
+                xml:id="c">{self.CONDITION}</j:conditional>conditional<j:endConditional
+                target="#c"/> after
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartInline{}", body)
+        self.assertIn(r"\OSCondEndInline{}", body)
+        self.assertNotIn(r"\OSCondStartBlock", body)
+        self.assertNotIn(r"\OSCondEndBlock", body)
+
+    def test_conditional_around_aliyah_markers_only_is_silent(self):
+        """\\OSaliyah brackets its own label, so a delimiter would double the brackets."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <tei:milestone unit="aliyah.annual" n="first"/>
+              <j:conditional xml:id="c">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.1" n="year one first"/>
+              <j:endConditional target="#c"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn(r"\OSCond", body)
+        self.assertIn(r"\OSaliyah{first}", body)
+        self.assertIn(r"\OSaliyah{year one first}", body)
+
+    def test_silenced_conditional_keeps_its_labels_on_one_line(self):
+        """The point of silencing: no full-measure box between the labels."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <tei:milestone unit="aliyah.annual" n="first"/>
+              <j:conditional xml:id="c1">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.1" n="year one"/>
+              <j:endConditional target="#c1"/>
+              <j:conditional xml:id="c2">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="maftir.annual" n="maftir"/>
+              <j:endConditional target="#c2"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        labels = re.findall(r"\\OSaliyah\{([^}]*)\}", body)
+        self.assertEqual(["first", "year one", "maftir"], labels)
+        self.assertEqual(1, body.count(r"\pstart"))
+
+    def test_silencing_a_conditional_leaves_no_blank_line(self):
+        """A blank line is \\par, and reledmac does not want one inside a \\pstart.
+
+        Dropping a delimiter puts the whitespace that surrounded it back to back, which
+        is exactly how a blank line appears.
+        """
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c1">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.1" n="year one"/>
+              <j:endConditional target="#c1"/>
+              <j:conditional xml:id="c2">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.2" n="year two"/>
+              <j:endConditional target="#c2"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        stream = self._document_body(out).split(r"\pstart", 1)[1].split(r"\pend", 1)[0]
+        self.assertIsNone(
+            re.search(r"\n[ \t]*\n", stream),
+            f"blank line inside \\pstart: {stream!r}",
+        )
+
+    def test_a_silent_milestone_between_markers_leaves_no_blank_line(self):
+        """A qualified parsha unit sets nothing -- the div's heading names the parshah.
+
+        Being invisible, it must not hold apart the whitespace around it: two whitespace
+        leaves meeting in the output are a blank line, and a blank line is a \\par.
+        """
+        out = self._transform_body(
+            """<tei:div>
+              <tei:head>בְּחֻקֹּתַי</tei:head>
+              <tei:milestone unit="aliyah.triennial.2" n="year two fifth"/>
+              <tei:milestone unit="parsha.annual" n="בְּחֻקֹּתַי"/>
+              <tei:milestone unit="aliyah.annual" n="first"/>
+              <tei:milestone unit="verse" n="3"/>verse text
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        # The head occupies a \pstart of its own; the labels are in the one after it.
+        stream = body.split(r"\pstart")[-1].split(r"\pend", 1)[0]
+        self.assertIsNone(
+            re.search(r"\n[ \t]*\n", stream),
+            f"blank line inside \\pstart: {stream!r}",
+        )
+        self.assertEqual(
+            ["year two fifth", "first"], re.findall(r"\\OSaliyah\{([^}]*)\}", stream)
+        )
+
+    def test_a_silent_milestone_does_not_break_a_run_of_labels(self):
+        """It sets nothing, so the labels either side are adjacent and still duplicates."""
+        out = self._transform_body(
+            """<tei:div>
+              <tei:milestone unit="aliyah.triennial.1" n="first"/>
+              <tei:milestone unit="edition-verse" n="14"/>
+              <tei:milestone unit="aliyah.triennial.2" n="first"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        labels = re.findall(r"\\OSaliyah\{([^}]*)\}", self._document_body(out))
+        self.assertEqual(["first"], labels)
+
+    def test_conditional_around_markers_with_a_note_stays_visible(self):
+        """Silencing the delimiters would take the note's explanation with them."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">
+                <tei:note type="instruction">In the triennial cycle:</tei:note>{self.CONDITION}
+              </j:conditional>
+              <tei:milestone unit="aliyah.triennial.1" n="year one first"/>
+              <j:endConditional target="#c"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn("In the triennial cycle:", body)
+        self.assertIn(r"\OSCondStartInline{}", body)
+
     def test_conditional_macros_are_defined(self):
         out = self._transform_body(
             """<tei:p><tei:milestone unit="verse" n="1"/>x</tei:p>"""
@@ -1083,6 +1215,65 @@ class TestConditionalRendering(unittest.TestCase):
         ):
             with self.subTest(macro):
                 self.assertIn(macro, out)
+
+
+class TestRepeatedAliyahLabels(unittest.TestCase):
+    """The combined parshiyot reach the same triennial aliyah under several patterns.
+
+    The conditions differ, so the compiled TEI rightly carries a marker for each; they all
+    print the same label, and the reader needs to see it once.
+    """
+
+    CONDITION = TestConditionalRendering.CONDITION
+
+    def _labels(self, body: str) -> list[str]:
+        out = _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>"""
+        )
+        return re.findall(
+            r"\\OSaliyah\{([^}]*)\}", out.split(r"\begin{document}", 1)[1]
+        )
+
+    def test_repeated_label_at_one_point_is_shown_once(self):
+        labels = self._labels(
+            f"""<tei:div>
+              <j:conditional xml:id="c1">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.a.1" n="year one first"/>
+              <j:endConditional target="#c1"/>
+              <j:conditional xml:id="c2">{self.CONDITION}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.b.1" n="year one first"/>
+              <j:endConditional target="#c2"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        self.assertEqual(["year one first"], labels)
+
+    def test_different_labels_at_one_point_are_all_shown(self):
+        labels = self._labels(
+            """<tei:div>
+              <tei:milestone unit="aliyah.annual" n="first"/>
+              <tei:milestone unit="aliyah.weekday" n="kohen"/>
+              <tei:milestone unit="aliyah.triennial.1" n="year one first"/>
+              <tei:milestone unit="verse" n="1"/>verse text
+            </tei:div>"""
+        )
+        self.assertEqual(["first", "kohen", "year one first"], labels)
+
+    def test_the_same_label_at_two_points_is_shown_at_each(self):
+        """Two divisions genuinely named alike are not duplicates of one another."""
+        labels = self._labels(
+            """<tei:div>
+              <tei:milestone unit="aliyah.annual" n="first"/>
+              <tei:milestone unit="verse" n="1"/>first verse
+              <tei:milestone unit="aliyah.triennial.1" n="first"/>
+              <tei:milestone unit="verse" n="2"/>second verse
+            </tei:div>"""
+        )
+        self.assertEqual(["first", "first"], labels)
 
 
 class TestOptionRendering(unittest.TestCase):
@@ -1740,6 +1931,35 @@ class TestReadingDivisions(unittest.TestCase):
         self.assertEqual(
             self._body(without).count(r"\pend"), self._body(with_marker).count(r"\pend")
         )
+
+    def test_silenced_markers_keep_pstart_counts_equal_for_parallel_text(self):
+        """Dropping a marker must not drop the \\pstart it would have opened.
+
+        A conditional and an aliyah marker each open a \\pstart when none is open, so
+        silencing the one and deduplicating the other could cost a column a \\pstart that
+        the facing column still has, and reledpar pairs the columns by counting them.
+        """
+        condition = TestConditionalRendering.CONDITION
+        without = self._transform_body(
+            """<tei:div><tei:milestone unit="verse" n="1"/>a</tei:div>"""
+        )
+        with_markers = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c1">{condition}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.1" n="first"/>
+              <j:endConditional target="#c1"/>
+              <j:conditional xml:id="c2">{condition}</j:conditional>
+              <tei:milestone unit="aliyah.triennial.2" n="first"/>
+              <j:endConditional target="#c2"/>
+              <tei:milestone unit="verse" n="1"/>a
+            </tei:div>"""
+        )
+        for macro in (r"\pstart", r"\pend"):
+            with self.subTest(macro):
+                self.assertEqual(
+                    self._body(without).count(macro),
+                    self._body(with_markers).count(macro),
+                )
 
     def test_a_qualified_parsha_unit_is_left_to_the_heading(self):
         """The humash gives every parshah a tei:head, so printing the milestone too would
