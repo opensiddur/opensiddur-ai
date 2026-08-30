@@ -22,7 +22,7 @@
       </tei:availability>
     </tei:publicationStmt>
     <tei:sourceDesc>
-      <tei:bibl>
+      <tei:bibl xml:id="project_source_bibl">
         <tei:title>Original work</tei:title>
         <tei:author ref="urn:x-opensiddur:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:author>
         <tei:date when="2009">2009</tei:date>

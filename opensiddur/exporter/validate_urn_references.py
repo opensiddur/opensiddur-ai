@@ -16,10 +16,7 @@ from lxml import etree
 from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.exporter.refdb import INDEX_DB_FILE, ReferenceDatabase
 from opensiddur.exporter.urn import UrnResolver, coarsen
-
-
-TEI_NS = "http://www.tei-c.org/ns/1.0"
-JLPTEI_NS = "http://jewishliturgy.org/ns/jlptei/2"
+from opensiddur.exporter.xml_id_ref import parse_file_fragment_ref, resolve_file_fragment_ref
 
 
 @dataclass(frozen=True)
@@ -35,64 +32,107 @@ def _iter_project_xml_files(project_path: Path) -> Iterable[Path]:
     yield from sorted(project_path.glob("*.xml"))
 
 
+def _resolvable(
+    value: str,
+    *,
+    check_urns: bool,
+    resolver: Optional[UrnResolver],
+    project_directory: Path,
+) -> bool:
+    """A single, non-range target/targetEnd value: True if it resolves or is out of scope.
+
+    Out of scope: ``http(s)://`` URLs, a same-file ``#id`` (e.g. ``j:endConditional/@target``,
+    a standoff note's anchor), and any ``urn:`` value when ``check_urns`` is false.
+    """
+    if value.startswith("urn:x-opensiddur:"):
+        return not check_urns or bool(resolver.resolve_range(value))
+    if value.startswith("http://") or value.startswith("https://"):
+        return True
+    file_ref = parse_file_fragment_ref(value)
+    if file_ref is None:
+        return True
+    return resolve_file_fragment_ref(project_directory, file_ref)
+
+
 def validate_project_urn_references(
     project: str,
     *,
     project_directory: Path = PROJECT_DIRECTORY,
     reference_db_path: Path = INDEX_DB_FILE,
     index_before_validate: bool = False,
+    check_urns: bool = True,
 ) -> list[UnresolvableUrnReference]:
-    """Validate that compilation-relevant URN references are resolvable via refdb.
+    """Validate that compilation-relevant references are resolvable.
 
-    This checks URNs in:
-    - tei:ptr/@target
-    - tei:ref/@target
-    - j:transclude/@target and j:transclude/@targetEnd
+    Checks ``@target`` and ``@targetEnd`` on every element that carries either — not just
+    ``tei:ptr``/``tei:ref``/``j:transclude``, so a pointer on some other element is never missed
+    — dispatching by value kind:
+
+    - ``urn:x-opensiddur:...`` — resolved via refdb (``@corresp``-based range addressing).
+      Skipped entirely when ``check_urns`` is false: unlike the file/fragment check below,
+      this one is only meaningful once every project a URN might resolve into has been
+      indexed into refdb, which is a separate, explicit step
+      (``python -m opensiddur.exporter.refdb``) — not something one project's conversion can
+      itself guarantee.
+    - ``/{project}/{file}#{fragment}`` — resolved by looking up that ``xml:id`` directly in
+      the named file (see ``opensiddur.exporter.xml_id_ref``). Self-contained: no refdb or
+      cross-project state required, so this check always runs.
+    - ``http://``/``https://`` and a same-file ``#id`` (e.g. ``j:endConditional/@target``, a
+      standoff note's anchor) are out of scope.
+
+    When both ``@target`` and ``@targetEnd`` are URNs, they're treated as a range: ``@targetEnd``
+    must resolve within the project ``@target`` did (this is how ``j:transclude`` uses the pair,
+    but the check applies to any element using them the same way).
     """
 
     project_path = Path(project_directory) / project
     if not project_path.exists() or not project_path.is_dir():
         raise ValueError(f"Project directory does not exist: {project_path}")
 
-    refdb = ReferenceDatabase(reference_db_path)
+    refdb = ReferenceDatabase(reference_db_path) if check_urns else None
     try:
-        if index_before_validate:
+        if check_urns and index_before_validate:
             refdb.index_project(project, project_directory=project_directory)
 
-        resolver = UrnResolver(refdb)
-        ns = {"tei": TEI_NS, "j": JLPTEI_NS}
+        resolver = UrnResolver(refdb) if check_urns else None
 
         failures: list[UnresolvableUrnReference] = []
         for xml_file in _iter_project_xml_files(project_path):
             tree = etree.parse(str(xml_file))
             root = tree.getroot()
 
-            # Only targets that are URNs participate in this validation.
-            # Non-URN targets (e.g., local paths or URLs) are out of scope.
-            ptrs = root.xpath("//tei:ptr[@target]", namespaces=ns)
-            refs = root.xpath("//tei:ref[@target]", namespaces=ns)
-            transcludes = root.xpath("//j:transclude[@target]", namespaces=ns)
-
-            for el in [*ptrs, *refs]:
-                urn = el.get("target")
-                if not urn or not urn.startswith("urn:x-opensiddur:"):
-                    continue
-                if not resolver.resolve_range(urn):
-                    failures.append(
-                        UnresolvableUrnReference(
-                            project=project,
-                            file_name=xml_file.name,
-                            element_path=tree.getpath(el),
-                            attribute_name="target",
-                            urn=urn,
-                        )
-                    )
-
-            for el in transcludes:
+            for el in root.xpath("//*[@target or @targetEnd]"):
                 target = el.get("target")
-                if target and target.startswith("urn:x-opensiddur:"):
-                    start_candidates = resolver.resolve_range(target)
-                    if not start_candidates:
+                target_end = el.get("targetEnd")
+                start_project: Optional[str] = None
+
+                if target:
+                    if check_urns and target.startswith("urn:x-opensiddur:"):
+                        start_candidates = resolver.resolve_range(target)
+                        if not start_candidates:
+                            failures.append(
+                                UnresolvableUrnReference(
+                                    project=project,
+                                    file_name=xml_file.name,
+                                    element_path=tree.getpath(el),
+                                    attribute_name="target",
+                                    urn=target,
+                                )
+                            )
+                        else:
+                            # Prefer resolving within the current project when possible, since
+                            # that's the common compilation expectation.
+                            start = (
+                                UrnResolver.prioritize_range(start_candidates, [project])
+                                or start_candidates[0]
+                            )
+                            start_project = start.project
+                    elif not _resolvable(
+                        target,
+                        check_urns=check_urns,
+                        resolver=resolver,
+                        project_directory=project_directory,
+                    ):
                         failures.append(
                             UnresolvableUrnReference(
                                 project=project,
@@ -102,16 +142,13 @@ def validate_project_urn_references(
                                 urn=target,
                             )
                         )
-                        continue
 
-                    # Prefer resolving the transclude within the current project when possible,
-                    # since that's the common compilation expectation.
-                    start = UrnResolver.prioritize_range(start_candidates, [project]) or start_candidates[0]
-
-                    target_end = el.get("targetEnd")
-                    if target_end and target_end.startswith("urn:x-opensiddur:"):
+                if target_end:
+                    if start_project is not None and target_end.startswith("urn:x-opensiddur:"):
                         end_candidates = resolver.resolve_range(target_end)
-                        if not end_candidates:
+                        if not end_candidates or not UrnResolver.prioritize_range(
+                            end_candidates, [start_project]
+                        ):
                             failures.append(
                                 UnresolvableUrnReference(
                                     project=project,
@@ -121,19 +158,24 @@ def validate_project_urn_references(
                                     urn=target_end,
                                 )
                             )
-                            continue
-                        if not UrnResolver.prioritize_range(end_candidates, [start.project]):
-                            failures.append(
-                                UnresolvableUrnReference(
-                                    project=project,
-                                    file_name=xml_file.name,
-                                    element_path=tree.getpath(el),
-                                    attribute_name="targetEnd",
-                                    urn=target_end,
-                                )
+                    elif start_project is None and not _resolvable(
+                        target_end,
+                        check_urns=check_urns,
+                        resolver=resolver,
+                        project_directory=project_directory,
+                    ):
+                        failures.append(
+                            UnresolvableUrnReference(
+                                project=project,
+                                file_name=xml_file.name,
+                                element_path=tree.getpath(el),
+                                attribute_name="targetEnd",
+                                urn=target_end,
                             )
+                        )
     finally:
-        refdb.close()
+        if refdb is not None:
+            refdb.close()
 
     return failures
 
@@ -172,7 +214,6 @@ def find_coarsened_urn_references(
     refdb = ReferenceDatabase(reference_db_path)
     try:
         resolver = UrnResolver(refdb)
-        ns = {"tei": TEI_NS, "j": JLPTEI_NS}
         coarsened: list[CoarsenedUrnReference] = []
 
         for xml_file in _iter_project_xml_files(project_path):
@@ -180,13 +221,9 @@ def find_coarsened_urn_references(
             root = tree.getroot()
             references = [
                 (el, attribute)
-                for xpath, attribute in (
-                    ("//tei:ptr[@target]", "target"),
-                    ("//tei:ref[@target]", "target"),
-                    ("//j:transclude[@target]", "target"),
-                    ("//j:transclude[@targetEnd]", "targetEnd"),
-                )
-                for el in root.xpath(xpath, namespaces=ns)
+                for el in root.xpath("//*[@target or @targetEnd]")
+                for attribute in ("target", "targetEnd")
+                if el.get(attribute)
             ]
 
             for el, attribute in references:

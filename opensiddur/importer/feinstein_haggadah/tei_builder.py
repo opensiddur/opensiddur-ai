@@ -723,13 +723,43 @@ def read_front_stub(stub_name: str) -> str:
     return _LEADING_COMMENT_RE.sub("", read_header_stub(stub_name)).strip()
 
 
+PROJECT_SOURCE_BIBL_ID = "project_source_bibl"
+
+
+def xml_id_ref(project_id: str, file_stem: str, fragment: str) -> str:
+    """A project-root-relative pointer to one ``xml:id`` in one file: ``/{project}/{file}#{id}``.
+
+    Use this, not a ``urn:x-opensiddur:`` URN, when the thing referenced is a single, constant
+    position in a single file with no notion of "which variant" — e.g. the one specific
+    ``tei:bibl`` entry a project's documents cite as their source, which will never be swapped
+    for an alternate source. URNs are for the opposite case: referencing *a text* that may have
+    several variant representations, where ``@project`` selects one of those possibilities.
+    """
+    return f"/{project_id}/{file_stem}#{fragment}"
+
+
+def require_project_source_bibl_id(header_xml: str, *, header_stub: str) -> None:
+    """Fail fast if the index header stub doesn't define the id every citation pointer names.
+
+    ``citation_bibl``/``project_citation_bibl`` always point at
+    ``{PROJECT_SOURCE_BIBL_ID}`` in the project index; if the stub never defines that id on a
+    ``tei:bibl``, every citation in the project silently becomes a dangling pointer.
+    """
+    if f'xml:id="{PROJECT_SOURCE_BIBL_ID}"' not in header_xml:
+        raise RuntimeError(
+            f'{header_stub} has no tei:bibl xml:id="{PROJECT_SOURCE_BIBL_ID}"; '
+            "citation_bibl()/project_citation_bibl() point at that id and would produce "
+            "dangling references"
+        )
+
+
 def citation_bibl(project_id: str, from_page: str, to_page: str) -> str:
     """A per-document citation pointing at the project bibliography, scoped to its pages.
 
-    See ``schema/JLPTEI-3.md``: the pointer is the index document's URN plus the
-    ``project_source_bibl`` fragment.
+    See ``schema/JLPTEI-3.md``: the pointer is a file/fragment reference to the
+    ``project_source_bibl`` entry in the project's index document.
     """
-    target = f"urn:x-opensiddur:text:haggadah:haggadah@{project_id}#project_source_bibl"
+    target = xml_id_ref(project_id, "index", PROJECT_SOURCE_BIBL_ID)
     return (
         "<tei:bibl>"
         f'<tei:ptr target="{target}"/>'
@@ -779,11 +809,8 @@ def project_citation_bibl(
     known."""
     if from_page and to_page:
         return citation_bibl(project_id, from_page, to_page)
-    return (
-        "<tei:bibl>"
-        f'<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@{project_id}"/>'
-        "</tei:bibl>"
-    )
+    target = xml_id_ref(project_id, "index", PROJECT_SOURCE_BIBL_ID)
+    return f'<tei:bibl><tei:ptr target="{target}"/></tei:bibl>'
 
 
 _SOURCE_DESC_RE = re.compile(

@@ -41,6 +41,30 @@ URNs (Universal Resource Names) are a form of URI (universal resource identifie
 
 An element's  urn is stored in the TEI-global `@corresp` attribute.
 
+### URNs versus file/fragment pointers
+
+Not every cross-file reference is a URN. A URN names *a text* — content that may exist in
+several variant representations, where the `@project` suffix selects one of those
+possibilities. That covers most cross-references: alignment between editions, quotations of a
+Biblical or liturgical passage, transclusion of shared text. Use a URN whenever the thing
+referenced could plausibly be represented by more than one project.
+
+Some references, though, point at one exact, unchanging position in one exact file, with no
+notion of "which variant" — the reference names a specific document's specific content, not a
+text that document happens to carry. The paradigm case is a document's citation of its own
+project's source bibliography: a haggadah document's `tei:bibl` names one constant bibliographic
+entry in its project's `index.xml`, never "one of several possible sources." For these, use a
+plain, project-root-relative file/fragment pointer instead of a URN:
+
+```
+/{PROJECT_ID}/{FILE_STEM}#{XML_ID}
+```
+
+with no file extension (`.xml` is assumed). For example,
+`/heidenheim_haggadah_1822/index#project_source_bibl` addresses the `tei:bibl` with that
+`xml:id` in `heidenheim_haggadah_1822/index.xml`. `xml:id` is unique within a file, so resolving
+this kind of pointer only requires opening the named file — no URN or reference-database lookup.
+
 `condition` URNs name a condition that cannot be calculated — in practice a textual variant,
 a wording some communities add and others do not. They are used as the feature names of the
 `opensiddur:variant` feature structure (see [Setting attribute values](#setting-attribute-values)).
@@ -346,9 +370,11 @@ Every document has a TEI header with a standardized structure.
                 <tei:date>{PUBLICATION_OR_DOWNLOAD_DATE}</tei:date>
              </tei:bibl>
             <!-- each individual document will typically contain a citation with a pointer to the 
-            project bibliography, addressed by the index document's URN plus the xml:id fragment -->
+            project bibliography, addressed by a file/fragment pointer -- not a URN, since the
+            citation always names this one constant bibl entry, never one of several possible
+            sources; see "URNs versus file/fragment pointers" above -->
             <tei:bibl>
-               <tei:ptr target="{PROJECT_INDEX_URN}#project_source_bibl"/>
+               <tei:ptr target="/{PROJECT_ID}/index#project_source_bibl"/>
                <tei:biblScope unit="pages" from="{FROM_PAGE}" to="{TO_PAGE}"/>
             </tei:bibl>
          </tei:sourceDesc>
@@ -362,10 +388,9 @@ Every document has a TEI header with a standardized structure.
   * `alt` for an alternate version of the title (translation/transliterationn)
   * `alt-sub` for an alternate version of the subtitle (translation/transliteration)
 * `LANGUAGE` can be any ISO language code
-* `PROJECT_INDEX_URN` is the URN of the project's index document, as declared in its
-  `tei:publicationStmt/tei:idno[@type='urn']` — for example
-  `urn:x-opensiddur:text:haggadah:haggadah@heidenheim_haggadah_1822`. The `#project_source_bibl`
-  fragment addresses the `tei:bibl` of that name in the index document's `tei:sourceDesc`.
+* `PROJECT_ID` is the project's directory name under `project/` — for example
+  `heidenheim_haggadah_1822`. The `#project_source_bibl` fragment addresses the `tei:bibl` of
+  that name in the project's `index.xml`.
 * `FROM_PAGE` and `TO_PAGE` are page designations as they are printed in the source, not sequence
   numbers in a scan. Where a source is foliated rather than paginated, use recto/verso designations
   (`5r`, `5v`).

@@ -430,12 +430,10 @@ class TestPositionalTransclusion(unittest.TestCase):
 
 
 class TestCitationBibl(unittest.TestCase):
-    def test_pointer_uses_the_index_urn_and_fragment(self) -> None:
+    def test_pointer_uses_the_index_file_fragment(self) -> None:
         bibl = citation_bibl("heidenheim_haggadah_1822", "5r", "6r")
         self.assertIn(
-            'target="urn:x-opensiddur:text:haggadah:haggadah'
-            '@heidenheim_haggadah_1822#project_source_bibl"',
-            bibl,
+            'target="/heidenheim_haggadah_1822/index#project_source_bibl"', bibl
         )
         self.assertIn('<tei:biblScope unit="pages" from="5r" to="6r"/>', bibl)
 

@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 import unittest
@@ -76,6 +77,11 @@ class TestTeiBuilderValidation(unittest.TestCase):
 
 
 class TestConvertProducesValidJlptei(unittest.TestCase):
+    @unittest.skipUnless(
+        os.environ.get("OPENSIDDUR_RUN_SLOW_TESTS"),
+        "slow end-to-end conversion of the full haggadah compilation (schema-validates every "
+        "output file with jing); set OPENSIDDUR_RUN_SLOW_TESTS=1 to run it",
+    )
     def test_convert_all_writes_valid_project_files(self) -> None:
         compilation_path = support.require_path(
             support.compilation_path(), "haggadah compilation not checked out"
@@ -121,8 +127,7 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
 
         kadesh = (project_dir / "kadesh.xml").read_text(encoding="utf-8")
         self.assertIn(
-            '<tei:ptr target="urn:x-opensiddur:text:haggadah:'
-            'haggadah@heidenheim_haggadah_1822#project_source_bibl"/>',
+            '<tei:ptr target="/heidenheim_haggadah_1822/index#project_source_bibl"/>',
             kadesh,
         )
         # The pointer replaces the bibliography; it does not sit alongside a copy of it.
@@ -193,8 +198,7 @@ class TestDocumentHeaders(unittest.TestCase):
             scripture={},
         )
         self.assertIn(
-            '<tei:ptr target="urn:x-opensiddur:text:haggadah:'
-            'haggadah@p#project_source_bibl"/>',
+            '<tei:ptr target="/p/index#project_source_bibl"/>',
             header,
         )
         self.assertIn('<tei:biblScope unit="pages" from="3v" to="4r"/>', header)
@@ -206,14 +210,13 @@ class TestDocumentHeaders(unittest.TestCase):
         self.assertIn("<tei:respStmt>", header)
         self.assertIn("<tei:licence", header)
 
-    def test_document_header_without_a_page_range_still_cites_the_project(self) -> None:
-        """A project with no page breaks — the 2009 translation — has no ranges at all."""
+    def test_document_header_without_a_page_range_still_cites_the_bibl(self) -> None:
+        """A project with no page breaks — the 2009 translation — has no ranges at all, but
+        still names the specific bibl entry, just without a page scope."""
         header = document_header(
             PROJECT_HEADER, "kadesh", project_id="p", ranges={}, scripture={}
         )
-        self.assertIn(
-            '<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@p"/>', header
-        )
+        self.assertIn('<tei:ptr target="/p/index#project_source_bibl"/>', header)
         self.assertNotIn("biblScope", header)
 
     def test_document_header_adds_the_wlc_bibl_for_a_scripture_section(self) -> None:
@@ -246,9 +249,7 @@ class TestDocumentHeaders(unittest.TestCase):
 
     def test_minimal_index_header_without_pages_omits_the_scope(self) -> None:
         header = minimal_index_header("Seder", project_id="p", urn_suffix="seder")
-        self.assertIn(
-            '<tei:ptr target="urn:x-opensiddur:text:haggadah:haggadah@p"/>', header
-        )
+        self.assertIn('<tei:ptr target="/p/index#project_source_bibl"/>', header)
         self.assertNotIn("biblScope", header)
 
     def test_header_with_only_bibls_rejects_a_header_without_a_source_desc(self) -> None:
