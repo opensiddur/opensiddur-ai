@@ -1,0 +1,171 @@
+name: Validate projects
+
+# Reusable workflow (opensiddur-ai#94): validates a PR to opensiddur-projects by running this
+# repository's schema and referential-integrity validators against it. Called from
+# opensiddur-projects/.github/workflows/validate.yml.
+#
+# No `paths:` filter and every stage below always runs, even when the caller's event touches
+# no XML -- a required status check that can be skipped blocks a PR forever, so this job must
+# always run and report (opensiddur-ai#94, design question 5).
+
+on:
+  workflow_call:
+    inputs:
+      opensiddur_ai_ref:
+        description: >
+          Ref (branch, tag, or SHA) of opensiddur-ai to check out the validators from.
+          Decoupled from this workflow file's own version, which the caller always pins with
+          `uses: opensiddur/opensiddur-ai/.github/workflows/validate-projects.yml@main` --
+          this input lets a manual run exercise a different branch of the validator code
+          without changing which copy of the workflow definition runs.
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Install Jing (RelaxNG validator)
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --no-install-suggests -y jing
+
+      - name: Checkout opensiddur-projects (the PR)
+        uses: actions/checkout@v5
+        with:
+          # Full history: the affected-projects diff below needs the PR's base branch.
+          fetch-depth: 0
+          path: projects
+
+      - name: Checkout opensiddur-ai validators (${{ inputs.opensiddur_ai_ref }})
+        uses: actions/checkout@v5
+        with:
+          repository: opensiddur/opensiddur-ai
+          ref: ${{ inputs.opensiddur_ai_ref }}
+          path: opensiddur-ai
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        working-directory: opensiddur-ai
+        run: uv sync --all-groups
+
+      - name: Cache built schema
+        uses: actions/cache@v4
+        with:
+          path: |
+            opensiddur-ai/schema/*.relaxng
+            opensiddur-ai/schema/*.schematron
+            opensiddur-ai/schema/*.xslt
+          key: schema-${{ inputs.opensiddur_ai_ref }}-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml') }}
+
+      - name: Build schema
+        working-directory: opensiddur-ai
+        run: bash scripts/build-schema.sh
+
+      - name: Compute affected projects
+        id: scope
+        working-directory: projects
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [ -n "${BASE_REF}" ]; then
+            git fetch origin "${BASE_REF}"
+            changed=$(git diff --name-only --diff-filter=d "origin/${BASE_REF}...HEAD" -- 'project/**/*.xml' || true)
+            affected=$(printf '%s\n' "${changed}" | awk -F/ 'NF>=2 {print $2}' | sort -u)
+          else
+            # workflow_dispatch has no base branch: validate every project.
+            affected=""
+          fi
+          project_args=""
+          for p in ${affected}; do
+            project_args="${project_args} --project ${p}"
+          done
+          {
+            echo "affected<<EOF"
+            echo "${affected}"
+            echo "EOF"
+            echo "project_args=${project_args}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Affected projects: ${affected:-<all>}"
+
+      - name: Validate XML against the schema
+        id: schema
+        continue-on-error: true
+        working-directory: opensiddur-ai
+        run: |
+          uv run python -m opensiddur.exporter.validate_schema \
+            --project-directory "$GITHUB_WORKSPACE/projects/project" \
+            --repo-root "$GITHUB_WORKSPACE/projects" \
+            --github-annotations \
+            ${{ steps.scope.outputs.project_args }}
+
+      - name: Build the reference database
+        working-directory: opensiddur-ai
+        run: |
+          uv run python -m opensiddur.exporter.refdb \
+            --project-directory "$GITHUB_WORKSPACE/projects/project" \
+            --reference-db "$RUNNER_TEMP/reference.db"
+
+      - name: Validate URN reference resolution
+        id: urn_references
+        if: always()
+        continue-on-error: true
+        working-directory: opensiddur-ai
+        env:
+          AFFECTED: ${{ steps.scope.outputs.affected }}
+        run: |
+          set -uo pipefail
+          projects="${AFFECTED}"
+          if [ -z "${projects}" ]; then
+            projects=$(ls "$GITHUB_WORKSPACE/projects/project")
+          fi
+          rc=0
+          for p in ${projects}; do
+            if [ ! -d "$GITHUB_WORKSPACE/projects/project/$p" ]; then
+              continue
+            fi
+            uv run python -m opensiddur.exporter.validate_urn_references "$p" \
+              --project-directory "$GITHUB_WORKSPACE/projects/project" \
+              --reference-db "$RUNNER_TEMP/reference.db" || rc=$?
+          done
+          exit $rc
+
+      - name: Validate versification agreement (repo-wide)
+        id: versification
+        if: always()
+        continue-on-error: true
+        working-directory: opensiddur-ai
+        run: |
+          uv run python -m opensiddur.exporter.validate_versification \
+            --project-directory "$GITHUB_WORKSPACE/projects/project"
+
+      - name: Gate
+        if: always()
+        run: |
+          status=0
+          for outcome in \
+            "schema:${{ steps.schema.outcome }}" \
+            "urn_references:${{ steps.urn_references.outcome }}" \
+            "versification:${{ steps.versification.outcome }}"; do
+            name="${outcome%%:*}"
+            result="${outcome#*:}"
+            if [ "${result}" != "success" ]; then
+              echo "FAILED: ${name} (${result})"
+              status=1
+            fi
+          done
+          exit $status
