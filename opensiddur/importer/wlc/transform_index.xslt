@@ -165,7 +165,13 @@
 
     <!-- inclusions of book files -->
     <xsl:template match="book">
-        <xsl:variable name="book-name" select="lower-case(replace(names/name/text(), ' ', '_'))"/>
+        <!-- WLC titles the paired books "1 Kings", "2 Samuel" and so on, but every book
+             file (and every other project's convention) puts the ordinal last: kings_1,
+             samuel_2. names/filename already carries that ordinal-last form (Kings_1,
+             Samuel_2, ...), so use it rather than deriving a slug from names/name, which
+             would leave the ordinal in front and resolve no file. See transform_book.xslt,
+             which computes the per-book file's own URN the same, ordinal-last way. -->
+        <xsl:variable name="book-name" select="lower-case(names/filename/text())"/>
         <j:transclude type="external">
             <xsl:attribute name="target" select="concat('urn:x-opensiddur:text:bible:', $book-name)"/>
         </j:transclude>

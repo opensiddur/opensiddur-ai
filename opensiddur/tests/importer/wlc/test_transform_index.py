@@ -440,12 +440,48 @@ class TestTransformIndexXSLT(unittest.TestCase):
         self.assertIn('<tei:div corresp="urn:x-opensiddur:text:bible:tanakh"', result)
     
     def test_book_elements_become_transclude(self):
-        """Test that book elements become j:transclude with proper URN"""
-        # Note: This XSLT normally loads book data via doc(), which we've disabled for testing
-        # To test the book template, we skip this test in unit tests
-        # This template should be tested in integration tests with actual file structure
-        self.skipTest("Book transclude requires doc() call - test in integration tests")
-    
+        """Test that book elements become j:transclude with proper URN.
+
+        The book template itself never references the doc()-backed
+        $tanach-index-books lookup (that's used once, elsewhere, to loop over the whole
+        book list) so it can be exercised directly by feeding a standalone <book>
+        fragment as the transform's input document.
+        """
+        input_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<book><names><name>Genesis</name><filename>Genesis</filename></names></book>'''
+
+        input_file = self.test_dir / "input.xml"
+        output_file = self.test_dir / "output.xml"
+        input_file.write_text(input_xml)
+
+        xslt_transform(self.xslt_path, input_file, output_file)
+
+        result = etree.parse(str(output_file))
+        # The book template's whole output *is* the j:transclude -- there's no wrapper,
+        # so it's the document root, not a descendant.
+        transclude = result.getroot()
+        self.assertEqual(transclude.tag, "{http://jewishliturgy.org/ns/jlptei/2}transclude")
+        self.assertEqual(transclude.get("target"), "urn:x-opensiddur:text:bible:genesis")
+
+    def test_paired_book_urn_uses_ordinal_suffix(self):
+        """Regression test: WLC titles paired books ordinal-first ("1 Samuel"), but the
+        URN slug must be ordinal-last (samuel_1), matching every other project's
+        convention and the file every other reference to this book resolves against.
+        """
+        input_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<book><names><name>1 Samuel</name><filename>Samuel_1</filename></names></book>'''
+
+        input_file = self.test_dir / "input.xml"
+        output_file = self.test_dir / "output.xml"
+        input_file.write_text(input_xml)
+
+        xslt_transform(self.xslt_path, input_file, output_file)
+
+        result = etree.parse(str(output_file))
+        transclude = result.getroot()
+        self.assertEqual(transclude.tag, "{http://jewishliturgy.org/ns/jlptei/2}transclude")
+        self.assertEqual(transclude.get("target"), "urn:x-opensiddur:text:bible:samuel_1")
+
     def test_tei_namespace_added_to_elements(self):
         """Test that titleStmt, title, publisher, etc. get TEI namespace"""
         input_xml = '''<?xml version="1.0" encoding="UTF-8"?>
