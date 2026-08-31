@@ -15,7 +15,7 @@ from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.exporter.refdb import INDEX_DB_FILE, ReferenceDatabase
-from opensiddur.exporter.urn import UrnResolver, coarsen
+from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
 from opensiddur.exporter.xml_id_ref import parse_file_fragment_ref, resolve_file_fragment_ref
 
 
@@ -146,9 +146,13 @@ def validate_project_urn_references(
                 if target_end:
                     if start_project is not None and target_end.startswith("urn:x-opensiddur:"):
                         end_candidates = resolver.resolve_range(target_end)
-                        if not end_candidates or not UrnResolver.prioritize_range(
+                        prioritized_end = end_candidates and UrnResolver.prioritize_range(
                             end_candidates, [start_project]
-                        ):
+                        )
+                        # targetEnd names a single point, not a range: a ResolvedUrnRange here
+                        # means the data violates the schema constraint that forbids a ranged
+                        # targetEnd (it should have been split into two transclude elements).
+                        if not prioritized_end or isinstance(prioritized_end, ResolvedUrnRange):
                             failures.append(
                                 UnresolvableUrnReference(
                                     project=project,

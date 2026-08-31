@@ -21,6 +21,10 @@ class ResolvedUrnRange(BaseModel):
     start: ResolvedUrn
     end: ResolvedUrn
 
+    @property
+    def project(self) -> str:
+        return self.start.project
+
 
 def split_range(ranged_urn: str) -> Optional[tuple[str, str]]:
     """Split a ranged URN into its start and end URNs.
@@ -289,7 +293,7 @@ class UrnResolver:
         # map a numeric priority to a project name
         priorities = dict(zip(project_priority, range(len(project_priority))))
         def _project_name(urn) -> str:
-            return urn.project if hasattr(urn, 'project') else urn.start.project
+            return urn.project
         sorted_urns = sorted([
             r for r in resolved_urns 
             if priorities.get(_project_name(r)) is not None
