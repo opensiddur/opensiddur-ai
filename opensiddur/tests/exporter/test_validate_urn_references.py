@@ -332,6 +332,97 @@ class TestValidateUrnReferences(unittest.TestCase):
             self.assertEqual(len(failures), 1)
             self.assertEqual(failures[0].attribute_name, "targetEnd")
 
+    def test_validates_resolvable_ranged_transclude_target(self):
+        """A @target that is itself a ranged URN (e.g. a haftarah-style reading) must resolve
+        without crashing when both ends of the range are indexed (issue #100)."""
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            text = etree.SubElement(xml, f"{{{TEI_NS}}}text")
+            body = etree.SubElement(text, f"{{{TEI_NS}}}body")
+            etree.SubElement(
+                body,
+                f"{{{JLPTEI_NS}}}transclude",
+                target="urn:x-opensiddur:test:doc1/9/7-9/15",
+            )
+
+            _write_project_xml(base, project, "a.xml", xml)
+
+            db_path = base / "ref.db"
+            _add_urn_mapping(db_path, project, "a.xml", "urn:x-opensiddur:test:doc1/9/7")
+            _add_urn_mapping(db_path, project, "a.xml", "urn:x-opensiddur:test:doc1/9/15")
+
+            failures = validate_project_urn_references(
+                project,
+                project_directory=base,
+                reference_db_path=db_path,
+            )
+            self.assertEqual(failures, [])
+
+    def test_reports_unresolvable_ranged_transclude_target(self):
+        """A ranged @target where only the start half is indexed must be reported, not crash."""
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            text = etree.SubElement(xml, f"{{{TEI_NS}}}text")
+            body = etree.SubElement(text, f"{{{TEI_NS}}}body")
+            etree.SubElement(
+                body,
+                f"{{{JLPTEI_NS}}}transclude",
+                target="urn:x-opensiddur:test:doc1/9/7-9/15",
+            )
+
+            _write_project_xml(base, project, "a.xml", xml)
+
+            db_path = base / "ref.db"
+            _add_urn_mapping(db_path, project, "a.xml", "urn:x-opensiddur:test:doc1/9/7")
+
+            failures = validate_project_urn_references(
+                project,
+                project_directory=base,
+                reference_db_path=db_path,
+            )
+            self.assertEqual(len(failures), 1)
+            self.assertEqual(failures[0].attribute_name, "target")
+            self.assertEqual(failures[0].urn, "urn:x-opensiddur:test:doc1/9/7-9/15")
+
+    def test_reports_ranged_transclude_target_end(self):
+        """@targetEnd must name a single point, not a range: a ranged targetEnd is reported as
+        invalid data rather than silently accepted or crashing."""
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project = "proj1"
+
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            text = etree.SubElement(xml, f"{{{TEI_NS}}}text")
+            body = etree.SubElement(text, f"{{{TEI_NS}}}body")
+            etree.SubElement(
+                body,
+                f"{{{JLPTEI_NS}}}transclude",
+                target="urn:x-opensiddur:test:doc1/1",
+                targetEnd="urn:x-opensiddur:test:doc1/2-3",
+            )
+
+            _write_project_xml(base, project, "a.xml", xml)
+
+            db_path = base / "ref.db"
+            _add_urn_mapping(db_path, project, "a.xml", "urn:x-opensiddur:test:doc1/1")
+            _add_urn_mapping(db_path, project, "a.xml", "urn:x-opensiddur:test:doc1/2")
+            _add_urn_mapping(db_path, project, "a.xml", "urn:x-opensiddur:test:doc1/3")
+
+            failures = validate_project_urn_references(
+                project,
+                project_directory=base,
+                reference_db_path=db_path,
+            )
+            self.assertEqual(len(failures), 1)
+            self.assertEqual(failures[0].attribute_name, "targetEnd")
+            self.assertEqual(failures[0].urn, "urn:x-opensiddur:test:doc1/2-3")
+
     def test_validates_resolvable_file_fragment_ref(self):
         with TemporaryDirectory() as td:
             base = Path(td)

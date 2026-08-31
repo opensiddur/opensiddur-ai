@@ -183,6 +183,23 @@
             </valList>
           </attDef>
         </attList>
+        <constraintSpec ident="transclude-constraints" scheme="schematron">
+          <desc>
+            Schematron rule ensuring <att>targetEnd</att> names a single point, not a range:
+            a transclusion spanning a range is written as <att>target</att> alone (itself
+            possibly a range) or <att>target</att>/<att>targetEnd</att> naming two points,
+            never as a ranged <att>targetEnd</att>.
+          </desc>
+          <constraint>
+            <sch:rule context="j:transclude" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:assert test="not(@targetEnd) or not(starts-with(@targetEnd, 'urn:x-opensiddur:'))
+                  or not(some $t in tokenize(@targetEnd, '/')[position() gt 1] satisfies contains($t, '-'))">
+                <att>targetEnd</att> must not itself be a ranged URN; split this into two
+                <gi>transclude</gi> elements instead.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
       </elementSpec>
       
       <elementSpec ident="standOff" module="linking" mode="change">

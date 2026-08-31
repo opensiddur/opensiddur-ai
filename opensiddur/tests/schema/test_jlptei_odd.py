@@ -36,6 +36,17 @@ class TestJlpteiOddConstraints(unittest.TestCase):
         )
         self.assertEqual(set(vals), {"external", "inline"})
 
+    def test_transclude_forbids_ranged_target_end(self):
+        asserts = self.tree.xpath(
+            "//tei:elementSpec[@ident='transclude']//sch:rule[@context='j:transclude']"
+            "/sch:assert[contains(@test, '@targetEnd')]",
+            namespaces=self.ns,
+        )
+        self.assertTrue(
+            asserts,
+            "Expected schematron assert on j:transclude forbidding a ranged @targetEnd",
+        )
+
     def test_paragraph_type_is_closed_list(self):
         vals = self.tree.xpath(
             "//tei:elementSpec[@ident='p']//tei:attDef[@ident='type']//tei:valItem/@ident",

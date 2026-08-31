@@ -67,6 +67,13 @@ INVALID_DOC = VALID_DOC.replace(
     "<tei:titleStmt><tei:p>not allowed here</tei:p>",
 )
 
+# Schema-invalid: targetEnd must name a single point, not a range (issue #100).
+RANGED_TARGET_END_DOC = VALID_DOC.replace(
+    "</tei:body>",
+    '<j:transclude target="urn:x-opensiddur:test:doc2/1"'
+    ' targetEnd="urn:x-opensiddur:test:doc2/2-3"/></tei:body>',
+)
+
 MALFORMED_DOC = "<tei:TEI xmlns:tei=\"http://www.tei-c.org/ns/1.0\"><tei:text>"
 
 
@@ -89,6 +96,13 @@ class TestValidateFile(unittest.TestCase):
     def test_schema_invalid_document(self):
         with tempfile.TemporaryDirectory() as td:
             path = _write(Path(td), "proj", "a.xml", INVALID_DOC)
+            result = validate_file(path)
+            self.assertFalse(result.ok)
+            self.assertTrue(result.errors)
+
+    def test_ranged_target_end_is_invalid(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = _write(Path(td), "proj", "a.xml", RANGED_TARGET_END_DOC)
             result = validate_file(path)
             self.assertFalse(result.ok)
             self.assertTrue(result.errors)
