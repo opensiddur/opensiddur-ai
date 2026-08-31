@@ -1,5 +1,7 @@
 """Tests for the PDF exporter module (LuaLaTeX + reledmac/reledpar pipeline)."""
 
+import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -250,6 +252,66 @@ class TestCompileTexToPdfManualLoop(unittest.TestCase):
         self.assertLessEqual(call_count[0], 3)
 
 
+class TestCompileTexToPdfRelativeTexFile(unittest.TestCase):
+    """Regression tests for a tex_file given as a relative path with a
+    directory component (e.g. from --tex-output build/intermediate.tex).
+
+    _run_lualatex/_run_latexmk set the subprocess cwd to tex_file.parent and
+    pass only tex_file.name; if tex_file isn't resolved to an absolute path
+    first, a relative "build/doc.tex" makes lualatex look for
+    "build/build/doc.tex" relative to its cwd -- the bug this guards against.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_dir = Path(self.temp_dir.name)
+        self.orig_cwd = os.getcwd()
+        os.chdir(self.test_dir)
+        self.addCleanup(os.chdir, self.orig_cwd)
+
+        (self.test_dir / "build").mkdir()
+        self.relative_tex_file = Path("build") / "doc.tex"
+        self.relative_tex_file.write_text(
+            r"\documentclass{book}\begin{document}Test\end{document}"
+        )
+        self.output_pdf = Path("out.pdf")
+
+    def _only_lualatex(self, name):
+        return name in {"lualatex", "bibtex"}
+
+    def test_relative_tex_file_resolved_before_subprocess_split(self):
+        def side_effect(cmd, **kwargs):
+            self.assertEqual(cmd[-1], "doc.tex")
+            self.assertTrue(Path(kwargs["cwd"]).is_absolute())
+            out_dir = next(
+                Path(arg.split("=", 1)[1]) for arg in cmd if arg.startswith("-output-directory=")
+            )
+            (out_dir / "doc.pdf").write_bytes(b"%PDF fake")
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        with patch(
+            "opensiddur.exporter.pdf.pdf._have_command",
+            side_effect=self._only_lualatex,
+        ):
+            with patch("subprocess.run", side_effect=side_effect):
+                result = compile_tex_to_pdf(self.relative_tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+
+    @unittest.skipUnless(
+        shutil.which("lualatex") and shutil.which("bibtex"),
+        "requires a real lualatex/bibtex installation",
+    )
+    def test_real_lualatex_finds_relative_tex_file(self):
+        """End-to-end: no mocking, so this fails if lualatex genuinely can't
+        find the .tex file -- the actual failure mode from the bug report."""
+        result = compile_tex_to_pdf(self.relative_tex_file, self.output_pdf)
+
+        self.assertTrue(result)
+        self.assertTrue(self.output_pdf.exists())
+
+
 class TestExportToPdf(unittest.TestCase):
     """Test the export_to_pdf function."""
 
@@ -372,6 +434,18 @@ class TestRunLatexmk(unittest.TestCase):
         self.assertEqual(cmd[0], "latexmk")
         self.assertIn("-lualatex", cmd)
 
+    def test_passes_basename_with_cwd_set_to_parent(self):
+        """The file argument must be a bare filename, not a path including
+        tex_file.parent -- cwd is already set to that parent, so passing the
+        full path makes latexmk look for <parent>/<parent>/doc.tex."""
+        result = MagicMock(returncode=0, stdout="", stderr="")
+        with patch("subprocess.run", return_value=result) as mock_run:
+            _run_latexmk(self.tex_file, self.output_dir)
+
+        cmd = mock_run.call_args.args[0]
+        self.assertEqual(cmd[-1], "doc.tex")
+        self.assertEqual(mock_run.call_args.kwargs["cwd"], self.tex_file.parent)
+
     def test_failure(self):
         result = MagicMock(returncode=1, stdout="stdout", stderr="stderr")
         with patch("subprocess.run", return_value=result):
@@ -426,6 +500,17 @@ class TestRunLualatex(unittest.TestCase):
 
         self.assertFalse(success)
         self.assertFalse(needs_rerun)
+
+    def test_passes_basename_with_cwd_set_to_parent(self):
+        """The file argument must be a bare filename, not a path including
+        tex_file.parent -- cwd is already set to that parent, so passing the
+        full path makes lualatex look for <parent>/<parent>/doc.tex."""
+        with patch("subprocess.run", return_value=MagicMock(returncode=0)) as mock_run:
+            _run_lualatex(self.tex_file, self.output_dir)
+
+        cmd = mock_run.call_args.args[0]
+        self.assertEqual(cmd[-1], "doc.tex")
+        self.assertEqual(mock_run.call_args.kwargs["cwd"], self.tex_file.parent)
 
 
 class TestRunBibtex(unittest.TestCase):

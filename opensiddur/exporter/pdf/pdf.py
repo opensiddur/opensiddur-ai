@@ -86,7 +86,7 @@ def _run_latexmk(tex_file: Path, output_dir: Path) -> bool:
         "-interaction=nonstopmode",
         "-halt-on-error",
         f"-output-directory={output_dir}",
-        str(tex_file),
+        tex_file.name,
     ]
     print(f"Running: {' '.join(cmd)}", file=sys.stderr)
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=tex_file.parent)
@@ -112,7 +112,7 @@ def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
         "-interaction=nonstopmode",
         "-halt-on-error",
         f"-output-directory={output_dir}",
-        str(tex_file),
+        tex_file.name,
     ]
     log_path = output_dir / f"{tex_file.stem}.log"
     print(f"(LuaLaTeX log: {log_path})", file=sys.stderr)
@@ -226,6 +226,14 @@ def compile_tex_to_pdf(
                 file=sys.stderr,
             )
             return False
+
+        # Resolve to absolute paths: _run_lualatex/_run_latexmk set the
+        # subprocess cwd to tex_file.parent and pass only tex_file.name, so a
+        # relative tex_file/build_dir must be pinned down before that split
+        # happens (otherwise a directory component gets applied twice).
+        tex_file = tex_file.resolve()
+        if build_dir is not None:
+            build_dir = build_dir.resolve()
 
         print(f"Compiling {tex_file} to PDF...", file=sys.stderr)
         tex_stem = tex_file.stem
