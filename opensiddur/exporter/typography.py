@@ -702,7 +702,12 @@ class ParagraphConfig(ForbidExtra):
         default="0pt", description="First-line indent. `0pt` for unindented paragraphs."
     )
     spacing: Length = Field(
-        default="0.5em", description="Vertical space between paragraphs."
+        default="0.75em",
+        description=(
+            "Vertical space between paragraphs, in addition to normal line "
+            "spacing. Defaults to at least half a line so a new paragraph "
+            "reads as distinct from an ordinary wrapped line."
+        ),
     )
     line_spacing: float = Field(
         default=1.0,

@@ -118,7 +118,7 @@ margins were configurable. Margins are named for the **binding**, not for the pa
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `paragraphs.indent` | length | `0pt` | First-line indent. |
-| `paragraphs.spacing` | length | `0.5em` | Vertical space between paragraphs. |
+| `paragraphs.spacing` | length | `0.75em` | Vertical space between paragraphs, in addition to normal line spacing. Defaults to at least half a line so a new paragraph reads as distinct from an ordinary wrapped line. |
 | `paragraphs.line_spacing` | number, 0.5–3.0 | `1.0` | Multiple of single spacing. Hebrew with vowels and cantillation needs more leading than unpointed text. |
 | `paragraphs.alignment` | `justify` \| `left` \| `right` \| `center` | `justify` | |
 

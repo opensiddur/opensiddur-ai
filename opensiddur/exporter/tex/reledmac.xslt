@@ -418,7 +418,7 @@
         <xsl:text>\makeatother&#10;</xsl:text>
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
-        <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
+        <xsl:text>\setlength{\parskip}{0.75em}&#10;</xsl:text>
 
         <!-- Font switches applied to the whole body, from typography.styles.body.
              Empty unless configured; emitted at the top of the document, where it
@@ -1036,7 +1036,13 @@
                             </xsl:when>
                             <xsl:otherwise>
                                 <xsl:if test="$in-pstart">
+                                    <!-- reledmac reconstructs each \pstart's lines from a
+                                         freshly \vsplit vbox, which bypasses TeX's normal
+                                         automatic \parskip-before-paragraph insertion:
+                                         \parskip's register value has no effect on the gap
+                                         between \pstart blocks unless we add it explicitly. -->
                                     <xsl:text>\pend&#10;</xsl:text>
+                                    <xsl:text>\vskip\parskip&#10;</xsl:text>
                                 </xsl:if>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="false()"/>
