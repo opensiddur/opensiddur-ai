@@ -61,7 +61,7 @@ class TestDefaults(unittest.TestCase):
 
     def test_paragraph_defaults_match_the_stylesheet(self):
         self.assertEqual(self.config.paragraphs.indent, "0pt")
-        self.assertEqual(self.config.paragraphs.spacing, "0.5em")
+        self.assertEqual(self.config.paragraphs.spacing, "0.75em")
         self.assertEqual(self.config.paragraphs.line_spacing, 1.0)
 
     def test_heading_defaults_step_down_by_one_rung_each(self):
