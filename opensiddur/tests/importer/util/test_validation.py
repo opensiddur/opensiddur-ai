@@ -766,5 +766,52 @@ class TestValidateWithStart(unittest.TestCase):
         self.assertEqual(errors, [])
 
 
+class TestConditionalIsClosed(unittest.TestCase):
+    """A conditional that is never closed governs the rest of the file.
+
+    Schematron already checked that an endConditional names a conditional preceding it. It
+    did not check the converse, so an unclosed conditional passed validation and silently
+    conditioned everything after it to the end of the document.
+    """
+
+    HEADER = (
+        '<tei:teiHeader><tei:fileDesc>'
+        '<tei:titleStmt><tei:title>t</tei:title></tei:titleStmt>'
+        '<tei:publicationStmt><tei:distributor>d</tei:distributor></tei:publicationStmt>'
+        '<tei:sourceDesc><tei:bibl>b</tei:bibl></tei:sourceDesc>'
+        '</tei:fileDesc></tei:teiHeader>'
+    )
+    CONDITIONAL = (
+        '<j:conditional xml:id="c1"><tei:fs type="opensiddur:holiday">'
+        '<tei:f name="pesah"><tei:numeric value="1" max="8"/></tei:f>'
+        '</tei:fs></j:conditional>'
+    )
+
+    def document(self, inner):
+        return (
+            '<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" '
+            'xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="he">'
+            f'{self.HEADER}<tei:text><tei:body><tei:div>{inner}</tei:div>'
+            '</tei:body></tei:text></tei:TEI>'
+        )
+
+    def test_a_closed_conditional_is_valid(self):
+        is_valid, errors = validate(self.document(
+            f'{self.CONDITIONAL}<tei:p>x</tei:p><j:endConditional target="#c1"/>'))
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+
+    def test_an_unclosed_conditional_is_reported(self):
+        is_valid, errors = validate(self.document(f'{self.CONDITIONAL}<tei:p>x</tei:p>'))
+        self.assertFalse(is_valid)
+        self.assertTrue(any("must be closed" in error for error in errors), errors)
+
+    def test_the_closing_element_must_follow_the_conditional(self):
+        # A close before its open leaves the scope open to the end of the file just as
+        # surely as no close at all.
+        is_valid, _ = validate(self.document(
+            f'<j:endConditional target="#c1"/><tei:p>x</tei:p>{self.CONDITIONAL}'))
+        self.assertFalse(is_valid)
+
+
 if __name__ == '__main__':
     unittest.main()

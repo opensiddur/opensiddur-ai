@@ -127,6 +127,32 @@ def licenses_to_tex(licenses: list[LicenseRecord]) -> str:
     )
 
 
+#: The contributor URN form: the scheme, the ``contributor`` type, then the namespace the
+#: identifier is meaningful in and the identifier itself. See ``schema/JLPTEI-3.md``.
+CONTRIBUTOR_URN = "urn:x-opensiddur:contributor:"
+
+
+def _contributor_of(ref: str | None, name_text: str, file_path: Path) -> tuple[str, str]:
+    """The namespace a contributor's identifier belongs to, and the identifier.
+
+    A reference that is not a contributor URN is reported rather than guessed at. Reading
+    one as a URN anyway is what printed a heading of "From " with nothing after it: the
+    last colon-delimited piece of ``https://he.wikisource.org/`` is not a namespace.
+    """
+    if not ref:
+        print(f"Warning: {file_path}: {name_text or 'a contributor'} is credited with no "
+              "reference; listed without one", file=sys.stderr)
+        return "", name_text
+    tail = ref.removeprefix(CONTRIBUTOR_URN)
+    if tail == ref or "/" not in tail:
+        print(f"Warning: {file_path}: {ref!r} is not a contributor URN "
+              f"({CONTRIBUTOR_URN}<namespace>/<identifier>); listed without a namespace",
+              file=sys.stderr)
+        return "", name_text or ref
+    namespace, contributor = tail.split("/", 1)
+    return namespace, contributor
+
+
 def extract_credits(xml_file_paths: list[Path]) -> dict[Path, list[CreditRecord]]:
     """Extract credits (respStmt entries) from a list of JLPTEI XML files."""
     ns = {"tei": "http://www.tei-c.org/ns/1.0"}
@@ -146,22 +172,26 @@ def extract_credits(xml_file_paths: list[Path]) -> dict[Path, list[CreditRecord]
 
                 role = resp.attrib.get("key")
                 ref = name.attrib.get("ref")
+                # itertext, not .text: a name may carry markup, and .text stops at the
+                # first child element.
+                name_text = "".join(name.itertext()).strip()
 
-                if not role or not ref:
+                if not role:
+                    print(f"Warning: {file_path}: a credit for {name_text or 'someone'} "
+                          "has no resp/@key saying what they did; not listed",
+                          file=sys.stderr)
                     continue
-
-                # Parse namespace and contributor from ref (urn:x-opensiddur:NAMESPACE/CONTRIBUTOR)
-                tail = ref.split(":")[-1]
-                if "/" not in tail:
-                    continue
-                namespace, contributor = tail.split("/", 1)
+                # A credit with no reference is not silently dropped: a respStmt records
+                # who digitised a text, and one without a reference is malformed data
+                # rather than a person to leave out. It is listed under no namespace.
+                namespace, contributor = _contributor_of(ref, name_text, file_path)
 
                 credits.append(
                     CreditRecord(
                         role=role,
-                        resp_text=(resp.text or "").strip(),
-                        ref=ref,
-                        name_text=(name.text or "").strip(),
+                        resp_text="".join(resp.itertext()).strip(),
+                        ref=ref or name_text,
+                        name_text=name_text,
                         namespace=namespace,
                         contributor=contributor,
                     )
@@ -207,19 +237,46 @@ def credits_to_tex(credits: dict[str, dict[str, list[CreditRecord]]]) -> str:
     """Convert grouped credits into a LaTeX appendix section."""
     if not credits:
         return ""
+    # Sorted, because the file order these were gathered in is not meaningful and a
+    # credits list that reshuffles between two builds of the same document reads as though
+    # something changed.
     tex = "\\section*{Contributor credits}\n"
-    for role, namespace_dict in credits.items():
+    for role in sorted(credits, key=_role_order):
+        namespace_dict = credits[role]
         total = sum(len(c) for c in namespace_dict.values())
-        role_name = contributor_keys_to_roles.get(role, role) + ("s" if total > 1 else "")
+        role_name = _role_name(role, namespace_dict) + ("s" if total > 1 else "")
         tex += f"\\subsection*{{{role_name}}}\n"
-        for namespace, namespace_credits in namespace_dict.items():
-            sorted_credits = sorted(namespace_credits, key=lambda x: x.contributor)
-            tex += f"\\subsubsection*{{From {namespace}}}\n"
+        for namespace in sorted(namespace_dict):
+            sorted_credits = sorted(namespace_dict[namespace], key=lambda x: x.contributor)
+            # A credit with no namespace is one whose reference could not be read. It is
+            # still a person, so it is listed -- just under no heading claiming to know
+            # where their name is meaningful.
+            if namespace:
+                tex += f"\\subsubsection*{{From {namespace}}}\n"
             tex += "\\begin{itemize}\n"
             for credit in sorted_credits:
                 tex += f"\\item {credit.name_text}\n"
             tex += "\\end{itemize}\n"
     return tex
+
+
+def _role_order(role: str) -> tuple[int, str]:
+    """Roles in the order the schema lists them, then anything unrecognised."""
+    keys = list(contributor_keys_to_roles)
+    return (keys.index(role) if role in keys else len(keys), role)
+
+
+def _role_name(role: str, namespace_dict: dict[str, list[CreditRecord]]) -> str:
+    """What to call this kind of contribution.
+
+    A recognised MARC key has a name of its own. For anything else the document's own
+    ``tei:resp`` wording says what the person did, and is a better heading than the raw
+    three-letter code the reader would otherwise be shown.
+    """
+    if role in contributor_keys_to_roles:
+        return contributor_keys_to_roles[role]
+    said = [c.resp_text for group in namespace_dict.values() for c in group if c.resp_text]
+    return said[0] if said else role
 
 
 def get_project_index(file_path: Path) -> Path:
@@ -383,7 +440,10 @@ def transform_xml_to_tex(
 
         licenses = extract_licenses(file_references, project_directory)
         licenses_tex = licenses_to_tex(group_licenses(licenses))
-        credits = extract_credits(file_references)
+        # From the compiled document, not from the sources it was built out of: the
+        # compiler gathers every contributing document's credits into it, so the file
+        # printed from is the file that says who made it.
+        credits = extract_credits([input_file])
         credits_tex = credits_to_tex(group_credits(credits))
         sources_preamble_tex, sources_postamble_tex = extract_sources(file_references)
 

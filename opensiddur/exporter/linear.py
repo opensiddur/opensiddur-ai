@@ -99,6 +99,12 @@ class LinearData(BaseModel):
     # Ambient on LinearData rather than per-processor: nested processors are constructed in five
     # places and a per-instance flag is silently dropped by all of them.
     parallel_compilation_depth: int = 0
+    # Every contributor credit met while compiling, in the order met, as
+    # (resp key, name/@ref, name, resp wording). A transcluded document contributes its
+    # text and not its header, so its credits would otherwise be lost at the moment its
+    # words are taken -- and a reader of the compiled text would see the credits of the
+    # one file that happened to be the root.
+    credits: list[tuple[str, str, str, str]] = Field(default_factory=list)
 
 _linear_data = LinearData()
 

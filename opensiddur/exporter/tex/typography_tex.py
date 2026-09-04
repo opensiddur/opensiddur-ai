@@ -333,6 +333,11 @@ def _paragraph_section(config: TypographyConfig) -> list[str]:
         lines.append(rf"\setlength{{\parindent}}{{{paragraphs.indent}}}")
     if "spacing" in written:
         lines.append(rf"\setlength{{\parskip}}{{{paragraphs.spacing}}}")
+        # The body is reledmac numbered text, whose paragraphs are \pstart...\pend
+        # groups. Those do not take \parskip between them, so setting it alone moves the
+        # bibliography and leaves the prayer exactly where it was. Emitted only when the
+        # spacing is actually configured, so an unset project keeps reledmac's own default.
+        lines.append(r"\AtEveryPstart{\vspace{\parskip}}")
     if "line_spacing" in written:
         lines.append(rf"\linespread{{{_format_number(paragraphs.line_spacing)}}}\selectfont")
     if "alignment" in written:

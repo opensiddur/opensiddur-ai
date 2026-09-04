@@ -145,7 +145,7 @@ class TestExtractCredits(unittest.TestCase):
         xml = b"""<root xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:respStmt>
             <tei:resp key="aut">Author</tei:resp>
-            <tei:name ref="urn:x-opensiddur:ns/person">A B</tei:name>
+            <tei:name ref="urn:x-opensiddur:contributor:ns/person">A B</tei:name>
           </tei:respStmt>
         </root>"""
         f = self._create("p", "a.xml", xml)
@@ -156,13 +156,52 @@ class TestExtractCredits(unittest.TestCase):
         self.assertEqual(credits[0].namespace, "ns")
         self.assertEqual(credits[0].contributor, "person")
 
-    def test_skips_resp_without_required_attrs(self):
+    def test_a_credit_with_no_reference_is_still_a_person(self):
+        # It used to be dropped in silence. A respStmt records who digitised a text, so
+        # one without a reference is malformed data rather than somebody to leave out --
+        # and leaving them out is how a contributor disappears without anyone noticing.
         xml = b"""<root xmlns:tei="http://www.tei-c.org/ns/1.0">
-          <tei:respStmt><tei:resp key="aut">Author</tei:resp></tei:respStmt>
+          <tei:respStmt>
+            <tei:resp key="trc">Transcribed by</tei:resp>
+            <tei:name>Someone</tei:name>
+          </tei:respStmt>
         </root>"""
         f = self._create("p", "a.xml", xml)
-        result = extract_credits([f])
-        self.assertEqual(result[f], [])
+        credits = extract_credits([f])[f]
+        self.assertEqual(len(credits), 1)
+        self.assertEqual(credits[0].name_text, "Someone")
+        self.assertEqual(credits[0].namespace, "")
+
+    def test_a_credit_that_says_nothing_about_what_was_done_is_skipped(self):
+        # Without a resp/@key there is no telling which list to put them in.
+        xml = b"""<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:respStmt><tei:resp>Transcribed by</tei:resp>
+          <tei:name>Someone</tei:name></tei:respStmt>
+        </root>"""
+        f = self._create("p", "a.xml", xml)
+        self.assertEqual(extract_credits([f])[f], [])
+
+    def test_a_reference_that_is_not_a_contributor_urn_is_reported(self):
+        # A plain URL read as a URN gave the heading "From " with nothing after it.
+        xml = b"""<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:respStmt>
+            <tei:resp key="trc">Transcribed by</tei:resp>
+            <tei:name ref="https://he.wikisource.org/">Someone</tei:name>
+          </tei:respStmt>
+        </root>"""
+        f = self._create("p", "a.xml", xml)
+        credits = extract_credits([f])[f]
+        self.assertEqual(credits[0].namespace, "")
+
+    def test_a_name_carrying_markup_is_read_whole(self):
+        xml = b"""<root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:respStmt>
+            <tei:resp key="trc">Transcribed by</tei:resp>
+            <tei:name ref="urn:x-opensiddur:contributor:ns/p"><tei:hi>A</tei:hi> B</tei:name>
+          </tei:respStmt>
+        </root>"""
+        f = self._create("p", "a.xml", xml)
+        self.assertEqual(extract_credits([f])[f][0].name_text, "A B")
 
 
 class TestGroupCredits(unittest.TestCase):
@@ -171,7 +210,7 @@ class TestGroupCredits(unittest.TestCase):
         c = CreditRecord(
             role="aut",
             resp_text="Author",
-            ref="urn:x-opensiddur:ns/p1",
+            ref="urn:x-opensiddur:contributor:ns/p1",
             name_text="P1",
             namespace="ns",
             contributor="p1",
@@ -185,7 +224,7 @@ class TestGroupCredits(unittest.TestCase):
         c = CreditRecord(
             role="aut",
             resp_text="Author",
-            ref="urn:x-opensiddur:ns/p1",
+            ref="urn:x-opensiddur:contributor:ns/p1",
             name_text="P1",
             namespace="ns",
             contributor="p1",

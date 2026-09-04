@@ -43,6 +43,11 @@ from opensiddur.exporter.derivation_graph import (
 from opensiddur.exporter.linear import NumericValue, get_linear_data, reset_linear_data
 
 
+def _date_only(found: dict) -> dict:
+    """The year, month and day. compute_hebrew_date also reports whether the year leaps."""
+    return {key: found[key] for key in ("year", "month", "day")}
+
+
 def _snapshot(data: dict[tuple[str, str], object]) -> SettingSnapshot:
     return SettingSnapshot(
         get_setting=lambda fs_type, feature_name: data.get((fs_type, feature_name)),
@@ -119,7 +124,9 @@ class TestComputeFunctions(unittest.TestCase):
             (FS_LOCATION, "longitude"): 35.22,
         })
         result = compute_hebrew_date(snap)
-        self.assertEqual(result, {"year": 5785, "month": 7, "day": 1})
+        self.assertEqual(_date_only(result), {"year": 5785, "month": 7, "day": 1})
+        # 5785 has twelve months; 5784 had thirteen.
+        self.assertFalse(result["leap-year"])
 
     def test_hebrew_from_explicit_date(self):
         snap = _snapshot({
@@ -482,12 +489,14 @@ class TestLocalTime(unittest.TestCase):
         Read as UTC this is 20:30Z against a 23:36Z nightfall, and the day does not roll.
         """
         snap = self._snap()
-        self.assertEqual(compute_hebrew_date(snap), {"year": 5786, "month": 1, "day": 15})
+        self.assertEqual(_date_only(compute_hebrew_date(snap)),
+                         {"year": 5786, "month": 1, "day": 15})
         self.assertEqual(compute_holiday(snap)["pesah"], 1)
 
     def test_explicit_timezone_overrides_the_coordinates(self):
         snap = self._snap({(FS_LOCATION, "timezone"): "UTC"})
-        self.assertEqual(compute_hebrew_date(snap), {"year": 5786, "month": 1, "day": 14})
+        self.assertEqual(_date_only(compute_hebrew_date(snap)),
+                         {"year": 5786, "month": 1, "day": 14})
         self.assertEqual(compute_holiday(snap)["pesah"], 0)
 
     def test_unknown_timezone_name_falls_back_to_the_coordinates(self):
@@ -716,3 +725,82 @@ class TestSpecialShabbatot(unittest.TestCase):
                     previous = current
             day += timedelta(days=1)
         self.assertEqual(transitions, 11)
+
+
+class TestRainSeasons(unittest.TestCase):
+    """The two rain seasons, which are not the same season.
+
+    Dates are given as the source states the rule: geshem from Shmini Atzeret to the first
+    day of Pesach everywhere; tal umatar from 7 Marcheshvan in Israel but only from
+    4 December in the diaspora -- 5 December in the year before a Gregorian leap year.
+    """
+
+    JERUSALEM = {(FS_LOCATION, "latitude"): 31.78, (FS_LOCATION, "longitude"): 35.22}
+    NEW_YORK = {(FS_LOCATION, "latitude"): 40.71, (FS_LOCATION, "longitude"): -74.01}
+
+    def seasons(self, year, month, day, place):
+        snapshot = _snapshot({
+            (FS_GREGORIAN, "year"): year,
+            (FS_GREGORIAN, "month"): month,
+            (FS_GREGORIAN, "day"): day,
+            **place,
+        })
+        found = compute_holiday_aggregate(snapshot)
+        return found.get("geshem"), found.get("tal-umatar")
+
+    def test_geshem_runs_from_shmini_atzeret_and_is_the_same_everywhere(self):
+        # 25 October 2024 is after Shmini Atzeret and before 7 Marcheshvan.
+        for place, name in ((self.JERUSALEM, "Israel"), (self.NEW_YORK, "diaspora")):
+            with self.subTest(place=name):
+                geshem, _ = self.seasons(2024, 10, 25, place)
+                self.assertTrue(geshem)
+
+    def test_geshem_ends_at_pesach(self):
+        for place, name in ((self.JERUSALEM, "Israel"), (self.NEW_YORK, "diaspora")):
+            with self.subTest(place=name):
+                geshem, _ = self.seasons(2025, 5, 1, place)
+                self.assertFalse(geshem)
+
+    def test_israel_asks_for_rain_from_the_seventh_of_marcheshvan(self):
+        # 8 November 2024 is 7 Marcheshvan 5785.
+        self.assertTrue(self.seasons(2024, 11, 8, self.JERUSALEM)[1])
+
+    def test_the_diaspora_is_still_asking_for_dew_then(self):
+        # The petition follows the agricultural year of the place asking, so the diaspora
+        # waits until December however far into the Hebrew winter it is.
+        self.assertFalse(self.seasons(2024, 11, 8, self.NEW_YORK)[1])
+
+    def test_the_diaspora_begins_in_december(self):
+        self.assertFalse(self.seasons(2024, 12, 3, self.NEW_YORK)[1])
+        self.assertTrue(self.seasons(2024, 12, 5, self.NEW_YORK)[1])
+
+    def test_the_year_before_a_leap_year_slips_a_day(self):
+        # 2024 is a Gregorian leap year, so the winter opening in December 2023 begins on
+        # the fifth rather than the fourth.
+        self.assertFalse(self.seasons(2023, 12, 4, self.NEW_YORK)[1])
+        self.assertTrue(self.seasons(2023, 12, 5, self.NEW_YORK)[1])
+        # December 2024 looks ahead to 2025, which is not a leap year.
+        self.assertTrue(self.seasons(2024, 12, 4, self.NEW_YORK)[1])
+
+    def test_both_seasons_end_at_pesach(self):
+        for place, name in ((self.JERUSALEM, "Israel"), (self.NEW_YORK, "diaspora")):
+            with self.subTest(place=name):
+                self.assertTrue(self.seasons(2025, 1, 15, place)[1])
+                self.assertFalse(self.seasons(2025, 5, 1, place)[1])
+
+    def test_the_season_is_left_undefined_rather_than_guessed(self):
+        # Without a location there is no telling which rule applies, and an omitted
+        # feature evaluates as undefined -- which keeps the text and leaves the marker for
+        # a later stage. Guessing would print the wrong season silently.
+        snapshot = _snapshot({
+            (FS_GREGORIAN, "year"): 2024,
+            (FS_GREGORIAN, "month"): 11,
+            (FS_GREGORIAN, "day"): 8,
+            (FS_HEBREW_DATE, "year"): 5785,
+            (FS_HEBREW_DATE, "month"): 8,
+            (FS_HEBREW_DATE, "day"): 7,
+        })
+        found = compute_holiday_aggregate(snapshot)
+        self.assertTrue(found["geshem"])          # needs no location
+        self.assertNotIn("tal-umatar", found)     # does
+

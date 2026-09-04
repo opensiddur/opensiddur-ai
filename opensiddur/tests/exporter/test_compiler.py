@@ -2185,3 +2185,78 @@ class TestCompilerMain(unittest.TestCase):
             linear_data=mock_linear_data,
         )
 
+
+
+class TestGatherCredits(unittest.TestCase):
+    """Whoever digitised a text is credited for it, wherever the text came from.
+
+    A transcluded document contributes its words and not its header, so its credits are
+    taken at the moment the header is dropped. Without that, a document built out of two
+    dozen files names the contributors of whichever one happened to be the root.
+    """
+
+    TEI = "http://www.tei-c.org/ns/1.0"
+
+    def document(self, *names):
+        from lxml import etree as _etree
+
+        stmts = "".join(
+            f'<tei:respStmt><tei:resp key="trc">Transcribed by</tei:resp>'
+            f'<tei:name ref="urn:x-opensiddur:contributor:he.wikisource.org/{name}">'
+            f"{name}</tei:name></tei:respStmt>" for name in names)
+        return _etree.fromstring(
+            f'<tei:TEI xmlns:tei="{self.TEI}"><tei:teiHeader><tei:fileDesc>'
+            f"<tei:titleStmt><tei:title>t</tei:title>{stmts}</tei:titleStmt>"
+            "</tei:fileDesc></tei:teiHeader><tei:text><tei:body/></tei:text></tei:TEI>")
+
+    def credited(self, root):
+        return [name.text for name in root.iter(f"{{{self.TEI}}}name")]
+
+    def setUp(self):
+        from opensiddur.exporter.linear import LinearData
+
+        self.linear_data = LinearData()
+
+    def test_a_transcluded_documents_contributors_reach_the_compiled_text(self):
+        from opensiddur.exporter.compiler import gather_credits, merge_credits
+
+        root = self.document("Dovi")
+        gather_credits(self.document("Neriah"), self.linear_data)
+        merge_credits(root, self.linear_data)
+        self.assertEqual(self.credited(root), ["Dovi", "Neriah"])
+
+    def test_the_same_person_is_credited_once(self):
+        from opensiddur.exporter.compiler import gather_credits, merge_credits
+
+        root = self.document("Dovi")
+        gather_credits(self.document("Nahum", "Dovi"), self.linear_data)
+        merge_credits(root, self.linear_data)
+        self.assertEqual(self.credited(root), ["Dovi", "Nahum"])
+
+    def test_the_roots_own_contributors_are_kept(self):
+        from opensiddur.exporter.compiler import merge_credits
+
+        root = self.document("Dovi")
+        merge_credits(root, self.linear_data)
+        self.assertEqual(self.credited(root), ["Dovi"])
+
+    def test_what_each_person_did_travels_with_their_name(self):
+        from opensiddur.exporter.compiler import gather_credits, merge_credits
+
+        root = self.document("Dovi")
+        gather_credits(self.document("Neriah"), self.linear_data)
+        merge_credits(root, self.linear_data)
+        added = root.findall(f".//{{{self.TEI}}}respStmt")[-1]
+        self.assertEqual(added.find(f"{{{self.TEI}}}resp").get("key"), "trc")
+        self.assertEqual(added.find(f"{{{self.TEI}}}name").get("ref"),
+                         "urn:x-opensiddur:contributor:he.wikisource.org/Neriah")
+
+    def test_a_document_with_no_title_statement_is_left_alone(self):
+        from lxml import etree as _etree
+
+        from opensiddur.exporter.compiler import gather_credits, merge_credits
+
+        gather_credits(self.document("Neriah"), self.linear_data)
+        bare = _etree.fromstring(f'<tei:TEI xmlns:tei="{self.TEI}"><tei:text/></tei:TEI>')
+        merge_credits(bare, self.linear_data)
+        self.assertEqual(self.credited(bare), [])

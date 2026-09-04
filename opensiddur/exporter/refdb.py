@@ -105,6 +105,16 @@ def milestone_terminates(element: ElementBase, following: ElementBase) -> bool:
     following_unit = following.get('unit')
     containers = containing_units(unit)
 
+    # A milestone with no @corresp opens nothing. It may still *close* something, but
+    # only its own unit: a bare milestone of the same unit is the explicit terminator
+    # (see JLPTEI-3, "URN scope"), used where a division ends partway through a file
+    # with no sibling after it. The exact-match rule is what keeps this from catching
+    # milestones that merely happen to lack a corresp for other reasons -- notably
+    # unit="edition-verse", which carries @n and never @corresp, and which under the
+    # path-depth fallback below would otherwise terminate every verse it follows.
+    if not following.get('corresp'):
+        return following_unit is not None and following_unit == unit
+
     if containers is not None and containing_units(following_unit) is not None:
         return following_unit == unit or following_unit in containers
 
@@ -134,8 +144,10 @@ def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
 
     is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
     if is_milestone:
+        # Corresp-less milestones are included so an explicit terminator can close a
+        # scope; `milestone_terminates` decides which of them actually do.
         following_milestones = element.xpath(
-            './following::tei:milestone[@corresp][ancestor::tei:text]', namespaces=ns_map)
+            './following::tei:milestone[ancestor::tei:text]', namespaces=ns_map)
         actual_end = None
         for milestone in following_milestones:
             if milestone_terminates(element, milestone):
