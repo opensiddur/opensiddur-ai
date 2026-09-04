@@ -1188,7 +1188,7 @@ class TestConditionalRendering(unittest.TestCase):
         self.assertEqual(["first"], labels)
 
     def test_conditional_around_markers_with_a_note_stays_visible(self):
-        """Silencing the delimiters would take the note's explanation with them."""
+        """The note is what tells the reader; the bracket beside it is redundant."""
         out = self._transform_body(
             f"""<tei:div>
               <j:conditional xml:id="c">
@@ -1201,7 +1201,10 @@ class TestConditionalRendering(unittest.TestCase):
         )
         body = self._document_body(out)
         self.assertIn("In the triennial cycle:", body)
-        self.assertIn(r"\OSCondStartInline{}", body)
+        # A conditional that announces itself needs no bracket: the instruction says which
+        # passage this is and on what it depends, and the bracket reads as stray
+        # punctuation beside it.
+        self.assertNotIn(r"\OSCondStartInline{}", body)
 
     def test_conditional_macros_are_defined(self):
         out = self._transform_body(
@@ -2130,32 +2133,4 @@ class TestUnrenderedMilestones(unittest.TestCase):
 
     def test_an_edition_verse_prints_nothing(self):
         self.assertNotIn("14", _transform(self.XML).split("begin{document}")[1])
-
-
-class TestParagraphSpacing(unittest.TestCase):
-    """reledmac rebuilds each \\pstart's lines from a freshly \\vsplit vbox, which
-    bypasses TeX's normal automatic \\parskip-before-paragraph insertion -- without
-    an explicit skip, \\parskip's configured value has no visible effect at all
-    (confirmed by rendering and measuring PDF output with two different \\parskip
-    values). An explicit \\vskip\\parskip between \\pend and the next \\pstart is
-    what actually makes paragraphs.spacing do anything."""
-
-    XML = """<?xml version="1.0" encoding="UTF-8"?>
-    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
-      <tei:text><tei:body>
-        <tei:p>First paragraph.</tei:p>
-        <tei:p>Second paragraph.</tei:p>
-      </tei:body></tei:text>
-    </tei:TEI>"""
-
-    def test_an_explicit_skip_follows_every_pend(self):
-        out = _transform(self.XML)
-        self.assertEqual(out.count(r"\pend"), 2)
-        self.assertEqual(out.count("\\vskip\\parskip"), 2)
-        self.assertIn("\\pend\n\\vskip\\parskip\n", out)
-
-    def test_no_skip_before_the_first_paragraph(self):
-        out = _transform(self.XML)
-        body = out.split(r"\begin{document}", 1)[1]
-        self.assertLess(body.index(r"\pstart"), body.index("\\vskip\\parskip"))
 

@@ -1,0 +1,4 @@
+{"urn": "urn:x-opensiddur:text:siddur:chol", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:siddur", "label_en": "Weekdays"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol", "label_en": "Weekday morning service"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/amidah", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "label_en": "The Amidah for the weekday morning service"}
+{"urn": "urn:x-opensiddur:text:siddur:siddur", "status": "canonical", "label_en": "The Complete Siddur"}

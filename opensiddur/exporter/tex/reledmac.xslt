@@ -321,6 +321,21 @@
              - Use {{\bfseries ...}} (regular braces) not \begingroup/\endgroup — the latter
                can prematurely close reledmac's internal groups inside \edtext/\Bfootnote. -->
         <xsl:text>\newcommand{\instructionnote}[1]{{\bfseries #1}}&#10;</xsl:text>
+        <!-- An instruction running against the direction of the text it introduces cannot
+             share a line with it: the two runs would be laid out from opposite margins and
+             read as one jumbled line. Birnbaum sets his English rubrics on their own line
+             above the Hebrew, and this is that line. A full-width box for the same reason
+             as \OSCondRule: \par does not reliably break inside a reledmac \pstart. The
+             glue leads so the instruction sits at the margin the text runs from: left
+             under a Hebrew paragraph, as Birnbaum sets his English rubrics on p.83. -->
+        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\leavevmode\hbox to \linewidth{\hss{\bfseries #1}}}&#10;</xsl:text>
+        <!-- The same, for an instruction standing inside a paragraph rather than between
+             two. A box the width of the line does not fit on a line that is already
+             partly set: it overhangs the margin and the instruction runs off the page,
+             which is what happened to both seasonal readings of Birkat ha-Shanim and to
+             the day-names of Ya'aleh v'Yavo. Ending the line first gives the instruction
+             a line of its own without a box that cannot fit. -->
+        <xsl:text>\newcommand{\OSInstructionLine}[1]{\leavevmode\unskip\newline\hbox to \linewidth{\hss{\bfseries #1}}\newline\ignorespaces}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <!-- Conditional passages. Only markers whose condition could not be decided survive
              compilation: a decided condition is resolved away, its text either kept outright
@@ -418,7 +433,7 @@
         <xsl:text>\makeatother&#10;</xsl:text>
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
-        <xsl:text>\setlength{\parskip}{0.75em}&#10;</xsl:text>
+        <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
 
         <!-- Font switches applied to the whole body, from typography.styles.body.
              Empty unless configured; emitted at the top of the document, where it
@@ -1036,13 +1051,7 @@
                             </xsl:when>
                             <xsl:otherwise>
                                 <xsl:if test="$in-pstart">
-                                    <!-- reledmac reconstructs each \pstart's lines from a
-                                         freshly \vsplit vbox, which bypasses TeX's normal
-                                         automatic \parskip-before-paragraph insertion:
-                                         \parskip's register value has no effect on the gap
-                                         between \pstart blocks unless we add it explicitly. -->
                                     <xsl:text>\pend&#10;</xsl:text>
-                                    <xsl:text>\vskip\parskip&#10;</xsl:text>
                                 </xsl:if>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="false()"/>
@@ -1533,9 +1542,18 @@
          a rule, because brackets several lines apart do not read as a pair. -->
     <xsl:template match="j:conditional" mode="emit">
         <xsl:choose>
+            <!-- A conditional that announces itself needs no bracket either: the
+                 instruction says which passage this is and on what it depends, and the
+                 bracket beside it reads as stray punctuation. -->
+            <xsl:when test="tei:note[@type='instruction'] and f:is-inline-conditional(.)"/>
             <xsl:when test="f:is-inline-conditional(.)">
                 <xsl:text>\OSCondStartInline{}</xsl:text>
             </xsl:when>
+            <!-- A block that announces itself needs no rule to open it: the instruction
+                 says which passage this is and on what it depends, and a rule above it
+                 only reads as a stray line. The closing rule stays, since nothing else
+                 shows where the passage stops. -->
+            <xsl:when test="tei:note[@type='instruction']"/>
             <xsl:otherwise>
                 <xsl:text>\OSCondStartBlock{}</xsl:text>
             </xsl:otherwise>
@@ -1547,6 +1565,10 @@
     <xsl:template match="j:endConditional" mode="emit">
         <xsl:variable name="start" select="f:matching-start(.)"/>
         <xsl:choose>
+            <!-- Matching the opening: a scope whose instruction stands in for its
+                 opening bracket takes no closing one. -->
+            <xsl:when test="exists($start/tei:note[@type='instruction'])
+                            and f:is-inline-conditional($start)"/>
             <xsl:when test="if (exists($start))
                             then f:is-inline-conditional($start)
                             else (ancestor::tei:p or ancestor::tei:l)">
@@ -1600,10 +1622,31 @@
          attach to a zero-width lemma so the apparatus mark sits at the
          note's textual anchor point. -->
     <xsl:template match="tei:note[@type='instruction']" mode="emit" priority="10">
-        <xsl:text>\instructionnote{</xsl:text>
+        <!-- Whose direction the instruction runs in, against the text around it. -->
+        <xsl:variable name="note-lang"
+                      select="string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
+        <xsl:variable name="text-lang"
+                      select="string((ancestor::*[@xml:lang][1])/@xml:lang)"/>
+        <xsl:variable name="crosses"
+                      select="f:is-rtl-lang($note-lang) ne f:is-rtl-lang($text-lang)"/>
+        <xsl:variable name="within" select="exists(ancestor::tei:p | ancestor::tei:l)"/>
+        <xsl:text>\</xsl:text>
+        <xsl:value-of select="if (not($crosses)) then 'instructionnote'
+                              else if ($within) then 'OSInstructionLine'
+                              else 'OSInstructionBlock'"/>
+        <xsl:text>{</xsl:text>
         <xsl:call-template name="note-content"/>
         <xsl:text>}</xsl:text>
     </xsl:template>
+
+    <!-- Which scripts are written right to left, for deciding whether two runs can share
+         a line. Compared by direction rather than by language, so English beside Yiddish
+         is one line and Hebrew beside Yiddish is another. -->
+    <xsl:function name="f:is-rtl-lang" as="xs:boolean">
+        <xsl:param name="lang" as="xs:string"/>
+        <xsl:sequence select="tokenize($lang, '-')[1]
+                              = ('he', 'yi', 'arc', 'ar', 'fa', 'jrb', 'lad', 'ji')"/>
+    </xsl:function>
 
     <xsl:template match="tei:note[not(ancestor::tei:standOff)][not(@type='instruction')]" mode="emit">
         <xsl:variable name="serial" as="xs:integer"

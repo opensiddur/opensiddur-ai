@@ -15,6 +15,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_ISRAEL,
     FS_LOCATION,
     FS_QUORUM,
+    FS_RECITATION,
     FS_READING_CYCLE,
     FS_SERVICE_TIME,
     FS_TIME,
@@ -26,9 +27,11 @@ from opensiddur.exporter.calendar.compute import (
     compute_hebrew_time,
     compute_holiday,
     compute_holiday_aggregate,
+    compute_holiday_from_aggregate,
     compute_israel,
     compute_location,
     compute_quorum,
+    compute_recitation,
     compute_reading_cycle,
     compute_service_time,
     compute_torah_reading,
@@ -130,6 +133,20 @@ DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
         fs_type=FS_READING_CYCLE,
         required_inputs=frozenset({(FS_READING_CYCLE, "triennial"), (FS_TORAH, "triennial-year")}),
         compute=compute_reading_cycle,
+    ),
+    # Backward, and the only one that runs that way: a volume may say what kind of day it
+    # is without saying which day. Placed after the aggregate, whose own inputs are dates,
+    # so there is no cycle.
+    DerivationSpec(
+        fs_type=FS_HOLIDAY,
+        required_inputs=frozenset({(FS_HOLIDAY_AGG, "yom-tov")}),
+        compute=compute_holiday_from_aggregate,
+    ),
+    # Ma'ariv has no repetition, so its Amidah is always the silent one.
+    DerivationSpec(
+        fs_type=FS_RECITATION,
+        required_inputs=frozenset({(FS_SERVICE_TIME, "maariv")}),
+        compute=compute_recitation,
     ),
     DerivationSpec(
         fs_type=FS_QUORUM,

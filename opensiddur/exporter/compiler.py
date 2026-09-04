@@ -26,7 +26,15 @@ from typing import Any, Literal, Optional, TypedDict
 from lxml.etree import ElementBase
 from lxml import etree
 
-from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, is_element_node
+from opensiddur.exporter.constants import (
+    JLPTEI_NAMESPACE,
+    PROCESSING_NAMESPACE,
+    TEI_NS,
+    is_element_node,
+)
+
+#: The instruction a conditional carries, which outlives a condition that holds.
+TEI_NOTE = f"{{{TEI_NS}}}note"
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.linear import (
     ConditionalScope,
@@ -313,6 +321,12 @@ class CompilerProcessor:
                 tei_ns = self.ns_map.get("tei", "http://www.tei-c.org/ns/1.0")
                 tei_root_tag = f"{{{tei_ns}}}TEI"
                 for processed in processed_list:
+                    # ...with one exception. Whoever digitised the words being taken is
+                    # owed a credit for them, and this is the moment their header is
+                    # about to be dropped. Gathering the credits here is what makes the
+                    # compiled document self-describing: it can be printed, or turned
+                    # into HTML, without reopening the sources it was built from.
+                    gather_credits(processed, self.linear_data)
                     if processed.tag == tei_root_tag:
                         text_el = processed.find(f"{{{tei_ns}}}text")
                         if text_el is None:
@@ -817,6 +831,15 @@ class CompilerProcessor:
             self._push_conditional_scope(scoped_id, result)
             if result == TriState.UNDEFINED:
                 return True, self._copy_element_subtree(element)
+            if result == TriState.TRUE:
+                # The instruction outlives the condition that carried it. It is the rubric
+                # the edition prints -- "When the Reader repeats the Shemoneh Esreh, the
+                # following Kedushah is said:" -- and belongs to the text, so it is set
+                # wherever the passage is. Only a condition resolving *false* takes its
+                # instruction with it, the passage not being said at all.
+                kept = element.find(TEI_NOTE)
+                if kept is not None and kept.get("type") == "instruction":
+                    return True, self._copy_element_subtree(kept)
             return True, None
 
         if element.tag == J_END_CONDITIONAL:
@@ -931,6 +954,169 @@ class CompilerProcessor:
         return copied
 
 
+TEI_NS = "http://www.tei-c.org/ns/1.0"
+
+
+def gather_credits(element, linear_data) -> None:
+    """Record every contributor credit in a document, before its header is dropped.
+
+    A ``tei:respStmt`` says who *digitised* a text. The compiler takes a transcluded
+    document's words and discards its header, so without this the credits of every file
+    but the root are lost at the moment their words are used -- which is how a siddur
+    built from two dozen files came to name the contributors of one of them.
+    """
+    for resp_stmt in element.iter(f"{{{TEI_NS}}}respStmt"):
+        resp = resp_stmt.find(f"{{{TEI_NS}}}resp")
+        name = resp_stmt.find(f"{{{TEI_NS}}}name")
+        if resp is None or name is None:
+            continue
+        credit = (
+            resp.get("key") or "",
+            name.get("ref") or "",
+            "".join(name.itertext()).strip(),
+            "".join(resp.itertext()).strip(),
+        )
+        if credit not in linear_data.credits:
+            linear_data.credits.append(credit)
+
+
+TEI_DIV = f"{{{TEI_NS}}}div"
+TEI_P = f"{{{TEI_NS}}}p"
+TEI_L = f"{{{TEI_NS}}}l"
+
+
+def _only_a_paragraph(element) -> bool:
+    """An unnamed division holding one paragraph and nothing else.
+
+    Unnamed because nothing in the source names it: :func:`tei.structure` gives words a
+    division of their own where they find themselves beside a subdivision, and that
+    division carries no URN because it addresses nothing.
+    """
+    return (element.tag == TEI_DIV and not element.attrib
+            and len(element) == 1 and element[0].tag == TEI_P
+            and not (element.text or "").strip()
+            and not (element[0].tail or "").strip())
+
+
+def join_split_paragraphs(root) -> None:
+    """Close up a paragraph a resolved conditional had split.
+
+    A conditional between two runs of words forces each into a division of its own, since
+    a division may not hold words and subdivisions side by side. When the condition
+    resolves false the passage between them goes, and the two halves of what the edition
+    prints as one paragraph are left as two -- Birnbaum sets
+    ``אַתָּה חוֹנֵן לְאָדָם דַּעַת`` and ``חׇנֵּנוּ מֵאִתְּךָ דֵּעָה`` as one (p.85), with the
+    Havdalah that separates them said only at Ma'ariv.
+
+    Only unnamed divisions are joined, and only to each other: one carries no address, so
+    nothing refers to it and nothing is lost by its going. A division the source named
+    keeps its own paragraph however short it is.
+    """
+    for parent in root.iter():
+        run = list(parent)
+        for element in run:
+            if not _only_a_paragraph(element):
+                continue
+            following = element.getnext()
+            while following is not None and _only_a_paragraph(following):
+                head, tail = element[0], following[0]
+                last = list(head)[-1] if len(head) else None
+                if last is not None:
+                    last.tail = ((last.tail or "") + " " + (tail.text or "")).rstrip() + " "
+                else:
+                    head.text = ((head.text or "") + " " + (tail.text or "")).strip() + " "
+                for child in list(tail):
+                    head.append(child)
+                parent.remove(following)
+                following = element.getnext()
+
+
+def drop_empty_scopes(root) -> None:
+    """Remove a conditional that governs nothing.
+
+    A scope can be left empty by what it governs going elsewhere -- the Eretz Yisrael
+    insert in the Gevurot belongs to the transcribers' project, so in Birnbaum's the marker
+    pair is all that remains -- and an undecided empty scope prints as its own brackets or
+    rule, offering the reader a choice between nothing and nothing.
+
+    Only pairs in the same parent are considered, and only when what lies between them
+    holds no words and no elements of its own. A scope spanning a division boundary is
+    left alone: nothing here can see what it governs.
+    """
+    for parent in list(root.iter()):
+        children = list(parent)
+        opens = {child.get(XML_ID): index
+                 for index, child in enumerate(children)
+                 if child.tag == J_CONDITIONAL and child.get(XML_ID)}
+        for index, child in enumerate(children):
+            if child.tag != J_END_CONDITIONAL:
+                continue
+            start = opens.get((child.get("target") or "")[1:])
+            if start is None or start > index:
+                continue
+            between = children[start + 1:index]
+            if any(piece.tag not in CONDITIONAL_CONTROL_TAGS for piece in between):
+                continue
+            if any((piece.tail or "").strip() for piece in [children[start], *between]):
+                continue
+            parent.remove(children[start])
+            parent.remove(child)
+
+
+def close_up_whitespace(root) -> None:
+    """Collapse the space a resolved conditional leaves behind.
+
+    A scope removed from the middle of a phrase takes its words but not the space on
+    either side of it, so what was on either side ends up two spaces apart -- visible in
+    Birkat ha-Tzaddikim, Velirushalayim and Shema Koleinu, wherever an insert is not said
+    today.
+
+    Inside a paragraph or a line and nowhere else: there the whitespace is content, and
+    everywhere else it is the indentation of the file. The newlines the importer sets after
+    punctuation are left alone, being how a long verse is kept readable in the source and a
+    single space to the typesetter either way.
+    """
+    for holder in list(root.iter(TEI_P, TEI_L)):
+        for element in [holder, *holder.iter()]:
+            for attribute in ("text", "tail"):
+                value = getattr(element, attribute)
+                if not value:
+                    continue
+                closed = re.sub(r"[ \t]+\n", "\n", re.sub(r"[ \t]{2,}", " ", value))
+                if closed != value:
+                    setattr(element, attribute, closed)
+
+
+def merge_credits(root, linear_data) -> None:
+    """Put the gathered credits into the compiled document's own title statement.
+
+    The root document's credits are already there; the ones gathered from everything it
+    transcluded are appended, in the order they were met, without repeating any.
+    """
+    title_stmt = root.find(f".//{{{TEI_NS}}}titleStmt")
+    if title_stmt is None:
+        return
+    gather_credits(root, linear_data)
+    present = {
+        (r.get("key") or "", n.get("ref") or "")
+        for stmt in title_stmt.findall(f"{{{TEI_NS}}}respStmt")
+        for r in [stmt.find(f"{{{TEI_NS}}}resp")] for n in [stmt.find(f"{{{TEI_NS}}}name")]
+        if r is not None and n is not None
+    }
+    for role, reference, name_text, resp_text in linear_data.credits:
+        if (role, reference) in present:
+            continue
+        present.add((role, reference))
+        stmt = etree.SubElement(title_stmt, f"{{{TEI_NS}}}respStmt")
+        resp = etree.SubElement(stmt, f"{{{TEI_NS}}}resp")
+        resp.set("key", role)
+        resp.text = resp_text
+        name = etree.SubElement(stmt, f"{{{TEI_NS}}}name")
+        if reference:
+            name.set("ref", reference)
+        name.text = name_text
+
+
 def main(argv: list[str] | None = None):  # pragma: no cover
     parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")
     parser.add_argument("--project", "-p", type=str, help="The project name.", required=True)
@@ -968,6 +1154,10 @@ def main(argv: list[str] | None = None):  # pragma: no cover
     from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
     compiler = ExternalCompilerProcessor(args.project, args.file_name, linear_data=linear_data)
     result = compiler.process()[0]
+    drop_empty_scopes(result)
+    close_up_whitespace(result)
+    join_split_paragraphs(result)
+    merge_credits(result, linear_data)
     etree.ElementTree(result).write(
         args.output_file if args.output_file else sys.stdout,
         pretty_print=True,

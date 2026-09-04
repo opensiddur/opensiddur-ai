@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
@@ -33,6 +34,7 @@ FS_SERVICE_TIME = "opensiddur:service-time"
 FS_QUORUM = "opensiddur:quorum"
 FS_HOUSEHOLD = "opensiddur:household"
 FS_VARIANT = "opensiddur:variant"
+FS_RECITATION = "opensiddur:recitation"
 
 # Israel approximate bounding box (lat/lon).
 _ISRAEL_LAT = (29.5, 33.5)
@@ -81,6 +83,8 @@ AGGREGATE_FEATURES = (
     "minor-fast",
     "day-before-holiday",
     "day-after-holiday",
+    "geshem",
+    "tal-umatar",
 )
 
 # The modern triennial cycle as reckoned by the CJLS, whose first year was 5756.
@@ -154,6 +158,20 @@ READING_CYCLE_DEFAULTS: dict[str, Any] = {
     "triennial": False,
     **dict.fromkeys(TRIENNIAL_YEAR_FEATURES, False),
 }
+
+#: Which recitation of a prayer said more than once in a service this is.
+#:
+#: Independent of *which* service: every Amidah is said silently and then, when a minyan is
+#: present, repeated aloud -- the Kedushah belongs to the repetition and Atah Kadosh to the
+#: silent. ``quorum/minyan`` will not stand in for it, since with a minyan present the
+#: individual still says the silent Amidah first.
+#:
+#: Declared, never derived from a date, and undefined by default: a volume printing both
+#: recitations declares neither, and both are kept.
+RECITATION_FEATURES = (
+    "silent",
+    "repetition",
+)
 
 SERVICE_TIME_FEATURES = (
     "shaharit",
@@ -361,7 +379,12 @@ def compute_hebrew_date(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     if gdate is None or snapshot.location() is None:
         return None
     heb = _pyluach_from_gregorian(_effective_gregorian_date(snapshot)).to_heb()
-    return {"year": heb.year, "month": heb.month, "day": heb.day}
+    # Whether the year holds a thirteenth month. The liturgy asks for it: a leap year
+    # takes a thirteenth petition in the blessing of the new month, to match the thirteen
+    # months. This is the Hebrew leap year, not the Gregorian one that decides when the
+    # diaspora begins asking for rain -- the two are unrelated and both are needed.
+    return {"year": heb.year, "month": heb.month, "day": heb.day,
+            "leap-year": hebrewcal.Year(heb.year).leap}
 
 
 def compute_hebrew_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
@@ -540,6 +563,36 @@ def compute_holiday(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     return _map_hdate_holidays(hi, heb)
 
 
+#: Festivals every one of whose days is yom tov.
+#:
+#: Pesah and Sukkot are deliberately absent: their middle days are chol hamoed, so knowing
+#: a day is not yom tov says nothing about whether Pesah is running -- and the day number
+#: cannot settle it either, since the second of Pesah is yom tov in the diaspora and chol
+#: hamoed in Israel.
+ALWAYS_YOM_TOV = ("shavuot", "rosh-hashana", "yom-kippur", "shmini-atzeret")
+
+
+def compute_holiday_from_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """What a day being *not* yom tov says about which festivals it can be.
+
+    The other derivations here run forward from a date. This one runs the other way, for a
+    volume that says what kind of day it is without saying which day: a weekday siddur
+    declares ``yom-tov`` false, and it follows that the day is not Rosh Hashanah, not Yom
+    Kippur, not Shavuot and not Shemini Atzeret -- every day of each of those being yom
+    tov. Without this the festivals stay undefined, and undefined *keeps* the text they
+    govern, so a weekday Amidah still carried the Days of Awe Kedushah.
+
+    Only from false. Yom tov being true does not say which festival it is.
+
+    Contributes nothing by returning an empty mapping rather than ``None``: ``None`` means
+    *this derivation cannot run*, and clears every derived value the feature structure
+    already has -- which here would throw away the festivals the date itself derived.
+    """
+    if snapshot.get_bool(FS_HOLIDAY_AGG, "yom-tov") is not False:
+        return {}
+    return dict.fromkeys(ALWAYS_YOM_TOV, 0)
+
+
 def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     holidays = compute_holiday(snapshot)
     dow = compute_day_of_week(snapshot)
@@ -554,12 +607,13 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
     # Saturday night: the civil day is still Saturday but the Hebrew day has moved on. This
     # is when havdalah is said — in the haggadah, the yaknehaz paragraph of the kiddush.
     motzaei_shabbat = dow.get("secular-day") == 7 and dow.get("hebrew-day") != 7
-    yom_tov = any(
-        holidays.get(k, 0) > 0
-        for k in (
-            "pesah", "shavuot", "rosh-hashana", "yom-kippur", "sukkot", "shmini-atzeret",
-        )
-    )
+    # A festival *day*, meaning one on which work is forbidden -- not the whole festival
+    # period. Chol hamoed is not yom tov, and cannot be told from the day number alone:
+    # the second of Pesah is yom tov in the diaspora and chol hamoed in Israel, and both
+    # are day 2. hdate knows which, having been given the diaspora setting already.
+    gdate = _effective_gregorian_date(snapshot)
+    yom_tov = gdate is not None and hdate.HDateInfo(
+        gdate, diaspora=snapshot.is_diaspora()).is_yom_tov
     chol_hamoed = holidays.get("pesah", 0) in (3, 4, 5, 6) or holidays.get("sukkot", 0) in (3, 4, 5, 6)
     regalim = holidays.get("pesah", 0) > 0 or holidays.get("shavuot", 0) > 0 or holidays.get("sukkot", 0) > 0
     aseret = (
@@ -580,7 +634,64 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
         "eruv-tavshilin": _needs_eruv_tavshilin(snapshot),
         "day-before-holiday": False,
         "day-after-holiday": False,
+        **_seasons(snapshot, heb),
     }
+
+
+def _seasons(snapshot: SettingSnapshot, heb: pyluach_dates.HebrewDate | None
+             ) -> dict[str, Any]:
+    """The two rain seasons, which are not the same season.
+
+    ``geshem`` is when מַשִּׁיב הָרוּחַ וּמוֹרִיד הַגֶּשֶׁם is said in the second berakhah
+    of the Amidah: from Shmini Atzeret to the first day of Pesach, the same everywhere.
+
+    ``tal-umatar`` is when וְתֵן טַל וּמָטָר לִבְרָכָה is asked for in the ninth: from
+    7 Marcheshvan **in Israel**, but in the diaspora only from 4 December — 5 December in
+    the year before a Gregorian leap year — because the petition follows the agricultural
+    year of the place asking. Both end at Pesach.
+
+    A feature is **left out** rather than guessed where its inputs are missing: an omitted
+    feature evaluates as undefined, which keeps the text it governs and leaves the marker
+    in the output for a later stage. Guessing would silently print the wrong season.
+    """
+    if heb is None:
+        return {}
+    pesach = pyluach_dates.HebrewDate(heb.year, 1, 15)
+    # Within one Hebrew year the months run Tishrei first and Nisan last, so Shmini Atzeret
+    # to Pesach is one unbroken stretch rather than a wrap around the new year.
+    found: dict[str, Any] = {
+        "geshem": pyluach_dates.HebrewDate(heb.year, 7, 22) <= heb <= pesach,
+    }
+    in_israel = snapshot.get_bool(FS_ISRAEL, "is-israel")
+    if in_israel is None:
+        computed = compute_israel(snapshot)
+        in_israel = computed.get("is-israel") if computed else None
+    if in_israel is None:
+        return found
+    if in_israel:
+        found["tal-umatar"] = pyluach_dates.HebrewDate(heb.year, 8, 7) <= heb <= pesach
+        return found
+    gregorian = _effective_gregorian_date(snapshot)
+    if gregorian is None or heb > pesach:
+        found["tal-umatar"] = False if gregorian is not None else None
+        return {k: v for k, v in found.items() if v is not None}
+    if gregorian.month == 12:
+        found["tal-umatar"] = gregorian.day >= _tal_umatar_december_day(gregorian.year)
+    else:
+        # Before Pesach and not December: January to Pesach is still the winter that
+        # began last December; October and November are not, since the diaspora waits.
+        found["tal-umatar"] = gregorian.month <= 4
+    return found
+
+
+def _tal_umatar_december_day(year: int) -> int:
+    """The December day the diaspora begins asking for rain.
+
+    The fourth, except in the year before a Gregorian leap year, when the extra day the
+    coming February will hold has not yet been inserted and the reckoning slips to the
+    fifth. This is the one place the liturgical year consults the civil calendar.
+    """
+    return 5 if calendar.isleap(year + 1) else 4
 
 
 def _needs_eruv_tavshilin(snapshot: SettingSnapshot) -> bool:
@@ -776,6 +887,23 @@ def compute_reading_cycle(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "annual": year is None,
         **{f"triennial-year-{n}": n == year for n in TRIENNIAL_YEARS},
     }
+
+
+def compute_recitation(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """What the service implies about which recitations it has.
+
+    Ma'ariv has no repetition, so the Ma'ariv Amidah is always the silent one and nothing
+    in it is conditioned on being read aloud. Nothing is derived in the other direction:
+    the services that *do* have a repetition have a silent recitation as well, so knowing
+    the service says nothing about which of the two is in hand.
+
+    Contributes an empty mapping rather than ``None`` where it has nothing to say, ``None``
+    meaning *this derivation cannot run* and clearing every derived value the structure
+    already holds.
+    """
+    if snapshot.get_bool(FS_SERVICE_TIME, "maariv") is not True:
+        return {}
+    return {"silent": True, "repetition": False}
 
 
 def compute_quorum(snapshot: SettingSnapshot) -> dict[str, Any] | None:

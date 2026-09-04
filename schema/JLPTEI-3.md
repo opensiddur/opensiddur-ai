@@ -140,7 +140,29 @@ To add URNs to reference parts of poems and prayers that don't have natural line
 All URIs reference the following scopes:
 1. If the URI is on an element with non-empty content, it references that content.
 2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the next milestone of the same unit *or* the end of the file if no subsequent milestone of the same unit exists.
-3. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
+3. A `milestone` that carries a `unit` but **no** `corresp` is a *terminator*: it ends the scope opened by the nearest preceding milestone of that same unit, and opens nothing itself.
+
+4. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
+
+### Terminating a scope
+
+Rule 2 runs a scope to the end of the file when nothing of the same unit follows, which
+over-claims wherever a division ends partway through a file with no sibling after it — a
+page of shared liturgy whose last paragraph belongs to no named prayer, for instance. The
+terminator in rule 3 closes such a scope explicitly:
+
+```xml
+<tei:milestone unit="prayer" n="1" corresp="urn:x-opensiddur:text:prayer:amidah/avot"/>
+...
+<tei:milestone unit="prayer"/>   <!-- ends avot; starts nothing -->
+```
+
+A terminator is not indexed, because only elements carrying `corresp` are, so it adds no
+URN mapping and cannot be referenced.
+
+**The unit must match exactly.** A bare milestone of some *other* unit does not terminate
+anything, which is what keeps `unit="edition-verse"` — which carries `n` and never
+`corresp` — from closing every verse it follows.
 
 ## Versification
 
@@ -282,7 +304,9 @@ is the only thing that says where to stop.
 #### Contributors and contributor URNs
 Contributions are credited in the file header using `tei:respStmt` entries, with a contributor URN stored in `tei:name/@ref`.
 
-Contributor URNs use the form `urn:x-opensiddur:<namespace>/<identifier>`.
+Contributor URNs use the form `urn:x-opensiddur:contributor:<namespace>/<identifier>`.
+The `contributor` segment is the type, as `text`, `condition` and `note` are types in the
+URNs described above — a contributor is not a text and must not be mistaken for one.
 
 The `namespace` indicates where the identifier is meaningful. For example:
 - `en.wikisource.org/{username}` for English Wikisource contributors
@@ -293,9 +317,20 @@ Example:
 ```xml
 <tei:respStmt>
   <tei:resp key="trc">Transcribed by</tei:resp>
-  <tei:name ref="urn:x-opensiddur:en.wikisource.org/Prosody">Prosody (English Wikisource contributor)</tei:name>
+  <tei:name ref="urn:x-opensiddur:contributor:en.wikisource.org/Prosody">Prosody (English Wikisource contributor)</tei:name>
 </tei:respStmt>
 ```
+
+**A `tei:respStmt` credits the people who made the digital text** — who transcribed it,
+marked it up, proofread it. The **author of the work is recorded as a source**, in
+`tei:sourceDesc`, which is where a bibliography is built from. The two coincide only for
+someone who both wrote a text and digitised it, and then there is an author `respStmt` as
+well as a source. Crediting an author in a `respStmt` instead claims they did work they
+did not do, and pushes the people who did do it out of view.
+
+**Name a contributor as they are known.** A real name where it is known; the username they
+chose where it is not, since that is what identifies them. There is no need to guess: a
+pseudonym is an identity, and a wrong real name is worse than none.
 
 ### Project index
 Every project has an entry point file called `index.xml`. This file contains the project metadata, including the project header.
@@ -996,6 +1031,12 @@ Further derived values are also available and calculated from the above
       <tei:binary value=""/>
    </tei:f>
    <tei:f name="yom-tov">
+      <!-- A festival *day*, on which work is forbidden. Chol hamoed is not yom tov, and
+      the day number cannot settle it: the second of Pesah is yom tov in the diaspora and
+      chol hamoed in Israel. Setting it false derives shavuot, rosh-hashana, yom-kippur
+      and shmini-atzeret to 0, every day of each of those being yom tov -- which is how a
+      volume says what kind of day it is without saying which day. Pesah and sukkot are
+      not derived, having chol hamoed days that are not yom tov. -->
       <tei:binary value=""/>
    </tei:f>
    <tei:f name="chol-hamoed">
@@ -1237,6 +1278,27 @@ instruction that says when to read it, rather than silently dropping it.
    </tei:f>
 </tei:fs>
 ```
+
+Nor is which recitation of a prayer said more than once in a service this is. Every Amidah
+is said silently and then, when a minyan is present, repeated aloud: the Kedushah belongs
+to the repetition and `אַתָּה קָדוֹשׁ` to the silent one. This is independent of *which*
+service, and `opensiddur:quorum/minyan` will not stand in for it — with a minyan present
+the individual still says the silent Amidah first, so both are read.
+```xml
+<tei:fs type="opensiddur:recitation">
+   <tei:f name="silent">
+      <!-- the Amidah as each person says it -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="repetition">
+      <!-- the Reader's repetition aloud. Ma'ariv has none, so declaring
+      opensiddur:service-time/maariv derives silent true and repetition false,
+      unless either is itself explicitly set. -->
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+A volume printing both recitations declares neither, and both are kept.
 
 Nor is whose home one is in:
 ```xml

@@ -1,12 +1,13 @@
 """Integration tests for j:conditional compilation."""
 
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.compiler import CompilerProcessor, join_split_paragraphs
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
@@ -157,25 +158,79 @@ class TestConditionalIntegration(unittest.TestCase):
         self.assertIn("conditional", out)
         self.assertIn("endConditional", out)
 
-    def test_true_excludes_instruction_note(self):
-        fn = self._write(
-            "note.xml",
+    def _noted(self, name: str, value: str) -> str:
+        return self._write(
+            name,
             '''
             <j:declare xml:id="d">
-                <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+                <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="%s"/></tei:f></tei:fs>
             </j:declare>
             <j:conditional xml:id="c">
-                <tei:note type="instruction">Should not appear</tei:note>
+                <tei:note type="instruction">Say this here</tei:note>
                 <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
             </j:conditional>
-            <tei:p>text</tei:p>
+            <tei:p>the passage</tei:p>
             <j:endConditional target="#c"/>
             <j:endDeclare target="#d"/>
-            ''',
+            ''' % value,
         )
-        out = self._compile(fn)
-        self.assertIn("text", out)
-        self.assertNotIn("Should not appear", out)
+
+    def test_true_keeps_the_instruction_note(self):
+        # The instruction outlives the condition that carried it: it is the rubric the
+        # edition prints over the passage, so it is set wherever the passage is.
+        out = self._compile(self._noted("note_true.xml", "true"))
+        self.assertIn("the passage", out)
+        self.assertIn("Say this here", out)
+
+    def test_false_takes_the_instruction_note_with_it(self):
+        # Nothing is said here at all, so nothing tells the reader to say it.
+        out = self._compile(self._noted("note_false.xml", "false"))
+        self.assertNotIn("the passage", out)
+        self.assertNotIn("Say this here", out)
+
+    def _split(self, name: str, value: str) -> str:
+        return self._write(
+            name,
+            '''
+            <j:declare xml:id="d">
+                <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="%s"/></tei:f></tei:fs>
+            </j:declare>
+            <tei:div><tei:p>before</tei:p></tei:div>
+            <j:conditional xml:id="c">
+                <tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>
+            </j:conditional>
+            <tei:div corresp="urn:x-opensiddur:text:prayer:x"><tei:p>inserted</tei:p></tei:div>
+            <j:endConditional target="#c"/>
+            <tei:div><tei:p>after</tei:p></tei:div>
+            <j:endDeclare target="#d"/>
+            ''' % value,
+        )
+
+    def _joined(self, name: str, value: str) -> str:
+        proc = CompilerProcessor("test_project", self._split(name, value))
+        result = proc.process()
+        join_split_paragraphs(result)
+        return re.sub(r"\s+", " ", etree.tostring(result, encoding="unicode"))
+
+    def test_a_false_scope_leaves_no_paragraph_split(self):
+        # A conditional between two runs of words forces each into a division of its own,
+        # a division not being able to hold words and subdivisions side by side. When the
+        # condition goes, what the edition prints as one paragraph must not stay as two.
+        out = self._joined("split_false.xml", "false")
+        self.assertNotIn("inserted", out)
+        self.assertIn("before after", out)
+
+    def test_a_true_scope_keeps_the_divisions_apart(self):
+        # Nothing has gone, so nothing closes up: the inserted passage still divides them.
+        out = self._joined("split_true.xml", "true")
+        self.assertIn("inserted", out)
+        self.assertNotIn("before after", out)
+
+    def test_a_named_division_is_never_joined(self):
+        # One unnamed division carries no address, so nothing refers to it and nothing is
+        # lost by its going. A division the source named keeps its own paragraph.
+        self.assertIn("urn:x-opensiddur:text:prayer:x",
+                      self._joined("split_true.xml", "true"))
 
     def test_declare_inside_false_conditional_still_updates_stack(self):
         fn = self._write(

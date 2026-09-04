@@ -406,7 +406,8 @@ class TestCombinators(unittest.TestCase):
             (TriState.TRUE, TriState.FALSE, TriState.FALSE),
             (TriState.TRUE, TriState.UNDEFINED, TriState.UNDEFINED),
             (TriState.FALSE, TriState.FALSE, TriState.FALSE),
-            (TriState.FALSE, TriState.UNDEFINED, TriState.UNDEFINED),
+            # A false conjunct settles it, whatever else is unknown: Kleene's rule.
+            (TriState.FALSE, TriState.UNDEFINED, TriState.FALSE),
             (TriState.UNDEFINED, TriState.UNDEFINED, TriState.UNDEFINED),
         ]
         for left, right, expected in cases:

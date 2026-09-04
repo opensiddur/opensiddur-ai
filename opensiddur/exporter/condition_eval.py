@@ -224,9 +224,14 @@ def _combine_all(results: list[TriState]) -> TriState:
         return TriState.TRUE
     if all(r == TriState.TRUE for r in results):
         return TriState.TRUE
-    if any(r == TriState.UNDEFINED for r in results):
-        return TriState.UNDEFINED
-    return TriState.FALSE
+    # A false conjunct settles the conjunction, whatever else is unknown -- Kleene's rule,
+    # and checked before undefined for that reason. Deferring to undefined kept text that
+    # is known not to be said: a weekday volume declaring musaf false still carried the
+    # Festival Musaf Kedushah, because nothing had said whether it was one of the regalim
+    # -- and nothing could, the festival weeks having weekdays in them.
+    if any(r == TriState.FALSE for r in results):
+        return TriState.FALSE
+    return TriState.UNDEFINED
 
 
 def _combine_any(results: list[TriState]) -> TriState:
