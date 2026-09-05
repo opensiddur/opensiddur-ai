@@ -88,6 +88,10 @@
          the same block boundaries; the visible cost is that \Pages starts a fresh page
          pair at each batch, which \Columns (layout=pairs) does not. -->
     <xsl:param name="parallel-batch-size" as="xs:integer" select="500"/>
+    <!-- Which language a PDF bookmark carries where a work names a section twice:
+         'combined' joins the two titles, 'primary' takes the first column's or the
+         division's first head, 'alt' takes the other. See typography.bookmarks.from. -->
+    <xsl:param name="bookmarks-from" as="xs:string">combined</xsl:param>
 
     <!-- ====================================================================
          Document scaffolding
@@ -296,6 +300,10 @@
         <xsl:text>\newcommand{\OSheadB}[1]{\mbox{}\hfill{\normalfont\Large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSheadC}[1]{\mbox{}\hfill{\normalfont\large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSheadD}[1]{\mbox{}\hfill{\normalfont\normalsize\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
+        <!-- A division titled twice in two languages. The translated title is set under
+             the first, lighter and a size down, so that it reads as naming the same
+             section again rather than opening one of its own. -->
+        <xsl:text>\newcommand{\OSheadTranslation}[1]{\par\mbox{}\hfill{\normalfont\normalsize\itshape #1}\hfill\mbox{}}&#10;</xsl:text>
 
         <!-- Title page (tei:titlePage).
              Unlike \OSheadA/B/C, these are never emitted inside a reledmac \pstart — a
@@ -693,6 +701,9 @@
                 <xsl:with-param name="align-verses" select="false()"/>
                 <xsl:with-param name="single-pstart" select="true()"/>
                 <xsl:with-param name="stream" select="'primary'"/>
+                <!-- Both columns are in scope here and nowhere else, which is what makes
+                     joining their headings possible at all. -->
+                <xsl:with-param name="alt-nodes" select="$right-nodes"/>
             </xsl:call-template>
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
@@ -746,13 +757,29 @@
              'primary' for a single text or the first parallel column, 'alt' for
              the second column. See the mark declarations in the preamble. -->
         <xsl:param name="stream" as="xs:string" select="'primary'"/>
+        <!-- The other column's nodes, when this stream is one side of a parallel block.
+             Only their headings are read, and only to give this stream's headings the
+             title of the same section in the other language. -->
+        <xsl:param name="alt-nodes" as="node()*" select="()"/>
 
         <xsl:variable name="flattened" as="node()*">
             <xsl:apply-templates select="$nodes" mode="leaves"/>
         </xsl:variable>
         <!-- Silent conditional delimiters and repeated labels are decided here, where the
              leaves either side of a marker are in view. See f:resolve-markers. -->
-        <xsl:variable name="leaves" as="node()*" select="f:resolve-markers($flattened)"/>
+        <xsl:variable name="resolved" as="node()*" select="f:resolve-markers($flattened)"/>
+        <xsl:variable name="alt-heads" as="element()*">
+            <xsl:if test="exists($alt-nodes)">
+                <xsl:variable name="alt-flattened" as="node()*">
+                    <xsl:apply-templates select="$alt-nodes" mode="leaves"/>
+                </xsl:variable>
+                <xsl:sequence select="$alt-flattened[self::f:head]"/>
+            </xsl:if>
+        </xsl:variable>
+        <xsl:variable name="leaves" as="node()*"
+                      select="if (exists($alt-heads))
+                              then f:pair-heads($resolved, $alt-heads)
+                              else $resolved"/>
 
         <xsl:if test="exists($leaves)">
             <xsl:if test="$lang = 'he'">
@@ -1135,20 +1162,117 @@
         <xsl:if test="not($is-hebrew)">
             <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
         </xsl:if>
-        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:apply-templates select="node()[not(self::f:alt-head)]" mode="emit"/>
         <xsl:if test="not($is-hebrew)">
             <xsl:text>}</xsl:text>
         </xsl:if>
         <xsl:text>}</xsl:text>
+
+        <!-- A second head on the same division is the translated title. It is set under
+             the first rather than beside it, so that it reads as naming the same section
+             again and not as a section of its own. -->
+        <xsl:if test="f:alt-head">
+            <!-- No direction wrapper here: mode="emit" already wraps each run against the
+                 stream it lands in, and adding one on top nests a second \textdir around
+                 the first for no gain. -->
+            <xsl:text>\OSheadTranslation{</xsl:text>
+            <xsl:apply-templates select="f:alt-head/node()" mode="emit"/>
+            <xsl:text>}</xsl:text>
+        </xsl:if>
+
         <!-- PDF outline entry. No \tableofcontents is emitted, so the .toc drives
              hyperref's bookmarks only. It takes the flattened @title: \addcontentsline
-             builds a PDF string, which cannot carry markup. -->
-        <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
-        <xsl:value-of select="f:heading-toc-level(xs:integer(@level))"/>
-        <xsl:text>}{</xsl:text>
-        <xsl:value-of select="f:format-section-title(string(@title), $lang)"/>
-        <xsl:text>}</xsl:text>
+             builds a PDF string, which cannot carry markup.
+
+             Exactly one stream may write it. Both used to, which is why a parallel
+             compile produced two entries per heading, interleaved out of document order
+             because the columns reach the .toc at different points. -->
+        <xsl:variable name="writes-outline" as="xs:boolean"
+                      select="if ($bookmarks-from = 'alt')
+                              then $stream = 'alt'
+                              else $stream = 'primary'"/>
+        <xsl:if test="$writes-outline">
+            <!-- @alt-title is the title of the same section in the other language,
+                 whether that came from a second head on the division or from the other
+                 column; f:pair-heads has already settled which. Combined, they are one
+                 entry, because they name one section. -->
+            <xsl:variable name="other" as="xs:string" select="string(@alt-title)"/>
+            <xsl:variable name="outline-title" as="xs:string"
+                          select="if ($bookmarks-from = 'combined' and $other != ''
+                                      and $other != string(@title))
+                                  then concat(string(@title), ' &#xB7; ', $other)
+                                  else string(@title)"/>
+            <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
+            <xsl:value-of select="f:heading-toc-level(xs:integer(@level))"/>
+            <xsl:text>}{</xsl:text>
+            <xsl:value-of select="f:format-section-title($outline-title, $lang)"/>
+            <xsl:text>}</xsl:text>
+        </xsl:if>
     </xsl:template>
+
+    <!-- The heading in the other column that names the same section as $head.
+
+         Paired on (@corresp, @part): one authored division becomes several pieces under
+         marker_reconstruct, all carrying the same @corresp, so the URN alone would match
+         the wrong piece. Where the division carries no URN — which happens; a head-bearing
+         div need not have one — fall back to the heading at the same ordinal among those
+         the other column offers.
+
+         Position alone would not do. A project's realisation of a URN need not cover every
+         branch, so one column may hold a heading the other lacks, and everything after the
+         gap would pair with the wrong title. An unmatched heading gets no counterpart and
+         is bookmarked under its own title, which is the honest answer; it is never dropped. -->
+    <xsl:function name="f:counterpart" as="element()?">
+        <xsl:param name="head" as="element()"/>
+        <xsl:param name="alt-heads" as="element()*"/>
+        <xsl:param name="ordinal" as="xs:integer"/>
+        <xsl:variable name="by-urn" as="element()*"
+                      select="if (string($head/@corresp) != '')
+                              then $alt-heads[string(@corresp) = string($head/@corresp)
+                                              and string(@part) = string($head/@part)]
+                              else ()"/>
+        <xsl:sequence
+            select="if (exists($by-urn)) then $by-urn[1]
+                    else if (string($head/@corresp) = '') then $alt-heads[$ordinal]
+                    else ()"/>
+    </xsl:function>
+
+    <!-- Copy a flattened leaf sequence, giving every f:head sentinel the title of its
+         counterpart in the other column. Done here rather than in the heading template
+         because a heading's ordinal among headings is knowable only with the whole
+         sequence in hand: the template is called from inside an iterate, one leaf at a
+         time. A sentinel that already carries @alt-title got it from a second head on its
+         own division, and that wins — it is the same division's own translation. -->
+    <xsl:function name="f:pair-heads" as="node()*">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:param name="alt-heads" as="element()*"/>
+        <xsl:iterate select="$leaves">
+            <xsl:param name="seen" as="xs:integer" select="0"/>
+            <xsl:choose>
+                <xsl:when test="self::f:head">
+                    <xsl:variable name="ordinal" as="xs:integer" select="$seen + 1"/>
+                    <xsl:variable name="mate" as="element()?"
+                                  select="f:counterpart(., $alt-heads, $ordinal)"/>
+                    <xsl:copy>
+                        <xsl:copy-of select="@*"/>
+                        <xsl:if test="not(@alt-title) and exists($mate)">
+                            <xsl:attribute name="alt-title" select="string($mate/@title)"/>
+                        </xsl:if>
+                        <xsl:copy-of select="node()"/>
+                    </xsl:copy>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="seen" select="$ordinal"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:sequence select="."/>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="seen" select="$seen"/>
+                    </xsl:next-iteration>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:iterate>
+    </xsl:function>
 
     <!-- ====================================================================
          Pass 1 (mode="leaves"): walk the tree, emit a flat sequence of
@@ -1200,6 +1324,13 @@
         <xsl:if test="tei:head">
             <xsl:call-template name="head-sentinel">
                 <xsl:with-param name="head" select="tei:head[1]"/>
+                <!-- A multilingual work titles one division twice, and every head after the
+                     first used to be dropped here: the recursion below excludes them all,
+                     so only tei:head[1] survived. It bit at random rather than always,
+                     because marker_reconstruct splits a division across parallel columns
+                     and each piece gets its own tei:head[1] — so two heads were lost only
+                     when the splitter happened not to cut between them. -->
+                <xsl:with-param name="alt-head" select="tei:head[2]"/>
                 <xsl:with-param name="level"
                                 select="min((count(ancestor::tei:div[tei:head]) + 1, 4))"/>
             </xsl:call-template>
@@ -1220,6 +1351,11 @@
     <xsl:template name="head-sentinel">
         <xsl:param name="head" as="element(tei:head)"/>
         <xsl:param name="level" as="xs:integer"/>
+        <!-- The same division's heading in the other language, where the source titles it
+             twice in one div. The other way a work carries two languages — two projects
+             compiled in parallel — is joined later, in the parallel block, where both
+             columns are in scope; see $alt-heads. -->
+        <xsl:param name="alt-head" as="element(tei:head)?" select="()"/>
         <xsl:element name="f:head" namespace="urn:opensiddur:reledmac">
             <!-- @title is the flattened plain-text form, used only for the PDF
                  bookmark (\addcontentsline takes no markup). -->
@@ -1231,6 +1367,19 @@
             <!-- Drives the {book-title} running-head code: in a Bible export the
                  book is a div[@type='book'] whose head names it. -->
             <xsl:attribute name="is-book" select="$head/parent::tei:div/@type = 'book'"/>
+            <!-- Identity, for pairing this heading with its counterpart in the other
+                 column. @corresp alone is not enough: marker_reconstruct splits one
+                 authored division into several pieces that all carry it, so the piece is
+                 named by the pair. Either may be absent — a head-bearing div need not
+                 carry a URN at all — which is why the pairing falls back to position. -->
+            <xsl:attribute name="corresp" select="string($head/parent::tei:div/@corresp)"/>
+            <xsl:attribute name="part" select="string($head/parent::tei:div/@p:part)"/>
+            <xsl:if test="exists($alt-head)">
+                <xsl:attribute name="alt-title"
+                               select="normalize-space(string-join(
+                                   $alt-head//text()[not(ancestor::tei:note)], ''))"/>
+                <xsl:attribute name="alt-lang" select="f:section-title-lang($alt-head)"/>
+            </xsl:if>
             <!-- The head's own content is carried through so it can be rendered in
                  mode="emit" rather than flattened: a title like
                  <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
@@ -1239,6 +1388,14 @@
                  Notes are dropped: an apparatus entry cannot be anchored in a
                  heading, which sits outside the numbered line stream. -->
             <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
+            <!-- The counterpart's content, kept in a child element so that the primary
+                 head's nodes stay direct children and mode="emit" renders them exactly as
+                 before. The heading template picks this out and excludes it. -->
+            <xsl:if test="exists($alt-head)">
+                <xsl:element name="f:alt-head" namespace="urn:opensiddur:reledmac">
+                    <xsl:copy-of select="$alt-head/node()[not(self::tei:note)]"/>
+                </xsl:element>
+            </xsl:if>
         </xsl:element>
     </xsl:template>
 

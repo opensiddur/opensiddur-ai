@@ -2134,3 +2134,209 @@ class TestUnrenderedMilestones(unittest.TestCase):
     def test_an_edition_verse_prints_nothing(self):
         self.assertNotIn("14", _transform(self.XML).split("begin{document}")[1])
 
+
+
+class TestMultilingualBookmarks(unittest.TestCase):
+    """A work that names a section in two languages gets one outline entry, not two.
+
+    Two encodings say the same thing: a division with two ``tei:head``, and two projects
+    compiled side by side. Both are governed by ``typography.bookmarks.from``.
+    """
+
+    @staticmethod
+    def _outline_entry(out: str) -> str:
+        r"""The bookmark as a PDF reader sees it.
+
+        f:emit-bidi-text wraps each Latin run against the stream it sits in, so the TeX
+        reads {{\textdir TLT\selectlanguage{english}Grace}} {{...after}}. The preamble's
+        \pdfstringdefDisableCommands strips exactly those commands when hyperref builds
+        the PDF string, so undoing them here makes an assertion mean what the reader will
+        see rather than what the TeX happens to look like.
+        """
+        marker = "}{"
+        after = out.split("\\addcontentsline{toc}{", 1)[1]
+        after = after.split(marker, 1)[1] if marker in after else after
+        # The title is the balanced brace group that starts here.
+        depth, end = 0, len(after)
+        for i, ch in enumerate(after):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                if depth == 0:
+                    end = i
+                    break
+                depth -= 1
+        title = after[:end]
+        return (title.replace("{\\textdir TLT\\selectlanguage{english}", "")
+                     .replace("{", "").replace("}", "").strip())
+
+    PARALLEL = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div corresp="urn:x-opensiddur:text:haggadah:barech">
+                  <tei:head>ברך</tei:head>
+                  <tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div corresp="urn:x-opensiddur:text:haggadah:barech">
+                  <tei:head>Grace after Meals</tei:head>
+                  <tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    def test_parallel_columns_emit_one_bookmark_not_two(self):
+        """Both columns used to write to the .toc, so every heading appeared twice and
+        out of document order, the columns reaching the .toc at different points."""
+        out = _transform(self.PARALLEL)
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+
+    def test_parallel_bookmark_combines_both_titles(self):
+        out = _transform(self.PARALLEL)
+        self.assertEqual("ברך · Grace after Meals", self._outline_entry(out))
+
+    def test_from_primary_takes_the_first_column_alone(self):
+        out = _transform(self.PARALLEL, **{"bookmarks-from": "primary"})
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertEqual("ברך", self._outline_entry(out))
+
+    def test_from_alt_takes_the_second_column_alone(self):
+        out = _transform(self.PARALLEL, **{"bookmarks-from": "alt"})
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertEqual("Grace after Meals", self._outline_entry(out))
+
+    def test_a_second_head_on_one_division_is_rendered_and_not_dropped(self):
+        """Every head after the first used to be discarded outright: the div template
+        recursed on node()[not(self::tei:head)] and only tei:head[1] became a sentinel.
+        It bit at random, because a division split across parallel columns gives each
+        piece its own tei:head[1]."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:head>ברך</tei:head>
+              <tei:head xml:lang="en">Grace after Meals</tei:head>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\OSheadA{ברך}", out)
+        # The translated title reaches the page, which it did not before.
+        self.assertIn(r"\OSheadTranslation{", out)
+        for word in ("Grace", "after", "Meals"):
+            self.assertIn(word, out.split(r"\OSheadTranslation{", 1)[1][:200])
+        # ...and the two titles are one entry, not two.
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertEqual("ברך · Grace after Meals", self._outline_entry(out))
+
+    def test_two_heads_in_one_division_honour_from_primary(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:head>ברך</tei:head>
+              <tei:head xml:lang="en">Grace after Meals</tei:head>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"bookmarks-from": "primary"})
+        # The translated title is still set on the page; only the outline entry narrows.
+        self.assertIn(r"\OSheadTranslation{", out)
+        self.assertEqual("ברך", self._outline_entry(out))
+
+    def test_identical_titles_are_not_doubled_in_one_entry(self):
+        """Birnbaum heads his Hebrew and English pages alike, so combining would
+        otherwise read "SHEMONEH ESREH · SHEMONEH ESREH"."""
+        xml = self.PARALLEL.replace("<tei:head>Grace after Meals</tei:head>",
+                                    "<tei:head>ברך</tei:head>")
+        out = _transform(xml)
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertEqual("ברך", self._outline_entry(out))
+
+    def test_a_heading_on_one_side_only_keeps_its_own_title(self):
+        """A project's realisation of a URN need not cover every branch, so one column
+        may hold a heading the other lacks. It must be bookmarked under its own title
+        rather than dropped or given someone else's."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div corresp="urn:x-opensiddur:text:haggadah:only-here">
+                  <tei:head>יחיד</tei:head>
+                  <tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div corresp="urn:x-opensiddur:text:haggadah:only-here">
+                  <tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertEqual("יחיד", self._outline_entry(out))
+
+    def test_single_language_document_is_unaffected(self):
+        """The stream defaults to primary, so a document with no parallel block keeps
+        exactly the bookmark it had before this setting existed."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Genesis</tei:head><tei:p>In the beginning.</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\phantomsection\addcontentsline{toc}{section}"
+            r"{{\textdir TLT\selectlanguage{english}Genesis}}",
+            out,
+        )
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+
+    def test_part_divs_sharing_a_urn_pair_to_their_own_counterparts(self):
+        """marker_reconstruct splits one authored division across the columns and stamps
+        each piece with @p:part, so several pieces carry the same @corresp. Pairing on the
+        URN alone would match the first piece every time and give the second piece the
+        first's translation."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit" p:part="first">
+                  <tei:head>ראשון</tei:head><tei:p>א</tei:p>
+                </tei:div>
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit" p:part="middle">
+                  <tei:head>שני</tei:head><tei:p>ב</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit" p:part="first">
+                  <tei:head>First</tei:head><tei:p>a</tei:p>
+                </tei:div>
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit" p:part="middle">
+                  <tei:head>Second</tei:head><tei:p>b</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertEqual(2, out.count(r"\addcontentsline"))
+        # Each piece takes its own counterpart, not the first one twice.
+        self.assertIn("ראשון · First", out)
+        self.assertIn("שני · Second", out)
+        self.assertNotIn("שני · First", out)
