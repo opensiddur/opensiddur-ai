@@ -2535,3 +2535,44 @@ class TestParallelHeadings(unittest.TestCase):
         out = _transform(xml)
         self.assertEqual(1, out.count(r"\OSheadA{"))
         self.assertNotIn(r"\mbox{}", out.split(r"\begin{document}")[1])
+
+    def test_a_shared_heading_is_set_across_the_page_not_inside_a_column(self):
+        """A heading both columns give is not a heading of either: it names the section,
+        and the section spans the opening. Set inside a column it would be centred over
+        half the page."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+        self.assertNotIn(r"\OSheadA{", left)
+        self.assertNotIn(r"\OSheadA{", right)
+        # ...and it is set before the columns it heads.
+        self.assertLess(out.index(r"\OSheadA{"), out.index(r"\begin{Leftside}"))
+
+    def test_a_spanning_heading_carries_the_marks_and_the_bookmark(self):
+        """The heading inside the columns is suppressed, so it carries neither. Both
+        running-head families are set, since a page style may name either language."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertIn(r"\InsertMark{OSheadA}", out)
+        self.assertIn(r"\InsertMark{OSheadAAlt}", out)
+        # The outline entry is anchored where the reader lands, outside the columns.
+        self.assertLess(out.index(r"\addcontentsline"), out.index(r"\begin{Leftside}"))
+
+    def test_headings_that_differ_stay_in_their_columns(self):
+        """Only a shared heading spans the page. Two different titles are two headings,
+        each belonging to the column whose language it is in."""
+        out = _transform(self._parallel(self.SAME, self.OTHER))
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertIn(r"\OSheadA{", left)
+        self.assertIn(r"\OSheadA{", right)
+
+    def test_primary_and_alt_never_span_the_page(self):
+        """Asking for one column's heading is asking for that column's heading. Only
+        'combined' produces a title that belongs to neither."""
+        for mode in ("primary", "alt"):
+            with self.subTest(mode=mode):
+                out = _transform(self._parallel(self.SAME, self.SAME),
+                                 **{"headings-from": mode})
+                self.assertGreater(out.index(r"\OSheadA{"), out.index(r"\begin{Leftside}"))

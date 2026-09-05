@@ -641,6 +641,91 @@
         </xsl:call-template>
     </xsl:template>
 
+    <!-- The title a parallel block opens with, when both columns give it the same one and
+         the settings ask for a single heading. Empty otherwise.
+
+         A heading both columns share is not a heading of either column: it names the
+         section, and the section spans the opening. Setting it inside a column would
+         centre it over half the page. So it is hoisted out of the columns entirely and
+         typeset between them, which is possible only where the block *opens* with it —
+         there is no way to interrupt a \Pages once begun. A heading further in stays in
+         its column. -->
+    <xsl:function name="f:spanning-title" as="xs:string">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:param name="mode" as="xs:string"/>
+        <xsl:variable name="primary" select="$block/p:parallelItem[@role='primary'][1]"/>
+        <xsl:variable name="secondary" select="$block/p:parallelItem[@role='parallel'][1]"/>
+        <xsl:variable name="primary-leaves" as="node()*">
+            <xsl:apply-templates select="$primary/node()" mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="secondary-leaves" as="node()*">
+            <xsl:apply-templates select="$secondary/node()" mode="leaves"/>
+        </xsl:variable>
+        <!-- Whitespace between the markup does not count as content, so a head is still
+             what the block opens with when pretty-printed XML puts a newline before it. -->
+        <xsl:variable name="primary-first"
+                      select="$primary-leaves[not(self::text() and not(normalize-space(.)))][1]"/>
+        <xsl:variable name="secondary-first"
+                      select="$secondary-leaves[not(self::text() and not(normalize-space(.)))][1]"/>
+        <xsl:sequence
+            select="if ($mode = 'combined'
+                        and exists($primary-first[self::f:head])
+                        and exists($secondary-first[self::f:head])
+                        and string($primary-first/@title) = string($secondary-first/@title))
+                    then string($primary-first/@title)
+                    else ''"/>
+    </xsl:function>
+
+    <!-- A heading set across the page, outside the column structure. It carries the
+         running-head marks for both columns and the outline entry, because the heading in
+         the columns has been suppressed and would carry neither. \phantomsection anchors
+         here, which is where the reader will actually land. -->
+    <xsl:template name="spanning-heading">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='primary'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="head" select="$leaves[self::f:head][1]"/>
+        <xsl:if test="exists($head)">
+            <xsl:variable name="lang" select="string($head/@xml:lang)"/>
+            <xsl:variable name="is-hebrew"
+                          select="$lang = 'he' or starts-with($lang, 'he-')"/>
+            <xsl:variable name="mark" select="f:emit-bidi-mark(string($head/@title))"/>
+            <xsl:for-each select="('', 'Alt')">
+                <xsl:text>\InsertMark{OShead</xsl:text>
+                <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
+                <xsl:value-of select="."/>
+                <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
+                <xsl:text>\InsertMark{OSheadAny</xsl:text><xsl:value-of select="."/>
+                <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
+            </xsl:for-each>
+            <xsl:text>&#10;</xsl:text>
+            <xsl:if test="$is-hebrew">
+                <xsl:text>\begin{hebrew}</xsl:text>
+            </xsl:if>
+            <xsl:text>\OShead</xsl:text>
+            <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
+            <xsl:text>{</xsl:text>
+            <xsl:if test="not($is-hebrew)">
+                <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+            </xsl:if>
+            <xsl:apply-templates select="$head/node()[not(self::f:alt-head)]" mode="emit"/>
+            <xsl:if test="not($is-hebrew)">
+                <xsl:text>}</xsl:text>
+            </xsl:if>
+            <xsl:text>}</xsl:text>
+            <xsl:if test="$is-hebrew">
+                <xsl:text>\end{hebrew}</xsl:text>
+            </xsl:if>
+            <xsl:text>&#10;\phantomsection\addcontentsline{toc}{</xsl:text>
+            <xsl:value-of select="f:heading-toc-level(xs:integer($head/@level))"/>
+            <xsl:text>}{</xsl:text>
+            <xsl:value-of select="f:format-section-title(string($head/@title), $lang)"/>
+            <xsl:text>}&#10;</xsl:text>
+        </xsl:if>
+    </xsl:template>
+
     <xsl:template name="parallel-run">
         <xsl:param name="parallels" as="element(p:parallel)+"/>
 
@@ -668,6 +753,30 @@
                 </xsl:if>
             </xsl:for-each>
         </xsl:variable>
+
+        <!-- A block opening with a heading both columns share starts a new column block,
+             so the heading can be set across the page between them. -->
+        <xsl:for-each-group select="$usable"
+                            group-starting-with="*[f:spanning-title(., $headings-from) != '']">
+            <xsl:call-template name="parallel-columns">
+                <xsl:with-param name="usable" select="current-group()"/>
+                <xsl:with-param name="spanning"
+                                select="f:spanning-title(current-group()[1], $headings-from)"/>
+            </xsl:call-template>
+        </xsl:for-each-group>
+    </xsl:template>
+
+    <!-- One \Pages (or \Columns) block, optionally preceded by a heading set across the
+         whole page rather than inside either column. -->
+    <xsl:template name="parallel-columns">
+        <xsl:param name="usable" as="element(p:parallel)*"/>
+        <xsl:param name="spanning" as="xs:string" select="''"/>
+
+        <xsl:if test="$spanning != ''">
+            <xsl:call-template name="spanning-heading">
+                <xsl:with-param name="block" select="$usable[1]"/>
+            </xsl:call-template>
+        </xsl:if>
 
         <xsl:if test="exists($usable)">
         <xsl:variable name="env" select="if ($layout='pairs') then 'pairs' else 'pages'"/>
@@ -720,6 +829,7 @@
                 <!-- Both columns are in scope here and nowhere else, which is what makes
                      joining their headings possible at all. -->
                 <xsl:with-param name="alt-nodes" select="$right-nodes"/>
+                <xsl:with-param name="hoisted-heading" select="$spanning"/>
             </xsl:call-template>
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
@@ -735,6 +845,7 @@
                 <!-- The other column, so this one can tell whether its heading says the
                      same thing. The primary side is given the same in reverse. -->
                 <xsl:with-param name="alt-nodes" select="$left-nodes"/>
+                <xsl:with-param name="hoisted-heading" select="$spanning"/>
             </xsl:call-template>
             <xsl:text>\end{Rightside}&#10;</xsl:text>
 
@@ -780,6 +891,9 @@
              Only their headings are read, and only to give this stream's headings the
              title of the same section in the other language. -->
         <xsl:param name="alt-nodes" as="node()*" select="()"/>
+        <!-- A title already set across the page, above these columns. The first heading
+             carrying it is suppressed here so it is not set a second time inside one. -->
+        <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
 
         <xsl:variable name="flattened" as="node()*">
             <xsl:apply-templates select="$nodes" mode="leaves"/>
@@ -1055,6 +1169,8 @@
                                     <xsl:with-param name="stream" select="$stream"/>
                                     <xsl:with-param name="has-alt-column"
                                                     select="exists($alt-nodes)"/>
+                                    <xsl:with-param name="hoisted-heading"
+                                                    select="$hoisted-heading"/>
                                 </xsl:call-template>
                                 <xsl:text>\par&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1072,6 +1188,8 @@
                                     <xsl:with-param name="stream" select="$stream"/>
                                     <xsl:with-param name="has-alt-column"
                                                     select="exists($alt-nodes)"/>
+                                    <xsl:with-param name="hoisted-heading"
+                                                    select="$hoisted-heading"/>
                                 </xsl:call-template>
                                 <xsl:text>&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1157,6 +1275,7 @@
         <!-- Whether a facing column exists at all. Without it, 'alt' cannot mean the other
              column and has to mean the division's own second head instead. -->
         <xsl:param name="has-alt-column" as="xs:boolean" select="false()"/>
+        <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
         <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
 
@@ -1187,8 +1306,12 @@
              build when asked to. -->
         <xsl:variable name="agrees" as="xs:boolean"
                       select="string(@alt-title) != '' and string(@alt-title) = string(@title)"/>
+        <!-- Already set across the page above these columns, so neither column sets it. -->
+        <xsl:variable name="hoisted" as="xs:boolean"
+                      select="$hoisted-heading != '' and $hoisted-heading = string(@title)"/>
         <xsl:variable name="sets-heading" as="xs:boolean"
-                      select="if ($headings-from = 'primary') then $stream = 'primary'
+                      select="if ($hoisted) then false()
+                              else if ($headings-from = 'primary') then $stream = 'primary'
                               else if ($headings-from = 'alt') then $stream = 'alt'
                               else $stream = 'primary' or not($agrees)"/>
         <xsl:choose>
@@ -1238,7 +1361,8 @@
              taking the division's second head as the other title. Tying 'alt' to the
              column alone emitted no outline at all for a single text titled twice. -->
         <xsl:variable name="writes-outline" as="xs:boolean"
-                      select="if ($stream = 'alt')
+                      select="if ($hoisted) then false()
+                              else if ($stream = 'alt')
                               then $bookmarks-from = 'alt'
                               else not($bookmarks-from = 'alt' and $has-alt-column)"/>
         <xsl:if test="$writes-outline">
