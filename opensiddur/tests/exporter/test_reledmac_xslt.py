@@ -2439,3 +2439,99 @@ class TestMultilingualBookmarks(unittest.TestCase):
                     out = _transform(xml, **{"bookmarks-from": mode})
                     self.assertEqual(1, out.count(r"\addcontentsline"))
                     self.assertNotEqual("", self._outline_entry(out))
+
+
+class TestParallelHeadings(unittest.TestCase):
+    """A section titled twice gets one heading on the page where the titles agree.
+
+    The same question ``bookmarks.from`` asks of the outline, asked of the page, so it
+    takes the same vocabulary. Suppressing a heading is not dropping it: reledpar pairs
+    the columns by counting \\pstart...\\pend, so the paragraph must stay, and reledmac
+    cannot typeset an empty one.
+    """
+
+    @staticmethod
+    def _parallel(primary_title: str, alt_title: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit">
+                  <tei:head>{primary_title}</tei:head><tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit">
+                  <tei:head>{alt_title}</tei:head><tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    @staticmethod
+    def _pstarts(out: str) -> tuple:
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        return (left.count(r"\pstart"), right.count(r"\pstart"))
+
+    SAME = "KEDUSHAH"
+    OTHER = "Sanctification"
+
+    def test_columns_that_agree_set_the_heading_once(self):
+        """Birnbaum heads his Hebrew and English pages alike, so both columns printed
+        KEDUSHAH and the reader saw it twice."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+
+    def test_columns_that_differ_each_set_their_own(self):
+        out = _transform(self._parallel(self.SAME, self.OTHER))
+        self.assertEqual(2, out.count(r"\OSheadA{"))
+        self.assertIn(self.SAME, out)
+        self.assertIn(self.OTHER, out)
+
+    def test_from_primary_and_alt_each_set_exactly_one(self):
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("primary", "alt"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    self.assertEqual(1, out.count(r"\OSheadA{"))
+
+    def test_from_alt_sets_the_second_columns_title(self):
+        out = _transform(self._parallel(self.SAME, self.OTHER),
+                         **{"headings-from": "alt"})
+        self.assertIn(rf"\OSheadA{{{{\textdir TLT\selectlanguage{{english}}{self.OTHER}}}}}", out)
+
+    def test_a_suppressed_heading_keeps_its_paragraph(self):
+        """reledpar pairs the columns by counting \\pstart, so a suppressed heading must
+        still open one. It must also not be empty: reledmac fails the whole build on an
+        empty \\pstart rather than skipping it."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    left, right = self._pstarts(out)
+                    self.assertEqual(left, right)
+                    self.assertIsNone(re.search(r"\\pstart\s*\\pend", out))
+
+    def test_the_running_head_still_knows_both_columns(self):
+        """A suppressed heading is still in force on the page, so a page style must be
+        able to name either language."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertIn(r"\InsertMark{OSheadA}", out)
+        self.assertIn(r"\InsertMark{OSheadAAlt}", out)
+
+    def test_a_single_language_document_is_unaffected(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Genesis</tei:head><tei:p>In the beginning.</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+        self.assertNotIn(r"\mbox{}", out.split(r"\begin{document}")[1])

@@ -262,6 +262,23 @@ This is the one default that does **not** reproduce earlier output. Before it, b
 of a parallel compile wrote to the outline, so every heading appeared twice and out of
 document order. Set `from: primary` for one title per entry.
 
+## `headings`
+
+The heading a section carries **on the page**, where a work titles it twice — the same
+question [`bookmarks`](#bookmarks) asks of the outline, so it takes the same vocabulary.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `headings.from` | `combined` \| `primary` \| `alt` | `combined` | Which column sets the heading. `combined` prints one where the two columns title the section alike and both where they differ; `primary` and `alt` always print the one named. |
+
+The values mean slightly different things here and in `bookmarks`, because an outline entry
+can join two titles into one string and a heading on a page cannot. `combined` there joins
+them; `combined` here prints one heading when there is only one thing to say.
+
+A suppressed heading still keeps its paragraph and its running-head mark: reledpar pairs
+the columns by counting them, and a page style should still be able to name either
+language.
+
 ## `page_header` and `page_footer`
 
 Running heads and feet. Empty by default, which leaves the document class's own page style

@@ -92,6 +92,13 @@
          'combined' joins the two titles, 'primary' takes the first column's or the
          division's first head, 'alt' takes the other. See typography.bookmarks.from. -->
     <xsl:param name="bookmarks-from" as="xs:string">combined</xsl:param>
+    <!-- Which column's heading is set on the page where a work titles a section twice.
+         'combined' prints one heading where the two columns agree and both where they do
+         not; 'primary' and 'alt' always print the one named. Same vocabulary as
+         bookmarks-from, and for the same reason: it is the same question about the same
+         pair of titles, asked of the page rather than of the outline.
+         See typography.headings.from. -->
+    <xsl:param name="headings-from" as="xs:string">combined</xsl:param>
 
     <!-- ====================================================================
          Document scaffolding
@@ -725,6 +732,9 @@
                 <!-- The second column records into the `Alt` mark classes so a
                      running head can name either language's heading. -->
                 <xsl:with-param name="stream" select="'alt'"/>
+                <!-- The other column, so this one can tell whether its heading says the
+                     same thing. The primary side is given the same in reverse. -->
+                <xsl:with-param name="alt-nodes" select="$left-nodes"/>
             </xsl:call-template>
             <xsl:text>\end{Rightside}&#10;</xsl:text>
 
@@ -1168,6 +1178,21 @@
             <xsl:text>}{</xsl:text><xsl:value-of select="$mark-title"/><xsl:text>}</xsl:text>
         </xsl:if>
 
+        <!-- Whether this column sets the heading on the page. Where the two columns
+             title a section identically, printing both says the same thing twice, once per
+             column; where they differ, each column needs its own. Suppressing one is not
+             the same as dropping it: reledpar pairs the columns by counting
+             \pstart...\pend, so the paragraph has to stay and be non-empty. \mbox{} is
+             both — reledmac cannot typeset an empty \pstart at all, and fails the whole
+             build when asked to. -->
+        <xsl:variable name="agrees" as="xs:boolean"
+                      select="string(@alt-title) != '' and string(@alt-title) = string(@title)"/>
+        <xsl:variable name="sets-heading" as="xs:boolean"
+                      select="if ($headings-from = 'primary') then $stream = 'primary'
+                              else if ($headings-from = 'alt') then $stream = 'alt'
+                              else $stream = 'primary' or not($agrees)"/>
+        <xsl:choose>
+            <xsl:when test="$sets-heading">
         <xsl:text>\OShead</xsl:text>
         <xsl:value-of select="f:heading-suffix(xs:integer(@level))"/>
         <xsl:text>{</xsl:text>
@@ -1183,6 +1208,11 @@
             <xsl:text>}</xsl:text>
         </xsl:if>
         <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\mbox{}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
 
         <!-- A second head on the same division is the translated title. It is set under
              the first rather than beside it, so that it reads as naming the same section
@@ -1215,13 +1245,19 @@
             <!-- @alt-title is the title of the same section in the other language,
                  whether that came from a second head on the division or from the other
                  column; f:pair-heads has already settled which. Combined, they are one
-                 entry, because they name one section. -->
+                 entry, because they name one section.
+
+                 Under 'alt' it is read only in the primary stream, and only because a
+                 single text titled twice has no other column to take the title from.
+                 The alt stream's own @title is already the alt title; reading @alt-title
+                 there would hand back the primary's. -->
             <xsl:variable name="other" as="xs:string" select="string(@alt-title)"/>
             <xsl:variable name="outline-title" as="xs:string"
                           select="if ($bookmarks-from = 'combined' and $other != ''
                                       and $other != string(@title))
                                   then concat(string(@title), ' &#xB7; ', $other)
-                                  else if ($bookmarks-from = 'alt' and $other != '')
+                                  else if ($bookmarks-from = 'alt' and $stream = 'primary'
+                                           and $other != '')
                                   then $other
                                   else string(@title)"/>
             <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>

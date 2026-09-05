@@ -910,6 +910,26 @@ class BookmarksConfig(ForbidExtra):
     )
 
 
+class HeadingsConfig(ForbidExtra):
+    """The heading a section carries on the page, where a work titles it twice.
+
+    The same question :class:`BookmarksConfig` asks of the outline, asked of the page, so
+    it takes the same vocabulary. The values differ only in what "combined" can mean: an
+    outline entry can join two titles into one string, while a heading on a page cannot,
+    so ``combined`` there prints one heading where the columns agree and both where they
+    do not.
+    """
+
+    from_: BookmarkSource = Field(
+        default=BookmarkSource.COMBINED,
+        alias="from",
+        description=(
+            "combined: one heading where the two columns title the section alike, both "
+            "where they differ. primary: always the first column's. alt: always the other."
+        ),
+    )
+
+
 class TableOfContentsConfig(ForbidExtra):
     """ An auto-generated table of contents.
 
@@ -979,6 +999,10 @@ class TypographyConfig(ForbidExtra):
     bookmarks: BookmarksConfig = Field(
         default_factory=BookmarksConfig,
         description="The PDF outline, where a work names a section in two languages.",
+    )
+    headings: HeadingsConfig = Field(
+        default_factory=HeadingsConfig,
+        description="Headings on the page, where a work names a section in two languages.",
     )
     page_header: RunningHeadConfig = Field(
         default_factory=RunningHeadConfig,

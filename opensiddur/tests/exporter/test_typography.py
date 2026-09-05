@@ -450,3 +450,35 @@ class TestHeadingTranslationStyle(unittest.TestCase):
         with self.assertRaises(ValidationError) as caught:
             _validate({"styles": {"heading_translation": {"colour": "red"}}})
         self.assertIn("colour", str(caught.exception))
+
+
+class TestHeadingsConfig(unittest.TestCase):
+    """Headings on the page, where a work titles a section in two languages.
+
+    Deliberately the same vocabulary as `bookmarks`: it is the same question about the
+    same pair of titles, asked of the page rather than of the outline.
+    """
+
+    def test_default_is_combined(self):
+        self.assertEqual("combined", _validate({}).headings.from_.value)
+
+    def test_from_is_read_under_its_yaml_name(self):
+        self.assertEqual("primary", _validate({"headings": {"from": "primary"}})
+                         .headings.from_.value)
+        self.assertEqual("alt", _validate({"headings": {"from": "alt"}})
+                         .headings.from_.value)
+
+    def test_it_takes_the_same_values_as_bookmarks(self):
+        """One vocabulary for one question, so a settings file reads consistently."""
+        config = _validate({"bookmarks": {"from": "alt"}, "headings": {"from": "alt"}})
+        self.assertEqual(type(config.bookmarks.from_), type(config.headings.from_))
+
+    def test_an_unknown_source_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"headings": {"from": "matched"}})
+        self.assertIn("headings.from", str(caught.exception))
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"headings": {"level": 2}})
+        self.assertIn("level", str(caught.exception))
