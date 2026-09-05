@@ -269,11 +269,26 @@ question [`bookmarks`](#bookmarks) asks of the outline, so it takes the same voc
 
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `headings.from` | `combined` \| `primary` \| `alt` | `combined` | Which column sets the heading. `combined` prints one where the two columns title the section alike and both where they differ; `primary` and `alt` always print the one named. |
+| `headings.from` | `combined` \| `primary` \| `alt` \| `both` | `combined` | Which heading a section carries. The first three set **one** heading, spanning the page above both columns; `both` sets one in each column. |
 
-The values mean slightly different things here and in `bookmarks`, because an outline entry
-can join two titles into one string and a heading on a page cannot. `combined` there joins
-them; `combined` here prints one heading when there is only one thing to say.
+| Value | What is set |
+| --- | --- |
+| `combined` | One heading, spanning. Both titles where the columns differ, the second beneath the first as a translation of it; one title where they agree. |
+| `primary` | The first column's title, spanning. |
+| `alt` | The other column's title, spanning. |
+| `both` | Each column keeps its own heading, inside its own column. Nothing is deduplicated and nothing spans. |
+
+**A heading that is set once spans the page.** It is not a heading of either column: it
+names the section, and the section spans the opening. Setting it inside a column would
+centre it over half the page. Only `both` keeps a heading in a column, because then there
+really are two and each belongs to the column whose language it is in.
+
+Spanning is possible only where a parallel block **opens** with the heading — there is no
+interrupting a `\Pages` once begun — so a heading further into a block stays where it is,
+deduplicated but not spanning.
+
+`bookmarks` has no `both`: an outline entry is one line and cannot show two titles in two
+places. A page can, which is why this setting has a value that one does not.
 
 A suppressed heading still keeps its paragraph and its running-head mark: reledpar pairs
 the columns by counting them, and a page style should still be able to name either

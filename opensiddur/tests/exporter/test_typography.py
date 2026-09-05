@@ -468,10 +468,12 @@ class TestHeadingsConfig(unittest.TestCase):
         self.assertEqual("alt", _validate({"headings": {"from": "alt"}})
                          .headings.from_.value)
 
-    def test_it_takes_the_same_values_as_bookmarks(self):
-        """One vocabulary for one question, so a settings file reads consistently."""
-        config = _validate({"bookmarks": {"from": "alt"}, "headings": {"from": "alt"}})
-        self.assertEqual(type(config.bookmarks.from_), type(config.headings.from_))
+    def test_it_shares_the_bookmark_vocabulary_and_adds_one(self):
+        """One vocabulary for one question, so a settings file reads consistently — plus
+        `both`, which only a page can honour."""
+        from opensiddur.exporter.typography import BookmarkSource, HeadingSource
+        self.assertEqual({s.value for s in BookmarkSource} | {"both"},
+                         {s.value for s in HeadingSource})
 
     def test_an_unknown_source_is_refused(self):
         with self.assertRaises(ValidationError) as caught:
@@ -482,3 +484,10 @@ class TestHeadingsConfig(unittest.TestCase):
         with self.assertRaises(ValidationError) as caught:
             _validate({"headings": {"level": 2}})
         self.assertIn("level", str(caught.exception))
+
+    def test_both_is_accepted_here_and_not_in_bookmarks(self):
+        """A page can show two titles in two places; an outline entry is one line."""
+        self.assertEqual("both", _validate({"headings": {"from": "both"}})
+                         .headings.from_.value)
+        with self.assertRaises(ValidationError):
+            _validate({"bookmarks": {"from": "both"}})

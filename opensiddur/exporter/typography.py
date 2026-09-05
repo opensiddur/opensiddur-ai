@@ -910,6 +910,20 @@ class BookmarksConfig(ForbidExtra):
     )
 
 
+class HeadingSource(StrEnum):
+    """Which heading a section carries on the page, where a work titles it twice.
+
+    The first three are :class:`BookmarkSource`'s, and mean the same. ``BOTH`` has no
+    counterpart there because an outline entry is one line and cannot show two titles in
+    two places; a page can.
+    """
+
+    COMBINED = "combined"
+    PRIMARY = "primary"
+    ALT = "alt"
+    BOTH = "both"
+
+
 class HeadingsConfig(ForbidExtra):
     """The heading a section carries on the page, where a work titles it twice.
 
@@ -920,12 +934,14 @@ class HeadingsConfig(ForbidExtra):
     do not.
     """
 
-    from_: BookmarkSource = Field(
-        default=BookmarkSource.COMBINED,
+    from_: HeadingSource = Field(
+        default=HeadingSource.COMBINED,
         alias="from",
         description=(
-            "combined: one heading where the two columns title the section alike, both "
-            "where they differ. primary: always the first column's. alt: always the other."
+            "combined: one heading, spanning the page — both titles where the columns "
+            "differ, one where they agree. primary: the first column's title, spanning. "
+            "alt: the other one, spanning. both: each column keeps its own heading, in "
+            "its column."
         ),
     )
 

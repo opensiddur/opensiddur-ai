@@ -2486,9 +2486,10 @@ class TestParallelHeadings(unittest.TestCase):
         out = _transform(self._parallel(self.SAME, self.SAME))
         self.assertEqual(1, out.count(r"\OSheadA{"))
 
-    def test_columns_that_differ_each_set_their_own(self):
+    def test_columns_that_differ_show_both_titles(self):
+        """Under the default they span the page together, the second set beneath the
+        first; both are still on the page."""
         out = _transform(self._parallel(self.SAME, self.OTHER))
-        self.assertEqual(2, out.count(r"\OSheadA{"))
         self.assertIn(self.SAME, out)
         self.assertIn(self.OTHER, out)
 
@@ -2559,20 +2560,55 @@ class TestParallelHeadings(unittest.TestCase):
         # The outline entry is anchored where the reader lands, outside the columns.
         self.assertLess(out.index(r"\addcontentsline"), out.index(r"\begin{Leftside}"))
 
-    def test_headings_that_differ_stay_in_their_columns(self):
-        """Only a shared heading spans the page. Two different titles are two headings,
-        each belonging to the column whose language it is in."""
-        out = _transform(self._parallel(self.SAME, self.OTHER))
+    def test_headings_stay_in_their_columns_only_under_both(self):
+        out = _transform(self._parallel(self.SAME, self.OTHER),
+                         **{"headings-from": "both"})
         left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
         right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
         self.assertIn(r"\OSheadA{", left)
         self.assertIn(r"\OSheadA{", right)
 
-    def test_primary_and_alt_never_span_the_page(self):
-        """Asking for one column's heading is asking for that column's heading. Only
-        'combined' produces a title that belongs to neither."""
-        for mode in ("primary", "alt"):
-            with self.subTest(mode=mode):
-                out = _transform(self._parallel(self.SAME, self.SAME),
-                                 **{"headings-from": mode})
-                self.assertGreater(out.index(r"\OSheadA{"), out.index(r"\begin{Leftside}"))
+    def test_every_mode_that_sets_one_heading_spans_the_page(self):
+        """A heading set once is not a heading of either column — it names the section,
+        and the section spans the opening. Which of the two titles it shows does not
+        change that."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    self.assertLess(out.index(r"\OSheadA{"),
+                                    out.index(r"\begin{Leftside}"))
+
+    def test_both_keeps_a_heading_in_each_column(self):
+        """The one mode that does not span. Where there really are two headings, each
+        belongs to the column whose language it is in."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            with self.subTest(titles=titles):
+                out = _transform(self._parallel(*titles), **{"headings-from": "both"})
+                left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+                right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+                self.assertEqual(1, left.count(r"\OSheadA{"))
+                self.assertEqual(1, right.count(r"\OSheadA{"))
+
+    def test_both_does_not_deduplicate(self):
+        """'both' means both, even where the two columns say the same thing."""
+        out = _transform(self._parallel(self.SAME, self.SAME),
+                         **{"headings-from": "both"})
+        self.assertEqual(2, out.count(r"\OSheadA{"))
+
+    def test_combined_sets_a_differing_title_beneath_as_a_translation(self):
+        """Spanning the page leaves nowhere to put a second title side by side, so it goes
+        under the first — the shape a division titled twice in one column already takes."""
+        out = _transform(self._parallel(self.SAME, self.OTHER))
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+        self.assertEqual(1, out.count(r"\OSheadTranslation{"))
+        self.assertIn(self.OTHER, out.split(r"\OSheadTranslation{")[1][:120])
+
+    def test_one_outline_entry_in_every_mode(self):
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt", "both"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    self.assertEqual(1, out.count(r"\addcontentsline"))
