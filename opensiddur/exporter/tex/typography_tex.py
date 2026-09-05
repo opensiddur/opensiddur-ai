@@ -382,6 +382,17 @@ def _styles_section(config: TypographyConfig) -> list[str]:
             + "}",
         )
 
+    # A translated title, under the heading it translates. \par first, because it is a
+    # line of its own beneath the title rather than a continuation of it; the alignment
+    # then applies to that line. Set at whichever of the four levels the heading is, so
+    # it takes one style rather than four.
+    emit(
+        "heading_translation",
+        lambda s: r"\renewcommand{\OSheadTranslation}[1]{\par"
+        + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
+        + "}",
+    )
+
     # Title page: set outside all numbering, so real paragraphs are safe.
     for role, macro in (
         ("title_main", r"\OSTitleMain"),

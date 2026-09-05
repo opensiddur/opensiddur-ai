@@ -10,6 +10,7 @@ setting is a change to a document that asked for none.
 """
 
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from opensiddur.exporter import typography as typography_module
@@ -420,3 +421,43 @@ class TestParallelColumns(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHeadingTranslation(unittest.TestCase):
+    r"""The translated title under a heading, where a division is titled twice.
+
+    Its appearance lives in two places — a \newcommand in reledmac.xslt and this role —
+    and they must agree, or setting the style to the value the reference documents would
+    change the page.
+    """
+
+    XSLT = Path(__file__).resolve().parents[3] / "opensiddur" / "exporter" / "tex" / "reledmac.xslt"
+
+    def test_unset_emits_nothing_so_the_built_in_stands(self):
+        self.assertNotIn("OSheadTranslation", _tex({}))
+
+    def test_the_declared_default_reproduces_the_built_in_definition(self):
+        """Set to its own documented default, the role must generate the definition the
+        stylesheet already carries, character for character."""
+        generated = [
+            line for line in _tex({
+                "styles": {"heading_translation":
+                           {"size": "normal", "style": "italic", "align": "center"}}
+            }).splitlines() if "OSheadTranslation" in line
+        ]
+        self.assertEqual(1, len(generated))
+        body = generated[0].split("[1]", 1)[1]
+        built_in = self.XSLT.read_text(encoding="utf-8")
+        marker = r"\newcommand{\OSheadTranslation}[1]"
+        self.assertIn(marker, built_in)
+        built_in_body = built_in.split(marker, 1)[1].split("&#10;", 1)[0]
+        self.assertEqual(built_in_body, body)
+
+    def test_a_configured_style_reaches_the_macro(self):
+        tex = _tex({"styles": {"heading_translation":
+                               {"size": "small", "style": "normal", "align": "right"}}})
+        self.assertIn(r"\renewcommand{\OSheadTranslation}[1]{\par", tex)
+        self.assertIn(r"\small", tex)
+        # Right-aligned: glue leads, and none follows.
+        line = [l for l in tex.splitlines() if "OSheadTranslation" in l][0]
+        self.assertTrue(line.rstrip().endswith("#1}}"))

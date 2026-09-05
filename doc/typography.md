@@ -152,6 +152,7 @@ as the surrounding text has it.
 | `styles.heading2` | `x-large`, bold, centered | Second-level heading. |
 | `styles.heading3` | `large`, bold, centered | Third-level heading. |
 | `styles.heading4` | `normal`, bold, centered | Fourth-level heading; the deepest there is. |
+| `styles.heading_translation` | `normal`, italic, centered | A heading's translated title, where a division is titled twice. Set on its own line under the title it translates, at whichever of the four levels that title is — so it takes one style rather than four. See [`bookmarks`](#bookmarks) for how the two titles reach the outline. |
 | `styles.title_main` | `xxxx-large`, bold, centered, `1.5ex` after | The main title on the title page. |
 | `styles.title_sub` | `x-large`, centered, `1.5ex` before | The subtitle. |
 | `styles.title_alt` | `large`, centered, `1ex` after | An alternative title, usually the title in the other language. |

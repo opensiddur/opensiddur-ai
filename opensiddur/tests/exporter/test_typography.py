@@ -425,3 +425,28 @@ class TestBookmarksConfig(unittest.TestCase):
         with self.assertRaises(ValidationError) as caught:
             _validate({"bookmarks": {"depth": 2}})
         self.assertIn("depth", str(caught.exception))
+
+
+class TestHeadingTranslationStyle(unittest.TestCase):
+    """The translated title under a heading, where a division is titled twice."""
+
+    def test_default_matches_the_built_in_appearance(self):
+        """Unset, the role must describe exactly what reledmac.xslt's own \\newcommand
+        does — otherwise setting the style to its documented default would change the
+        page."""
+        style = _validate({}).styles.heading_translation
+        self.assertEqual("normal", style.size)
+        self.assertEqual("italic", style.style)
+        self.assertEqual("center", style.align)
+
+    def test_it_is_configurable_like_any_other_role(self):
+        style = _validate(
+            {"styles": {"heading_translation": {"size": "small", "align": "right"}}}
+        ).styles.heading_translation
+        self.assertEqual("small", style.size)
+        self.assertEqual("right", style.align)
+
+    def test_an_unknown_attribute_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"styles": {"heading_translation": {"colour": "red"}}})
+        self.assertIn("colour", str(caught.exception))

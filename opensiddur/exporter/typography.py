@@ -484,6 +484,15 @@ class Styles(ForbidExtra):
         ),
         description="Fourth-level section heading; the deepest level there is.",
     )
+    heading_translation: TextStyle = Field(
+        default_factory=lambda: TextStyle(
+            size=NamedSize.NORMAL, style=FontStyle.ITALIC, align=Alignment.CENTER
+        ),
+        description=(
+            "A heading's translated title, where a division is titled twice. Set under "
+            "the title it translates, at any of the four heading levels."
+        ),
+    )
     title_main: TextStyle = Field(
         default_factory=lambda: TextStyle(
             size=NamedSize.XXXX_LARGE,
