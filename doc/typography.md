@@ -262,6 +262,38 @@ This is the one default that does **not** reproduce earlier output. Before it, b
 of a parallel compile wrote to the outline, so every heading appeared twice and out of
 document order. Set `from: primary` for one title per entry.
 
+## `headings`
+
+The heading a section carries **on the page**, where a work titles it twice — the same
+question [`bookmarks`](#bookmarks) asks of the outline, so it takes the same vocabulary.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `headings.from` | `combined` \| `primary` \| `alt` \| `both` | `combined` | Which heading a section carries. The first three set **one** heading, spanning the page above both columns; `both` sets one in each column. |
+
+| Value | What is set |
+| --- | --- |
+| `combined` | One heading, spanning. Both titles where the columns differ, the second beneath the first as a translation of it; one title where they agree. |
+| `primary` | The first column's title, spanning. |
+| `alt` | The other column's title, spanning. |
+| `both` | Each column keeps its own heading, inside its own column. Nothing is deduplicated and nothing spans. |
+
+**A heading that is set once spans the page.** It is not a heading of either column: it
+names the section, and the section spans the opening. Setting it inside a column would
+centre it over half the page. Only `both` keeps a heading in a column, because then there
+really are two and each belongs to the column whose language it is in.
+
+Spanning is possible only where a parallel block **opens** with the heading — there is no
+interrupting a `\Pages` once begun — so a heading further into a block stays where it is,
+deduplicated but not spanning.
+
+`bookmarks` has no `both`: an outline entry is one line and cannot show two titles in two
+places. A page can, which is why this setting has a value that one does not.
+
+A suppressed heading still keeps its paragraph and its running-head mark: reledpar pairs
+the columns by counting them, and a page style should still be able to name either
+language.
+
 ## `page_header` and `page_footer`
 
 Running heads and feet. Empty by default, which leaves the document class's own page style

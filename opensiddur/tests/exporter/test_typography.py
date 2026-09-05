@@ -450,3 +450,44 @@ class TestHeadingTranslationStyle(unittest.TestCase):
         with self.assertRaises(ValidationError) as caught:
             _validate({"styles": {"heading_translation": {"colour": "red"}}})
         self.assertIn("colour", str(caught.exception))
+
+
+class TestHeadingsConfig(unittest.TestCase):
+    """Headings on the page, where a work titles a section in two languages.
+
+    Deliberately the same vocabulary as `bookmarks`: it is the same question about the
+    same pair of titles, asked of the page rather than of the outline.
+    """
+
+    def test_default_is_combined(self):
+        self.assertEqual("combined", _validate({}).headings.from_.value)
+
+    def test_from_is_read_under_its_yaml_name(self):
+        self.assertEqual("primary", _validate({"headings": {"from": "primary"}})
+                         .headings.from_.value)
+        self.assertEqual("alt", _validate({"headings": {"from": "alt"}})
+                         .headings.from_.value)
+
+    def test_it_shares_the_bookmark_vocabulary_and_adds_one(self):
+        """One vocabulary for one question, so a settings file reads consistently — plus
+        `both`, which only a page can honour."""
+        from opensiddur.exporter.typography import BookmarkSource, HeadingSource
+        self.assertEqual({s.value for s in BookmarkSource} | {"both"},
+                         {s.value for s in HeadingSource})
+
+    def test_an_unknown_source_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"headings": {"from": "matched"}})
+        self.assertIn("headings.from", str(caught.exception))
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"headings": {"level": 2}})
+        self.assertIn("level", str(caught.exception))
+
+    def test_both_is_accepted_here_and_not_in_bookmarks(self):
+        """A page can show two titles in two places; an outline entry is one line."""
+        self.assertEqual("both", _validate({"headings": {"from": "both"}})
+                         .headings.from_.value)
+        with self.assertRaises(ValidationError):
+            _validate({"bookmarks": {"from": "both"}})

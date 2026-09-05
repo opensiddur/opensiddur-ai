@@ -910,6 +910,42 @@ class BookmarksConfig(ForbidExtra):
     )
 
 
+class HeadingSource(StrEnum):
+    """Which heading a section carries on the page, where a work titles it twice.
+
+    The first three are :class:`BookmarkSource`'s, and mean the same. ``BOTH`` has no
+    counterpart there because an outline entry is one line and cannot show two titles in
+    two places; a page can.
+    """
+
+    COMBINED = "combined"
+    PRIMARY = "primary"
+    ALT = "alt"
+    BOTH = "both"
+
+
+class HeadingsConfig(ForbidExtra):
+    """The heading a section carries on the page, where a work titles it twice.
+
+    The same question :class:`BookmarksConfig` asks of the outline, asked of the page, so
+    it takes the same vocabulary. The values differ only in what "combined" can mean: an
+    outline entry can join two titles into one string, while a heading on a page cannot,
+    so ``combined`` there prints one heading where the columns agree and both where they
+    do not.
+    """
+
+    from_: HeadingSource = Field(
+        default=HeadingSource.COMBINED,
+        alias="from",
+        description=(
+            "combined: one heading, spanning the page — both titles where the columns "
+            "differ, one where they agree. primary: the first column's title, spanning. "
+            "alt: the other one, spanning. both: each column keeps its own heading, in "
+            "its column."
+        ),
+    )
+
+
 class TableOfContentsConfig(ForbidExtra):
     """ An auto-generated table of contents.
 
@@ -979,6 +1015,10 @@ class TypographyConfig(ForbidExtra):
     bookmarks: BookmarksConfig = Field(
         default_factory=BookmarksConfig,
         description="The PDF outline, where a work names a section in two languages.",
+    )
+    headings: HeadingsConfig = Field(
+        default_factory=HeadingsConfig,
+        description="Headings on the page, where a work names a section in two languages.",
     )
     page_header: RunningHeadConfig = Field(
         default_factory=RunningHeadConfig,

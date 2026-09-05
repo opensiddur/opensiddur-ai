@@ -2439,3 +2439,176 @@ class TestMultilingualBookmarks(unittest.TestCase):
                     out = _transform(xml, **{"bookmarks-from": mode})
                     self.assertEqual(1, out.count(r"\addcontentsline"))
                     self.assertNotEqual("", self._outline_entry(out))
+
+
+class TestParallelHeadings(unittest.TestCase):
+    """A section titled twice gets one heading on the page where the titles agree.
+
+    The same question ``bookmarks.from`` asks of the outline, asked of the page, so it
+    takes the same vocabulary. Suppressing a heading is not dropping it: reledpar pairs
+    the columns by counting \\pstart...\\pend, so the paragraph must stay, and reledmac
+    cannot typeset an empty one.
+    """
+
+    @staticmethod
+    def _parallel(primary_title: str, alt_title: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit">
+                  <tei:head>{primary_title}</tei:head><tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit">
+                  <tei:head>{alt_title}</tei:head><tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    @staticmethod
+    def _pstarts(out: str) -> tuple:
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        return (left.count(r"\pstart"), right.count(r"\pstart"))
+
+    SAME = "KEDUSHAH"
+    OTHER = "Sanctification"
+
+    def test_columns_that_agree_set_the_heading_once(self):
+        """Birnbaum heads his Hebrew and English pages alike, so both columns printed
+        KEDUSHAH and the reader saw it twice."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+
+    def test_columns_that_differ_show_both_titles(self):
+        """Under the default they span the page together, the second set beneath the
+        first; both are still on the page."""
+        out = _transform(self._parallel(self.SAME, self.OTHER))
+        self.assertIn(self.SAME, out)
+        self.assertIn(self.OTHER, out)
+
+    def test_from_primary_and_alt_each_set_exactly_one(self):
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("primary", "alt"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    self.assertEqual(1, out.count(r"\OSheadA{"))
+
+    def test_from_alt_sets_the_second_columns_title(self):
+        out = _transform(self._parallel(self.SAME, self.OTHER),
+                         **{"headings-from": "alt"})
+        self.assertIn(rf"\OSheadA{{{{\textdir TLT\selectlanguage{{english}}{self.OTHER}}}}}", out)
+
+    def test_a_suppressed_heading_keeps_its_paragraph(self):
+        """reledpar pairs the columns by counting \\pstart, so a suppressed heading must
+        still open one. It must also not be empty: reledmac fails the whole build on an
+        empty \\pstart rather than skipping it."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    left, right = self._pstarts(out)
+                    self.assertEqual(left, right)
+                    self.assertIsNone(re.search(r"\\pstart\s*\\pend", out))
+
+    def test_the_running_head_still_knows_both_columns(self):
+        """A suppressed heading is still in force on the page, so a page style must be
+        able to name either language."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertIn(r"\InsertMark{OSheadA}", out)
+        self.assertIn(r"\InsertMark{OSheadAAlt}", out)
+
+    def test_a_single_language_document_is_unaffected(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Genesis</tei:head><tei:p>In the beginning.</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+        self.assertNotIn(r"\mbox{}", out.split(r"\begin{document}")[1])
+
+    def test_a_shared_heading_is_set_across_the_page_not_inside_a_column(self):
+        """A heading both columns give is not a heading of either: it names the section,
+        and the section spans the opening. Set inside a column it would be centred over
+        half the page."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+        self.assertNotIn(r"\OSheadA{", left)
+        self.assertNotIn(r"\OSheadA{", right)
+        # ...and it is set before the columns it heads.
+        self.assertLess(out.index(r"\OSheadA{"), out.index(r"\begin{Leftside}"))
+
+    def test_a_spanning_heading_carries_the_marks_and_the_bookmark(self):
+        """The heading inside the columns is suppressed, so it carries neither. Both
+        running-head families are set, since a page style may name either language."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertIn(r"\InsertMark{OSheadA}", out)
+        self.assertIn(r"\InsertMark{OSheadAAlt}", out)
+        # The outline entry is anchored where the reader lands, outside the columns.
+        self.assertLess(out.index(r"\addcontentsline"), out.index(r"\begin{Leftside}"))
+
+    def test_headings_stay_in_their_columns_only_under_both(self):
+        out = _transform(self._parallel(self.SAME, self.OTHER),
+                         **{"headings-from": "both"})
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertIn(r"\OSheadA{", left)
+        self.assertIn(r"\OSheadA{", right)
+
+    def test_every_mode_that_sets_one_heading_spans_the_page(self):
+        """A heading set once is not a heading of either column — it names the section,
+        and the section spans the opening. Which of the two titles it shows does not
+        change that."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    self.assertLess(out.index(r"\OSheadA{"),
+                                    out.index(r"\begin{Leftside}"))
+
+    def test_both_keeps_a_heading_in_each_column(self):
+        """The one mode that does not span. Where there really are two headings, each
+        belongs to the column whose language it is in."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            with self.subTest(titles=titles):
+                out = _transform(self._parallel(*titles), **{"headings-from": "both"})
+                left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+                right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+                self.assertEqual(1, left.count(r"\OSheadA{"))
+                self.assertEqual(1, right.count(r"\OSheadA{"))
+
+    def test_both_does_not_deduplicate(self):
+        """'both' means both, even where the two columns say the same thing."""
+        out = _transform(self._parallel(self.SAME, self.SAME),
+                         **{"headings-from": "both"})
+        self.assertEqual(2, out.count(r"\OSheadA{"))
+
+    def test_combined_sets_a_differing_title_beneath_as_a_translation(self):
+        """Spanning the page leaves nowhere to put a second title side by side, so it goes
+        under the first — the shape a division titled twice in one column already takes."""
+        out = _transform(self._parallel(self.SAME, self.OTHER))
+        self.assertEqual(1, out.count(r"\OSheadA{"))
+        self.assertEqual(1, out.count(r"\OSheadTranslation{"))
+        self.assertIn(self.OTHER, out.split(r"\OSheadTranslation{")[1][:120])
+
+    def test_one_outline_entry_in_every_mode(self):
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt", "both"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles),
+                                     **{"headings-from": mode})
+                    self.assertEqual(1, out.count(r"\addcontentsline"))
