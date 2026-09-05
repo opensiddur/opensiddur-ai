@@ -252,7 +252,7 @@ reader they are the same question asked twice.
 
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `bookmarks.from` | `combined` \| `primary` \| `alt` | `combined` | Which title an outline entry carries. `combined` joins both with a middle dot; `primary` takes the first column's title, or the division's first head; `alt` takes the other. |
+| `bookmarks.from` | `combined` \| `primary` \| `alt` | `combined` | Which title an outline entry carries. `combined` joins both with a middle dot; `primary` takes the first column's title, or the division's first head; `alt` takes the other — the facing column where there is one, otherwise the division's second head. |
 
 Depth is not settable here: the outline is always four levels deep. `table_of_contents.depth`
 governs the printed table only.

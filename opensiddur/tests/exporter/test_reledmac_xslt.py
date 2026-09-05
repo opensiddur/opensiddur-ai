@@ -2340,3 +2340,42 @@ class TestMultilingualBookmarks(unittest.TestCase):
         self.assertIn("ראשון · First", out)
         self.assertIn("שני · Second", out)
         self.assertNotIn("שני · First", out)
+
+    def test_from_alt_on_a_single_text_takes_the_divisions_second_head(self):
+        """'alt' means the other title, not the other column. A single text titled twice
+        has no facing column, and tying the setting to the stream emitted no outline for
+        it at all."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:head>ברך</tei:head>
+              <tei:head xml:lang="en">Grace</tei:head>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"bookmarks-from": "alt"})
+        self.assertEqual(1, out.count(r"\addcontentsline"))
+        self.assertEqual("Grace", self._outline_entry(out))
+
+    def test_every_mode_emits_exactly_one_entry_for_either_encoding(self):
+        """The invariant the whole change exists to establish: one section, one entry,
+        whichever way the work carries its two languages and whichever title is asked for."""
+        single = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:head>ברך</tei:head>
+              <tei:head xml:lang="en">Grace</tei:head>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        for encoding, xml in (("two heads in one div", single),
+                              ("two parallel columns", self.PARALLEL)):
+            for mode in ("combined", "primary", "alt"):
+                with self.subTest(encoding=encoding, mode=mode):
+                    out = _transform(xml, **{"bookmarks-from": mode})
+                    self.assertEqual(1, out.count(r"\addcontentsline"))
+                    self.assertNotEqual("", self._outline_entry(out))

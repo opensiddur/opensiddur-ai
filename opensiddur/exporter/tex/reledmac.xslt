@@ -1034,6 +1034,8 @@
                                 </xsl:choose>
                                 <xsl:call-template name="heading">
                                     <xsl:with-param name="stream" select="$stream"/>
+                                    <xsl:with-param name="has-alt-column"
+                                                    select="exists($alt-nodes)"/>
                                 </xsl:call-template>
                                 <xsl:text>\par&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1049,6 +1051,8 @@
                                 <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
                                 <xsl:call-template name="heading">
                                     <xsl:with-param name="stream" select="$stream"/>
+                                    <xsl:with-param name="has-alt-column"
+                                                    select="exists($alt-nodes)"/>
                                 </xsl:call-template>
                                 <xsl:text>&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1131,6 +1135,9 @@
          outline entry. Caller is responsible for the surrounding \pstart/\pend. -->
     <xsl:template name="heading">
         <xsl:param name="stream" as="xs:string" select="'primary'"/>
+        <!-- Whether a facing column exists at all. Without it, 'alt' cannot mean the other
+             column and has to mean the division's own second head instead. -->
+        <xsl:param name="has-alt-column" as="xs:boolean" select="false()"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
         <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
 
@@ -1187,10 +1194,14 @@
              Exactly one stream may write it. Both used to, which is why a parallel
              compile produced two entries per heading, interleaved out of document order
              because the columns reach the .toc at different points. -->
+        <!-- Exactly one stream writes the entry. Under 'alt' that is the facing column
+             where there is one; where there is none, the primary stream still writes it,
+             taking the division's second head as the other title. Tying 'alt' to the
+             column alone emitted no outline at all for a single text titled twice. -->
         <xsl:variable name="writes-outline" as="xs:boolean"
-                      select="if ($bookmarks-from = 'alt')
-                              then $stream = 'alt'
-                              else $stream = 'primary'"/>
+                      select="if ($stream = 'alt')
+                              then $bookmarks-from = 'alt'
+                              else not($bookmarks-from = 'alt' and $has-alt-column)"/>
         <xsl:if test="$writes-outline">
             <!-- @alt-title is the title of the same section in the other language,
                  whether that came from a second head on the division or from the other
@@ -1201,6 +1212,8 @@
                           select="if ($bookmarks-from = 'combined' and $other != ''
                                       and $other != string(@title))
                                   then concat(string(@title), ' &#xB7; ', $other)
+                                  else if ($bookmarks-from = 'alt' and $other != '')
+                                  then $other
                                   else string(@title)"/>
             <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
             <xsl:value-of select="f:heading-toc-level(xs:integer(@level))"/>
