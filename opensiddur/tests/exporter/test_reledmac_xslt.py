@@ -753,6 +753,66 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn(r"\instructionnote{", out)
         self.assertIn("stand", out)
 
+    def test_a_cross_direction_instruction_is_not_put_in_a_fixed_width_box(self):
+        r"""An \hbox to \linewidth cannot break, so a rubric wider than it overhangs
+        instead of wrapping. \linewidth inside reledpar's parallel setting is the page
+        rather than the column, so the box was twice the width it had to fit in and every
+        long rubric ran off the paper in a two-column compile. Ordinary text flow is
+        measured by whatever column it lands in."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:note type="instruction" xml:lang="en">Between Rosh Hashanah and Yom Kippur substitute:</tei:note>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        definitions = [
+            line for line in out.splitlines()
+            if r"\newcommand{\OSInstruction" in line
+        ]
+        self.assertEqual(2, len(definitions))
+        for definition in definitions:
+            self.assertNotIn(r"\hbox to \linewidth", definition)
+            self.assertNotIn(r"\parbox", definition)
+
+    def test_a_cross_direction_instruction_still_gets_its_own_line(self):
+        """Why the macros exist at all: an English rubric and the Hebrew it introduces run
+        from opposite margins, so sharing a line would read as one jumbled line."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:note type="instruction" xml:lang="en">Between Sukkoth and Pesah add:</tei:note>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\OSInstructionBlock{", out)
+        definition = [
+            line for line in out.splitlines()
+            if r"\newcommand{\OSInstructionBlock}" in line
+        ][0]
+        self.assertIn(r"\newline", definition)
+
+    def test_an_instruction_running_with_the_text_needs_no_line_of_its_own(self):
+        """Same direction, so it can share the line and keeps the plain inline macro."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:note type="instruction" xml:lang="en">Stand.</tei:note>
+              <tei:p>Blessed art thou.</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\instructionnote{", out)
+        self.assertNotIn(r"\OSInstructionBlock{", out)
+
     def test_body_editorial_note_emits_apparatus(self):
         """Compiler inlines editorial tei:note in the body; XSLT maps it to B-series."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
