@@ -332,18 +332,27 @@
         <!-- An instruction running against the direction of the text it introduces cannot
              share a line with it: the two runs would be laid out from opposite margins and
              read as one jumbled line. Birnbaum sets his English rubrics on their own line
-             above the Hebrew, and this is that line. A full-width box for the same reason
-             as \OSCondRule: \par does not reliably break inside a reledmac \pstart. The
-             glue leads so the instruction sits at the margin the text runs from: left
-             under a Hebrew paragraph, as Birnbaum sets his English rubrics on p.83. -->
-        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\leavevmode\hbox to \linewidth{\hss{\bfseries #1}}}&#10;</xsl:text>
+             above the Hebrew, and this is that line. No box, though: a box of any fixed
+             width overhangs a rubric wider than it, because an \hbox to \linewidth cannot
+             break. \linewidth inside reledpar's parallel setting is the page rather than
+             the column, so the box was twice the width it had to fit in and every long
+             rubric ran off the paper in a two-column compile. A \parbox of the same width
+             fixes only the first half of that. Ordinary text flow between two \newline
+             fixes both: it is measured by whatever column it lands in, and it wraps. What
+             it gives up is the flush margin the box provided, which is worth less than the
+             words being on the page. -->
+        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\leavevmode\unskip\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <!-- The same, for an instruction standing inside a paragraph rather than between
              two. A box the width of the line does not fit on a line that is already
              partly set: it overhangs the margin and the instruction runs off the page,
              which is what happened to both seasonal readings of Birkat ha-Shanim and to
              the day-names of Ya'aleh v'Yavo. Ending the line first gives the instruction
-             a line of its own without a box that cannot fit. -->
-        <xsl:text>\newcommand{\OSInstructionLine}[1]{\leavevmode\unskip\newline\hbox to \linewidth{\hss{\bfseries #1}}\newline\ignorespaces}&#10;</xsl:text>
+             a line of its own, and ordinary text flow lets it wrap once it has one.
+
+             Identical to \OSInstructionBlock now that neither boxes its argument. The two
+             are kept apart because their call sites are: one interrupts a paragraph and
+             one stands between paragraphs, and a style may yet want to tell them apart. -->
+        <xsl:text>\newcommand{\OSInstructionLine}[1]{\leavevmode\unskip\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <!-- Conditional passages. Only markers whose condition could not be decided survive
              compilation: a decided condition is resolved away, its text either kept outright
