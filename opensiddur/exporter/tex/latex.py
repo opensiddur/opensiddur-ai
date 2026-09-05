@@ -485,6 +485,7 @@ def transform_xml_to_tex(
                 "notes-mark": typography.notes.mark.value,
                 "table-of-contents": typography.table_of_contents.enabled,
                 "table-of-contents-depth": typography.table_of_contents.depth,
+                "bookmarks-from": typography.bookmarks.from_.value,
                 "page-style-preamble": page_style_tex,
             },
         )

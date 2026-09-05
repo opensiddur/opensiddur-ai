@@ -43,7 +43,9 @@ def _setting_paths(model: type[BaseModel], prefix: str = "") -> list[str]:
     """
     paths: list[str] = []
     for name, field in model.model_fields.items():
-        path = f"{prefix}{name}"
+        # The alias where there is one: the reference documents the settings file, and a
+        # field aliased because its name is a Python keyword is written under the alias.
+        path = f"{prefix}{field.alias or name}"
         if path in _DOCUMENTED_AS_PROSE:
             continue
         paths.append(path)

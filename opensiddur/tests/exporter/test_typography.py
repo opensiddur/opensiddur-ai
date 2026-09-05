@@ -395,3 +395,58 @@ class TestTextStyle(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBookmarksConfig(unittest.TestCase):
+    """The PDF outline of a work that names a section in two languages.
+
+    This is the one setting whose default deliberately does *not* reproduce prior
+    output: before it, a parallel compile wrote two entries per heading, interleaved
+    out of document order. Nobody chose that, so the default fixes it.
+    """
+
+    def test_default_is_combined(self):
+        self.assertEqual("combined", _validate({}).bookmarks.from_.value)
+
+    def test_from_is_read_under_its_yaml_name(self):
+        """The field is ``from_`` in Python because ``from`` is a keyword, but the
+        settings file must still say ``from``."""
+        self.assertEqual("primary", _validate({"bookmarks": {"from": "primary"}})
+                         .bookmarks.from_.value)
+        self.assertEqual("alt", _validate({"bookmarks": {"from": "alt"}})
+                         .bookmarks.from_.value)
+
+    def test_an_unknown_source_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"bookmarks": {"from": "both"}})
+        self.assertIn("bookmarks.from", str(caught.exception))
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"bookmarks": {"depth": 2}})
+        self.assertIn("depth", str(caught.exception))
+
+
+class TestHeadingTranslationStyle(unittest.TestCase):
+    """The translated title under a heading, where a division is titled twice."""
+
+    def test_default_matches_the_built_in_appearance(self):
+        """Unset, the role must describe exactly what reledmac.xslt's own \\newcommand
+        does — otherwise setting the style to its documented default would change the
+        page."""
+        style = _validate({}).styles.heading_translation
+        self.assertEqual("normal", style.size)
+        self.assertEqual("italic", style.style)
+        self.assertEqual("center", style.align)
+
+    def test_it_is_configurable_like_any_other_role(self):
+        style = _validate(
+            {"styles": {"heading_translation": {"size": "small", "align": "right"}}}
+        ).styles.heading_translation
+        self.assertEqual("small", style.size)
+        self.assertEqual("right", style.align)
+
+    def test_an_unknown_attribute_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"styles": {"heading_translation": {"colour": "red"}}})
+        self.assertIn("colour", str(caught.exception))

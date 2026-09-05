@@ -152,6 +152,7 @@ as the surrounding text has it.
 | `styles.heading2` | `x-large`, bold, centered | Second-level heading. |
 | `styles.heading3` | `large`, bold, centered | Third-level heading. |
 | `styles.heading4` | `normal`, bold, centered | Fourth-level heading; the deepest there is. |
+| `styles.heading_translation` | `normal`, italic, centered | A heading's translated title, where a division is titled twice. Set on its own line under the title it translates, at whichever of the four levels that title is — so it takes one style rather than four. See [`bookmarks`](#bookmarks) for how the two titles reach the outline. |
 | `styles.title_main` | `xxxx-large`, bold, centered, `1.5ex` after | The main title on the title page. |
 | `styles.title_sub` | `x-large`, centered, `1.5ex` before | The subtitle. |
 | `styles.title_alt` | `large`, centered, `1ex` after | An alternative title, usually the title in the other language. |
@@ -243,6 +244,23 @@ emitted in.
 | --- | --- | --- | --- |
 | `table_of_contents.enabled` | boolean | `false` | Print a table of contents. |
 | `table_of_contents.depth` | integer 1–4 | `4` | Heading levels shown. Independent of the PDF bookmark depth, which is always four levels deep. |
+
+## `bookmarks`
+
+The PDF outline of a work that names a section in two languages — a division carrying two
+`tei:head`, or two projects compiled in parallel. One setting governs both, because to a
+reader they are the same question asked twice.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `bookmarks.from` | `combined` \| `primary` \| `alt` | `combined` | Which title an outline entry carries. `combined` joins both with a middle dot; `primary` takes the first column's title, or the division's first head; `alt` takes the other — the facing column where there is one, otherwise the division's second head. |
+
+Depth is not settable here: the outline is always four levels deep. `table_of_contents.depth`
+governs the printed table only.
+
+This is the one default that does **not** reproduce earlier output. Before it, both columns
+of a parallel compile wrote to the outline, so every heading appeared twice and out of
+document order. Set `from: primary` for one title per entry.
 
 ## `page_header` and `page_footer`
 

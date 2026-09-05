@@ -484,6 +484,15 @@ class Styles(ForbidExtra):
         ),
         description="Fourth-level section heading; the deepest level there is.",
     )
+    heading_translation: TextStyle = Field(
+        default_factory=lambda: TextStyle(
+            size=NamedSize.NORMAL, style=FontStyle.ITALIC, align=Alignment.CENTER
+        ),
+        description=(
+            "A heading's translated title, where a division is titled twice. Set under "
+            "the title it translates, at any of the four heading levels."
+        ),
+    )
     title_main: TextStyle = Field(
         default_factory=lambda: TextStyle(
             size=NamedSize.XXXX_LARGE,
@@ -872,6 +881,35 @@ class ParallelTypographyConfig(ForbidExtra):
     )
 
 
+class BookmarkSource(StrEnum):
+    """Which language a PDF bookmark carries where a work names a section twice."""
+
+    COMBINED = "combined"
+    PRIMARY = "primary"
+    ALT = "alt"
+
+
+class BookmarksConfig(ForbidExtra):
+    """The PDF outline of a work that names its sections in two languages.
+
+    A work does that in one of two ways — a division with two ``tei:head``, or two
+    projects compiled in parallel — and this setting governs both, because to a reader
+    they are the same question asked twice.
+
+    ``depth`` is not settable here: the outline is always four levels deep. See
+    :class:`TableOfContentsConfig`, whose ``depth`` is the printed table only.
+    """
+
+    from_: BookmarkSource = Field(
+        default=BookmarkSource.COMBINED,
+        alias="from",
+        description=(
+            "combined: join both titles in one entry. primary: the first column's "
+            "title, or the division's first head. alt: the other one."
+        ),
+    )
+
+
 class TableOfContentsConfig(ForbidExtra):
     """ An auto-generated table of contents.
 
@@ -937,6 +975,10 @@ class TypographyConfig(ForbidExtra):
     table_of_contents: TableOfContentsConfig = Field(
         default_factory=TableOfContentsConfig,
         description="An auto-generated table of contents.",
+    )
+    bookmarks: BookmarksConfig = Field(
+        default_factory=BookmarksConfig,
+        description="The PDF outline, where a work names a section in two languages.",
     )
     page_header: RunningHeadConfig = Field(
         default_factory=RunningHeadConfig,
