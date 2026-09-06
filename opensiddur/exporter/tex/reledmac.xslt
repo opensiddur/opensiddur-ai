@@ -92,6 +92,23 @@
          'combined' joins the two titles, 'primary' takes the first column's or the
          division's first head, 'alt' takes the other. See typography.bookmarks.from. -->
     <xsl:param name="bookmarks-from" as="xs:string">combined</xsl:param>
+    <!-- Which column's heading is set on the page where a work titles a section twice.
+         'combined' prints one heading where the two columns agree and both where they do
+         not; 'primary' and 'alt' always print the one named. Same vocabulary as
+         bookmarks-from, and for the same reason: it is the same question about the same
+         pair of titles, asked of the page rather than of the outline.
+         See typography.headings.from. -->
+    <xsl:param name="headings-from" as="xs:string">combined</xsl:param>
+    <!-- The same question asked of a rubric rather than a heading. A rubric is never
+         hoisted out of the columns: it stands mid-flow, and a parallel block cannot be
+         interrupted partway through, so the one that is kept stays in its column.
+
+         Anything but 'both' therefore requires that every rubric fall on an alignment
+         boundary. Where it does not, the column that gave up its copy has no rubric near
+         the passage it is about, and a reader of that column loses it — which is why
+         'both' is the default here where 'combined' is the default for a heading. See
+         typography.instructions.from, which says so at more length. -->
+    <xsl:param name="instructions-from" as="xs:string">both</xsl:param>
 
     <!-- ====================================================================
          Document scaffolding
@@ -634,6 +651,117 @@
         </xsl:call-template>
     </xsl:template>
 
+    <!-- The primary title a parallel block opens with, when the heading is to be set
+         across the page rather than inside a column. Empty when it is not.
+
+         A heading that is set once is not a heading of either column: it names the
+         section, and the section spans the opening. So every mode that sets one heading
+         hoists it out of the columns — whichever title it shows. Only 'both' keeps a
+         heading inside a column, because then there really are two, and each belongs to
+         the column whose language it is in.
+
+         Hoisting is possible only where the block *opens* with the heading: there is no
+         interrupting a \Pages once begun. A heading further in stays where it is. -->
+    <xsl:function name="f:spanning-title" as="xs:string">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:param name="mode" as="xs:string"/>
+        <xsl:variable name="primary" select="$block/p:parallelItem[@role='primary'][1]"/>
+        <xsl:variable name="primary-leaves" as="node()*">
+            <xsl:apply-templates select="$primary/node()" mode="leaves"/>
+        </xsl:variable>
+        <!-- Whitespace between the markup does not count as content, so a head is still
+             what the block opens with when pretty-printed XML puts a newline before it. -->
+        <xsl:variable name="first"
+                      select="$primary-leaves[not(self::text() and not(normalize-space(.)))][1]"/>
+        <xsl:sequence
+            select="if ($mode != 'both' and exists($first[self::f:head]))
+                    then string($first/@title)
+                    else ''"/>
+    </xsl:function>
+
+    <!-- A heading set across the page, outside the column structure. It carries the
+         running-head marks for both columns and the outline entry, because the heading in
+         the columns has been suppressed and would carry neither. \phantomsection anchors
+         here, which is where the reader will actually land. -->
+    <xsl:template name="spanning-heading">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="primary-leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='primary'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="secondary-leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='parallel'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="head" select="$primary-leaves[self::f:head][1]"/>
+        <xsl:variable name="alt-head" select="$secondary-leaves[self::f:head][1]"/>
+        <xsl:if test="exists($head)">
+            <!-- Which of the two titles this heading shows. 'combined' shows the other one
+                 too where it says something different, set beneath as a translation of the
+                 first — the same shape a division titled twice in one column takes. -->
+            <xsl:variable name="shown" as="element()"
+                          select="if ($headings-from = 'alt' and exists($alt-head))
+                                  then $alt-head else $head"/>
+            <xsl:variable name="second" as="element()?"
+                          select="if ($headings-from = 'combined' and exists($alt-head)
+                                      and string($alt-head/@title) != string($head/@title))
+                                  then $alt-head else ()"/>
+            <xsl:variable name="lang" select="string($shown/@xml:lang)"/>
+            <xsl:variable name="is-hebrew"
+                          select="$lang = 'he' or starts-with($lang, 'he-')"/>
+            <xsl:variable name="mark" select="f:emit-bidi-mark(string($shown/@title))"/>
+            <xsl:for-each select="('', 'Alt')">
+                <xsl:text>\InsertMark{OShead</xsl:text>
+                <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
+                <xsl:value-of select="."/>
+                <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
+                <xsl:text>\InsertMark{OSheadAny</xsl:text><xsl:value-of select="."/>
+                <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
+            </xsl:for-each>
+            <xsl:text>&#10;</xsl:text>
+            <!-- \parfillskip is 0pt plus 1fil on an ordinary paragraph, and the heading
+                 macros centre with an \hfill at each end. Three infinite glues put the
+                 title a third of the way across instead of half. reledmac zeroes
+                 \parfillskip inside a \pstart, which is why a heading set in a column
+                 looks right and this one, set between columns, did not. -->
+            <xsl:text>{\parfillskip=0pt\relax </xsl:text>
+            <xsl:if test="$is-hebrew">
+                <xsl:text>\begin{hebrew}</xsl:text>
+            </xsl:if>
+            <xsl:text>\OShead</xsl:text>
+            <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
+            <xsl:text>{</xsl:text>
+            <xsl:if test="not($is-hebrew)">
+                <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+            </xsl:if>
+            <xsl:apply-templates select="$shown/node()[not(self::f:alt-head)]" mode="emit"/>
+            <xsl:if test="not($is-hebrew)">
+                <xsl:text>}</xsl:text>
+            </xsl:if>
+            <xsl:text>}</xsl:text>
+            <xsl:if test="exists($second)">
+                <xsl:text>\OSheadTranslation{</xsl:text>
+                <xsl:apply-templates select="$second/node()[not(self::f:alt-head)]"
+                                     mode="emit"/>
+                <xsl:text>}</xsl:text>
+            </xsl:if>
+            <xsl:if test="$is-hebrew">
+                <xsl:text>\end{hebrew}</xsl:text>
+            </xsl:if>
+            <xsl:text>\par}&#10;</xsl:text>
+            <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
+            <xsl:value-of select="f:heading-toc-level(xs:integer($head/@level))"/>
+            <xsl:text>}{</xsl:text>
+            <xsl:value-of select="f:format-section-title(
+                if ($bookmarks-from = 'combined' and exists($second))
+                then concat(string($head/@title), ' &#xB7; ', string($second/@title))
+                else if ($bookmarks-from = 'alt' and exists($alt-head))
+                then string($alt-head/@title)
+                else string($head/@title), $lang)"/>
+            <xsl:text>}&#10;</xsl:text>
+        </xsl:if>
+    </xsl:template>
+
     <xsl:template name="parallel-run">
         <xsl:param name="parallels" as="element(p:parallel)+"/>
 
@@ -661,6 +789,30 @@
                 </xsl:if>
             </xsl:for-each>
         </xsl:variable>
+
+        <!-- A block opening with a heading both columns share starts a new column block,
+             so the heading can be set across the page between them. -->
+        <xsl:for-each-group select="$usable"
+                            group-starting-with="*[f:spanning-title(., $headings-from) != '']">
+            <xsl:call-template name="parallel-columns">
+                <xsl:with-param name="usable" select="current-group()"/>
+                <xsl:with-param name="spanning"
+                                select="f:spanning-title(current-group()[1], $headings-from)"/>
+            </xsl:call-template>
+        </xsl:for-each-group>
+    </xsl:template>
+
+    <!-- One \Pages (or \Columns) block, optionally preceded by a heading set across the
+         whole page rather than inside either column. -->
+    <xsl:template name="parallel-columns">
+        <xsl:param name="usable" as="element(p:parallel)*"/>
+        <xsl:param name="spanning" as="xs:string" select="''"/>
+
+        <xsl:if test="$spanning != ''">
+            <xsl:call-template name="spanning-heading">
+                <xsl:with-param name="block" select="$usable[1]"/>
+            </xsl:call-template>
+        </xsl:if>
 
         <xsl:if test="exists($usable)">
         <xsl:variable name="env" select="if ($layout='pairs') then 'pairs' else 'pages'"/>
@@ -713,6 +865,7 @@
                 <!-- Both columns are in scope here and nowhere else, which is what makes
                      joining their headings possible at all. -->
                 <xsl:with-param name="alt-nodes" select="$right-nodes"/>
+                <xsl:with-param name="hoisted-heading" select="$spanning"/>
             </xsl:call-template>
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
@@ -725,6 +878,10 @@
                 <!-- The second column records into the `Alt` mark classes so a
                      running head can name either language's heading. -->
                 <xsl:with-param name="stream" select="'alt'"/>
+                <!-- The other column, so this one can tell whether its heading says the
+                     same thing. The primary side is given the same in reverse. -->
+                <xsl:with-param name="alt-nodes" select="$left-nodes"/>
+                <xsl:with-param name="hoisted-heading" select="$spanning"/>
             </xsl:call-template>
             <xsl:text>\end{Rightside}&#10;</xsl:text>
 
@@ -770,6 +927,9 @@
              Only their headings are read, and only to give this stream's headings the
              title of the same section in the other language. -->
         <xsl:param name="alt-nodes" as="node()*" select="()"/>
+        <!-- A title already set across the page, above these columns. The first heading
+             carrying it is suppressed here so it is not set a second time inside one. -->
+        <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
 
         <xsl:variable name="flattened" as="node()*">
             <xsl:apply-templates select="$nodes" mode="leaves"/>
@@ -777,17 +937,37 @@
         <!-- Silent conditional delimiters and repeated labels are decided here, where the
              leaves either side of a marker are in view. See f:resolve-markers. -->
         <xsl:variable name="resolved" as="node()*" select="f:resolve-markers($flattened)"/>
-        <xsl:variable name="alt-heads" as="element()*">
+        <xsl:variable name="alt-flattened" as="node()*">
             <xsl:if test="exists($alt-nodes)">
-                <xsl:variable name="alt-flattened" as="node()*">
-                    <xsl:apply-templates select="$alt-nodes" mode="leaves"/>
-                </xsl:variable>
-                <xsl:sequence select="$alt-flattened[self::f:head]"/>
+                <xsl:apply-templates select="$alt-nodes" mode="leaves"/>
             </xsl:if>
         </xsl:variable>
+        <xsl:variable name="alt-heads" as="element()*"
+                      select="$alt-flattened[self::f:head]"/>
+        <!-- A rubric is as often inside a j:conditional as beside one — the marker and
+             the sentence it explains travel together — and a conditional reaches the leaf
+             stream whole. So rubrics are gathered from within the leaves, not only from
+             among them. -->
+        <xsl:variable name="alt-instructions" as="xs:string*"
+                      select="for $n in $alt-flattened
+                                        /descendant-or-self::tei:note[@type='instruction']
+                              return normalize-space(string($n))"/>
+        <!-- 'both' keeps every rubric where it is. 'combined' drops from the second
+             column only what the first already says in the same words, so two rubrics
+             that differ are both kept. 'primary' and 'alt' name a column and mean it:
+             the other column's rubric goes whether or not it says something different,
+             which is what naming one column asks for. -->
+        <xsl:variable name="drop-rubrics" as="xs:string"
+                      select="if ($instructions-from = 'both') then 'none'
+                              else if ($instructions-from = 'combined')
+                              then (if ($stream = 'alt') then 'matching' else 'none')
+                              else if ($instructions-from = 'primary')
+                              then (if ($stream = 'alt') then 'all' else 'none')
+                              else (if ($stream = 'primary') then 'all' else 'none')"/>
         <xsl:variable name="leaves" as="node()*"
-                      select="if (exists($alt-heads))
-                              then f:pair-heads($resolved, $alt-heads)
+                      select="if (exists($alt-flattened))
+                              then f:pair-heads($resolved, $alt-heads, $alt-instructions,
+                                                $drop-rubrics)
                               else $resolved"/>
 
         <xsl:if test="exists($leaves)">
@@ -1045,6 +1225,8 @@
                                     <xsl:with-param name="stream" select="$stream"/>
                                     <xsl:with-param name="has-alt-column"
                                                     select="exists($alt-nodes)"/>
+                                    <xsl:with-param name="hoisted-heading"
+                                                    select="$hoisted-heading"/>
                                 </xsl:call-template>
                                 <xsl:text>\par&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1062,6 +1244,8 @@
                                     <xsl:with-param name="stream" select="$stream"/>
                                     <xsl:with-param name="has-alt-column"
                                                     select="exists($alt-nodes)"/>
+                                    <xsl:with-param name="hoisted-heading"
+                                                    select="$hoisted-heading"/>
                                 </xsl:call-template>
                                 <xsl:text>&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1147,6 +1331,7 @@
         <!-- Whether a facing column exists at all. Without it, 'alt' cannot mean the other
              column and has to mean the division's own second head instead. -->
         <xsl:param name="has-alt-column" as="xs:boolean" select="false()"/>
+        <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
         <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
 
@@ -1168,6 +1353,33 @@
             <xsl:text>}{</xsl:text><xsl:value-of select="$mark-title"/><xsl:text>}</xsl:text>
         </xsl:if>
 
+        <!-- Whether this column sets the heading on the page. Where the two columns
+             title a section identically, printing both says the same thing twice, once per
+             column; where they differ, each column needs its own. Suppressing one is not
+             the same as dropping it: reledpar pairs the columns by counting
+             \pstart...\pend, so the paragraph has to stay and be non-empty. \mbox{} is
+             both — reledmac cannot typeset an empty \pstart at all, and fails the whole
+             build when asked to. -->
+        <xsl:variable name="agrees" as="xs:boolean"
+                      select="string(@alt-title) != '' and string(@alt-title) = string(@title)"/>
+        <!-- Already set across the page above these columns, so neither column sets it. -->
+        <!-- The hoisted title is the primary column's. In the alt column the sentinel's
+             own @title is the other language, and @alt-title is the primary's — so both
+             columns recognise the heading that was lifted out above them. -->
+        <xsl:variable name="hoisted" as="xs:boolean"
+                      select="$hoisted-heading != ''
+                              and ($hoisted-heading = string(@title)
+                                   or $hoisted-heading = string(@alt-title))"/>
+        <!-- Reached only by a heading that was not hoisted: one further into a block
+             than its opening, or any heading at all under 'both'. -->
+        <xsl:variable name="sets-heading" as="xs:boolean"
+                      select="if ($hoisted) then false()
+                              else if ($headings-from = 'both') then true()
+                              else if ($headings-from = 'primary') then $stream = 'primary'
+                              else if ($headings-from = 'alt') then $stream = 'alt'
+                              else $stream = 'primary' or not($agrees)"/>
+        <xsl:choose>
+            <xsl:when test="$sets-heading">
         <xsl:text>\OShead</xsl:text>
         <xsl:value-of select="f:heading-suffix(xs:integer(@level))"/>
         <xsl:text>{</xsl:text>
@@ -1183,6 +1395,11 @@
             <xsl:text>}</xsl:text>
         </xsl:if>
         <xsl:text>}</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\mbox{}</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
 
         <!-- A second head on the same division is the translated title. It is set under
              the first rather than beside it, so that it reads as naming the same section
@@ -1208,20 +1425,27 @@
              taking the division's second head as the other title. Tying 'alt' to the
              column alone emitted no outline at all for a single text titled twice. -->
         <xsl:variable name="writes-outline" as="xs:boolean"
-                      select="if ($stream = 'alt')
+                      select="if ($hoisted) then false()
+                              else if ($stream = 'alt')
                               then $bookmarks-from = 'alt'
                               else not($bookmarks-from = 'alt' and $has-alt-column)"/>
         <xsl:if test="$writes-outline">
             <!-- @alt-title is the title of the same section in the other language,
                  whether that came from a second head on the division or from the other
                  column; f:pair-heads has already settled which. Combined, they are one
-                 entry, because they name one section. -->
+                 entry, because they name one section.
+
+                 Under 'alt' it is read only in the primary stream, and only because a
+                 single text titled twice has no other column to take the title from.
+                 The alt stream's own @title is already the alt title; reading @alt-title
+                 there would hand back the primary's. -->
             <xsl:variable name="other" as="xs:string" select="string(@alt-title)"/>
             <xsl:variable name="outline-title" as="xs:string"
                           select="if ($bookmarks-from = 'combined' and $other != ''
                                       and $other != string(@title))
                                   then concat(string(@title), ' &#xB7; ', $other)
-                                  else if ($bookmarks-from = 'alt' and $other != '')
+                                  else if ($bookmarks-from = 'alt' and $stream = 'primary'
+                                           and $other != '')
                                   then $other
                                   else string(@title)"/>
             <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
@@ -1268,8 +1492,32 @@
     <xsl:function name="f:pair-heads" as="node()*">
         <xsl:param name="leaves" as="node()*"/>
         <xsl:param name="alt-heads" as="element()*"/>
+        <!-- The other column's rubrics, in order. A rubric carries no URN to pair on, so
+             it is matched by its words, scanning forward and never back: each of the
+             other column's rubrics is spent at most once, and in order.
+
+             Counted, not positioned. One column routinely carries rubrics the other has
+             none of — Birnbaum's Hebrew page labels the Reader where his English page
+             translates the words instead — and matching by position puts every rubric
+             after such a label out of step. Matching forward from a moving pointer fixes
+             that only until one pair matches out of order, and then strands the rest.
+
+             So the test is a count: the nth rubric saying this in this column is echoed if
+             the other column says it n times or more. The columns are two renderings of
+             one document aligned paragraph by paragraph, which is what makes a rubric
+             present in both overwhelmingly likely to be present at the same place; and a
+             rubric the other column does not have, or has fewer of, is kept. -->
+        <xsl:param name="alt-instructions" as="xs:string*"/>
+        <!-- What this stream gives up: 'none', 'matching' (only a rubric the other
+             column gives in the same words) or 'all' (every rubric, because the settings
+             named the other column). Decided by the caller, which knows which column it
+             is; mode="emit" does not. -->
+        <xsl:param name="drop-rubrics" as="xs:string"/>
         <xsl:iterate select="$leaves">
             <xsl:param name="seen" as="xs:integer" select="0"/>
+            <!-- The rubrics already met in this column, so that the nth of a repeated one
+                 is matched against the other column's nth. -->
+            <xsl:param name="rubrics-seen" as="xs:string*" select="()"/>
             <xsl:choose>
                 <xsl:when test="self::f:head">
                     <xsl:variable name="ordinal" as="xs:integer" select="$seen + 1"/>
@@ -1284,17 +1532,68 @@
                     </xsl:copy>
                     <xsl:next-iteration>
                         <xsl:with-param name="seen" select="$ordinal"/>
+                        <xsl:with-param name="rubrics-seen" select="$rubrics-seen"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="descendant-or-self::tei:note[@type='instruction']">
+                    <!-- One rubric per leaf in practice: either the note itself, or a
+                         conditional carrying the rubric that explains it. -->
+                    <xsl:variable name="note"
+                                  select="descendant-or-self::tei:note[@type='instruction'][1]"/>
+                    <xsl:variable name="text" as="xs:string"
+                                  select="normalize-space(string($note))"/>
+                    <!-- How many times this column has said it, counting this one. -->
+                    <xsl:variable name="nth" as="xs:integer"
+                                  select="count($rubrics-seen[. = $text]) + 1"/>
+                    <xsl:variable name="echoed" as="xs:boolean"
+                                  select="$drop-rubrics = 'all'
+                                          or ($drop-rubrics = 'matching'
+                                              and count($alt-instructions[. = $text]) ge $nth)"/>
+                    <xsl:apply-templates select="." mode="stamp-rubric">
+                        <xsl:with-param name="echoed" select="$echoed" tunnel="yes"/>
+                        <xsl:with-param name="note-lang" tunnel="yes"
+                                        select="string(($note/ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
+                        <xsl:with-param name="text-lang" tunnel="yes"
+                                        select="string(($note/ancestor::*[@xml:lang][1])/@xml:lang)"/>
+                    </xsl:apply-templates>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="seen" select="$seen"/>
+                        <xsl:with-param name="rubrics-seen"
+                                        select="($rubrics-seen, $text)"/>
                     </xsl:next-iteration>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:sequence select="."/>
                     <xsl:next-iteration>
                         <xsl:with-param name="seen" select="$seen"/>
+                        <xsl:with-param name="rubrics-seen" select="$rubrics-seen"/>
                     </xsl:next-iteration>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:iterate>
     </xsl:function>
+
+    <!-- Copy a leaf, recording on every rubric inside it what pairing decided and the
+         languages its direction is read from. Copying detaches a node from its ancestors,
+         and those two languages are read off them, so an English rubric in a Hebrew column
+         would otherwise stop looking like one and be set inline instead of on its own
+         line. -->
+    <xsl:mode name="stamp-rubric" on-no-match="shallow-copy"/>
+
+    <xsl:template match="tei:note[@type='instruction']" mode="stamp-rubric">
+        <xsl:param name="echoed" as="xs:boolean" tunnel="yes"/>
+        <xsl:param name="note-lang" as="xs:string" tunnel="yes"/>
+        <xsl:param name="text-lang" as="xs:string" tunnel="yes"/>
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <xsl:attribute name="f:note-lang" select="$note-lang"/>
+            <xsl:attribute name="f:text-lang" select="$text-lang"/>
+            <xsl:if test="$echoed">
+                <xsl:attribute name="f:echoed" select="'true'"/>
+            </xsl:if>
+            <xsl:copy-of select="node()"/>
+        </xsl:copy>
+    </xsl:template>
 
     <!-- ====================================================================
          Pass 1 (mode="leaves"): walk the tree, emit a flat sequence of
@@ -1801,11 +2100,21 @@
          attach to a zero-width lemma so the apparatus mark sits at the
          note's textual anchor point. -->
     <xsl:template match="tei:note[@type='instruction']" mode="emit" priority="10">
-        <!-- Whose direction the instruction runs in, against the text around it. -->
+        <!-- A rubric the other column gives in the same words is one rubric printed twice,
+             once per column. f:pair-heads has marked it; which column keeps it is the
+             settings' business. Nothing is emitted for the one that does not, and nothing
+             needs to be: a rubric is inline, so unlike a heading it opens no paragraph
+             that reledpar would be counting. -->
+        <xsl:if test="not(@f:echoed = 'true')">
+        <!-- Whose direction the instruction runs in, against the text around it. Read
+             off the ancestors, except where pairing has copied the note out of its tree
+             and recorded them on it. -->
         <xsl:variable name="note-lang"
-                      select="string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
+                      select="if (@f:note-lang) then string(@f:note-lang)
+                              else string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
         <xsl:variable name="text-lang"
-                      select="string((ancestor::*[@xml:lang][1])/@xml:lang)"/>
+                      select="if (@f:text-lang) then string(@f:text-lang)
+                              else string((ancestor::*[@xml:lang][1])/@xml:lang)"/>
         <xsl:variable name="crosses"
                       select="f:is-rtl-lang($note-lang) ne f:is-rtl-lang($text-lang)"/>
         <xsl:variable name="within" select="exists(ancestor::tei:p | ancestor::tei:l)"/>
@@ -1816,6 +2125,7 @@
         <xsl:text>{</xsl:text>
         <xsl:call-template name="note-content"/>
         <xsl:text>}</xsl:text>
+        </xsl:if>
     </xsl:template>
 
     <!-- Which scripts are written right to left, for deciding whether two runs can share

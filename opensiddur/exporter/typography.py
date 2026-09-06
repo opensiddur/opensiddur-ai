@@ -910,6 +910,75 @@ class BookmarksConfig(ForbidExtra):
     )
 
 
+class HeadingSource(StrEnum):
+    """Which heading a section carries on the page, where a work titles it twice.
+
+    The first three are :class:`BookmarkSource`'s, and mean the same. ``BOTH`` has no
+    counterpart there because an outline entry is one line and cannot show two titles in
+    two places; a page can.
+    """
+
+    COMBINED = "combined"
+    PRIMARY = "primary"
+    ALT = "alt"
+    BOTH = "both"
+
+
+class HeadingsConfig(ForbidExtra):
+    """The heading a section carries on the page, where a work titles it twice.
+
+    The same question :class:`BookmarksConfig` asks of the outline, asked of the page, so
+    it takes the same vocabulary. The values differ only in what "combined" can mean: an
+    outline entry can join two titles into one string, while a heading on a page cannot,
+    so ``combined`` there prints one heading where the columns agree and both where they
+    do not.
+    """
+
+    from_: HeadingSource = Field(
+        default=HeadingSource.COMBINED,
+        alias="from",
+        description=(
+            "combined: one heading, spanning the page — both titles where the columns "
+            "differ, one where they agree. primary: the first column's title, spanning. "
+            "alt: the other one, spanning. both: each column keeps its own heading, in "
+            "its column."
+        ),
+    )
+
+
+class InstructionsConfig(ForbidExtra):
+    """The rubric a passage carries, where a work prints it in both columns.
+
+    :class:`HeadingsConfig`'s question, asked of a rubric. It takes the same vocabulary,
+    but a rubric is not hoisted out of the columns the way a heading is: it stands
+    mid-flow, and a parallel block cannot be interrupted partway through. The rubric that
+    is kept therefore stays *in its column*.
+
+    **Anything but ``both`` requires that every rubric fall on an alignment boundary.**
+    Where the columns are aligned at the rubric's own position, a reader of either sees it
+    on the row it governs. Where they are not, the column that gave up its copy has no
+    rubric anywhere near the passage it is about, and a reader of that column loses it
+    outright. ``both`` carries no such requirement, and is therefore the default —
+    the one setting here whose default is the conservative value rather than the tidy one,
+    because getting it wrong loses a rubric rather than merely repeating one.
+
+    :class:`HeadingsConfig` defaults the other way, and the asymmetry is deliberate: a
+    heading is lifted clear of the columns, so deduplicating one costs nothing.
+    """
+
+    from_: HeadingSource = Field(
+        default=HeadingSource.BOTH,
+        alias="from",
+        description=(
+            "combined: one rubric where the two columns give it alike, both where they "
+            "differ. primary: always the first column's. alt: always the other. both: "
+            "each column keeps its own. Anything but both requires that every rubric fall "
+            "on an alignment boundary, or the column that gives up its copy loses it near "
+            "the passage it is about."
+        ),
+    )
+
+
 class TableOfContentsConfig(ForbidExtra):
     """ An auto-generated table of contents.
 
@@ -979,6 +1048,14 @@ class TypographyConfig(ForbidExtra):
     bookmarks: BookmarksConfig = Field(
         default_factory=BookmarksConfig,
         description="The PDF outline, where a work names a section in two languages.",
+    )
+    headings: HeadingsConfig = Field(
+        default_factory=HeadingsConfig,
+        description="Headings on the page, where a work names a section in two languages.",
+    )
+    instructions: InstructionsConfig = Field(
+        default_factory=InstructionsConfig,
+        description="Rubrics, where a work prints the same one in both columns.",
     )
     page_header: RunningHeadConfig = Field(
         default_factory=RunningHeadConfig,

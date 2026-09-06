@@ -450,3 +450,75 @@ class TestHeadingTranslationStyle(unittest.TestCase):
         with self.assertRaises(ValidationError) as caught:
             _validate({"styles": {"heading_translation": {"colour": "red"}}})
         self.assertIn("colour", str(caught.exception))
+
+
+class TestHeadingsConfig(unittest.TestCase):
+    """Headings on the page, where a work titles a section in two languages.
+
+    Deliberately the same vocabulary as `bookmarks`: it is the same question about the
+    same pair of titles, asked of the page rather than of the outline.
+    """
+
+    def test_default_is_combined(self):
+        self.assertEqual("combined", _validate({}).headings.from_.value)
+
+    def test_from_is_read_under_its_yaml_name(self):
+        self.assertEqual("primary", _validate({"headings": {"from": "primary"}})
+                         .headings.from_.value)
+        self.assertEqual("alt", _validate({"headings": {"from": "alt"}})
+                         .headings.from_.value)
+
+    def test_it_shares_the_bookmark_vocabulary_and_adds_one(self):
+        """One vocabulary for one question, so a settings file reads consistently — plus
+        `both`, which only a page can honour."""
+        from opensiddur.exporter.typography import BookmarkSource, HeadingSource
+        self.assertEqual({s.value for s in BookmarkSource} | {"both"},
+                         {s.value for s in HeadingSource})
+
+    def test_an_unknown_source_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"headings": {"from": "matched"}})
+        self.assertIn("headings.from", str(caught.exception))
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"headings": {"level": 2}})
+        self.assertIn("level", str(caught.exception))
+
+    def test_both_is_accepted_here_and_not_in_bookmarks(self):
+        """A page can show two titles in two places; an outline entry is one line."""
+        self.assertEqual("both", _validate({"headings": {"from": "both"}})
+                         .headings.from_.value)
+        with self.assertRaises(ValidationError):
+            _validate({"bookmarks": {"from": "both"}})
+
+
+class TestInstructionsConfig(unittest.TestCase):
+    """Rubrics, where a work prints the same one in both columns."""
+
+    def test_default_is_both(self):
+        """The conservative value, not the tidy one: deduplicating a rubric where the
+        columns are not aligned at its position loses it for one column's reader, where
+        keeping both merely repeats it. Headings default the other way, and the asymmetry
+        is deliberate — a heading is lifted clear of the columns, so deduplicating one
+        costs nothing."""
+        self.assertEqual("both", _validate({}).instructions.from_.value)
+        self.assertEqual("combined", _validate({}).headings.from_.value)
+
+    def test_it_takes_the_heading_vocabulary(self):
+        """The same question asked of a rubric, so the same four values."""
+        from opensiddur.exporter.typography import HeadingSource
+        for value in (s.value for s in HeadingSource):
+            with self.subTest(value=value):
+                self.assertEqual(value, _validate({"instructions": {"from": value}})
+                                 .instructions.from_.value)
+
+    def test_an_unknown_source_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"instructions": {"from": "spanning"}})
+        self.assertIn("instructions.from", str(caught.exception))
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"instructions": {"span": True}})
+        self.assertIn("span", str(caught.exception))

@@ -262,6 +262,75 @@ This is the one default that does **not** reproduce earlier output. Before it, b
 of a parallel compile wrote to the outline, so every heading appeared twice and out of
 document order. Set `from: primary` for one title per entry.
 
+## `headings`
+
+The heading a section carries **on the page**, where a work titles it twice — the same
+question [`bookmarks`](#bookmarks) asks of the outline, so it takes the same vocabulary.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `headings.from` | `combined` \| `primary` \| `alt` \| `both` | `combined` | Which heading a section carries. The first three set **one** heading, spanning the page above both columns; `both` sets one in each column. |
+
+| Value | What is set |
+| --- | --- |
+| `combined` | One heading, spanning. Both titles where the columns differ, the second beneath the first as a translation of it; one title where they agree. |
+| `primary` | The first column's title, spanning. |
+| `alt` | The other column's title, spanning. |
+| `both` | Each column keeps its own heading, inside its own column. Nothing is deduplicated and nothing spans. |
+
+**A heading that is set once spans the page.** It is not a heading of either column: it
+names the section, and the section spans the opening. Setting it inside a column would
+centre it over half the page. Only `both` keeps a heading in a column, because then there
+really are two and each belongs to the column whose language it is in.
+
+Spanning is possible only where a parallel block **opens** with the heading — there is no
+interrupting a `\Pages` once begun — so a heading further into a block stays where it is,
+deduplicated but not spanning.
+
+`bookmarks` has no `both`: an outline entry is one line and cannot show two titles in two
+places. A page can, which is why this setting has a value that one does not.
+
+A suppressed heading still keeps its paragraph and its running-head mark: reledpar pairs
+the columns by counting them, and a page style should still be able to name either
+language.
+
+## `instructions`
+
+The rubric a passage carries, where a work prints it in both columns — [`headings`](#headings)'
+question asked of a rubric, with the same vocabulary.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `instructions.from` | `combined` \| `primary` \| `alt` \| `both` | `both` | Which column's rubric is set. `combined` sets one where the two columns give it in the same words and both where they differ; `primary` and `alt` set the one named whether or not they differ; `both` keeps each column's. |
+
+> **Anything but `both` requires that every rubric fall on an alignment boundary.**
+> Read the rest of this section before setting it.
+
+**A rubric is not hoisted the way a heading is.** A heading is lifted out of the columns and
+set across the page; a rubric cannot be, because it stands mid-flow and a parallel block
+cannot be interrupted partway through. So the rubric that is kept stays *in its column* —
+the primary one under `combined` and `primary`.
+
+That is only readable where the two columns are aligned at the rubric's own position. Where
+they are, a reader of either column sees it on the row it governs. Where they are not, the
+column that gave up its copy has no rubric anywhere near the passage the rubric is about,
+and a reader of that column simply loses it. The Birnbaum siddur is the worked example:
+its rubrics sit mid-passage rather than at paragraph boundaries, so it sets
+`instructions.from: both`.
+
+**`both` has no such requirement, and is the default** — the one setting in this document
+whose default is the conservative value rather than the tidy one, because getting it wrong
+loses a rubric rather than merely repeating one. Set `combined` where a document's rubrics
+are known to sit at alignment boundaries.
+
+[`headings`](#headings) defaults the other way, and the asymmetry is deliberate: a heading
+is lifted clear of the columns and set across the page, so deduplicating one costs nothing.
+
+Rubrics are matched by count, not position: the *n*th rubric saying this in one column is
+echoed if the other says it *n* times or more. Position does not survive contact with a real
+document, where one column routinely carries rubrics the other has none of. A rubric the
+other column does not have, or has fewer of, is always kept.
+
 ## `page_header` and `page_footer`
 
 Running heads and feet. Empty by default, which leaves the document class's own page style
