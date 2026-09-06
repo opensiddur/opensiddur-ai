@@ -2673,10 +2673,12 @@ class TestParallelInstructions(unittest.TestCase):
     def test_the_same_rubric_in_both_columns_is_set_once(self):
         """Birnbaum prints his rubrics in English on both sides of the opening, so both
         columns carried the same sentence and the reader saw it twice."""
-        self.assertEqual((1, 0), self._counts(_transform(self._parallel(self.SAME, self.SAME))))
+        self.assertEqual((1, 0), self._counts(_transform(
+            self._parallel(self.SAME, self.SAME), **{"instructions-from": "combined"})))
 
     def test_rubrics_that_differ_are_both_set(self):
-        self.assertEqual((1, 1), self._counts(_transform(self._parallel(self.SAME, self.OTHER))))
+        self.assertEqual((1, 1), self._counts(_transform(
+            self._parallel(self.SAME, self.OTHER), **{"instructions-from": "combined"})))
 
     def test_naming_a_column_takes_that_column_whether_or_not_they_differ(self):
         """'primary' and 'alt' name a column and mean it — unlike 'combined', which only
@@ -2692,6 +2694,12 @@ class TestParallelInstructions(unittest.TestCase):
                     self._counts(_transform(self._parallel(*titles),
                                             **{"instructions-from": "alt"})))
 
+    def test_both_is_the_default(self):
+        """Deduplicating a rubric the columns are not aligned on loses it for one
+        column's reader; keeping both merely repeats it."""
+        self.assertEqual((1, 1), self._counts(_transform(
+            self._parallel(self.SAME, self.SAME))))
+
     def test_both_keeps_every_rubric_where_it_is(self):
         for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
             with self.subTest(titles=titles):
@@ -2702,7 +2710,8 @@ class TestParallelInstructions(unittest.TestCase):
 
     def test_a_kept_rubric_stays_in_its_column(self):
         """Unlike a heading, which is hoisted out of the columns entirely."""
-        out = _transform(self._parallel(self.SAME, self.SAME))
+        out = _transform(self._parallel(self.SAME, self.SAME),
+                         **{"instructions-from": "combined"})
         self.assertGreater(out.index(r"\OSInstructionBlock{"),
                            out.index(r"\begin{Leftside}"))
 

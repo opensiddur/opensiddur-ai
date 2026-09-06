@@ -958,12 +958,16 @@ class InstructionsConfig(ForbidExtra):
     Where the columns are aligned at the rubric's own position, a reader of either sees it
     on the row it governs. Where they are not, the column that gave up its copy has no
     rubric anywhere near the passage it is about, and a reader of that column loses it
-    outright. ``both`` carries no such requirement, and is the value to reach for unless a
-    document's rubrics are known to sit at alignment boundaries.
+    outright. ``both`` carries no such requirement, and is therefore the default —
+    the one setting here whose default is the conservative value rather than the tidy one,
+    because getting it wrong loses a rubric rather than merely repeating one.
+
+    :class:`HeadingsConfig` defaults the other way, and the asymmetry is deliberate: a
+    heading is lifted clear of the columns, so deduplicating one costs nothing.
     """
 
     from_: HeadingSource = Field(
-        default=HeadingSource.COMBINED,
+        default=HeadingSource.BOTH,
         alias="from",
         description=(
             "combined: one rubric where the two columns give it alike, both where they "

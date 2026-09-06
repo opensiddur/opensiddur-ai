@@ -301,7 +301,7 @@ question asked of a rubric, with the same vocabulary.
 
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `instructions.from` | `combined` \| `primary` \| `alt` \| `both` | `combined` | Which column's rubric is set. `combined` sets one where the two columns give it in the same words and both where they differ; `primary` and `alt` set the one named whether or not they differ; `both` keeps each column's. |
+| `instructions.from` | `combined` \| `primary` \| `alt` \| `both` | `both` | Which column's rubric is set. `combined` sets one where the two columns give it in the same words and both where they differ; `primary` and `alt` set the one named whether or not they differ; `both` keeps each column's. |
 
 > **Anything but `both` requires that every rubric fall on an alignment boundary.**
 > Read the rest of this section before setting it.
@@ -318,8 +318,13 @@ and a reader of that column simply loses it. The Birnbaum siddur is the worked e
 its rubrics sit mid-passage rather than at paragraph boundaries, so it sets
 `instructions.from: both`.
 
-**`both` has no such requirement**, which is why it is the value to reach for unless the
-document's rubrics are known to sit at alignment boundaries.
+**`both` has no such requirement, and is the default** — the one setting in this document
+whose default is the conservative value rather than the tidy one, because getting it wrong
+loses a rubric rather than merely repeating one. Set `combined` where a document's rubrics
+are known to sit at alignment boundaries.
+
+[`headings`](#headings) defaults the other way, and the asymmetry is deliberate: a heading
+is lifted clear of the columns and set across the page, so deduplicating one costs nothing.
 
 Rubrics are matched by count, not position: the *n*th rubric saying this in one column is
 echoed if the other says it *n* times or more. Position does not survive contact with a real

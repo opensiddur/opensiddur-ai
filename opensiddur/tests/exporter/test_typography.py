@@ -496,8 +496,14 @@ class TestHeadingsConfig(unittest.TestCase):
 class TestInstructionsConfig(unittest.TestCase):
     """Rubrics, where a work prints the same one in both columns."""
 
-    def test_default_is_combined(self):
-        self.assertEqual("combined", _validate({}).instructions.from_.value)
+    def test_default_is_both(self):
+        """The conservative value, not the tidy one: deduplicating a rubric where the
+        columns are not aligned at its position loses it for one column's reader, where
+        keeping both merely repeats it. Headings default the other way, and the asymmetry
+        is deliberate — a heading is lifted clear of the columns, so deduplicating one
+        costs nothing."""
+        self.assertEqual("both", _validate({}).instructions.from_.value)
+        self.assertEqual("combined", _validate({}).headings.from_.value)
 
     def test_it_takes_the_heading_vocabulary(self):
         """The same question asked of a rubric, so the same four values."""

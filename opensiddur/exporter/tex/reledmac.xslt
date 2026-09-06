@@ -105,9 +105,10 @@
 
          Anything but 'both' therefore requires that every rubric fall on an alignment
          boundary. Where it does not, the column that gave up its copy has no rubric near
-         the passage it is about, and a reader of that column loses it. See
+         the passage it is about, and a reader of that column loses it — which is why
+         'both' is the default here where 'combined' is the default for a heading. See
          typography.instructions.from, which says so at more length. -->
-    <xsl:param name="instructions-from" as="xs:string">combined</xsl:param>
+    <xsl:param name="instructions-from" as="xs:string">both</xsl:param>
 
     <!-- ====================================================================
          Document scaffolding
