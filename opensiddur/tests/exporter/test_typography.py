@@ -491,3 +491,28 @@ class TestHeadingsConfig(unittest.TestCase):
                          .headings.from_.value)
         with self.assertRaises(ValidationError):
             _validate({"bookmarks": {"from": "both"}})
+
+
+class TestInstructionsConfig(unittest.TestCase):
+    """Rubrics, where a work prints the same one in both columns."""
+
+    def test_default_is_combined(self):
+        self.assertEqual("combined", _validate({}).instructions.from_.value)
+
+    def test_it_takes_the_heading_vocabulary(self):
+        """The same question asked of a rubric, so the same four values."""
+        from opensiddur.exporter.typography import HeadingSource
+        for value in (s.value for s in HeadingSource):
+            with self.subTest(value=value):
+                self.assertEqual(value, _validate({"instructions": {"from": value}})
+                                 .instructions.from_.value)
+
+    def test_an_unknown_source_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"instructions": {"from": "spanning"}})
+        self.assertIn("instructions.from", str(caught.exception))
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"instructions": {"span": True}})
+        self.assertIn("span", str(caught.exception))

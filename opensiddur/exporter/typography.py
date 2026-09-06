@@ -946,6 +946,27 @@ class HeadingsConfig(ForbidExtra):
     )
 
 
+class InstructionsConfig(ForbidExtra):
+    """The rubric a passage carries, where a work prints it in both columns.
+
+    :class:`HeadingsConfig`'s question, asked of a rubric. It takes the same vocabulary
+    and one value fewer in effect: a rubric is not hoisted out of the columns the way a
+    heading is, because it stands mid-flow and there is no interrupting a parallel block
+    partway through. Where the two columns agree it is set once, in the primary column,
+    at the point both would have had it.
+    """
+
+    from_: HeadingSource = Field(
+        default=HeadingSource.COMBINED,
+        alias="from",
+        description=(
+            "combined: one rubric where the two columns give it alike, both where they "
+            "differ. primary: always the first column's. alt: always the other. both: "
+            "each column keeps its own."
+        ),
+    )
+
+
 class TableOfContentsConfig(ForbidExtra):
     """ An auto-generated table of contents.
 
@@ -1019,6 +1040,10 @@ class TypographyConfig(ForbidExtra):
     headings: HeadingsConfig = Field(
         default_factory=HeadingsConfig,
         description="Headings on the page, where a work names a section in two languages.",
+    )
+    instructions: InstructionsConfig = Field(
+        default_factory=InstructionsConfig,
+        description="Rubrics, where a work prints the same one in both columns.",
     )
     page_header: RunningHeadConfig = Field(
         default_factory=RunningHeadConfig,

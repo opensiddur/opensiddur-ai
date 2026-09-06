@@ -2612,3 +2612,96 @@ class TestParallelHeadings(unittest.TestCase):
                     out = _transform(self._parallel(*titles),
                                      **{"headings-from": mode})
                     self.assertEqual(1, out.count(r"\addcontentsline"))
+
+
+class TestParallelInstructions(unittest.TestCase):
+    """A rubric both columns give is one rubric printed twice.
+
+    HeadingsConfig's question asked of a rubric, and it takes the same vocabulary. What it
+    does not do is span the page: a rubric stands mid-flow, and a parallel block cannot be
+    interrupted partway through, so the kept one stays in its column.
+    """
+
+    @staticmethod
+    def _parallel(primary: str, alt: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div>
+                  <tei:note type="instruction" xml:lang="en">{primary}</tei:note>
+                  <tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div>
+                  <tei:note type="instruction" xml:lang="en">{alt}</tei:note>
+                  <tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    MACROS = (r"\instructionnote{", r"\OSInstructionBlock{", r"\OSInstructionLine{")
+    SAME = "Between Rosh Hashanah and Yom Kippur add:"
+    OTHER = "On fast days the Reader adds:"
+
+    @classmethod
+    def _counts(cls, out: str) -> tuple:
+        def n(s):
+            return sum(s.count(m) for m in cls.MACROS)
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        return n(left), n(right)
+
+    def test_the_same_rubric_in_both_columns_is_set_once(self):
+        """Birnbaum prints his rubrics in English on both sides of the opening, so both
+        columns carried the same sentence and the reader saw it twice."""
+        self.assertEqual((1, 0), self._counts(_transform(self._parallel(self.SAME, self.SAME))))
+
+    def test_rubrics_that_differ_are_both_set(self):
+        self.assertEqual((1, 1), self._counts(_transform(self._parallel(self.SAME, self.OTHER))))
+
+    def test_naming_a_column_takes_that_column_whether_or_not_they_differ(self):
+        """'primary' and 'alt' name a column and mean it — unlike 'combined', which only
+        removes what the other column already says."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            with self.subTest(titles=titles):
+                self.assertEqual(
+                    (1, 0),
+                    self._counts(_transform(self._parallel(*titles),
+                                            **{"instructions-from": "primary"})))
+                self.assertEqual(
+                    (0, 1),
+                    self._counts(_transform(self._parallel(*titles),
+                                            **{"instructions-from": "alt"})))
+
+    def test_both_keeps_every_rubric_where_it_is(self):
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            with self.subTest(titles=titles):
+                self.assertEqual(
+                    (1, 1),
+                    self._counts(_transform(self._parallel(*titles),
+                                            **{"instructions-from": "both"})))
+
+    def test_a_kept_rubric_stays_in_its_column(self):
+        """Unlike a heading, which is hoisted out of the columns entirely."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        self.assertGreater(out.index(r"\OSInstructionBlock{"),
+                           out.index(r"\begin{Leftside}"))
+
+    def test_a_single_language_document_is_unaffected(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div>
+              <tei:note type="instruction" xml:lang="en">Stand.</tei:note>
+              <tei:p>שלום</tei:p>
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertEqual(1, sum(out.count(m) for m in self.MACROS))

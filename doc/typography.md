@@ -294,6 +294,23 @@ A suppressed heading still keeps its paragraph and its running-head mark: reledp
 the columns by counting them, and a page style should still be able to name either
 language.
 
+## `instructions`
+
+The rubric a passage carries, where a work prints it in both columns — [`headings`](#headings)'
+question asked of a rubric, with the same vocabulary.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `instructions.from` | `combined` \| `primary` \| `alt` \| `both` | `combined` | Which column's rubric is set. `combined` sets one where the two columns give it in the same words and both where they differ; `primary` and `alt` set the one named whether or not they differ; `both` keeps each column's. |
+
+**A rubric is not hoisted the way a heading is.** It stands mid-flow, and a parallel block
+cannot be interrupted partway through, so the one that is kept stays in its column — at the
+point both columns would have had it, where a reader of either can see it.
+
+Rubrics are paired by position and confirmed by their words: two that disagree at a position
+are two rubrics, and `combined` keeps both. That is also what a column holding a rubric the
+other lacks degrades to, which is the safe direction to fail in.
+
 ## `page_header` and `page_footer`
 
 Running heads and feet. Empty by default, which leaves the document class's own page style

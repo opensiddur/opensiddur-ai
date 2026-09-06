@@ -99,6 +99,12 @@
          pair of titles, asked of the page rather than of the outline.
          See typography.headings.from. -->
     <xsl:param name="headings-from" as="xs:string">combined</xsl:param>
+    <!-- The same question asked of a rubric rather than a heading. A rubric is never
+         hoisted out of the columns: it stands mid-flow, and a parallel block cannot be
+         interrupted partway through. Where the two columns give it alike it is set once,
+         in the primary column, at the point both would have had it.
+         See typography.instructions.from. -->
+    <xsl:param name="instructions-from" as="xs:string">combined</xsl:param>
 
     <!-- ====================================================================
          Document scaffolding
@@ -920,17 +926,37 @@
         <!-- Silent conditional delimiters and repeated labels are decided here, where the
              leaves either side of a marker are in view. See f:resolve-markers. -->
         <xsl:variable name="resolved" as="node()*" select="f:resolve-markers($flattened)"/>
-        <xsl:variable name="alt-heads" as="element()*">
+        <xsl:variable name="alt-flattened" as="node()*">
             <xsl:if test="exists($alt-nodes)">
-                <xsl:variable name="alt-flattened" as="node()*">
-                    <xsl:apply-templates select="$alt-nodes" mode="leaves"/>
-                </xsl:variable>
-                <xsl:sequence select="$alt-flattened[self::f:head]"/>
+                <xsl:apply-templates select="$alt-nodes" mode="leaves"/>
             </xsl:if>
         </xsl:variable>
+        <xsl:variable name="alt-heads" as="element()*"
+                      select="$alt-flattened[self::f:head]"/>
+        <!-- A rubric is as often inside a j:conditional as beside one — the marker and
+             the sentence it explains travel together — and a conditional reaches the leaf
+             stream whole. So rubrics are gathered from within the leaves, not only from
+             among them. -->
+        <xsl:variable name="alt-instructions" as="xs:string*"
+                      select="for $n in $alt-flattened
+                                        /descendant-or-self::tei:note[@type='instruction']
+                              return normalize-space(string($n))"/>
+        <!-- 'both' keeps every rubric where it is. 'combined' drops from the second
+             column only what the first already says in the same words, so two rubrics
+             that differ are both kept. 'primary' and 'alt' name a column and mean it:
+             the other column's rubric goes whether or not it says something different,
+             which is what naming one column asks for. -->
+        <xsl:variable name="drop-rubrics" as="xs:string"
+                      select="if ($instructions-from = 'both') then 'none'
+                              else if ($instructions-from = 'combined')
+                              then (if ($stream = 'alt') then 'matching' else 'none')
+                              else if ($instructions-from = 'primary')
+                              then (if ($stream = 'alt') then 'all' else 'none')
+                              else (if ($stream = 'primary') then 'all' else 'none')"/>
         <xsl:variable name="leaves" as="node()*"
-                      select="if (exists($alt-heads))
-                              then f:pair-heads($resolved, $alt-heads)
+                      select="if (exists($alt-flattened))
+                              then f:pair-heads($resolved, $alt-heads, $alt-instructions,
+                                                $drop-rubrics)
                               else $resolved"/>
 
         <xsl:if test="exists($leaves)">
@@ -1455,8 +1481,32 @@
     <xsl:function name="f:pair-heads" as="node()*">
         <xsl:param name="leaves" as="node()*"/>
         <xsl:param name="alt-heads" as="element()*"/>
+        <!-- The other column's rubrics, in order. A rubric carries no URN to pair on, so
+             it is matched by its words, scanning forward and never back: each of the
+             other column's rubrics is spent at most once, and in order.
+
+             Counted, not positioned. One column routinely carries rubrics the other has
+             none of — Birnbaum's Hebrew page labels the Reader where his English page
+             translates the words instead — and matching by position puts every rubric
+             after such a label out of step. Matching forward from a moving pointer fixes
+             that only until one pair matches out of order, and then strands the rest.
+
+             So the test is a count: the nth rubric saying this in this column is echoed if
+             the other column says it n times or more. The columns are two renderings of
+             one document aligned paragraph by paragraph, which is what makes a rubric
+             present in both overwhelmingly likely to be present at the same place; and a
+             rubric the other column does not have, or has fewer of, is kept. -->
+        <xsl:param name="alt-instructions" as="xs:string*"/>
+        <!-- What this stream gives up: 'none', 'matching' (only a rubric the other
+             column gives in the same words) or 'all' (every rubric, because the settings
+             named the other column). Decided by the caller, which knows which column it
+             is; mode="emit" does not. -->
+        <xsl:param name="drop-rubrics" as="xs:string"/>
         <xsl:iterate select="$leaves">
             <xsl:param name="seen" as="xs:integer" select="0"/>
+            <!-- The rubrics already met in this column, so that the nth of a repeated one
+                 is matched against the other column's nth. -->
+            <xsl:param name="rubrics-seen" as="xs:string*" select="()"/>
             <xsl:choose>
                 <xsl:when test="self::f:head">
                     <xsl:variable name="ordinal" as="xs:integer" select="$seen + 1"/>
@@ -1471,17 +1521,68 @@
                     </xsl:copy>
                     <xsl:next-iteration>
                         <xsl:with-param name="seen" select="$ordinal"/>
+                        <xsl:with-param name="rubrics-seen" select="$rubrics-seen"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="descendant-or-self::tei:note[@type='instruction']">
+                    <!-- One rubric per leaf in practice: either the note itself, or a
+                         conditional carrying the rubric that explains it. -->
+                    <xsl:variable name="note"
+                                  select="descendant-or-self::tei:note[@type='instruction'][1]"/>
+                    <xsl:variable name="text" as="xs:string"
+                                  select="normalize-space(string($note))"/>
+                    <!-- How many times this column has said it, counting this one. -->
+                    <xsl:variable name="nth" as="xs:integer"
+                                  select="count($rubrics-seen[. = $text]) + 1"/>
+                    <xsl:variable name="echoed" as="xs:boolean"
+                                  select="$drop-rubrics = 'all'
+                                          or ($drop-rubrics = 'matching'
+                                              and count($alt-instructions[. = $text]) ge $nth)"/>
+                    <xsl:apply-templates select="." mode="stamp-rubric">
+                        <xsl:with-param name="echoed" select="$echoed" tunnel="yes"/>
+                        <xsl:with-param name="note-lang" tunnel="yes"
+                                        select="string(($note/ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
+                        <xsl:with-param name="text-lang" tunnel="yes"
+                                        select="string(($note/ancestor::*[@xml:lang][1])/@xml:lang)"/>
+                    </xsl:apply-templates>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="seen" select="$seen"/>
+                        <xsl:with-param name="rubrics-seen"
+                                        select="($rubrics-seen, $text)"/>
                     </xsl:next-iteration>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:sequence select="."/>
                     <xsl:next-iteration>
                         <xsl:with-param name="seen" select="$seen"/>
+                        <xsl:with-param name="rubrics-seen" select="$rubrics-seen"/>
                     </xsl:next-iteration>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:iterate>
     </xsl:function>
+
+    <!-- Copy a leaf, recording on every rubric inside it what pairing decided and the
+         languages its direction is read from. Copying detaches a node from its ancestors,
+         and those two languages are read off them, so an English rubric in a Hebrew column
+         would otherwise stop looking like one and be set inline instead of on its own
+         line. -->
+    <xsl:mode name="stamp-rubric" on-no-match="shallow-copy"/>
+
+    <xsl:template match="tei:note[@type='instruction']" mode="stamp-rubric">
+        <xsl:param name="echoed" as="xs:boolean" tunnel="yes"/>
+        <xsl:param name="note-lang" as="xs:string" tunnel="yes"/>
+        <xsl:param name="text-lang" as="xs:string" tunnel="yes"/>
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <xsl:attribute name="f:note-lang" select="$note-lang"/>
+            <xsl:attribute name="f:text-lang" select="$text-lang"/>
+            <xsl:if test="$echoed">
+                <xsl:attribute name="f:echoed" select="'true'"/>
+            </xsl:if>
+            <xsl:copy-of select="node()"/>
+        </xsl:copy>
+    </xsl:template>
 
     <!-- ====================================================================
          Pass 1 (mode="leaves"): walk the tree, emit a flat sequence of
@@ -1988,11 +2089,21 @@
          attach to a zero-width lemma so the apparatus mark sits at the
          note's textual anchor point. -->
     <xsl:template match="tei:note[@type='instruction']" mode="emit" priority="10">
-        <!-- Whose direction the instruction runs in, against the text around it. -->
+        <!-- A rubric the other column gives in the same words is one rubric printed twice,
+             once per column. f:pair-heads has marked it; which column keeps it is the
+             settings' business. Nothing is emitted for the one that does not, and nothing
+             needs to be: a rubric is inline, so unlike a heading it opens no paragraph
+             that reledpar would be counting. -->
+        <xsl:if test="not(@f:echoed = 'true')">
+        <!-- Whose direction the instruction runs in, against the text around it. Read
+             off the ancestors, except where pairing has copied the note out of its tree
+             and recorded them on it. -->
         <xsl:variable name="note-lang"
-                      select="string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
+                      select="if (@f:note-lang) then string(@f:note-lang)
+                              else string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
         <xsl:variable name="text-lang"
-                      select="string((ancestor::*[@xml:lang][1])/@xml:lang)"/>
+                      select="if (@f:text-lang) then string(@f:text-lang)
+                              else string((ancestor::*[@xml:lang][1])/@xml:lang)"/>
         <xsl:variable name="crosses"
                       select="f:is-rtl-lang($note-lang) ne f:is-rtl-lang($text-lang)"/>
         <xsl:variable name="within" select="exists(ancestor::tei:p | ancestor::tei:l)"/>
@@ -2003,6 +2114,7 @@
         <xsl:text>{</xsl:text>
         <xsl:call-template name="note-content"/>
         <xsl:text>}</xsl:text>
+        </xsl:if>
     </xsl:template>
 
     <!-- Which scripts are written right to left, for deciding whether two runs can share
