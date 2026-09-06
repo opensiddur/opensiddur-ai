@@ -715,6 +715,12 @@
                 <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
             </xsl:for-each>
             <xsl:text>&#10;</xsl:text>
+            <!-- \parfillskip is 0pt plus 1fil on an ordinary paragraph, and the heading
+                 macros centre with an \hfill at each end. Three infinite glues put the
+                 title a third of the way across instead of half. reledmac zeroes
+                 \parfillskip inside a \pstart, which is why a heading set in a column
+                 looks right and this one, set between columns, did not. -->
+            <xsl:text>{\parfillskip=0pt\relax </xsl:text>
             <xsl:if test="$is-hebrew">
                 <xsl:text>\begin{hebrew}</xsl:text>
             </xsl:if>
@@ -738,7 +744,8 @@
             <xsl:if test="$is-hebrew">
                 <xsl:text>\end{hebrew}</xsl:text>
             </xsl:if>
-            <xsl:text>&#10;\phantomsection\addcontentsline{toc}{</xsl:text>
+            <xsl:text>\par}&#10;</xsl:text>
+            <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
             <xsl:value-of select="f:heading-toc-level(xs:integer($head/@level))"/>
             <xsl:text>}{</xsl:text>
             <xsl:value-of select="f:format-section-title(

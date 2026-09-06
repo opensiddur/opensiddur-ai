@@ -2613,6 +2613,19 @@ class TestParallelHeadings(unittest.TestCase):
                                      **{"headings-from": mode})
                     self.assertEqual(1, out.count(r"\addcontentsline"))
 
+    def test_a_spanning_heading_is_centred_on_the_measure(self):
+        r"""\parfillskip is 0pt plus 1fil on an ordinary paragraph, and the heading macros
+        centre with an \hfill at each end. Three infinite glues put the title a third of
+        the way across rather than half. reledmac zeroes \parfillskip inside a \pstart,
+        which is why a heading set in a column looked right and this one, set between
+        columns, sat left of centre."""
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        spanning = out.split(r"\begin{Leftside}")[0]
+        self.assertIn(r"{\parfillskip=0pt\relax", spanning)
+        # The group closes with \par, so the setting cannot leak into what follows.
+        self.assertIn(r"\par}", spanning)
+        self.assertLess(spanning.index(r"{\parfillskip=0pt\relax"),
+                        spanning.index(r"\OSheadA{"))
 
 class TestParallelInstructions(unittest.TestCase):
     """A rubric both columns give is one rubric printed twice.
