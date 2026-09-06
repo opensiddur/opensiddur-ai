@@ -334,10 +334,9 @@ def _paragraph_section(config: TypographyConfig) -> list[str]:
     if "spacing" in written:
         lines.append(rf"\setlength{{\parskip}}{{{paragraphs.spacing}}}")
         # The body is reledmac numbered text, whose paragraphs are \pstart...\pend
-        # groups. Those do not take \parskip between them, so setting it alone moves the
-        # bibliography and leaves the prayer exactly where it was. Emitted only when the
-        # spacing is actually configured, so an unset project keeps reledmac's own default.
-        lines.append(r"\AtEveryPstart{\vspace{\parskip}}")
+        # groups, and those do not take \parskip between them. reledmac.xslt hooks
+        # \AtEveryPstart* to \OSPstartSkip for exactly that reason; \parskip is read
+        # when a \pstart is set, so rewriting it here is all this has to do.
     if "line_spacing" in written:
         lines.append(rf"\linespread{{{_format_number(paragraphs.line_spacing)}}}\selectfont")
     if "alignment" in written:
@@ -594,13 +593,15 @@ def _markers_section(config: TypographyConfig) -> list[str]:
             + "}}"
         )
     if conditional_written & {"block", "rule_width", "rule_thickness"}:
-        width = _percent_of(conditional.rule_width, r"\linewidth")
+        width = _percent_of(conditional.rule_width, r"\hsize")
         if conditional.block is ConditionalBlock.RULE:
             # A full-width box rather than \par-separated material: these rules
             # sit inside reledmac \pstart groups, where \par does not reliably
-            # break the line.
+            # break the line. \hsize rather than \linewidth: reledpar narrows
+            # \hsize to the column but leaves \linewidth at the page width, so a
+            # \linewidth box centres its rule outside the column it belongs to.
             lines.append(
-                r"\renewcommand{\OSCondRule}{\leavevmode\hbox to \linewidth{\hss\rule{"
+                r"\renewcommand{\OSCondRule}{\leavevmode\hbox to \hsize{\hss\rule{"
                 + width
                 + "}{"
                 + conditional.rule_thickness
