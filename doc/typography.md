@@ -303,13 +303,28 @@ question asked of a rubric, with the same vocabulary.
 | --- | --- | --- | --- |
 | `instructions.from` | `combined` \| `primary` \| `alt` \| `both` | `combined` | Which column's rubric is set. `combined` sets one where the two columns give it in the same words and both where they differ; `primary` and `alt` set the one named whether or not they differ; `both` keeps each column's. |
 
-**A rubric is not hoisted the way a heading is.** It stands mid-flow, and a parallel block
-cannot be interrupted partway through, so the one that is kept stays in its column — at the
-point both columns would have had it, where a reader of either can see it.
+> **Anything but `both` requires that every rubric fall on an alignment boundary.**
+> Read the rest of this section before setting it.
 
-Rubrics are paired by position and confirmed by their words: two that disagree at a position
-are two rubrics, and `combined` keeps both. That is also what a column holding a rubric the
-other lacks degrades to, which is the safe direction to fail in.
+**A rubric is not hoisted the way a heading is.** A heading is lifted out of the columns and
+set across the page; a rubric cannot be, because it stands mid-flow and a parallel block
+cannot be interrupted partway through. So the rubric that is kept stays *in its column* —
+the primary one under `combined` and `primary`.
+
+That is only readable where the two columns are aligned at the rubric's own position. Where
+they are, a reader of either column sees it on the row it governs. Where they are not, the
+column that gave up its copy has no rubric anywhere near the passage the rubric is about,
+and a reader of that column simply loses it. The Birnbaum siddur is the worked example:
+its rubrics sit mid-passage rather than at paragraph boundaries, so it sets
+`instructions.from: both`.
+
+**`both` has no such requirement**, which is why it is the value to reach for unless the
+document's rubrics are known to sit at alignment boundaries.
+
+Rubrics are matched by count, not position: the *n*th rubric saying this in one column is
+echoed if the other says it *n* times or more. Position does not survive contact with a real
+document, where one column routinely carries rubrics the other has none of. A rubric the
+other column does not have, or has fewer of, is always kept.
 
 ## `page_header` and `page_footer`
 

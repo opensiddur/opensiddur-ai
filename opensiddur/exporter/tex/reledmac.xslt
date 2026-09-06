@@ -101,9 +101,12 @@
     <xsl:param name="headings-from" as="xs:string">combined</xsl:param>
     <!-- The same question asked of a rubric rather than a heading. A rubric is never
          hoisted out of the columns: it stands mid-flow, and a parallel block cannot be
-         interrupted partway through. Where the two columns give it alike it is set once,
-         in the primary column, at the point both would have had it.
-         See typography.instructions.from. -->
+         interrupted partway through, so the one that is kept stays in its column.
+
+         Anything but 'both' therefore requires that every rubric fall on an alignment
+         boundary. Where it does not, the column that gave up its copy has no rubric near
+         the passage it is about, and a reader of that column loses it. See
+         typography.instructions.from, which says so at more length. -->
     <xsl:param name="instructions-from" as="xs:string">combined</xsl:param>
 
     <!-- ====================================================================
