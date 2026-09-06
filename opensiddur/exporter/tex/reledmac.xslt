@@ -358,7 +358,14 @@
              fixes both: it is measured by whatever column it lands in, and it wraps. What
              it gives up is the flush margin the box provided, which is worth less than the
              words being on the page. -->
-        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\leavevmode\unskip\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
+        <!-- The leading \strut is what keeps the break out of the facing column. Two of
+             these in a row put two \newline together, and the empty line between them has
+             no height; \Columns cuts each column into slices of \baselineskip, and a
+             zero-height line leaves the glue before it inside its own slice rather than at
+             the cut, whereupon reledpar \unvbox-es it onto the shared page list and both
+             columns move. The \strut gives that line the height of ordinary text, so it
+             becomes a row of this column alone. -->
+        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <!-- The same, for an instruction standing inside a paragraph rather than between
              two. A box the width of the line does not fit on a line that is already
              partly set: it overhangs the margin and the instruction runs off the page,
@@ -369,7 +376,14 @@
              Identical to \OSInstructionBlock now that neither boxes its argument. The two
              are kept apart because their call sites are: one interrupts a paragraph and
              one stands between paragraphs, and a style may yet want to tell them apart. -->
-        <xsl:text>\newcommand{\OSInstructionLine}[1]{\leavevmode\unskip\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
+        <!-- The leading \strut is what keeps the break out of the facing column. Two of
+             these in a row put two \newline together, and the empty line between them has
+             no height; \Columns cuts each column into slices of \baselineskip, and a
+             zero-height line leaves the glue before it inside its own slice rather than at
+             the cut, whereupon reledpar \unvbox-es it onto the shared page list and both
+             columns move. The \strut gives that line the height of ordinary text, so it
+             becomes a row of this column alone. -->
+        <xsl:text>\newcommand{\OSInstructionLine}[1]{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <!-- Conditional passages. Only markers whose condition could not be decided survive
              compilation: a decided condition is resolved away, its text either kept outright
@@ -381,8 +395,12 @@
         <xsl:text>\newcommand{\OSCondStartInline}{{\bfseries[}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondEndInline}{{\bfseries]}}&#10;</xsl:text>
         <!-- A full-width box rather than \par-separated material: these rules sit inside
-             reledmac \pstart groups, where \par does not reliably break the line. -->
-        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \linewidth{\hss\rule{0.25\linewidth}{0.4pt}\hss}}&#10;</xsl:text>
+             reledmac \pstart groups, where \par does not reliably break the line.
+             \hsize, not \linewidth, for the reason given above \OSInstructionBlock:
+             reledpar sets \hsize to the column width inside a parallel column but leaves
+             \linewidth at the page, so a \linewidth box is twice the width it has to fit
+             in and the centred rule lands outside its own column. -->
+        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \hsize{\hss\rule{0.25\hsize}{0.4pt}\hss}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondStartBlock}{\OSCondRule}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondEndBlock}{\OSCondRule}&#10;</xsl:text>
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
@@ -468,6 +486,28 @@
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
         <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
+
+        <!-- The space between one \pstart and the next. reledmac \pstart groups do not
+             take \parskip between them, so without this there is no space between
+             parallel blocks at all and what looks like separation is only the shorter
+             column being padded out to the longer one.
+
+             Starred: the unstarred \AtEveryPstart prefixes \noindent, which makes
+             reledpar treat the material as column content and set it in a full-width
+             two-\parbox row of its own, costing a whole line per \pstart. The starred
+             form goes into the shared vertical list, which is what vertical space wants.
+
+             Halved because \Columns runs the hook once for the left \pstart and again
+             for the right one (reledpar's \Columns@print@before@pstart), so a paired
+             compile would otherwise get twice the skip a single-column one gets.
+
+             A macro rather than a length so it is read when a \pstart is set, not here:
+             typography.paragraphs.spacing rewrites \parskip further down the preamble,
+             and this has to follow it. -->
+        <xsl:text>\newcommand{\OSPstartSkip}{</xsl:text>
+        <xsl:value-of select="if ($has-parallel) then '0.5\parskip' else '\parskip'"/>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:text>\AtEveryPstart*{\vspace{\OSPstartSkip}}&#10;</xsl:text>
 
         <!-- Font switches applied to the whole body, from typography.styles.body.
              Empty unless configured; emitted at the top of the document, where it
@@ -856,6 +896,7 @@
             <xsl:text>\begin{</xsl:text><xsl:value-of select="$env"/><xsl:text>}&#10;</xsl:text>
 
             <xsl:text>\begin{Leftside}&#10;</xsl:text>
+            <xsl:call-template name="column-glue-reset"/>
                 <xsl:call-template name="numbered-stream">
                 <xsl:with-param name="nodes" select="$left-nodes"/>
                 <xsl:with-param name="lang" select="$left-lang"/>
@@ -870,6 +911,7 @@
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
             <xsl:text>\begin{Rightside}&#10;</xsl:text>
+            <xsl:call-template name="column-glue-reset"/>
                 <xsl:call-template name="numbered-stream">
                 <xsl:with-param name="nodes" select="$right-nodes"/>
                 <xsl:with-param name="lang" select="$right-lang"/>
@@ -888,6 +930,23 @@
             <xsl:text>\end{</xsl:text><xsl:value-of select="$env"/><xsl:text>}&#10;</xsl:text>
             <xsl:value-of select="$typeset"/><xsl:text>&#10;</xsl:text>
         </xsl:if>
+    </xsl:template>
+
+    <!-- No vertical glue may survive inside a parallel \pstart.
+
+         \Columns takes each side one slice at a time (\vsplit ... to\baselineskip) and
+         then \unvbox-es that slice onto the enclosing vertical list — which is the
+         full-width page list — keeping only its \lastbox as the column's line. Glue in
+         the slice is left behind there, between two full-width rows, so it displaces
+         BOTH columns. A \parskip after a paragraph inside one column therefore opened a
+         gap in the middle of the facing column's paragraph.
+
+         Zeroing it here is enough because a \par with no \parskip contributes only
+         interline glue, which the \vsplit consumes exactly. Leftside and Rightside are
+         LaTeX environments, hence groups, so this reaches the raw-box construction and
+         nothing else — the single-column body and the bibliography keep \parskip. -->
+    <xsl:template name="column-glue-reset">
+        <xsl:text>\setlength{\parskip}{0pt}&#10;</xsl:text>
     </xsl:template>
 
     <xsl:template name="parallel-side">
@@ -964,11 +1023,18 @@
                               else if ($instructions-from = 'primary')
                               then (if ($stream = 'alt') then 'all' else 'none')
                               else (if ($stream = 'primary') then 'all' else 'none')"/>
-        <xsl:variable name="leaves" as="node()*"
+        <xsl:variable name="paired" as="node()*"
                       select="if (exists($alt-flattened))
                               then f:pair-heads($resolved, $alt-heads, $alt-instructions,
                                                 $drop-rubrics)
                               else $resolved"/>
+        <!-- A paragraph break is a terminator, so the last paragraph of a block carries
+             one with nothing after it. Inside a single \pstart that break now sets a
+             blank line, and a blank line before \pend is a row of empty column. Drop the
+             ones that separate nothing. -->
+        <xsl:variable name="leaves" as="node()*"
+                      select="if ($single-pstart) then f:trim-trailing-breaks($paired)
+                              else $paired"/>
 
         <xsl:if test="exists($leaves)">
             <xsl:if test="$lang = 'he'">
@@ -1267,8 +1333,33 @@
                                 </xsl:next-iteration>
                             </xsl:when>
                             <xsl:when test="$single-pstart and $in-pstart">
-                                <!-- Keep the single block open; just start a new paragraph. -->
-                                <xsl:text>\par&#10;</xsl:text>
+                                <!-- Keep the single block open; just start a new paragraph.
+
+                                     The separation is a blank line rather than a skip
+                                     because a skip would not stay in this column — see
+                                     the column-glue-reset template. One line is also the
+                                     smallest column-local vertical unit reledpar has:
+                                     \Columns advances both sides a row at a time, so
+                                     anything shorter is either discarded at the slice
+                                     boundary or leaks onto the shared page list. The two
+                                     columns drift by these lines within a block and come
+                                     back together at the next \pstart, which is the only
+                                     alignment the encoder actually declared.
+
+                                     \skipnumbering keeps the blank line out of the margin
+                                     numbering, and \mbox{} keeps it non-empty: reledmac
+                                     cannot set an empty paragraph and dies on the whole
+                                     build when asked to.
+
+                                     The \strut is what makes it a line rather than a leak.
+                                     \Columns cuts each column into slices of \baselineskip;
+                                     a box of no height leaves the interline glue before it
+                                     inside its own slice instead of at the cut, and that
+                                     glue is then \unvbox-ed onto the shared page list — the
+                                     very displacement this is meant to avoid. A strut gives
+                                     the line the height and depth of ordinary text, so the
+                                     slice ends where the machinery expects. -->
+                                <xsl:text>\par\skipnumbering\mbox{\strut}\par&#10;</xsl:text>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="true()"/>
                                 </xsl:next-iteration>
@@ -1397,7 +1488,7 @@
         <xsl:text>}</xsl:text>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:text>\mbox{}</xsl:text>
+                <xsl:text>\mbox{\strut}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
 
@@ -2288,6 +2379,34 @@
                    or starts-with($unit, 'aliyah')
                    or starts-with($unit, 'maftir')
                    or $node/@rend = '****'))"/>
+    </xsl:function>
+
+    <!-- True when a leaf puts something on the page, so a paragraph break before it has
+         something to separate. Everything a stream can carry that does not: the breaks
+         themselves, the layout whitespace between them, and the silent milestones. -->
+    <xsl:function name="f:puts-ink" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:sequence select="not(exists($node/self::f:para-break)
+                                  or exists($node/self::f:block-break)
+                                  or f:is-structural-space($node)
+                                  or f:renders-nothing($node))"/>
+    </xsl:function>
+
+    <!-- Drop the paragraph breaks that trail the end of a block, where they would set a
+         blank line against \pend rather than separate two paragraphs. Grouped by block so
+         a break at the end of one block is judged against that block, not the next one. -->
+    <xsl:function name="f:trim-trailing-breaks" as="node()*">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:for-each-group select="$leaves" group-ending-with="self::f:block-break">
+            <xsl:variable name="group" as="node()*" select="current-group()"/>
+            <xsl:variable name="last-ink" as="xs:integer"
+                          select="(0,
+                                   for $i in 1 to count($group)
+                                   return if (f:puts-ink($group[$i])) then $i else ()
+                                  )[last()]"/>
+            <xsl:sequence select="$group[position() le $last-ink
+                                         or exists(self::f:block-break)]"/>
+        </xsl:for-each-group>
     </xsl:function>
 
     <!-- The endConditional that closes a conditional, and the nodes between the two.

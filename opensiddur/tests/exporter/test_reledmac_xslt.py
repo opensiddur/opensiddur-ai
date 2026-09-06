@@ -2727,3 +2727,265 @@ class TestParallelInstructions(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertEqual(1, sum(out.count(m) for m in self.MACROS))
+
+
+class TestParallelParagraphSpacing(unittest.TestCase):
+    r"""A paragraph break in one column must not open a gap in the other.
+
+    ``\Columns`` takes each side one ``\baselineskip`` slice at a time and ``\unvbox``-es
+    that slice onto the full-width page list, keeping only its ``\lastbox`` as the column's
+    line. Glue in the slice stays behind on the shared list, between two full-width rows —
+    so a ``\parskip`` after a paragraph in the Hebrew column used to open a blank line in
+    the middle of the facing English paragraph.
+
+    The cure is that no vertical glue may survive inside a parallel ``\pstart``. The
+    separation becomes a blank line instead, which is the smallest column-local vertical
+    unit reledpar has.
+    """
+
+    @staticmethod
+    def _parallel(primary: str, alt: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div>{primary}</tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div>{alt}</tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    TWO_PARAGRAPHS = _parallel.__func__(
+        "<tei:p>שלום</tei:p><tei:p>עולם</tei:p>",
+        "<tei:p>Hello</tei:p><tei:p>World</tei:p>",
+    )
+
+    @staticmethod
+    def _sides(out: str) -> tuple[str, str]:
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        return left, right
+
+    def test_a_paragraph_break_is_a_blank_line_not_a_skip(self):
+        """The regression test. A bare \\par between two paragraphs of a parallel block
+        carries \\parskip glue, and that glue reaches the facing column."""
+        out = _transform(self.TWO_PARAGRAPHS, layout="pairs")
+        for side in self._sides(out):
+            self.assertIn(r"\par\skipnumbering\mbox{\strut}\par", side)
+
+    def test_a_trailing_break_sets_no_blank_line(self):
+        r"""A paragraph break is a terminator, so the last paragraph of a block carries one
+        with nothing after it. Kept, it would set an empty row against \pend."""
+        out = _transform(self.TWO_PARAGRAPHS, layout="pairs")
+        for side in self._sides(out):
+            self.assertEqual(1, side.count(r"\par\skipnumbering\mbox{\strut}\par"))
+            self.assertNotRegex(side, r"\\mbox\{\\strut\}\\par\s*\\pend")
+
+    def test_parskip_is_zeroed_inside_both_columns(self):
+        out = _transform(self.TWO_PARAGRAPHS, layout="pairs")
+        for side in self._sides(out):
+            self.assertIn(r"\setlength{\parskip}{0pt}", side)
+
+    def test_the_columns_keep_their_own_paragraph_counts(self):
+        r"""Column-local means column-local: the two sides need not break in the same
+        places, and neither side gains a break because the other has one."""
+        out = _transform(
+            self._parallel(
+                "<tei:p>שלום</tei:p><tei:p>עולם</tei:p><tei:p>שוב</tei:p>",
+                "<tei:p>Hello world again</tei:p>",
+            ),
+            layout="pairs",
+        )
+        left, right = self._sides(out)
+        self.assertEqual(2, left.count(r"\par\skipnumbering\mbox{\strut}\par"))
+        self.assertEqual(0, right.count(r"\par\skipnumbering\mbox{\strut}\par"))
+
+    def test_differing_paragraph_counts_still_pair_pstart_for_pstart(self):
+        r"""The block stays the alignment unit. Paragraphs inside it are not pstarts, so
+        an uneven number of them cannot desync the columns."""
+        out = _transform(
+            self._parallel(
+                "<tei:p>שלום</tei:p><tei:p>עולם</tei:p><tei:p>שוב</tei:p>",
+                "<tei:p>Hello world again</tei:p>",
+            ),
+            layout="pairs",
+        )
+        left, right = self._sides(out)
+        self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
+        self.assertEqual(left.count(r"\pend"), right.count(r"\pend"))
+
+    def test_a_single_column_document_keeps_its_parskip(self):
+        """Confined to parallel mode: nothing here touches ordinary numbered text."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:p>שלום</tei:p><tei:p>עולם</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        body = out.split(r"\begin{document}")[1]
+        self.assertNotIn(r"\setlength{\parskip}{0pt}", body)
+        self.assertNotIn(r"\skipnumbering\mbox{\strut}", body)
+
+
+class TestPstartSkip(unittest.TestCase):
+    r"""Space between one ``\pstart`` and the next.
+
+    reledmac ``\pstart`` groups do not take ``\parskip`` between them, so without the hook
+    there is no space between parallel blocks at all — what looks like separation is only
+    the shorter column being padded out to the longer one.
+    """
+
+    PARALLEL = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+             xmlns:p="http://jewishliturgy.org/ns/processing">
+      <tei:text><tei:body>
+        <p:parallel column-order="primary_first">
+          <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+          <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hello</tei:p></p:parallelItem>
+        </p:parallel>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    SINGLE = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_the_hook_is_starred(self):
+        r"""Unstarred, \AtEveryPstart prefixes \noindent, which makes reledpar treat the
+        material as column content and give it a full-width row of its own — a blank line
+        per \pstart rather than a skip."""
+        out = _transform(self.SINGLE)
+        self.assertIn(r"\AtEveryPstart*{\vspace{\OSPstartSkip}}", out)
+        self.assertNotIn(r"\AtEveryPstart{", out)
+
+    def test_the_skip_is_halved_for_paired_columns(self):
+        r"""\Columns runs the hook once for the left \pstart and again for the right one,
+        so a paired compile would otherwise get twice a single-column one's skip."""
+        self.assertIn(r"\newcommand{\OSPstartSkip}{0.5\parskip}", _transform(self.PARALLEL))
+        self.assertIn(r"\newcommand{\OSPstartSkip}{\parskip}", _transform(self.SINGLE))
+
+    def test_the_skip_follows_a_configured_paragraph_spacing(self):
+        r"""A macro, not a length: typography.paragraphs.spacing rewrites \parskip further
+        down the preamble, and the skip has to follow it rather than capture the default."""
+        out = _transform(self.SINGLE)
+        preamble = out.split(r"\begin{document}")[0]
+        self.assertLess(
+            preamble.index(r"\AtEveryPstart*"), len(preamble),
+            "the hook must be defined in the preamble",
+        )
+        self.assertIn(r"{\parskip}", preamble)
+
+
+class TestPreambleIsAllTeX(unittest.TestCase):
+    r"""The preamble must contain only TeX.
+
+    An XSLT comment that loses its opening ``<!--`` is still well-formed XML -- the prose
+    simply becomes a text node and is copied into the output. It lands in the preamble,
+    where LaTeX reads it as body text and dies with "Missing \begin{document}". No unit
+    test noticed, because none of them looked at what the preamble was made of.
+    """
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_no_stray_prose_before_begin_document(self):
+        out = _transform(self.XML)
+        preamble = out.split(r"\begin{document}")[0]
+        # The preamble embeds Lua, whose lines are not TeX; skip from \directlua to the
+        # brace that closes it.
+        stray, in_lua = [], False
+        for line in preamble.splitlines():
+            if "directlua" in line:
+                in_lua = True
+            if in_lua:
+                if line.rstrip().endswith("}"):
+                    in_lua = False
+                continue
+            if line.strip() and not line.lstrip().startswith(("\\", "%", "}", "{", "]")):
+                stray.append(line)
+        self.assertEqual([], stray, "non-TeX lines in the preamble")
+
+    def test_no_xml_comment_delimiters_survive(self):
+        self.assertNotIn("-->", _transform(self.XML))
+
+
+class TestEmptyLinesInAColumn(unittest.TestCase):
+    r"""Every empty line inside a parallel ``\pstart`` must carry a strut.
+
+    ``\Columns`` cuts each column into slices of ``\baselineskip``. A line of no height
+    leaves the glue before it inside its own slice instead of at the cut, and reledpar then
+    ``\unvbox``-es that slice onto the shared page list, where it moves both columns. A
+    strut gives the line the height of ordinary text, so it becomes a row of its own column
+    and nothing escapes. Measured: without the strut, two adjacent rubrics in the Hebrew
+    column opened a 6pt gap in the middle of a word in the English one.
+    """
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_the_instruction_macros_strut_the_line_they_break_from(self):
+        out = _transform(self.XML)
+        for macro in (r"\OSInstructionBlock", r"\OSInstructionLine"):
+            self.assertIn(
+                r"\newcommand{" + macro + r"}[1]{\leavevmode\unskip\strut\newline"
+                r"{\bfseries #1}\newline\ignorespaces}",
+                out,
+            )
+
+    def test_the_suppressed_heading_placeholder_is_strutted(self):
+        r"""The placeholder that keeps a suppressed heading's \pstart non-empty is itself a
+        line of the column, and an unstrutted one leaks the same way."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div corresp="urn:x-opensiddur:text:prayer:x">
+                  <tei:head>SAME</tei:head><tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div corresp="urn:x-opensiddur:text:prayer:x">
+                  <tei:head>SAME</tei:head><tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, layout="pairs")
+        self.assertIn(r"\mbox{\strut}", out)
+        self.assertNotRegex(out, r"\\mbox\{\}\\par")
+
+
+class TestConditionalRuleWidth(unittest.TestCase):
+    r"""The conditional rule is measured by its column, not by the page.
+
+    reledpar narrows ``\hsize`` to the column inside a parallel raw box but leaves
+    ``\linewidth`` at the page width — the same trap already documented for the
+    instruction boxes. A ``\linewidth`` box is twice the width it has to fit in, so its
+    centred rule lands outside the column it belongs to.
+    """
+
+    def test_the_default_rule_uses_hsize(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(
+            r"\newcommand{\OSCondRule}{\leavevmode\hbox to \hsize"
+            r"{\hss\rule{0.25\hsize}{0.4pt}\hss}}",
+            out,
+        )

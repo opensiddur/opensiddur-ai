@@ -122,6 +122,13 @@ margins were configurable. Margins are named for the **binding**, not for the pa
 | `paragraphs.line_spacing` | number, 0.5–3.0 | `1.0` | Multiple of single spacing. Hebrew with vowels and cantillation needs more leading than unpointed text. |
 | `paragraphs.alignment` | `justify` \| `left` \| `right` \| `center` | `justify` | |
 
+`paragraphs.spacing` sets the space between one aligned unit and the next. Inside a unit, in a
+parallel two-column compile, a paragraph break is a blank line instead — reledpar advances the
+two columns a line at a time, so a skip in one column would displace the facing one, and one
+line is the smallest separation that stays in the column it belongs to. To get the configured
+spacing part-way through a prayer, split it into two units by giving the two halves their own
+`@corresp` URNs; that also aligns the columns there.
+
 ## `styles`
 
 The appearance of each kind of text the exporter distinguishes. Setting one changes only that

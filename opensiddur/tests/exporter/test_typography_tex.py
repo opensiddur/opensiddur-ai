@@ -391,7 +391,14 @@ class TestMarkers(unittest.TestCase):
 
     def test_the_conditional_block_rule(self):
         tex = _tex({"markers": {"conditional": {"rule_width": "50%", "rule_thickness": "1pt"}}})
-        self.assertIn(r"\rule{0.5\linewidth}{1pt}", tex)
+        self.assertIn(r"\rule{0.5\hsize}{1pt}", tex)
+
+    def test_the_conditional_block_rule_is_measured_by_its_column(self):
+        """\\hsize, not \\linewidth: reledpar narrows \\hsize to the column but leaves
+        \\linewidth at the page width, so a \\linewidth rule lands outside its column."""
+        tex = _tex({"markers": {"conditional": {"rule_width": "50%"}}})
+        self.assertIn(r"\hbox to \hsize", tex)
+        self.assertNotIn(r"\linewidth", tex)
 
     def test_a_bracketed_conditional_block_reuses_the_inline_markers(self):
         tex = _tex({"markers": {"conditional": {"block": "brackets"}}})
