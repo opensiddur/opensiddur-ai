@@ -517,6 +517,13 @@ def _line_numbers_section(config: TypographyConfig, has_parallel: bool) -> list[
         return [r"\numberlinefalse"]
     if "unit" in written:
         lines.append(rf"\lineation{{{line_numbers.unit.value}}}")
+        if has_parallel:
+            # \lineation sets the main series only; reledpar keeps a separate
+            # \bypage@R that defaults to numbering by section. This block is emitted
+            # after the XSLT's own defaults and wins over them, so without the twin a
+            # settings file that names a unit -- `page' included -- would put the right
+            # column back to running on unbroken through the document.
+            lines.append(rf"\lineationR{{{line_numbers.unit.value}}}")
     if "increment" in written:
         lines.append(rf"\linenumincrement{{{line_numbers.increment}}}")
         if has_parallel:

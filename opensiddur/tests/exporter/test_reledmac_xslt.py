@@ -556,6 +556,40 @@ class TestParallelMapping(unittest.TestCase):
         self.assertIn(r"\linenummarginColumns{left}", out)
         self.assertIn(r"\linenummarginColumnsR{right}", out)
 
+    def test_both_series_are_numbered_by_page(self):
+        r"""\lineation sets the main series only. reledpar keeps a separate \bypage@R
+        which defaults to false, so without \lineationR the right column numbers by
+        section and runs on unbroken -- measured at 320 by page 11 of the Amidah."""
+        for layout in ("pairs", "pages"):
+            out = _transform(self.XML, layout=layout)
+            self.assertIn(r"\lineation{page}", out, layout)
+            self.assertIn(r"\lineationR{page}", out, layout)
+
+    def test_lineation_is_declared_before_numbering_opens(self):
+        r"""Both abort with \led@err@LineationInNumbered if called once numbering is open,
+        so they have to stay in the preamble."""
+        out = _transform(self.XML, layout="pairs")
+        self.assertLess(out.index(r"\lineationR{page}"), out.index(r"\begin{document}"))
+
+    def test_line_numbers_lap_outward_in_either_direction(self):
+        r"""A lap is built in horizontal mode and so takes the prevailing \textdir; in the
+        Hebrew column that plants the number inside the measure instead of outside it. A
+        zero-width box sits in the same place either way."""
+        out = _transform(self.XML, layout="pairs")
+        self.assertIn(
+            r"\renewcommand*{\leftlinenum}{\hbox dir TLT to \z@"
+            r"{\hss\ledlinenum\kern\linenumsep}}", out)
+        self.assertIn(
+            r"\renewcommand*{\rightlinenum}{\hbox dir TLT to \z@"
+            r"{\kern\linenumsep\ledlinenum\hss}}", out)
+        self.assertIn(r"\renewcommand*{\leftlinenumR}", out)
+        self.assertIn(r"\renewcommand*{\rightlinenumR}", out)
+
+    def test_lines_may_stretch_rather_than_overrun_the_measure(self):
+        r"""At a parallel column's measure TeX often prefers an overfull line, which sticks
+        out into the margin the numbers occupy. 73 lines did so in the Amidah."""
+        self.assertIn(r"\setlength{\emergencystretch}{3em}", _transform(self.XML))
+
     def test_pairs_layout_forces_ltr_for_columns_assembly(self):
         r"""Avoid RTL \pardir flipping the visual order of the two-column row."""
         out = _transform(self.XML, layout="pairs")
@@ -2881,6 +2915,28 @@ class TestPstartSkip(unittest.TestCase):
             "the hook must be defined in the preamble",
         )
         self.assertIn(r"{\parskip}", preamble)
+
+
+class TestSingleStreamOmitsReledparOnly(unittest.TestCase):
+    r"""\lineationR and the \...R lap macros live in reledpar, which is loaded only when
+    the document has a parallel block. Emitting them anyway is an undefined control
+    sequence at \begin{document}."""
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_no_reledpar_only_line_number_commands(self):
+        out = _transform(self.XML)
+        self.assertIn(r"\lineation{page}", out)
+        for macro in (r"\lineationR", r"\leftlinenumR", r"\rightlinenumR"):
+            self.assertNotIn(macro, out)
+
+    def test_the_direction_safe_lap_is_not_parallel_only(self):
+        """The single-column path laps through the same macro, so a Hebrew-only
+        document has the identical bug latent."""
+        self.assertIn(r"\renewcommand*{\leftlinenum}{\hbox dir TLT", _transform(self.XML))
 
 
 class TestPreambleIsAllTeX(unittest.TestCase):
