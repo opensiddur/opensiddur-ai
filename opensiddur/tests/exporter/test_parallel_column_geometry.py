@@ -177,6 +177,59 @@ class TestParallelColumnGeometry(unittest.TestCase):
         )
         self.assertEvenlyLeaded(advances)
 
+    def _rubric_rows(self, macros: str) -> tuple[list[float], list[float]]:
+        r"""Where each column sets a rubric that opens its \pstart.
+
+        One column crosses direction and gets \OSInstructionBlock, the other does not and
+        gets \instructionnote run-in -- which is correct, an English rubric cannot share a
+        line with Hebrew. Both must still start on the same row.
+        """
+        rubric = r"{\bfseries Used when one is unable to recite the complete Amidah}"
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            (work / "t.tex").write_text(
+                _DOCUMENT % {
+                    "macros": _macro("OSInstructionBlock") + "\n" + macros,
+                    "left": r"\par\mbox{}\par\OSInstructionBlock{" + rubric + "}",
+                    "right": r"\par\mbox{}\par" + rubric,
+                }
+            )
+            for _ in range(2):
+                done = subprocess.run(["lualatex", "-interaction=nonstopmode", "t.tex"],
+                                      cwd=work, capture_output=True, text=True)
+            self.assertTrue((work / "t.pdf").exists(),
+                            f"lualatex produced no PDF:\n{done.stdout[-2000:]}")
+            boxes = subprocess.run(["pdftotext", "-bbox", "t.pdf", "-"],
+                                   cwd=work, capture_output=True, text=True).stdout
+        left, right = [], []
+        for m in re.finditer(
+            r'<word xMin="([\d.]+)" yMin="([\d.]+)"[^>]*>([^<]*)</word>', boxes
+        ):
+            x, y, word = float(m.group(1)), float(m.group(2)), m.group(3)
+            if y > 85 and word.strip() and not word.strip().isdigit():
+                (left if x < 250 else right).append(round(y, 1))
+        return sorted(set(left)), sorted(set(right))
+
+    def assertRubricsShareRows(self, left, right) -> None:
+        self.assertTrue(left and right, "one column set no rubric at all")
+        self.assertEqual(
+            left, right,
+            f"the same rubric is set on different rows: left {left}, right {right} -- "
+            f"a break taken where no line was in progress spends a row in one column only",
+        )
+
+    def test_a_rubric_opening_a_pstart_starts_on_the_same_row_in_both_columns(self):
+        left, right = self._rubric_rows("")
+        self.assertRubricsShareRows(left, right)
+
+    def test_the_measurement_would_notice_a_rubric_pushed_down(self):
+        r"""\leavevmode is the pre-fix definition: it breaks even in vertical mode."""
+        leaky = (r"\renewcommand{\OSInstructionBlock}[1]"
+                 r"{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}")
+        left, right = self._rubric_rows(leaky)
+        with self.assertRaises(AssertionError):
+            self.assertRubricsShareRows(left, right)
+
     def test_the_measurement_would_notice(self):
         r"""The check has to be able to fail, or the two tests above prove nothing.
         An unstrutted rubric macro is the pre-fix definition, and it must be caught."""

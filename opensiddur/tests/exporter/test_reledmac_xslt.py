@@ -2991,13 +2991,17 @@ class TestEmptyLinesInAColumn(unittest.TestCase):
     </tei:TEI>"""
 
     def test_the_instruction_macros_strut_the_line_they_break_from(self):
+        r"""\ifhmode, not \leavevmode: end the line the rubric interrupts, but only when
+        there is one. At the head of a \pstart there is none, and breaking there spends a
+        row -- in one column only, since the facing column sets the same rubric run-in."""
         out = _transform(self.XML)
         for macro in (r"\OSInstructionBlock", r"\OSInstructionLine"):
             self.assertIn(
-                r"\newcommand{" + macro + r"}[1]{\leavevmode\unskip\strut\newline"
+                r"\newcommand{" + macro + r"}[1]{\ifhmode\unskip\strut\newline\fi"
                 r"{\bfseries #1}\newline\ignorespaces}",
                 out,
             )
+        self.assertNotIn(r"\leavevmode\unskip\strut", out)
 
     def test_the_suppressed_heading_placeholder_is_strutted(self):
         r"""The placeholder that keeps a suppressed heading's \pstart non-empty is itself a
