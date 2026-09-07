@@ -1,6 +1,7 @@
 """ Reference Database """
 
 import argparse
+import logging
 from pathlib import Path
 import re
 import sqlite3
@@ -11,11 +12,21 @@ from lxml.etree import ElementBase
 from pydantic import BaseModel
 from opensiddur.common.constants import PROJECT_DIRECTORY, INDEX_DB_DIRECTORY
 
+logger = logging.getLogger(__name__)
+
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 
 #: URNs under this prefix identify a stretch of text, so they must be unique within a
 #: project. Other URN types (condition, notes) are names and are meant to be shared.
 TEXT_URN_PREFIX = "urn:x-opensiddur:text:"
+
+#: URNs under this prefix name a point at which an edition may print a rubric. Unlike a
+#: text URN they are meant to repeat — the same instruction is referenced wherever it
+#: applies, and two projects supplying one are alternative wordings the settings choose
+#: between — so they are not an error. But two *different* rubrics in one project under
+#: one instruction URN are two claims on one identity, and the compiler substitutes
+#: whichever won the index for both. See `_warn_on_instruction_collision`.
+INSTRUCTION_URN_PREFIX = "urn:x-opensiddur:instruction:"
 
 
 class DuplicateUrnError(ValueError):
@@ -219,6 +230,7 @@ class ReferenceDatabase:
                 element_type TEXT,
                 end_element_path TEXT,
                 end_includes_tail BOOLEAN,
+                element_text TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (urn, project)
@@ -234,6 +246,13 @@ class ReferenceDatabase:
             CREATE INDEX IF NOT EXISTS idx_project 
             ON urn_mappings(project)
         ''')
+
+        # element_text was added after the table was in use and there is no migration
+        # framework here -- CREATE TABLE IF NOT EXISTS leaves an existing database on the
+        # old shape -- so add the column in place when it is missing.
+        columns = {row[1] for row in cursor.execute('PRAGMA table_info(urn_mappings)')}
+        if 'element_text' not in columns:
+            cursor.execute('ALTER TABLE urn_mappings ADD COLUMN element_text TEXT')
 
         # Create table for element_references
         # This table indicates that an element of the given tag and type 
@@ -348,6 +367,46 @@ class ReferenceDatabase:
 
         return [Reference(element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type'], target_start=row['target_start'], target_end=row['target_end'], target_is_id=row['target_is_id'], corresponding_urn=row['corresponding_urn'], project=row['project'], file_name=row['file_name']) for row in by_both]
 
+    def _warn_on_instruction_collision(
+        self, urn: str, project: str, file_name: str, element_path: str, element_text: str
+    ) -> None:
+        """Warn when one instruction URN carries two different rubrics in one project.
+
+        An instruction URN is a name, so repetition is normal and most occurrences carry no
+        text at all — they point at a rubric defined elsewhere. What is not normal is two
+        occurrences whose own wording differs: the URN then has two meanings, and because
+        `add_urn_mapping` keeps only the last one, the compiler substitutes the winner at
+        both places. Nothing errors and the wrong words reach the page.
+
+        Only occurrences that carry text are compared. An empty occurrence is a reference,
+        not a competing definition, and says nothing about what the URN means.
+
+        This warns rather than raises: `index_file` wraps indexing in a bare `except
+        Exception` that prints and returns 0, so a raise would be swallowed and the run
+        would still report success.
+        """
+        if not element_text or not urn.startswith(INSTRUCTION_URN_PREFIX):
+            return
+        cursor = self.conn.cursor()
+        previous = cursor.execute(
+            'SELECT file_name, element_path, element_text FROM urn_mappings '
+            'WHERE urn = ? AND project = ?',
+            (urn, project),
+        ).fetchone()
+        if previous is None or not previous['element_text']:
+            return
+        if previous['element_text'] == element_text:
+            return
+        if (previous['file_name'], previous['element_path']) == (file_name, element_path):
+            return
+        logger.warning(
+            "%s carries two different instructions in project %r; only one of them will be "
+            "used, in both places: %s:%s says %r, %s:%s says %r",
+            urn, project,
+            previous['file_name'], previous['element_path'], previous['element_text'],
+            file_name, element_path, element_text,
+        )
+
     def add_urn_mapping(self, project: str, file_name: str, element: ElementBase):
         """Add or update a URN mapping.
 
@@ -368,6 +427,13 @@ class ReferenceDatabase:
         end_element_path, end_includes_tail = find_end_of_mapping(element)
         element_tag = element.tag
         element_type = element.get('type')
+        # Only instructions need their wording kept. A text URN's element can span a whole
+        # book, and joining that text would store megabytes to answer a question nobody
+        # asks of it.
+        element_text = (
+            re.sub(r'\s+', ' ', ''.join(element.itertext())).strip()
+            if urn.startswith(INSTRUCTION_URN_PREFIX) else None
+        )
 
         # A text URN names one stretch of text, so a second, different mapping for it within
         # one project is a data error rather than an update. Letting the conflict resolve
@@ -376,7 +442,9 @@ class ReferenceDatabase:
         #
         # Only text URNs are identities. A condition URN is a feature name and is meant to
         # repeat — one setting selects the ta'am elyon reading everywhere it occurs — and a
-        # note URN names a kind of note shared across books, so neither is checked.
+        # note URN names a kind of note shared across books, so neither is rejected here.
+        # Instruction URNs get the softer check below: repetition is fine, but two
+        # occurrences that word the rubric differently are still two meanings for one name.
         existing = cursor.execute(
             'SELECT file_name, element_path FROM urn_mappings WHERE urn = ? AND project = ?',
             (urn, project),
@@ -390,16 +458,19 @@ class ReferenceDatabase:
                 f"{file_name}:{element_path}"
             )
 
+        self._warn_on_instruction_collision(urn, project, file_name, element_path, element_text)
+
         cursor.execute('''
-            INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail, element_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(urn, project) DO UPDATE SET
                 file_name = excluded.file_name,
                 element_path = excluded.element_path,
                 end_element_path = excluded.end_element_path,
                 end_includes_tail = excluded.end_includes_tail,
+                element_text = excluded.element_text,
                 updated_at = CURRENT_TIMESTAMP
-        ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail))
+        ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail, element_text))
         self.conn.commit()
 
     def add_reference(self, project: str, file_name: str, element: ElementBase):

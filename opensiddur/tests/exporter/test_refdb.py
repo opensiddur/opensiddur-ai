@@ -1,6 +1,7 @@
 """Tests for the ReferenceDatabase class."""
 
 import unittest
+import sqlite3
 import tempfile
 from pathlib import Path
 import time
@@ -128,6 +129,148 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0]['project'], "project1")
         self.assertEqual(rows[1]['project'], "project2")
+
+
+class TestInstructionUrnCollisions(unittest.TestCase):
+    """An instruction URN may repeat, but not with two different rubrics in one project.
+
+    The refdb keeps one row per (urn, project), so when two notes in a project word the
+    same instruction differently only one survives — and the compiler substitutes that one
+    at both places. Nothing raises, so the warning is the only signal.
+    """
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.db = ReferenceDatabase(Path(self.temp_dir.name) / 'test_urn.db')
+        self.addCleanup(self.db.close)
+
+    def _note(self, corresp: str, text: str = "") -> ElementBase:
+        """An instruction note, of the shape the Birnbaum projects use."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        note = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}note")
+        note.set("type", "instruction")
+        note.set("corresp", corresp)
+        if text:
+            note.text = text
+        return note
+
+    def test_the_same_rubric_twice_is_not_a_collision(self):
+        """A speaker label repeated at each place it applies is ordinary markup."""
+        urn = "urn:x-opensiddur:instruction:role/reader"
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.add_urn_mapping("proj", "qedushah.xml", self._note(urn, "Reader"))
+            self.db.add_urn_mapping("proj", "amidah.xml", self._note(urn, "Reader"))
+
+    def test_two_different_rubrics_under_one_urn_warn(self):
+        urn = "urn:x-opensiddur:instruction:role/reader"
+        self.db.add_urn_mapping("proj", "qedushah.xml", self._note(urn, "Reader"))
+        with self.assertLogs("opensiddur.exporter.refdb", level="WARNING") as caught:
+            self.db.add_urn_mapping(
+                "proj", "birkat_kohanim.xml",
+                self._note(urn, "Priestly blessing recited by Reader:"),
+            )
+        message = caught.output[0]
+        self.assertIn(urn, message)
+        self.assertIn("qedushah.xml", message)
+        self.assertIn("birkat_kohanim.xml", message)
+        self.assertIn("Reader", message)
+        self.assertIn("Priestly blessing recited by Reader:", message)
+
+    def test_an_empty_occurrence_is_a_reference_not_a_definition(self):
+        """Most instruction notes carry no text; they point at a rubric defined elsewhere."""
+        urn = "urn:x-opensiddur:instruction:role/congregation"
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.add_urn_mapping("proj", "shalom.xml", self._note(urn, "Congregation"))
+            self.db.add_urn_mapping("proj", "shalom.xml", self._note(urn))
+            self.db.add_urn_mapping("proj", "qedushah.xml", self._note(urn))
+
+    def test_different_projects_may_word_one_instruction_differently(self):
+        """Alternative wordings across projects are the feature; settings choose between them."""
+        urn = "urn:x-opensiddur:instruction:role/reader"
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.add_urn_mapping("he_project", "qedushah.xml", self._note(urn, "Reader"))
+            self.db.add_urn_mapping("en_project", "qedushah.xml", self._note(urn, "Reader:"))
+
+    def test_reindexing_one_element_is_not_a_collision(self):
+        """Re-indexing a changed file re-adds its own notes; that is an update, not a clash."""
+        urn = "urn:x-opensiddur:instruction:role/reader"
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.add_urn_mapping("proj", "qedushah.xml", self._note(urn, "Reader"))
+            self.db.add_urn_mapping("proj", "qedushah.xml", self._note(urn, "Reader:"))
+
+    def test_text_is_whitespace_normalized_across_child_elements(self):
+        """Wrapping a word in an element must not read as a different rubric."""
+        urn = "urn:x-opensiddur:instruction:role/reader"
+        plain = self._note(urn, "Reader and congregation")
+
+        marked = self._note(urn, "Reader\n  and ")
+        emphasis = etree.SubElement(marked, "{http://www.tei-c.org/ns/1.0}hi")
+        emphasis.text = "congregation"
+
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.add_urn_mapping("proj", "a.xml", plain)
+            self.db.add_urn_mapping("proj", "b.xml", marked)
+
+    def test_non_instruction_note_urns_are_not_checked(self):
+        """A note URN names a kind of note shared across books; wording is free to differ."""
+        urn = "urn:x-opensiddur:note:footnote"
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.add_urn_mapping("proj", "a.xml", self._note(urn, "one wording"))
+            self.db.add_urn_mapping("proj", "b.xml", self._note(urn, "another wording"))
+
+
+class TestElementTextColumnUpgrade(unittest.TestCase):
+    """element_text was added to a table already in use, and there is no migration step."""
+
+    def test_a_database_without_element_text_gains_the_column(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        db_path = Path(temp_dir.name) / 'old.db'
+
+        # A database on the pre-element_text shape, with a row already in it.
+        old = sqlite3.connect(db_path)
+        old.execute("""
+            CREATE TABLE urn_mappings (
+                urn TEXT NOT NULL,
+                project TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                element_path TEXT NOT NULL,
+                element_tag TEXT NOT NULL,
+                element_type TEXT,
+                end_element_path TEXT,
+                end_includes_tail BOOLEAN,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (urn, project)
+            )
+        """)
+        old.execute(
+            "INSERT INTO urn_mappings (urn, project, file_name, element_path, element_tag) "
+            "VALUES ('urn:x-opensiddur:instruction:role/reader', 'proj', 'old.xml', '/a', 'note')"
+        )
+        old.commit()
+        old.close()
+
+        db = ReferenceDatabase(db_path)
+        self.addCleanup(db.close)
+
+        columns = {row[1] for row in db.conn.execute("PRAGMA table_info(urn_mappings)")}
+        self.assertIn('element_text', columns)
+
+        # The pre-existing row has no text, so it cannot contradict anything.
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        note = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}note")
+        note.set("type", "instruction")
+        note.set("corresp", "urn:x-opensiddur:instruction:role/reader")
+        note.text = "Reader"
+        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
+            db.add_urn_mapping("proj", "new.xml", note)
+
+        stored = db.conn.execute(
+            "SELECT element_text FROM urn_mappings WHERE project = 'proj'"
+        ).fetchone()
+        self.assertEqual(stored['element_text'], "Reader")
 
 
 class TestReferenceDatabaseGetUrnMappings(unittest.TestCase):
