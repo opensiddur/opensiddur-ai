@@ -431,9 +431,15 @@
              line numbers write \linenumrep, which is the macro that is actually
              consulted (see tex/typography_tex.py). -->
         <xsl:text>\renewcommand*{\linenumberstyle}[1]{\hbox{\textdir TLT\selectlanguage{english}#1}}&#10;</xsl:text>
-        <!-- line numbering by page -->
+        <!-- Line numbering by page. \lineation sets the MAIN series only: reledpar keeps
+             a separate \bypage@R which defaults to false, i.e. the right column falls back
+             to numbering by section and runs on unbroken through the whole document. So the
+             R twin has to be asked for by name. Both must stay in the preamble; either one
+             aborts with \led@err@LineationInNumbered if called once numbering is open. -->
         <xsl:text>\lineation{page}&#10;</xsl:text>
         <xsl:if test="$has-parallel">
+            <!-- reledpar-only: \lineationR does not exist when reledpar is not loaded. -->
+            <xsl:text>\lineationR{page}&#10;</xsl:text>
             <!-- Put line numbers on the outer margins by default (pages/facing-page mode). -->
             <xsl:text>\linenummargin{outer}&#10;</xsl:text>
             <xsl:text>\linenummarginR{outer}&#10;</xsl:text>
@@ -442,7 +448,10 @@
                      and \begin{Rightside} to the physical RIGHT column (regardless of
                      column-order / which language is primary).  Line numbers must sit on the
                      outer page margins: left column → {left}, right column → {right}.  Using
-                     {right} for the left column places numbers in the inter-column gap. -->
+                     {right} for the left column places numbers in the inter-column gap — and
+                     for an RTL left column it is worse still, because the \rlap it selects
+                     is mirrored too and the number lands inside the column, on the edge that
+                     flush-right Hebrew occupies on every line. -->
                 <xsl:text>\linenummarginColumns{left}&#10;</xsl:text>
                 <xsl:text>\linenummarginColumnsR{right}&#10;</xsl:text>
                 <!-- By default reledpar aligns the two-column block to the right edge of the
@@ -471,7 +480,26 @@
         <!-- Space between the line number and the text block. If too small, right-side
              line numbers will collide with the right column in pairs layout. -->
         <xsl:text>\setlength{\linenumsep}{1em}&#10;</xsl:text>
+        <!-- Lap the number outward whichever way the column runs.
+
+             reledmac hangs the number off the measure with \llap (or \rlap), and a lap is
+             built in horizontal mode, so it takes the prevailing \textdir. reledpar
+             re-selects each column's own language, and with it its direction, around every
+             line it sets — inside the \Columns wrapper above, which it therefore overrides.
+             In the Hebrew column that mirrors the lap: instead of hanging \linenumsep to the
+             left of the measure the number is planted \linenumsep INSIDE it, on top of the
+             text, on every page. \ledlinenum already forces \textdir TLT, but that governs
+             only the digits within the lap, not which way the lap itself grows.
+
+             A box of zero width sits at the same place in either direction, so put the whole
+             lap in one and give it an explicit direction. In an LTR column the result is
+             what stock reledmac produced, to the point; measured, an English column does not
+             move. reledmac does this for its own section titles and never for lines. -->
+        <xsl:text>\renewcommand*{\leftlinenum}{\hbox dir TLT to \z@{\hss\ledlinenum\kern\linenumsep}}&#10;</xsl:text>
+        <xsl:text>\renewcommand*{\rightlinenum}{\hbox dir TLT to \z@{\kern\linenumsep\ledlinenum\hss}}&#10;</xsl:text>
         <xsl:if test="$has-parallel">
+            <xsl:text>\renewcommand*{\leftlinenumR}{\hbox dir TLT to \z@{\hss\l@dlinenumR\kern\linenumsep}}&#10;</xsl:text>
+            <xsl:text>\renewcommand*{\rightlinenumR}{\hbox dir TLT to \z@{\kern\linenumsep\l@dlinenumR\hss}}&#10;</xsl:text>
             <!-- \linenumrepR, \sublinenumrepR, and \setRlineflag are reledpar-only;
                  they do not exist when reledpar is not loaded. -->
             <!-- Use an \hbox group to localize \textdir; these tokens can be written
@@ -486,6 +514,14 @@
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
         <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
+
+        <!-- Let a line be loose rather than long. A parallel column is around half the
+             measure of a single-column page, and at that width TeX regularly finds no break
+             it likes and sets an overfull line instead, which sticks out past the measure and
+             into the margin the line numbers occupy. \emergencystretch buys it a further
+             pass in which it may stretch the spaces instead. Loose word spacing is a
+             blemish; a line lying under its own line number is a defect. -->
+        <xsl:text>\setlength{\emergencystretch}{3em}&#10;</xsl:text>
 
         <!-- The space between one \pstart and the next. reledmac \pstart groups do not
              take \parskip between them, so without this there is no space between

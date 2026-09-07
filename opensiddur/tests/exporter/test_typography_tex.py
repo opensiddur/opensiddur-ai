@@ -299,6 +299,22 @@ class TestLineNumbers(unittest.TestCase):
         self.assertIn(r"\lineation{section}", tex)
         self.assertIn(r"\linenummargin{inner}", tex)
 
+    def test_lineation_applies_to_both_series_when_parallel(self):
+        r"""\lineation sets the main series only; reledpar keeps a separate \bypage@R.
+        This section is emitted after the XSLT's defaults and wins over them, so a
+        settings file naming a unit would otherwise put the right column back to
+        numbering by section."""
+        self.assertNotIn(r"\lineationR", _tex({"line_numbers": {"unit": "section"}}))
+        tex = _tex({"line_numbers": {"unit": "section"}}, has_parallel=True)
+        self.assertIn(r"\lineation{section}", tex)
+        self.assertIn(r"\lineationR{section}", tex)
+
+    def test_lineation_by_page_also_resets_the_right_column(self):
+        """`page' is the default the XSLT already emits, so writing it in a settings file
+        looks like a no-op -- and used to silently undo the right column's reset."""
+        tex = _tex({"line_numbers": {"unit": "page"}}, has_parallel=True)
+        self.assertIn(r"\lineationR{page}", tex)
+
     def test_hebrew_numerals_need_no_left_to_right_wrapper(self):
         """Their output is Hebrew letters, which belong in the surrounding
         direction; only digits have to be forced."""
