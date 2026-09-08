@@ -21,7 +21,7 @@ from opensiddur.exporter.tex.running_heads import (
 )
 
 
-LTR = r"{\textdir TLT\selectlanguage{english}"
+LTR = r"{\textdir TLT\foreignlanguage{english}{"
 
 
 class TestParseTemplate(unittest.TestCase):
@@ -72,7 +72,7 @@ class TestExpandTemplate(unittest.TestCase):
         """Digits laid out RTL come out reversed: page 50 would read "05"."""
         self.assertEqual(
             expand_template("{page}"),
-            r"{\textdir TLT\selectlanguage{english}\thepage}",
+            r"{\textdir TLT\foreignlanguage{english}{\thepage}}",
         )
 
     def test_hebrew_page_number_uses_hebrewnumeral(self):
@@ -89,16 +89,16 @@ class TestExpandTemplate(unittest.TestCase):
     def test_literal_tex_specials_are_escaped(self):
         self.assertEqual(
             expand_template("100% & more_"),
-            LTR + r"100\% \& more\_" + "}",
+            LTR + r"100\% \& more\_" + "}}",
         )
 
     def test_literal_backslash_is_escaped_before_the_rest(self):
         self.assertEqual(
-            expand_template("a\\b"), LTR + r"a\textbackslash{}b" + "}"
+            expand_template("a\\b"), LTR + r"a\textbackslash{}b" + "}}"
         )
 
     def test_doubled_braces_survive_as_escaped_literal_braces(self):
-        self.assertEqual(expand_template("{{x}}"), LTR + r"\{x\}" + "}")
+        self.assertEqual(expand_template("{{x}}"), LTR + r"\{x\}" + "}}")
 
 
 class TestRenderPosition(unittest.TestCase):
@@ -109,11 +109,11 @@ class TestRenderPosition(unittest.TestCase):
 
     def test_non_hebrew_slot_forces_ltr(self):
         out = render_position(RunningHeadPosition(text="{page}", language="en"))
-        self.assertTrue(out.startswith(r"{\textdir TLT\selectlanguage{english} "))
+        self.assertTrue(out.startswith(r"{\textdir TLT\foreignlanguage{english}{"))
 
     def test_hebrew_slot_forces_rtl(self):
         out = render_position(RunningHeadPosition(text="{page}", language="he"))
-        self.assertTrue(out.startswith(r"{\textdir TRT\selectlanguage{hebrew} "))
+        self.assertTrue(out.startswith(r"{\textdir TRT\foreignlanguage{hebrew}{"))
 
     def test_hebrew_subtag_counts_as_hebrew(self):
         out = render_position(RunningHeadPosition(text="{page}", language="he-IL"))
@@ -156,7 +156,7 @@ class TestBidiLiterals(unittest.TestCase):
     """
 
     def test_latin_literal_is_wrapped_ltr(self):
-        self.assertEqual(expand_template("Page"), LTR + "Page}")
+        self.assertEqual(expand_template("Page"), LTR + "Page}}")
 
     def test_hebrew_literal_takes_texthebrew(self):
         """\\texthebrew carries the Hebrew font too, without which a Latin-font
@@ -167,7 +167,7 @@ class TestBidiLiterals(unittest.TestCase):
         """The space separating them rides along with the Latin run, which is
         harmless — what matters is that neither run is left bare."""
         self.assertEqual(
-            expand_template("פרק ch"), r"\texthebrew{פרק}" + LTR + " ch}"
+            expand_template("פרק ch"), r"\texthebrew{פרק}" + LTR + " ch}}"
         )
 
     def test_whitespace_alone_is_not_wrapped(self):
@@ -196,13 +196,13 @@ class TestBidiLiterals(unittest.TestCase):
     def test_a_digit_after_hebrew_is_still_its_own_run(self):
         """The joiner must not swallow the chapter number into the name."""
         out = expand_template("\u05e4\u05e8\u05e7 14")
-        self.assertEqual(out, "\\texthebrew{\u05e4\u05e8\u05e7}" + LTR + " 14}")
+        self.assertEqual(out, "\\texthebrew{\u05e4\u05e8\u05e7}" + LTR + " 14}}")
 
     def test_a_latin_literal_beside_the_page_number_reads_in_order(self):
         """Regression: "p{page}" in a Hebrew slot used to read "1p"."""
         out = expand_template("p{page}")
         self.assertEqual(
-            out, LTR + "p}" + r"{\textdir TLT\selectlanguage{english}\thepage}"
+            out, LTR + "p}}" + r"{\textdir TLT\foreignlanguage{english}{\thepage}}"
         )
 
 

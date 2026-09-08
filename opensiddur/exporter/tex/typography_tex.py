@@ -416,12 +416,12 @@ def _styles_section(config: TypographyConfig) -> list[str]:
     emit(
         "verse_number",
         lambda s: r"\renewcommand{\vno}[1]{\textsuperscript{{\textdir TLT"
-        r"\selectlanguage{english}" + tokens(s) + r"#1}}\,}",
+        r"\foreignlanguage{english}{" + tokens(s) + r"#1}}}\,}",
     )
     emit(
         "chapter_number",
         lambda s: r"\renewcommand{\chno}[1]{{" + tokens(s)
-        + r"{\textdir TLT\selectlanguage{english}#1}}\,}",
+        + r"{\textdir TLT\foreignlanguage{english}{#1}}}\,}",
     )
     emit(
         "citation",
@@ -470,24 +470,24 @@ def _note_mark_tex(style: TextStyle, anchor: NoteAnchor, spacing: float) -> list
         # what keeps two sides of a parallel text aligned.
         body = (
             r"\leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.5ex}"
-            r"{{\selectlanguage{english}\kern0.05em\normalfont"
+            r"{\foreignlanguage{english}{\kern0.05em\normalfont"
             + tokens
             + r" #1\kern0.05em}}}\hss}"
         )
     elif anchor is NoteAnchor.SUPERSCRIPT:
         body = (
-            r"\textsuperscript{{\textdir TLT\selectlanguage{english}\normalfont"
+            r"\textsuperscript{{\textdir TLT\foreignlanguage{english}{\normalfont"
             + tokens
-            + " #1}}"
+            + " #1}}}"
         )
     else:
-        body = r"{\textdir TLT\selectlanguage{english}\normalfont" + tokens + " #1}"
+        body = r"{\textdir TLT\foreignlanguage{english}{\normalfont" + tokens + " #1}}"
     return [
         r"\renewcommand{\OSInterlinearNotemark}[1]{%",
         "  " + body + "%",
         "}",
         r"\renewcommand{\OSFootnotemark}[1]{%",
-        r"  {\textdir TLT\selectlanguage{english}\normalfont" + tokens + r" #1}\space",
+        r"  {\textdir TLT\foreignlanguage{english}{\normalfont" + tokens + r" #1}}\space",
         "}",
     ]
 
@@ -559,7 +559,7 @@ def _line_number_format_tex(config: TypographyConfig, has_parallel: bool) -> lis
     if config.line_numbers.numerals is Numerals.HEBREW:
         body = tokens + r"\hebrewnumeral{#1}"
     else:
-        body = r"\textdir TLT\selectlanguage{english}" + tokens + r"\@arabic{#1}"
+        body = r"\textdir TLT\foreignlanguage{english}{" + tokens + r"\@arabic{#1}}"
     # \@arabic is internal; the \hbox keeps the direction and language switches
     # from leaking into reledmac's aux-file writes.
     lines = [r"\makeatletter", r"\renewcommand*{\linenumrep}[1]{\hbox{" + body + "}}"]

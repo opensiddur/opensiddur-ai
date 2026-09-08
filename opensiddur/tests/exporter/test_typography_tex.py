@@ -236,7 +236,7 @@ class TestStyles(unittest.TestCase):
         for role, macro in (("verse_number", r"\vno"), ("chapter_number", r"\chno")):
             tex = _tex({"styles": {role: {"size": "small"}}})
             self.assertIn(rf"\renewcommand{{{macro}}}[1]{{", tex)
-            self.assertIn(r"\textdir TLT\selectlanguage{english}", tex)
+            self.assertIn(r"\textdir TLT\foreignlanguage{english}{", tex)
 
     def test_body_style_goes_through_the_document_wide_hook(self):
         self.assertIn(

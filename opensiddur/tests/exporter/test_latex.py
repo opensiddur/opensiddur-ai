@@ -736,7 +736,7 @@ typography:
         )
         with patch.object(latex_module, "projects_source_root", self.test_dir):
             out = transform_xml_to_tex(f, typography=typography)
-        self.assertIn(r"\fancyhead[L]{{\textdir TRT\selectlanguage{hebrew} ", out)
+        self.assertIn(r"\fancyhead[L]{{\textdir TRT\foreignlanguage{hebrew}{", out)
 
     def test_layout_pairs_propagates_to_parallel_block(self):
         xml = """<?xml version="1.0"?>
