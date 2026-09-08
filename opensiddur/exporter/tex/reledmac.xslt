@@ -432,20 +432,23 @@
         <xsl:text>\Xnolemmaseparator[B]&#10;</xsl:text>
         <xsl:text>\Xinplaceofnumber[B]{0pt}&#10;</xsl:text>
 
-        <!-- Line numbers must always be LTR (otherwise RTL contexts can flip digits).
-             reledpar uses \linenumrepR and a right-side flag, set below.
-             Use \hbox to contain direction/language changes without leaking
-             \begingroup/\endgroup into reledmac's aux-file write machinery.
+        <!-- Line numbers must always be LTR, or an RTL context flips the digits and
+             50 reads 05. The LEFT series needs nothing from us: reledmac's own \ledlinenum
+             opens with \ifluatex\textdir TLT\fi, so the number is already set left to
+             right whatever the column runs in.
 
-             NOTE: this line does nothing. \linenumberstyle is a *declaration*
-             whose only job is to define \linenumrep, and reledmac calls it once
-             as it loads, so redefining it afterwards never takes effect — the
-             left-side numbers are still reledmac's own \@arabic. Left as it is
-             rather than corrected here, because correcting it would change the
-             output of every existing document; typography settings that touch
-             line numbers write \linenumrep, which is the macro that is actually
-             consulted (see tex/typography_tex.py). -->
-        <xsl:text>\renewcommand*{\linenumberstyle}[1]{\hbox{\textdir TLT\foreignlanguage{english}{#1}}}&#10;</xsl:text>
+             The right series is the asymmetric one — reledpar's \l@dlinenumR carries no
+             such switch — which is why \linenumrepR and \sublinenumrepR are redefined
+             below, and why that pair has to stay.
+
+             There was a \renewcommand*{\linenumberstyle} here, and it never did anything.
+             \linenumberstyle is a declaration, not a formatter: its argument is a style
+             NAME and its only job is to define \linenumrep, which reledmac does once as it
+             loads. Redefining it afterwards is never consulted — and had anything called
+             it the way reledmac does, it would have set the word "arabic" in the margin.
+             reledpar's \linenumberstyle* (which forwards to both series) makes that a live
+             trap rather than merely dead code, so it is gone. Settings that choose numerals
+             write \linenumrep, the macro actually consulted; see tex/typography_tex.py. -->
         <!-- Line numbering by page. \lineation sets the MAIN series only: reledpar keeps
              a separate \bypage@R which defaults to false, i.e. the right column falls back
              to numbering by section and runs on unbroken through the whole document. So the
