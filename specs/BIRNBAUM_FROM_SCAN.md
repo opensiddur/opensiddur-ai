@@ -15,15 +15,36 @@ for it.
 
 ## What is on disk
 
-Page images are cached outside every repository, in `output/birnbaum_scan/`, so they
-survive a worktree and are never committed:
+The line is drawn at what a machine can remake. **Images stay out of every repository**: a
+leaf is re-fetchable from the Archive, and the enlarged bands are cut from it by
+`pages.py`, so 63MB of the working directory is worth nothing in git.
 
 ```
-output/birnbaum_scan/pages/{printed}.jpg      the full-resolution leaf
-output/birnbaum_scan/bands/{printed}_{i}.png  overlapping bands, enlarged
-output/birnbaum_scan/readings/{printed}.md    what the page was read to say
-output/birnbaum_scan/accuracy.md              the transcription-distance measurement
+output/birnbaum_scan/pages/{printed}.jpg      the full-resolution leaf, untracked
+output/birnbaum_scan/bands/{printed}_{i}.png  overlapping bands, enlarged, untracked
 ```
+
+**The reading is committed**, because nothing regenerates it. In `sourcetexts`, under
+`sources/birnbaum_siddur/scan_reading/`:
+
+```
+readings/{printed}.md         what the page was read to say
+hebrew/{printed}.txt          the Hebrew lifted out of that reading
+transcription/{printed}.txt   the Wikisource slice it was compared against
+```
+
+and in this repository, the measurement and the tooling:
+
+```
+specs/birnbaum_scan/accuracy.md    the transcription-distance measurement
+specs/birnbaum_scan/verdicts/      which side each difference was decided for
+specs/birnbaum_scan/settings/      the export settings the commands below name
+opensiddur/importer/birnbaum_scan/ pages.py fetches and cuts; compare.py measures;
+                                   build/ writes the TEI
+```
+
+`transcription/` duplicates 12K of a file already in `sourcetexts`. That is deliberate: the
+slice boundaries are a judgement, and without them `accuracy.md` cannot be rechecked.
 
 ```bash
 export OPENSIDDUR_CONTACT_EMAIL=... OPENSIDDUR_AGENT_MODEL=...
@@ -157,10 +178,10 @@ uv run python -m opensiddur.importer.util.validation "$W/birnbaum_ashkenaz_he_19
 uv run python -m opensiddur.exporter.refdb --project-directory "$W"
 uv run python -m opensiddur.exporter.validate_urn_references birnbaum_ashkenaz_he_1949 --project-directory "$W"
 uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
-    -f chol_shacharit_amidah.xml -s output/birnbaum_scan/settings_undecided.yaml \
+    -f chol_shacharit_amidah.xml -s specs/birnbaum_scan/settings/undecided.yaml \
     -o output/amidah.xml --project-directory "$W"
 uv run python -m opensiddur.exporter.pdf.pdf output/amidah.xml output/amidah.pdf \
-    -s output/birnbaum_scan/settings_undecided.yaml --project-directory "$W"
+    -s specs/birnbaum_scan/settings/undecided.yaml --project-directory "$W"
 ```
 
 `refdb` must be re-run before `validate_urn_references`; a stale index reads as
