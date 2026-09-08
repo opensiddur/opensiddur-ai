@@ -1,0 +1,15 @@
+# Service, recitation and chol declared; NOTHING about the date. The rain seasons, the
+# Ten Days, Ya'aleh v'Yavo and עננו stay open, with their rubrics, and the rules and
+# brackets in the PDF mark them. That is the compile having no date and place, not a
+# defect in the text.
+# Birnbaum sets his rubrics mid-passage, not at paragraph boundaries, so the two columns
+# are not aligned at a rubric's own position. Deduplicating them would leave the English
+# column with no rubric anywhere near the passage its rubric is about. See
+# doc/typography.md, `instructions`.
+typography:
+  instructions:
+    from: both
+priority:
+  transclusion: [birnbaum_ashkenaz_he_1949]
+parallel:
+  projects: [birnbaum_ashkenaz_en_1949]

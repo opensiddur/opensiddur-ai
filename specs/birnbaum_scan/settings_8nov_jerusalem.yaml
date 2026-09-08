@@ -1,0 +1,25 @@
+# A named day and place: 15 January 2026 in Jerusalem, at the Reader's repetition.
+# Nothing conditional should survive this compile.
+# Birnbaum sets his rubrics mid-passage, not at paragraph boundaries, so the two columns
+# are not aligned at a rubric's own position. Deduplicating them would leave the English
+# column with no rubric anywhere near the passage its rubric is about. See
+# doc/typography.md, `instructions`.
+typography:
+  instructions:
+    from: both
+priority:
+  transclusion: [birnbaum_ashkenaz_he_1949]
+parallel:
+  projects: [birnbaum_ashkenaz_en_1949]
+declarations:
+  opensiddur:gregorian-date:
+    year: 2026
+    month: 11
+    day: 8
+  opensiddur:location:
+    latitude: 31.78
+    longitude: 35.22
+  opensiddur:service-time:
+    shaharit: true
+  opensiddur:recitation:
+    repetition: true

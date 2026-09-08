@@ -48,6 +48,7 @@ dependencies = [
     "pyluach>=2.3.0",
     "hdate>=1.2.1",
     "tzfpy>=1.3.2",
+    "pillow>=11.0.0",
 ]
 
 [project.urls]

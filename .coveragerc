@@ -10,6 +10,11 @@ omit =
 precision = 2
 show_missing = True
 skip_covered = False
+# `python -m module` entry points are exercised through main(argv) in the tests; the
+# two-line __main__ guard itself is not reachable from a test that imports the module.
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
 
 [html]
 directory = htmlcov
