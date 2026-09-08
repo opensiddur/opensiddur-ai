@@ -91,10 +91,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   new `specs/urn_registry/contributor.jsonl` is the roster, and both
   `validate_urn_references` and `urn_registry --check` apply the rules in CI. `opensiddur.org`
   identifiers are ours, so they must be registered; wikisource usernames arrive from the wiki
-  and are grammar-checked only.
-- The humash importer emitted `urn:x-opensiddur:opensiddur.org/efraim-feinstein`, missing the
-  `contributor:` type segment. The projects had already been corrected; the generator had not,
-  so a regeneration reintroduced it.
+  and are grammar-checked only. The malformed references fixed by hand below would now fail a
+  build rather than waiting to be noticed.
+- The author of a source is no longer credited as a contributor. Meir Halevi (Wolf) Heidenheim
+  carried an `edt` "Edited and published by" `respStmt` on all 97 files of
+  `heidenheim_haggadah_1822`, while also standing as `tei:author` in the project's source bibl.
+  A `respStmt` credits whoever made the *digital* text, so this claimed he did work he did not do
+  and, having no `@ref` to a contributor URN, made the LaTeX exporter warn once per file and list
+  him under no namespace heading. He is removed from every `titleStmt` and stays in the
+  bibliography, where a reader looking for who made the book will find him: the exporter gathers
+  each referenced project's `index.xml`, so the printed Sources section is unchanged.
+  `opensiddur/importer/feinstein_haggadah/heidenheim_haggadah_1822_header_stub.xml` no longer
+  emits the credit, so re-running the importer will not put it back.
+- Both haggadah header stubs wrote contributor references as `urn:x-opensiddur:opensiddur.org/…`,
+  missing the `contributor:` type segment the URN form requires. The committed project XML has the
+  correct shape, so re-running either importer would have regressed the references it writes and
+  made the LaTeX exporter report each one as "not a contributor URN".
+- The humash importer wrote the same malformed shape,
+  `urn:x-opensiddur:opensiddur.org/efraim-feinstein`. As with the haggadah stubs, the projects had
+  already been corrected and the generator had not, so a regeneration reintroduced it.
+- `schema/JLPTEI-3.md` now says that a contributor namespace is a claim about the person rather
+  than a default — `opensiddur.org/` names someone who contributed to Open Siddur — and that a
+  source's translator or editor gets no contributor URN at all, belonging in the `tei:bibl`
+  instead. Nothing said this, which is how a credit under an invented identifier passed review.
 - Batched Action API queries are sent as POST. Fifty Hebrew subpage titles percent-encode past the
   URL length limit and the server answered `414 URI Too Long`, so batching was silently capped by
   URL length on any wiki whose titles are not short and Latin.

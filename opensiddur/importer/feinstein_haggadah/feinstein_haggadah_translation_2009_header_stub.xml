@@ -6,7 +6,7 @@
       <tei:title type="alt" xml:lang="he">הגדה לסדר פסח</tei:title>
       <tei:respStmt>
         <tei:resp key="trl">Translated by</tei:resp>
-        <tei:name ref="urn:x-opensiddur:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:name>
+        <tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:name>
       </tei:respStmt>
     </tei:titleStmt>
     <tei:editionStmt>
@@ -24,7 +24,7 @@
     <tei:sourceDesc>
       <tei:bibl xml:id="project_source_bibl">
         <tei:title>Original work</tei:title>
-        <tei:author ref="urn:x-opensiddur:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:author>
+        <tei:author ref="urn:x-opensiddur:contributor:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:author>
         <tei:date when="2009">2009</tei:date>
         <tei:note xml:lang="en">This English text is an original work composed for the Open Siddur Project. It is not a translation of Wolf Heidenheim&apos;s German translation from the 1822 haggadah. The Hebrew source text is published separately as heidenheim_haggadah_1822.</tei:note>
       </tei:bibl>

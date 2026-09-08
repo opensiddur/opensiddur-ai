@@ -2996,6 +2996,53 @@ class TestInlineLanguageSwitch(unittest.TestCase):
         self.assertEqual(0, depth, "a group is left open")
 
 
+class TestLineNumberStyle(unittest.TestCase):
+    r"""``\linenumberstyle`` is a declaration, not a formatter.
+
+    Its argument is a style *name* -- ``arabic``, ``roman`` -- and its only job is to define
+    ``\linenumrep``, which reledmac does once as it loads (``reledmac.sty:758-762``).
+    Redefining it afterwards is never consulted, and had anything called it the way reledmac
+    does, it would have set the word "arabic" in the margin. reledpar's ``\linenumberstyle*``
+    forwards to both series, so leaving a broken definition there is a trap for anyone who
+    reaches for the documented API.
+
+    Nothing is lost by not touching it: the left series is already left-to-right, because
+    ``\ledlinenum`` opens with ``\ifluatex\textdir TLT\fi`` (``reledmac.sty:770-774``).
+    """
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+    </tei:TEI>"""
+
+    PARALLEL = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+             xmlns:p="http://jewishliturgy.org/ns/processing">
+      <tei:text><tei:body>
+        <p:parallel column-order="primary_first">
+          <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+          <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hello</tei:p></p:parallelItem>
+        </p:parallel>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_linenumberstyle_is_left_alone(self):
+        """Matching test_typography_tex.py, so both halves of the codebase agree."""
+        self.assertNotIn(r"\linenumberstyle", _transform(self.XML))
+        self.assertNotIn(r"\linenumberstyle", _transform(self.PARALLEL, layout="pairs"))
+
+    def test_the_right_series_still_gets_its_direction(self):
+        r"""The asymmetry is the point. reledpar's \l@dlinenumR carries no \textdir TLT of
+        its own, so \linenumrepR and \sublinenumrepR must keep theirs -- deleting this pair
+        alongside \linenumberstyle would reverse the right column's digits."""
+        out = _transform(self.PARALLEL, layout="pairs")
+        self.assertIn(r"\renewcommand*{\linenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}", out)
+        self.assertIn(r"\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}", out)
+
+    def test_a_single_stream_needs_no_right_series(self):
+        self.assertNotIn(r"\linenumrepR", _transform(self.XML))
+
+
 class TestPreambleIsAllTeX(unittest.TestCase):
     r"""The preamble must contain only TeX.
 
