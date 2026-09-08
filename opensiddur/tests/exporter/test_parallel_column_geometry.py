@@ -104,6 +104,49 @@ def _macro(name: str) -> str:
     raise AssertionError(rf"\{name} is not defined in the preamble")
 
 
+_RTL_TEI = """<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+         xmlns:p="http://jewishliturgy.org/ns/processing">
+  <tei:text><tei:body>
+    <p:parallel column-order="primary_first">
+      <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+      <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hello</tei:p></p:parallelItem>
+    </p:parallel>
+  </tei:body></tei:text>
+</tei:TEI>"""
+
+# Hebrew x6 against English x30 is not arbitrary. The split appears only at particular
+# line counts, and this is a pair that reproduces it; measured on the Birnbaum Amidah the
+# same rubric came out 34.0pt across, where a row is 13.5.
+_RTL_HEBREW = " ".join(["שָׁלוֹם עוֹלָם וְשָׁלוֹם"] * 6)
+_RTL_ENGLISH = " ".join(f"word{n}" for n in range(30))
+# Wrapped as the exporter wraps it: a Latin rubric inside \begin{hebrew} needs the
+# direction and language switch, or it is set in the Hebrew font and comes out as
+# missing glyphs.
+_RTL_RUBRIC = r"{{\textdir TLT\selectlanguage{english} On Rosh Hodesh and Hol ha-Moed add:}}"
+
+_RTL_BODY = r"""%(macros)s
+\begin{document}
+\begin{pairs}
+\begin{Leftside}
+\begin{hebrew}
+\beginnumbering
+\pstart %(hebrew)s\par\skipnumbering\mbox{\strut}\par
+\OSInstructionBlock{%(rubric)s}\pend
+\endnumbering
+\end{hebrew}
+\end{Leftside}
+\begin{Rightside}
+\beginnumbering
+\pstart %(english)s\par\skipnumbering\mbox{\strut}\par
+\instructionnote{%(rubric)s}\pend
+\endnumbering
+\end{Rightside}
+\end{pairs}
+\Columns
+\end{document}
+"""
+
 @unittest.skipUnless(
     shutil.which("lualatex") and shutil.which("pdftotext"),
     "requires a real lualatex installation and pdftotext",
@@ -176,6 +219,123 @@ class TestParallelColumnGeometry(unittest.TestCase):
             macros=block,
         )
         self.assertEvenlyLeaded(advances)
+
+    def _rubric_rows(self, macros: str) -> tuple[list[float], list[float]]:
+        r"""Where each column sets a rubric that opens its \pstart.
+
+        One column crosses direction and gets \OSInstructionBlock, the other does not and
+        gets \instructionnote run-in -- which is correct, an English rubric cannot share a
+        line with Hebrew. Both must still start on the same row.
+        """
+        rubric = r"{\bfseries Used when one is unable to recite the complete Amidah}"
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            (work / "t.tex").write_text(
+                _DOCUMENT % {
+                    "macros": _macro("OSInstructionBlock") + "\n" + macros,
+                    "left": r"\par\mbox{}\par\OSInstructionBlock{" + rubric + "}",
+                    "right": r"\par\mbox{}\par" + rubric,
+                }
+            )
+            for _ in range(2):
+                done = subprocess.run(["lualatex", "-interaction=nonstopmode", "t.tex"],
+                                      cwd=work, capture_output=True, text=True)
+            self.assertTrue((work / "t.pdf").exists(),
+                            f"lualatex produced no PDF:\n{done.stdout[-2000:]}")
+            boxes = subprocess.run(["pdftotext", "-bbox", "t.pdf", "-"],
+                                   cwd=work, capture_output=True, text=True).stdout
+        left, right = [], []
+        for m in re.finditer(
+            r'<word xMin="([\d.]+)" yMin="([\d.]+)"[^>]*>([^<]*)</word>', boxes
+        ):
+            x, y, word = float(m.group(1)), float(m.group(2)), m.group(3)
+            if y > 85 and word.strip() and not word.strip().isdigit():
+                (left if x < 250 else right).append(round(y, 1))
+        return sorted(set(left)), sorted(set(right))
+
+    def assertRubricsShareRows(self, left, right) -> None:
+        self.assertTrue(left and right, "one column set no rubric at all")
+        self.assertEqual(
+            left, right,
+            f"the same rubric is set on different rows: left {left}, right {right} -- "
+            f"a break taken where no line was in progress spends a row in one column only",
+        )
+
+    def test_a_rubric_opening_a_pstart_starts_on_the_same_row_in_both_columns(self):
+        left, right = self._rubric_rows("")
+        self.assertRubricsShareRows(left, right)
+
+    def test_the_measurement_would_notice_a_rubric_pushed_down(self):
+        r"""\leavevmode is the pre-fix definition: it breaks even in vertical mode."""
+        leaky = (r"\renewcommand{\OSInstructionBlock}[1]"
+                 r"{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}")
+        left, right = self._rubric_rows(leaky)
+        with self.assertRaises(AssertionError):
+            self.assertRubricsShareRows(left, right)
+
+    def _rubric_line_gap(self, macros: str) -> float:
+        r"""How far apart the two lines of one rubric are, in the RTL column.
+
+        The rubric follows a paragraph that ended with \par, so \OSInstructionBlock is
+        entered in **vertical** mode. That is the case \leavevmode papered over: it opened
+        a paragraph so the \newline had something to break out of, and in an RTL column --
+        where reledpar re-selects the language, and with it the direction, around every
+        line it sets -- that cost a row, which fell between the rubric's own two lines and
+        split it. A Latin left column with everything else identical does not split, which
+        is what points at the direction rather than at the break.
+        """
+        preamble = xslt_transform_string(
+            XSLT_FILE, _RTL_TEI,
+            xslt_params={"additional-preamble": "", "additional-postamble": "",
+                         "layout": "pairs"},
+        ).split(r"\begin{document}")[0]
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            (work / "t.tex").write_text(preamble + _RTL_BODY % {
+                "macros": macros, "hebrew": _RTL_HEBREW,
+                "english": _RTL_ENGLISH, "rubric": _RTL_RUBRIC,
+            })
+            for _ in range(3):
+                done = subprocess.run(["lualatex", "-interaction=nonstopmode", "t.tex"],
+                                      cwd=work, capture_output=True, text=True)
+            self.assertTrue((work / "t.pdf").exists(),
+                            f"lualatex produced no PDF:\n{done.stdout[-2000:]}")
+            boxes = subprocess.run(["pdftotext", "-bbox", "t.pdf", "-"],
+                                   cwd=work, capture_output=True, text=True).stdout
+        seen: dict[str, list[float]] = {}
+        for m in re.finditer(
+            r'<word xMin="([\d.]+)" yMin="([\d.]+)"[^>]*>([^<]*)</word>', boxes
+        ):
+            x, y, word = float(m.group(1)), float(m.group(2)), m.group(3).strip()
+            if y > 85 and x < 300 and word in ("On", "add:"):
+                seen.setdefault(word, []).append(y)
+        self.assertIn("On", seen, "the RTL column set no rubric")
+        self.assertIn("add:", seen, "the rubric has no second line to measure")
+        return min(seen["add:"]) - min(seen["On"])
+
+    def assertRubricIsNotSplit(self, gap: float) -> None:
+        """A rubric is one utterance. Its lines sit one row apart, never two."""
+        self.assertLess(
+            gap, 20.0,
+            f"the rubric's two lines are {gap:.1f}pt apart, more than the 13.5pt row -- "
+            f"a blank row has opened inside a single rubric",
+        )
+
+    def test_a_rubric_entered_in_vertical_mode_is_not_split(self):
+        self.assertRubricIsNotSplit(self._rubric_line_gap(""))
+
+    def test_the_measurement_would_notice_a_split_rubric(self):
+        r"""\leavevmode is the pre-fix definition, and on this document it splits: 34.0pt
+        against the 13.5pt the fixed macro gives."""
+        leaky = (r"\renewcommand{\OSInstructionBlock}[1]"
+                 r"{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}")
+        # Measured outside assertRaises on purpose: _rubric_line_gap raises AssertionError
+        # of its own when the rubric fails to render, and catching that here would let a
+        # document that typesets nothing masquerade as a document that splits.
+        gap = self._rubric_line_gap(leaky)
+        self.assertGreater(gap, 20.0, "the pre-fix macro did not split this document")
+        with self.assertRaises(AssertionError):
+            self.assertRubricIsNotSplit(gap)
 
     def test_the_measurement_would_notice(self):
         r"""The check has to be able to fail, or the two tests above prove nothing.

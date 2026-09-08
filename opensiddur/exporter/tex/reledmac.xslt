@@ -365,7 +365,13 @@
              the cut, whereupon reledpar \unvbox-es it onto the shared page list and both
              columns move. The \strut gives that line the height of ordinary text, so it
              becomes a row of this column alone. -->
-        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
+        <!-- \ifhmode, not \leavevmode: end the line the rubric interrupts, but only when
+             there is one. At the head of a \pstart nothing has been set yet, and breaking
+             there spends a row on nothing. In a parallel compile that row is spent in one
+             column alone — the facing column gives the same rubric run-in, because the
+             rubric does not cross ITS direction — so the two copies of one rubric land on
+             different rows and take four between them where two would do. -->
+        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\ifhmode\unskip\strut\newline\fi{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <!-- The same, for an instruction standing inside a paragraph rather than between
              two. A box the width of the line does not fit on a line that is already
              partly set: it overhangs the margin and the instruction runs off the page,
@@ -383,7 +389,13 @@
              the cut, whereupon reledpar \unvbox-es it onto the shared page list and both
              columns move. The \strut gives that line the height of ordinary text, so it
              becomes a row of this column alone. -->
-        <xsl:text>\newcommand{\OSInstructionLine}[1]{\leavevmode\unskip\strut\newline{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
+        <!-- \ifhmode, not \leavevmode: end the line the rubric interrupts, but only when
+             there is one. At the head of a \pstart nothing has been set yet, and breaking
+             there spends a row on nothing. In a parallel compile that row is spent in one
+             column alone — the facing column gives the same rubric run-in, because the
+             rubric does not cross ITS direction — so the two copies of one rubric land on
+             different rows and take four between them where two would do. -->
+        <xsl:text>\newcommand{\OSInstructionLine}[1]{\ifhmode\unskip\strut\newline\fi{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <!-- Conditional passages. Only markers whose condition could not be decided survive
              compilation: a decided condition is resolved away, its text either kept outright
