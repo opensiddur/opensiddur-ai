@@ -6,8 +6,10 @@ against it would be a test of the sources rather than of this code, and would st
 failing for reasons that have nothing to do with what it checks.
 """
 
+import io
 import json
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
@@ -237,6 +239,39 @@ class BandsTestCase(unittest.TestCase):
             pages.bands(81, count=0, source=self.source)
         with self.assertRaises(ValueError):
             pages.bands(81, overlap=0.5, source=self.source)
+
+
+class CommandLineTestCase(unittest.TestCase):
+    """The fetching and the cutting are tested above; this is the wiring between them.
+
+    Both are patched out: what the command line owes a caller is that it names every
+    page it was asked for, honours --no-bands, and passes the cutting options through.
+    """
+
+    def _run(self, *arguments):
+        output = io.StringIO()
+        with mock.patch.object(pages, "fetch", side_effect=lambda p, **kw: Path(f"/scan/{p}.jpg")) as fetch, \
+             mock.patch.object(pages, "bands", return_value=[Path("/scan/81-1.jpg")]) as bands, \
+             redirect_stdout(output):
+            self.assertEqual(0, pages.main(list(arguments)))
+        return output.getvalue(), fetch, bands
+
+    def test_fetches_and_cuts_every_page_it_is_given(self):
+        printed, fetch, bands = self._run("81", "82")
+        self.assertEqual(["81", "82"], [call.args[0] for call in fetch.call_args_list])
+        self.assertEqual(2, bands.call_count)
+        self.assertIn("/scan/81.jpg", printed)
+        self.assertIn("/scan/81-1.jpg", printed)
+
+    def test_no_bands_fetches_the_page_and_stops_there(self):
+        printed, _, bands = self._run("81", "--no-bands")
+        bands.assert_not_called()
+        self.assertIn("/scan/81.jpg", printed)
+
+    def test_passes_the_cutting_options_through(self):
+        _, fetch, bands = self._run("81", "--bands", "6", "--scale", "3", "--force")
+        self.assertTrue(fetch.call_args.kwargs["force"])
+        self.assertEqual({"count": 6, "scale": 3}, bands.call_args.kwargs)
 
 
 if __name__ == "__main__":

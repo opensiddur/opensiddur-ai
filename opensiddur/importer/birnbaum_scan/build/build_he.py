@@ -50,7 +50,8 @@ INDEX = f"""<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jew
           <tei:date type="accessed" when="2026-09-08">2026-09-08</tei:date>
           <tei:idno type="url">https://archive.org/details/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949</tei:idno>
           <tei:idno type="archive.org">PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949</tei:idno>
-          <tei:note xml:lang="en">The scan cited here is the source of the text, not merely a reference for it: every word was read off it, page by page, and every tei:pb/@facs deep-links into the leaf it falls on. The scan is 1541x2291 per leaf, which is the scan itself and not a derivative.</tei:note>
+          <tei:note xml:lang="en">The scan cited here is the source of the text, not merely a reference for it: every word was read off it, page by page.</tei:note>
+          <tei:note type="encoding" xml:lang="en">Every tei:pb/@facs in this project deep-links into the leaf its page break falls on. The scan is 1541x2291 pixels per leaf, which is the scan itself and not a derivative.</tei:note>
         </tei:bibl>
       </tei:sourceDesc>
     </tei:fileDesc>

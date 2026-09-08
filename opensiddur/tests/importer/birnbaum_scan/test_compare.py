@@ -5,7 +5,12 @@ from the sources: the point of the buckets is that a different word never counts
 different vowel, and that is provable on three words.
 """
 
+import io
+import json
 import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from opensiddur.importer.birnbaum_scan import compare
 
@@ -143,6 +148,52 @@ class MixedTestCase(unittest.TestCase):
         for bucket in compare.BUCKETS:
             self.assertIn(bucket, rendered)
         self.assertIn("1 words read", rendered)
+
+
+class CommandLineTestCase(unittest.TestCase):
+    """The command line is how the accuracy report is produced, so it is checked too."""
+
+    def setUp(self):
+        self.directory = TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.reading = self._write("reading.txt", f"{BARUKH} {ATAH}")
+        self.transcription = self._write("transcription.txt", f"בַּרוּךְ {ATAH}")
+
+    def _write(self, name, text):
+        path = Path(self.directory.name) / name
+        path.write_text(text, encoding="utf-8")
+        return str(path)
+
+    def _run(self, *arguments):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(0, compare.main([self.reading, self.transcription, *arguments]))
+        return output.getvalue()
+
+    def test_prints_the_tally_as_a_table(self):
+        printed = self._run("--page", "81")
+        self.assertIn(f"| {compare.VOWELS} |", printed)
+        self.assertIn("2 words read", printed)
+
+    def test_emits_the_differences_as_json_when_asked(self):
+        payload = json.loads(self._run("--page", "81", "--json"))
+        self.assertEqual("81", payload["page"])
+        self.assertEqual(2, payload["word_count"])
+        self.assertEqual(
+            {"key", "bucket", "ours", "theirs", "at", "size", "verdict"},
+            set(payload["differences"][0]),
+        )
+
+    def test_applies_verdicts_and_reports_the_ones_that_match_nothing(self):
+        key = compare.compare(*(Path(f).read_text(encoding="utf-8")
+                                for f in (self.reading, self.transcription))
+                              ).differences[0].key
+        verdicts = self._write("verdicts.json",
+                               json.dumps({key: compare.PRINT, "no/such/key": compare.READING}))
+        printed = self._run("--json", "--verdicts", verdicts)
+        self.assertIn("no difference matches the verdict 'no/such/key'", printed)
+        payload = json.loads(printed[printed.index("{"):])
+        self.assertEqual(compare.PRINT, payload["differences"][0]["verdict"])
 
 
 if __name__ == "__main__":
