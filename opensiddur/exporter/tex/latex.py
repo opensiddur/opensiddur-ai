@@ -15,6 +15,7 @@ here. When no settings file is supplied, sensible defaults from
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -292,20 +293,27 @@ def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
     carries ``\\printbibliography``. Both are empty when there is no
     ``listBibl`` content.
     """
-    index_files = set(get_project_index(fp) for fp in xml_file_paths)
+    index_files = sorted(set(get_project_index(fp) for fp in xml_file_paths))
     bibtex_records: list[str] = []
-    seen: set[str] = set()
+    seen_keys: set[str] = set()
     for index_xml in index_files:
         try:
             index_xml_text = index_xml.read_text(encoding="utf-8")
             bib_xslt_path = Path(__file__).parent / "bibtex.xslt"
             bibtex_str = xslt_transform_string(bib_xslt_path, index_xml_text).strip()
-            if bibtex_str and bibtex_str not in seen:
-                seen.add(bibtex_str)
-                bibtex_records.append(bibtex_str)
         except Exception as e:
             print(f"Could not extract bibtex from {index_xml}: {e}", file=sys.stderr)
             continue
+        # Two projects of the same book cite it identically but for a note, so the
+        # same key arrives twice with different bodies. Deduplicate by key, not by
+        # text: biber keeps only one entry per key anyway, and warns about the rest.
+        for entry in filter(None, (e.strip() for e in bibtex_str.split("\n\n"))):
+            key_match = re.match(r"@\w+\{([^,]*),", entry)
+            key = key_match.group(1) if key_match else entry
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            bibtex_records.append(entry)
 
     bibtex_blob = "\n\n".join(bibtex_records)
     if not bibtex_blob:

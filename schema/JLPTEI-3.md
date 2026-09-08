@@ -421,12 +421,24 @@ Every document has a TEI header with a standardized structure.
                 <tei:title>{SOURCE_TITLE}</tei:title>
                 <tei:author>{SOURCE_AUTHOR}</tei:author>
                 <tei:editor>{SOURCE_EDITOR}</tei:editor>
-                <!-- for websites, only publisher will be used -->
-                 <tei:publisher>
+                <tei:publisher>{SOURCE_PUBLISHER}</tei:publisher>
+                <!-- for a source that is itself a website, name the site as its distributor -->
+                 <tei:distributor>
                     <tei:ref target="{SOURCE_WEBSITE}">{SOURCE_WEBSITE_NAME}</tei:ref>
-                 </tei:publisher>
+                 </tei:distributor>
                 <tei:pubPlace>{SOURCE_PUBLICATION_PLACE}</tei:pubPlace>
-                <tei:date>{PUBLICATION_OR_DOWNLOAD_DATE}</tei:date>
+                <tei:date when="{PUBLICATION_DATE}">{PUBLICATION_DATE}</tei:date>
+                <!-- where the copy that was used is online, cite it on the entry for the work
+                itself rather than as a second bibl: a scan is a copy of the book, not another
+                book. The access date is a property of the URL and is typed "accessed"; a
+                site-specific identifier is typed by the site that issued it. -->
+                <tei:date type="accessed" when="{ACCESS_DATE}">{ACCESS_DATE}</tei:date>
+                <tei:idno type="url">{SOURCE_URL}</tei:idno>
+                <tei:idno type="{SITE_NAME}">{SITE_ITEM_IDENTIFIER}</tei:idno>
+                <!-- a note belongs to the citation and is printed with it; a note about how
+                this project encodes the source is typed "encoding" and stays in the XML -->
+                <tei:note>{NOTE_ON_THE_SOURCE}</tei:note>
+                <tei:note type="encoding">{NOTE_ON_THE_ENCODING}</tei:note>
              </tei:bibl>
             <!-- each individual document will typically contain a citation with a pointer to the 
             project bibliography, addressed by a file/fragment pointer -- not a URN, since the
@@ -465,9 +477,11 @@ not overload `@corresp`, which is reserved for alignment:
 
 `@facs` is available on every element via `att.global.facs`. The TEI `transcr` module is not
 included in this schema, so `tei:facsimile`, `tei:surface` and `tei:graphic` are unavailable and
-`@facs` takes an absolute URL rather than a local pointer. Record the scan itself as a `tei:bibl`
-in `tei:sourceDesc`, and where the designation-to-scan-page mapping is computable, implement it
-once in the importer rather than repeating it.
+`@facs` takes an absolute URL rather than a local pointer. Record the scan on the `tei:bibl` of
+the work it reproduces — `tei:idno[@type='url']` for the copy, a site-typed `tei:idno` for its
+item identifier there, and `tei:date[@type='accessed']` for the date it was consulted — rather
+than as a `tei:bibl` of its own, and where the designation-to-scan-page mapping is computable,
+implement it once in the importer rather than repeating it.
 
 | `RESPONSIBILITY_TYPE` | `RESPONSIBILITY_STRING` |
 |-----------------------|-------------------------|

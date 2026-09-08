@@ -402,6 +402,176 @@ class TestExtractSources(unittest.TestCase):
         self.assertNotIn(r"\textbackslash", preamble)
         self.assertNotIn(r"\{\}", preamble)
 
+    def test_bibtex_cites_an_online_copy_on_the_work_it_reproduces(self):
+        """A scan is a copy of the book, so it is fields on the book's entry.
+
+        biblatex prints eprinttype/eprint ("archive.org: <id>") and the access
+        date beside the URL; howpublished it does not print at all.
+        """
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Book of Examples</tei:title>
+              <tei:author>Example Author</tei:author>
+              <tei:publisher>Example Press</tei:publisher>
+              <tei:date when="1949">1949</tei:date>
+              <tei:date type="accessed" when="2026-09-08">2026-09-08</tei:date>
+              <tei:idno type="url">https://example.org/details/book</tei:idno>
+              <tei:idno type="example.org">book</tei:idno>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("@book{example1949,", preamble)
+        self.assertIn("url = {https://example.org/details/book},", preamble)
+        self.assertIn("urldate = {2026-09-08},", preamble)
+        self.assertIn("eprinttype = {example.org},", preamble)
+        self.assertIn("eprint = {book},", preamble)
+        self.assertNotIn("howpublished", preamble)
+        self.assertNotIn("\n  date = {2026-09-08}", preamble)
+
+    def test_bibtex_emits_iso_dates_as_date_and_others_as_year(self):
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Dated</tei:title>
+              <tei:author>Iso</tei:author>
+              <tei:date>2025-07-27</tei:date>
+            </tei:bibl>
+            <tei:bibl>
+              <tei:title>Prose date</tei:title>
+              <tei:author>Prose</tei:author>
+              <tei:date>25 January 2016</tei:date>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("date = {2025-07-27},", preamble)
+        self.assertIn("year = {25 January 2016},", preamble)
+
+    def test_bibtex_joins_notes_and_accession_into_one_addendum(self):
+        """A repeated field makes biber reject the entry."""
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Noted</tei:title>
+              <tei:author>Noter</tei:author>
+              <tei:note>First remark.</tei:note>
+              <tei:note>Second remark.</tei:note>
+              <tei:idno type="Accession">X 19 A</tei:idno>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertEqual(preamble.count("addendum = {"), 1)
+        self.assertIn(
+            "addendum = {First remark. Second remark. Accession: X 19 A},", preamble
+        )
+        self.assertNotIn("note = {", preamble)
+
+    def test_bibtex_omits_encoding_notes(self):
+        """How this project encodes the source is no part of citing the book."""
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Noted</tei:title>
+              <tei:author>Noter</tei:author>
+              <tei:note>Worth citing.</tei:note>
+              <tei:note type="encoding">The scan is 1541x2291 pixels per leaf.</tei:note>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("addendum = {Worth citing.},", preamble)
+        self.assertNotIn("1541x2291", preamble)
+
+    def test_bibtex_emits_distributor_of_an_online_source_as_organization(self):
+        """biblatex ignores publisher in @online, so a host filed there vanishes."""
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>A page</tei:title>
+              <tei:distributor>
+                <tei:ref target="https://example.org">Example Wiki</tei:ref>
+              </tei:distributor>
+              <tei:idno type="url">https://example.org/page</tei:idno>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("@online{example", preamble)
+        self.assertIn("organization = {Example Wiki},", preamble)
+        self.assertNotIn("publisher = {", preamble)
+
+    def test_bibtex_takes_the_url_from_a_bare_ref(self):
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl>
+              <tei:title>Facsimile</tei:title>
+              <tei:ref target="https://example.org/4909">Example #4909</tei:ref>
+            </tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("@online{unknownnd,", preamble)
+        self.assertIn("url = {https://example.org/4909},", preamble)
+
+    def test_bibtex_disambiguates_colliding_cite_keys_in_one_index(self):
+        """Duplicate keys make biber drop all but the first entry."""
+        index = """<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl xml:id="facsimile_bibl"><tei:title>Facsimile</tei:title></tei:bibl>
+            <tei:bibl><tei:title>Transcription</tei:title></tei:bibl>
+          </tei:listBibl>
+        </root>""".encode("utf-8")
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("@misc{unknownnd-facsimilebibl,", preamble)
+        self.assertIn("@misc{unknownnd-2,", preamble)
+
+    def test_dedupes_entries_that_share_a_cite_key_across_indexes(self):
+        """Two projects of one book cite it alike but for a note."""
+
+        def index(note: str) -> bytes:
+            return f"""<?xml version="1.0"?>
+            <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+              <tei:listBibl>
+                <tei:bibl>
+                  <tei:title>Book of Examples</tei:title>
+                  <tei:author>Example Author</tei:author>
+                  <tei:date>1949</tei:date>
+                  <tei:note>{note}</tei:note>
+                </tei:bibl>
+              </tei:listBibl>
+            </root>""".encode("utf-8")
+
+        he = self._create("he", "doc.xml", b"<root/>")
+        self._create("he", "index.xml", index("The Hebrew of this project."))
+        en = self._create("en", "doc.xml", b"<root/>")
+        self._create("en", "index.xml", index("The English of this project."))
+        preamble, _ = extract_sources([he, en])
+        self.assertEqual(preamble.count("{example1949,"), 1)
+
 
 class TestGetFileReferences(unittest.TestCase):
 
