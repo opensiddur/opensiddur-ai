@@ -187,6 +187,9 @@
              every non-Hebrew bookmark reads "LTShabbat Shekalim". -->
         <xsl:text>  \def\textdir#1#2#3{}&#10;</xsl:text>
         <xsl:text>  \def\selectlanguage#1{}&#10;</xsl:text>
+        <!-- Two arguments, and the title is the second: \def\foreignlanguage#1#2{#1}
+             would put the language name in the bookmark and throw the title away. -->
+        <xsl:text>  \def\foreignlanguage#1#2{#2}&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
 
         <!-- ================================================================
@@ -258,11 +261,11 @@
 
         <!-- Verse numbers rendered as superscripts at the start of each verse.
              Force LTR for digits even inside Hebrew RTL contexts. -->
-        <xsl:text>\newcommand{\vno}[1]{\textsuperscript{{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+        <xsl:text>\newcommand{\vno}[1]{\textsuperscript{{\textdir TLT\foreignlanguage{english}{#1}}}\,}&#10;</xsl:text>
         <!-- Chapter number, inline at the start of a chapter. Only emitted inside
              tei:div[@type='book'] (Bible exports), where the chapter exists solely as a
              milestone and would otherwise be invisible. -->
-        <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\selectlanguage{english}#1}}\,}&#10;</xsl:text>
+        <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\foreignlanguage{english}{#1}}}\,}&#10;</xsl:text>
         <!-- A scriptural citation ("<book> <chapter>:<verse>-..."), on a line of its own:
              either the source of a haftarah/festival reading the humash otherwise never
              states (see tei:milestone[@unit='citation'] below), or where a reading resumes
@@ -418,10 +421,10 @@
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
              sits in the interlinear band (not a letter-attached superscript). -->
         <xsl:text>\newcommand{\OSInterlinearNotemark}[1]{%&#10;</xsl:text>
-        <xsl:text>  \leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.5ex}{{\selectlanguage{english}\kern0.05em\normalfont\scriptsize\sffamily #1\kern0.05em}}}\hss}%&#10;</xsl:text>
+        <xsl:text>  \leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.5ex}{\foreignlanguage{english}{\kern0.05em\normalfont\scriptsize\sffamily #1\kern0.05em}}}\hss}%&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSFootnotemark}[1]{%&#10;</xsl:text>
-        <xsl:text>  {\textdir TLT\selectlanguage{english}\scriptsize\sffamily #1}\space&#10;</xsl:text>
+        <xsl:text>  {\textdir TLT\foreignlanguage{english}{\scriptsize\sffamily #1}}\space&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
         <!-- B-series apparatus: no line numbers; lemma text is not repeated in the
              footnote (\Xwraplemma[B]{\@gobble}) — only \OSFootnotemark + \notenote. -->
@@ -442,7 +445,7 @@
              output of every existing document; typography settings that touch
              line numbers write \linenumrep, which is the macro that is actually
              consulted (see tex/typography_tex.py). -->
-        <xsl:text>\renewcommand*{\linenumberstyle}[1]{\hbox{\textdir TLT\selectlanguage{english}#1}}&#10;</xsl:text>
+        <xsl:text>\renewcommand*{\linenumberstyle}[1]{\hbox{\textdir TLT\foreignlanguage{english}{#1}}}&#10;</xsl:text>
         <!-- Line numbering by page. \lineation sets the MAIN series only: reledpar keeps
              a separate \bypage@R which defaults to false, i.e. the right column falls back
              to numbering by section and runs on unbroken through the whole document. So the
@@ -820,11 +823,11 @@
             <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
             <xsl:text>{</xsl:text>
             <xsl:if test="not($is-hebrew)">
-                <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+                <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
             </xsl:if>
             <xsl:apply-templates select="$shown/node()[not(self::f:alt-head)]" mode="emit"/>
             <xsl:if test="not($is-hebrew)">
-                <xsl:text>}</xsl:text>
+                <xsl:text>}}</xsl:text>
             </xsl:if>
             <xsl:text>}</xsl:text>
             <xsl:if test="exists($second)">
@@ -1144,9 +1147,9 @@
                                 <xsl:choose>
                                     <xsl:when test="matches(string(@n), '^[0-9]+$')">
                                         <!-- Force LTR digits in Hebrew RTL contexts -->
-                                        <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+                                        <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                        <xsl:text>}</xsl:text>
+                                        <xsl:text>}}</xsl:text>
                                     </xsl:when>
                                     <xsl:otherwise>
                                         <xsl:value-of select="f:escape-tex(string(@n))"/>
@@ -1527,11 +1530,11 @@
              tei:foreign[@xml:lang='he'] inside such a title get their own \texthebrew
              wrapper from mode="emit". -->
         <xsl:if test="not($is-hebrew)">
-            <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+            <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::f:alt-head)]" mode="emit"/>
         <xsl:if test="not($is-hebrew)">
-            <xsl:text>}</xsl:text>
+            <xsl:text>}}</xsl:text>
         </xsl:if>
         <xsl:text>}</xsl:text>
             </xsl:when>
@@ -2020,13 +2023,17 @@
         <xsl:value-of select="$macro"/>
         <xsl:text>{</xsl:text>
         <xsl:if test="$needs-ltr">
-            <xsl:text>{\textdir TLT\selectlanguage{english}</xsl:text>
+            <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
         </xsl:if>
         <xsl:if test="$needs-rtl">
             <xsl:text>\texthebrew{</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="node()" mode="emit"/>
-        <xsl:if test="$needs-ltr or $needs-rtl">
+        <!-- The LTR branch opens two groups, the RTL one \texthebrew's single group. -->
+        <xsl:if test="$needs-ltr">
+            <xsl:text>}}</xsl:text>
+        </xsl:if>
+        <xsl:if test="$needs-rtl">
             <xsl:text>}</xsl:text>
         </xsl:if>
         <xsl:text>}&#10;</xsl:text>
@@ -2352,17 +2359,17 @@
                      in an LTR context.
                      Use {{\textdir TRT ...}} (regular braces) to avoid leaking
                      \begingroup/\endgroup into reledmac's aux-file write machinery. -->
-                <xsl:text>{{\textdir TRT\selectlanguage{hebrew} </xsl:text>
+                <xsl:text>{{\textdir TRT\foreignlanguage{hebrew}{</xsl:text>
                 <xsl:apply-templates mode="emit"/>
-                <xsl:text>}}</xsl:text>
+                <xsl:text>}}}</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <!-- Force explicit LTR direction inside notes even when nested
                      in an RTL (Hebrew) context. This avoids visual reversal of
                      LTR runs like \"note\" rendering backwards. -->
-                <xsl:text>{{\textdir TLT\selectlanguage{english} </xsl:text>
+                <xsl:text>{{\textdir TLT\foreignlanguage{english}{</xsl:text>
                 <xsl:apply-templates mode="emit"/>
-                <xsl:text>}}</xsl:text>
+                <xsl:text>}}}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
@@ -2649,7 +2656,7 @@
                 <xsl:sequence select="f:emit-bidi-text($title)"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}', f:escape-tex($title), '}')"/>
+                <xsl:sequence select="concat('{\textdir TLT\foreignlanguage{english}{', f:escape-tex($title), '}}')"/>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:function>
@@ -2698,7 +2705,7 @@
         <xsl:variable name="parts" as="xs:string*">
             <xsl:analyze-string select="$s" regex="[A-Za-z0-9]+([-'.:;–]\s?[A-Za-z0-9]+)*">
                 <xsl:matching-substring>
-                    <xsl:sequence select="concat('{{\textdir TLT\selectlanguage{english}', f:escape-tex(.), '}}')"/>
+                    <xsl:sequence select="concat('{{\textdir TLT\foreignlanguage{english}{', f:escape-tex(.), '}}}')"/>
                 </xsl:matching-substring>
                 <xsl:non-matching-substring>
                     <xsl:sequence select="f:escape-tex(.)"/>
@@ -2743,8 +2750,8 @@
                     <!-- Whitespace separating two runs carries no direction of
                          its own; wrapping it would only add empty groups. -->
                     <xsl:if test="normalize-space(.)">
-                        <xsl:sequence select="concat('{\textdir TLT\selectlanguage{english}',
-                                                     f:escape-tex(.), '}')"/>
+                        <xsl:sequence select="concat('{\textdir TLT\foreignlanguage{english}{',
+                                                     f:escape-tex(.), '}}')"/>
                     </xsl:if>
                 </xsl:non-matching-substring>
             </xsl:analyze-string>

@@ -123,7 +123,14 @@ _RTL_ENGLISH = " ".join(f"word{n}" for n in range(30))
 # Wrapped as the exporter wraps it: a Latin rubric inside \begin{hebrew} needs the
 # direction and language switch, or it is set in the Hebrew font and comes out as
 # missing glyphs.
-_RTL_RUBRIC = r"{{\textdir TLT\selectlanguage{english} On Rosh Hodesh and Hol ha-Moed add:}}"
+_RTL_RUBRIC = r"{{\textdir TLT\foreignlanguage{english}{On Rosh Hodesh and Hol ha-Moed add:}}}"
+
+# What the exporter emitted before the inline language switch was fixed. The split this
+# module checks for needed both ingredients -- \leavevmode breaking where no line was in
+# progress, and \selectlanguage, a block-level command used inline, contributing vertical
+# material of its own. With either one gone the document sets cleanly, so the self-check
+# has to reproduce both or it would be asserting against a state that never existed.
+_RTL_RUBRIC_BEFORE = r"{{\textdir TLT\selectlanguage{english} On Rosh Hodesh and Hol ha-Moed add:}}"
 
 _RTL_BODY = r"""%(macros)s
 \begin{document}
@@ -273,7 +280,7 @@ class TestParallelColumnGeometry(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.assertRubricsShareRows(left, right)
 
-    def _rubric_line_gap(self, macros: str) -> float:
+    def _rubric_line_gap(self, macros: str, *, legacy: bool = False) -> float:
         r"""How far apart the two lines of one rubric are, in the RTL column.
 
         The rubric follows a paragraph that ended with \par, so \OSInstructionBlock is
@@ -293,7 +300,8 @@ class TestParallelColumnGeometry(unittest.TestCase):
             work = Path(tmp)
             (work / "t.tex").write_text(preamble + _RTL_BODY % {
                 "macros": macros, "hebrew": _RTL_HEBREW,
-                "english": _RTL_ENGLISH, "rubric": _RTL_RUBRIC,
+                "english": _RTL_ENGLISH,
+                "rubric": _RTL_RUBRIC_BEFORE if legacy else _RTL_RUBRIC,
             })
             for _ in range(3):
                 done = subprocess.run(["lualatex", "-interaction=nonstopmode", "t.tex"],
@@ -332,7 +340,7 @@ class TestParallelColumnGeometry(unittest.TestCase):
         # Measured outside assertRaises on purpose: _rubric_line_gap raises AssertionError
         # of its own when the rubric fails to render, and catching that here would let a
         # document that typesets nothing masquerade as a document that splits.
-        gap = self._rubric_line_gap(leaky)
+        gap = self._rubric_line_gap(leaky, legacy=True)
         self.assertGreater(gap, 20.0, "the pre-fix macro did not split this document")
         with self.assertRaises(AssertionError):
             self.assertRubricIsNotSplit(gap)

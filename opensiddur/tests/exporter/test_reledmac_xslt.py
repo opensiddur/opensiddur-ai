@@ -91,7 +91,7 @@ class TestPreamble(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(
-            r"\newcommand{\OSDocumentTitle}{{\textdir TLT\selectlanguage{english}"
+            r"\newcommand{\OSDocumentTitle}{{\textdir TLT\foreignlanguage{english}{"
             r"A Book of Prayer}}",
             out,
         )
@@ -215,7 +215,7 @@ class TestPreamble(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn("english}Five}", out)
+        self.assertIn("english}{Five}", out)
         self.assertNotIn("OSheadE", out)
 
     def test_a_third_level_head_is_added_to_the_outline(self):
@@ -306,7 +306,7 @@ class TestSingleStreamMapping(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         # Chapter numbers are forced LTR to avoid digit reversal in RTL contexts.
-        self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}1}}", out)
+        self.assertIn(r"\chno{{\textdir TLT\foreignlanguage{english}{1}}}", out)
         self.assertNotIn(r"\eledsection", out)
 
     def test_chapter_number_forces_ltr_digits_in_hebrew_context(self):
@@ -323,7 +323,7 @@ class TestSingleStreamMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}12}}", out)
+        self.assertIn(r"\chno{{\textdir TLT\foreignlanguage{english}{12}}}", out)
 
     def test_chapter_milestone_inside_a_parallel_column_still_emits_its_number(self):
         """The book div now lives *inside* each column, not around the p:parallel.
@@ -358,7 +358,7 @@ class TestSingleStreamMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml, layout="pairs")
-        self.assertIn(r"\chno{{\textdir TLT\selectlanguage{english}3}}", out)
+        self.assertIn(r"\chno{{\textdir TLT\foreignlanguage{english}{3}}}", out)
         # ...and it is genuinely the two-column path, not the linear fallback.
         self.assertIn(r"\begin{pairs}", out)
         self.assertIn(r"\Columns", out)
@@ -512,7 +512,7 @@ class TestParallelMapping(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(r"\InsertMark{OSbook}{\texthebrew{בראשית}}", out)
         self.assertIn(
-            r"\InsertMark{OSbookAlt}{{\textdir TLT\selectlanguage{english}GENESIS}}", out
+            r"\InsertMark{OSbookAlt}{{\textdir TLT\foreignlanguage{english}{GENESIS}}}", out
         )
         self.assertIn(r"\InsertMark{OSheadAAlt}{", out)
 
@@ -521,7 +521,7 @@ class TestParallelMapping(unittest.TestCase):
         open one of its own."""
         out = _transform(self.XML)
         self.assertIn(
-            r"\InsertMark{OSchapter}{{\textdir TLT\selectlanguage{english}1}}", out
+            r"\InsertMark{OSchapter}{{\textdir TLT\foreignlanguage{english}{1}}}", out
         )
         self.assertNotIn(r"}}\pstart", out)
 
@@ -539,7 +539,7 @@ class TestParallelMapping(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(
-            r"\InsertMark{OSchapter}{{\textdir TLT\selectlanguage{english}50}}", out
+            r"\InsertMark{OSchapter}{{\textdir TLT\foreignlanguage{english}{50}}}", out
         )
 
     def test_pairs_layout_uses_columns_typesetter(self):
@@ -861,7 +861,7 @@ class TestNotesMapping(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(r"\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{1}}{\Bfootnote{\OSFootnotemark{1}\notenote{", out)
         self.assertIn("English annotation", out)
-        self.assertIn(r"{{\textdir TLT\selectlanguage{english}", out)
+        self.assertIn(r"{{\textdir TLT\foreignlanguage{english}{", out)
 
     def test_standoff_not_resolved_at_tex_stage(self):
         """tei:standOff is not expanded here; only body notes become apparatus."""
@@ -958,8 +958,8 @@ class TestNotesMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"{{\textdir TLT\selectlanguage{english} English note}}", out)
-        self.assertIn(r"{{\textdir TLT\selectlanguage{english} Inline English instruction}}", out)
+        self.assertIn(r"{{\textdir TLT\foreignlanguage{english}{English note}}}", out)
+        self.assertIn(r"{{\textdir TLT\foreignlanguage{english}{Inline English instruction}}}", out)
 
     def test_hebrew_note_wraps_embedded_latin_siglum(self):
         """MAM apparatus notes are Hebrew prose that embeds Latin manuscript
@@ -976,10 +976,10 @@ class TestNotesMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"{{\textdir TLT\selectlanguage{english}EVR-II-B-8}}", out)
+        self.assertIn(r"{{\textdir TLT\foreignlanguage{english}{EVR-II-B-8}}}", out)
         # The hyphen joining the Hebrew word to the siglum stays outside the
         # wrap; only the Latin/digit token itself is switched to LTR.
-        self.assertIn("פטרבורג-{{\\textdir TLT\\selectlanguage{english}EVR-II-B-8}}", out)
+        self.assertIn("פטרבורג-{{\\textdir TLT\\foreignlanguage{english}{EVR-II-B-8}}}", out)
 
     def test_pure_hebrew_note_has_no_spurious_latin_wrap(self):
         """Hebrew abbreviation punctuation (ASCII gershayim, e.g. מ""ג) must
@@ -1009,7 +1009,7 @@ class TestNotesMapping(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertNotIn(r"\textdir TLT\selectlanguage{english}EVR-II-B-8", out)
+        self.assertNotIn(r"\textdir TLT\foreignlanguage{english}{EVR-II-B-8", out)
         self.assertIn("EVR-II-B-8", out)
 
 
@@ -1427,9 +1427,9 @@ class TestStructuralElements(unittest.TestCase):
         # The running-head marks precede it inside the same pstart.
         self.assertIn(
             "\\pstart \\skipnumbering\n"
-            r"\InsertMark{OSheadA}{{\textdir TLT\selectlanguage{english}Genesis}}"
-            r"\InsertMark{OSheadAny}{{\textdir TLT\selectlanguage{english}Genesis}}"
-            r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}",
+            r"\InsertMark{OSheadA}{{\textdir TLT\foreignlanguage{english}{Genesis}}}"
+            r"\InsertMark{OSheadAny}{{\textdir TLT\foreignlanguage{english}{Genesis}}}"
+            r"\OSheadA{{\textdir TLT\foreignlanguage{english}{Genesis}}}",
             out,
         )
         self.assertNotIn(r"\eledchapter", out)
@@ -1446,7 +1446,7 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\InsertMark{OSbook}{{\textdir TLT\selectlanguage{english}Genesis}}", out)
+        self.assertIn(r"\InsertMark{OSbook}{{\textdir TLT\foreignlanguage{english}{Genesis}}}", out)
 
     def test_non_book_div_head_records_no_book_mark(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -1459,7 +1459,7 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\InsertMark{OSheadA}{{\textdir TLT\selectlanguage{english}A Section}}", out)
+        self.assertIn(r"\InsertMark{OSheadA}{{\textdir TLT\foreignlanguage{english}{A Section}}}", out)
         self.assertNotIn(r"\InsertMark{OSbook}", out)
 
     def test_heading_marks_follow_the_heading_level(self):
@@ -1472,11 +1472,11 @@ class TestStructuralElements(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\InsertMark{OSheadA}{{\textdir TLT\selectlanguage{english}Outer}}", out)
-        self.assertIn(r"\InsertMark{OSheadB}{{\textdir TLT\selectlanguage{english}Inner}}", out)
+        self.assertIn(r"\InsertMark{OSheadA}{{\textdir TLT\foreignlanguage{english}{Outer}}}", out)
+        self.assertIn(r"\InsertMark{OSheadB}{{\textdir TLT\foreignlanguage{english}{Inner}}}", out)
         # Every heading also records into the any-level class, which backs
         # the {section-title} code.
-        self.assertIn(r"\InsertMark{OSheadAny}{{\textdir TLT\selectlanguage{english}Inner}}", out)
+        self.assertIn(r"\InsertMark{OSheadAny}{{\textdir TLT\foreignlanguage{english}{Inner}}}", out)
 
     def test_mixed_script_heading_mark_carries_per_run_direction(self):
         """A running head can be placed in a slot of either direction, so the
@@ -1493,7 +1493,7 @@ class TestStructuralElements(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(r"\InsertMark{OSbook}{\texthebrew{רות}", out)
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}RUTH}", out)
+        self.assertIn(r"{\textdir TLT\foreignlanguage{english}{RUTH}}", out)
 
     def test_a_hyphenated_hebrew_heading_stays_one_run(self):
         """A paired parsha name is written with an en-dash, which is outside the
@@ -1515,7 +1515,7 @@ class TestStructuralElements(unittest.TestCase):
             "\u05de\u05b0\u05e6\u05b9\u05e8\u05b8\u05e2}}",
             out,
         )
-        self.assertNotIn("selectlanguage{english}\u2013", out)
+        self.assertNotIn("foreignlanguage{english}{\u2013", out)
 
     def test_div_head_emits_pdf_bookmark(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -1530,7 +1530,7 @@ class TestStructuralElements(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(
             r"\phantomsection\addcontentsline{toc}{section}"
-            r"{{\textdir TLT\selectlanguage{english}Genesis}}",
+            r"{{\textdir TLT\foreignlanguage{english}{Genesis}}}",
             out,
         )
 
@@ -1553,8 +1553,8 @@ class TestStructuralElements(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         # Two headless container divs above "Outer" must not push it below level 1.
-        self.assertIn(r"\OSheadA{{\textdir TLT\selectlanguage{english}Outer}}", out)
-        self.assertIn(r"\OSheadB{{\textdir TLT\selectlanguage{english}Inner}}", out)
+        self.assertIn(r"\OSheadA{{\textdir TLT\foreignlanguage{english}{Outer}}}", out)
+        self.assertIn(r"\OSheadB{{\textdir TLT\foreignlanguage{english}{Inner}}}", out)
         self.assertIn(r"\addcontentsline{toc}{subsection}", out)
 
     def test_head_markup_is_rendered_not_flattened(self):
@@ -1573,7 +1573,7 @@ class TestStructuralElements(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(
-            r"\OSheadA{{\textdir TLT\selectlanguage{english}"
+            r"\OSheadA{{\textdir TLT\foreignlanguage{english}{"
             r"\texthebrew{רות}\quad RUTH}}",
             out,
         )
@@ -1584,7 +1584,7 @@ class TestStructuralElements(unittest.TestCase):
         # The bookmark still takes the flattened form: \addcontentsline builds a PDF
         # string and cannot carry markup.
         self.assertIn(
-            r"\addcontentsline{toc}{section}{{\textdir TLT\selectlanguage{english}רותRUTH}}",
+            r"\addcontentsline{toc}{section}{{\textdir TLT\foreignlanguage{english}{רותRUTH}}}",
             out,
         )
 
@@ -1602,7 +1602,7 @@ class TestStructuralElements(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertNotIn("Should not appear", out)
-        self.assertIn(r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}", out)
+        self.assertIn(r"\OSheadA{{\textdir TLT\foreignlanguage{english}{Genesis}}}", out)
 
     def test_english_head_in_hebrew_document_uses_ltr_wrapper(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -1616,7 +1616,7 @@ class TestStructuralElements(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(
-            r"\OSheadA{{\textdir TLT\selectlanguage{english}Genesis}}",
+            r"\OSheadA{{\textdir TLT\foreignlanguage{english}{Genesis}}}",
             out,
         )
 
@@ -1633,7 +1633,7 @@ class TestStructuralElements(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(r"\OSheadA{בראשית}", out)
         self.assertNotIn(
-            r"\OSheadA{{\textdir TLT\selectlanguage{english}בראשית}}",
+            r"\OSheadA{{\textdir TLT\foreignlanguage{english}{בראשית}}}",
             out,
         )
 
@@ -1655,7 +1655,7 @@ class TestStructuralElements(unittest.TestCase):
         # the bidi algorithm (this is what previously rendered "42:5" as "43:10-42:5" in a
         # citation — see TestCitationMilestone.test_a_multi_number_range_stays_in_order).
         self.assertIn(
-            r"\OSheadA{ישעיהו {{\textdir TLT\selectlanguage{english}42:5}}}",
+            r"\OSheadA{ישעיהו {{\textdir TLT\foreignlanguage{english}{42:5}}}}",
             out,
         )
 
@@ -1761,7 +1761,7 @@ class TestFrontMatter(unittest.TestCase):
         # or its Latin text would be laid out right to left.
         self.assertIn(r"\OSTitleMain{ההגדה לליל שמורים}", page)
         self.assertIn(
-            r"\OSImprintLine{{\textdir TLT\selectlanguage{english}Roedelheim,}}", page
+            r"\OSImprintLine{{\textdir TLT\foreignlanguage{english}{Roedelheim,}}}", page
         )
 
     def test_imprint_parts_stay_inline_in_a_running_imprint(self):
@@ -2123,7 +2123,7 @@ class TestCitationMilestone(unittest.TestCase):
                <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
         )
         body = self._body(out)
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}42:5-43:10}", body)
+        self.assertIn(r"{\textdir TLT\foreignlanguage{english}{42:5-43:10}}", body)
 
     def test_a_multi_number_range_stays_in_order(self):
         """Two colon/dash-joined number groups sitting side by side in RTL text, with no
@@ -2136,7 +2136,7 @@ class TestCitationMilestone(unittest.TestCase):
         )
         body = self._body(out)
         self.assertIn(
-            r"{\textdir TLT\selectlanguage{english}34:8–34:22; 33:25–33:26}", body,
+            r"{\textdir TLT\foreignlanguage{english}{34:8–34:22; 33:25–33:26}}", body,
         )
 
     def test_a_book_change_still_gets_its_own_wrap(self):
@@ -2147,8 +2147,8 @@ class TestCitationMilestone(unittest.TestCase):
                <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>"""
         )
         body = self._body(out)
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}18:46}", body)
-        self.assertIn(r"{\textdir TLT\selectlanguage{english}3:4–3:24}", body)
+        self.assertIn(r"{\textdir TLT\foreignlanguage{english}{18:46}}", body)
+        self.assertIn(r"{\textdir TLT\foreignlanguage{english}{3:4–3:24}}", body)
 
     def test_a_citation_does_not_break_the_reading(self):
         """The reading's own transcluded text still follows in the numbered stream."""
@@ -2242,7 +2242,7 @@ class TestMultilingualBookmarks(unittest.TestCase):
         r"""The bookmark as a PDF reader sees it.
 
         f:emit-bidi-text wraps each Latin run against the stream it sits in, so the TeX
-        reads {{\textdir TLT\selectlanguage{english}Grace}} {{...after}}. The preamble's
+        reads {{\textdir TLT\foreignlanguage{english}{Grace}}} {{...after}}. The preamble's
         \pdfstringdefDisableCommands strips exactly those commands when hyperref builds
         the PDF string, so undoing them here makes an assertion mean what the reader will
         see rather than what the TeX happens to look like.
@@ -2261,7 +2261,7 @@ class TestMultilingualBookmarks(unittest.TestCase):
                     break
                 depth -= 1
         title = after[:end]
-        return (title.replace("{\\textdir TLT\\selectlanguage{english}", "")
+        return (title.replace("{\\textdir TLT\\foreignlanguage{english}{", "")
                      .replace("{", "").replace("}", "").strip())
 
     PARALLEL = """<?xml version="1.0" encoding="UTF-8"?>
@@ -2394,7 +2394,7 @@ class TestMultilingualBookmarks(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(
             r"\phantomsection\addcontentsline{toc}{section}"
-            r"{{\textdir TLT\selectlanguage{english}Genesis}}",
+            r"{{\textdir TLT\foreignlanguage{english}{Genesis}}}",
             out,
         )
         self.assertEqual(1, out.count(r"\addcontentsline"))
@@ -2538,7 +2538,7 @@ class TestParallelHeadings(unittest.TestCase):
     def test_from_alt_sets_the_second_columns_title(self):
         out = _transform(self._parallel(self.SAME, self.OTHER),
                          **{"headings-from": "alt"})
-        self.assertIn(rf"\OSheadA{{{{\textdir TLT\selectlanguage{{english}}{self.OTHER}}}}}", out)
+        self.assertIn(rf"\OSheadA{{{{\textdir TLT\foreignlanguage{{english}}{{{self.OTHER}}}}}}}", out)
 
     def test_a_suppressed_heading_keeps_its_paragraph(self):
         """reledpar pairs the columns by counting \\pstart, so a suppressed heading must
@@ -2937,6 +2937,63 @@ class TestSingleStreamOmitsReledparOnly(unittest.TestCase):
         """The single-column path laps through the same macro, so a Hebrew-only
         document has the identical bug latent."""
         self.assertIn(r"\renewcommand*{\leftlinenum}{\hbox dir TLT", _transform(self.XML))
+
+
+class TestInlineLanguageSwitch(unittest.TestCase):
+    r"""``\selectlanguage`` is polyglossia's *block* switch; ``\foreignlanguage`` is the
+    inline one.
+
+    Used inside a line, the block form contributes vertical material of its own. In
+    ``\Columns`` that material escapes onto the shared page list -- reledpar re-selects
+    each column's language around every line it sets -- and costs a row in *both* columns.
+    Measured on the Birnbaum Amidah: an English rubric in the Hebrew column opened a 34.1pt
+    gap where a row is 13.5, cutting the facing column's paragraph in half. Swapping only
+    the switch, with the same content and the same pagination, gives 13.6.
+
+    So no emitted TeX may use ``\selectlanguage`` inline. The one exception is the
+    ``\pdfstringdefDisableCommands`` block, which defines it away for bookmark strings.
+    """
+
+    XML = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body>
+        <tei:div><tei:head>Genesis</tei:head>
+          <tei:p>In the beginning<tei:note type="instruction" xml:lang="en">Reader:</tei:note></tei:p>
+        </tei:div>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_no_inline_selectlanguage_survives(self):
+        out = _transform(self.XML)
+        body = out.split(r"\begin{document}")[1]
+        self.assertNotIn(r"\selectlanguage", body)
+        preamble = out.split(r"\begin{document}")[0]
+        # Only where hyperref is told to ignore it.
+        self.assertEqual(1, preamble.count(r"\selectlanguage"))
+        self.assertIn(r"\def\selectlanguage#1{}", preamble)
+
+    def test_bookmarks_keep_their_titles(self):
+        r"""\foreignlanguage takes two arguments and the title is the *second*:
+        \def\foreignlanguage#1#2{#1} would put "english" in every bookmark."""
+        self.assertIn(r"\def\foreignlanguage#1#2{#2}", _transform(self.XML))
+
+    def test_the_switch_wraps_its_text_in_a_group(self):
+        out = _transform(self.XML)
+        self.assertIn(r"{\textdir TLT\foreignlanguage{english}{Genesis}}", out)
+
+    def test_every_emitted_group_is_balanced(self):
+        """Turning a prefix switch into one that takes an argument adds a brace at every
+        one of the twenty-five sites; an unbalanced one is a LaTeX error, not a test
+        failure, so check the shape here where it is cheap."""
+        body = _transform(self.XML).split(r"\begin{document}")[1]
+        depth = 0
+        for char in body:
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                self.assertGreaterEqual(depth, 0, "a group closes that was never opened")
+        self.assertEqual(0, depth, "a group is left open")
 
 
 class TestPreambleIsAllTeX(unittest.TestCase):

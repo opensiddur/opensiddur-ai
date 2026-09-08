@@ -48,7 +48,7 @@ from opensiddur.exporter.tex.escape import escape_tex
 # harmless. \hebrewnumeral needs no such wrapper: its output is Hebrew letters,
 # which belong in the slot's own direction.
 RUNNING_HEAD_CODES: dict[str, str] = {
-    "page": r"{\textdir TLT\selectlanguage{english}\thepage}",
+    "page": r"{\textdir TLT\foreignlanguage{english}{\thepage}}",
     "page-hebrew": r"\hebrewnumeral{\value{page}}",
     "document-title": r"\OSDocumentTitle",
     "book-title": r"\LastMark{OSbook}",
@@ -108,7 +108,7 @@ def _append_ltr(parts: list[str], text: str) -> None:
         # it would only add empty groups.
         parts.append(text)
         return
-    parts.append(r"{\textdir TLT\selectlanguage{english}" + escape_tex(text) + "}")
+    parts.append(r"{\textdir TLT\foreignlanguage{english}{" + escape_tex(text) + "}}")
 
 
 @dataclass(frozen=True)
@@ -314,11 +314,13 @@ def render_position(
 
     language = position.language if position.language is not None else default_language
     if is_hebrew_language(language):
-        direction = r"\textdir TRT\selectlanguage{hebrew}"
+        direction = r"\textdir TRT\foreignlanguage{hebrew}"
     else:
-        direction = r"\textdir TLT\selectlanguage{english}"
+        direction = r"\textdir TLT\foreignlanguage{english}"
 
-    content = "{" + direction + " " + expand_template(position.text) + "}"
+    # \foreignlanguage takes its text as an argument, so the group the direction
+    # switch opens now closes around it rather than after it.
+    content = "{" + direction + "{" + expand_template(position.text) + "}}"
 
     if position.if_:
         # The test is expanded bare: no direction wrapper, so an unset mark
