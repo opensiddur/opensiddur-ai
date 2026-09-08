@@ -83,6 +83,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alternative names for a service.
 
 ### Fixed
+- Contributor URNs are validated. Nothing checked them before: `specs/urn_registry/` had no
+  contributor file and the reference validator looked only at `@target`/`@targetEnd`, so a
+  misspelt identifier on `tei:name/@ref` was not a broken link but a different person, credited
+  silently — the only signal was a warning at typeset time, after the credit had already been
+  set. The shape is now enforced by Schematron (so an ordinary file validation catches it), the
+  new `specs/urn_registry/contributor.jsonl` is the roster, and both
+  `validate_urn_references` and `urn_registry --check` apply the rules in CI. `opensiddur.org`
+  identifiers are ours, so they must be registered; wikisource usernames arrive from the wiki
+  and are grammar-checked only. The malformed references fixed by hand below would now fail a
+  build rather than waiting to be noticed.
 - The author of a source is no longer credited as a contributor. Meir Halevi (Wolf) Heidenheim
   carried an `edt` "Edited and published by" `respStmt` on all 97 files of
   `heidenheim_haggadah_1822`, while also standing as `tei:author` in the project's source bibl.
@@ -97,6 +107,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   missing the `contributor:` type segment the URN form requires. The committed project XML has the
   correct shape, so re-running either importer would have regressed the references it writes and
   made the LaTeX exporter report each one as "not a contributor URN".
+- The humash importer wrote the same malformed shape,
+  `urn:x-opensiddur:opensiddur.org/efraim-feinstein`. As with the haggadah stubs, the projects had
+  already been corrected and the generator had not, so a regeneration reintroduced it.
 - `schema/JLPTEI-3.md` now says that a contributor namespace is a claim about the person rather
   than a default — `opensiddur.org/` names someone who contributed to Open Siddur — and that a
   source's translator or editor gets no contributor URN at all, belonging in the `tei:bibl`

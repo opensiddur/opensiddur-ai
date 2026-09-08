@@ -101,6 +101,92 @@ class TestJlpteiOddConstraints(unittest.TestCase):
 
 
 
+class TestContributorRefConstraints(unittest.TestCase):
+    def setUp(self):
+        self.tree = etree.parse(str(ODD_PATH))
+        self.ns = {
+            "tei": "http://www.tei-c.org/ns/1.0",
+            "sch": "http://purl.oclc.org/dsdl/schematron",
+        }
+
+    def test_a_contributor_ref_rule_exists(self):
+        rules = self.tree.xpath(
+            "//tei:constraintSpec[@ident='contributor-ref-constraints']"
+            "//sch:rule[contains(@context, '@ref')]",
+            namespaces=self.ns,
+        )
+        self.assertTrue(rules, "Expected a schematron rule constraining @ref")
+
+    def test_the_rule_names_every_contributor_namespace(self):
+        # The ODD cannot import the Python constant, so the two are kept in step by hand.
+        from opensiddur.common.urn_registry import CONTRIBUTOR_NAMESPACES
+
+        tests = self.tree.xpath(
+            "//tei:constraintSpec[@ident='contributor-ref-constraints']//sch:assert/@test",
+            namespaces=self.ns,
+        )
+        self.assertEqual(len(tests), 1)
+        for namespace in CONTRIBUTOR_NAMESPACES:
+            self.assertIn(namespace.replace(".", "\\."), tests[0])
+
+
+class TestContributorRefValidation(unittest.TestCase):
+    """The compiled schema's behaviour on contributor URNs.
+
+    Requires the compiled schema artifacts (`bash scripts/build-schema.sh`).
+    """
+
+    SKELETON = (
+        '<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"'
+        ' xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="he">'
+        "<tei:teiHeader><tei:fileDesc>"
+        '<tei:titleStmt><tei:title type="main" xml:lang="en">t</tei:title>'
+        "<tei:respStmt><tei:resp key=\"trl\">Translated by</tei:resp>"
+        '<tei:name ref="{ref}">Someone</tei:name></tei:respStmt></tei:titleStmt>'
+        "<tei:publicationStmt><tei:distributor>d</tei:distributor></tei:publicationStmt>"
+        "<tei:sourceDesc><tei:bibl><tei:title>s</tei:title></tei:bibl></tei:sourceDesc>"
+        "</tei:fileDesc></tei:teiHeader>"
+        '<tei:text xml:lang="he"><tei:body><tei:p>x</tei:p></tei:body></tei:text>'
+        "</tei:TEI>"
+    )
+
+    def assertValidity(self, valid: bool, ref: str, message: str):
+        from opensiddur.importer.util.validation import validate
+
+        is_valid, errors = validate(self.SKELETON.format(ref=ref))
+        self.assertEqual(is_valid, valid, f"{message}\n{errors if is_valid != valid else ''}")
+
+    def test_a_well_formed_contributor_ref_validates(self):
+        for ref in (
+            "urn:x-opensiddur:contributor:opensiddur.org/eve-feinstein",
+            "urn:x-opensiddur:contributor:en.wikisource.org/Kathleen.wright5",
+            "urn:x-opensiddur:contributor:he.wikisource.org/Dovi",
+        ):
+            with self.subTest(ref):
+                self.assertValidity(True, ref, f"{ref} should validate")
+
+    def test_a_ref_missing_the_type_segment_is_rejected(self):
+        self.assertValidity(
+            False,
+            "urn:x-opensiddur:opensiddur.org/eve-feinstein",
+            "a contributor URN without the type segment must not validate",
+        )
+
+    def test_a_ref_in_an_unknown_namespace_is_rejected(self):
+        self.assertValidity(
+            False,
+            "urn:x-opensiddur:contributor:example.com/someone",
+            "an unknown contributor namespace must not validate",
+        )
+
+    def test_a_text_urn_on_ref_is_rejected(self):
+        self.assertValidity(
+            False,
+            "urn:x-opensiddur:text:prayer:ashrei",
+            "@ref carries contributor URNs only",
+        )
+
+
 class TestSubverseValidation(unittest.TestCase):
     """The compiled schema's behaviour on sub-verse milestones, not just the ODD's wording.
 

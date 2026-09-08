@@ -340,6 +340,22 @@ needs saying in prose, say it in `tei:editionStmt` or a `tei:note` on the bibl.
 chose where it is not, since that is what identifies them. There is no need to guess: a
 pseudonym is an identity, and a wrong real name is worse than none.
 
+**How a contributor URN is validated.** A misspelt identifier is not a broken link; it is a
+different person, credited silently. So the shape is checked in three places:
+
+- The **schema** enforces the grammar. Any `@ref` beginning `urn:x-opensiddur:` must read
+  `urn:x-opensiddur:contributor:<namespace>/<identifier>` with one of the three namespaces
+  above, so an ordinary file validation catches a malformed credit.
+- `specs/urn_registry/contributor.jsonl` is the **roster**, one line per contributor with a
+  `label_en` giving the name as displayed. An `opensiddur.org` identifier is one we chose, so
+  it **must** be registered there — an unregistered one is a typo, not a new person. A
+  wikisource username comes from the wiki's own revision history and an importer meets new
+  ones routinely, so those are grammar-checked and registered opportunistically, for the
+  label; an unregistered one is reported as a note, not an error.
+- `opensiddur.exporter.validate_urn_references` applies both rules per project, and
+  `opensiddur.common.urn_registry --check` applies them across the whole corpus. Both run in
+  CI.
+
 ### Project index
 Every project has an entry point file called `index.xml`. This file contains the project metadata, including the project header.
 

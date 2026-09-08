@@ -175,6 +175,9 @@ The compiler uses a **processing context state machine** — see `specs/COMPILER
 - `j:all` / `j:any` / `j:none` / `j:one` — boolean operators for conditions
 
 Contributor credits are **not** a `j:` element. They belong in the TEI header as `tei:respStmt` entries with contributor URNs on `tei:name/@ref` (see `schema/JLPTEI-3.md`).
+The shape `urn:x-opensiddur:contributor:<namespace>/<identifier>` is enforced by Schematron, and
+every `opensiddur.org` identifier must have a line in `specs/urn_registry/contributor.jsonl` —
+an unregistered one is a typo, and a typo credits a different person.
 
 **Content-model and Schematron rules** (violations produce cryptic jing errors):
 - `tei:TEI` must have `@xml:lang`

@@ -932,7 +932,7 @@ def index_file(sections: dict[str, list[str]]) -> tuple[str, str]:
       <tei:title type="alt" xml:lang="en">Humash</tei:title>
       <tei:respStmt>
         <tei:resp key="mrk">Markup</tei:resp>
-        <tei:name ref="urn:x-opensiddur:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name>
+        <tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name>
       </tei:respStmt>
     </tei:titleStmt>
     <tei:editionStmt>

@@ -144,6 +144,16 @@ jobs:
           done
           exit $rc
 
+      - name: Validate the URN registry (repo-wide)
+        id: urn_registry
+        if: always()
+        continue-on-error: true
+        working-directory: opensiddur-ai
+        run: |
+          uv run python -m opensiddur.common.urn_registry --check \
+            --project-directory "$GITHUB_WORKSPACE/projects/project" \
+            --reference-db "$RUNNER_TEMP/reference.db"
+
       - name: Validate versification agreement (repo-wide)
         id: versification
         if: always()
@@ -160,6 +170,7 @@ jobs:
           for outcome in \
             "schema:${{ steps.schema.outcome }}" \
             "urn_references:${{ steps.urn_references.outcome }}" \
+            "urn_registry:${{ steps.urn_registry.outcome }}" \
             "versification:${{ steps.versification.outcome }}"; do
             name="${outcome%%:*}"
             result="${outcome#*:}"

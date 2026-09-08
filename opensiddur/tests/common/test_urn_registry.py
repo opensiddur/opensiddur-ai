@@ -14,9 +14,12 @@ from opensiddur.common.urn_registry import (
     ERROR,
     INFO,
     WARNING,
+    Registry,
     RegistryError,
     Urn,
     check_against_refdb,
+    check_contributor_urn,
+    check_contributors,
     load_registry,
     main,
     parse_urn,
@@ -24,6 +27,7 @@ from opensiddur.common.urn_registry import (
 )
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
+CONTRIBUTOR = "urn:x-opensiddur:contributor:"
 
 
 def write(directory: Path, name: str, *records: dict) -> Path:
@@ -142,7 +146,7 @@ class ValidateTestCase(unittest.TestCase):
     def check(self, *records):
         write(self.dir, "prayer", *records)
         registry, problems = load_registry(self.dir)
-        return problems + validate(registry, use_refdb=False)
+        return problems + validate(registry, use_refdb=False, use_projects=False)
 
     def test_a_clean_registry_has_nothing_to_say(self):
         problems = self.check(
@@ -290,15 +294,15 @@ class MainTestCase(unittest.TestCase):
 
     def test_a_clean_registry_exits_zero(self):
         write(self.dir, "prayer", canonical("avot"))
-        self.assertEqual(main(["--registry", str(self.dir), "--check", "--no-refdb"]), 0)
+        self.assertEqual(main(["--registry", str(self.dir), "--check", "--no-refdb", "--no-projects"]), 0)
 
     def test_check_exits_nonzero_on_an_error(self):
         write(self.dir, "prayer", {"urn": PRAYER + "x", "status": "alias"})
-        self.assertEqual(main(["--registry", str(self.dir), "--check", "--no-refdb"]), 1)
+        self.assertEqual(main(["--registry", str(self.dir), "--check", "--no-refdb", "--no-projects"]), 1)
 
     def test_without_check_errors_are_reported_but_do_not_fail(self):
         write(self.dir, "prayer", {"urn": PRAYER + "x", "status": "alias"})
-        self.assertEqual(main(["--registry", str(self.dir), "--no-refdb"]), 0)
+        self.assertEqual(main(["--registry", str(self.dir), "--no-refdb", "--no-projects"]), 0)
 
     def test_a_missing_registry_exits_nonzero(self):
         self.assertEqual(main(["--registry", str(self.dir / "nowhere"), "--check"]), 1)
@@ -306,3 +310,149 @@ class MainTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def contributor(local: str, **kw) -> dict:
+    return {"urn": CONTRIBUTOR + local, "status": "canonical", **kw}
+
+
+def write_credit(project_directory: Path, project: str, name: str, *refs: str) -> Path:
+    """A minimal project file crediting ``refs``, one respStmt each."""
+    resp_stmts = "".join(
+        f'<tei:respStmt><tei:resp key="trl">Translated by</tei:resp>'
+        f'<tei:name ref="{ref}">Someone</tei:name></tei:respStmt>'
+        for ref in refs
+    )
+    path = project_directory / project
+    path.mkdir(parents=True, exist_ok=True)
+    xml_path = path / name
+    xml_path.write_text(
+        '<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">'
+        f"<tei:teiHeader><tei:fileDesc><tei:titleStmt>{resp_stmts}"
+        "</tei:titleStmt></tei:fileDesc></tei:teiHeader></tei:TEI>",
+        encoding="utf-8",
+    )
+    return xml_path
+
+
+class ContributorGrammarTestCase(unittest.TestCase):
+    """Shapes the corpus actually contains, and the ways one can be mistyped."""
+
+    def test_accepts_every_shape_in_use(self):
+        for local in (
+            "opensiddur.org/efraim-feinstein",
+            "opensiddur.org/eve-feinstein",
+            "en.wikisource.org/Prosody",
+            "en.wikisource.org/EncycloPetey",
+            # A username with a dot, and one that is a bare IP address: both are real.
+            "en.wikisource.org/Kathleen.wright5",
+            "en.wikisource.org/70.172.194.25",
+            # The jps1917 importer percent-encodes what the wiki gives it.
+            "en.wikisource.org/Some%20User",
+            "he.wikisource.org/Dovi",
+        ):
+            with self.subTest(local):
+                self.assertIsNone(check_contributor_urn(CONTRIBUTOR + local))
+
+    def test_rejects_a_missing_type_segment(self):
+        # The shape the older importers emitted. It has no namespace left for parse_urn to
+        # find, so it must be recognised before parsing to get a usable message.
+        reason = check_contributor_urn("urn:x-opensiddur:opensiddur.org/eve-feinstein")
+        self.assertIsNotNone(reason)
+        self.assertIn("contributor", reason)
+        self.assertIn(CONTRIBUTOR + "opensiddur.org/eve-feinstein", reason)
+
+    def test_rejects_an_unknown_namespace(self):
+        reason = check_contributor_urn(CONTRIBUTOR + "example.com/someone")
+        self.assertIsNotNone(reason)
+        self.assertIn("namespace", reason)
+
+    def test_rejects_another_urn_type(self):
+        reason = check_contributor_urn(PRAYER + "ashrei")
+        self.assertIsNotNone(reason)
+        self.assertIn("not a contributor URN", reason)
+
+    def test_rejects_a_missing_or_multipart_identifier(self):
+        for text in (
+            CONTRIBUTOR + "opensiddur.org",
+            CONTRIBUTOR + "opensiddur.org/",
+            CONTRIBUTOR + "opensiddur.org/someone/else",
+        ):
+            with self.subTest(text):
+                self.assertIsNotNone(check_contributor_urn(text))
+
+    def test_our_own_identifiers_are_kebab_case(self):
+        # A wiki username may be mixed case; one we chose may not.
+        self.assertIsNotNone(check_contributor_urn(CONTRIBUTOR + "opensiddur.org/Eve_Feinstein"))
+        self.assertIsNone(check_contributor_urn(CONTRIBUTOR + "en.wikisource.org/Eve_Feinstein"))
+
+    def test_a_contributor_record_escapes_the_lowercase_component_rule(self):
+        # COMPONENT_RE would reject `Prosody`; the registry must not.
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td)
+            write(directory, "contributor", contributor("en.wikisource.org/Prosody"))
+            registry, problems = load_registry(directory)
+            problems += validate(registry, use_refdb=False, use_projects=False)
+            self.assertEqual(severities(problems, ERROR), [])
+
+    def test_a_malformed_registry_line_is_an_error(self):
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td)
+            write(directory, "contributor", {"urn": CONTRIBUTOR + "example.com/someone",
+                                             "status": "canonical"})
+            registry, problems = load_registry(directory)
+            problems += validate(registry, use_refdb=False, use_projects=False)
+            self.assertEqual(len(severities(problems, ERROR)), 1)
+
+
+class ContributorCrossCheckTestCase(unittest.TestCase):
+    """What the corpus credits, against what the registry knows."""
+
+    def _problems(self, registry_records, credits):
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td)
+            registry_directory = directory / "registry"
+            registry_directory.mkdir()
+            write(registry_directory, "contributor", *registry_records)
+            registry, _ = load_registry(registry_directory)
+
+            project_directory = directory / "project"
+            write_credit(project_directory, "proj", "a.xml", *credits)
+            return list(check_contributors(registry, project_directory=project_directory))
+
+    def test_a_registered_contributor_is_silent(self):
+        self.assertEqual(
+            self._problems([contributor("opensiddur.org/eve-feinstein")],
+                           [CONTRIBUTOR + "opensiddur.org/eve-feinstein"]),
+            [],
+        )
+
+    def test_an_unregistered_identifier_of_ours_is_an_error(self):
+        problems = self._problems([contributor("opensiddur.org/eve-feinstein")],
+                                  [CONTRIBUTOR + "opensiddur.org/eve-fienstein"])
+        self.assertEqual(len(severities(problems, ERROR)), 1)
+        self.assertIn("proj/a.xml", problems[0].where)
+
+    def test_an_unregistered_wiki_username_is_only_a_note(self):
+        problems = self._problems([], [CONTRIBUTOR + "en.wikisource.org/Prosody"])
+        self.assertEqual(severities(problems, ERROR), [])
+        self.assertEqual(len(severities(problems, INFO)), 1)
+
+    def test_a_malformed_credit_is_an_error(self):
+        problems = self._problems([], ["urn:x-opensiddur:opensiddur.org/eve-feinstein"])
+        self.assertEqual(len(severities(problems, ERROR)), 1)
+
+    def test_a_missing_project_directory_does_not_mask_registry_errors(self):
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td)
+            write(directory, "contributor", contributor("opensiddur.org/eve-feinstein"))
+            registry, _ = load_registry(directory)
+            problems = validate(
+                registry, use_refdb=False, project_directory=directory / "absent"
+            )
+            self.assertEqual(severities(problems, ERROR), [])
+            self.assertEqual(len(severities(problems, WARNING)), 1)
+
+    def test_an_empty_registry_still_reads_the_corpus(self):
+        problems = self._problems([], [CONTRIBUTOR + "opensiddur.org/eve-feinstein"])
+        self.assertEqual(len(severities(problems, ERROR)), 1)
