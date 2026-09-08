@@ -313,6 +313,11 @@ The `namespace` indicates where the identifier is meaningful. For example:
 - `he.wikisource.org/{username}` for Hebrew Wikisource contributors
 - `opensiddur.org/{identifier}` for original Open Siddur contributors
 
+The namespace is a claim about the person, not a default. `opensiddur.org/` names someone who
+contributed to Open Siddur; minting one for a historical figure who never did asserts an
+identity that does not exist. The author, editor or translator of a source gets no contributor
+URN at all, because they are not credited as a contributor — see below.
+
 Example:
 ```xml
 <tei:respStmt>
@@ -326,7 +331,10 @@ marked it up, proofread it. The **author of the work is recorded as a source**, 
 `tei:sourceDesc`, which is where a bibliography is built from. The two coincide only for
 someone who both wrote a text and digitised it, and then there is an author `respStmt` as
 well as a source. Crediting an author in a `respStmt` instead claims they did work they
-did not do, and pushes the people who did do it out of view.
+did not do, and pushes the people who did do it out of view. This holds however the source
+names them: a translator or an editor of the printed book carries a responsibility for the
+source, not a contribution to the digital text, and belongs in the `tei:bibl`. Where the fact
+needs saying in prose, say it in `tei:editionStmt` or a `tei:note` on the bibl.
 
 **Name a contributor as they are known.** A real name where it is known; the username they
 chose where it is not, since that is what identifies them. There is no need to guess: a

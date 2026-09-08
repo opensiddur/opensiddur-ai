@@ -6,12 +6,8 @@
       <tei:title type="alt" xml:lang="en">Haggadah le-Leil Shimurim</tei:title>
       <tei:title type="alt" xml:lang="en">Seder ha-Haggadah for the Night of Vigil</tei:title>
       <tei:respStmt>
-        <tei:resp key="edt">Edited and published by</tei:resp>
-        <tei:name>Meir Halevi (Wolf) Heidenheim</tei:name>
-      </tei:respStmt>
-      <tei:respStmt>
         <tei:resp key="trc">Hebrew transcribed for the Open Siddur Project by</tei:resp>
-        <tei:name ref="urn:x-opensiddur:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name>
+        <tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name>
       </tei:respStmt>
     </tei:titleStmt>
     <tei:editionStmt>
