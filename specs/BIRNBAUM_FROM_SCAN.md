@@ -127,9 +127,12 @@ both.
 English page sets "Reader:" as its own centred italic line, and at the Kedushah responses
 gives no label at all, translating the words instead.
 
-**Birnbaum gets no `respStmt`.** A `respStmt` records who *digitised* a text; he is the
-author, and is recorded as a source. In the English project he is also `trl`, because
-the translation is his.
+**Birnbaum gets no `respStmt`**, in either project. A `respStmt` records who *digitised* a
+text; he is the author of the one being digitised, and is recorded as a source. That the
+English is his own translation is said in the English project's `tei:editionStmt` and in a
+`tei:note` on `project_source_bibl` — beside the citation, where a reader looking for who
+made the book will find it. Crediting him as `trl` instead would claim he did work he did
+not do, and push the people who did read the scan out of view.
 
 ## The projects
 
