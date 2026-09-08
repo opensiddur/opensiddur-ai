@@ -592,6 +592,29 @@
             </sch:rule>
           </constraint>
         </constraintSpec>
+        <constraintSpec ident="contributor-ref-constraints" scheme="schematron">
+          <desc>
+            A contributor URN on @ref names a person, and nothing downstream can tell a
+            misspelt identifier from a second contributor: the credit simply appears under a
+            name nobody has. So the shape is checked here, where every validation sees it,
+            rather than only at typeset time.
+
+            Grammar only. Whether the identifier names anyone we know is a roster question,
+            and the registry in specs/urn_registry/ answers it -- Schematron cannot read that
+            file. Keep the namespace list in step with CONTRIBUTOR_NAMESPACES in
+            opensiddur/common/urn_registry.py.
+          </desc>
+          <constraint>
+            <sch:rule context="//*[starts-with(@ref, 'urn:x-opensiddur:')]"
+                      xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+              <sch:assert test="matches(@ref, '^urn:x-opensiddur:contributor:(en\.wikisource\.org|he\.wikisource\.org|opensiddur\.org)/[^/]+$')">
+                The @ref <sch:value-of select="@ref"/> is not a contributor URN. It must read
+                urn:x-opensiddur:contributor:&lt;namespace&gt;/&lt;identifier&gt;, where the
+                namespace is en.wikisource.org, he.wikisource.org or opensiddur.org.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
     </elementSpec>
 
     <!-- Verse milestones carry two numberings. unit="verse" is the canonical division and

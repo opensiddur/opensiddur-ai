@@ -1,4 +1,5 @@
 import io
+import json
 import subprocess
 import sys
 import unittest
@@ -14,6 +15,7 @@ from opensiddur.exporter.validate_urn_references import (
     _format_failure,
     find_coarsened_urn_references,
     main,
+    validate_project_contributor_references,
     validate_project_urn_references,
 )
 
@@ -588,3 +590,146 @@ class TestCoarsenedUrnReferences(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+CONTRIBUTOR = "urn:x-opensiddur:contributor:"
+
+
+def _write_registry(base: Path, *urns: str) -> Path:
+    """A registry directory holding exactly ``urns``, so no test reads specs/."""
+    directory = base / "registry"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "contributor.jsonl").write_text(
+        "".join(
+            json.dumps({"urn": urn, "status": "canonical", "label_en": "Someone"}) + "\n"
+            for urn in urns
+        ),
+        encoding="utf-8",
+    )
+    return directory
+
+
+def _write_credits(base: Path, project: str, filename: str, *refs: str) -> Path:
+    """A project file crediting ``refs``, one tei:respStmt each."""
+    xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+    header = etree.SubElement(xml, f"{{{TEI_NS}}}teiHeader")
+    file_desc = etree.SubElement(header, f"{{{TEI_NS}}}fileDesc")
+    title_stmt = etree.SubElement(file_desc, f"{{{TEI_NS}}}titleStmt")
+    for ref in refs:
+        resp_stmt = etree.SubElement(title_stmt, f"{{{TEI_NS}}}respStmt")
+        etree.SubElement(resp_stmt, f"{{{TEI_NS}}}resp", key="trl").text = "Translated by"
+        etree.SubElement(resp_stmt, f"{{{TEI_NS}}}name", ref=ref).text = "Someone"
+    return _write_project_xml(base, project, filename, xml)
+
+
+class TestContributorReferences(unittest.TestCase):
+    """A misspelt contributor URN is a different person in the credits, so it must fail."""
+
+    def _failures(self, credits, registered=()):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            registry = _write_registry(base, *registered)
+            _write_credits(base / "project", "proj", "a.xml", *credits)
+            return validate_project_contributor_references(
+                "proj",
+                project_directory=base / "project",
+                registry_directory=registry,
+            )
+
+    def test_a_registered_contributor_passes(self):
+        urn = CONTRIBUTOR + "opensiddur.org/eve-feinstein"
+        self.assertEqual(self._failures([urn], registered=[urn]), [])
+
+    def test_a_malformed_ref_fails(self):
+        # The shape the older importers emitted: no `contributor:` type segment.
+        failures = self._failures(["urn:x-opensiddur:opensiddur.org/eve-feinstein"])
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0].project, "proj")
+        self.assertEqual(failures[0].file_name, "a.xml")
+        self.assertIn("contributor", failures[0].reason)
+
+    def test_an_unregistered_identifier_of_ours_fails(self):
+        failures = self._failures(
+            [CONTRIBUTOR + "opensiddur.org/eve-fienstein"],
+            registered=[CONTRIBUTOR + "opensiddur.org/eve-feinstein"],
+        )
+        self.assertEqual(len(failures), 1)
+        self.assertIn("not registered", failures[0].reason)
+
+    def test_an_unregistered_wiki_username_passes(self):
+        # Wikisource usernames are harvested by importers, so the roster does not gate them.
+        self.assertEqual(self._failures([CONTRIBUTOR + "en.wikisource.org/Prosody"]), [])
+
+    def test_a_bad_ref_on_another_element_is_still_caught(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            registry = _write_registry(base)
+            xml = etree.Element(f"{{{TEI_NS}}}TEI", nsmap=NSMAP)
+            text = etree.SubElement(xml, f"{{{TEI_NS}}}text")
+            body = etree.SubElement(text, f"{{{TEI_NS}}}body")
+            etree.SubElement(
+                body, f"{{{TEI_NS}}}persName",
+                ref="urn:x-opensiddur:opensiddur.org/eve-feinstein",
+            )
+            _write_project_xml(base / "project", "proj", "a.xml", xml)
+
+            failures = validate_project_contributor_references(
+                "proj", project_directory=base / "project", registry_directory=registry
+            )
+            self.assertEqual(len(failures), 1)
+            self.assertIn("persName", failures[0].element_path)
+
+    def test_a_project_with_no_refs_passes(self):
+        self.assertEqual(self._failures([]), [])
+
+    def test_a_non_contributor_ref_fails(self):
+        # @ref carries contributor URNs only; a text URN there is a mistake.
+        failures = self._failures(["urn:x-opensiddur:text:prayer:ashrei"])
+        self.assertEqual(len(failures), 1)
+
+    def test_a_missing_project_directory_raises(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "project").mkdir()
+            with self.assertRaises(ValueError):
+                validate_project_contributor_references(
+                    "absent",
+                    project_directory=base / "project",
+                    registry_directory=_write_registry(base),
+                )
+
+
+class TestMainExitCode(unittest.TestCase):
+    def test_a_bad_contributor_ref_exits_2(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project_directory = base / "project"
+            _write_credits(
+                project_directory, "proj", "a.xml",
+                "urn:x-opensiddur:opensiddur.org/eve-feinstein",
+            )
+            stdout = io.StringIO()
+            with patch("sys.stdout", stdout):
+                code = main([
+                    "proj",
+                    "--project-directory", str(project_directory),
+                    "--reference-db", str(base / "ref.db"),
+                ])
+            self.assertEqual(code, 2)
+            self.assertIn("a.xml", stdout.getvalue())
+
+    def test_a_clean_project_exits_0(self):
+        with TemporaryDirectory() as td:
+            base = Path(td)
+            project_directory = base / "project"
+            _write_credits(
+                project_directory, "proj", "a.xml",
+                CONTRIBUTOR + "en.wikisource.org/Prosody",
+            )
+            with patch("sys.stdout", io.StringIO()):
+                code = main([
+                    "proj",
+                    "--project-directory", str(project_directory),
+                    "--reference-db", str(base / "ref.db"),
+                ])
+            self.assertEqual(code, 0)

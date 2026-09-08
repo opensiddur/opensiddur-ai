@@ -83,6 +83,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alternative names for a service.
 
 ### Fixed
+- Contributor URNs are validated. Nothing checked them before: `specs/urn_registry/` had no
+  contributor file and the reference validator looked only at `@target`/`@targetEnd`, so a
+  misspelt identifier on `tei:name/@ref` was not a broken link but a different person, credited
+  silently — the only signal was a warning at typeset time, after the credit had already been
+  set. The shape is now enforced by Schematron (so an ordinary file validation catches it), the
+  new `specs/urn_registry/contributor.jsonl` is the roster, and both
+  `validate_urn_references` and `urn_registry --check` apply the rules in CI. `opensiddur.org`
+  identifiers are ours, so they must be registered; wikisource usernames arrive from the wiki
+  and are grammar-checked only.
+- The humash importer emitted `urn:x-opensiddur:opensiddur.org/efraim-feinstein`, missing the
+  `contributor:` type segment. The projects had already been corrected; the generator had not,
+  so a regeneration reintroduced it.
 - Batched Action API queries are sent as POST. Fifty Hebrew subpage titles percent-encode past the
   URL length limit and the server answered `414 URI Too Long`, so batching was silently capped by
   URL length on any wiki whose titles are not short and Latin.

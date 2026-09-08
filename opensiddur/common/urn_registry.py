@@ -47,6 +47,29 @@ GOVERNED_TYPES = frozenset({"instruction"})
 # A path component: lowercase, no `-` (which marks a range), no URN delimiters.
 COMPONENT_RE = re.compile(r"^[a-z0-9_]+$")
 
+# A contributor URN names a person rather than a text, so it is shaped differently from
+# everything else here: `urn:x-opensiddur:contributor:<namespace>/<identifier>`, with the
+# identifier chosen by whoever runs the namespace rather than by us. See "Contributors and
+# contributor URNs" in `schema/JLPTEI-3.md`.
+CONTRIBUTOR_TYPE = "contributor"
+
+# Keep in sync with the `contributor-ref-constraints` Schematron rule in
+# `schema/jlptei.odd.xml`, which enforces the same grammar at validation time.
+CONTRIBUTOR_NAMESPACES = frozenset({"en.wikisource.org", "he.wikisource.org", "opensiddur.org"})
+
+# Namespaces whose identifiers we choose ourselves, so an unregistered one is a typo rather
+# than a contributor an importer has only just met. A wikisource username arrives from the
+# wiki's revision history, and requiring a registry line for each would mean editing the
+# registry on every import.
+ROSTERED_CONTRIBUTOR_NAMESPACES = frozenset({"opensiddur.org"})
+
+# Our own identifiers are lowercase kebab-case.
+OPENSIDDUR_IDENTIFIER_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+# A wikisource username is whatever the wiki allows, percent-encoded on the way in: mixed
+# case, dots and bare IP addresses all occur. Only the URN delimiters are forbidden.
+WIKI_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9._~%!$&'()*+,;=@-]+$")
+
 STATUS_CANONICAL = "canonical"
 STATUS_ALIAS = "alias"
 STATUS_CONTEXT = "context"
@@ -124,6 +147,67 @@ def parse_urn(text: str) -> Urn:
         raise ValueError(f"URN has an empty namespace: {text!r}")
 
     return Urn(urn_type, namespace, path, project or None, fragment or None)
+
+
+def split_contributor_urn(text: str) -> tuple[str, str]:
+    """The ``(namespace, identifier)`` of a contributor URN.
+
+    A contributor URN has one component fewer than a text URN -- ``contributor:<namespace>``
+    rather than ``text:<namespace>:<path>`` -- so ``parse_urn`` reads ``namespace/identifier``
+    as a single namespace and leaves the path empty. Splitting it is this function's job.
+
+    Raises ``ValueError`` if the URN does not parse at all.
+    """
+    urn = parse_urn(text)
+    namespace, separator, identifier = urn.namespace.partition("/")
+    if not separator:
+        identifier = ""
+    if urn.path:
+        identifier = "/".join((identifier,) + urn.path)
+    return namespace, identifier
+
+
+def check_contributor_urn(text: str) -> str | None:
+    """Why ``text`` is not a well-formed contributor URN, or None if it is.
+
+    Grammar only: whether the identifier names anyone we know is a question for the
+    registry, and is asked separately, because only some namespaces are rostered.
+    """
+    # `urn:x-opensiddur:opensiddur.org/someone` -- the type segment was left out, so the
+    # namespace slid into its place. Caught before parsing, both because that shape leaves
+    # `parse_urn` no namespace to find and because it deserves its own message: it is what
+    # the older importers emitted, and it is invisible in a rendered credits list.
+    rest = text[len(SCHEME):] if text.startswith(SCHEME) else ""
+    if rest.split("/", 1)[0].split(":", 1)[0] in CONTRIBUTOR_NAMESPACES:
+        return (f"{text}: missing the {CONTRIBUTOR_TYPE!r} type segment; should be "
+                f"{SCHEME}{CONTRIBUTOR_TYPE}:{rest}")
+
+    try:
+        urn = parse_urn(text)
+        namespace, identifier = split_contributor_urn(text)
+    except ValueError as exc:
+        return str(exc)
+
+    if urn.type != CONTRIBUTOR_TYPE:
+        return f"{text}: not a contributor URN (type is {urn.type!r})"
+
+    if namespace not in CONTRIBUTOR_NAMESPACES:
+        return (f"{text}: unknown contributor namespace {namespace!r}; expected one of "
+                f"{', '.join(sorted(CONTRIBUTOR_NAMESPACES))}")
+
+    if urn.project or urn.fragment:
+        return f"{text}: a contributor URN carries no @project or #fragment"
+
+    if not identifier or "/" in identifier:
+        return (f"{text}: expected exactly one identifier after {namespace}/, "
+                f"found {identifier!r}")
+
+    pattern = (OPENSIDDUR_IDENTIFIER_RE if namespace == "opensiddur.org"
+               else WIKI_IDENTIFIER_RE)
+    if not pattern.match(identifier):
+        return f"{text}: identifier {identifier!r} is not valid for {namespace}"
+
+    return None
 
 
 @dataclass
@@ -258,14 +342,20 @@ def _check_grammar(record: Record, registry: Registry) -> Iterator[Problem]:
     if urn.fragment:
         yield Problem(ERROR, f"{record.urn} carries a #fragment", record.where)
 
-    for component in urn.path:
-        if not COMPONENT_RE.match(component):
-            yield Problem(
-                ERROR,
-                f"{record.urn}: component {component!r} must be lowercase letters, "
-                "digits and underscore -- '-' marks a range",
-                record.where,
-            )
+    if urn.type == CONTRIBUTOR_TYPE:
+        # A contributor identifier is not ours to lowercase: it is a wiki username, or a
+        # kebab-case name we chose, so it has a grammar of its own.
+        if (reason := check_contributor_urn(record.urn)) is not None:
+            yield Problem(ERROR, reason, record.where)
+    else:
+        for component in urn.path:
+            if not COMPONENT_RE.match(component):
+                yield Problem(
+                    ERROR,
+                    f"{record.urn}: component {component!r} must be lowercase letters, "
+                    "digits and underscore -- '-' marks a range",
+                    record.where,
+                )
 
     if record.status not in VALID_STATUSES:
         yield Problem(ERROR, f"{record.urn}: unknown status {record.status!r}",
@@ -381,7 +471,67 @@ def check_against_refdb(registry: Registry, database=None) -> Iterator[Problem]:
             )
 
 
-def validate(registry: Registry, database=None, *, use_refdb: bool = True) -> list[Problem]:
+def check_contributors(registry: Registry, *, project_directory=None) -> Iterator[Problem]:
+    """Cross-check the contributor URNs the corpus credits against the registry.
+
+    `check_against_refdb` cannot do this: refdb indexes the `@corresp` URNs that say where
+    text lives, and a contributor URN names a person, so it never appears there. The corpus
+    has to be read directly.
+
+    Grammar is checked everywhere. Registration is required only for the namespaces we name
+    ourselves -- see :data:`ROSTERED_CONTRIBUTOR_NAMESPACES`. Elsewhere an unregistered
+    contributor is reported at INFO, as a line worth adding rather than a mistake.
+    """
+    from lxml import etree
+
+    from opensiddur.common.constants import PROJECT_DIRECTORY
+
+    directory = Path(project_directory or PROJECT_DIRECTORY)
+    if not directory.is_dir():
+        raise RegistryError(f"No project directory at {directory}")
+
+    # URN -> where it was first credited, so a message can point somewhere.
+    seen: dict[str, str] = {}
+    for xml_file in sorted(directory.glob("*/*.xml")):
+        try:
+            root = etree.parse(str(xml_file)).getroot()
+        except etree.XMLSyntaxError:
+            continue  # unparseable XML is the schema validator's to report
+        for element in root.xpath("//*[@ref]"):
+            value = element.get("ref")
+            if value.startswith(SCHEME):
+                seen.setdefault(value, f"{xml_file.parent.name}/{xml_file.name}")
+
+    for text, where in sorted(seen.items()):
+        if (reason := check_contributor_urn(text)) is not None:
+            yield Problem(ERROR, reason, where)
+            continue
+        if text in registry.records:
+            continue
+        namespace, _ = split_contributor_urn(text)
+        if namespace in ROSTERED_CONTRIBUTOR_NAMESPACES:
+            yield Problem(
+                ERROR,
+                f"{text} is credited but not registered; a {namespace} identifier is one we "
+                "chose, so an unregistered one is a typo rather than someone new",
+                where,
+            )
+        else:
+            yield Problem(
+                INFO,
+                f"{text} is credited but not registered; add a line to give it a label",
+                where,
+            )
+
+
+def validate(
+    registry: Registry,
+    database=None,
+    *,
+    use_refdb: bool = True,
+    use_projects: bool = True,
+    project_directory=None,
+) -> list[Problem]:
     """Every problem with the registry, worst first."""
     problems: list[Problem] = []
     for record in registry.records.values():
@@ -392,6 +542,11 @@ def validate(registry: Registry, database=None, *, use_refdb: bool = True) -> li
             problems.extend(check_against_refdb(registry, database))
         except Exception as exc:  # a missing or stale database must not mask real errors
             problems.append(Problem(WARNING, f"could not cross-check against refdb: {exc}"))
+    if use_projects:
+        try:
+            problems.extend(check_contributors(registry, project_directory=project_directory))
+        except Exception as exc:  # nor must a missing corpus
+            problems.append(Problem(WARNING, f"could not check contributors: {exc}"))
 
     order = {ERROR: 0, WARNING: 1, INFO: 2}
     return sorted(problems, key=lambda p: (order[p.severity], p.where, p.message))
@@ -412,6 +567,16 @@ def _build_arg_parser() -> argparse.ArgumentParser:
                         help="Exit non-zero if anything is wrong. For CI.")
     parser.add_argument("--no-refdb", action="store_true",
                         help="Skip the cross-check against the reference database.")
+    parser.add_argument("--no-projects", action="store_true",
+                        help="Skip the contributor cross-check against the projects.")
+    parser.add_argument(
+        "--project-directory", type=Path, default=None,
+        help="Base project directory (defaults to the repo's project/).",
+    )
+    parser.add_argument(
+        "--reference-db", type=Path, default=None,
+        help="Path to reference.db (defaults to the repo's database/reference.db).",
+    )
     return parser
 
 
@@ -425,7 +590,23 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("%s", exc)
         return 1
 
-    problems += validate(registry, use_refdb=not args.no_refdb)
+    database = None
+    if not args.no_refdb and args.reference_db is not None:
+        from opensiddur.exporter.refdb import ReferenceDatabase
+
+        database = ReferenceDatabase(args.reference_db)
+
+    try:
+        problems += validate(
+            registry,
+            database,
+            use_refdb=not args.no_refdb,
+            use_projects=not args.no_projects,
+            project_directory=args.project_directory,
+        )
+    finally:
+        if database is not None:
+            database.close()
     for problem in problems:
         logger.info("%s", problem)
 

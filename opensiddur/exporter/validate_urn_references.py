@@ -1,7 +1,10 @@
-"""Post-conversion validation for resolvable URN references.
+"""Validation for the URN references a project carries.
 
-This validator is intentionally optional and is meant to be run after an entire
-project/source has been converted and the reference DB has been populated.
+Two checks, with different prerequisites. The reference check -- ``@target``/``@targetEnd``
+-- is post-conversion: it is meant to run after an entire project/source has been converted
+and the reference DB has been populated. The contributor check -- ``@ref`` -- needs neither,
+since a contributor URN names a person rather than a stretch of text and so resolves against
+the registry rather than against the corpus.
 """
 
 from __future__ import annotations
@@ -14,6 +17,12 @@ from typing import Iterable, Optional
 from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.urn_registry import (
+    ROSTERED_CONTRIBUTOR_NAMESPACES,
+    check_contributor_urn,
+    load_registry,
+    split_contributor_urn,
+)
 from opensiddur.exporter.refdb import INDEX_DB_FILE, ReferenceDatabase
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
 from opensiddur.exporter.xml_id_ref import parse_file_fragment_ref, resolve_file_fragment_ref
@@ -185,6 +194,70 @@ def validate_project_urn_references(
 
 
 @dataclass(frozen=True)
+class InvalidContributorReference:
+    """A contributor credit that names nobody we can identify."""
+
+    project: str
+    file_name: str
+    element_path: str
+    ref: str
+    reason: str
+
+
+def validate_project_contributor_references(
+    project: str,
+    *,
+    project_directory: Path = PROJECT_DIRECTORY,
+    registry_directory: Optional[Path] = None,
+) -> list[InvalidContributorReference]:
+    """Validate the contributor URNs a project credits.
+
+    Checks ``@ref`` on every element that carries one -- not just ``tei:respStmt/tei:name``,
+    for the same reason the target check above is not limited to ``tei:ptr`` -- against the
+    grammar in ``opensiddur.common.urn_registry`` and, for the namespaces we name ourselves,
+    against the registry roster. A misspelt identifier is otherwise indistinguishable from a
+    second person, and silently becomes one in the credits.
+
+    Independent of refdb and of the resolver: a contributor URN names a person, not a stretch
+    of text, so there is nothing to resolve and nothing to index first.
+    """
+    project_path = Path(project_directory) / project
+    if not project_path.exists() or not project_path.is_dir():
+        raise ValueError(f"Project directory does not exist: {project_path}")
+
+    registry, _ = load_registry(registry_directory)
+
+    failures: list[InvalidContributorReference] = []
+    for xml_file in _iter_project_xml_files(project_path):
+        tree = etree.parse(str(xml_file))
+        for el in tree.getroot().xpath("//*[@ref]"):
+            ref = el.get("ref")
+            if not ref.startswith("urn:x-opensiddur:"):
+                continue
+
+            reason = check_contributor_urn(ref)
+            if reason is None and ref not in registry.records:
+                namespace, _ = split_contributor_urn(ref)
+                if namespace in ROSTERED_CONTRIBUTOR_NAMESPACES:
+                    reason = (
+                        f"{ref} is not registered in specs/urn_registry/; a {namespace} "
+                        "identifier is one we chose, so an unregistered one is a typo"
+                    )
+            if reason is not None:
+                failures.append(
+                    InvalidContributorReference(
+                        project=project,
+                        file_name=xml_file.name,
+                        element_path=tree.getpath(el),
+                        ref=ref,
+                        reason=reason,
+                    )
+                )
+
+    return failures
+
+
+@dataclass(frozen=True)
 class CoarsenedUrnReference:
     """A reference that resolves only once a division is dropped from the end of it."""
 
@@ -267,6 +340,10 @@ def _format_failure(f: UnresolvableUrnReference) -> str:
     return f"{f.project}/{f.file_name}: {f.element_path} @{f.attribute_name}={f.urn}"
 
 
+def _format_contributor(c: InvalidContributorReference) -> str:
+    return f"{c.project}/{c.file_name}: {c.element_path} @ref: {c.reason}"
+
+
 def _format_coarsened(c: CoarsenedUrnReference) -> str:
     return (
         f"{c.project}/{c.file_name}: {c.element_path} @{c.attribute_name}={c.urn} "
@@ -312,9 +389,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     ):
         print(_format_coarsened(c))
 
-    if failures:
+    contributor_failures = validate_project_contributor_references(
+        args.project,
+        project_directory=Path(args.project_directory),
+    )
+
+    if failures or contributor_failures:
         for f in failures:
             print(_format_failure(f))
+        for c in contributor_failures:
+            print(_format_contributor(c))
         return 2
     return 0
 
