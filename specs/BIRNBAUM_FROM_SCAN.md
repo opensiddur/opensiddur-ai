@@ -167,14 +167,13 @@ one file per prayer holding the words, the conditionals and the `tei:pb`. Both p
 emit **identical** URNs under their own project ids, which is what aligns them; a URN
 repeated inside one document would break the join silently, so none is.
 
-Naming follows the siddur URN scheme, which is written up on `feat/birnbaum-he-importer`
-as `specs/SIDDUR_URN_SCHEME.md` and has not landed here yet. Ya'aleh v'Yavo and Al ha-Nissim are top-level
+Naming follows [`SIDDUR_URN_SCHEME.md`](SIDDUR_URN_SCHEME.md). Ya'aleh v'Yavo and Al ha-Nissim are top-level
 because both are also said in Birkat HaMazon — nest only what lives in one place.
 
 ## Building and checking
 
 ```bash
-W=../../opensiddur-projects/master/project
+W=opensiddur-projects/project
 uv run python -m opensiddur.importer.util.validation "$W/birnbaum_ashkenaz_he_1949/amidah_avot.xml"
 uv run python -m opensiddur.exporter.refdb --project-directory "$W"
 uv run python -m opensiddur.exporter.validate_urn_references birnbaum_ashkenaz_he_1949 --project-directory "$W"
