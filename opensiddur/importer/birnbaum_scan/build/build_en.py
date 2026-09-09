@@ -3,25 +3,13 @@
 import argparse
 import sys
 from .common import set_project_directory
-from .common import PROJECT_EN, PRAYER, SIDDUR, document, write, cond, endcond, feature, SERVICE, AGG
+from .common import PROJECT_EN, PRAYER, SIDDUR, FRONT, document, write, cond, endcond, feature, SERVICE, AGG
+from .front import SECTIONS, front_block, section_body
+from .index import index
 from .en_prayers import PRAYERS
 from . import build_he
 
 U, S = PRAYER, SIDDUR
-
-INDEX = build_he.INDEX.replace(f'@{build_he.PROJECT_HE}', f'@{PROJECT_EN}').replace(
-    '<tei:edition>Read directly from the scanned 1949 printing, page by page. Not derived from any transcription of it.</tei:edition>',
-    '<tei:edition>Birnbaum’s own English, read from the facing pages of the scanned 1949 printing</tei:edition>').replace(
-    'xml:lang="he">\n  <tei:teiHeader', 'xml:lang="en">\n  <tei:teiHeader')
-# The English is Birnbaum's own translation, and that is said here, beside the citation of
-# the book it was read out of. It is not a respStmt: a respStmt records who *digitised* a
-# text, and he is the author of the one being digitised, recorded as a source.
-_SCAN_NOTE = '          <tei:note xml:lang="en">The scan cited here is'
-INDEX = INDEX.replace(
-    _SCAN_NOTE,
-    '          <tei:note xml:lang="en">The English of this project is Birnbaum’s own '
-    'translation, printed on the pages facing the Hebrew.</tei:note>\n'
-    + _SCAN_NOTE, 1)
 
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
@@ -64,7 +52,15 @@ def main(argv=None):
     if args.project_directory:
         set_project_directory(args.project_directory)
     n = 0
-    write(PROJECT_EN, "index", INDEX); n += 1
+    write(PROJECT_EN, "index", index(
+        project=PROJECT_EN, lang="en", front=front_block(PROJECT_EN))); n += 1
+    # The prose front matter is realised here and transcluded by both indexes:
+    # Birnbaum wrote it in English and the print has no Hebrew counterpart.
+    for s in SECTIONS:
+        write(PROJECT_EN, s["name"], document(
+            body=section_body(s), lang="en", title_he="", title_en=s["title"],
+            urn=FRONT + s["slug"], project=PROJECT_EN,
+            first=s["first"], last=s["last"])); n += 1
     write(PROJECT_EN, "chol_shacharit_amidah", document(
         body=unit_body(), lang="en",
         title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",

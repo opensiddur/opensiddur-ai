@@ -13,3 +13,8 @@ printed page's image and cutting it into bands legible enough to read nikkud fro
 out to say (:mod:`compare`). Everything else is the reading itself, and the TEI it
 produces.
 """
+
+#: Prefix for addressing a leaf by scan page rather than by the number the book prints on
+#: it. The front matter needs it: only twelve of its twenty-five leaves are numbered, and
+#: the title pages are not among them.
+SCAN_PAGE_PREFIX = "s"

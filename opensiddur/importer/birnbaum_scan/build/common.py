@@ -6,6 +6,8 @@ break sigils. Scaffolding — the TEI files it writes are the artifact.
 """
 from pathlib import Path
 
+from opensiddur.importer.birnbaum_scan import SCAN_PAGE_PREFIX
+
 PROJECT_HE = "birnbaum_ashkenaz_he_1949"
 PROJECT_EN = "birnbaum_ashkenaz_en_1949"
 #: Where the TEI is written. The opensiddur-projects submodule by default, so a fresh
@@ -22,20 +24,54 @@ def set_project_directory(path) -> Path:
     return OUT
 
 IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949/page"
-# printed page -> IA leaf, from pages.json. Leaf = scan page - 1, scan page = printed + 25.
-LEAF = {p: p + 24 for p in range(81, 99)}
 
 #: The second @ed token names which printing a break belongs to, since a shared text is
 #: printed at several services. See SIDDUR_URN_SCHEME.md, "One text, printed on several pages".
+#: Front matter is printed once, so it passes ``sigil=FRONT_SIGIL`` and names no printing.
 SIGIL = "1949 chol/shacharit/amidah"
+FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
 SIDDUR = "urn:x-opensiddur:text:siddur:"
+FRONT = "urn:x-opensiddur:text:front:"
 
 
-def pb(page: int) -> str:
-    """A page break, deep-linked to the leaf it falls on."""
-    return f'<tei:pb n="{page}" ed="{SIGIL}" facs="{IA}/n{LEAF[page]}_medium.jpg"/>'
+#: IA leaf `n` is scan page `n + 1`, for the whole of this item. Fixed by how the Archive
+#: numbers the scan, not by anything the book does.
+LEAF_OFFSET = -1
+
+#: Printed page -> scan page, for the pages read so far. The front matter is not in here:
+#: the print numbers only twelve of its twenty-five leaves, so it is addressed by scan page.
+SCAN_PAGE = {p: p + 25 for p in range(81, 99)}
+
+
+def leaf(page) -> int:
+    """The IA leaf a page falls on.
+
+    `page` is the number the book prints, or ``sN`` addressing scan page N -- which is how
+    a leaf the print does not number is reached.
+
+    This mapping is written out rather than read from ``pages.json`` on purpose. The prayer
+    modules call :func:`pb` at import time, so reading a data file here would mean no part
+    of the importer could even be imported without the sourcetexts submodule, and the unit
+    tests would be testing the data rather than the code. `test_leaf_mapping_matches_pages_json`
+    checks it against ``pages.json`` wherever the submodule is present, so it cannot drift.
+    """
+    token = str(page)
+    if token.startswith(SCAN_PAGE_PREFIX):
+        return int(token[len(SCAN_PAGE_PREFIX):]) + LEAF_OFFSET
+    return SCAN_PAGE[int(token)] + LEAF_OFFSET
+
+
+def pb(page, *, sigil: str = SIGIL, n: str | None = None) -> str:
+    """A page break, deep-linked to the leaf it falls on.
+
+    `page` addresses the leaf; `n` is the designation printed on it, defaulting to `page`.
+    They differ only in the front matter, where a leaf the book does not number is
+    addressed as ``sN`` but designated with the number the book's own sequence implies.
+    """
+    return (f'<tei:pb n="{page if n is None else n}" ed="{sigil}" '
+            f'facs="{IA}/n{leaf(page)}_medium.jpg"/>')
 
 
 def header(*, title_he: str, title_en: str, urn: str, project: str,

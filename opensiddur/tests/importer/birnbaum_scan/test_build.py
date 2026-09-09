@@ -11,11 +11,13 @@ list is used at all, it is a synthetic one.
 
 import unittest
 from pathlib import Path
+from unittest import mock
 from tempfile import TemporaryDirectory
 
 from lxml import etree
 
-from opensiddur.importer.birnbaum_scan.build import common
+from opensiddur.importer.birnbaum_scan.build import common, front
+from opensiddur.tests.importer.birnbaum_scan import write_synthetic_front
 
 NS = {"tei": "http://www.tei-c.org/ns/1.0", "j": "http://jewishliturgy.org/ns/jlptei/2"}
 
@@ -32,13 +34,49 @@ def fragment(text: str):
 class TestPageBreak(unittest.TestCase):
 
     def test_deep_links_to_the_leaf_the_page_falls_on(self):
-        page = min(common.LEAF)
-        element = fragment(common.pb(page))[0]
+        element = fragment(common.pb("81"))[0]
         self.assertEqual(element.tag, "{%s}pb" % NS["tei"])
-        self.assertEqual(element.get("n"), str(page))
+        self.assertEqual(element.get("n"), "81")
         self.assertEqual(element.get("ed"), common.SIGIL)
-        self.assertEqual(
-            element.get("facs"), f"{common.IA}/n{common.LEAF[page]}_medium.jpg")
+        self.assertEqual(element.get("facs"), f"{common.IA}/n105_medium.jpg")
+
+    def test_front_matter_names_no_printing_and_may_be_designated_apart(self):
+        """A leaf addressed as sN carries the designation the book's sequence implies,
+        and no second @ed token: front matter is printed once."""
+        element = fragment(common.pb("s2", sigil=common.FRONT_SIGIL, n="[2]"))[0]
+        self.assertEqual(element.get("n"), "[2]")
+        self.assertEqual(element.get("ed"), common.FRONT_SIGIL)
+        self.assertEqual(element.get("facs"), f"{common.IA}/n1_medium.jpg")
+
+
+class TestLeafMappingAgainstTheData(unittest.TestCase):
+    """`common` writes the printed-page to leaf mapping out rather than reading
+    `pages.json`, because the prayer modules call `pb` at import time and no part of the
+    importer should need the sourcetexts submodule merely to be imported. That trade is
+    only safe if the two cannot drift, so check them against each other wherever the
+    submodule is present -- and skip, rather than fail, where it is not."""
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan import pages
+
+        if not pages.PAGES_JSON.is_file():
+            self.skipTest("the sourcetexts submodule is not initialised")
+        self.table = pages.load_pages()
+
+    def test_every_printed_page_maps_to_the_leaf_pages_json_records(self):
+        for printed, scan_page in common.SCAN_PAGE.items():
+            with self.subTest(printed=printed):
+                reference = self.table[str(printed)]
+                self.assertEqual(scan_page, reference.scan_page)
+                self.assertEqual(common.leaf(printed), reference.leaf)
+
+    def test_the_scan_page_offset_holds_for_every_leaf_of_the_front_matter(self):
+        from opensiddur.importer.birnbaum_scan.build import front
+
+        for leaf_number in front.DESIGNATION:
+            with self.subTest(leaf=leaf_number):
+                reference = self.table[f"s{leaf_number}"]
+                self.assertEqual(common.leaf(f"s{leaf_number}"), reference.leaf)
 
 
 class TestHeader(unittest.TestCase):
@@ -194,6 +232,13 @@ class TestBuilders(unittest.TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         self.addCleanup(common.set_project_directory, common.DEFAULT_PROJECT_DIRECTORY)
         self.directory = Path(self.temp_dir.name)
+        # The builders splice in the committed reading, which lives in a submodule a
+        # plain checkout does not have. What is under test is the builder, so stand
+        # synthetic fragments in its place.
+        patch = mock.patch.object(
+            front, "FRAGMENTS", write_synthetic_front(self.directory / "front"))
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def test_each_builder_writes_an_index_a_unit_and_one_file_per_prayer(self):
         for build, project in ((self.build_he, common.PROJECT_HE),
@@ -203,7 +248,10 @@ class TestBuilders(unittest.TestCase):
                 written = sorted(p.name for p in (self.directory / project).glob("*.xml"))
                 self.assertIn("index.xml", written)
                 self.assertIn("chol_shacharit_amidah.xml", written)
-                self.assertEqual(len(written), len(build.PRAYERS) + 2)
+                # index, the unit, one file per prayer -- and, in the English
+                # project, one per front-matter section Birnbaum wrote only in English.
+                extra = len(front.SECTIONS) if project == common.PROJECT_EN else 0
+                self.assertEqual(len(written), len(build.PRAYERS) + 2 + extra)
 
     def test_everything_written_parses_and_names_its_own_project(self):
         self.build_he.main(["--project-directory", str(self.directory)])
@@ -216,7 +264,9 @@ class TestBuilders(unittest.TestCase):
     def test_the_english_index_records_whose_translation_it_is(self):
         """Birnbaum's authorship of the English is said beside the citation, not as a
         respStmt, which would credit him with digitising his own book."""
-        index = etree.fromstring(self.build_en.INDEX.encode("utf-8"))
+        from opensiddur.importer.birnbaum_scan.build.index import index as build_index
+        index = etree.fromstring(build_index(
+            project=common.PROJECT_EN, lang="en", front="").encode("utf-8"))
         notes = [n.text for n in index.findall(".//tei:sourceDesc//tei:note", NS)]
         self.assertTrue(any("translation" in (n or "") for n in notes))
         names = [n.text for n in index.findall(".//tei:respStmt/tei:name", NS)]

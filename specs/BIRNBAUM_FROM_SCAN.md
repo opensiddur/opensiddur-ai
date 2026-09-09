@@ -155,6 +155,70 @@ English is his own translation is said in the English project's `tei:editionStmt
 made the book will find it. Crediting him as `trl` instead would claim he did work he did
 not do, and push the people who did read the scan out of view.
 
+## The front matter
+
+Twenty-five leaves precede printed page 1, and the book divides them by language exactly as
+it divides its body. Read off the scan; the Wikisource transcription of these pages is
+proofread and was used only as a check, which is how it turned up wrong on the dedicatee's
+name — the print reads WERBELOWSKY, not Werblowsky.
+
+| leaf | designation | holds | side |
+|---|---|---|---|
+| 1 | `[1]` | blank | — |
+| 2 | `[2]` | the Hebrew title page | he |
+| 3 | `[I]` | the English title page | en |
+| 4 | `[II]` | copyright, rights statement, Hebrew typesetting imprint, printer | en |
+| 5 | `[III]` | the dedication | en |
+| 6 | `[IV]` | הַתֹּכֶן, the Hebrew table of contents | he |
+| 7 | `[V]` | CONTENTS, the English table of contents | en |
+| 8 | `[VI]` | blank | — |
+| 9 | `[VII]` | ACKNOWLEDGMENTS | en |
+| 10 | `[VIII]` | blank | — |
+| 11–25 | `IX`–`XXIII` | INTRODUCTION, in three parts he numbers himself, with footnotes | en |
+
+**The book numbers only leaves 11–25.** It prints `IX` on leaf 11 and `XXIII` on leaf 25,
+which fixes leaf 3 as `I`; leaves 3–10 are therefore designated `[I]`–`[VIII]`, in brackets,
+and leaves 1–2 precede the sequence and are numbered from the scan as `[1]` and `[2]`. The
+brackets are the whole of the claim: this is a number the book implies and does not print.
+`tei:pb/@ed` here is `1949` alone — the second token names a printing, and front matter is
+printed once.
+
+**Both tables of contents are deferred.** They index some 600 printed pages the projects do
+not hold yet. Their leaves still carry a page break, so nothing renumbers when they are read.
+
+**The reading is XML, not markdown.** `sourcetexts/.../scan_reading/front/` holds one
+well-formed fragment per section, and `build/front.py` splices them in. For the body a
+markdown reading and the TEI are two artifacts because the TEI is assembled from Python; here
+the fragment *is* the reading, and a parallel prose copy of it would only drift.
+
+**Birnbaum's introduction has to reach the Hebrew compile.** He wrote it in English and the
+print has no Hebrew counterpart, so the English project realises it and the Hebrew index
+transcludes it, issuing no `corresp` of its own — see `front:` in
+[`SIDDUR_URN_SCHEME.md`](SIDDUR_URN_SCHEME.md). Two things had to change for that to work:
+
+- `priority.transclusion` in every `settings_*.yaml` now names the English project after the
+  Hebrew. The list is a filter rather than a preference, so a URN no listed project realises
+  raised `No prioritized URNs found` instead of resolving to the one project that has it.
+- `common.pb()` briefly read `pages.json` for the leaf a page falls on, which looked like
+  removing a duplicate and was not: the prayer modules call it at import time, so no part of
+  the importer could be imported without the sourcetexts submodule, and CI does not
+  initialise one. The mapping is written out again, and a test checks it against
+  `pages.json` wherever the submodule is present, so it cannot drift. **A unit test here
+  tests the code, never the reading** -- the builders' tests stand synthetic fragments in
+  place of `scan_reading/front/`.
+- `reledmac.xslt` grouped front-matter prose under the *root* language. In a Hebrew-rooted
+  project every line of the English introduction came out reversed. It now groups by the
+  prose's own language, so each language gets its own numbered stream.
+
+**The comparison of the old and new translations (p. XXI) is a `tei:list`, not two divisions.**
+A `tei:div` may not be followed by a `tei:p`, and the comparison sits mid-section with
+paragraphs after it; a labelled list is `model.inter` and sits among them. It is also the
+better reading of the page — two labelled alternatives, not two divisions of the introduction.
+
+**The dedication's three display lines are `tei:lg`/`tei:l`.** Written as one paragraph broken
+by `tei:lb`, the trailing line break left an empty line box that the next heading was set into,
+and ACKNOWLEDGMENTS printed on top of the dedicatee's name.
+
 ## The projects
 
 | project | holds |
@@ -205,6 +269,11 @@ parallel one. A `\parbox` of the same width does not help, for the same reason. 
 now set the rubric as ordinary text between two `\newline`, which is measured by whatever
 column it lands in. That gives up the flush margin and keeps the words on the page.
 
+**Open: a `tei:label` runs into the item it labels.** In the introduction's comparison of
+the two translations, "THE NEW TRANSLATION" is set at the head of its first paragraph rather
+than on a line of its own. The reading is unambiguous and the encoding is right; the placement
+is the exporter's.
+
 **Open: a paragraph's overflow can be typeset in the facing column.** Where a Hebrew
 paragraph is short and its English counterpart runs longer, the tail of the English lands
 in the Hebrew column — "all kinds of its produce for the best." under Birkat ha-Shanim,
@@ -215,14 +284,17 @@ pairs now all are) does not change it. Three occurrences in eleven pages.
 ## What is done, and what is next
 
 Done: printed pages 81–97, the weekday shacharit Amidah, both projects, 60 files, all
-validating.
+validating. Done: the front matter, scan leaves 1–25 — both title leaves, the dedication, the
+acknowledgments and the introduction — 3 further files and a `tei:front` on each index.
 
 Next, in the order the evidence suggests:
 
 1. **Birnbaum's footnotes.** He runs two apparatuses: commentary keyed by Hebrew lemma,
    set across the opening so a note begun under a Hebrew page finishes under the facing
    English one; and numbered scripture citations keyed to superscripts in the English
-   text. They are a standoff apparatus and belong in their own file.
-2. **Finish the accuracy measurement** for pages 85–97, which is cheap now and is the
+   text. They are a standoff apparatus and belong in their own file. The introduction's own
+   footnotes are not these: they are ordinary inline `tei:note`, already encoded.
+2. **The two tables of contents**, once there is enough of the book for them to point at.
+3. **Finish the accuracy measurement** for pages 85–97, which is cheap now and is the
    evidence for whether this scales.
-3. **The surrounding units**, page by page.
+4. **The surrounding units**, page by page.

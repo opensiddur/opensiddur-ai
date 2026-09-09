@@ -62,14 +62,30 @@ class LoadPagesTestCase(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.pages_json = write_pages_json(Path(self.directory.name))
 
-    def test_keys_by_printed_page(self):
+    def test_keys_by_printed_page_and_by_scan_page(self):
+        """Both, so that a numbered leaf can be asked for either way."""
         table = pages.load_pages(self.pages_json)
-        self.assertEqual({"81", "82"}, set(table))
+        self.assertLessEqual({"81", "82", "s106", "s107"}, set(table))
+        self.assertIs(table["81"], table["s106"])
 
-    def test_leaves_out_pages_the_print_does_not_number(self):
-        """An unnumbered leaf cannot be asked for by printed page, so it is absent."""
-        self.assertNotIn(None, pages.load_pages(self.pages_json))
-        self.assertEqual(2, len(pages.load_pages(self.pages_json)))
+    def test_reaches_a_leaf_the_print_does_not_number(self):
+        """The front matter is mostly unnumbered, and has to be addressable anyway."""
+        table = pages.load_pages(self.pages_json)
+        unnumbered = [r for r in table.values() if r.printed_page is None]
+        self.assertTrue(unnumbered, "the fixture has an unnumbered leaf")
+        for reference in unnumbered:
+            self.assertIn(f"s{reference.scan_page}", table)
+
+    def test_designation_is_what_the_book_prints_else_the_scan_page(self):
+        table = pages.load_pages(self.pages_json)
+        self.assertEqual("81", table["s106"].designation)
+        unnumbered = next(r for r in table.values() if r.printed_page is None)
+        self.assertEqual(f"s{unnumbered.scan_page}", unnumbered.designation)
+
+    def test_naming_a_leaf_that_answers_to_nothing_says_how_to_address_one(self):
+        with self.assertRaises(pages.ScanError) as caught:
+            pages.lookup("nonesuch", self.pages_json)
+        self.assertIn("s", str(caught.exception))
 
     def test_records_every_numbering(self):
         reference = pages.load_pages(self.pages_json)["81"]

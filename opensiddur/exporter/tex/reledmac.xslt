@@ -644,11 +644,18 @@
          ==================================================================== -->
 
     <xsl:template match="tei:front">
-        <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
         <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
 
+        <!-- Prose is grouped by its own language, not the root's. A book's front matter is
+             routinely in a language the body is not: Birnbaum's introduction is English in
+             a Hebrew-rooted project, and set under the root language every line of it came
+             out reversed. Grouping on the language keeps adjacent same-language prose in one
+             numbered stream, which is what a stream is for, and starts a new one where the
+             language changes. tei:titlePage already resolves its own language and stays a
+             group of its own, since it is set outside the numbering entirely. -->
         <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
-                            group-adjacent="if (self::tei:titlePage) then 'titlePage' else 'prose'">
+                            group-adjacent="if (self::tei:titlePage) then 'titlePage'
+                                            else concat('prose:', f:in-scope-lang(.))">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'titlePage'">
                     <xsl:apply-templates select="current-group()"/>
@@ -656,7 +663,8 @@
                 <xsl:otherwise>
                     <xsl:call-template name="numbered-stream">
                         <xsl:with-param name="nodes" select="current-group()"/>
-                        <xsl:with-param name="lang" select="$root-lang"/>
+                        <xsl:with-param name="lang"
+                                        select="substring-after(current-grouping-key(), 'prose:')"/>
                         <xsl:with-param name="align-verses" select="false()"/>
                     </xsl:call-template>
                 </xsl:otherwise>
