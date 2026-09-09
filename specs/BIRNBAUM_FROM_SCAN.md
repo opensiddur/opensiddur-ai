@@ -199,6 +199,13 @@ transcludes it, issuing no `corresp` of its own — see `front:` in
 - `priority.transclusion` in every `settings_*.yaml` now names the English project after the
   Hebrew. The list is a filter rather than a preference, so a URN no listed project realises
   raised `No prioritized URNs found` instead of resolving to the one project that has it.
+- `common.pb()` briefly read `pages.json` for the leaf a page falls on, which looked like
+  removing a duplicate and was not: the prayer modules call it at import time, so no part of
+  the importer could be imported without the sourcetexts submodule, and CI does not
+  initialise one. The mapping is written out again, and a test checks it against
+  `pages.json` wherever the submodule is present, so it cannot drift. **A unit test here
+  tests the code, never the reading** -- the builders' tests stand synthetic fragments in
+  place of `scan_reading/front/`.
 - `reledmac.xslt` grouped front-matter prose under the *root* language. In a Hebrew-rooted
   project every line of the English introduction came out reversed. It now groups by the
   prose's own language, so each language gets its own numbered stream.

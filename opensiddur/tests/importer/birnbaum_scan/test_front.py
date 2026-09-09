@@ -16,12 +16,12 @@ from unittest import mock
 from lxml import etree
 
 from opensiddur.importer.birnbaum_scan.build import common, front
+from opensiddur.tests.importer.birnbaum_scan import write_synthetic_front
 
 NS = {"tei": "http://www.tei-c.org/ns/1.0", "j": "http://jewishliturgy.org/ns/jlptei/2"}
 WRAPPER = ('<root xmlns:tei="http://www.tei-c.org/ns/1.0" '
            'xmlns:j="http://jewishliturgy.org/ns/jlptei/2">%s</root>')
 
-TEI_NS = 'xmlns:tei="http://www.tei-c.org/ns/1.0"'
 
 
 class FakeLeaf:
@@ -35,22 +35,10 @@ class FrontMatterTestCase(unittest.TestCase):
     def setUp(self):
         directory = TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.fragments = Path(directory.name)
-        for section in front.SECTIONS:
-            (self.fragments / section["fragment"]).write_text(
-                f'<tei:div {TEI_NS} corresp="urn:x-opensiddur:text:front:'
-                f'{section["slug"]}"><tei:p>words</tei:p></tei:div>\n',
-                encoding="utf-8")
-        for _, name in (p for pairs in front.TITLE_LEAVES.values() for p in pairs):
-            (self.fragments / name).write_text(
-                f'<tei:titlePage {TEI_NS} corresp="urn:x-opensiddur:text:front:'
-                f'title_page"><tei:docTitle><tei:titlePart>t</tei:titlePart>'
-                f'</tei:docTitle></tei:titlePage>\n', encoding="utf-8")
-        self.addCleanup(mock.patch.object(front, "FRAGMENTS", self.fragments).stop)
-        mock.patch.object(front, "FRAGMENTS", self.fragments).start()
-        leaves = {f"s{leaf}": FakeLeaf(leaf - 1) for leaf in range(1, 26)}
-        self.addCleanup(mock.patch.object(common, "_leaves", lambda: leaves).stop)
-        mock.patch.object(common, "_leaves", lambda: leaves).start()
+        self.fragments = write_synthetic_front(Path(directory.name))
+        patch = mock.patch.object(front, "FRAGMENTS", self.fragments)
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def parsed(self, project):
         return etree.fromstring(WRAPPER % front.front_block(project))[0]

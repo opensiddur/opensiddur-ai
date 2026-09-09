@@ -17,6 +17,7 @@ from tempfile import TemporaryDirectory
 from lxml import etree
 
 from opensiddur.importer.birnbaum_scan.build import common, front
+from opensiddur.tests.importer.birnbaum_scan import write_synthetic_front
 
 NS = {"tei": "http://www.tei-c.org/ns/1.0", "j": "http://jewishliturgy.org/ns/jlptei/2"}
 
@@ -30,28 +31,7 @@ def fragment(text: str):
     return etree.fromstring(WRAPPER % text)
 
 
-class FakeLeaf:
-    """The one thing `pb` wants out of pages.json."""
-
-    def __init__(self, leaf):
-        self.leaf = leaf
-
-
-#: A synthetic leaf table, so these tests do not turn into tests of pages.json.
-LEAVES = {"81": FakeLeaf(105), "s2": FakeLeaf(1), "XI": FakeLeaf(12)}
-
-
-def with_fake_leaves(case):
-    """Point `common.pb` at LEAVES for the duration of one test."""
-    patch = mock.patch.object(common, "_leaves", lambda: LEAVES)
-    patch.start()
-    case.addCleanup(patch.stop)
-
-
 class TestPageBreak(unittest.TestCase):
-
-    def setUp(self):
-        with_fake_leaves(self)
 
     def test_deep_links_to_the_leaf_the_page_falls_on(self):
         element = fragment(common.pb("81"))[0]
@@ -67,6 +47,36 @@ class TestPageBreak(unittest.TestCase):
         self.assertEqual(element.get("n"), "[2]")
         self.assertEqual(element.get("ed"), common.FRONT_SIGIL)
         self.assertEqual(element.get("facs"), f"{common.IA}/n1_medium.jpg")
+
+
+class TestLeafMappingAgainstTheData(unittest.TestCase):
+    """`common` writes the printed-page to leaf mapping out rather than reading
+    `pages.json`, because the prayer modules call `pb` at import time and no part of the
+    importer should need the sourcetexts submodule merely to be imported. That trade is
+    only safe if the two cannot drift, so check them against each other wherever the
+    submodule is present -- and skip, rather than fail, where it is not."""
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan import pages
+
+        if not pages.PAGES_JSON.is_file():
+            self.skipTest("the sourcetexts submodule is not initialised")
+        self.table = pages.load_pages()
+
+    def test_every_printed_page_maps_to_the_leaf_pages_json_records(self):
+        for printed, scan_page in common.SCAN_PAGE.items():
+            with self.subTest(printed=printed):
+                reference = self.table[str(printed)]
+                self.assertEqual(scan_page, reference.scan_page)
+                self.assertEqual(common.leaf(printed), reference.leaf)
+
+    def test_the_scan_page_offset_holds_for_every_leaf_of_the_front_matter(self):
+        from opensiddur.importer.birnbaum_scan.build import front
+
+        for leaf_number in front.DESIGNATION:
+            with self.subTest(leaf=leaf_number):
+                reference = self.table[f"s{leaf_number}"]
+                self.assertEqual(common.leaf(f"s{leaf_number}"), reference.leaf)
 
 
 class TestHeader(unittest.TestCase):
@@ -222,6 +232,13 @@ class TestBuilders(unittest.TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         self.addCleanup(common.set_project_directory, common.DEFAULT_PROJECT_DIRECTORY)
         self.directory = Path(self.temp_dir.name)
+        # The builders splice in the committed reading, which lives in a submodule a
+        # plain checkout does not have. What is under test is the builder, so stand
+        # synthetic fragments in its place.
+        patch = mock.patch.object(
+            front, "FRAGMENTS", write_synthetic_front(self.directory / "front"))
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def test_each_builder_writes_an_index_a_unit_and_one_file_per_prayer(self):
         for build, project in ((self.build_he, common.PROJECT_HE),

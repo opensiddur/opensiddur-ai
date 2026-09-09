@@ -30,6 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from opensiddur.common.constants import OUTPUT_DIRECTORY, SOURCETEXTS_ROOT
+from opensiddur.importer.birnbaum_scan import SCAN_PAGE_PREFIX
 from opensiddur.importer.birnbaum_siddur.internet_archive import IA_IDENTIFIER
 from opensiddur.importer.util.internet_archive import (
     Archive,
@@ -50,11 +51,6 @@ PAGE_DIRECTORY = SCAN_DIRECTORY / "pages"
 BAND_DIRECTORY = SCAN_DIRECTORY / "bands"
 
 CONTACT_EMAIL_ENV_VAR = "OPENSIDDUR_CONTACT_EMAIL"
-
-# Prefix for addressing a leaf by scan page rather than by the number the book prints
-# on it. The front matter needs it: only twelve of its twenty-five leaves are numbered,
-# and the title page is not among them.
-SCAN_PAGE_PREFIX = "s"
 
 # Bands overlap so that no line of type is cut in half by a boundary: a line landing
 # on the seam is whole in one of the two bands that share it.
