@@ -38,7 +38,7 @@ and in this repository, the measurement and the tooling:
 ```
 specs/birnbaum_scan/accuracy.md    the transcription-distance measurement
 specs/birnbaum_scan/verdicts/      which side each difference was decided for
-specs/birnbaum_scan/settings/      the export settings the commands below name
+specs/birnbaum_scan/settings_*.yaml the export settings the commands below name
 opensiddur/importer/birnbaum_scan/ pages.py fetches and cuts; compare.py measures;
                                    build/ writes the TEI
 ```
@@ -167,21 +167,21 @@ one file per prayer holding the words, the conditionals and the `tei:pb`. Both p
 emit **identical** URNs under their own project ids, which is what aligns them; a URN
 repeated inside one document would break the join silently, so none is.
 
-Naming follows `SIDDUR_URN_SCHEME.md`. Ya'aleh v'Yavo and Al ha-Nissim are top-level
+Naming follows [`SIDDUR_URN_SCHEME.md`](SIDDUR_URN_SCHEME.md). Ya'aleh v'Yavo and Al ha-Nissim are top-level
 because both are also said in Birkat HaMazon — nest only what lives in one place.
 
 ## Building and checking
 
 ```bash
-W=../../opensiddur-projects/feat_birnbaum-from-scan/project
+W=opensiddur-projects/project
 uv run python -m opensiddur.importer.util.validation "$W/birnbaum_ashkenaz_he_1949/amidah_avot.xml"
 uv run python -m opensiddur.exporter.refdb --project-directory "$W"
 uv run python -m opensiddur.exporter.validate_urn_references birnbaum_ashkenaz_he_1949 --project-directory "$W"
 uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
-    -f chol_shacharit_amidah.xml -s specs/birnbaum_scan/settings/undecided.yaml \
+    -f chol_shacharit_amidah.xml -s specs/birnbaum_scan/settings_undecided.yaml \
     -o output/amidah.xml --project-directory "$W"
 uv run python -m opensiddur.exporter.pdf.pdf output/amidah.xml output/amidah.pdf \
-    -s specs/birnbaum_scan/settings/undecided.yaml --project-directory "$W"
+    -s specs/birnbaum_scan/settings_undecided.yaml --project-directory "$W"
 ```
 
 `refdb` must be re-run before `validate_urn_references`; a stale index reads as

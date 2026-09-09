@@ -10,7 +10,10 @@ temp.*
 # Local AI/IDE
 .vscode
 .cursor
-.claude
+# .claude holds per-developer settings, which are local; skills are shared
+# documentation and belong in the repository.
+.claude/*
+!.claude/skills/
 
 # Coverage files
 .coverage
