@@ -51,6 +51,11 @@ BAND_DIRECTORY = SCAN_DIRECTORY / "bands"
 
 CONTACT_EMAIL_ENV_VAR = "OPENSIDDUR_CONTACT_EMAIL"
 
+# Prefix for addressing a leaf by scan page rather than by the number the book prints
+# on it. The front matter needs it: only twelve of its twenty-five leaves are numbered,
+# and the title page is not among them.
+SCAN_PAGE_PREFIX = "s"
+
 # Bands overlap so that no line of type is cut in half by a boundary: a line landing
 # on the seam is whole in one of the two bands that share it.
 DEFAULT_BANDS = 4
@@ -64,9 +69,13 @@ class ScanError(RuntimeError):
 
 @dataclass(frozen=True)
 class PageRef:
-    """Where one printed page is, in every numbering that matters."""
+    """Where one leaf is, in every numbering that matters.
 
-    printed_page: str
+    ``printed_page`` is ``None`` for a leaf the print does not number, which is most
+    of the front matter.
+    """
+
+    printed_page: str | None
     scan_page: int
     leaf: int
     side: str | None
@@ -83,13 +92,33 @@ class PageRef:
         """
         return page_image_url(IA_IDENTIFIER, self.leaf, size="")
 
+    @property
+    def designation(self) -> str:
+        """The canonical name for this leaf: what the book prints, else the scan page.
+
+        The cache is keyed by this rather than by whatever the caller typed, so that
+        ``XI`` and ``s13`` name one file instead of fetching the same leaf twice.
+        """
+        if self.printed_page is not None:
+            return self.printed_page
+        return f"{SCAN_PAGE_PREFIX}{self.scan_page}"
+
+
+def scan_page_designation(scan_page: int) -> str:
+    """The token that addresses a leaf the print does not number."""
+    return f"{SCAN_PAGE_PREFIX}{scan_page}"
+
 
 def load_pages(pages_json: Path | None = None) -> dict[str, PageRef]:
-    """Read ``pages.json`` into a table keyed by printed page number.
+    """Read ``pages.json`` into a table keyed by every designation a leaf answers to.
 
-    Leaves the print does not number -- blanks, plates, the odd unnumbered page --
-    are left out: they cannot be asked for by printed page, which is the only way
-    anything here refers to a page.
+    A numbered leaf is keyed by its printed number *and* by ``s{scan page}``; a leaf
+    the print does not number -- blanks, plates, the whole of the front matter before
+    the Roman sequence begins -- is keyed by the scan-page token alone. Front matter
+    has to be reachable somehow, and the scan page is the only number every leaf has.
+
+    ``PageRef.designation`` is the one the cache is named after, so asking for ``XI``
+    and asking for ``s13`` share a single image on disk rather than fetching twice.
     """
     path = Path(pages_json) if pages_json is not None else PAGES_JSON
     try:
@@ -103,36 +132,41 @@ def load_pages(pages_json: Path | None = None) -> dict[str, PageRef]:
     table: dict[str, PageRef] = {}
     for page in payload.get("pages", []):
         printed = page.get("printed_page")
-        if printed is None:
-            continue
-        table[str(printed)] = PageRef(
-            printed_page=str(printed),
-            scan_page=page["scan_page"],
+        scan_page = page["scan_page"]
+        reference = PageRef(
+            printed_page=None if printed is None else str(printed),
+            scan_page=scan_page,
             leaf=page["ia_leaf"],
             side=page.get("side"),
             facing_scan_page=page.get("facing_scan_page"),
             facs=page["facs"],
         )
+        table[scan_page_designation(scan_page)] = reference
+        if printed is not None:
+            table[str(printed)] = reference
     return table
 
 
 def lookup(printed_page: str | int, pages_json: Path | None = None) -> PageRef:
-    """The one page bearing this printed number, or a named failure."""
+    """The one leaf answering to this designation, or a named failure."""
     table = load_pages(pages_json)
     key = str(printed_page)
     if key not in table:
-        raise ScanError(f"No page of the scan is printed with the number {key!r}.")
+        raise ScanError(
+            f"No page of the scan answers to {key!r}. Pages are addressed by the "
+            f"number the book prints on them, or as {SCAN_PAGE_PREFIX}N by scan page."
+        )
     return table[key]
 
 
-def image_path(printed_page: str | int) -> Path:
-    """Where this page's image is cached."""
-    return PAGE_DIRECTORY / f"{printed_page}.jpg"
+def image_path(designation: str | int) -> Path:
+    """Where the leaf with this designation is cached."""
+    return PAGE_DIRECTORY / f"{designation}.jpg"
 
 
-def band_path(printed_page: str | int, index: int) -> Path:
-    """Where one band of this page is written."""
-    return BAND_DIRECTORY / f"{printed_page}_{index}.png"
+def band_path(designation: str | int, index: int) -> Path:
+    """Where one band of this leaf is written."""
+    return BAND_DIRECTORY / f"{designation}_{index}.png"
 
 
 def fetch(
@@ -149,12 +183,12 @@ def fetch(
     a temporary sibling and renames, so an interrupted fetch cannot leave a truncated
     file looking like a complete one.
     """
-    destination = image_path(printed_page)
+    reference = lookup(printed_page, pages_json)
+    destination = image_path(reference.designation)
     if destination.is_file() and not force:
         logger.debug("%s is already on disk", destination)
         return destination
 
-    reference = lookup(printed_page, pages_json)
     if archive is None:
         email = contact_email or os.environ.get(CONTACT_EMAIL_ENV_VAR, "").strip()
         if not email:
@@ -166,7 +200,7 @@ def fetch(
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(destination.name + ".part")
-    logger.info("Fetching printed page %s (leaf %d)", reference.printed_page, reference.leaf)
+    logger.info("Fetching page %s (leaf %d)", reference.designation, reference.leaf)
     response = http_get(archive, reference.image_url, stream=True)
     try:
         with open(temporary, "wb") as handle:
@@ -207,7 +241,12 @@ def bands(
     if not 0 <= overlap < 0.5:
         raise ValueError("Overlap is a fraction of a band's height, below one half.")
 
-    origin = Path(source) if source is not None else image_path(printed_page)
+    # A caller supplying its own image is naming the bands itself; otherwise the leaf
+    # is canonicalised so that `XI` and `s13` cut bands over one cached image.
+    designation = (
+        str(printed_page) if source is not None else lookup(printed_page).designation
+    )
+    origin = Path(source) if source is not None else image_path(designation)
     if not origin.is_file():
         raise ScanError(f"{origin} has not been fetched yet.")
 
@@ -224,7 +263,7 @@ def bands(
             enlarged = crop.resize(
                 (crop.width * scale, crop.height * scale), Image.LANCZOS
             )
-            destination = band_path(printed_page, index)
+            destination = band_path(designation, index)
             enlarged.save(destination)
             written.append(destination)
     return written
@@ -233,14 +272,17 @@ def bands(
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Fetch printed pages of the Birnbaum scan and cut them into bands "
+            "Fetch pages of the Birnbaum scan and cut them into bands "
             "legible enough to read nikkud from."
         )
     )
     parser.add_argument(
         "pages",
         nargs="+",
-        help="Printed page numbers, as the book prints them (81 82 ... or XI).",
+        help=(
+            "Pages, as the book prints them (81 82 ... or XI), or as sN by scan page "
+            "for a leaf the print does not number (s1 s2 ... -- the front matter)."
+        ),
     )
     parser.add_argument(
         "--no-bands",

@@ -4,6 +4,7 @@ The bodies are written by hand, read off the scan, one function per prayer. This
 holds only what every file repeats: the header, the URN, the source pointer and the page
 break sigils. Scaffolding — the TEI files it writes are the artifact.
 """
+from functools import lru_cache
 from pathlib import Path
 
 PROJECT_HE = "birnbaum_ashkenaz_he_1949"
@@ -22,20 +23,43 @@ def set_project_directory(path) -> Path:
     return OUT
 
 IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949/page"
-# printed page -> IA leaf, from pages.json. Leaf = scan page - 1, scan page = printed + 25.
-LEAF = {p: p + 24 for p in range(81, 99)}
 
 #: The second @ed token names which printing a break belongs to, since a shared text is
 #: printed at several services. See SIDDUR_URN_SCHEME.md, "One text, printed on several pages".
+#: Front matter is printed once, so it passes ``sigil=FRONT_SIGIL`` and names no printing.
 SIGIL = "1949 chol/shacharit/amidah"
+FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
 SIDDUR = "urn:x-opensiddur:text:siddur:"
+FRONT = "urn:x-opensiddur:text:front:"
 
 
-def pb(page: int) -> str:
-    """A page break, deep-linked to the leaf it falls on."""
-    return f'<tei:pb n="{page}" ed="{SIGIL}" facs="{IA}/n{LEAF[page]}_medium.jpg"/>'
+@lru_cache(maxsize=1)
+def _leaves() -> dict:
+    """``pages.json``, keyed by every designation a leaf answers to.
+
+    Read rather than re-derived: pages.json is the only place the printed-page to leaf
+    correspondence is recorded, and the front matter's offset is not the body's.
+    """
+    from opensiddur.importer.birnbaum_scan.pages import load_pages
+    return load_pages()
+
+
+def leaf(page) -> int:
+    """The IA leaf a page falls on. `page` is what the book prints, or ``sN`` by scan page."""
+    return _leaves()[str(page)].leaf
+
+
+def pb(page, *, sigil: str = SIGIL, n: str | None = None) -> str:
+    """A page break, deep-linked to the leaf it falls on.
+
+    `page` addresses the leaf; `n` is the designation printed on it, defaulting to `page`.
+    They differ only in the front matter, where a leaf the book does not number is
+    addressed as ``sN`` but designated with the number the book's own sequence implies.
+    """
+    return (f'<tei:pb n="{page if n is None else n}" ed="{sigil}" '
+            f'facs="{IA}/n{leaf(page)}_medium.jpg"/>')
 
 
 def header(*, title_he: str, title_en: str, urn: str, project: str,

@@ -5,64 +5,11 @@ import sys
 from .common import set_project_directory
 from .common import (PROJECT_HE, PRAYER, SIDDUR, document, write, pb, cond, endcond,
                     feature, SERVICE, AGG)
+from .front import SECTIONS, front_block, section_body
+from .index import index
 from .he_prayers import PRAYERS
 
 U, S = PRAYER, SIDDUR
-
-INDEX_BODY = f"""      <tei:div corresp="{S}siddur">
-        <tei:div corresp="{S}chol">
-          <tei:div corresp="{S}chol/shacharit">
-            <j:transclude type="external" target="{S}chol/shacharit/amidah"/>
-          </tei:div>
-        </tei:div>
-      </tei:div>"""
-
-INDEX = f"""<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="he">
-  <tei:teiHeader>
-    <tei:fileDesc>
-      <tei:titleStmt>
-        <tei:title type="main" xml:lang="he">הַסִּדּוּר הַשָּׁלֵם</tei:title>
-        <tei:title type="alt" xml:lang="en">ha-Siddur ha-Shalem (The Daily Prayer Book)</tei:title>
-        <tei:respStmt>
-          <tei:resp key="trc">Read from the 1949 scan and encoded by</tei:resp>
-          <tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name>
-        </tei:respStmt>
-      </tei:titleStmt>
-      <tei:editionStmt>
-        <tei:edition>Read directly from the scanned 1949 printing, page by page. Not derived from any transcription of it.</tei:edition>
-      </tei:editionStmt>
-      <tei:publicationStmt>
-        <tei:distributor>
-          <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
-        </tei:distributor>
-        <tei:idno type="urn">{S}siddur@{PROJECT_HE}</tei:idno>
-        <tei:availability status="free">
-          <tei:licence target="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International</tei:licence>
-        </tei:availability>
-      </tei:publicationStmt>
-      <tei:sourceDesc>
-        <tei:bibl xml:id="project_source_bibl">
-          <tei:title>ha-Siddur ha-Shalem: The Daily Prayer Book</tei:title>
-          <tei:author>Philip Birnbaum</tei:author>
-          <tei:publisher>Hebrew Publishing Company</tei:publisher>
-          <tei:pubPlace>New York</tei:pubPlace>
-          <tei:date when="1949">1949</tei:date>
-          <tei:date type="accessed" when="2026-09-08">2026-09-08</tei:date>
-          <tei:idno type="url">https://archive.org/details/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949</tei:idno>
-          <tei:idno type="archive.org">PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949</tei:idno>
-          <tei:note xml:lang="en">The scan cited here is the source of the text, not merely a reference for it: every word was read off it, page by page.</tei:note>
-          <tei:note type="encoding" xml:lang="en">Every tei:pb/@facs in this project deep-links into the leaf its page break falls on. The scan is 1541x2291 pixels per leaf, which is the scan itself and not a derivative.</tei:note>
-        </tei:bibl>
-      </tei:sourceDesc>
-    </tei:fileDesc>
-  </tei:teiHeader>
-  <tei:text>
-    <tei:body>
-{INDEX_BODY}
-    </tei:body>
-  </tei:text>
-</tei:TEI>
-"""
 
 # The unit declares its service and that it is a weekday, and declares EVERY service --
 # an undeclared false is undefined, and undefined keeps the text, so declaring shaharit
@@ -131,7 +78,8 @@ def main(argv=None):
     if args.project_directory:
         set_project_directory(args.project_directory)
     written = []
-    written.append(write(PROJECT_HE, "index", INDEX))
+    written.append(write(PROJECT_HE, "index", index(
+        project=PROJECT_HE, lang="he", front=front_block(PROJECT_HE))))
     written.append(write(PROJECT_HE, "chol_shacharit_amidah", document(
         body=unit_body(), lang="he",
         title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",

@@ -39,7 +39,8 @@ SCHEME = "urn:x-opensiddur:"
 # Namespaces whose names this registry governs. `bible:` is excluded because its names
 # are fixed by the canon rather than chosen, and `haggadah:` because it predates the
 # scheme -- it appears here only on the left-hand side of an alias.
-GOVERNED_NAMESPACES = frozenset({"prayer", "poem", "siddur", "mishnah", "talmud"})
+GOVERNED_NAMESPACES = frozenset({"prayer", "poem", "siddur", "mishnah", "talmud",
+                                 "front"})
 
 # `instruction` is a URN *type*, not a namespace, and the registry governs it too.
 GOVERNED_TYPES = frozenset({"instruction"})

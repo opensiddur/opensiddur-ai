@@ -8,7 +8,12 @@ typography:
   instructions:
     from: both
 priority:
-  transclusion: [birnbaum_ashkenaz_he_1949]
+# Ordered: the Hebrew wins wherever both projects realise a URN, which is
+# everywhere in the body. The English is the fallback for the front matter
+# Birnbaum wrote only in English -- his introduction has no Hebrew counterpart
+# to prefer, and without a fallback the transclusion would fail rather than
+# quietly resolve to the one project that carries it.
+  transclusion: [birnbaum_ashkenaz_he_1949, birnbaum_ashkenaz_en_1949]
 parallel:
   projects: [birnbaum_ashkenaz_en_1949]
 declarations:

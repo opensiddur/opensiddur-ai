@@ -1,0 +1,11 @@
+{"urn": "urn:x-opensiddur:text:front:title_page", "status": "canonical", "label_en": "The book's title page"}
+{"urn": "urn:x-opensiddur:text:front:copyright", "status": "canonical", "label_en": "The copyright and imprint page"}
+{"urn": "urn:x-opensiddur:text:front:dedication", "status": "canonical", "label_en": "The book's dedication"}
+{"urn": "urn:x-opensiddur:text:front:acknowledgements", "status": "canonical", "label_en": "The author's acknowledgements"}
+{"urn": "urn:x-opensiddur:text:front:preface", "status": "canonical", "label_en": "A preface"}
+{"urn": "urn:x-opensiddur:text:front:introduction", "status": "canonical", "label_en": "An editor's or translator's introduction"}
+{"urn": "urn:x-opensiddur:text:front:introduction/1", "status": "canonical", "parent": "urn:x-opensiddur:text:front:introduction", "label_en": "Introduction, the edition's own first part"}
+{"urn": "urn:x-opensiddur:text:front:introduction/2", "status": "canonical", "parent": "urn:x-opensiddur:text:front:introduction", "label_en": "Introduction, the edition's own second part"}
+{"urn": "urn:x-opensiddur:text:front:introduction/3", "status": "canonical", "parent": "urn:x-opensiddur:text:front:introduction", "label_en": "Introduction, the edition's own third part"}
+{"urn": "urn:x-opensiddur:text:front:contents", "status": "canonical", "label_en": "A table of contents"}
+{"urn": "urn:x-opensiddur:text:front:colophon", "status": "canonical", "label_en": "A colophon"}

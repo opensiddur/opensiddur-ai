@@ -224,6 +224,51 @@ to every other context, and the next context needing it would have to copy the w
 instead of transcluding them. The same reasoning keeps instructions in the context: the
 rubric for the third cup differs from the second while the blessing does not.
 
+## `front:` — a book's own front matter
+
+```
+urn:x-opensiddur:text:front:<part>[/<n>]
+```
+
+Front matter is the one thing in a book that is neither liturgy nor a place in the running
+order. A title page is not said, so it is not `prayer:`; it holds words of its own, so it is
+not `siddur:`, which by the rule above holds none. It gets a namespace.
+
+**The parts are a closed list**, so that two books agree the way two siddurim agree on
+`chol/shacharit`: `title_page`, `copyright`, `dedication`, `acknowledgements`, `preface`,
+`introduction`, `contents`, `colophon`. Adding to it is a change to this document.
+
+**No book or edition component.** The `@project` suffix already scopes the URN to an edition,
+and leaving the book out of the path is exactly what lets a translation align: the Hebrew and
+the English title leaves of one book are both `front:title_page`, and they pair with no
+further work. So does a translation's introduction against the original's.
+
+**A trailing numeric is the edition's own division**, under the same rule as
+[Sub-division numbering](#sub-division-numbering). Birnbaum heads the parts of his
+introduction I, II and III himself, so `front:introduction/1` records a division he made; it
+does not claim that another edition's `/1` covers the same ground.
+
+### One side may transclude what it does not realise
+
+Front matter is routinely one-sided. Birnbaum wrote his introduction in English and the print
+has no Hebrew counterpart to it at all.
+
+> **An index may transclude a front-matter URN its own project does not realise.** The
+> transclusion resolves to whichever project does, and that project issues the only
+> `@corresp`.
+
+Both compiles then carry the section, and neither carries a false alignment: a project is
+never set in parallel against itself, so a transclusion resolving into the parallel project
+falls back to a single column instead of pairing English against unrelated Hebrew. This needs
+the other project named in `priority.transclusion`, after the primary — the priority list is a
+filter, not a preference, and a URN in no listed project fails to resolve rather than
+resolving anyway.
+
+`tei:titlePage` cannot be transcluded, because it belongs to `model.frontPart` and a
+transclusion arrives inside a `tei:div`. Two editions each write their own title leaf into
+their own index and declare the correspondence by carrying the same URN. See
+[Front matter](../schema/JLPTEI-3.md#front-matter).
+
 ## `poem:` — piyyutim and zemirot
 
 Same rules and transliteration as `prayer:`. Used for poetry that is not itself part of

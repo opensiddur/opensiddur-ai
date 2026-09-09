@@ -1785,6 +1785,39 @@ class TestFrontMatter(unittest.TestCase):
         )
         self.assertNotIn(r"\OSImprintLine", body)
 
+    FRONT_IN_ANOTHER_LANGUAGE = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+      <tei:text>
+        <tei:front>
+          <tei:div xml:lang="en">
+            <tei:head>INTRODUCTION</tei:head>
+            <tei:p>The Siddur is the most popular book in Jewish life.</tei:p>
+          </tei:div>
+          <tei:div xml:lang="he">
+            <tei:p>פתח דבר</tei:p>
+          </tei:div>
+        </tei:front>
+        <tei:body><tei:p>בראשית</tei:p></tei:body>
+      </tei:text>
+    </tei:TEI>"""
+
+    def test_front_prose_is_set_in_its_own_language_not_the_root_s(self):
+        """A book's front matter is routinely in a language its body is not: Birnbaum's
+        introduction is English in a Hebrew-rooted project. Set under the root language,
+        every line of it came out reversed."""
+        out = _transform(self.FRONT_IN_ANOTHER_LANGUAGE)
+        front = out.split(r"\frontmatter", 1)[1].split(r"\mainmatter", 1)[0]
+        english = front.split("INTRODUCTION", 1)[0]
+        self.assertNotIn(r"\begin{hebrew}", english)
+
+    def test_front_prose_of_each_language_gets_its_own_numbered_stream(self):
+        """Grouping by language keeps adjacent same-language prose in one stream and
+        starts a new one where the language changes."""
+        out = _transform(self.FRONT_IN_ANOTHER_LANGUAGE)
+        front = out.split(r"\frontmatter", 1)[1].split(r"\mainmatter", 1)[0]
+        self.assertEqual(2, front.count(r"\beginnumbering"))
+        self.assertIn(r"\begin{hebrew}", front)
+
     def test_document_without_front_matter_is_unchanged(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">

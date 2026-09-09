@@ -11,11 +11,12 @@ list is used at all, it is a synthetic one.
 
 import unittest
 from pathlib import Path
+from unittest import mock
 from tempfile import TemporaryDirectory
 
 from lxml import etree
 
-from opensiddur.importer.birnbaum_scan.build import common
+from opensiddur.importer.birnbaum_scan.build import common, front
 
 NS = {"tei": "http://www.tei-c.org/ns/1.0", "j": "http://jewishliturgy.org/ns/jlptei/2"}
 
@@ -29,16 +30,43 @@ def fragment(text: str):
     return etree.fromstring(WRAPPER % text)
 
 
+class FakeLeaf:
+    """The one thing `pb` wants out of pages.json."""
+
+    def __init__(self, leaf):
+        self.leaf = leaf
+
+
+#: A synthetic leaf table, so these tests do not turn into tests of pages.json.
+LEAVES = {"81": FakeLeaf(105), "s2": FakeLeaf(1), "XI": FakeLeaf(12)}
+
+
+def with_fake_leaves(case):
+    """Point `common.pb` at LEAVES for the duration of one test."""
+    patch = mock.patch.object(common, "_leaves", lambda: LEAVES)
+    patch.start()
+    case.addCleanup(patch.stop)
+
+
 class TestPageBreak(unittest.TestCase):
 
+    def setUp(self):
+        with_fake_leaves(self)
+
     def test_deep_links_to_the_leaf_the_page_falls_on(self):
-        page = min(common.LEAF)
-        element = fragment(common.pb(page))[0]
+        element = fragment(common.pb("81"))[0]
         self.assertEqual(element.tag, "{%s}pb" % NS["tei"])
-        self.assertEqual(element.get("n"), str(page))
+        self.assertEqual(element.get("n"), "81")
         self.assertEqual(element.get("ed"), common.SIGIL)
-        self.assertEqual(
-            element.get("facs"), f"{common.IA}/n{common.LEAF[page]}_medium.jpg")
+        self.assertEqual(element.get("facs"), f"{common.IA}/n105_medium.jpg")
+
+    def test_front_matter_names_no_printing_and_may_be_designated_apart(self):
+        """A leaf addressed as sN carries the designation the book's sequence implies,
+        and no second @ed token: front matter is printed once."""
+        element = fragment(common.pb("s2", sigil=common.FRONT_SIGIL, n="[2]"))[0]
+        self.assertEqual(element.get("n"), "[2]")
+        self.assertEqual(element.get("ed"), common.FRONT_SIGIL)
+        self.assertEqual(element.get("facs"), f"{common.IA}/n1_medium.jpg")
 
 
 class TestHeader(unittest.TestCase):
@@ -203,7 +231,10 @@ class TestBuilders(unittest.TestCase):
                 written = sorted(p.name for p in (self.directory / project).glob("*.xml"))
                 self.assertIn("index.xml", written)
                 self.assertIn("chol_shacharit_amidah.xml", written)
-                self.assertEqual(len(written), len(build.PRAYERS) + 2)
+                # index, the unit, one file per prayer -- and, in the English
+                # project, one per front-matter section Birnbaum wrote only in English.
+                extra = len(front.SECTIONS) if project == common.PROJECT_EN else 0
+                self.assertEqual(len(written), len(build.PRAYERS) + 2 + extra)
 
     def test_everything_written_parses_and_names_its_own_project(self):
         self.build_he.main(["--project-directory", str(self.directory)])
@@ -216,7 +247,9 @@ class TestBuilders(unittest.TestCase):
     def test_the_english_index_records_whose_translation_it_is(self):
         """Birnbaum's authorship of the English is said beside the citation, not as a
         respStmt, which would credit him with digitising his own book."""
-        index = etree.fromstring(self.build_en.INDEX.encode("utf-8"))
+        from opensiddur.importer.birnbaum_scan.build.index import index as build_index
+        index = etree.fromstring(build_index(
+            project=common.PROJECT_EN, lang="en", front="").encode("utf-8"))
         notes = [n.text for n in index.findall(".//tei:sourceDesc//tei:note", NS)]
         self.assertTrue(any("translation" in (n or "") for n in notes))
         names = [n.text for n in index.findall(".//tei:respStmt/tei:name", NS)]

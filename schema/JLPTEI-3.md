@@ -663,6 +663,18 @@ that is the entry point the exporter compiles.
 
 Front matter that is running prose is encoded like any other text, with `tei:div`, `tei:head` and `tei:p`.
 
+`j:transclude` is permitted inside `tei:front`, and the front matter need not be written into the index
+literally. This is how a project holds front matter its own language does not print: a bilingual edition
+sets its author's introduction once, in the project whose language it is, and the other project's index
+transcludes it without declaring a `corresp` of its own. That keeps the introduction present when either
+side is compiled, and — because a project is never set in parallel against itself — stops it being paired
+against text it does not translate.
+
+`tei:titlePage` is the exception. It belongs to `model.frontPart`, which only `tei:front` admits, so it
+cannot arrive inside the `tei:div` a transclusion delivers. A transcribed title leaf is written into its
+own project's `tei:front`; where two editions of one book each print one, both carry the same `@corresp`
+and the correspondence is declared without transclusion.
+
 ##### Title pages
 
 A title page is encoded with `tei:titlePage`. It transcribes what the book itself prints on its title leaf. This is
