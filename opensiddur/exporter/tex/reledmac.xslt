@@ -573,6 +573,28 @@
         <xsl:text>\newcommand{\OSSectionSeparatorStyle}[1]{\begin{center}#1\end{center}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSSectionSeparator}{\OSSectionSeparatorStyle{* * * *}}&#10;</xsl:text>
 
+        <!-- Labelled lists (tei:list, tei:label, tei:item). Split in two the way the
+             section separator is, so a settings file can restyle the label without
+             knowing how it is placed.
+
+             The label is set inside a \pstart, so it follows \OSheadA-\OSheadD rather
+             than \OSSectionSeparatorStyle: no {\centering ...\par} and no \parbox. See
+             the comment above \OSheadA for why a \par inside a group escapes reledmac's
+             per-line capture, and \OSCondRule for why a box sized from \linewidth
+             overhangs a reledpar column.
+
+             The item's indent is a pair of skips rather than a box or a list
+             environment, for the same reason: \leftskip and \rightskip are measured
+             against \hsize, which reledpar sets to the column width, so the indent is
+             column-correct in a parallel compile and page-correct in a full-width one
+             without either being asked for. \leftskip is read at \par time and
+             \pstart...\pend is a group, so setting it at the head of the paragraph
+             indents the whole of that paragraph and nothing after it. -->
+        <xsl:text>\newcommand{\OSListIndent}{2em}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSListLabelStyle}[1]{{\normalfont\scshape #1}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSListLabel}[1]{\OSListLabelStyle{#1}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSListItemPar}{\leftskip=\OSListIndent\relax\rightskip=\OSListIndent\relax}&#10;</xsl:text>
+
         <xsl:if test="$notes-placement = 'endnote'">
             <!-- The endnote apparatus is configured separately from the footnote
                  one above, and needs the same treatment: no line number, and no
@@ -1409,6 +1431,51 @@
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:when>
+                    <xsl:when test="self::f:list-label">
+                        <!-- The label naming a list item. Placed the way f:head is — it is
+                             the same problem, a short phrase that must have a line of its
+                             own — but it is not a heading and must not be mistaken for
+                             one: no \InsertMark, so it never reaches a running head, and
+                             no \addcontentsline, so it claims no place in the PDF outline.
+                             A list label names an alternative inside a section; it does not
+                             open a section. -->
+                        <xsl:choose>
+                            <xsl:when test="$single-pstart">
+                                <!-- reledpar pairs the two sides by \pstart count, and a
+                                     list is exactly the kind of thing only one side
+                                     carries, so closing and reopening here would desync
+                                     the columns. Stay inside whatever is open, as f:head
+                                     does above. -->
+                                <xsl:choose>
+                                    <xsl:when test="$in-pstart">
+                                        <xsl:text>\par&#10;</xsl:text>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                        <xsl:text>\pstart </xsl:text>
+                                    </xsl:otherwise>
+                                </xsl:choose>
+                                <xsl:call-template name="list-label"/>
+                                <xsl:text>\par&#10;</xsl:text>
+                                <xsl:next-iteration>
+                                    <xsl:with-param name="in-pstart" select="true()"/>
+                                </xsl:next-iteration>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:if test="$in-pstart">
+                                    <xsl:text>\pend&#10;</xsl:text>
+                                </xsl:if>
+                                <!-- Its own paragraph, out of the line numbering: the
+                                     label is apparatus for the item, and numbering it
+                                     would cite it as a line of the text. -->
+                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
+                                <xsl:call-template name="list-label"/>
+                                <xsl:text>&#10;\pend&#10;</xsl:text>
+                                <xsl:next-iteration>
+                                    <xsl:with-param name="in-pstart" select="false()"/>
+                                </xsl:next-iteration>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:when>
                     <xsl:when test="self::f:para-break">
                         <!-- Paragraph boundary: end current pstart, but don't open a new
                              one until we see actual content. -->
@@ -1487,6 +1554,27 @@
                     <xsl:otherwise>
                         <xsl:if test="not($in-pstart)">
                             <xsl:text>\pstart </xsl:text>
+                            <!-- Indent the paragraphs of a list item, so an item reads as
+                                 a block set off from the prose around it rather than as
+                                 more of the same prose. Pass 1 emits leaves as the source
+                                 nodes themselves (xsl:sequence, not a copy), so a leaf
+                                 still knows whether it came from inside a tei:item.
+                                 Only this branch needs it: an item holds text and inline
+                                 markup, never the chapter or verse milestones that open a
+                                 \pstart in the branches above.
+
+                                 Single-column streams only, which is where labelled lists
+                                 are used: front matter is never parallel. Under
+                                 $single-pstart the whole side is one \pstart that is
+                                 already open, so there is no paragraph head to set the
+                                 skip at, and setting it mid-block would leak past the end
+                                 of the item — \leftskip would stay in force for the rest
+                                 of the \pstart, indenting the prose after the list too.
+                                 A parallel item is set flush; its label still separates
+                                 it. -->
+                            <xsl:if test="ancestor::tei:item">
+                                <xsl:text>\OSListItemPar </xsl:text>
+                            </xsl:if>
                         </xsl:if>
                         <xsl:apply-templates select="." mode="emit"/>
                         <xsl:next-iteration>
@@ -1634,6 +1722,27 @@
             <xsl:value-of select="f:format-section-title($outline-title, $lang)"/>
             <xsl:text>}</xsl:text>
         </xsl:if>
+    </xsl:template>
+
+    <!-- Render one f:list-label sentinel (the context node). Caller is responsible for the
+         surrounding \pstart/\pend, as with name="heading". -->
+    <xsl:template name="list-label">
+        <xsl:variable name="lang" select="string(@xml:lang)"/>
+        <xsl:text>\OSListLabel{</xsl:text>
+        <!-- The same direction wrapper a heading gets, and for the same reason: the label
+             is Latin text that may land in a Hebrew-rooted stream. Birnbaum's introduction
+             is exactly that — English front matter realised by the English project and
+             transcluded into a Hebrew index — so without this the label reads backwards.
+             A Hebrew label stays in the stream direction; any Latin run inside it takes
+             its own wrapper from mode="emit". -->
+        <xsl:if test="not(f:is-hebrew-lang($lang))">
+            <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
+        </xsl:if>
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:if test="not(f:is-hebrew-lang($lang))">
+            <xsl:text>}}</xsl:text>
+        </xsl:if>
+        <xsl:text>}</xsl:text>
     </xsl:template>
 
     <!-- The heading in the other column that names the same section as $head.
@@ -1813,7 +1922,7 @@
     <xsl:template match="tei:titlePage" mode="leaves"/>
 
     <!-- Internal sentinels produced by this stylesheet must survive flattening. -->
-    <xsl:template match="f:para-break | f:block-break | f:head" mode="leaves">
+    <xsl:template match="f:para-break | f:block-break | f:head | f:list-label" mode="leaves">
         <xsl:sequence select="."/>
     </xsl:template>
 
@@ -1921,6 +2030,48 @@
         <xsl:if test="not(@p:part = ('first', 'middle'))">
             <!-- Hard line break inside the current pstart -->
             <xsl:element name="tei:lb" namespace="http://www.tei-c.org/ns/1.0"/>
+        </xsl:if>
+    </xsl:template>
+
+    <!-- A labelled list. Without these three templates all of tei:list, tei:label and
+         tei:item fall through to the match="*" fallback below, which descends without
+         emitting a sentinel of any kind: the label's text runs into the head of the
+         paragraph it labels, and the items lose every boundary between them, so a
+         comparison of two translations set as two labelled blocks comes out as one
+         continuous run of prose. -->
+    <xsl:template match="tei:label[parent::tei:list]" mode="leaves">
+        <!-- tei:label is macro.phraseSeq — phrase content only, never a tei:p — so this
+             is head-sentinel's shape without the block handling, the heading levels or
+             the parallel-column pairing. tei:note is dropped for the reason it is
+             dropped from a heading: an apparatus entry cannot be anchored in a line
+             that sits outside the numbered stream.
+             Restricted to a label inside a list: the other use of tei:label is naming
+             a standoff note (see JLPTEI-3.md), which is not text on the page. -->
+        <xsl:element name="f:list-label" namespace="urn:opensiddur:reledmac">
+            <xsl:attribute name="xml:lang" select="f:in-scope-lang(.)"/>
+            <xsl:copy-of select="node()[not(self::tei:note)]"/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="tei:item" mode="leaves">
+        <xsl:apply-templates select="node()" mode="leaves"/>
+        <!-- An item whose content is block-level has already been closed off by the
+             f:para-break its last tei:p emitted; emitting a second one here would be a
+             no-op in a single-column stream but would spend a blank strut line in a
+             parallel one (see the f:para-break branch of numbered-stream). Only an item
+             of inline content — the plain, label-less lists in the JPS 1917 books —
+             needs a break of its own. -->
+        <xsl:if test="not(tei:p | tei:ab | tei:lg)">
+            <xsl:element name="f:para-break" namespace="urn:opensiddur:reledmac"/>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="tei:list" mode="leaves">
+        <xsl:apply-templates select="node()" mode="leaves"/>
+        <!-- Same guard, one level up: separate the list from the prose that follows it,
+             unless its items have already done so. -->
+        <xsl:if test="not(tei:item[tei:p | tei:ab | tei:lg])">
+            <xsl:element name="f:para-break" namespace="urn:opensiddur:reledmac"/>
         </xsl:if>
     </xsl:template>
 
@@ -2410,6 +2561,27 @@
                 <xsl:text>}}}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
+    </xsl:template>
+
+    <!-- A list inside a note. tei:note is emitted whole by pass 1 (xsl:sequence, so its
+         children never reach mode="leaves"), which means a list nested in one — the JPS
+         1917 index carries a 23-item list in a standoff note — is rendered here instead,
+         where the sentinel machinery is not available. \newline rather than \par: the
+         note is set inside \Bfootnote, and a \par there breaks reledmac's apparatus
+         grouping. That is the same constraint \OSInstructionBlock is written to. -->
+    <xsl:template match="tei:label[parent::tei:list]" mode="emit">
+        <xsl:text>\OSListLabelStyle{</xsl:text>
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <xsl:text>}\ </xsl:text>
+    </xsl:template>
+
+    <xsl:template match="tei:item" mode="emit">
+        <xsl:apply-templates select="node()" mode="emit"/>
+        <!-- Nothing after the last item: a trailing \newline would set a blank line
+             against the end of the note. -->
+        <xsl:if test="following-sibling::tei:item">
+            <xsl:text>\newline </xsl:text>
+        </xsl:if>
     </xsl:template>
 
     <!-- Default: shouldn't be reachable after pass 1, but be defensive. -->

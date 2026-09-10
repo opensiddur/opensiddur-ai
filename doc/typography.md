@@ -179,6 +179,7 @@ as the surrounding text has it.
 | `styles.note_mark` | `xx-small` | The mark that anchors a note, in the text and where the note is printed. |
 | `styles.line_number` | inherits | Marginal line numbers. |
 | `styles.section_separator` | centered | The separator between unheaded sections. |
+| `styles.list_label` | small-caps | The label naming an item of a labelled list, set on a line of its own above the item. Like the headings, it is set inside an aligned unit rather than as a block, so `space_before` and `space_after` do nothing here; the space above it is the space between one aligned unit and the next. See [`lists`](#lists) for the item's indent. |
 
 ## `line_numbers`
 
@@ -229,6 +230,20 @@ this only if …", and the reader has to be able to see where the passage starts
 | `markers.conditional.block` | `rule` \| `brackets` \| `none` | `rule` | How a whole conditional paragraph is delimited. Brackets several lines apart do not read as a pair, hence the rule. |
 | `markers.conditional.rule_width` | percentage | `25%` | Width of the rule, as a percentage of the measure. |
 | `markers.conditional.rule_thickness` | length | `0.4pt` | |
+
+## `lists`
+
+A labelled list sets out alternatives among the paragraphs of a prose passage — Birnbaum's
+introduction compares his new translation against the old one this way. The label is styled by
+[`styles.list_label`](#roles); this is how the item under it is set off from the prose around
+it.
+
+| Key | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `lists.item_indent` | length | `2em` | Indent applied to both margins of an item's paragraphs, so the item reads as a block of its own. `0pt` sets items flush with the surrounding text and leaves the label alone to distinguish them. |
+
+The indent is measured against the column, not the page, so an item inside a parallel block is
+indented within its own column.
 
 ## `parallel`
 

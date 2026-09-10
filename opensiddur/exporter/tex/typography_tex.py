@@ -450,6 +450,15 @@ def _styles_section(config: TypographyConfig) -> list[str]:
         + _block_paragraph(s, "#1", spacing)
         + "}",
     )
+    # A list label, like a heading, is paragraph content inside a \pstart, so it
+    # takes inline alignment for the same reason the heading roles do: a block
+    # environment's \par escapes reledmac's per-line capture.
+    emit(
+        "list_label",
+        lambda s: r"\renewcommand{\OSListLabelStyle}[1]{"
+        + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
+        + "}",
+    )
     return lines
 
 
@@ -625,6 +634,20 @@ def _markers_section(config: TypographyConfig) -> list[str]:
     return lines
 
 
+def _lists_section(config: TypographyConfig) -> list[str]:
+    """The indent that sets a list item off from the prose around it.
+
+    A length rather than a style key: ``TextStyle`` has no indent attribute, and
+    the stylesheet applies this as ``\\leftskip``/``\\rightskip`` at the head of
+    each of the item's paragraphs rather than as a box, so that a parallel
+    compile measures it against the column and not the page.
+    """
+    lists = config.lists
+    if "item_indent" not in lists.model_fields_set:
+        return []
+    return [rf"\renewcommand{{\OSListIndent}}{{{lists.item_indent}}}"]
+
+
 def _percent_of(percent: str, dimension: str) -> str:
     """``43%`` of ``\\textwidth`` is ``0.43\\textwidth``."""
     return _format_number(float(percent.rstrip("%")) / 100) + dimension
@@ -681,6 +704,7 @@ def build_typography_preamble(
         ("Notes", _notes_section(config)),
         ("Line numbers", _line_numbers_section(config, has_parallel)),
         ("Markers", _markers_section(config)),
+        ("Lists", _lists_section(config)),
         ("Parallel columns", _parallel_section(config, has_parallel)),
     ]
     lines: list[str] = []

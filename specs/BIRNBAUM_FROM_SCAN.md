@@ -346,10 +346,26 @@ parallel one. A `\parbox` of the same width does not help, for the same reason. 
 now set the rubric as ordinary text between two `\newline`, which is measured by whatever
 column it lands in. That gives up the flush margin and keeps the words on the page.
 
-**Open: a `tei:label` runs into the item it labels.** In the introduction's comparison of
-the two translations, "THE NEW TRANSLATION" is set at the head of its first paragraph rather
-than on a line of its own. The reading is unambiguous and the encoding is right; the placement
-is the exporter's.
+**Fixed here: the labelled list was not set as a list at all.** The visible symptom was that
+"THE NEW TRANSLATION" printed at the head of its first paragraph rather than on a line of its
+own, but the label was only the part that showed. `reledmac.xslt` had no template for
+`tei:label`, `tei:list` or `tei:item`, so all three fell to its pass-through fallback, which
+descends without emitting a sentinel. Paragraph boundaries in that stylesheet are made by an
+`f:para-break` that only `tei:p`/`tei:ab` and `tei:lg` emit, so nothing separated the label
+from the paragraph after it — and, because the list and the item were equally unhandled, the
+item's four paragraphs became four sibling `\pstart`s with no mark of where an item began or
+ended. Birnbaum sets the passage as two labelled blocks; it came out as one continuous run of
+prose. The reading and the encoding were right, as this said; what was missing was the whole
+list, not the label's line break.
+
+The label now takes a line of its own, out of the line numbering, styled by
+`styles.list_label` (small caps by default); the item's paragraphs are indented on both
+margins by `lists.item_indent` (`2em` by default), so the two alternatives read as two blocks.
+It is placed the way a `tei:head` is — the same problem — but emits no running-head mark and
+no PDF outline entry, because a list label names an alternative inside a section rather than
+opening one. The indent applies in a single-column stream, which is where labelled lists are
+used: the front matter is set full width, and under reledpar a whole column is one `\pstart`
+with no paragraph head to hang the skip on.
 
 **Open: a paragraph's overflow can be typeset in the facing column.** Where a Hebrew
 paragraph is short and its English counterpart runs longer, the tail of the English lands

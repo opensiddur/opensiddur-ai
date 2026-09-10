@@ -3262,3 +3262,172 @@ class TestConditionalRuleWidth(unittest.TestCase):
             r"{\hss\rule{0.25\hsize}{0.4pt}\hss}}",
             out,
         )
+
+
+class TestLabelledLists(unittest.TestCase):
+    r"""``tei:list``, ``tei:label`` and ``tei:item`` are set as a list.
+
+    All three used to fall through the ``match="*"`` pass-through in pass 1, which
+    descends without emitting a sentinel. The label's text ran into the head of the
+    paragraph it labelled, and the items lost every boundary between them: Birnbaum's
+    comparison of his new translation against the old — two labelled blocks in the
+    print — came out as one continuous run of prose, distinguished only by the label
+    text embedded mid-flow.
+    """
+
+    GLOSS = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+      <tei:text><tei:front>
+        <tei:div xml:lang="en">
+          <tei:p>The following parallel columns will illustrate the difference.</tei:p>
+          <tei:list type="gloss">
+            <tei:label>THE NEW TRANSLATION</tei:label>
+            <tei:item>
+              <tei:p>Blessed art thou.</tei:p>
+              <tei:p>Through thy abundant goodness.</tei:p>
+            </tei:item>
+            <tei:label>THE OLD TRANSLATION</tei:label>
+            <tei:item><tei:p>Blessed art thou, who feedest.</tei:p></tei:item>
+          </tei:list>
+          <tei:p>Here and there new interpretations.</tei:p>
+        </tei:div>
+      </tei:front><tei:body><tei:p>Body.</tei:p></tei:body></tei:text>
+    </tei:TEI>"""
+
+    def _front(self, xml: str = None) -> str:
+        out = _transform(xml if xml is not None else self.GLOSS)
+        return out[out.index(r"\frontmatter"):out.index(r"\mainmatter")]
+
+    def test_the_label_is_set_on_a_line_of_its_own(self):
+        """The regression test for the reported defect: the label's paragraph closes
+        before the paragraph it labels opens, rather than sharing a \\pstart with it."""
+        front = self._front()
+        self.assertIn(r"\OSListLabel{", front)
+        label_at = front.index("THE NEW TRANSLATION")
+        item_at = front.index("Blessed art thou.")
+        self.assertLess(label_at, item_at)
+        # ...and a \pend falls between the two.
+        self.assertIn(r"\pend", front[label_at:item_at])
+
+    def test_each_paragraph_of_an_item_is_indented(self):
+        front = self._front()
+        for text in ("Blessed art thou.", "Through thy abundant goodness.",
+                     "Blessed art thou, who feedest."):
+            with self.subTest(text=text):
+                self.assertIn(r"\pstart \OSListItemPar " + text, front)
+
+    def test_prose_around_the_list_is_not_indented(self):
+        front = self._front()
+        for text in ("The following parallel columns",
+                     "Here and there new interpretations"):
+            with self.subTest(text=text):
+                self.assertIn(r"\pstart " + text, front)
+                self.assertNotIn(r"\OSListItemPar " + text, front)
+
+    def test_the_label_is_not_a_heading(self):
+        """It names an alternative inside a section; it does not open one. So it takes
+        no running-head mark and no place in the PDF outline, and it stays out of the
+        line numbering, which cites lines of the text."""
+        front = self._front()
+        self.assertIn("\\pstart \\skipnumbering\n\\OSListLabel{", front)
+        self.assertNotIn(r"\InsertMark{OShead", front)
+        self.assertNotIn(r"\addcontentsline", front)
+
+    def test_an_english_label_in_a_hebrew_rooted_project_is_wrapped_ltr(self):
+        """Birnbaum's introduction is English front matter realised by the English
+        project and transcluded into a Hebrew index. Without the wrapper it reads
+        backwards, which is what happened to the prose before it was grouped by its
+        own language."""
+        front = self._front()
+        self.assertIn(
+            r"\OSListLabel{{\textdir TLT\foreignlanguage{english}"
+            r"{THE NEW TRANSLATION}}}",
+            front,
+        )
+
+    def test_a_list_of_inline_items_separates_its_items(self):
+        """The plain, label-less form the JPS 1917 books use. Each item is a paragraph
+        of its own, and the list is closed off from the prose that follows it."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:p>Before.</tei:p>
+            <tei:list><tei:item>Alpha</tei:item><tei:item>Beta</tei:item></tei:list>
+            <tei:p>After.</tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\pstart \OSListItemPar Alpha\pend", out)
+        self.assertIn(r"\pstart \OSListItemPar Beta\pend", out)
+        self.assertIn(r"\pstart After.\pend", out)
+
+    def test_an_item_of_paragraphs_gets_no_second_break(self):
+        r"""The item's last tei:p has already emitted one. A second would be a no-op
+        here but would spend a blank strut line in a parallel stream."""
+        front = self._front()
+        self.assertNotIn(r"\pend\n\pend", front)
+        self.assertEqual(front.count(r"\pstart"), front.count(r"\pend"))
+
+    def test_a_list_on_one_side_does_not_desync_the_columns(self):
+        r"""reledpar pairs the two sides by counting ``\pstart``...``\pend``, and a list
+        is exactly the kind of thing only one side carries."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="en">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:list type="gloss">
+                  <tei:label>NEW</tei:label>
+                  <tei:item><tei:p>One.</tei:p><tei:p>Two.</tei:p></tei:item>
+                </tei:list>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        block = out[out.index(r"\begin{pages}"):out.index(r"\Pages")]
+        left = block[block.index(r"\begin{Leftside}"):block.index(r"\end{Leftside}")]
+        right = block[block.index(r"\begin{Rightside}"):block.index(r"\end{Rightside}")]
+        self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
+        self.assertEqual(left.count(r"\pend"), right.count(r"\pend"))
+        self.assertIn(r"\OSListLabel{", right)
+
+    def test_a_list_inside_a_note_separates_its_items_without_a_par(self):
+        r"""``tei:note`` is emitted whole by pass 1, so a list nested in one — the JPS
+        1917 index carries a 23-item list in a standoff note — never reaches the
+        sentinel machinery and is rendered in mode="emit" instead. A ``\par`` inside
+        ``\Bfootnote`` breaks reledmac's apparatus grouping, so the items are separated
+        by ``\newline``."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:p>Text<tei:note>Preface.
+              <tei:list><tei:item>Alpha</tei:item><tei:item>Beta</tei:item></tei:list>
+            </tei:note>.</tei:p>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        note = out[out.index(r"\Bfootnote{"):]
+        note = note[:note.index(r"\pend")]
+        self.assertIn(r"Alpha\newline Beta", note)
+        self.assertNotIn(r"\par", note)
+        self.assertNotIn(r"\OSListItemPar", note)
+
+    def test_a_standoff_note_label_is_left_alone(self):
+        """The other use of tei:label names a standoff note, which is not text on the
+        page. Only a label inside a list becomes a list label."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text>
+            <tei:standOff type="notes">
+              <tei:note target="#a"><tei:label>catchword</tei:label>A note.</tei:note>
+            </tei:standOff>
+            <tei:body><tei:p>Hi</tei:p></tei:body>
+          </tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        # Scoped to the body: \OSListLabel is always defined in the preamble.
+        body = out[out.index(r"\begin{document}"):]
+        self.assertNotIn(r"\OSListLabel", body)
