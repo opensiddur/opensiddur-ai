@@ -70,9 +70,16 @@ urn:x-opensiddur:text:siddur:chol/shacharit/amidah@birnbaum_ashkenaz_he_1949
 
 `<occasion>` and `<service>` come from closed lists, so two siddurim agree:
 
-**occasion** — `chol`, `shabbat`, `rosh_chodesh`, `shalosh_regalim`, `pesach`, `sukkot`,
-`shavuot`, `rosh_hashanah`, `yom_kippur`, `chanukah`, `purim`, `taanit`, `berakhot`,
-`bayit`, `lifecycle`, `hosafot`.
+**occasion** — `all`, `chol`, `shabbat`, `rosh_chodesh`, `shalosh_regalim`, `pesach`,
+`sukkot`, `shavuot`, `rosh_hashanah`, `yom_kippur`, `chanukah`, `purim`, `taanit`,
+`berakhot`, `bayit`, `lifecycle`, `hosafot`.
+
+`all` is for a unit said at its service **whatever the occasion** — not a unit said on
+every occasion *in addition* to what the occasion calls for, which is `hosafot`. Prefer a
+named occasion wherever the book confines a unit to one: `all` is a claim that no occasion
+changes the unit, and it is wrong the moment some occasion does. Birnbaum's Shaḥarith
+li-Yladim is the first of these — a child says it every morning, Sabbaths and festivals
+included, so filing it under `chol` would say something the book does not.
 
 **service** — `arvit`, `shacharit`, `musaf`, `minchah`, `neilah`, `selichot`. Omitted for
 occasions that are not services.

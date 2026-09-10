@@ -21,7 +21,16 @@ EDITION = {
 TRANSLATION_NOTE = ("The English of this project is Birnbaum’s own translation, printed "
                     "on the pages facing the Hebrew.")
 
+#: The running order, in the order the book prints it. Shaḥarith li-Yladim is on pages
+#: 1-2 and so comes first. It is filed under the occasion `all` rather than `chol`: a
+#: child says it every morning, Sabbaths and festivals included, and filing it under
+#: weekdays would be a claim the book does not make. See SIDDUR_URN_SCHEME.md.
 BODY = f"""      <tei:div corresp="{S}siddur">
+        <tei:div corresp="{S}all">
+          <tei:div corresp="{S}all/shacharit">
+            <j:transclude type="external" target="{S}all/shacharit/yeladim"/>
+          </tei:div>
+        </tei:div>
         <tei:div corresp="{S}chol">
           <tei:div corresp="{S}chol/shacharit">
             <j:transclude type="external" target="{S}chol/shacharit/amidah"/>

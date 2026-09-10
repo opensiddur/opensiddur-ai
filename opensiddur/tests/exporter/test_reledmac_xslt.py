@@ -2539,6 +2539,51 @@ class TestParallelHeadings(unittest.TestCase):
         </tei:TEI>"""
 
     @staticmethod
+    def _translation_arg(out: str) -> str:
+        r"""The argument of \OSheadTranslation, by balanced braces.
+
+        A fixed-width window after the macro name is not good enough: the \addcontentsline
+        that follows a few characters later carries a direction wrapper of its own, so a
+        window wide enough to be useful catches it and the assertion passes on the wrong
+        text. That is how the first version of these tests stayed green against the
+        unfixed stylesheet."""
+        rest = out.split(r"\OSheadTranslation{", 1)[1]
+        depth, out_chars = 1, []
+        for ch in rest:
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            out_chars.append(ch)
+        return "".join(out_chars)
+
+    @staticmethod
+    def _parallel_langs(primary_title: str, alt_title: str, *,
+                        primary: str, parallel: str) -> str:
+        """`_parallel` with the two columns' languages chosen, for the direction tests."""
+        body = {"he": "שלום", "en": "Hello"}
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="{primary}">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit">
+                  <tei:head xml:lang="{primary}">{primary_title}</tei:head><tei:p>{body[primary]}</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="{parallel}">
+                <tei:div corresp="urn:x-opensiddur:text:siddur:unit">
+                  <tei:head xml:lang="{parallel}">{alt_title}</tei:head><tei:p>{body[parallel]}</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    @staticmethod
     def _pstarts(out: str) -> tuple:
         left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
         right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
@@ -2670,7 +2715,38 @@ class TestParallelHeadings(unittest.TestCase):
         out = _transform(self._parallel(self.SAME, self.OTHER))
         self.assertEqual(1, out.count(r"\OSheadA{"))
         self.assertEqual(1, out.count(r"\OSheadTranslation{"))
-        self.assertIn(self.OTHER, out.split(r"\OSheadTranslation{")[1][:120])
+        self.assertIn(self.OTHER, self._translation_arg(out))
+
+    def test_a_facing_title_in_the_other_language_is_set_in_its_own_direction(self):
+        """The heading spans the page inside the hebrew environment when the primary title
+        is Hebrew. An English title beneath it needs its own LTR wrapper, or it is typeset
+        right to left and its letters are painted in reverse order on the page.
+
+        The text being present proves nothing here — it was present, and reversed. What
+        has to be asserted is the direction wrapper around it."""
+        out = _transform(self._parallel_langs(self.SAME, self.OTHER,
+                                              primary="he", parallel="en"))
+        translation = self._translation_arg(out)
+        self.assertIn(r"\textdir TLT", translation)
+        self.assertIn(r"\foreignlanguage{english}", translation)
+
+    def test_a_facing_hebrew_title_under_a_latin_one_is_wrapped_too(self):
+        """The same requirement the other way round: the wrapper follows the title's own
+        language, not the language of the heading it is set beneath."""
+        out = _transform(self._parallel_langs("MORNING PRAYER", "שחרית",
+                                              primary="en", parallel="he"))
+        translation = self._translation_arg(out)
+        self.assertIn(r"\texthebrew{", translation)
+
+    def test_an_undeclared_title_language_falls_back_to_the_latin_wrapper(self):
+        """`f:section-title-lang` reads the head, then its tei:div ancestors, then the
+        tei:TEI — never the p:parallelItem. A head that declares no language anywhere in
+        that chain is treated as Latin. The project's unit files always declare one, so
+        this is the shape of the fallback rather than a case they rely on; it is asserted
+        so that widening the chain later is a deliberate change and not a surprise."""
+        out = _transform(self._parallel(self.SAME, self.OTHER))
+        translation = self._translation_arg(out)
+        self.assertIn(r"\foreignlanguage{english}", translation)
 
     def test_one_outline_entry_in_every_mode(self):
         for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):

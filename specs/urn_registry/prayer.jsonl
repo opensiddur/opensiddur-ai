@@ -6,6 +6,7 @@
 {"urn": "urn:x-opensiddur:text:prayer:al_hanissim/purim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:al_hanissim", "label_he": "עַל הַנִּסִּים לְפוּרִים", "label_en": "Al ha-Nissim for Purim"}
 {"urn": "urn:x-opensiddur:text:prayer:al_hanissim/purim/al_hanissim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:al_hanissim/purim"}
 {"urn": "urn:x-opensiddur:text:prayer:al_hanissim/purim/bimei", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:al_hanissim/purim"}
+{"urn": "urn:x-opensiddur:text:prayer:al_mitzvat_tzitzit", "status": "canonical", "label_he": "בִּרְכַּת צִיצִת", "label_en": "Blessing on the precept of tsitsith"}
 {"urn": "urn:x-opensiddur:text:prayer:al_netilat_yadayim", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah", "status": "canonical", "label_en": "Amidah"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah/adir_adiraynu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah", "label_he": "אדיר אדירנו"}
@@ -250,6 +251,7 @@
 {"urn": "urn:x-opensiddur:text:prayer:hallel/yehalelukha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel_hagadol", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hamotzi", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:modeh_ani", "status": "canonical", "label_he": "מוֹדֶה אֲנִי", "label_en": "Modeh Ani"}
 {"urn": "urn:x-opensiddur:text:prayer:nishmat", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical", "label_en": "Verses of Praise"}
 {"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar", "parent": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical"}
@@ -259,7 +261,18 @@
 {"urn": "urn:x-opensiddur:text:prayer:qiddush/vayekhulu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
 {"urn": "urn:x-opensiddur:text:prayer:sefirat_haomer", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:shehecheyanu", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:shema", "status": "canonical", "label_he": "שְׁמַע", "label_en": "The Shema"}
+{"urn": "urn:x-opensiddur:text:prayer:shema/barukh_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_he": "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד"}
+{"urn": "urn:x-opensiddur:text:prayer:shema/shema_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_he": "שְׁמַע יִשְׂרָאֵל", "label_en": "Deuteronomy 6:4"}
 {"urn": "urn:x-opensiddur:text:prayer:shokhen_ad", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva", "status": "canonical", "label_he": "תּוֹרָה צִוָּה לָֽנוּ מֹשֶׁה", "label_en": "The composite of verses said by a child on dressing"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/berakhot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "בְּרָכוֹת יָחֻֽלוּ עַל רֹאשִׁי"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/el_melekh_neeman", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "אֵל מֶֽלֶךְ נֶאֱמָן"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/lishuatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "לִישׁוּעָתְךָ קִוִּֽיתִי", "label_en": "Genesis 49:18"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/morasha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "תּוֹרָה צִוָּה לָֽנוּ מֹשֶׁה", "label_en": "Deuteronomy 33:4"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/shema_beni", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "שְׁמַע בְּנִי מוּסַר אָבִֽיךָ", "label_en": "Proverbs 1:8"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/torah_tehi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "תּוֹרָה תְּהִי אֱמוּנָתִי"}
+{"urn": "urn:x-opensiddur:text:prayer:torah_tziva/veatem_hadveqim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "וְאַתֶּם הַדְּבֵקִים", "label_en": "Deuteronomy 4:4"}
 {"urn": "urn:x-opensiddur:text:prayer:uvmakhalot", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:yaaleh_veyavo", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:yaaleh_veyavo/elohenu_velohei", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yaaleh_veyavo"}
@@ -267,4 +280,6 @@
 {"urn": "urn:x-opensiddur:text:prayer:yaaleh_veyavo/rosh_hodesh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yaaleh_veyavo"}
 {"urn": "urn:x-opensiddur:text:prayer:yaaleh_veyavo/sukkot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yaaleh_veyavo"}
 {"urn": "urn:x-opensiddur:text:prayer:yaaleh_veyavo/zokhrenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yaaleh_veyavo"}
+{"urn": "urn:x-opensiddur:text:prayer:yeladim", "status": "canonical", "label_he": "לִילָדִים", "label_en": "Texts the book prints for children, in the form it prints for them"}
+{"urn": "urn:x-opensiddur:text:prayer:yeladim/elohai_netzor", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yeladim", "label_he": "אֱלֹהַי נְצֹר", "label_en": "The abridged meditation printed for children; not amidah/elohai_netzor, which is a longer text"}
 {"urn": "urn:x-opensiddur:text:prayer:yishtabach", "status": "canonical"}

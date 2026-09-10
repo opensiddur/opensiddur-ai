@@ -229,7 +229,66 @@ and ACKNOWLEDGMENTS printed on top of the dedicatee's name.
 Three tiers: `index.xml`, a unit file holding document order and no words of its own, and
 one file per prayer holding the words, the conditionals and the `tei:pb`. Both projects
 emit **identical** URNs under their own project ids, which is what aligns them; a URN
-repeated inside one document would break the join silently, so none is.
+repeated inside one document would break the join silently, so none is — and since nothing
+downstream complains when one is, `test_no_project_emits_the_same_urn_twice` is what
+actually holds the line.
+
+Two units so far, in the order the book prints them:
+
+| unit file | URN | Hebrew pages | English pages |
+|---|---|---:|---:|
+| `all_shacharit_yeladim.xml` | `siddur:all/shacharit/yeladim` | 1 | 2 |
+| `chol_shacharit_amidah.xml` | `siddur:chol/shacharit/amidah` | 81–97 | 82–98 |
+
+### A second unit means a second `@ed` sigil
+
+`common.pb` takes a **required** `sigil`. The second token of `@ed` names which printing a
+page break belongs to, and while there was one unit a default was harmless. With two it is
+a trap: a break authored in the wrong module would be stamped as the other unit's printing,
+and neither the schema, nor the compiler, nor the rendered PDF would say so. Each prayer
+module binds its own sigil once at import, so no call site carries it, and
+`test_a_sigil_must_be_named_and_is_never_guessed` keeps the default from creeping back.
+
+### `all` is a new occasion, and it was not a local decision
+
+Shaḥarith li-Yladim is said every morning — Sabbaths and festivals included — so `chol`
+would have filed it under weekdays, which the book does not do. Adding to the closed
+occasion list is a change to `SIDDUR_URN_SCHEME.md`, and it is made there, with the rule
+for when `all` is right and when it over-claims.
+
+### One text printed twice, in different words
+
+The children's page ends with a three-sentence meditation that page 95 prints far longer,
+after the Shemoneh Esreh. Same opening words, different text — so it takes a URN of its
+own, `prayer:yeladim/elohai_netzor`, and `amidah_elohai_netzor.xml` is untouched. Sharing
+`prayer:amidah/elohai_netzor` between them would have been wrong twice over: the words
+differ, and `refdb` refuses a URN mapped twice inside one project anyway.
+
+### The same rubric, roman on one side and italic on the other
+
+The children's opening sets its four rubrics in **roman** on the Hebrew page and in
+**italic** on the English one, word for word the same rubrics. Inside the third one that
+inverts: `arba kanfoth` is italic against the roman rubric on the Hebrew page, and on the
+English page, where the rubric is already italic, it is not distinguished at all.
+
+The encoding does not follow the type. Both sides mark the term as `tei:foreign` — the
+intent is identical on the two pages, a transliterated Hebrew term, and only the
+realisation differs, because an italic term inside an italic rubric has nowhere to go.
+Recording which side is roman belongs in the reading; choosing how to render it belongs in
+the typography settings; neither belongs in the URN. The first reading of page 2 got this
+backwards in both directions, which is the argument for checking a styling claim against
+both pages side by side at 5x rather than against one page and an assumption.
+
+### A printed paragraph that holds several texts and shows no seam
+
+Under "When dressed:" the print sets nine distinct texts as ONE run-on paragraph, and the
+facing English does the same with no visual break at all. The two sides join on exact URN
+equality, so anything that must line up with its translation needs a URN — and there is
+nothing else here to line up on. They are paired at `tei:seg` inside the single `tei:p`.
+Splitting them into transcluded files would align them too, and would destroy the printed
+paragraph. The two Shema verses inside that paragraph keep their own canonical names
+rather than nesting under the composite: they are the same words wherever the book prints
+them, and a later unit that prints them has to align with this one.
 
 Naming follows [`SIDDUR_URN_SCHEME.md`](SIDDUR_URN_SCHEME.md). Ya'aleh v'Yavo and Al ha-Nissim are top-level
 because both are also said in Birkat HaMazon — nest only what lives in one place.
@@ -248,8 +307,14 @@ uv run python -m opensiddur.exporter.pdf.pdf output/amidah.xml output/amidah.pdf
     -s specs/birnbaum_scan/settings_undecided.yaml --project-directory "$W"
 ```
 
+Swap `-f chol_shacharit_amidah.xml` for `-f all_shacharit_yeladim.xml` to build the
+children's unit instead. Every `prayer:` and `siddur:` URN a project emits must have a
+line in `specs/urn_registry/`, which `refdb` is what checks it against — an unregistered
+URN is an error, not a warning.
+
 `refdb` must be re-run before `validate_urn_references`; a stale index reads as
-unresolved references. Indexing the whole corpus takes several minutes.
+unresolved references. Indexing the whole corpus takes several minutes, and it uses the
+same `database/reference.db` the test suite does, so never run the two at once.
 
 **Compile for a day and a place, or the conditions are untested.** Reading the XML proves
 nothing. `settings_undecided.yaml` declares the service and the recitation and no date, so
@@ -259,6 +324,18 @@ names a day and a place, and nothing conditional should survive it.
 ## Known defects in the parallel PDF
 
 Found by compiling this unit two-column; both are in the exporter, not in the TEI.
+
+**Fixed here: a facing title in the other language was typeset backwards.** A spanning
+heading is set inside the `hebrew` environment when the primary column's title is Hebrew,
+and `\OSheadTranslation` received the facing column's title with no direction wrapper of
+its own — so an English title under a Hebrew one came out with its letters painted in
+reverse order, `NERDLIHC ROF REYARP GNINROM`. It went unnoticed until now because it
+needs the two columns to head a section in *different* languages: the Amidah heads both
+sides in English, and Shaḥarith li-Yladim is the first unit where the print does not.
+`\OSheadTranslation` now wraps its argument against the title's own language, in either
+direction. Note what the reading order of `pdftotext` says about such a heading: nothing.
+It reorders RTL runs on output, so a reversed heading comes back looking correct — the
+defect is only visible in the glyphs' own x coordinates, read in ascending order.
 
 **Fixed here: an instruction set in a fixed-width box ran off the page.**
 `\OSInstructionBlock` and `\OSInstructionLine` set the rubric in `\hbox to \linewidth`,
@@ -286,13 +363,18 @@ pairs now all are) does not change it. Three occurrences in eleven pages.
 Done: printed pages 81–97, the weekday shacharit Amidah, both projects, 60 files, all
 validating. Done: the front matter, scan leaves 1–25 — both title leaves, the dedication, the
 acknowledgments and the introduction — 3 further files and a `tei:front` on each index.
+Done: printed pages 1–2, Shaḥarith li-Yladim, the first of the surrounding units and the
+first opening of the body — 12 further files, a new occasion, and 18 new registry lines.
 
 Next, in the order the evidence suggests:
 
 1. **Birnbaum's footnotes.** He runs two apparatuses: commentary keyed by Hebrew lemma,
    set across the opening so a note begun under a Hebrew page finishes under the facing
    English one; and numbered scripture citations keyed to superscripts in the English
-   text. They are a standoff apparatus and belong in their own file. The introduction's own
+   text. Page 1 is a second witness, and a simpler one: its single lemma-keyed note sits
+   at the foot of the Hebrew page, does not run across the opening, and the facing English
+   page carries no apparatus at all — so an opening with exactly one note, and no
+   continuation to model, is the cheapest place to start. They are a standoff apparatus and belong in their own file. The introduction's own
    footnotes are not these: they are ordinary inline `tei:note`, already encoded.
 2. **The two tables of contents**, once there is enough of the book for them to point at.
 3. **Finish the accuracy measurement** for pages 85–97, which is cheap now and is the

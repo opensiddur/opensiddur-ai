@@ -28,7 +28,14 @@ IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerB
 #: The second @ed token names which printing a break belongs to, since a shared text is
 #: printed at several services. See SIDDUR_URN_SCHEME.md, "One text, printed on several pages".
 #: Front matter is printed once, so it passes ``sigil=FRONT_SIGIL`` and names no printing.
-SIGIL = "1949 chol/shacharit/amidah"
+#:
+#: One sigil per unit, and :func:`pb` defaults to none of them. A default was safe while
+#: there was one unit and became a trap the moment there were two: a page break authored in
+#: the wrong module would be stamped with the other unit's printing, and nothing -- not the
+#: schema, not the compiler, not the rendered PDF -- would say so. Each prayer module binds
+#: its own sigil once, at import, so no call site carries it.
+SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
+SIGIL_YELADIM = "1949 all/shacharit/yeladim"
 FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
@@ -42,7 +49,11 @@ LEAF_OFFSET = -1
 
 #: Printed page -> scan page, for the pages read so far. The front matter is not in here:
 #: the print numbers only twelve of its twenty-five leaves, so it is addressed by scan page.
-SCAN_PAGE = {p: p + 25 for p in range(81, 99)}
+#:
+#: The +25 offset in fact holds for every numbered page in the book. The table is kept to
+#: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
+#: deep-linking a leaf nobody has looked at.
+SCAN_PAGE = {p: p + 25 for p in (*range(1, 3), *range(81, 99))}
 
 
 def leaf(page) -> int:
@@ -63,8 +74,10 @@ def leaf(page) -> int:
     return SCAN_PAGE[int(token)] + LEAF_OFFSET
 
 
-def pb(page, *, sigil: str = SIGIL, n: str | None = None) -> str:
+def pb(page, *, sigil: str, n: str | None = None) -> str:
     """A page break, deep-linked to the leaf it falls on.
+
+    `sigil` is required: see :data:`SIGIL_AMIDAH` for why there is no default.
 
     `page` addresses the leaf; `n` is the designation printed on it, defaulting to `page`.
     They differ only in the front matter, where a leaf the book does not number is

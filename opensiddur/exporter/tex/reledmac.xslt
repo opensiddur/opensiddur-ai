@@ -842,9 +842,36 @@
             </xsl:if>
             <xsl:text>}</xsl:text>
             <xsl:if test="exists($second)">
+                <!-- The facing column's title is wrapped against ITS OWN language, not the
+                     one this heading is set in. The two can differ: a book may head the
+                     same section in Hebrew on one page and in English on the facing one.
+                     Left unwrapped, an English title emitted inside the hebrew environment
+                     is typeset right to left, and comes out with its letters painted in
+                     reverse order. mode="emit" cannot save it: that wraps a run the source
+                     marks as foreign, and a head whose whole text is in the other language
+                     marks nothing. -->
+                <xsl:variable name="second-lang" select="string($second/@xml:lang)"/>
+                <xsl:variable name="second-is-hebrew"
+                              select="$second-lang = 'he' or starts-with($second-lang, 'he-')"/>
                 <xsl:text>\OSheadTranslation{</xsl:text>
+                <xsl:choose>
+                    <xsl:when test="$second-is-hebrew">
+                        <xsl:text>\texthebrew{</xsl:text>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
+                    </xsl:otherwise>
+                </xsl:choose>
                 <xsl:apply-templates select="$second/node()[not(self::f:alt-head)]"
                                      mode="emit"/>
+                <xsl:choose>
+                    <xsl:when test="$second-is-hebrew">
+                        <xsl:text>}</xsl:text>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:text>}}</xsl:text>
+                    </xsl:otherwise>
+                </xsl:choose>
                 <xsl:text>}</xsl:text>
             </xsl:if>
             <xsl:if test="$is-hebrew">

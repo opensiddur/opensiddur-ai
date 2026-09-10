@@ -6,12 +6,19 @@ from .common import set_project_directory
 from .common import PROJECT_EN, PRAYER, SIDDUR, FRONT, document, write, cond, endcond, feature, SERVICE, AGG
 from .front import SECTIONS, front_block, section_body
 from .index import index
-from .en_prayers import PRAYERS
+from .en_prayers import PRAYERS as AMIDAH_PRAYERS
+from .en_yeladim import PRAYERS as YELADIM_PRAYERS
 from . import build_he
+
+#: Every prayer file this project writes, both units.
+PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS
 
 U, S = PRAYER, SIDDUR
 
 BY_NAME = {p["name"]: p for p in PRAYERS}
+
+#: Which printed pages each unit spans, on the English side of the opening.
+EN_UNIT_PAGES = {"yeladim": (2, 2), "amidah": (82, 98)}
 
 
 def unit_body():
@@ -61,11 +68,11 @@ def main(argv=None):
             body=section_body(s), lang="en", title_he="", title_en=s["title"],
             urn=FRONT + s["slug"], project=PROJECT_EN,
             first=s["first"], last=s["last"])); n += 1
-    write(PROJECT_EN, "chol_shacharit_amidah", document(
-        body=unit_body(), lang="en",
-        title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",
-        title_en="The weekday morning Amidah",
-        urn=f"{S}chol/shacharit/amidah", project=PROJECT_EN, first=82, last=98)); n += 1
+    for unit in build_he.units(PROJECT_EN, EN_UNIT_PAGES, BY_NAME, unit_body()):
+        write(PROJECT_EN, unit["name"], document(
+            body=unit["body"], lang="en", title_he=unit["title_he"],
+            title_en=unit["title_en"], urn=unit["urn"], project=PROJECT_EN,
+            first=unit["pages"][0], last=unit["pages"][1])); n += 1
     for p in PRAYERS:
         write(PROJECT_EN, p["name"], document(
             body=p["body"], lang="en", title_he="", title_en=p["title"],

@@ -3,20 +3,45 @@
 
 One entry per prayer file. Each is (file name, title, urn slug, first page, last page,
 body). The body is hand-authored: a division holds content or subdivisions but never
-both, so words that share a division with a conditional get a wrapper division of their
-own carrying no URN -- nothing names them.
+both, so words that share a division with a conditional get a division of their own --
+one carrying a URN, because it names a text. An unnamed wrapper would satisfy the rule
+too and name nothing, which is a level to see through; see the skill's note on divisions.
 """
-from .common import PRAYER, pb, cond, endcond, feature, AGG, HOL, SERVICE, RECITATION, QUORUM
+import functools
+
+from .common import PRAYER, cond, endcond, feature, AGG, HOL, SERVICE, RECITATION, QUORUM
+from . import common
+
+#: Every page break in this module belongs to the Amidah's printing. Bound once here
+#: because common.pb takes no default sigil -- see common.SIGIL_AMIDAH.
+pb = functools.partial(common.pb, sigil=common.SIGIL_AMIDAH)
 
 U = PRAYER
 
 
+#: Paragraphs handed to `wrap` sit one level inside the division it opens at eight.
+PARA_INDENT = 10
+
+
 def d(urn, *paras, indent=8):
-    """A division carrying a URN, holding one or more paragraphs."""
+    """A division carrying a URN and holding its paragraphs, or the paragraphs alone.
+
+    ``d(None, ...)`` returns the paragraphs by themselves, for `wrap` to put inside the
+    division it opens. It used to return them inside a second, unnamed division, which
+    named nothing and grouped nothing -- a level for a reader to see through. The rule
+    that a division holds content or subdivisions but never both is real, but it bites
+    where a division would hold words alongside a conditional, and every such division
+    here carries a URN of its own. So nothing ever needed the unnamed one.
+
+    `indent` governs the named form only; bare paragraphs take :data:`PARA_INDENT`,
+    because `wrap` always opens its division at eight.
+    """
+    if urn is None:
+        pad = " " * PARA_INDENT
+        return "\n".join(f"{pad}<tei:p>{p}</tei:p>" for p in paras)
     pad = " " * indent
     inner = "\n".join(f"{pad}  <tei:p>{p}</tei:p>" for p in paras)
-    open_tag = f'{pad}<tei:div corresp="{urn}">' if urn else f"{pad}<tei:div>"
-    return f"{open_tag}\n{inner}\n{pad}</tei:div>"
+    return f'{pad}<tei:div corresp="{urn}">\n{inner}\n{pad}</tei:div>'
 
 
 def wrap(urn, inner):
