@@ -598,6 +598,13 @@ class Styles(ForbidExtra):
         default_factory=lambda: TextStyle(align=Alignment.CENTER),
         description="The separator between unheaded sections.",
     )
+    list_label: TextStyle = Field(
+        default_factory=lambda: TextStyle(variant=FontVariant.SMALL_CAPS),
+        description=(
+            "The label naming an item of a labelled list, on a line of its own "
+            "above the item."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -999,6 +1006,19 @@ class TableOfContentsConfig(ForbidExtra):
 # ---------------------------------------------------------------------------
 
 
+class ListConfig(ForbidExtra):
+    """ How the items of a labelled list are set off from the prose around them. """
+
+    item_indent: Length = Field(
+        default="2em",
+        description=(
+            "Indent applied to both margins of an item's paragraphs, so an item "
+            "reads as a block of its own. `0pt` to set items flush with the "
+            "surrounding text and let the label alone distinguish them."
+        ),
+    )
+
+
 class TypographyConfig(ForbidExtra):
     """ Everything about how the exported document looks.
 
@@ -1036,6 +1056,10 @@ class TypographyConfig(ForbidExtra):
     markers: MarkerConfig = Field(
         default_factory=MarkerConfig,
         description="Section separators, verse and chapter numbers, conditional markers.",
+    )
+    lists: ListConfig = Field(
+        default_factory=ListConfig,
+        description="How the items of a labelled list are indented.",
     )
     parallel: ParallelTypographyConfig = Field(
         default_factory=ParallelTypographyConfig,

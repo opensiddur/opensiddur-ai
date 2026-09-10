@@ -484,3 +484,40 @@ class TestHeadingTranslation(unittest.TestCase):
         # Right-aligned: glue leads, and none follows.
         line = [l for l in tex.splitlines() if "OSheadTranslation" in l][0]
         self.assertTrue(line.rstrip().endswith("#1}}"))
+
+
+class TestLists(unittest.TestCase):
+    """The label's style and the item's indent are configured separately: the indent
+    is not one of the eight ``TextStyle`` attributes, so it is a section of its own."""
+
+    def test_the_label_style_writes_the_label_macro(self):
+        tex = _tex({"styles": {"list_label": {"variant": "small-caps", "weight": "bold"}}})
+        self.assertIn(r"\renewcommand{\OSListLabelStyle}[1]{", tex)
+        self.assertIn(r"\scshape", tex)
+        self.assertIn(r"\bfseries", tex)
+
+    def test_the_label_takes_inline_alignment(self):
+        r"""Like a heading, it is set inside a \pstart, where a block environment's
+        \par escapes reledmac's per-line capture."""
+        tex = _tex({"styles": {"list_label": {"align": "center"}}})
+        self.assertIn(r"\renewcommand{\OSListLabelStyle}[1]{\mbox{}\hfill", tex)
+        self.assertNotIn(r"\begin{center}", tex)
+
+    def test_the_item_indent_writes_the_indent_macro(self):
+        self.assertIn(
+            r"\renewcommand{\OSListIndent}{1.5em}",
+            _tex({"lists": {"item_indent": "1.5em"}}),
+        )
+
+    def test_a_zero_indent_is_still_emitted(self):
+        """Setting it to 0pt is how a file asks for flush items, and is not the same
+        as leaving it unset."""
+        self.assertIn(
+            r"\renewcommand{\OSListIndent}{0pt}",
+            _tex({"lists": {"item_indent": "0pt"}}),
+        )
+
+    def test_neither_is_emitted_unconfigured(self):
+        tex = _tex({"paragraphs": {"indent": "1em"}})
+        self.assertNotIn(r"\OSListIndent", tex)
+        self.assertNotIn(r"\OSListLabelStyle", tex)
