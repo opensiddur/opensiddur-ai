@@ -34,11 +34,23 @@ def fragment(text: str):
 class TestPageBreak(unittest.TestCase):
 
     def test_deep_links_to_the_leaf_the_page_falls_on(self):
-        element = fragment(common.pb("81"))[0]
+        element = fragment(common.pb("81", sigil=common.SIGIL_AMIDAH))[0]
         self.assertEqual(element.tag, "{%s}pb" % NS["tei"])
         self.assertEqual(element.get("n"), "81")
-        self.assertEqual(element.get("ed"), common.SIGIL)
+        self.assertEqual(element.get("ed"), common.SIGIL_AMIDAH)
         self.assertEqual(element.get("facs"), f"{common.IA}/n105_medium.jpg")
+
+    def test_a_sigil_must_be_named_and_is_never_guessed(self):
+        """@ed's second token says which printing a break belongs to. A default was
+        harmless while there was one unit; with two, a break authored in the wrong module
+        would be stamped as the other unit's, and nothing downstream would say so."""
+        with self.assertRaises(TypeError):
+            common.pb("81")
+
+    def test_the_first_body_page_follows_the_last_front_matter_leaf(self):
+        """The front matter ends at scan 25 and printed page 1 is the next leaf, so the
+        two foliations meet with no gap and no overlap."""
+        self.assertEqual(common.leaf(1), common.leaf("s25") + 1)
 
     def test_front_matter_names_no_printing_and_may_be_designated_apart(self):
         """A leaf addressed as sN carries the designation the book's sequence implies,
@@ -201,6 +213,49 @@ class TestUnitAssembly(unittest.TestCase):
         self.assertTrue(values)
         self.assertEqual(set(values.values()), {"false"})
 
+    def test_the_children_s_unit_declares_its_service_and_not_the_date(self):
+        """A child says this page every morning, festivals and Sabbaths included. The
+        Amidah declares the holiday aggregates false because it is the *weekday* Amidah;
+        repeating that here would file the page under weekdays."""
+        declaration = fragment(self.build_he.declaration_yeladim())[0]
+        service = declaration.find("tei:fs[@type='%s']" % common.SERVICE, NS)
+        values = {f.get("name"): f.find("tei:binary", NS).get("value")
+                  for f in service.findall("tei:f", NS)}
+        self.assertEqual(values.pop("shaharit"), "true")
+        self.assertEqual(set(values.values()), {"false"})
+        self.assertIsNone(declaration.find("tei:fs[@type='%s']" % common.AGG, NS))
+
+    def test_the_children_s_unit_is_headed_in_each_project_s_own_language(self):
+        """The Amidah's headings are English on both sides because that is what the print
+        does. This unit's are not: the Hebrew page heads it in Hebrew."""
+        heads = {}
+        for build, project in ((self.build_he, common.PROJECT_HE),
+                               (self.build_en, common.PROJECT_EN)):
+            body = fragment(self.build_he.unit_body_yeladim(
+                self.build_he.YELADIM_HEAD[project], build.BY_NAME))[0]
+            head = body.find("tei:head", NS)
+            heads[project] = head.get("{http://www.w3.org/XML/1998/namespace}lang")
+        self.assertEqual(heads, {common.PROJECT_HE: "he", common.PROJECT_EN: "en"})
+
+    def test_no_project_emits_the_same_text_urn_twice(self):
+        """Two sides join on exact URN equality, and a @corresp repeated within one
+        project breaks that join *silently*. This is the only thing that would catch it.
+
+        Only `text:` URNs name texts and so only they have to be unique. An
+        `instruction:` URN names a role label -- "Reader" -- and the whole point of it is
+        to be reused wherever that label is printed."""
+        for build, project in ((self.build_he, common.PROJECT_HE),
+                               (self.build_en, common.PROJECT_EN)):
+            with self.subTest(project=project):
+                emitted = []
+                for prayer in build.PRAYERS:
+                    emitted += [element.get("corresp") for element
+                                in fragment(prayer["body"]).iter()
+                                if (element.get("corresp") or "").startswith(
+                                    "urn:x-opensiddur:text:")]
+                duplicated = sorted({u for u in emitted if emitted.count(u) > 1})
+                self.assertEqual(duplicated, [])
+
     def test_the_unit_transcludes_each_prayer_in_order_once(self):
         for build in (self.build_he, self.build_en):
             with self.subTest(build=build.__name__):
@@ -220,6 +275,18 @@ class TestUnitAssembly(unittest.TestCase):
                     for t in fragment(build.unit_body())[0].findall(".//j:transclude", NS)]
 
         self.assertEqual(targets(self.build_he), targets(self.build_en))
+
+    def test_the_two_projects_hold_the_same_units_in_the_book_s_order(self):
+        """Printed pages 1-2 come before 81-97, and a unit cannot exist on one side only."""
+        def names(build, project, pages):
+            return [u["name"] for u in self.build_he.units(
+                project, pages, build.BY_NAME, build.unit_body())]
+
+        expected = ["all_shacharit_yeladim", "chol_shacharit_amidah"]
+        self.assertEqual(
+            names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
+        self.assertEqual(
+            names(self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES), expected)
 
 
 class TestBuilders(unittest.TestCase):
@@ -248,10 +315,15 @@ class TestBuilders(unittest.TestCase):
                 written = sorted(p.name for p in (self.directory / project).glob("*.xml"))
                 self.assertIn("index.xml", written)
                 self.assertIn("chol_shacharit_amidah.xml", written)
-                # index, the unit, one file per prayer -- and, in the English
+                self.assertIn("all_shacharit_yeladim.xml", written)
+                # index, one file per unit, one per prayer -- and, in the English
                 # project, one per front-matter section Birnbaum wrote only in English.
+                pages = (build.EN_UNIT_PAGES if project == common.PROJECT_EN
+                         else build.HE_UNIT_PAGES)
+                units = len(self.build_he.units(
+                    project, pages, build.BY_NAME, build.unit_body()))
                 extra = len(front.SECTIONS) if project == common.PROJECT_EN else 0
-                self.assertEqual(len(written), len(build.PRAYERS) + 2 + extra)
+                self.assertEqual(len(written), len(build.PRAYERS) + 1 + units + extra)
 
     def test_everything_written_parses_and_names_its_own_project(self):
         self.build_he.main(["--project-directory", str(self.directory)])

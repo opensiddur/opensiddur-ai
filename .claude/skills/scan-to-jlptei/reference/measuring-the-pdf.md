@@ -51,6 +51,13 @@ passes by luck whenever no numbered line happens to be full measure.
 page's lowest number in each column should be 5. The right-hand series has its own
 switches; a left column that resets while the right runs on to 320 is the signature.
 
+**A Latin heading is painted left to right.** Where the two columns head a section in
+different languages, the facing title is set inside the other column's direction, and a
+reversed heading is a real defect that reads perfectly in `pdftotext` output. Take the
+glyphs' own x coordinates, sort ascending, join, and require the expected string — not its
+reverse — to appear. A heading is not covered by any rubric check: measure it separately,
+or a whole section title can come out backwards with every rubric assertion still green.
+
 ## How the measurement lies
 
 Every one of these produced a confident wrong answer before it was caught.
@@ -66,6 +73,17 @@ measuring a line's extent.
 **Inline verse numbers look exactly like line numbers.** Both are bare integers. Tell them
 apart by position — a margin number sits clear of the text by `\linenumsep`, an inline one
 is adjacent — not by pattern.
+
+**`pdftotext` reading order hides a reversed run.** It reorders RTL runs on output, so a
+Latin heading typeset right to left comes back in the correct order and looks fine. Only
+the glyph coordinates show it. The same caution applies to any assertion about order taken
+from `pdftotext` text output rather than from `-bbox`.
+
+**A window after a macro name is not its argument.** Slicing a fixed number of characters
+after `\\OSheadTranslation{` reaches past the argument into the `\\addcontentsline` that
+follows, which carries a direction wrapper of its own — so an assertion about the
+argument's wrapper passes on the wrong text. Match balanced braces instead. This kept a
+test green against the very stylesheet bug it was written to catch.
 
 **Metadata, colophon and bibliography pages are not parallel text.** A column-splitting
 heuristic will happily bisect a full-width licence block and report nonsense. Restrict to

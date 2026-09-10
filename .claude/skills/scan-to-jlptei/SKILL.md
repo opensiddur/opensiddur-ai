@@ -76,6 +76,24 @@ check that silently measures nothing is worse than no check, because it is belie
 ## Traps
 
 **Encoding**
+- **A division must earn its level.** Emit one only when it carries a `@corresp`, or when
+  it groups several children that belong together (a heading with the passages under it).
+  A division that names nothing and groups nothing — one URN-bearing `tei:div` holding a
+  single bare `tei:div` holding the words — is a level for every reader and every
+  stylesheet to see through, and the validator will not object to it. Words go directly
+  inside the division that names them:
+
+  ```xml
+  <tei:div corresp="urn:x-opensiddur:text:prayer:modeh_ani">
+    <tei:p>…</tei:p>          <!-- right: the naming division holds the words -->
+  </tei:div>
+  ```
+
+  The rule it is easy to over-apply is that *a division holds content or subdivisions but
+  never both*. That is real, and it bites when words would sit alongside a
+  `j:conditional`; the fix there is to give those words a division **with a URN**, not an
+  anonymous one. If you find yourself writing an unnamed wrapper, ask what it names or
+  what it groups — and if the answer is neither, delete it.
 - One instruction URN per distinct rubric *text*. Sharing a URN between rubrics that say
   different things makes the compiler print one where the other belongs.
 - A page turn falls mid-sentence; `tei:pb` is valid inside `tei:p`.
