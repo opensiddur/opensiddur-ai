@@ -1,0 +1,14 @@
+{"page": "1", "was": "יָחֹֽלוּ", "is": "יָחֻֽלוּ", "kind": "vowels", "settled_by": "image", "found_by": "transcription", "before_commit": true}
+{"page": "3", "was": "יְיָ,", "is": "יְיָ;", "kind": "punctuation", "settled_by": "image at 12x", "found_by": "transcription", "before_commit": true}
+{"page": "3", "was": "רָצוֹן,", "is": "רָצוֹן;", "kind": "punctuation", "settled_by": "image at 12x", "found_by": "transcription", "before_commit": true}
+{"page": "3", "was": "מְּאֹד", "is": "מְאֹד", "kind": "dagesh", "settled_by": "image at 18x", "found_by": "transcription", "before_commit": true}
+{"page": "5", "was": "בַּהֲנָחַת", "is": "בְּהַנָּחַת", "kind": "vowels", "settled_by": "image at 14x", "found_by": "transcription", "before_commit": true}
+{"page": "5", "was": "לְהָנִֽיחַ", "is": "לְהַנִּֽיחַ", "kind": "vowels", "settled_by": "image at 14x", "found_by": "transcription (נוסח template)", "before_commit": true}
+{"page": "5", "was": "יְבִאֲךָ", "is": "יְבִיאֲךָ", "kind": "consonants", "settled_by": "image", "found_by": "transcription", "before_commit": true}
+{"page": "7", "was": "זְרוֹעַ", "is": "זְרוֹעוֹ", "kind": "consonants", "settled_by": "image at 10x", "found_by": "transcription", "before_commit": true}
+{"page": "7", "was": "לְהָנִֽיחַ", "is": "לְהַנִּֽיחַ", "kind": "vowels", "settled_by": "image at 18x", "found_by": "transcription", "before_commit": true, "note": "the blessing; the meditation on the same page is a different word"}
+{"page": "7", "was": "לְהָנִֽיחַ", "is": "לְהַנִֽיחַ", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.1", "before_commit": true, "note": "the meditation. Neither the reading nor the transcription had this form: both set a qamats where the print has a pataḥ"}
+{"page": "7", "was": "וּמַחְשָׁבוֹת", "is": "וּמַחֲשָׁבוֹת", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.2", "before_commit": true}
+{"page": "7", "was": "יִתְגָּרֶה", "is": "יִתְגָּֽרֶה", "kind": "meteg", "settled_by": "editor", "found_by": "open question 7.3", "before_commit": true}
+{"page": "7", "was": "וְקָמָי;", "is": "וְקָמַי;", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.4", "before_commit": true}
+{"page": "83", "was": "יֹאמֵֽרוּ—", "is": "יֹאמֵֽרוּ–", "kind": "punctuation", "settled_by": "editor", "found_by": "transcription", "before_commit": false, "note": "em dash for en dash; the first correction to an already-merged page"}

@@ -20,10 +20,10 @@ adjudicated by going back to the page image.
 | 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
 | 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
 | 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing) |
-| 7 | 162 | 0 | 0 | 8 | 0 (2 caught before committing), 6 **unadjudicated** |
+| 7 | 162 | 0 | 0 | 9 | 0 (6 caught before committing) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
-| **total** | **641** | **0** | **8** | **22** | **0** |
+| **total** | **641** | **0** | **8** | **23** | **0** |
 
 **No misreading survives in 641 words.** But the second number in that column has grown
 faster than the first, and it is now the one that matters: **ten readings have been
@@ -87,7 +87,41 @@ ten corrections are in the same position. Until a verdict file can say *this was
 and here is what it was*, the error rate of this method is prose, and prose is not
 checkable.
 
-## Page 7: six differences left unadjudicated, deliberately
+## Corrections are data now, not prose
+
+`corrections.jsonl` records every reading corrected so far -- what it was, what the print
+carries, what settled it, and whether it was caught before or after committing. Fourteen
+entries.
+
+It exists because a correction has nowhere else to live. Once a reading is fixed the
+difference disappears from the comparison, so the `reading` verdict that recorded it
+matches nothing and `compare` rightly warns about it. Verdict files describe live
+differences; corrections describe ones that are gone. Keeping them in the same file made
+the second kind either noisy or invisible.
+
+The counts in the table above are therefore checkable rather than asserted: thirteen of
+the fourteen were caught before committing, and the fourteenth is page 83's.
+
+## Page 7: the queue's first run
+
+Page 7's six open questions were the first put through `OPEN_QUESTIONS.md` and answered by
+the editor rather than by another crop. Five behaved as expected. **The sixth did not, and
+it is the useful one.**
+
+Question 7.1 asked whether the meditation's לְהָנִֽיחַ carried a meteg, the reading and the
+transcription differing by that alone. The answer was neither: the print sets a **pataḥ**
+where both of them set a qamats. Two independent witnesses agreed with each other and were
+both wrong, and the only reason it came out is that the queue asks what the print carries
+rather than which of two candidates to pick.
+
+That is an argument for the queue's refusal to guess. An answer that matches neither form
+is an error, not a third option to be coerced into one of the two -- and here the error
+was the right outcome, because it meant the reading had to be fixed before the verdict
+could be recorded at all.
+
+Note also that the page's two occurrences of the word remain genuinely different --
+לְהַנִֽיחַ in the meditation, לְהַנִּֽיחַ in the blessing -- which is now confirmed by
+someone who knows the text rather than inferred from a crop.
 
 Page 7's two catches were `זְרוֹעַ` for **זְרוֹעוֹ** and, in the blessing, `לְהָנִֽיחַ`
 for **לְהַנִּֽיחַ** — the same word page 5 had to correct, so the spelling is his and
