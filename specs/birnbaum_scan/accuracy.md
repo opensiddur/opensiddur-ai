@@ -22,12 +22,12 @@ adjudicated by going back to the page image.
 | 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing) |
 | 7 | 162 | 0 | 0 | 8 | 0 (2 caught before committing), 6 **unadjudicated** |
 | 81 | 39 | 0 | 0 | 0 | 0 |
-| 83 | 125 | 0 | 6 | 7 | 0 |
-| **total** | **641** | **0** | **8** | **23** | **0** |
+| 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
+| **total** | **641** | **0** | **8** | **22** | **0** |
 
 **No misreading survives in 641 words.** But the second number in that column has grown
-faster than the first, and it is now the one that matters: **nine readings have been
-corrected before committing, all of them points, and eight of the nine were caught by the
+faster than the first, and it is now the one that matters: **ten readings have been
+corrected, all of them points, and nine of the ten were caught by the
 transcription rather than by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
@@ -58,6 +58,34 @@ difference is not in the table above; recording it here is the only way it is no
 lost. Four catches in 369 words is the honest error rate of this method, and it is not
 zero. It also shows the check working as designed: the transcription is not a source,
 but it is a competent second reader.
+
+## Page 83 carried a misreading through to a merged branch
+
+The Amidah pages were read before any of the above was known, and this file recorded
+zero misreadings for them. That is no longer true for page 83, whose dash before the
+Kedushah response was read as an em dash where the print sets an **en dash**. It has been
+corrected and the tally above now says so.
+
+Three things make it worth more than the one character it changes.
+
+**It confirms the re-check rather than merely suggesting it.** The warning below this
+section said pages 81-97 should be re-examined because they were read at band
+magnification. One of them has now been shown to carry an error, so the re-check is owed
+and not optional.
+
+**It was not found by a crop.** It was settled by someone who knew what the page should
+say. The reading had recorded a difference and left it `unresolved`, which meant the
+transcription had already flagged the right character and the reading declined to take
+its side. That is the same failure as page 5's sin dot: reaching for "the scan cannot
+settle it" when the answer was available.
+
+**A correction after committing has nowhere good to live.** Once the reading is fixed the
+difference disappears, so the `reading` verdict that should record it matches nothing --
+`compare` prints `warning: no difference matches the verdict`, which is the tool behaving
+correctly and still leaving the catch with no home but this paragraph. Nine of the other
+ten corrections are in the same position. Until a verdict file can say *this was corrected
+and here is what it was*, the error rate of this method is prose, and prose is not
+checkable.
 
 ## Page 7: six differences left unadjudicated, deliberately
 
