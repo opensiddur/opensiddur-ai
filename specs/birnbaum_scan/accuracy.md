@@ -18,11 +18,12 @@ adjudicated by going back to the page image.
 | page | words | whitespace | consonants | vowels | misreadings |
 |---|---:|---:|---:|---:|---:|
 | 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
+| 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 7 | 0 |
-| **total** | **275** | **0** | **8** | **8** | **0** |
+| **total** | **369** | **0** | **8** | **12** | **0** |
 
-**No misreading survives in 275 words**, and every difference that does is the
+**No misreading survives in 369 words**, and every difference that does is the
 transcription departing from the print. Reading pointed Hebrew off a 1541 px scan, in
 enlarged bands, is reliable — the 4x crop is doing the work, and the band upscaling does
 not need raising.
@@ -32,9 +33,44 @@ The first draft of the reading had `יָחֹֽלוּ` where the transcription ha
 back to the image settled it **for the transcription** — three dots set diagonally under
 the ḥet, and no dot above it. The reading was corrected before it was committed, so the
 difference is not in the table above; recording it here is the only way it is not simply
-lost. One catch in 275 words is the honest error rate of this method, and it is not
+lost. Four catches in 369 words is the honest error rate of this method, and it is not
 zero. It also shows the check working as designed: the transcription is not a source,
 but it is a competent second reader.
+
+## Page 3: four differences, and three catches going the other way
+
+Page 3's four surviving differences are all the transcription interpreting rather than
+reading: two are qamats qatan written U+05C7 where this print has the one qamats glyph and
+nothing else, and two are a dagesh and a segol the print carries and the transcription
+drops. Verified at 9-20x.
+
+**The three caught before committing are the more useful number.** The first draft of this
+reading had a comma twice where the print sets a semicolon, and a dagesh in the mem of
+מְאֹד that is not there. All three were settled *for the transcription* by going back to
+the image at 12-18x. Recording them here is the only way they are not simply lost, and
+they raise the honest error rate of this method to four catches in 369 words.
+
+The two semicolons are worth naming as a class. Birnbaum uses both commas and semicolons,
+sometimes in one line, and at 3x they are one mark; the semicolon's upper dot merges with
+the comma's body. **A comma read off a band at 3x is not evidence.** Where the punctuation
+carries a sense break, crop it.
+
+### The transcription's variant templates are evidence, not markup
+
+The Hebrew Wikisource foundation text marks the places its editors knew the print differs
+from what they set, in a `{{נוסח}}` template that names the editions. Stripping those
+templates -- the obvious thing to do with wiki markup -- throws away exactly what the
+comparison is for, and it silently manufactures differences: both of page 3's apparent
+dropped words were a stripped template, and both would have been recorded as the
+transcription failing where in fact it was flagging a variant *and naming Birnbaum's side
+of it*.
+
+`opensiddur/importer/birnbaum_scan/transcription.py` resolves them. Four conventions are
+in use and one inverts -- `{{נוסח|X|=בירנבוים|אחרים=Y}}` makes **X** the reading, so a
+rule that simply prefers a `בירנבוים=` parameter takes the variant on every one of them.
+One value is a sentence about how he sets two Torah portions rather than a word to
+substitute, so a value that is not a short run of pointed Hebrew is kept out of the text
+and reported.
 
 ## Page 1: three differences, all of them the transcription
 
