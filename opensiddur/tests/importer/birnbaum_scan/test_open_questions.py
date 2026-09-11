@@ -87,6 +87,28 @@ class TestContext(OpenQuestionsTest):
         self.assertIn("ארבע", context)
 
 
+class TestDescribingTheDifference(OpenQuestionsTest):
+    """Two pointed words differing by one meteg look identical in a list."""
+
+    def test_a_mark_the_reading_has_is_named(self):
+        self.assertIn("reading has METEG", oq.describe("רֶֽחֶם", "רֶחֶם"))
+
+    def test_a_mark_the_transcription_has_is_named(self):
+        self.assertIn("transcription has METEG", oq.describe("לָתֶת", "לָֽתֶת"))
+
+    def test_a_swapped_point_names_both_sides(self):
+        described = oq.describe("לְהָנִיחַ", "לְהַנִיחַ")
+        self.assertIn("QAMATS", described)
+        self.assertIn("PATAH", described)
+
+    def test_a_difference_in_letters_says_so_rather_than_naming_points(self):
+        self.assertIn("letters differ", oq.describe("זְרוֹעַ", "זְרוֹעוֹ"))
+
+    def test_the_description_reaches_the_queue(self):
+        self.r.page("3", "אָ רֶֽחֶם", "אָ רֶחֶם")
+        self.assertIn("differs by", oq.render(self.r.collect()))
+
+
 class TestAnswers(OpenQuestionsTest):
     def test_the_readings_own_form_means_print(self):
         self.assertEqual(oq.verdict_for("vowels:1:בָּ|בְּ", "בָּ"), cmp.PRINT)

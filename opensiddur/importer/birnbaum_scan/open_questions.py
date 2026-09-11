@@ -58,6 +58,45 @@ class Question:
         return self.difference.key
 
 
+def _marks(word: str) -> list[str]:
+    """The points on a word, named, in the order they are written."""
+    import unicodedata
+    return [unicodedata.name(c, "?").replace("HEBREW POINT ", "").replace("HEBREW ", "")
+            for c in word if unicodedata.category(c) == "Mn"]
+
+
+def describe(ours: str, theirs: str) -> str:
+    """What actually differs, said in marks rather than left to the eye.
+
+    Two pointed words differing by one meteg look identical in a list, and a reader
+    deciding twenty of them should not have to spot the difference twenty times.
+
+    Marks are counted, not merely collected: a qamats swapped for a pataḥ in a word that
+    already carries a pataḥ elsewhere is the case that matters most, and a set would
+    report only half of it. The skeleton is checked separately, because a difference in
+    letters is a different word and should never be reported as a point.
+    """
+    import unicodedata
+    from collections import Counter
+
+    def skeleton(word: str) -> str:
+        return "".join(c for c in word if unicodedata.category(c) != "Mn")
+
+    parts = []
+    if skeleton(ours) != skeleton(theirs):
+        parts.append("the letters differ, not just the points")
+    ours_marks, theirs_marks = Counter(_marks(ours)), Counter(_marks(theirs))
+    lost = ours_marks - theirs_marks
+    gained = theirs_marks - ours_marks
+    if lost:
+        parts.append(f"reading has {', '.join(sorted(lost.elements()))}")
+    if gained:
+        parts.append(f"transcription has {', '.join(sorted(gained.elements()))}")
+    if not parts:
+        parts.append("the same marks in a different order")
+    return "; ".join(parts)
+
+
 def _context(words: list[str], at: int, width: int = CONTEXT) -> str:
     start = max(0, at - width)
     return " ".join(words[start:at + width + 1])
@@ -124,6 +163,8 @@ def render(questions: list[Question]) -> str:
             lines.append(f"    context        … {q.context} …")
             lines.append(f"    reading        {d.ours}")
             lines.append(f"    transcription  {d.theirs}")
+            lines.append("")
+            lines.append(f"    differs by     {describe(d.ours, d.theirs)}")
             lines.append("")
             lines.append(f"What to look at: {WHAT_TO_LOOK_AT.get(d.bucket, d.bucket)}.")
             if not q.recorded:
