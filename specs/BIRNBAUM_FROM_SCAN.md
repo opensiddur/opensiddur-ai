@@ -321,6 +321,61 @@ nothing. `settings_undecided.yaml` declares the service and the recitation and n
 every day-dependent reading survives with its rubric; `settings_15jan_jerusalem.yaml`
 names a day and a place, and nothing conditional should survive it.
 
+## The footnote apparatus
+
+The print carries two apparatuses. *Commentary* sits at the foot of the Hebrew page, keyed
+by a Hebrew catchword set in bold, and runs across the opening: a note begun under a
+Hebrew page finishes under the facing English one. *Scripture citations* are numbered,
+keyed to superscripts, and printed on the English pages only. Both are Birnbaum's own
+statements about his book, in his introduction, and both are confirmed by every page read.
+
+They are `tei:note` in one `tei:standOff[@type="notes"]`, told apart by `@type`:
+`commentary` carries the catchword in `tei:label`, `citation` carries the printed numeral
+in `@n`. The apparatus is its own file, with a header and no `tei:text` of its own --
+valid, because `tei:standOff` is a `model.resource` exactly as `tei:text` is.
+
+### A note is keyed to the nearest canonical URN, not to an id
+
+Three ways were available, and the choice is not obvious:
+
+1. **An `xml:id` in the annotated file, with the apparatus in that same file.** This is
+   what `jps1917` and `miqra_al_pi_hamasorah` do, and it is forced rather than chosen:
+   `refdb.get_references_to` matches an `#id` target only within the one project and file
+   that declares it, so an id cannot reach across a file boundary at all. It also welds
+   the apparatus to the text, and a note set that cannot be detached cannot be exchanged.
+2. **A citation-target URN emitted at every annotatable position.** Any note could then
+   key to any position -- but the registry would have to carry the citation targets of
+   every source, which is a large permanent cost for positions most of which nothing ever
+   annotates.
+3. **The nearest canonical URN the text already carries.** Chosen.
+
+Three wins because it is the only one that lets note sources be **switched and combined
+across projects**: a second edition's commentary on the same liturgy targets the same
+URNs and drops straight in beside this one, and either can be left out. Nothing new is
+emitted for it, and nothing already generated changed when the apparatus was added.
+
+The cost is that a note is only as precisely placed as the nearest URN. Where a lemma
+falls mid-paragraph with no URN at that point, **the fix is to give that phrase a
+`tei:seg` with its own canonical URN** -- which is what the alignment of the two columns
+would want anyway -- and never to reach for an anchor.
+
+### A note is realised once, and not in both columns
+
+A note reaches its text by URN, and `refdb` matches a URN target in every project. The two
+sides of a parallel text realise the same URNs -- that is what makes them parallel -- so a
+note attached to either is found while compiling *both*, and the reader gets it twice per
+opening. Each column now drops the projects that are themselves columns; an apparatus
+project that is not a column still reaches the primary one.
+
+The apparatus is realised in the English project, as the introduction is, because the
+commentary is English prose about Hebrew words. What that gives up is real and worth
+stating: the commentary begins physically under the Hebrew page in the print, and will not
+in the rendered PDF.
+
+A note carries no URN of its own. `urn:x-opensiddur:notes:` names an apparatus *file*, so
+one edition's notes can be swapped for another's; a note is not a text, and `@target`
+already says what it annotates.
+
 ## Known defects in the parallel PDF
 
 Found by compiling this unit two-column; both are in the exporter, not in the TEI.

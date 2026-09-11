@@ -217,6 +217,25 @@ whole and does not split on whitespace, so a space-separated list would be recor
 single nonexistent URN. Correspondence to two URNs at once is expressed by nesting, not
 by listing.
 
+### Where a shared text lives is revisited as the book grows
+
+The first unit to print a text is not thereby its home. A name is chosen from what the
+text *is*, and early in a conversion the only evidence available is the one place it has
+been read so far — which is a fact about the reading order, not about the liturgy.
+
+Birnbaum's Shema is the case that shows it. The two verses were first read inside the
+run-on paragraph on printed page 1, in Shaḥarith li-Yladim, and so were first realised
+there. They belong to Keriath Shema, which this conversion has not reached. When it is
+reached, the realisation moves there and the children's page transcludes it; the URNs do
+not change, but which file *realises* them does.
+
+> **Expect to move the realisation of a shared text as later units are read. What may
+> not change under it is the URN itself, because that is what two projects join on.**
+
+This is not churn to be avoided. Leaving a text realised in the first unit that happened
+to print it would make the running order of one conversion into a claim about the
+liturgy, and every later unit would have to defer to an accident.
+
 ### Conditions belong to the context, not to the shared text
 
 Conditioning a transclusion from outside it is the established convention, not something

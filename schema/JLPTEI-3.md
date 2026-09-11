@@ -1329,6 +1329,23 @@ instruction that says when to read it, rather than silently dropping it.
 </tei:fs>
 ```
 
+Nor is who is saying it. A siddur may set one passage for a man to say and another for a
+woman, as Birnbaum's 1949 print does in two columns headed `Men say:` and `Women say:`.
+That is a fact about the person praying rather than about the day or the room, so it is
+declared, not computed, and like the quorum it has **no default**: left unset it is
+`undefined`, and both passages are kept with the rubrics that say who each is for. A
+value is a symbol rather than a pair of binaries, because the alternatives are exclusive
+and two binaries can be set both true.
+```xml
+<tei:fs type="opensiddur:person">
+   <tei:f name="gender">
+      <!-- the gender the *book* addresses its rubric to, which is a property of the
+      edition being encoded and not a claim about who may say the words. -->
+      <tei:symbol value="male"/>
+   </tei:f>
+</tei:fs>
+```
+
 Nor is which recitation of a prayer said more than once in a service this is. Every Amidah
 is said silently and then, when a minyan is present, repeated aloud: the Kedushah belongs
 to the repetition and `אַתָּה קָדוֹשׁ` to the silent one. This is independent of *which*

@@ -184,6 +184,11 @@ HOL = "opensiddur:holiday"
 SERVICE = "opensiddur:service-time"
 RECITATION = "opensiddur:recitation"
 QUORUM = "opensiddur:quorum"
+#: Who is saying it. Birnbaum sets two columns headed "Men say:" and "Women say:",
+#: which no calendar can settle -- like the quorum, it is a fact about the people
+#: praying. It takes no default, so a text compiled without knowing who will say it
+#: keeps both columns with the rubrics that say who each is for.
+PERSON = "opensiddur:person"
 
 
 def standoff_document(*, notes: str, lang: str, **kw) -> str:
