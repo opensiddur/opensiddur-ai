@@ -2125,8 +2125,12 @@
         <xsl:text>\leavevmode\\{}&#10;</xsl:text>
     </xsl:template>
 
-    <!-- tei:anchor: linkage ids only; editorial notes are already inlined in the body. -->
-    <xsl:template match="tei:anchor" mode="emit"/>
+    <!-- tei:anchor carries no text of its own, but the compiler inserts a standoff note
+         it is the target of as its child. Descend, or that note is built and then
+         silently dropped: the mark never appears and the apparatus is short by one. -->
+    <xsl:template match="tei:anchor" mode="emit">
+        <xsl:apply-templates mode="emit"/>
+    </xsl:template>
 
     <xsl:template match="tei:hi[@rend='small-caps']" mode="emit" priority="10">
         <xsl:text>\textsc{</xsl:text>

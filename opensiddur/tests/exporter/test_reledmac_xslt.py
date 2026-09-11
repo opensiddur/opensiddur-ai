@@ -706,6 +706,25 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn("commentary", out)
         self.assertNotIn(r"\footnote{", out)
 
+    def test_an_anchor_emits_the_note_the_compiler_put_inside_it(self):
+        """A standoff note reaches the text as a child of the anchor it targets.
+
+        The template for tei:anchor used to be empty, on the premise that an anchor
+        carries no text of its own. It does not, but the compiler puts the note it is
+        the target of inside it, so an empty template built the note and then dropped
+        it: no mark, and an apparatus one note short, with nothing anywhere saying so.
+        """
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>Body<tei:anchor xml:id="a1"
+              ><tei:note>from the apparatus</tei:note></tei:anchor>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn("from the apparatus", out)
+        self.assertIn(r"\Bfootnote{", out)
+
     def test_notes_can_be_collected_as_endnotes(self):
         """The apparatus series is the same; only where it is printed changes."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>

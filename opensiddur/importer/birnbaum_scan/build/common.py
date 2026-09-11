@@ -41,6 +41,9 @@ FRONT_SIGIL = "1949"
 PRAYER = "urn:x-opensiddur:text:prayer:"
 SIDDUR = "urn:x-opensiddur:text:siddur:"
 FRONT = "urn:x-opensiddur:text:front:"
+#: A note is not a text. It takes no `text:` URN -- it is addressed by what it
+#: annotates -- and `notes:` names the apparatus file itself, not anything in it.
+NOTES = "urn:x-opensiddur:notes:"
 
 
 #: IA leaf `n` is scan page `n + 1`, for the whole of this item. Fixed by how the Archive
@@ -181,3 +184,22 @@ HOL = "opensiddur:holiday"
 SERVICE = "opensiddur:service-time"
 RECITATION = "opensiddur:recitation"
 QUORUM = "opensiddur:quorum"
+
+
+def standoff_document(*, notes: str, lang: str, **kw) -> str:
+    """An apparatus file: a header and a tei:standOff, and no tei:text of its own.
+
+    Birnbaum's footnotes annotate words that live in other files, so the apparatus has no
+    text to carry. `tei:standOff` is a `model.resource` like `tei:text` is, so a document
+    may hold one without the other -- which is what lets the apparatus be its own file
+    rather than a tail on every prayer.
+
+    The notes target `@corresp` URNs, never `#id`s. `refdb.get_references_to` matches a
+    URN target across every project, and an `#id` target only within the one file that
+    declares it, so an apparatus in its own file can only reach the text by URN.
+    """
+    return (f'<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" '
+            f'xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="{lang}">\n'
+            f'{header(lang=lang, **kw)}\n'
+            f'  <tei:standOff type="notes">\n{notes}\n  </tei:standOff>\n'
+            f'</tei:TEI>\n')

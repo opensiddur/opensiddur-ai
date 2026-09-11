@@ -647,7 +647,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         primary_end = transclude_range.end.end_element_path or transclude_range.end.element_path
         include_tail = transclude_range.end.end_includes_tail
 
-        with self._parallel_sub_compilation():
+        with self._parallel_sub_compilation(), self._primary_annotations():
             primary_proc = ExternalCompilerProcessor(
                 primary_project, primary_file,
                 from_start=primary_start,
@@ -736,17 +736,50 @@ class ExternalCompilerProcessor(CompilerProcessor):
             self.linear_data.parallel_compilation_depth -= 1
 
     @contextmanager
+    def _primary_annotations(self):
+        """Drop the parallel projects' apparatus from the primary column.
+
+        A standoff note reaches its text by URN, and `refdb` matches a URN target in every
+        project, so a note is found while compiling *either* side of an opening whose two
+        sides realise the same URNs -- which is exactly what a parallel text is. Narrowing
+        the parallel column alone is not enough: the primary column still holds the
+        configured list, and where that names the facing project the note is emitted twice.
+
+        A project that is supplying a parallel column owns its notes in that column. This
+        removes only those projects, so an apparatus project that is not itself a column
+        (a commentary annotating both sides, say) still reaches the primary one.
+        """
+        saved = self.linear_data.annotation_projects
+        parallel = set(self.linear_data.parallel_projects)
+        try:
+            self.linear_data.annotation_projects = [
+                p for p in saved if p not in parallel]
+            yield
+        finally:
+            self.linear_data.annotation_projects = saved
+
+    @contextmanager
     def _parallel_priority(self, parallel_project: str):
-        """Temporarily set project_priority and instruction_priority to [parallel_project]."""
+        """Narrow every project list to [parallel_project] for one parallel column.
+
+        `annotation_projects` is narrowed for the same reason the other two are. A
+        standoff note targets a URN, and `refdb` matches a URN target in every project,
+        so a note attached to a text both sides realise is found while compiling *either*
+        column. Left wide, the apparatus is inserted into both columns and the reader
+        gets every note twice per opening.
+        """
         saved_priority = self.linear_data.project_priority
         saved_instr = self.linear_data.instruction_priority
+        saved_annotations = self.linear_data.annotation_projects
         try:
             self.linear_data.project_priority = [parallel_project]
             self.linear_data.instruction_priority = [parallel_project]
+            self.linear_data.annotation_projects = [parallel_project]
             yield
         finally:
             self.linear_data.project_priority = saved_priority
             self.linear_data.instruction_priority = saved_instr
+            self.linear_data.annotation_projects = saved_annotations
 
     def _root_correspondence_urn(self) -> Optional[str]:
         """The URN identifying this document as a whole, for parallel-column matching.
@@ -825,7 +858,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return None
         parallel_project, parallel_file = selected
 
-        with self._parallel_sub_compilation():
+        with self._parallel_sub_compilation(), self._primary_annotations():
             primary_proc = ExternalCompilerProcessor(
                 self.project, self.file_name,
                 linear_data=self.linear_data,

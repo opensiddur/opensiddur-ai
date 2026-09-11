@@ -3,12 +3,13 @@
 import argparse
 import sys
 from .common import set_project_directory
-from .common import PROJECT_EN, PRAYER, SIDDUR, FRONT, document, write, cond, endcond, feature, SERVICE, AGG
+from .common import PROJECT_EN, PRAYER, SIDDUR, FRONT, NOTES, document, standoff_document, write, cond, endcond, feature, SERVICE, AGG
 from .front import SECTIONS, front_block, section_body
 from .index import index
 from .en_prayers import PRAYERS as AMIDAH_PRAYERS
 from .en_yeladim import PRAYERS as YELADIM_PRAYERS
 from . import build_he
+from . import notes as apparatus
 
 #: Every prayer file this project writes, both units.
 PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS
@@ -19,6 +20,16 @@ BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the English side of the opening.
 EN_UNIT_PAGES = {"yeladim": (2, 2), "amidah": (82, 98)}
+
+#: Birnbaum's footnotes, one apparatus file per unit. They are written here and not in
+#: `build_he` because the commentary is English prose, as his introduction is: the
+#: English side realises it and the Hebrew reaches it by resolution. The pages named
+#: are the pages the notes were read from, which for the commentary are the *Hebrew*
+#: pages -- that is where the print sets it.
+APPARATUS = {
+    "notes_yeladim": dict(entries=apparatus.YELADIM_NOTES, slug="birnbaum_1949/yeladim",
+                          title="Notes on Shaḥarith li-Yladim", first=1, last=1),
+}
 
 
 def unit_body():
@@ -73,6 +84,13 @@ def main(argv=None):
             body=unit["body"], lang="en", title_he=unit["title_he"],
             title_en=unit["title_en"], urn=unit["urn"], project=PROJECT_EN,
             first=unit["pages"][0], last=unit["pages"][1])); n += 1
+    for name, a in APPARATUS.items():
+        if not a["entries"]:
+            continue
+        write(PROJECT_EN, name, standoff_document(
+            notes=apparatus.standoff(a["entries"]), lang="en", title_he="",
+            title_en=a["title"], urn=NOTES + a["slug"], project=PROJECT_EN,
+            first=a["first"], last=a["last"])); n += 1
     for p in PRAYERS:
         write(PROJECT_EN, p["name"], document(
             body=p["body"], lang="en", title_he="", title_en=p["title"],

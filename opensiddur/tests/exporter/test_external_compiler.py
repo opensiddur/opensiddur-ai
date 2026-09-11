@@ -1822,11 +1822,61 @@ def _linear_data_with_root_parallel(root: etree._Element):
         processing_context = [{"project": "ctx", "file_name": "ctx.xml"}]
         project_priority = ["primary"]
         instruction_priority = ["primary"]
+        annotation_projects = []
         parallel_projects = ["primary", "bad", "parallel"]
         parallel_column_order = 0
         parallel_compilation_depth = 0
 
     return _LD()
+
+
+class TestPrimaryColumnAnnotations(unittest.TestCase):
+    """The primary column of a parallel text drops the facing project's apparatus.
+
+    A standoff note reaches its text by URN, and `refdb` matches a URN target in every
+    project. The two sides of a parallel text realise the same URNs -- that is what makes
+    them parallel -- so a note attached to either is found while compiling *both*, and the
+    reader gets it twice per opening. Narrowing the parallel column alone does not fix it:
+    the primary column still holds the configured list, and the whole point of that list
+    is that it names the project carrying the apparatus.
+    """
+
+    def _processor(self, *, annotations, parallel):
+        root = etree.Element(f"{{{TEI_NS}}}TEI", nsmap={"tei": TEI_NS})
+
+        class _XmlCache:
+            @staticmethod
+            def parse_xml(project: str, file_name: str):
+                return etree.ElementTree(root)
+
+        class _LD:
+            xml_cache = _XmlCache()
+            processing_context = [{"project": "he", "file_name": "a.xml"}]
+            project_priority = ["he"]
+            instruction_priority = ["he"]
+            annotation_projects = annotations
+            parallel_projects = parallel
+            parallel_column_order = 0
+            parallel_compilation_depth = 0
+        return ExternalCompilerProcessor("he", "a.xml", linear_data=_LD())
+
+    def test_a_project_supplying_a_column_does_not_annotate_the_other_one(self):
+        proc = self._processor(annotations=["en"], parallel=["en"])
+        with proc._primary_annotations():
+            self.assertEqual(proc.linear_data.annotation_projects, [])
+
+    def test_an_apparatus_project_that_is_not_a_column_still_reaches_the_primary(self):
+        """Removing every annotation project would break commentary that annotates both
+        sides from outside. Only the projects that are themselves columns are dropped."""
+        proc = self._processor(annotations=["en", "wlc"], parallel=["en"])
+        with proc._primary_annotations():
+            self.assertEqual(proc.linear_data.annotation_projects, ["wlc"])
+
+    def test_the_configured_list_is_put_back_afterwards(self):
+        proc = self._processor(annotations=["en"], parallel=["en"])
+        with proc._primary_annotations():
+            pass
+        self.assertEqual(proc.linear_data.annotation_projects, ["en"])
 
 
 class TestExternalCompilerParallelTransclude(unittest.TestCase):

@@ -317,13 +317,17 @@ class TestBuilders(unittest.TestCase):
                 self.assertIn("chol_shacharit_amidah.xml", written)
                 self.assertIn("all_shacharit_yeladim.xml", written)
                 # index, one file per unit, one per prayer -- and, in the English
-                # project, one per front-matter section Birnbaum wrote only in English.
+                # project, one per front-matter section Birnbaum wrote only in English
+                # and one apparatus file per unit whose footnotes have been read.
                 pages = (build.EN_UNIT_PAGES if project == common.PROJECT_EN
                          else build.HE_UNIT_PAGES)
                 units = len(self.build_he.units(
                     project, pages, build.BY_NAME, build.unit_body()))
                 extra = len(front.SECTIONS) if project == common.PROJECT_EN else 0
-                self.assertEqual(len(written), len(build.PRAYERS) + 1 + units + extra)
+                apparatus = (len([a for a in build.APPARATUS.values() if a["entries"]])
+                             if project == common.PROJECT_EN else 0)
+                self.assertEqual(len(written),
+                                 len(build.PRAYERS) + 1 + units + extra + apparatus)
 
     def test_everything_written_parses_and_names_its_own_project(self):
         self.build_he.main(["--project-directory", str(self.directory)])
