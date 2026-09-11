@@ -20,17 +20,18 @@ adjudicated by going back to the page image.
 | 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
 | 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
 | 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing), 1 unresolved |
+| 7 | 162 | 0 | 0 | 8 | 0 (2 caught before committing), 6 **unadjudicated** |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 7 | 0 |
-| **total** | **479** | **0** | **8** | **15** | **0** |
+| **total** | **641** | **0** | **8** | **23** | **0** |
 
-**No misreading survives in 479 words.** But the second number in that column has grown
-faster than the first, and it is now the one that matters: **seven readings have been
-corrected before committing, all of them points, and six of the seven were caught by the
+**No misreading survives in 641 words.** But the second number in that column has grown
+faster than the first, and it is now the one that matters: **nine readings have been
+corrected before committing, all of them points, and eight of the nine were caught by the
 transcription rather than by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
-reliable *for consonants* — the skeleton has not been wrong once in 479 words. It is not
+reliable *for consonants* — the skeleton has not been wrong once in 641 words. It is not
 reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
 differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
 neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
@@ -57,6 +58,26 @@ difference is not in the table above; recording it here is the only way it is no
 lost. Four catches in 369 words is the honest error rate of this method, and it is not
 zero. It also shows the check working as designed: the transcription is not a source,
 but it is a competent second reader.
+
+## Page 7: six differences left unadjudicated, deliberately
+
+Page 7's two catches were `זְרוֹעַ` for **זְרוֹעוֹ** and, in the blessing, `לְהָנִֽיחַ`
+for **לְהַנִּֽיחַ** — the same word page 5 had to correct, so the spelling is his and
+consistent. Worth noting that the page's two occurrences are genuinely different:
+the blessing sets לְהַנִּֽיחַ and the meditation sets לְהָנִיחַ, and the transcription
+distinguishes them too. Flattening them would be a correction, not a reading.
+
+**Six differences are recorded with no verdict, and that is the honest state rather than a
+gap.** All six are meteg, a shva against a ḥataf-pataḥ, a qamats against a pataḥ, or a
+comma — the exact class this reading has repeatedly got wrong — and none was settled on the
+image in this pass. Two ways of clearing them were available and both are wrong: writing
+`print` on the strength of the first reading is what the corrections above disprove, and
+writing the transcription's side would make a check into a source. They stay open until
+someone crops them at 12x.
+
+The `unresolved` column therefore now means two different things, and the distinction
+matters: page 5's one entry is a sin dot this scan cannot settle at any magnification,
+while page 7's six are simply not yet done.
 
 ## Page 3: four differences, and three catches going the other way
 
