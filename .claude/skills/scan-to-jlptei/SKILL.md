@@ -111,6 +111,11 @@ check that silently measures nothing is worse than no check, because it is belie
   harder. Where it disagrees about a point, the presumption is a 12x crop — not that the
   reading stands. Where it flags a variant in a `{{נוסח}}` template it has been right
   every time.
+- **Do not reach for "the scan cannot settle it" when what is missing is the word.** An
+  `unresolved` verdict is a claim about the image, and it is the wrong one whenever the
+  reading follows from knowing the text: a sin dot that will not resolve in the crop is
+  still settled if the word is עָשָׂה. From inside the crop the two failure modes look
+  identical, so ask what the word is before blaming the scan.
 - **A comma read off a band at 3x is not evidence.** This print uses commas *and*
   semicolons, sometimes in one line, and at band magnification the semicolon's upper dot
   merges into the comma's body. Two of the first three misreadings on printed page 3 were

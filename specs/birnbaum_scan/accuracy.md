@@ -19,7 +19,7 @@ adjudicated by going back to the page image.
 |---|---:|---:|---:|---:|---:|
 | 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
 | 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
-| 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing), 1 unresolved |
+| 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing) |
 | 7 | 162 | 0 | 0 | 8 | 0 (2 caught before committing), 6 **unadjudicated** |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 7 | 0 |
@@ -75,9 +75,16 @@ image in this pass. Two ways of clearing them were available and both are wrong:
 writing the transcription's side would make a check into a source. They stay open until
 someone crops them at 12x.
 
-The `unresolved` column therefore now means two different things, and the distinction
-matters: page 5's one entry is a sin dot this scan cannot settle at any magnification,
-while page 7's six are simply not yet done.
+The `unresolved` column therefore carries exactly one meaning at present — **not yet
+done** — and page 7's six entries are all of it.
+
+It briefly carried a second. Page 5's שֶׂ/שׁ was recorded as undecidable, on the ground
+that the dot could not be placed at any magnification this scan supports. That was a
+statement about the scan when it should have been a question about the word: עָשָׂה takes
+a sin, so the print's reading was never in doubt and the transcription's shin is its own
+error. It is now `print`. **Worth keeping as a caution: "the image cannot settle it" is
+easy to reach for when what is actually missing is knowledge of the text, and the two
+failure modes look identical from inside the crop.**
 
 ## Page 3: four differences, and three catches going the other way
 
