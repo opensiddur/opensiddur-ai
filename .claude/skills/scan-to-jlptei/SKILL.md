@@ -18,7 +18,7 @@ document disagree, **the document wins and this file is wrong** — fix it.
 |---|---|---|
 | 1 | Fetch and cut the leaf | `python -m opensiddur.importer.birnbaum_scan.pages 81 82 83` |
 | 2 | Read the page into prose | by hand, into `readings/{printed}.md` |
-| 3 | Diff against a transcription | `python -m opensiddur.importer.birnbaum_scan.compare` |
+| 3 | Diff against a transcription | `compare` — build the slice with `transcription.resolve`, never by stripping markup |
 | 4 | Adjudicate each difference | go back to the image; record in `verdicts/{printed}.json` |
 | 5 | Author the TEI | hand-written, one function per prayer |
 | 6 | Compile and render | `exporter.compiler`, then `exporter.pdf.pdf` |
@@ -99,6 +99,57 @@ check that silently measures nothing is worse than no check, because it is belie
 - A page turn falls mid-sentence; `tei:pb` is valid inside `tei:p`.
 - Slugs are unique per foundation page, not globally.
 - Chapter and verse are separated by a colon.
+
+**Reading**
+- **A comma read off a band at 3x is not evidence.** This print uses commas *and*
+  semicolons, sometimes in one line, and at band magnification the semicolon's upper dot
+  merges into the comma's body. Two of the first three misreadings on printed page 3 were
+  exactly this. Where punctuation carries a sense break, crop it and look at 12x.
+- **The same goes for a dagesh in a wide letter.** A mem or a bet with nothing in it reads
+  at 3x much like one with a point, and a neighbouring letter's dagesh is easily annexed
+  to it. Page 3's third catch was a dagesh in מאד that is not there; what looked like it
+  belonged to the tav of the word before.
+- **Lift the Hebrew as paragraphs, not as printed lines.** `compare` counts a line break
+  against a space as a whitespace difference, so a `hebrew/{printed}.txt` that preserves
+  the print's line wrapping reports a difference per line and buries the real ones. The
+  print's lineation belongs in `readings/`, which is prose about the page, not in the
+  slice being diffed.
+- **Correct the reading before committing it, and say so in `accuracy.md`.** A difference
+  the image settles *for the transcription* vanishes from the tally once the reading is
+  fixed, so the tally alone will always report zero misreadings. The prose is the only
+  place the method's real error rate survives.
+
+**The transcription**
+- **Resolve `{{נוסח}}`; never strip it.** The Wikisource foundation text marks the places
+  its editors knew the print differs from what they set, and names Birnbaum's own reading
+  in the template. Stripping it as markup throws away precisely what the comparison is
+  for, *and* manufactures differences: a stripped template reads as a word the
+  transcription dropped. Use
+  `opensiddur.importer.birnbaum_scan.transcription.resolve`.
+- **One of the four conventions inverts.** `{{נוסח|X|=בירנבוים|אחרים=Y}}` and
+  `{{נוסח|X|=בירנבוים ועבו"י|אחרים=Y}}` make **X** the reading and `אחרים=` the variant.
+  A rule that simply prefers a `בירנבוים=` parameter takes the wrong side of every one of
+  them.
+- **A `בירנבוים=` value is not always a word.** At least one is a sentence about how he
+  sets two Torah portions. Substituting it drops a line of Hebrew prose into the middle of
+  a prayer, where the diff then reports it as the print's own words.
+
+**The apparatus**
+- **A note keys to the nearest canonical URN.** An `#id` target resolves only inside the
+  one file that declares it — `refdb.get_references_to` scopes id lookups by project *and*
+  file name — so an apparatus in its own file can reach the text only by URN. That is also
+  what lets one edition's notes be swapped or combined with another's.
+- **Where the lemma falls mid-paragraph, give the phrase a `tei:seg` with its own URN.**
+  Never reach for a `tei:anchor` to place a note more precisely; the seg is what the
+  alignment of the two columns wants anyway.
+- **Set `annotations:` in the settings, or no standoff note exists.** It defaults to
+  empty, and an unset apparatus is not an error — the compile simply comes out with no
+  notes and says nothing about it.
+- **A note attached to a parallel text is found while compiling both columns.** Both sides
+  realise the same URNs, which is what makes them parallel, so the apparatus prints twice
+  per opening unless each column drops the projects that are themselves columns. Narrowing
+  only the facing column does not fix it: the primary column still holds the configured
+  list, and naming the apparatus project is that list's whole purpose.
 
 **Attribution**
 - The reading is ours. A transcription used as a check is not a source, and the people who
