@@ -19,14 +19,35 @@ adjudicated by going back to the page image.
 |---|---:|---:|---:|---:|---:|
 | 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
 | 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
+| 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing), 1 unresolved |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 7 | 0 |
-| **total** | **369** | **0** | **8** | **12** | **0** |
+| **total** | **479** | **0** | **8** | **15** | **0** |
 
-**No misreading survives in 369 words**, and every difference that does is the
-transcription departing from the print. Reading pointed Hebrew off a 1541 px scan, in
-enlarged bands, is reliable — the 4x crop is doing the work, and the band upscaling does
-not need raising.
+**No misreading survives in 479 words.** But the second number in that column has grown
+faster than the first, and it is now the one that matters: **seven readings have been
+corrected before committing, all of them points, and six of the seven were caught by the
+transcription rather than by looking harder.**
+
+That revises what the first three pages concluded. Reading this scan in enlarged bands is
+reliable *for consonants* — the skeleton has not been wrong once in 479 words. It is not
+reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
+differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
+neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
+read as a qamats, and a defective spelling read where the print is plene.
+
+So the transcription is not a formality to be run after the reading is finished. **It is
+the instrument that finds the pointing errors**, and where it disagrees the presumption
+should be that it is worth a 12x crop, not that the reading stands. Where it flags a
+variant in a `{{נוסח}}` template it has been right every time so far: both of page 5's
+tefillin readings were templates naming Birnbaum's own spelling, and both times the
+reading was wrong and the template was right.
+
+**This bears on pages 81-97, which were read the same way before any of it was known.**
+Page 83's seven vowel differences were all adjudicated for the print, and page 81's
+thirty-nine words produced none at all. Those verdicts were reached at band magnification.
+They should be re-checked at 12x before the Amidah is treated as settled; that re-check is
+not part of this pass and has not been done.
 
 But page 1 is the first page on which the check earned its keep in the other direction.
 The first draft of the reading had `יָחֹֽלוּ` where the transcription had `יָחֻֽלוּ`; going

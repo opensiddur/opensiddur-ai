@@ -101,6 +101,16 @@ check that silently measures nothing is worse than no check, because it is belie
 - Chapter and verse are separated by a colon.
 
 **Reading**
+- **Bands are reliable for consonants and not for points.** In the first 479 words the
+  consonantal skeleton was never once wrong, and seven readings of the *pointing* had to
+  be corrected before committing. At 3x a semicolon and a comma are one mark, a patach and
+  a qamats differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot the
+  neighbouring letter can lend it.
+- **So the transcription is the instrument that finds pointing errors, not a formality
+  run afterwards.** Six of those seven were caught by the diff rather than by looking
+  harder. Where it disagrees about a point, the presumption is a 12x crop — not that the
+  reading stands. Where it flags a variant in a `{{נוסח}}` template it has been right
+  every time.
 - **A comma read off a band at 3x is not evidence.** This print uses commas *and*
   semicolons, sometimes in one line, and at band magnification the semicolon's upper dot
   merges into the comma's body. Two of the first three misreadings on printed page 3 were
