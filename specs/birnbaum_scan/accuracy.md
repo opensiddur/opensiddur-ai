@@ -87,6 +87,24 @@ ten corrections are in the same position. Until a verdict file can say *this was
 and here is what it was*, the error rate of this method is prose, and prose is not
 checkable.
 
+## Open: whether the meditation's לְהַנִֽיחַ carries a dagesh
+
+**Contested, and the text currently follows the editor.** Printed page 7 sets the word twice
+— once in the tefillin meditation and once in the blessing. The blessing is recorded with a
+dagesh in the nun, the meditation without one, and this file previously treated that
+difference as a finding.
+
+A blind second reader put on the meditation instance reported a dagesh in **both**, and
+called them the same word. Measuring the coordinates it gave: an isolated ink blob sits
+inside the letter in each instance, at min gray 76 and 57 against blank paper at 252 and a
+known ink stroke at 79, alike in size and shape and clearly separate from the strokes
+around them.
+
+So the evidence on the scan favours a dagesh in both, and the reading as it stands does not
+have one in the meditation. It has been left as the editor answered rather than changed on
+a machine's say-so; if the dagesh is right, the claim that the two occurrences differ comes
+out of `readings/7.md` and out of this file with it.
+
 ## Corrections are data now, not prose
 
 `corrections.jsonl` records every reading corrected so far -- what it was, what the print

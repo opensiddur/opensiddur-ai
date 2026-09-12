@@ -134,6 +134,28 @@ check that silently measures nothing is worse than no check, because it is belie
   fixed, so the tally alone will always report zero misreadings. The prose is the only
   place the method's real error rate survives.
 
+**A second reader**
+- **The diff can only surface a disagreement, never a shared error.** Where the reading
+  and the transcription are wrong in the same way, nothing in the comparison fires and the
+  page looks settled. Both of the worst errors found on this book so far were of that kind,
+  and neither could have come out of `compare`.
+- **A blind second reader is the only thing that finds them.** Put a fresh agent on the
+  page image with the two candidates and tell it plainly that both may be wrong. Asked that
+  way it has returned "neither", correctly, on a word where the reading and the
+  transcription agreed with each other and the print disagreed with both.
+- **Its prose is not evidence, even when its answer is right.** Of fourteen justifications
+  checked, one invented a corroborating detail outright — a "reddish ink cast" on the ink,
+  where measurement puts ink and blank paper at the same R−B — and one described the right
+  feature in the wrong place. Verify every claim that would change a file: crop the
+  coordinates it gives, or measure the pixels it cites.
+- **A high score on an easy page proves nothing.** A page whose answers follow from knowing
+  Biblical Hebrew — metegs in stress positions, `אֶל־מֹשֶׁה` taking a maqqef — can be
+  answered perfectly without reading the image at all. Test a second reader on a question
+  where both candidates are wrong; that is the only kind that separates reading from
+  priors.
+- **Never let it decide.** Use it to triage and to escalate: it says "neither", it claims
+  an absence, or it disagrees with the reading. Those three go to a person.
+
 **The transcription**
 - **Resolve `{{נוסח}}`; never strip it.** The Wikisource foundation text marks the places
   its editors knew the print differs from what they set, and names Birnbaum's own reading
