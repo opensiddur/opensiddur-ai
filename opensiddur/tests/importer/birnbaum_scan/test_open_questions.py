@@ -119,6 +119,14 @@ class TestAnswers(OpenQuestionsTest):
     def test_a_verdict_word_is_taken_as_written(self):
         self.assertEqual(oq.verdict_for("vowels:1:בָּ|בְּ", "print"), cmp.PRINT)
 
+    def test_a_whitespace_answer_works_quoted_or_bare(self):
+        """The queue shows whitespace candidates quoted, because a bare space is
+        invisible. Nobody should have to type the quotes back."""
+        key = "whitespace:1:' '|'־'"
+        self.assertEqual(oq.verdict_for(key, "'־'"), cmp.READING)
+        self.assertEqual(oq.verdict_for(key, "־"), cmp.READING)
+        self.assertEqual(oq.verdict_for(key, "' '"), cmp.PRINT)
+
     def test_a_form_that_is_neither_is_refused_rather_than_guessed(self):
         """Both readings are in the key, so an answer can be checked instead of trusted."""
         with self.assertRaises(ValueError):

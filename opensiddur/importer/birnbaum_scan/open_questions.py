@@ -194,14 +194,22 @@ def verdict_for(key: str, answer: str) -> str:
     A key is `bucket:at:ours|theirs`, so the two readings are in the key itself and an
     answer can be checked against them rather than trusted.
     """
+    def unquote(value: str) -> str:
+        """A whitespace candidate is shown quoted, because a bare space is invisible.
+        Accept it either way rather than making someone type the quotes back."""
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] == "'":
+            return value[1:-1]
+        return value
+
     answer = answer.strip()
     if answer in cmp.VERDICTS:
         return answer
     _, _, forms = key.split(":", 2)
     ours, _, theirs = forms.partition("|")
-    if answer == ours:
+    if answer == ours or unquote(answer) == unquote(ours):
         return cmp.PRINT
-    if answer == theirs:
+    if answer == theirs or unquote(answer) == unquote(theirs):
         return cmp.READING
     raise ValueError(
         f"answer {answer!r} is neither reading ({ours!r}) nor transcription ({theirs!r}) "

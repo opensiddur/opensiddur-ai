@@ -12,3 +12,6 @@
 {"page": "7", "was": "יִתְגָּרֶה", "is": "יִתְגָּֽרֶה", "kind": "meteg", "settled_by": "editor", "found_by": "open question 7.3", "before_commit": true}
 {"page": "7", "was": "וְקָמָי;", "is": "וְקָמַי;", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.4", "before_commit": true}
 {"page": "83", "was": "יֹאמֵֽרוּ—", "is": "יֹאמֵֽרוּ–", "kind": "punctuation", "settled_by": "editor", "found_by": "transcription", "before_commit": false, "note": "em dash for en dash; the first correction to an already-merged page"}
+{"page": "9", "was": "לָתֶת", "is": "לָֽתֶת", "kind": "meteg", "settled_by": "editor", "found_by": "open question 9.2", "before_commit": true}
+{"page": "9", "was": "לַיְיָ.", "is": "לַייָ.", "kind": "vowels", "settled_by": "editor", "found_by": "open question 9.3", "before_commit": true}
+{"page": "9", "was": "אֶל מֹשֶׁה", "is": "אֶל־מֹשֶׁה", "kind": "maqqef", "settled_by": "editor", "found_by": "open question 9.12", "before_commit": true}
