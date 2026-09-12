@@ -124,6 +124,12 @@ check that silently measures nothing is worse than no check, because it is belie
   at 3x much like one with a point, and a neighbouring letter's dagesh is easily annexed
   to it. Page 3's third catch was a dagesh in מאד that is not there; what looked like it
   belonged to the tav of the word before.
+- **In verse, the lineation *is* the text.** The rule below is for prose. A poem's lines
+  are its structure — Birnbaum's own footnote says Adon Olam "is composed of ten lines" —
+  so keep them, and settle the whitespace differences they produce as `print` rather than
+  carrying them to a person. Where such a poem is set in two columns, the columns are the
+  two halves of one line: splitting on the column would give twenty lines and contradict
+  the book's statement about itself.
 - **Lift the Hebrew as paragraphs, not as printed lines.** `compare` counts a line break
   against a space as a whitespace difference, so a `hebrew/{printed}.txt` that preserves
   the print's line wrapping reports a difference per line and buries the real ones. The

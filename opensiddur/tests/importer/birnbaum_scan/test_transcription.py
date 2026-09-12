@@ -59,6 +59,17 @@ class TestMarkupStripping(unittest.TestCase):
         self.assertNotIn("<", out)
         self.assertNotIn("'", out)
 
+    def test_removed_markup_leaves_a_word_boundary(self):
+        """A tag between two words is a boundary. Deleting it outright joins them into
+        one token, which `compare` reports as two consonantal differences, and the
+        misalignment cascades through the rest of the page."""
+        out = transcription.strip_markup("לְרֵאשִׁיתוֹ.<קטע סוף=א/><קטע התחלה=ב/>הִנּוֹ")
+        self.assertEqual(out.split(), ["לְרֵאשִׁיתוֹ.", "הִנּוֹ"])
+
+    def test_a_removed_transclusion_also_leaves_a_boundary(self):
+        out = transcription.strip_markup("אָ{{#קטע:א/ב|ג}}בּ")
+        self.assertEqual(out.split(), ["אָ", "בּ"])
+
     def test_a_piped_link_keeps_what_was_displayed(self):
         self.assertEqual(transcription.strip_markup("[[a/b#c|תהלים לו]]"), "תהלים לו")
 

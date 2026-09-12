@@ -95,11 +95,16 @@ def strip_markup(text: str) -> str:
     `compare` tokenises whatever it is given and would count a stray brace as a word, so
     nothing may survive here but the text and its separators.
     """
-    text = re.sub(r"\{\{#קטע:[^}]*\}\}", "", text)
+    # Removed markup leaves a space, never nothing. A `<קטע סוף=.../>` between two words
+    # is a boundary, and deleting it outright joins them into one token -- which `compare`
+    # then reports as two consonantal differences, and the misalignment cascades through
+    # everything after it. One missing space produced twenty-five phantom differences on
+    # printed page 11 before this was found.
+    text = re.sub(r"\{\{#קטע:[^}]*\}\}", " ", text)
     text = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", text)
     text = re.sub(r"\[\[([^\]]*)\]\]", r"\1", text)
-    text = re.sub(r"\{\{[^{}]*\}\}", "", text)
-    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"\{\{[^{}]*\}\}", " ", text)
+    text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"'{2,}", "", text)
     return re.sub(r"[ \t]+", " ", text).strip()
 
