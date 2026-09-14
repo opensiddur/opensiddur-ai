@@ -283,3 +283,12 @@
 {"urn": "urn:x-opensiddur:text:prayer:yeladim", "status": "canonical", "label_he": "לִילָדִים", "label_en": "Texts the book prints for children, in the form it prints for them"}
 {"urn": "urn:x-opensiddur:text:prayer:yeladim/elohai_netzor", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yeladim", "label_he": "אֱלֹהַי נְצֹר", "label_en": "The abridged meditation printed for children; not amidah/elohai_netzor, which is a longer text"}
 {"urn": "urn:x-opensiddur:text:prayer:yishtabach", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:mah_tovu", "status": "canonical", "label_en": "Mah Tovu", "label_he": "מַה טֹּֽבוּ"}
+{"urn": "urn:x-opensiddur:text:prayer:mah_tovu/mah_tovu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:mah_tovu", "label_en": "How goodly are your tents (Numbers 24:5)"}
+{"urn": "urn:x-opensiddur:text:prayer:mah_tovu/varani", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:mah_tovu", "label_en": "By thy abundant grace (Psalms 5:8; 26:8; 95:6; 69:14)"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith", "status": "canonical", "label_en": "Putting on the tallith", "label_he": "סֵֽדֶר עֲטִיפַת טַלִּית"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/barkhi_nafshi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Bless the Lord, O my soul (Psalm 104:1-2)"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/hineni_mitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "I am enwrapping myself", "label_he": "הִנְנִי מִתְעַטֵּף"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/lehitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Blessing over wrapping in the tallith"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/mah_yakar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "How precious is thy kindness (Psalm 36:8-11)"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "May it be thy will, after wrapping"}

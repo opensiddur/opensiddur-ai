@@ -36,6 +36,7 @@ IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerB
 #: its own sigil once, at import, so no call site carries it.
 SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
 SIGIL_YELADIM = "1949 all/shacharit/yeladim"
+SIGIL_BIRCHOT = "1949 chol/shacharit/birchot_hashachar"
 FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
@@ -56,7 +57,7 @@ LEAF_OFFSET = -1
 #: The +25 offset in fact holds for every numbered page in the book. The table is kept to
 #: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
 #: deep-linking a leaf nobody has looked at.
-SCAN_PAGE = {p: p + 25 for p in (*range(1, 3), *range(81, 99))}
+SCAN_PAGE = {p: p + 25 for p in (*range(1, 21), *range(81, 99))}
 
 
 def leaf(page) -> int:

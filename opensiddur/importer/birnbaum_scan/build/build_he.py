@@ -9,9 +9,10 @@ from .front import SECTIONS, front_block, section_body
 from .index import index
 from .he_prayers import PRAYERS as AMIDAH_PRAYERS
 from .he_yeladim import PRAYERS as YELADIM_PRAYERS
+from .he_tallith import PRAYERS as TALLITH_PRAYERS
 
 #: Every prayer file this project writes, both units.
-PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS
+PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
 
 U, S = PRAYER, SIDDUR
 
@@ -78,6 +79,59 @@ def unit_body_yeladim(head, by_name):
     return "\n".join(lines)
 
 
+#: The rubrics of printed pages 3 and 5, in the order the pages set them. English on the
+#: Hebrew page as well as the English one, as everywhere in this book, so both projects
+#: emit them identically. `tallith` is marked foreign in both: the Hebrew page sets it
+#: italic against a roman rubric and the English page sets it inside an already-italic
+#: one, which is the same intent realised twice and belongs to typography, not to the URN.
+TALLITH = '<tei:foreign xml:lang="he-Latn">tallith</tei:foreign>'
+BIRCHOT_RUBRICS = (
+    ("Upon entering the synagogue:", ["birchot_mah_tovu"]),
+    (f"Before putting on the {TALLITH}:",
+     ["tallith_barkhi_nafshi", "tallith_hineni_mitatef"]),
+    (f"When putting on the {TALLITH}:", ["tallith_lehitatef"]),
+)
+
+#: The source citation over Psalm 36:8-11, which the two sides punctuate differently: the
+#: Hebrew page separates chapter from verse with a comma and the English page with a
+#: colon. Both are his, and the separator belongs to the language the citation is set in.
+BIRCHOT_CITATION = {
+    PROJECT_HE: '        <tei:head xml:lang="he">תהלים לו, ח–יא</tei:head>',
+    PROJECT_EN: '        <tei:head xml:lang="en">Psalm 36:8-11</tei:head>',
+}
+
+#: Hebrew on the Hebrew page, English on the English one -- as the children's unit heads
+#: are, and unlike the Amidah, which heads both sides in English.
+BIRCHOT_HEAD = {
+    PROJECT_HE: '        <tei:head xml:lang="he">בִּרְכוֹת הַשַּֽׁחַר</tei:head>',
+    PROJECT_EN: '        <tei:head xml:lang="en">PRELIMINARY MORNING SERVICE</tei:head>',
+}
+
+#: The tallith order's own heading, under the section heading.
+TALLITH_HEAD = {
+    PROJECT_HE: '        <tei:head xml:lang="he">סֵֽדֶר עֲטִיפַת טַלִּית</tei:head>',
+    PROJECT_EN: '        <tei:head xml:lang="en">PUTTING ON THE TALLITH</tei:head>',
+}
+
+
+def unit_body_birchot(project, by_name):
+    """Birkhoth ha-Shaḥar, as far as it has been read: Mah Tovu and the tallith order."""
+    lines = [f'      <tei:div corresp="{S}chol/shacharit/birchot_hashachar">',
+             declaration(), BIRCHOT_HEAD[project]]
+    for n, (note, names) in enumerate(BIRCHOT_RUBRICS):
+        if n == 1:                      # the tallith order opens with its own heading
+            lines.append(TALLITH_HEAD[project])
+        lines.append(f'        <tei:note type="instruction" xml:lang="en">{note}</tei:note>')
+        for name in names:
+            lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+    lines.append(BIRCHOT_CITATION[project])
+    for name in ("tallith_mah_yakar", "tallith_yehi_ratzon"):
+        lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+    lines.append('        <j:endDeclare target="#unit_service"/>')
+    lines.append("      </tei:div>")
+    return "\n".join(lines)
+
+
 #: The book's running order: the children's page is printed first, and comes first here.
 #: Each entry is what write() needs to put one unit file on disk. Both projects build
 #: their units from this one function, so a unit cannot exist on one side only.
@@ -92,6 +146,10 @@ def units(project, pages, by_name, amidah_body):
              body=unit_body_yeladim(YELADIM_HEAD[project], by_name),
              title_he="שַׁחֲרִית לִילָדִים", title_en="Morning prayer for children",
              urn=f"{S}all/shacharit/yeladim", pages=pages["yeladim"]),
+        dict(name="chol_shacharit_birchot_hashachar",
+             body=unit_body_birchot(project, by_name),
+             title_he="בִּרְכוֹת הַשַּֽׁחַר", title_en="Preliminary morning service",
+             urn=f"{S}chol/shacharit/birchot_hashachar", pages=pages["birchot"]),
         dict(name="chol_shacharit_amidah", body=amidah_body,
              title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",
              title_en="The weekday morning Amidah",
@@ -119,7 +177,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 5), "amidah": (81, 97)}
 
 
 def unit_body():

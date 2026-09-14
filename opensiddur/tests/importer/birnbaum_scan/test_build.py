@@ -277,16 +277,59 @@ class TestUnitAssembly(unittest.TestCase):
         self.assertEqual(targets(self.build_he), targets(self.build_en))
 
     def test_the_two_projects_hold_the_same_units_in_the_book_s_order(self):
-        """Printed pages 1-2 come before 81-97, and a unit cannot exist on one side only."""
+        """The units stand in the order the book prints them, and a unit cannot exist on
+        one side only. Printed pages 1-2, then 3-48, then 81-97."""
         def names(build, project, pages):
             return [u["name"] for u in self.build_he.units(
                 project, pages, build.BY_NAME, build.unit_body())]
 
-        expected = ["all_shacharit_yeladim", "chol_shacharit_amidah"]
+        expected = ["all_shacharit_yeladim", "chol_shacharit_birchot_hashachar",
+                    "chol_shacharit_amidah"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(
             names(self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES), expected)
+
+
+class TestTheTallithSubUnit(unittest.TestCase):
+    """Mah Tovu is one paragraph in Hebrew and two in English.
+
+    The two sides join on exact URN equality, so a parting made on one side and not the
+    other pairs the columns at the top of the passage and lets them drift through the
+    rest. These check that the parting is named on both sides while each side keeps the
+    paragraphing the print gives it.
+    """
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan.build import he_tallith, en_tallith
+        self.he = {p["name"]: p for p in he_tallith.PRAYERS}
+        self.en = {p["name"]: p for p in en_tallith.PRAYERS}
+
+    def test_both_sides_carry_the_same_prayers_under_the_same_urns(self):
+        self.assertEqual(sorted(self.he), sorted(self.en))
+        for name in self.he:
+            self.assertEqual(self.he[name]["urn"], self.en[name]["urn"], name)
+
+    def test_the_mah_tovu_parting_is_named_on_both_sides(self):
+        for side in (self.he, self.en):
+            body = side["birchot_mah_tovu"]["body"]
+            self.assertIn("mah_tovu/mah_tovu", body)
+            self.assertIn("mah_tovu/varani", body)
+
+    def test_the_hebrew_keeps_one_paragraph_and_the_english_two(self):
+        """The parting must not be bought by reflowing either side."""
+        self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:p>"), 1)
+        self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:seg "), 2)
+        self.assertEqual(self.en["birchot_mah_tovu"]["body"].count("<tei:p "), 2)
+        self.assertNotIn("<tei:seg ", self.en["birchot_mah_tovu"]["body"])
+
+    def test_every_page_break_belongs_to_this_unit(self):
+        from opensiddur.importer.birnbaum_scan.build import common
+        for side in (self.he, self.en):
+            for name, prayer in side.items():
+                for line in prayer["body"].splitlines():
+                    if "tei:pb" in line:
+                        self.assertIn(common.SIGIL_BIRCHOT, line, name)
 
 
 class TestBuilders(unittest.TestCase):
