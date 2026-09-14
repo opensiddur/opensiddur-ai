@@ -10,9 +10,10 @@ from .index import index
 from .he_prayers import PRAYERS as AMIDAH_PRAYERS
 from .he_yeladim import PRAYERS as YELADIM_PRAYERS
 from .he_tallith import PRAYERS as TALLITH_PRAYERS
+from .he_tefillin import PRAYERS as TEFILLIN_PRAYERS
 
 #: Every prayer file this project writes, both units.
-PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
+PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS + TEFILLIN_PRAYERS
 
 U, S = PRAYER, SIDDUR
 
@@ -177,7 +178,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 5), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 11), "amidah": (81, 97)}
 
 
 def unit_body():

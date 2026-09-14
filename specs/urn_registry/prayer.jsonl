@@ -292,3 +292,11 @@
 {"urn": "urn:x-opensiddur:text:prayer:tallith/lehitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Blessing over wrapping in the tallith"}
 {"urn": "urn:x-opensiddur:text:prayer:tallith/mah_yakar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "How precious is thy kindness (Psalm 36:8-11)"}
 {"urn": "urn:x-opensiddur:text:prayer:tallith/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "May it be thy will, after wrapping"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin", "status": "canonical", "label_en": "Putting on the tefillin", "label_he": "סֵֽדֶר הַנָּחַת תְּפִלִּין"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Meditation before putting on the tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/lehaniach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Blessing over binding the tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/al_mitzvat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Blessing over the precept of tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/umechokhmatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Supreme God, thou wilt imbue me"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/verastikh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "I will betroth you to myself (Hosea 2:21-22)"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "May it be thy will, after putting on the tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/parashiyot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "The four sections of the tefillin (Exodus 13:1-16)"}
