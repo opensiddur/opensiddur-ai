@@ -40,6 +40,18 @@ class TestVariantResolution(unittest.TestCase):
         self.assertEqual(r.text, "וְהָיָה")
         self.assertEqual(len(r.comments), 1)
 
+    def test_a_short_note_is_not_mistaken_for_a_reading(self):
+        """A four-word Hebrew sentence saying a full stop is missing passed the word cap
+        and was substituted into the middle of a blessing. A variant replaces the text it
+        is given against, so it is about as long as that text."""
+        r = transcription.resolve("{{נוסח|תּוֹרָה.|בירנבוים=חסרה נקודה בסוף המשפט}}")
+        self.assertEqual(r.text, "תּוֹרָה.")
+        self.assertEqual(len(r.comments), 1)
+
+    def test_a_two_word_variant_on_a_two_word_positional_is_still_a_reading(self):
+        r = transcription.resolve("{{נוסח|אָ בּ|בירנבוים=גּ דּ}}")
+        self.assertEqual(r.text, "גּ דּ")
+
     def test_a_template_with_no_birnbaum_parameter_keeps_its_positional(self):
         r = transcription.resolve("{{נוסח|שָׁלוֹם|אחרים=שָׁלֹם}}")
         self.assertEqual(r.text, "שָׁלוֹם")

@@ -62,10 +62,21 @@ def _split_params(body: str) -> tuple[str, dict[str, str], str]:
     return positional, named, attribution
 
 
-def _is_reading(value: str) -> bool:
-    return (bool(value)
-            and len(value.split()) <= MAX_READING_WORDS
-            and bool(READING.match(value)))
+def _is_reading(value: str, positional: str = "") -> bool:
+    """Whether a parameter is a variant reading or a note about one.
+
+    A variant replaces the text it is given against, so it is about as long. The word
+    cap alone is not enough: a four-word Hebrew sentence saying a full stop is missing
+    passed it, and was substituted into the middle of a blessing as though the print
+    said it.
+    """
+    if not value or not READING.match(value):
+        return False
+    if len(value.split()) > MAX_READING_WORDS:
+        return False
+    if positional and len(value.split()) > len(positional.split()) + 1:
+        return False
+    return True
 
 
 def resolve(text: str) -> Resolution:
@@ -79,7 +90,7 @@ def resolve(text: str) -> Resolution:
         value = named.get(BIRNBAUM)
         if value is None:
             return positional
-        if not _is_reading(value):
+        if not _is_reading(value, positional):
             result.comments.append(value)
             return positional
         if value != positional:
