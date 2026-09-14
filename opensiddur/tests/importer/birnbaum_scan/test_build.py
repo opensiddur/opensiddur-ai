@@ -332,6 +332,52 @@ class TestTheTallithSubUnit(unittest.TestCase):
                         self.assertIn(common.SIGIL_BIRCHOT, line, name)
 
 
+class TestThePoems(unittest.TestCase):
+    """Adon Olam and Yigdal are set two ways and are the same poem.
+
+    The Hebrew page sets each line of verse as two hemistichs in two columns; the English
+    sets it as two stacked lines in one. Birnbaum's footnote says ten lines and thirteen,
+    and both sides give that, so each `tei:l` holds a whole line on both sides.
+    """
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan.build import he_poems, en_poems
+        self.he = {p["name"]: p for p in he_poems.PRAYERS}
+        self.en = {p["name"]: p for p in en_poems.PRAYERS}
+
+    def _lines(self, body):
+        return body.count("<tei:l>") + body.count("<tei:l ")
+
+    def test_both_sides_give_the_number_of_lines_the_footnote_claims(self):
+        for side in (self.he, self.en):
+            self.assertEqual(self._lines(side["poem_adon_olam"]["body"]), 10)
+            self.assertEqual(self._lines(side["poem_yigdal"]["body"]), 13)
+
+    def test_the_two_sides_carry_the_same_urns(self):
+        self.assertEqual(sorted(p["urn"] for p in self.he.values()),
+                         sorted(p["urn"] for p in self.en.values()))
+
+    def test_the_poems_take_the_poem_namespace_not_the_prayer_one(self):
+        for side in (self.he, self.en):
+            for prayer in side.values():
+                self.assertIn(":poem:", prayer["urn"])
+
+    def test_only_the_english_numbers_yigdal(self):
+        """The numerals are the print's, on one side only, and are not words in the text.
+
+        Asserted on the *lines* rather than on any `@n` in the body: `tei:pb` carries the
+        printed page number in `@n` too, so a bare search finds the page break and says
+        the Hebrew numbers its lines when it does not.
+        """
+        self.assertEqual(self.en["poem_yigdal"]["body"].count('<tei:l n="'), 13)
+        self.assertEqual(self.he["poem_yigdal"]["body"].count('<tei:l n="'), 0)
+
+    def test_yigdal_breaks_over_the_page_on_both_sides(self):
+        for side in (self.he, self.en):
+            self.assertIn("tei:pb", side["poem_yigdal"]["body"])
+            self.assertNotIn("tei:pb", side["poem_adon_olam"]["body"])
+
+
 class TestBuilders(unittest.TestCase):
 
     def setUp(self):

@@ -11,9 +11,11 @@ from .he_prayers import PRAYERS as AMIDAH_PRAYERS
 from .he_yeladim import PRAYERS as YELADIM_PRAYERS
 from .he_tallith import PRAYERS as TALLITH_PRAYERS
 from .he_tefillin import PRAYERS as TEFILLIN_PRAYERS
+from .he_poems import PRAYERS as POEM_PRAYERS
 
 #: Every prayer file this project writes, both units.
-PRAYERS = AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS + TEFILLIN_PRAYERS
+PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
+           + TEFILLIN_PRAYERS + POEM_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -93,6 +95,23 @@ BIRCHOT_RUBRICS = (
     (f"When putting on the {TALLITH}:", ["tallith_lehitatef"]),
 )
 
+#: The tefillin order's heading and rubrics, printed pages 5-11 against 6-12. Barukh Shem
+#: is transcluded from the children's unit rather than re-emitted: the same words wherever
+#: the book prints them, and refdb refuses a text URN mapped twice in one project.
+TEFILLIN_HEAD = {
+    PROJECT_HE: '        <tei:head xml:lang="he">סֵֽדֶר הַנָּחַת תְּפִלִּין</tei:head>',
+    PROJECT_EN: '        <tei:head xml:lang="en">PUTTING ON THE TEFILLIN</tei:head>',
+}
+TEFILLIN_RUBRICS = (
+    ("Meditation before putting on the tefillin", ["tefillin_hineni_mekhaven"]),
+    ("When placing the tefillin on the left arm:", ["tefillin_lehaniach"]),
+    ("When placing the tefillin on the forehead:", ["tefillin_al_mitzvat"]),
+    ("", ["tefillin_umechokhmatkha"]),
+    ("When winding the retsuah three times round the middle finger:",
+     ["tefillin_verastikh"]),
+    ("", ["tefillin_yehi_ratzon", "tefillin_parashiyot"]),
+)
+
 #: The source citation over Psalm 36:8-11, which the two sides punctuate differently: the
 #: Hebrew page separates chapter from verse with a comma and the English page with a
 #: colon. Both are his, and the separator belongs to the language the citation is set in.
@@ -115,6 +134,15 @@ TALLITH_HEAD = {
 }
 
 
+#: The poems are headed on the English page and not on the Hebrew one -- the sharpest
+#: asymmetry in this unit. An empty string on the Hebrew side is the encoding saying so.
+POEM_HEADS = {
+    PROJECT_HE: ("", ""),
+    PROJECT_EN: ('        <tei:head xml:lang="en">ADON OLAM</tei:head>',
+                 '        <tei:head xml:lang="en">YIGDAL</tei:head>'),
+}
+
+
 def unit_body_birchot(project, by_name):
     """Birkhoth ha-Shaḥar, as far as it has been read: Mah Tovu and the tallith order."""
     lines = [f'      <tei:div corresp="{S}chol/shacharit/birchot_hashachar">',
@@ -127,6 +155,17 @@ def unit_body_birchot(project, by_name):
             lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
     lines.append(BIRCHOT_CITATION[project])
     for name in ("tallith_mah_yakar", "tallith_yehi_ratzon"):
+        lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+    lines.append(TEFILLIN_HEAD[project])
+    for note, names in TEFILLIN_RUBRICS:
+        if note:
+            lines.append(f'        <tei:note type="instruction" xml:lang="en">{note}</tei:note>')
+        for name in names:
+            lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+    adon, yigdal = POEM_HEADS[project]
+    for head, name in ((adon, "poem_adon_olam"), (yigdal, "poem_yigdal")):
+        if head:
+            lines.append(head)
         lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
     lines.append('        <j:endDeclare target="#unit_service"/>')
     lines.append("      </tei:div>")
@@ -178,7 +217,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 11), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 13), "amidah": (81, 97)}
 
 
 def unit_body():

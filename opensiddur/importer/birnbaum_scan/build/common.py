@@ -41,6 +41,9 @@ FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
 SIDDUR = "urn:x-opensiddur:text:siddur:"
+#: Piyyutim and zemiroth. `SIDDUR_URN_SCHEME.md` names Adon Olam and Yigdal
+#: here rather than under `prayer:`, and addresses their stanzas by incipit.
+POEM = "urn:x-opensiddur:text:poem:"
 FRONT = "urn:x-opensiddur:text:front:"
 #: A note is not a text. It takes no `text:` URN -- it is addressed by what it
 #: annotates -- and `notes:` names the apparatus file itself, not anything in it.
