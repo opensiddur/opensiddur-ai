@@ -163,6 +163,12 @@ check that silently measures nothing is worse than no check, because it is belie
   an absence, or it disagrees with the reading. Those three go to a person.
 
 **The transcription**
+- **A wall of consonantal differences is a boundary problem, not a finding.** A real
+  disagreement about consonants is rare — none survived in the first two thousand words
+  once the slices were right — so a page reporting them by the dozen has a section missing
+  or duplicated on one side. The signature is a word-count gap plus that wall. Find the
+  section before anyone looks at a crop; a passage may have no section of its own and live
+  inside a variant one, named `א` or `ב` rather than for its words.
 - **Resolve `{{נוסח}}`; never strip it.** The Wikisource foundation text marks the places
   its editors knew the print differs from what they set, and names Birnbaum's own reading
   in the template. Stripping it as markup throws away precisely what the comparison is
