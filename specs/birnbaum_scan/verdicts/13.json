@@ -1,0 +1,12 @@
+{
+  "whitespace:6:'\\n'|' '": "print",
+  "whitespace:15:'\\n'|' '": "print",
+  "whitespace:25:'\\n'|' '": "print",
+  "whitespace:33:'\\n'|' '": "print",
+  "whitespace:40:'\\n'|' '": "print",
+  "whitespace:48:'\\n'|' '": "print",
+  "vowels:90:בְּחָכְמָה,|בְּחׇכְמָה,": "print",
+  "vowels:119:כָל|כׇל": "print",
+  "vowels:177:מִכָּל|מִכׇּל": "print",
+  "whitespace:56:'\\n'|' '": "print"
+}
