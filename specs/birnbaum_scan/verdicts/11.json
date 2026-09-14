@@ -16,5 +16,7 @@
   "whitespace:111:'\\n'|' '": "print",
   "whitespace:120:'\\n'|' '": "print",
   "whitespace:130:'\\n'|' '": "print",
-  "whitespace:139:'\\n'|' '": "print"
+  "whitespace:139:'\\n'|' '": "print",
+  "consonants:0:מִבְּכוֹר|מִבְּכֹר": "print",
+  "vowels:123:דְּמוּת|דְמוּת": "print"
 }
