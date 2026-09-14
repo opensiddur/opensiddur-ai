@@ -16,3 +16,4 @@
 {"page": "9", "was": "לַיְיָ.", "is": "לַייָ.", "kind": "vowels", "settled_by": "editor", "found_by": "open question 9.3", "before_commit": true}
 {"page": "9", "was": "אֶל מֹשֶׁה", "is": "אֶל־מֹשֶׁה", "kind": "maqqef", "settled_by": "editor", "found_by": "open question 9.12", "before_commit": true}
 {"page": "11", "was": "בְּטֶֽרֶם־כָּל", "is": "בְּטֶֽרֶם כָּל", "kind": "maqqef", "settled_by": "editor", "found_by": "open question 11.3", "before_commit": true, "note": "a maqqef read where the print sets a space -- the opposite of page 9, where one was dropped"}
+{"page": "15", "was": "וְהָרֵאָיוֹן", "is": "וְהָרְאָיוֹן", "kind": "vowels", "settled_by": "editor", "found_by": "open question 15.1", "before_commit": true}
