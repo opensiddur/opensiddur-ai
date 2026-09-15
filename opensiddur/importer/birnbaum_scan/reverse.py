@@ -47,10 +47,41 @@ TRANSCLUDED: dict[int, tuple[str, ...]] = {
     ),
     # Barukh Shem again, after Ana B'khoaḥ -- likewise.
     35: ("בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד.",),
+    # Barukh Shem on the English side of the tefillin opening.
+    8: ("Blessed be the name of his glorious majesty forever and ever.",),
+    # The washing blessing, English side.
+    14: ("Blessed art thou, Lord our God, King of the universe, who hast sanctified us "
+         "with thy commandments, and commanded us concerning the washing of the hands.",),
+    26: (
+        "Hear, O Israel, the Lord is our God, the Lord is One.",
+        "Blessed be the name of his glorious majesty forever and ever.",
+    ),
+    # Barukh Shem after Ana B'khoaḥ, English side.
+    36: ("Blessed be the name of his glorious majesty forever and ever.",),
     25: (
         "שְׁמַע יִשְׂרָאֵל, יְיָ אֱלֹהֵֽינוּ, יְיָ אֶחָד.",
         "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד.",
     ),
+}
+
+#: Tags that sit *inside* a word's run of characters rather than between words. Removing
+#: one with a space splits `<tei:foreign>tefillin</tei:foreign>,` into `tefillin ,` and the
+#: diff then reports two differences that are the check's own doing. Every other tag is a
+#: boundary and **must** leave a space, or deleting it joins two words into one token --
+#: the mistake `strip_markup` had to be corrected for.
+INLINE = ("foreign", "hi", "seg", "anchor", "milestone", "divineName", "ref", "label")
+_INLINE_TAG = re.compile(r"</?(?:tei|j):(?:%s)\b[^>]*>" % "|".join(INLINE))
+#: Numerals the print sets as **line numbers** rather than inline with the words. They are
+#: carried in `tei:l/@n`, which is where a line number belongs, so they are not in the
+#: emitted text at all.
+#:
+#: This is a different thing from the numerals in Eizehu Mekoman (`א.`) and Rabbi Ishmael's
+#: rules (`א)`), which the print sets **inline** and which are therefore text. The two
+#: cannot be told apart by pattern -- only by looking at the page -- so they are declared.
+AS_ATTRIBUTE: dict[int, tuple[str, ...]] = {
+    # Yigdal's thirteen lines are numbered on the English page and not on the Hebrew one.
+    12: tuple(f"{n}." for n in range(1, 6)),
+    14: tuple(f"{n}." for n in range(6, 14)),
 }
 
 _TAG = re.compile(r"<[^>]+>")
@@ -69,11 +100,15 @@ def pages_of(body: str, first: int) -> dict[int, list[str]]:
     page = first
     position = 0
     for match in _PB.finditer(body):
-        out.setdefault(page, []).extend(_TAG.sub(" ", body[position:match.start()]).split())
+        out.setdefault(page, []).extend(_words(body[position:match.start()]))
         page = int(match.group(1))
         position = match.end()
-    out.setdefault(page, []).extend(_TAG.sub(" ", body[position:]).split())
+    out.setdefault(page, []).extend(_words(body[position:]))
     return out
+
+
+def _words(fragment: str) -> list[str]:
+    return _TAG.sub(" ", _INLINE_TAG.sub("", fragment)).split()
 
 
 def authored(prayers) -> dict[int, list[str]]:
@@ -100,14 +135,14 @@ def check(prayers, directory: Path, pages) -> dict[int, list[str]]:
     report: dict[int, list[str]] = {}
     for page in pages:
         expected = read(directory, page)
-        for phrase in TRANSCLUDED.get(page, ()):
+        for phrase in TRANSCLUDED.get(page, ()) + AS_ATTRIBUTE.get(page, ()):
             words = phrase.split()
             index = next(
                 (i for i in range(len(expected)) if expected[i:i + len(words)] == words),
                 None,
             )
             if index is None:
-                report[page] = [f"declared as transcluded but not in the reading: {phrase}"]
+                report[page] = [f"declared as set aside but not in the reading: {phrase}"]
                 break
             del expected[index:index + len(words)]
         else:

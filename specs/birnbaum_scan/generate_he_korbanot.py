@@ -38,7 +38,7 @@ def literal(text, first_prefix="", indent=9):
     """A run of Python string literals, wrapped, with an optional f-string head."""
     pad = " " * indent
     words = text.split()
-    wrapped = textwrap.wrap(" ".join(words), width=72)
+    wrapped = textwrap.wrap(" ".join(words), width=72, break_on_hyphens=False)
     out = []
     for n, line in enumerate(wrapped):
         tail = " " if n < len(wrapped) - 1 else ""
