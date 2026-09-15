@@ -37,17 +37,21 @@ adjudicated by going back to the page image.
 | 35 | 163 | 1 | 0 | 5 | 0 (none needed) |
 | 37 | 185 | 0 | 0 | 5 | 0 (none needed) |
 | 39 | 167 | 0 | 0 | 15 | 0 (none needed) |
+| 41 | 67 | 0 | 0 | 3 | 0 (none needed) |
+| 43 | 84 | 0 | 0 | 4 | 0 (none needed) |
+| 45 | 64 | 0 | 0 | 2 | 0 (none needed) |
+| 47 | 92 | 0 | 1 | 9 | 0 (none needed) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
-| **total** | **3547** | **5** | **11** | **158** | **0** |
+| **total** | **3854** | **5** | **12** | **176** | **0** |
 
-**No misreading survives in 3547 words.** But the second number in that column has grown
+**No misreading survives in 3854 words.** But the second number in that column has grown
 faster than the first, and it is now the one that matters: **twenty-nine readings have been
 corrected, nearly all of them points, and every one was caught by the diff rather than
 by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
-reliable *for consonants* — the skeleton has not been wrong once in 3547 words. It is not
+reliable *for consonants* — the skeleton has not been wrong once in 3854 words. It is not
 reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
 differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
 neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
@@ -213,6 +217,32 @@ eight words on page 15, and so is the print across pages: printed 25 sets
 `וְיֵדְעוּ כָל בָּאֵי עוֹלָם` with no dagesh, and that correction was itself found by going
 to the image. A word that looks settleable in bulk is worth one page of checking before it
 is treated that way.
+
+## The whole Hebrew side of Birchot ha-Shaḥar is now read
+
+Printed 3 through 47, twenty-three pages, **3,854 words counting the Amidah's two**. No
+misreading survives, and the last nine pages produced nothing that had to be put to a
+person: every difference was either the qamats-qatan rule or settled on the image.
+
+That is a change in the shape of the work, and it has a cause. The korbanot and Eizehu
+Mekoman are Mishnah and Talmud, texts both witnesses were copying rather than deciding
+about; printed 37 and 39 between them produced twenty differences of which every one was
+the rule. The pages that generate questions are the ones where the edition's editors had
+something to choose -- and they cluster in the blessings and the prayers, not the rabbinic
+material.
+
+Three defects in the tooling were found in the course of it, each by the reading rather
+than by a test:
+
+- The slice was built by hand. Rebuilt from the page file it found printed 21 nine words
+  short **in both witnesses at once**.
+- The qamats-qatan rule was applied by hand. Applied by the tool it found two pages where
+  the edition had also dropped a dagesh.
+- The `{{נוסח}}` resolver closed on the first `}}`. The Kaddish is the one place a template
+  holds a template, so it broke on the last page of the section and nowhere else.
+
+The common shape: **the step being done by hand was the step that was wrong**, and each
+was found by mechanising it rather than by checking it again.
 
 ## Corrections are data now, not prose
 

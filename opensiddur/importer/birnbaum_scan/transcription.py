@@ -27,8 +27,36 @@ import re
 from dataclasses import dataclass, field
 
 #: The template, and the attribution that names Birnbaum rather than contrasting with him.
-TEMPLATE = re.compile(r"\{\{נוסח\|(.*?)\}\}", re.S)
+#:
+#: Matched by scanning for balanced braces rather than with a regex: a template body can
+#: hold a template of its own -- the Kaddish sets
+#: `{{נוסח|בְּאַתְרָא [{{ק|בארץ:}} קַדִּישָׁא]|בירנבוים=בְּאַתְרָא}}` -- and a non-greedy
+#: `\}\}` closes on the *inner* one, taking half a word as the positional and throwing the
+#: `בירנבוים=` reading away. It fails silently, leaving a stray bracket in the slice.
+TEMPLATE_OPEN = "{{נוסח|"
 BIRNBAUM = "בירנבוים"
+
+
+def _templates(text: str):
+    """Every `{{נוסח|…}}`, as `(start, end, body)`, closing on its own braces."""
+    start = text.find(TEMPLATE_OPEN)
+    while start != -1:
+        depth, i = 0, start
+        while i < len(text):
+            if text.startswith("{{", i):
+                depth += 1
+                i += 2
+            elif text.startswith("}}", i):
+                depth -= 1
+                i += 2
+                if depth == 0:
+                    yield start, i, text[start + len(TEMPLATE_OPEN) : i - 2]
+                    break
+            else:
+                i += 1
+        else:  # unclosed; nothing more to find
+            return
+        start = text.find(TEMPLATE_OPEN, i)
 
 #: A value is a reading if it is short and made of Hebrew letters, points and separators.
 READING = re.compile(r"^[֐-׿‏\s/\[\]|,.;׳״־-]+$")
@@ -84,8 +112,9 @@ def _is_reading(value: str, positional: str = "") -> bool:
 def resolve(text: str) -> Resolution:
     """Replace every `{{נוסח}}` with the reading the 1949 print carries."""
     result = Resolution(text="")
-    def _one(match: re.Match) -> str:
-        positional, named, attribution = _split_params(match.group(1))
+
+    def _one(body: str) -> str:
+        positional, named, attribution = _split_params(body)
         # The attribution credits the positional to Birnbaum: it is already the reading.
         if BIRNBAUM in attribution:
             return positional
@@ -98,7 +127,14 @@ def resolve(text: str) -> Resolution:
         if value != positional:
             result.substitutions.append((positional, value))
         return value
-    result.text = TEMPLATE.sub(_one, text)
+
+    pieces, last = [], 0
+    for start, end, body in _templates(text):
+        pieces.append(text[last:start])
+        pieces.append(_one(body))
+        last = end
+    pieces.append(text[last:])
+    result.text = "".join(pieces)
     return result
 
 
@@ -185,6 +221,9 @@ def is_prayer_span(name: str) -> bool:
 #: balanced braces to evaluate.
 NOINCLUDE = re.compile(r"<noinclude>.*?</noinclude>", re.S)
 
+#: MediaWiki's list and indent markup, which is only markup at the start of a line.
+LIST_MARKER = re.compile(r"^[:*#;]+")
+
 #: Layout templates that wrap text which is part of the work: centring and two heading
 #: sizes. Everything else -- the running head, the interwiki link, the "paragraph continues"
 #: marker, and the rubric and citation wrappers -- is the edition's furniture and goes.
@@ -249,7 +288,14 @@ def page_slice(page_text: str, load) -> Resolution:
     text = strip_markup(text)
     # `strip_markup` flattens runs of spaces but leaves the page's own line structure, so
     # the paragraphing the edition sets survives to be compared.
-    paragraphs = [" ".join(line.split()) for line in text.split("\n")]
+    #
+    # A `:`, `*`, `#` or `;` opening a line is MediaWiki's list and indent markup, not text.
+    # Rabbi Ishmael's thirteen rules are set as an indented list, and left in place the
+    # marker rides on the first token of every rule -- `:א)` against `א)` -- so `compare`
+    # reports thirteen differences that are the slicer's own punctuation.
+    paragraphs = [
+        " ".join(LIST_MARKER.sub("", line).split()) for line in text.split("\n")
+    ]
     result.text = "\n".join(p for p in paragraphs).strip()
     result.text = re.sub(r"\n{3,}", "\n\n", result.text)
     return result

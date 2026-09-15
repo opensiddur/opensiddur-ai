@@ -16,6 +16,16 @@ class TestVariantResolution(unittest.TestCase):
         self.assertEqual(r.text, "אָבֹא")
         self.assertEqual(r.substitutions, [("אָבוֹא", "אָבֹא")])
 
+    def test_a_template_inside_a_template_closes_on_its_own_braces(self):
+        # The Kaddish sets `{{נוסח|בְּאַתְרָא [{{ק|בארץ:}} קַדִּישָׁא]|בירנבוים=בְּאַתְרָא}}`.
+        # A non-greedy `}}` closes on the inner template, takes half a word as the
+        # positional and throws the `בירנבוים=` reading away -- silently, leaving a stray
+        # bracket in the slice.
+        r = transcription.resolve(
+            "{{נוסח|בְּאַתְרָא [{{ק|בארץ:}} קַדִּישָׁא]|בירנבוים=בְּאַתְרָא}} הָדֵן"
+        )
+        self.assertEqual(r.text, "בְּאַתְרָא הָדֵן")
+
     def test_an_attribution_to_someone_else_still_defers_to_birnbaum(self):
         """`|=מסורה` says the positional is the Masorah's, not this book's."""
         r = transcription.resolve("{{נוסח|מְּאֹד|=מסורה|בירנבוים=מְאֹד}}")
@@ -175,6 +185,17 @@ class TestPageSlice(unittest.TestCase):
             + "<noinclude>}}</noinclude>"
         )
         self.assertEqual(self.slice(page).text, "אַלֶף")
+
+    def test_a_line_leading_indent_marker_is_markup(self):
+        # Rabbi Ishmael's thirteen rules are set as an indented list; left in, the marker
+        # rides on the first token of every rule and `compare` reports thirteen
+        # differences that are the slicer's own punctuation.
+        page = ":" + self.transclude("א") + "\n::" + self.transclude("ב")
+        self.assertEqual(self.slice(page).text, "אַלֶף\nבֵּית")
+
+    def test_a_colon_inside_a_line_is_text(self):
+        page = self.transclude("א") + ": " + self.transclude("ב")
+        self.assertEqual(self.slice(page).text, "אַלֶף: בֵּית")
 
     def test_a_heading_span_is_left_out(self):
         page = self.transclude("כותרת ג") + "\n" + self.transclude("א")
