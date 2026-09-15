@@ -1,9 +1,11 @@
 # A named day and place: 17 May 2026 in Jerusalem, at the Reader's repetition.
 #
-# **Rosh Ḥodesh Sivan**, and deliberately a *one-day* Rosh Ḥodesh: see the note in
-# `BIRNBAUM_FROM_SCAN.md`, "The second day of a two-day Rosh Ḥodesh computes as 0". On a
-# two-day Rosh Ḥodesh the second day is not recognised at all, so a date chosen without
-# care would have shown this conditional resolving false and proved nothing.
+# **Rosh Ḥodesh Sivan**, and deliberately a *one-day* Rosh Ḥodesh, where
+# `settings_shabbat_rosh_chodesh_jerusalem.yaml` names the second day of a two-day one.
+# The two shapes are computed differently -- `compute._rosh_hodesh_day` numbers the sole or
+# first day 1 and the second day 2 -- so both are worth a compile. They were worth more than
+# that before `opensiddur-ai#125`: the two-day shape was broken and this one was not, which
+# is what made the difference visible.
 #
 # Nothing conditional should survive this compile except the gendered blessings, which have
 # no default because no calendar can settle who is praying.

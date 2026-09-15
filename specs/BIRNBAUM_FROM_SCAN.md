@@ -552,6 +552,99 @@ measurement that cannot tell a duplicate from a coincidence has not measured any
 What is given up remains as recorded above: the commentary begins physically under the
 Hebrew page in the print, and in the rendered PDF it is in the English column.
 
+## Rosh Ḥodesh is computed correctly (was: wrong on most Rosh Ḥodesh days)
+
+**[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125), fixed in
+[#127](https://github.com/opensiddur/opensiddur-ai/pull/127).** Kept here for how it was
+found rather than for what it was.
+
+While it stood, `opensiddur:holiday/rosh-hodesh` was right on 5 of the 17 days that are
+Rosh Ḥodesh in 5786: six computed as `0`, six carried an inverted day number, and Rosh
+Hashanah was reported as Rosh Ḥodesh. One line did all three —
+`heb.month in (1, 3, 5, 7, 9, 11)` admitted only the odd-numbered Hebrew months, and the
+second day of a two-day Rosh Ḥodesh always falls on the 1st of an even one. Ya'aleh v'Yavo
+in the Amidah is conditioned the same way, so it was affected too.
+
+Against the fix all nineteen of 5786's Rosh Ḥodesh days compute correctly, and this unit's
+two musaf conditionals resolve as they should on every settings file:
+
+| settings | Sabbath musaf | Rosh Ḥodesh musaf |
+|---|---|---|
+| `undecided` | stands, with its rubric | stands, with its rubric |
+| `shabbat_rosh_chodesh_jerusalem` (18 Apr 2026) | said | said |
+| `rosh_chodesh_jerusalem` (17 May 2026) | dropped | said |
+| `15jan_jerusalem` and the other weekdays | dropped | dropped |
+
+**How it was found is the part worth keeping.** Every settings file in this directory named
+a weekday, so the Rosh Ḥodesh conditional had only ever been seen resolving to *false*. It
+took writing a settings file for the purpose of making it fire — and then the date chosen,
+18 April 2026, was a Sabbath that is also Rosh Ḥodesh, so the Sabbath passage appeared and
+the Rosh Ḥodesh passage did not. A date picked with less care would have shown a conditional
+resolving false, and that would have been read as proof it worked.
+
+The two settings files are kept apart deliberately: one names the **second day of a two-day**
+Rosh Ḥodesh and the other a **one-day** Rosh Ḥodesh, and `compute._rosh_hodesh_day`
+distinguishes them.
+
+## The section as compiled, measured
+
+31 pages two-column, from `settings_undecided.yaml`. What was measured and what it said:
+
+- **Every parallel block has two columns.** 210 blocks, none with fewer. Of these 120 carry
+  both scripts; the rest carry one, and every one of those is a rubric or a heading the print
+  sets in English **on both pages** — his practice throughout this book — or a poem heading
+  the English page has and the Hebrew page does not.
+- **Line numbers are in the margins and restart per page.** Left column right-aligned at the
+  measure's left, right column left-aligned at its right; page 3's left series runs 5, 10, 15,
+  20 and page 2's right series restarts within the page at each `\pstart` group.
+- **The section's headings are painted left to right**, including the two the English page
+  carries alone.
+- **A footnote's mark and its text are on the same page** — *nothing to measure*. The
+  apparatus is not built yet, so this measurement is reported as having no input rather than
+  as passing. An assertion with nothing to assert on is not a green light.
+
+**Two false positives are worth recording, because both came from the measurement and not
+from the PDF.** A first version called any numeral a line number, and reported `rules 4 and
+5 do not apply` — words in Rabbi Ishmael's seventh rule — as two numbers colliding with the
+text. A second clustered margin numbers by their left edge, which is right for the right
+column and wrong for the left, where they are right-aligned; it then reported twenty pages
+as starting at 10. Neither was in the document.
+
+That is the same shape as everything else this pass turned up: **the step being done by
+hand, or by a rule invented on the spot, is the step that is wrong.**
+
+## The apparatus renders (was: a parallel compile dropped it)
+
+**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124), fixed in
+[#126](https://github.com/opensiddur/opensiddur-ai/pull/126).** Kept here because the
+symptom is worth recognising again: while it stood, a single-column compile carried all 61
+notes of this unit and a two-column compile carried none, and everything else was green --
+the apparatus validated, `refdb` indexed it, every target resolved, the registry was clean.
+Only compiling two-column and looking for the notes found it.
+
+Against the fix, the three units carry **84 notes in a parallel compile**: 61 in Birkhoth
+ha-Shaḥar, 22 in the Amidah, 1 in Shaḥarith li-Yladim. None is duplicated, and all of them
+sit in the English column -- the one project that realises the apparatus.
+
+### The fifth measurement, now that there is something to measure
+
+`\Bfootnote` appears 61 times in the TeX and 61 marks with it. In the PDF:
+
+- **Every note is set once.** Each note's opening words appear on exactly one page. Nothing
+  is emitted into both columns, which is what `_primary_annotations` exists to prevent.
+- **Every note's opening is on a page**; none is lost.
+- **Two long notes continue overleaf** -- Yigdal's on printed 12 and the laver's on printed
+  28. That is what a note longer than the page's apparatus does, and what the print does
+  itself: his long notes run across the opening.
+
+A caution about the measurement rather than the document: a first pass matched each note by
+its first three long words and reported two notes "set on two pages". Widening the window to
+six showed each on exactly one. **Three words of English are not a fingerprint**, and a
+measurement that cannot tell a duplicate from a coincidence has not measured anything.
+
+What is given up remains as recorded above: the commentary begins physically under the
+Hebrew page in the print, and in the rendered PDF it is in the English column.
+
 ## Known defect in the calendar: `rosh-hodesh` is wrong on most Rosh Ḥodesh days
 
 **[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125)**. Not caused

@@ -1,10 +1,15 @@
 # A named day and place: 18 April 2026 in Jerusalem, at the Reader's repetition.
 #
-# **A Sabbath.** Every other settings file in this directory names a weekday, so until this
-# one existed Birkhoth ha-Shaḥar's Sabbath musaf conditional had only ever been shown
-# resolving to *false* -- and an assertion that cannot fail proves nothing. While the unit
-# was filed under `chol` it could not have fired on any date whatever, which is how it stood
-# without anyone noticing.
+# **A Sabbath that is also Rosh Ḥodesh**, and the only kind of day on which Birkhoth
+# ha-Shaḥar's two musaf conditionals are both true. Every other settings file in this
+# directory names a weekday, so until this one existed the Sabbath conditional had only ever
+# been shown resolving to *false* -- and an assertion that cannot fail proves nothing. While
+# the unit was filed under `chol` it could not have fired on any date whatever.
+#
+# It earns a second keep now. 18 April is 1 Iyar, the **second day of a two-day Rosh
+# Ḥodesh** -- the case `opensiddur-ai#125` had computing as "not Rosh Ḥodesh at all". Until
+# that was fixed this file showed the Sabbath passage appearing and the Rosh Ḥodesh passage
+# not, which is how the calendar defect surfaced.
 #
 # Nothing conditional should survive this compile except the gendered blessings, which have
 # no default because no calendar can settle who is praying.

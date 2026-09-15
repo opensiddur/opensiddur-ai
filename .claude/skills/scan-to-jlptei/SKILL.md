@@ -249,6 +249,17 @@ check that silently measures nothing is worse than no check, because it is belie
   sets two Torah portions. Substituting it drops a line of Hebrew prose into the middle of
   a prayer, where the diff then reports it as the print's own words.
 
+**Conditions**
+- **Compile for a day on which the condition is TRUE, not only for one where it is false.**
+  A settings file that leaves a conditional resolving false proves nothing about it. Both of
+  this book's day-dependent passages were only ever compiled on weekdays, so neither had
+  ever fired — one because the unit was filed under the wrong occasion, the other because
+  the calendar was wrong. Each took a settings file written to make it true.
+- **Choose that day knowing what it exercises.** Rosh Ḥodesh comes in two shapes, one day or
+  two, computed differently; the first of an odd-numbered Hebrew month passed against a
+  calendar that was wrong about every even one. A date picked for convenience tests whatever
+  it happens to test.
+
 **The apparatus**
 - **A note that never renders still validates.** An apparatus can be schema-valid, indexed
   by `refdb`, resolve every target and pass the registry while a two-column compile emits
