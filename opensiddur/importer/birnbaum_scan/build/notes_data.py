@@ -143,8 +143,8 @@ AMIDAH_NOTES = [
                 ", to which the Talmud (Sotah 49a) attaches unusual importance, is recited only "
                 "when a <tei:hi rend=\"italic\">minyan</tei:hi> is present because it is said: “I "
                 "shall be sanctified among the children of Israel” (Leviticus 22:32), which "
-                "implies that the proclamation of the holiness and kingship of God s to be made n "
-                "public service only."
+                "implies that the proclamation of the holiness and kingship of God is to be made "
+                "in public service only."
             )),
         ],
     ),
@@ -797,7 +797,7 @@ BIRCHOT_NOTES = [
             dict(text=(
                 "According to the Talmud, God said: “Whenever they recite the order of "
                 "sacrifices, I will deem it as if they offered them before me and will forgive "
-                "them all their sins” (Ta'anith 27b). The sacrificial system symbolized self- "
+                "them all their sins” (Ta‘anith 27b). The sacrificial system symbolized self- "
                 "surrender and devotion to the will of God. The peace-offering with its "
                 "communion-feast showed the idea of fellowship. It served to keep alive the sense "
                 "of dependence on God for the natural blessings of life, while it had the social "

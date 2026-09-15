@@ -431,6 +431,18 @@ two agree. They did not at first: a citation naming more than one book — `Numb
 Psalms 5:8; 26:8; 95:6; 69:14.` — was classified as commentary, so printed 4 counted two
 where the page prints three.
 
+**The Archive's own OCR is a third reading of the same images**, made by a process that
+never saw the transcription, and it is good enough on English prose to answer one question:
+are these words on the page at all? `check_notes_against_ocr.py` scores every commentary
+note against the OCR of its opening. **Median 95%**, two below 75% — and reading those two
+found one real error (printed 84's note drops two letters) and one false alarm (printed 86's
+page carries a damaged glyph, `wh.ch`, and the transcription reads it correctly).
+
+Fifty of the eighty-six notes sit on page feet not read during this pass. That check is what
+put two of them in front of a pair of eyes instead of sixteen page images, and it is a
+ranking rather than a verdict — the dropped letters it led to are `is` and `in`, too short
+for it to have scored at all.
+
 **The total must add up.** 86 read, 84 encoded, and the two left out are named: they annotate
 Mi Khamokha and Adonai Yimlokh, in the Ge'ulah blessing of the Shema, which these projects do
 not hold. A note quietly missing is indistinguishable from a note never read, so the number

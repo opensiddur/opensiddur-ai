@@ -197,7 +197,14 @@ TEXT_CORRECTIONS = {
     "''Numbers'' 24:5: ''Psalms'' 5:8": "''Numbers'' 24:5; ''Psalms'' 5:8",
     # Printed 28's note, at 7x. The transcription drops a letter and sets a backtick.
     "wll forgive": "will forgive",
-    "Ta`nith 27b": "Ta'anith 27b",
+    # He transliterates ayin with a turned comma: `Ta\u2018anith`, plain on printed 84's
+    # foot. The transcription sets a backtick and drops the first `a`.
+    "Ta`nith 27b": "Ta\u2018anith 27b",
+    # Printed 85's foot, at 8x: `God is to be made in public service only.` The
+    # transcription drops both `i`s. Found by ranking the notes against the Archive's OCR
+    # -- this one scored 74% where the median is 95%.
+    "kingship of God s to be made n public service only":
+        "kingship of God is to be made in public service only",
 }
 
 #: Lemmas the transcription gets wrong, settled on the image. The catchword is quoted from
