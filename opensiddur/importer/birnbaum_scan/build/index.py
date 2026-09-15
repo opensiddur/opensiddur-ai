@@ -29,11 +29,11 @@ BODY = f"""      <tei:div corresp="{S}siddur">
         <tei:div corresp="{S}all">
           <tei:div corresp="{S}all/shacharit">
             <j:transclude type="external" target="{S}all/shacharit/yeladim"/>
+            <j:transclude type="external" target="{S}all/shacharit/birchot_hashachar"/>
           </tei:div>
         </tei:div>
         <tei:div corresp="{S}chol">
           <tei:div corresp="{S}chol/shacharit">
-            <j:transclude type="external" target="{S}all/shacharit/birchot_hashachar"/>
             <j:transclude type="external" target="{S}chol/shacharit/amidah"/>
           </tei:div>
         </tei:div>
