@@ -325,11 +325,34 @@ Three mechanisms, all required:
    - Look up references by `@corresp` or `@xml:id`
    - Filter by `annotation_projects`
    - Prioritize by project priority
-   - INSERT as first children of annotated element
+   - INSERT as first children in the base compiler; the external compiler emits
+     notes before ordinary elements in its output sequence, or just inside the
+     opening marker of a structural element in marker mode
+
+### Parallel annotation lifecycle
+
+Annotations are resolved once per eligible source occurrence, before structural
+elements become markers. Range, conditional, and settings checks still apply.
+Notes precede the target's original text, retain their language and provenance,
+and are not repeated on suspend/resume markers or reconstructed fragments.
+Intentional repeated transclusions each retain their own apparatus.
+
+The successfully selected parallel column receives its own project's apparatus
+only when enabled in `annotations`. The primary column receives the remaining
+enabled projects, including third-party apparatus. Compile the counterpart first
+so a missing or failed counterpart does not remove notes from primary fallback.
+Both annotation selection and processing contexts are restored on failure.
+An empty `annotations` list disables standoff annotations in both columns.
+
+Row assembly and marker reconstruction preserve already compiled notes; they do
+not perform reference lookup or a second annotation pass. A correspondence URN
+may identify different element kinds in each column (for example, a Hebrew `seg`
+and an English `p`), so both structural and ordinary paths must support it.
 
 ### Annotation Commands
 
-- **INSERT**: Insert annotations as first children of element
+- **INSERT**: Insert annotations at the start of the target's content or output
+  sequence, according to the processor representation described above
 - **REPLACE**: Replace element with annotation
 - **KEEP**: Keep element as-is (for instructions without alternatives)
 - **NONE**: No annotation action needed
@@ -657,4 +680,3 @@ The compiler should be tested for:
 - Language attribute propagation
 - File source marking
 - Edge cases (empty ranges, missing URNs, etc.)
-

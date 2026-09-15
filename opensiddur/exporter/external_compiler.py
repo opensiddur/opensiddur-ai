@@ -213,6 +213,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         root: Optional[ElementBase] = None,
         *,
         copy_text: bool = True,
+        annotations: Optional[list[ElementBase]] = None,
     ) -> list[ElementBase]:
         """Compile element as a marker-ified structural element.
 
@@ -234,6 +235,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         self.marker_stack.append((p_id, element))
         result = [start_marker]
+        if annotations:
+            # Insert once at the source opening, not at its later resumed fragments.
+            # Original leading text must follow the apparatus, just as child insertion
+            # in the ordinary compiler moves element.text behind the inserted notes.
+            annotations[-1].tail = (annotations[-1].tail or '') + (start_marker.tail or '')
+            start_marker.tail = None
+            result.extend(self._rewrite_ids(annotations))
 
         for child in element:
             is_external_transclude = (
@@ -647,17 +655,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         primary_end = transclude_range.end.end_element_path or transclude_range.end.element_path
         include_tail = transclude_range.end.end_includes_tail
 
-        with self._parallel_sub_compilation(), self._primary_annotations():
-            primary_proc = ExternalCompilerProcessor(
-                primary_project, primary_file,
-                from_start=primary_start,
-                to_end=primary_end,
-                include_tail_after_end=include_tail,
-                linear_data=self.linear_data,
-                reference_database=self._refdb)
-            primary_proc.marker_stack = []
-            primary_result = primary_proc.process()
-
+        with self._parallel_sub_compilation():
+            # Establish a successful counterpart before assigning it apparatus;
+            # failed resolution/compilation must leave primary fallback unfiltered.
             parallel_result = None
             parallel_project = None
             parallel_file = None
@@ -692,6 +692,18 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         "trying the next configured parallel project",
                         p_project, p_file, target, exc_info=True)
                     continue
+
+            if parallel_result is not None:
+                with self._primary_annotations(parallel_project):
+                    primary_proc = ExternalCompilerProcessor(
+                        primary_project, primary_file,
+                        from_start=primary_start,
+                        to_end=primary_end,
+                        include_tail_after_end=include_tail,
+                        linear_data=self.linear_data,
+                        reference_database=self._refdb)
+                    primary_proc.marker_stack = []
+                    primary_result = primary_proc.process()
 
         if parallel_result is None:
             return None
@@ -736,45 +748,26 @@ class ExternalCompilerProcessor(CompilerProcessor):
             self.linear_data.parallel_compilation_depth -= 1
 
     @contextmanager
-    def _primary_annotations(self):
-        """Drop the parallel projects' apparatus from the primary column.
-
-        A standoff note reaches its text by URN, and `refdb` matches a URN target in every
-        project, so a note is found while compiling *either* side of an opening whose two
-        sides realise the same URNs -- which is exactly what a parallel text is. Narrowing
-        the parallel column alone is not enough: the primary column still holds the
-        configured list, and where that names the facing project the note is emitted twice.
-
-        A project that is supplying a parallel column owns its notes in that column. This
-        removes only those projects, so an apparatus project that is not itself a column
-        (a commentary annotating both sides, say) still reaches the primary one.
-        """
+    def _primary_annotations(self, parallel_project: str):
+        """Leave the successfully selected column's enabled apparatus on that side."""
         saved = self.linear_data.annotation_projects
-        parallel = set(self.linear_data.parallel_projects)
         try:
-            self.linear_data.annotation_projects = [
-                p for p in saved if p not in parallel]
+            self.linear_data.annotation_projects = [p for p in saved if p != parallel_project]
             yield
         finally:
             self.linear_data.annotation_projects = saved
 
     @contextmanager
     def _parallel_priority(self, parallel_project: str):
-        """Narrow every project list to [parallel_project] for one parallel column.
-
-        `annotation_projects` is narrowed for the same reason the other two are. A
-        standoff note targets a URN, and `refdb` matches a URN target in every project,
-        so a note attached to a text both sides realise is found while compiling *either*
-        column. Left wide, the apparatus is inserted into both columns and the reader
-        gets every note twice per opening.
-        """
+        """Select column-local text, instructions, and explicitly enabled apparatus."""
         saved_priority = self.linear_data.project_priority
         saved_instr = self.linear_data.instruction_priority
         saved_annotations = self.linear_data.annotation_projects
         try:
             self.linear_data.project_priority = [parallel_project]
             self.linear_data.instruction_priority = [parallel_project]
-            self.linear_data.annotation_projects = [parallel_project]
+            self.linear_data.annotation_projects = [
+                p for p in saved_annotations if p == parallel_project]
             yield
         finally:
             self.linear_data.project_priority = saved_priority
@@ -858,14 +851,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return None
         parallel_project, parallel_file = selected
 
-        with self._parallel_sub_compilation(), self._primary_annotations():
-            primary_proc = ExternalCompilerProcessor(
-                self.project, self.file_name,
-                linear_data=self.linear_data,
-                reference_database=self._refdb)
-            primary_proc.marker_stack = []
-            primary_result = primary_proc.process()
-
+        with self._parallel_sub_compilation():
             try:
                 with self._parallel_priority(parallel_project):
                     parallel_proc = ExternalCompilerProcessor(
@@ -881,6 +867,15 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     parallel_project, parallel_file, self.project, self.file_name,
                     exc_info=True)
                 parallel_result = None
+
+            if parallel_result is not None:
+                with self._primary_annotations(parallel_project):
+                    primary_proc = ExternalCompilerProcessor(
+                        self.project, self.file_name,
+                        linear_data=self.linear_data,
+                        reference_database=self._refdb)
+                    primary_proc.marker_stack = []
+                    primary_result = primary_proc.process()
 
         if parallel_result is None:
             return None
@@ -1050,16 +1045,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 return [self._rewrite_ids(conditional_copy)]
             return []
 
-        # In marker mode, all structural blocks use start/end marker pairs
-        if self.marker_stack is not None and element.tag in STRUCTURAL_BLOCKS:
-            result = self._process_element_as_marker(
-                element,
-                root,
-                copy_text=(context["command"] == _ProcessingCommand.COPY_AND_RECURSE),
-            )
-            self._update_processing_context_after(element)
-            return result
-
         # Before the range's start, a transclusion or annotation must not be resolved at
         # all: resolving it here would leak content that RECURSE is meant to suppress
         # entirely (see #53), and would raise on an unresolvable target that will never
@@ -1074,6 +1059,17 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 return [annotations[0]]
         else:
             annotations, annotation_command = [], _AnnotationCommand.NONE
+
+        # In marker mode, all structural blocks use start/end marker pairs
+        if self.marker_stack is not None and element.tag in STRUCTURAL_BLOCKS:
+            result = self._process_element_as_marker(
+                element,
+                root,
+                annotations=annotations,
+                copy_text=(context["command"] == _ProcessingCommand.COPY_AND_RECURSE),
+            )
+            self._update_processing_context_after(element)
+            return result
 
         if context["command"] == _ProcessingCommand.RECURSE:
             append_to = processed
@@ -1174,10 +1170,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 inside_deepest_common_ancestor=False,
             ))
 
-            processed = self._process_element(root, root)
-
-            # pop the processing context
-            self.linear_data.processing_context.pop()
+            try:
+                processed = self._process_element(root, root)
+            finally:
+                # A failed counterpart must not leave its context in the fallback.
+                self.linear_data.processing_context.pop()
 
         # When processing the full file (not a range transclusion), mark the file source on the root element
         # so that get_file_references() can find source files for metadata extraction
