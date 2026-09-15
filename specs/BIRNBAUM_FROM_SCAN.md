@@ -452,6 +452,33 @@ A note carries no URN of its own. `urn:x-opensiddur:notes:` names an apparatus *
 one edition's notes can be swapped for another's; a note is not a text, and `@target`
 already says what it annotates.
 
+## The section as compiled, measured
+
+31 pages two-column, from `settings_undecided.yaml`. What was measured and what it said:
+
+- **Every parallel block has two columns.** 210 blocks, none with fewer. Of these 120 carry
+  both scripts; the rest carry one, and every one of those is a rubric or a heading the print
+  sets in English **on both pages** — his practice throughout this book — or a poem heading
+  the English page has and the Hebrew page does not.
+- **Line numbers are in the margins and restart per page.** Left column right-aligned at the
+  measure's left, right column left-aligned at its right; page 3's left series runs 5, 10, 15,
+  20 and page 2's right series restarts within the page at each `\pstart` group.
+- **The section's headings are painted left to right**, including the two the English page
+  carries alone.
+- **A footnote's mark and its text are on the same page** — *nothing to measure*. The
+  apparatus is not built yet, so this measurement is reported as having no input rather than
+  as passing. An assertion with nothing to assert on is not a green light.
+
+**Two false positives are worth recording, because both came from the measurement and not
+from the PDF.** A first version called any numeral a line number, and reported `rules 4 and
+5 do not apply` — words in Rabbi Ishmael's seventh rule — as two numbers colliding with the
+text. A second clustered margin numbers by their left edge, which is right for the right
+column and wrong for the left, where they are right-aligned; it then reported twenty pages
+as starting at 10. Neither was in the document.
+
+That is the same shape as everything else this pass turned up: **the step being done by
+hand, or by a rule invented on the spot, is the step that is wrong.**
+
 ## Known defect in the calendar: the second day of a two-day Rosh Ḥodesh computes as 0
 
 Not caused by this work and not fixed by it, but found by it and load-bearing for anything
