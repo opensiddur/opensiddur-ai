@@ -280,11 +280,17 @@ Note also that the page's two occurrences of the word remain genuinely different
 לְהַנִֽיחַ in the meditation, לְהַנִּֽיחַ in the blessing -- which is now confirmed by
 someone who knows the text rather than inferred from a crop.
 
+**The correction reached the reading and not the TEI.** `hebrew/7.txt` was fixed,
+`corrections.jsonl` recorded it, and `he_tefillin.py` went on emitting the pre-correction
+`לְהָנִיחַ` for months. Nothing could see it: the reading and the transcription now agree,
+so `compare` reports nothing, and the schema, the registry and the reference database have
+no opinion about which vowel a word carries. It was found by `reverse`, which asks the
+question none of them ask -- whether the authored text *is* the reading.
+
 Page 7's two catches were `זְרוֹעַ` for **זְרוֹעוֹ** and, in the blessing, `לְהָנִֽיחַ`
 for **לְהַנִּֽיחַ** — the same word page 5 had to correct, so the spelling is his and
-consistent. Worth noting that the page's two occurrences are genuinely different:
-the blessing sets לְהַנִּֽיחַ and the meditation sets לְהָנִיחַ, and the transcription
-distinguishes them too. Flattening them would be a correction, not a reading.
+consistent. The page's two occurrences are genuinely different: the blessing sets
+לְהַנִּֽיחַ and the meditation לְהַנִֽיחַ, pataḥ in both and dagesh only in the blessing.
 
 **Six differences are recorded with no verdict, and that is the honest state rather than a
 gap.** All six are meteg, a shva against a ḥataf-pataḥ, a qamats against a pataḥ, or a

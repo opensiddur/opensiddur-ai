@@ -185,6 +185,23 @@ check that silently measures nothing is worse than no check, because it is belie
 - **A word is not a class.** `כל` came out of that with a dagesh on two pages and without one
   on a third, in the same print. Anything that looks like it could be settled in bulk is
   worth one page's worth of checking before it is.
+- **Check the authored text against the reading, page by page.** `compare` asks how far the
+  transcription stands from the reading; nothing asks whether the TEI carries what the
+  reading records. `reverse` does, and it is a diff rather than a tally, so one wrong vowel
+  fails it. Put on nine pages that had validated, resolved and compiled, it found a
+  correction that had reached `hebrew/7.txt` and `corrections.jsonl` and never reached the
+  generator: `לְהָנִיחַ` still standing where the editor had settled `לְהַנִֽיחַ`. Nothing
+  else could see it — once the reading is fixed the transcription agrees with it, and the
+  schema, the registry and the reference database have no opinion about a vowel.
+- **Order it by printed page, not by file.** A first attempt concatenated the authored files
+  in filename order and reported 380 words missing that were present in a different place.
+  Ordering by page is what makes the answer mean anything, and it puts a failure on the page
+  whose image settles it.
+- **A transclusion has to be declared, and each declaration is a debt.** A unit that
+  transcludes a text another unit realises emits nothing for it, so the words are on the
+  page in print and absent from the files. Naming them keeps the check honest; a stale
+  declaration would silently excuse a real omission, so the tool fails when a declared
+  phrase is not in the reading either.
 - **The comparison is blind to what both sides are missing.** Printed page 21's last line
   — nine words — was absent from the reading *and* from the hand-made slice, so nothing
   fired: 166 files validated, the suite passed, `refdb` was clean. It surfaced only when
