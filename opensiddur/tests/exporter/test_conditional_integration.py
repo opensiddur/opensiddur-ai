@@ -46,6 +46,80 @@ class TestConditionalIntegration(unittest.TestCase):
         result = proc.process()
         return etree.tostring(result, encoding="unicode")
 
+    @staticmethod
+    def _rosh_hodesh_passage(identifier: str) -> str:
+        return f'''
+            <j:conditional xml:id="{identifier}">
+                <tei:fs type="opensiddur:holiday">
+                    <tei:f name="rosh-hodesh"><tei:numeric value="1" max="2"/></tei:f>
+                </tei:fs>
+            </j:conditional>
+            <tei:p>passage-{identifier}</tei:p>
+            <j:endConditional target="#{identifier}"/>
+        '''
+
+    def _load_rosh_hodesh_date(self, month: int, day: int, **extra):
+        CompilerProcessor.load_init_settings(
+            get_linear_data(),
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2026, "month": month, "day": day},
+                "opensiddur:location": {"latitude": 31.78, "longitude": 35.22},
+                **extra,
+            }),
+        )
+
+    def test_date_derived_rosh_hodesh_selects_passage(self):
+        for month, day, included in (
+            (4, 17, True), (4, 18, True), (3, 19, True),
+            (4, 19, False), (9, 12, False),
+        ):
+            with self.subTest(month=month, day=day):
+                reset_linear_data()
+                get_linear_data().xml_cache.base_path = self.base
+                self._load_rosh_hodesh_date(month, day)
+                filename = self._write("rosh_hodesh.xml", self._rosh_hodesh_passage("rc"))
+                out = self._compile(filename)
+                self.assertEqual("passage-rc" in out, included)
+                self.assertNotIn("conditional", out)
+
+    def test_undated_rosh_hodesh_keeps_passage_and_condition(self):
+        filename = self._write("undated_rc.xml", self._rosh_hodesh_passage("rc"))
+        out = self._compile(filename)
+        self.assertIn("passage-rc", out)
+        self.assertIn("conditional", out)
+
+    def test_explicit_rosh_hodesh_override_wins(self):
+        for day, override, included in ((18, 0, False), (19, 2, True)):
+            with self.subTest(day=day, override=override):
+                reset_linear_data()
+                get_linear_data().xml_cache.base_path = self.base
+                self._load_rosh_hodesh_date(4, day, **{
+                    "opensiddur:holiday": {"rosh-hodesh": override},
+                })
+                filename = self._write("override_rc.xml", self._rosh_hodesh_passage("rc"))
+                self.assertEqual("passage-rc" in self._compile(filename), included)
+
+    def test_scoped_date_restores_rosh_hodesh_selection(self):
+        self._load_rosh_hodesh_date(4, 18)
+        filename = self._write(
+            "scoped_rc.xml",
+            self._rosh_hodesh_passage("before")
+            + '''
+            <j:declare xml:id="ordinary_day">
+                <tei:fs type="opensiddur:gregorian-date">
+                    <tei:f name="day"><tei:numeric value="19"/></tei:f>
+                </tei:fs>
+            </j:declare>
+            '''
+            + self._rosh_hodesh_passage("during")
+            + '<j:endDeclare target="#ordinary_day"/>'
+            + self._rosh_hodesh_passage("after"),
+        )
+        out = self._compile(filename)
+        self.assertIn("passage-before", out)
+        self.assertNotIn("passage-during", out)
+        self.assertIn("passage-after", out)
+
     def test_true_includes_content_strips_markers(self):
         fn = self._write(
             "true.xml",

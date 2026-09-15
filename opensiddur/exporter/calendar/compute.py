@@ -472,6 +472,17 @@ def _zero_holidays() -> dict[str, int]:
     return {name: 0 for name in HOLIDAY_FEATURES}
 
 
+def _rosh_hodesh_day(heb: pyluach_dates.HebrewDate) -> int:
+    """The sole/first (1) or second (2) day of Rosh Hodesh, or zero if absent."""
+    # A month's 30th begins the next month's two-day Rosh Hodesh. The first of
+    # Tishrei is Rosh Hashanah, not a liturgical Rosh Hodesh.
+    if heb.day == 30:
+        return 1
+    if heb.day == 1 and heb.month != _TISHREI:
+        return 2 if heb.subtract(days=1).day == 30 else 1
+    return 0
+
+
 def _map_hdate_holidays(
     hi: hdate.HDateInfo,
     heb: pyluach_dates.HebrewDate,
@@ -547,8 +558,7 @@ def _map_hdate_holidays(
     if hi.omer:
         values["omer"] = hi.omer.day
 
-    if heb.day in (1, 30) and heb.month in (1, 3, 5, 7, 9, 11):
-        values["rosh-hodesh"] = 1 if heb.day == 1 else 2
+    values["rosh-hodesh"] = _rosh_hodesh_day(heb)
 
     return values
 
@@ -834,8 +844,8 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "shabbat-hazon": shabbat == tisha_bav,
         "shabbat-nahamu": shabbat == tisha_bav.add(days=7),
         # Rosh Hodesh and Mahar Hodesh each carry their own haftarah.
-        "shabbat-rosh-hodesh": shabbat.day in (1, 30),
-        "shabbat-mahar-hodesh": tomorrow.day in (1, 30),
+        "shabbat-rosh-hodesh": _rosh_hodesh_day(shabbat) > 0,
+        "shabbat-mahar-hodesh": _rosh_hodesh_day(tomorrow) > 0,
     }
     patterns = _triennial_cycle_patterns(
         year, israel=not snapshot.is_diaspora()
