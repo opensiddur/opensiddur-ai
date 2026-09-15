@@ -1822,6 +1822,7 @@ def _linear_data_with_root_parallel(root: etree._Element):
         processing_context = [{"project": "ctx", "file_name": "ctx.xml"}]
         project_priority = ["primary"]
         instruction_priority = ["primary"]
+        annotation_projects = []
         parallel_projects = ["primary", "bad", "parallel"]
         parallel_column_order = 0
         parallel_compilation_depth = 0
