@@ -57,6 +57,26 @@ MAQQEF = "־"
 _SEPARATOR = re.compile(rf"[\s{MAQQEF}]+")
 
 
+#: Qamats (U+05B8) and qamats qatan (U+05C7). This print has **one** qamats glyph; the
+#: Wikisource edition writes U+05C7 wherever its editors read the vowel as qatan. That is
+#: their phonological interpretation, not something on the page, so the reading writes
+#: U+05B8 and the difference is settled for the print without looking at the scan -- the
+#: only class in this comparison that is.
+QAMATS, QAMATS_QATAN = "\u05b8", "\u05c7"
+
+
+def is_qamats_qatan_only(ours: str, theirs: str) -> bool:
+    """Whether two words differ in nothing but qamats against qamats qatan.
+
+    Folding the two characters together has to make the words identical. A word where
+    something *else* also differs is not settled by the rule, and saying so is the point:
+    `קָדָשִׁים` against `קׇדָשִׁים` is the rule, and a meteg or a dagesh riding along with
+    it is not.
+    """
+    fold = lambda word: word.replace(QAMATS_QATAN, QAMATS)
+    return ours != theirs and fold(ours) == fold(theirs)
+
+
 def words(text: str) -> list[str]:
     """Split on whitespace and maqqef, keeping the pointed forms.
 
@@ -148,6 +168,21 @@ class Comparison:
             if key in by_key:
                 by_key[key].verdict = verdict
         return [key for key in verdicts if key not in by_key]
+
+    def qamats_qatan_verdicts(self) -> dict[str, str]:
+        """`print` for every difference that is qamats qatan and nothing else.
+
+        The rule is the one class this comparison settles without going back to the image,
+        so applying it by hand on every page is copying, and copying is how a difference
+        that only *looks* like the rule gets a `print` it did not earn. This finds them and
+        refuses everything else.
+        """
+        return {
+            difference.key: PRINT
+            for difference in self.differences
+            if difference.bucket == VOWELS
+            and is_qamats_qatan_only(difference.ours, difference.theirs)
+        }
 
 
 def compare(ours: str, theirs: str, *, page: str = "") -> Comparison:
@@ -269,6 +304,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="JSON object mapping a difference key to print/reading.",
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON, not a table.")
+    parser.add_argument(
+        "--settle-qamats-qatan",
+        action="store_true",
+        help="Add a print verdict to the --verdicts file for every qamats-qatan-only "
+             "difference, then continue. Nothing else is settled this way.",
+    )
     return parser
 
 
@@ -279,6 +320,23 @@ def main(argv: list[str] | None = None) -> int:
         arguments.transcription.read_text(encoding="utf-8"),
         page=arguments.page,
     )
+    if arguments.settle_qamats_qatan:
+        if not arguments.verdicts:
+            raise SystemExit("--settle-qamats-qatan needs --verdicts to write into.")
+        settled = comparison.qamats_qatan_verdicts()
+        existing = (
+            json.loads(arguments.verdicts.read_text(encoding="utf-8"))
+            if arguments.verdicts.exists()
+            else {}
+        )
+        added = {k: v for k, v in settled.items() if k not in existing}
+        if added:
+            arguments.verdicts.write_text(
+                json.dumps(existing | added, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        print(f"qamats qatan: {len(settled)} found, {len(added)} newly recorded")
+
     if arguments.verdicts:
         unmatched = comparison.apply_verdicts(
             json.loads(arguments.verdicts.read_text(encoding="utf-8"))

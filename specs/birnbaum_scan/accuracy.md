@@ -35,17 +35,19 @@ adjudicated by going back to the page image.
 | 31 | 206 | 0 | 0 | 8 | 0 (none needed) |
 | 33 | 159 | 0 | 0 | 10 | 0 (none needed) |
 | 35 | 163 | 1 | 0 | 5 | 0 (none needed) |
+| 37 | 185 | 0 | 0 | 5 | 0 (none needed) |
+| 39 | 167 | 0 | 0 | 15 | 0 (none needed) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
-| **total** | **3195** | **5** | **11** | **138** | **0** |
+| **total** | **3547** | **5** | **11** | **158** | **0** |
 
-**No misreading survives in 3195 words.** But the second number in that column has grown
+**No misreading survives in 3547 words.** But the second number in that column has grown
 faster than the first, and it is now the one that matters: **twenty-nine readings have been
 corrected, nearly all of them points, and every one was caught by the diff rather than
 by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
-reliable *for consonants* — the skeleton has not been wrong once in 3195 words. It is not
+reliable *for consonants* — the skeleton has not been wrong once in 3547 words. It is not
 reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
 differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
 neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
@@ -182,6 +184,35 @@ One thing the hand slices carried that the machine does not: printed page 15's t
 the file now matches what the edition sets. The reading never had them and the print does
 not carry them, so the adjudication is unchanged; what changed is that the slice can be
 regenerated and checked.
+
+## The qamats-qatan rule is applied by a tool now, and it found two mistakes
+
+Qamats qatan is the only class this comparison settles without going back to the image: the
+print has one qamats glyph, the edition writes U+05C7 where its editors read the vowel as
+qatan, and that is their interpretation rather than something on the page. Applying it is
+therefore mechanical -- and it was being applied by hand, page after page, which is copying.
+
+`compare --settle-qamats-qatan` records the rule's verdicts and **refuses every difference
+the rule does not wholly cover**: the two words must be identical once U+05C7 and U+05B8 are
+folded together. Run over the twenty pages already adjudicated it accepted 89 differences and
+declined two that had been filed under the rule:
+
+| page | the print | the edition |
+|---|---|---|
+| 15 | `רִבּוֹן כָּל הַמַּעֲשִׂים` | `רִבּוֹן כׇל` |
+| 17 | `לִי כָּל צָרְכִּי` | `לִי כׇל` |
+
+In both the edition drops the **dagesh** as well as reading the vowel as qatan. Two things
+differ, the rule covers neither, and the readings said "settled by rule" about a difference
+it does not touch. Both have now been checked at 25× and both verdicts stand -- the print
+carries the dagesh -- so nothing in the tally changes. What changes is that the reason is
+true.
+
+**And `כל` turns out not to be a class at all.** The edition is inconsistent about it within
+eight words on page 15, and so is the print across pages: printed 25 sets
+`וְיֵדְעוּ כָל בָּאֵי עוֹלָם` with no dagesh, and that correction was itself found by going
+to the image. A word that looks settleable in bulk is worth one page of checking before it
+is treated that way.
 
 ## Corrections are data now, not prose
 

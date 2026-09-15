@@ -174,6 +174,17 @@ check that silently measures nothing is worse than no check, because it is belie
   an absence, or it disagrees with the reading. Those three go to a person.
 
 **The transcription**
+- **Apply the one mechanical rule mechanically.** Qamats qatan is the only class this
+  comparison settles without going back to the image, so it is the one that gets applied by
+  hand page after page — and applying it by hand is how a difference that merely *looks*
+  like it gets a `print` it never earned. `compare --settle-qamats-qatan` records the rule's
+  verdicts and refuses everything else. Put on twenty pages already adjudicated it found two
+  where the edition had dropped a **dagesh** as well as reading the vowel as qatan
+  (`כָּל` against `כׇל`): two things differing, the rule covering neither, and both filed
+  under it. The verdicts were right and the reasons were invented.
+- **A word is not a class.** `כל` came out of that with a dagesh on two pages and without one
+  on a third, in the same print. Anything that looks like it could be settled in bulk is
+  worth one page's worth of checking before it is.
 - **The comparison is blind to what both sides are missing.** Printed page 21's last line
   — nine words — was absent from the reading *and* from the hand-made slice, so nothing
   fired: 166 files validated, the suite passed, `refdb` was clean. It surfaced only when
