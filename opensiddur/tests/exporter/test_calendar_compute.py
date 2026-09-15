@@ -54,6 +54,89 @@ def _snapshot(data: dict[tuple[str, str], object]) -> SettingSnapshot:
     )
 
 
+class TestRoshHodesh(unittest.TestCase):
+    @staticmethod
+    def _snap(year, month, day, *, israel=True, hour=None):
+        data = {
+            (FS_GREGORIAN, "year"): year,
+            (FS_GREGORIAN, "month"): month,
+            (FS_GREGORIAN, "day"): day,
+            (FS_LOCATION, "latitude"): 31.78 if israel else 40.71,
+            (FS_LOCATION, "longitude"): 35.22 if israel else -74.01,
+            (FS_LOCATION, "timezone"): "Asia/Jerusalem" if israel else "America/New_York",
+        }
+        if hour is not None:
+            data[(FS_TIME, "hour")] = hour
+            data[(FS_TIME, "minute")] = 0
+        return _snapshot(data)
+
+    def test_every_rosh_hodesh_in_5786(self):
+        # Issue #125: all 17 days, with the bounding Rosh Hashanah dates.
+        cases = (
+            (2025, 9, 23, 0),
+            (2025, 10, 22, 1), (2025, 10, 23, 2),
+            (2025, 11, 21, 1),
+            (2025, 12, 20, 1), (2025, 12, 21, 2),
+            (2026, 1, 19, 1),
+            (2026, 2, 17, 1), (2026, 2, 18, 2),
+            (2026, 3, 19, 1),
+            (2026, 4, 17, 1), (2026, 4, 18, 2),
+            (2026, 5, 17, 1),
+            (2026, 6, 15, 1), (2026, 6, 16, 2),
+            (2026, 7, 15, 1),
+            (2026, 8, 13, 1), (2026, 8, 14, 2),
+            (2026, 9, 12, 0),
+        )
+        for year, month, day, expected in cases:
+            for israel in (True, False):
+                with self.subTest(date=(year, month, day), israel=israel):
+                    found = compute_holiday(self._snap(year, month, day, israel=israel))
+                    self.assertEqual(found["rosh-hodesh"], expected)
+
+    def test_ordinary_days_and_rosh_hashana(self):
+        for month, day, rosh_hashana in ((4, 16, 0), (4, 19, 0), (9, 12, 1), (9, 13, 2)):
+            with self.subTest(month=month, day=day):
+                found = compute_holiday(self._snap(2026, month, day))
+                self.assertEqual(found["rosh-hodesh"], 0)
+                self.assertEqual(found["rosh-hashana"], rosh_hashana)
+
+    def test_leap_adars_and_variable_month_lengths(self):
+        cases = (
+            (5784, 11, 30, 1), (5784, 12, 1, 2),  # Adar I
+            (5784, 12, 30, 1), (5784, 13, 1, 2),  # Adar II
+            (5784, 9, 1, 1), (5784, 10, 1, 1),  # Both preceding months short
+            (5785, 8, 30, 1), (5785, 9, 1, 2),
+            (5785, 9, 30, 1), (5785, 10, 1, 2),  # Both preceding months long
+        )
+        for year, month, day, expected in cases:
+            with self.subTest(hebrew=(year, month, day)):
+                gregorian = pyluach_dates.HebrewDate(year, month, day).to_pydate()
+                found = compute_holiday(self._snap(gregorian.year, gregorian.month, gregorian.day))
+                self.assertEqual(found["rosh-hodesh"], expected)
+
+    def test_nightfall_enters_advances_and_leaves_rosh_hodesh(self):
+        for day, daytime, nighttime in ((16, 0, 1), (17, 1, 2), (18, 2, 0)):
+            for hour, expected in ((12, daytime), (23, nighttime)):
+                with self.subTest(day=day, hour=hour):
+                    found = compute_holiday(self._snap(2026, 4, day, hour=hour))
+                    self.assertEqual(found["rosh-hodesh"], expected)
+
+    def test_weekly_torah_flags(self):
+        for date, rosh_hodesh, mahar_hodesh in (
+            ((2025, 12, 20), True, True),  # Day 1 on Shabbat; day 2 tomorrow
+            ((2026, 4, 18), True, False),  # Day 2 on Shabbat
+            ((2026, 5, 16), False, True),  # One-day Rosh Hodesh tomorrow
+            ((2026, 9, 12), False, False),  # Rosh Hashanah on Shabbat
+        ):
+            shabbat = pyluach_dates.GregorianDate(*date).to_pydate()
+            for days_before in range(7):
+                current = shabbat - timedelta(days=days_before)
+                with self.subTest(date=current):
+                    found = compute_torah_reading(self._snap(current.year, current.month, current.day))
+                    self.assertEqual(found["shabbat-rosh-hodesh"], rosh_hodesh)
+                    self.assertEqual(found["shabbat-mahar-hodesh"], mahar_hodesh)
+
+
 class TestSettingSnapshot(unittest.TestCase):
     def test_get_int_coercions(self):
         snap = _snapshot({
