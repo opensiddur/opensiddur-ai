@@ -4,7 +4,7 @@ import argparse
 import sys
 from .common import set_project_directory
 from .common import (PROJECT_EN, PROJECT_HE, PRAYER, SIDDUR, document, write, cond,
-                    endcond, feature, SERVICE, AGG, PERSON)
+                    endcond, feature, SERVICE, AGG, HOL, PERSON)
 from .front import SECTIONS, front_block, section_body
 from .index import index
 from .he_prayers import PRAYERS as AMIDAH_PRAYERS
@@ -13,10 +13,14 @@ from .he_tallith import PRAYERS as TALLITH_PRAYERS
 from .he_tefillin import PRAYERS as TEFILLIN_PRAYERS
 from .he_poems import PRAYERS as POEM_PRAYERS
 from .he_berakhot import PRAYERS as BERAKHOT_PRAYERS, BLESSINGS
+from .he_akedah import PRAYERS as AKEDAH_PRAYERS
+from .he_korbanot import PRAYERS as KORBANOT_PRAYERS
+from .he_ishmael import PRAYERS as ISHMAEL_PRAYERS
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
-           + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS)
+           + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -51,6 +55,20 @@ def declaration_yeladim():
     return (f'        <j:declare xml:id="unit_service">\n'
             f'          <tei:fs type="{SERVICE}">\n{svc}\n          </tei:fs>\n'
             f'        </j:declare>')
+
+
+# Birkhoth ha-Shaḥar is said every morning, Sabbaths and festivals included -- the print
+# says so twice on its own pages: `On Sabbath say:` stands inside the section, and it ends
+# `On Sabbaths and on major festivals the service is continued on page 299.` So it declares
+# the service and **nothing about the day**, exactly as Shaḥarith li-Yladim does.
+#
+# It used to share the Amidah's `declaration()`, which declares `shabbat: false` because
+# that unit is specifically the weekday Amidah. The effect was that the Sabbath musaf
+# passage was resolved away in *every* compile, including the undecided one -- a conditional
+# that could never be true, in a unit whose own rubric says when to say it. The compile is
+# what surfaced it; nothing else in the pass could.
+def declaration_birchot():
+    return declaration_yeladim()
 
 
 #: The rubrics of printed page 1, in the order the page sets them, each naming the
@@ -103,10 +121,21 @@ TEFILLIN_HEAD = {
     PROJECT_HE: '        <tei:head xml:lang="he">סֵֽדֶר הַנָּחַת תְּפִלִּין</tei:head>',
     PROJECT_EN: '        <tei:head xml:lang="en">PUTTING ON THE TEFILLIN</tei:head>',
 }
+#: The Shema verse and Barukh Shem are `tei:seg`s inside the children's `torah_tziva`
+#: rather than files of their own, so they are reached by URN and not by prayer name. They
+#: are the same words wherever the book prints them, which is the whole point of giving
+#: them canonical URNs there.
+SHEMA_PASUK = PRAYER + "shema/shema_yisrael"
+SHEMA_BARUKH_SHEM = PRAYER + "shema/barukh_shem"
+
 TEFILLIN_RUBRICS = (
     ("Meditation before putting on the tefillin", ["tefillin_hineni_mekhaven"]),
     ("When placing the tefillin on the left arm:", ["tefillin_lehaniach"]),
     ("When placing the tefillin on the forehead:", ["tefillin_al_mitzvat"]),
+    # Printed 7 sets Barukh Shem here, between the two blessings. It is realised on the
+    # children's page, so the unit reaches it by URN -- which `he_tefillin`'s docstring has
+    # said all along and the unit did not in fact do.
+    ("", [SHEMA_BARUKH_SHEM]),
     ("", ["tefillin_umechokhmatkha"]),
     ("When winding the retsuah three times round the middle finger:",
      ["tefillin_verastikh"]),
@@ -166,7 +195,13 @@ TORAH_BLESSINGS = ("asher_yatzar", "birkhot_hatorah_laasok", "birkhot_hatorah_ve
 
 
 def _transclude(lines, by_name, name):
-    lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+    """Transclude by prayer name, or -- when the name is already a URN -- by URN.
+
+    A URN is how a text realised as a `tei:seg` inside another file is reached: it has no
+    file of its own, and `refdb` resolves a URN to wherever it is declared.
+    """
+    urn = name if name.startswith("urn:") else by_name[name]["urn"]
+    lines.append(f'        <j:transclude type="external" target="{urn}"/>')
 
 
 def _birchot_blessings(lines, by_name):
@@ -191,31 +226,162 @@ def _birchot_blessings(lines, by_name):
         _transclude(lines, by_name, name)
 
 
+#: Printed 19 to 25, from the Akedah to the end of the Atah Hu passages.
+#:
+#: The two `Reader` labels on printed 25 are what make `lefikhakh/ashrenu` and
+#: `atah_hu/uvishuatkha` texts of their own: a label cannot stand inside a `tei:p`, and a
+#: passage that must start level with its translation needs a URN. The English page runs
+#: straight on and is parted at the same two points so the columns join URN for URN.
+AKEDAH_ORDER = (
+    ("citation", "בראשית כב, א–יט", "Genesis 22:1\u201319"),
+    "akedah",
+    "akedah_ribbono",
+    "leolam_yehe_adam",
+    "ribbon_kol_haolamim",
+    "aval_anachnu",
+    "lefikhakh",
+    ("reader", "ashrenu"),
+    ("transclude", SHEMA_PASUK),
+    ("transclude", SHEMA_BARUKH_SHEM),
+    "atah_hu_ad",
+    ("reader", "atah_hu_uvishuatkha"),
+    "atah_hu_bashamayim",
+)
+
+#: Printed 27 to 41. Every scriptural passage is printed under a citation, set in the
+#: Hebrew column in small unpointed type and on the English page as a centred italic line;
+#: chapter and verse take a comma there and a colon here, and a range takes an en dash in
+#: both. A citation naming two places parts them with a semicolon.
+KORBANOT_ORDER = (
+    ("citation", "שמות ל, יז–כא", "Exodus 30:17\u201321"),
+    "korbanot_kiyor",
+    "korbanot_yehi_ratzon_miqdash",
+    ("citation", "במדבר כח, א–ח", "Numbers 28:1\u20138"),
+    "korbanot_tamid",
+    ("citation", "ויקרא א, יא", "Leviticus 1:11"),
+    "korbanot_ushchat",
+    "korbanot_yehi_ratzon_amirah",
+    "korbanot_atah_hu",
+    ("citation", "שמות ל, לד–לו; ל ז–ח", "Exodus 30:34\u201336; 30:7\u20138"),
+    "korbanot_ketoret",
+    ("citation", "תלמוד בבלי, כריתות ו, א; תלמוד ירושלמי, יומא ד, ה",
+     "Babylonian Talmud, Kerithoth 6a; Palestinian Talmud, Yoma 4:5"),
+    "korbanot_pittum",
+    "korbanot_rashbag",
+    "korbanot_rabbi_natan",
+    "korbanot_bar_kappara",
+    "korbanot_pesukim",
+    "korbanot_atah_seter",
+    "korbanot_vearvah",
+    ("citation", "מסכת יומא לג, א", "Talmud Yoma 33a"),
+    "korbanot_abaye",
+    "poem_ana_bekhoach",
+    ("transclude", SHEMA_BARUKH_SHEM),
+    "korbanot_ribbon_haolamim",
+    ("conditional", "cond_musaf_shabbat", "On Sabbath say:",
+     feature(AGG, "shabbat"),
+     "במדבר כח, ט–י", "Numbers 28:9\u201310", "korbanot_musaf_shabbat"),
+    ("conditional", "cond_musaf_rosh_chodesh", "On Rosh \u1e24odesh say:",
+     feature(HOL, "rosh-hodesh", '<tei:numeric value="1" max="2"/>'),
+     "במדבר כח, יא–טו", "Numbers 28:11\u201315", "korbanot_musaf_rosh_chodesh"),
+    ("citation", "משנה זבחים, פרק ה", "Mishnah Zebaḥim, Chapter 5"),
+) + tuple(f"eizehu_mekoman_{n}" for n in range(1, 9))
+
+#: Printed 41 to 47. The English page carries a heading this one does not, which is the
+#: sharpest asymmetry in the section and is why `head` here is a per-project value.
+ISHMAEL_ORDER = (
+    ("head", None, "TALMUDIC EXPOSITION OF THE SCRIPTURES"),
+    ("citation", "ספרא, פתיחה", "Sifra, Introduction"),
+    "ishmael_lead",
+) + tuple(f"middot_{n}" for n in range(1, 14)) + (
+    ("citation", "אבות ה, כג; מלאכי ג, ד", "Mishnah Avoth 5:23; Malachi 3:4"),
+    "ishmael_yehi_ratzon",
+    ("head", "קַדִּישׁ דְּרַבָּנָן", "KADDISH D\u2019RABBANAN"),
+    ("mourners", None),
+    "kaddish_derabbanan_yitgadal",
+    "kaddish_derabbanan_yehe_shmeh",
+    "kaddish_derabbanan_yitbarakh",
+    "kaddish_derabbanan_al_yisrael",
+    "kaddish_derabbanan_yehe_shlama",
+    "kaddish_derabbanan_oseh_shalom",
+    ("closing", None),
+)
+
+#: The last line of the section, and the one place the two sides say different words: each
+#: names its own half of the target opening. Set as printed, and not linked -- page 299 is
+#: outside what these projects hold.
+CLOSING_RUBRIC = {
+    PROJECT_HE: "On Sabbaths and on major festivals the service is continued on page 299.",
+    PROJECT_EN: "On Sabbaths and on major festivals the service is continued on page 300.",
+}
+
+
+def _emit(lines, project, by_name, order):
+    """One ordered run of the unit: texts, citations, headings and conditionals."""
+    for item in order:
+        if isinstance(item, str):
+            _transclude(lines, by_name, item)
+            continue
+        kind = item[0]
+        if kind == "citation":
+            _he, _en = item[1], item[2]
+            lines.append('        <tei:head xml:lang="%s">%s</tei:head>'
+                         % (("he", _he) if project == PROJECT_HE else ("en", _en)))
+        elif kind == "head":
+            _he, _en = item[1], item[2]
+            if project == PROJECT_HE and _he is None:
+                continue        # printed 42 heads the section and printed 41 does not
+            lines.append('        <tei:head xml:lang="%s">%s</tei:head>'
+                         % (("he", _he) if project == PROJECT_HE else ("en", _en)))
+        elif kind == "transclude":
+            _transclude(lines, by_name, item[1])
+        elif kind == "reader":
+            lines.append('        <tei:note type="instruction" xml:lang="en">Reader</tei:note>')
+            _transclude(lines, by_name, item[1])
+        elif kind == "mourners":
+            lines.append('        <tei:note type="instruction" xml:lang="en">Mourners:</tei:note>')
+        elif kind == "closing":
+            lines.append('        <tei:note type="instruction" xml:lang="en">%s</tei:note>'
+                         % CLOSING_RUBRIC[project])
+        elif kind == "conditional":
+            cid, note, fs, he_cit, en_cit, name = item[1:]
+            lines.append(cond(cid, note=note, fs=fs))
+            lines.append('        <tei:head xml:lang="%s">%s</tei:head>'
+                         % (("he", he_cit) if project == PROJECT_HE else ("en", en_cit)))
+            _transclude(lines, by_name, name)
+            lines.append(endcond(cid))
+        else:
+            raise ValueError(f"unknown unit item {item!r}")
+
+
 def unit_body_birchot(project, by_name):
-    """Birkhoth ha-Shaḥar, as far as it has been read: Mah Tovu and the tallith order."""
-    lines = [f'      <tei:div corresp="{S}chol/shacharit/birchot_hashachar">',
-             declaration(), BIRCHOT_HEAD[project]]
+    """Birkhoth ha-Shaḥar entire: printed 3 to 47 on the Hebrew side, 4 to 48 on the
+    English one."""
+    lines = [f'      <tei:div corresp="{S}all/shacharit/birchot_hashachar">',
+             declaration_birchot(), BIRCHOT_HEAD[project]]
     for n, (note, names) in enumerate(BIRCHOT_RUBRICS):
         if n == 1:                      # the tallith order opens with its own heading
             lines.append(TALLITH_HEAD[project])
         lines.append(f'        <tei:note type="instruction" xml:lang="en">{note}</tei:note>')
         for name in names:
-            lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+            _transclude(lines, by_name, name)
     lines.append(BIRCHOT_CITATION[project])
     for name in ("tallith_mah_yakar", "tallith_yehi_ratzon"):
-        lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+        _transclude(lines, by_name, name)
     lines.append(TEFILLIN_HEAD[project])
     for note, names in TEFILLIN_RUBRICS:
         if note:
             lines.append(f'        <tei:note type="instruction" xml:lang="en">{note}</tei:note>')
         for name in names:
-            lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+            _transclude(lines, by_name, name)
     adon, yigdal = POEM_HEADS[project]
     for head, name in ((adon, "poem_adon_olam"), (yigdal, "poem_yigdal")):
         if head:
             lines.append(head)
-        lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+        _transclude(lines, by_name, name)
     _birchot_blessings(lines, by_name)
+    for order in (AKEDAH_ORDER, KORBANOT_ORDER, ISHMAEL_ORDER):
+        _emit(lines, project, by_name, order)
     lines.append('        <j:endDeclare target="#unit_service"/>')
     lines.append("      </tei:div>")
     return "\n".join(lines)
@@ -235,10 +401,10 @@ def units(project, pages, by_name, amidah_body):
              body=unit_body_yeladim(YELADIM_HEAD[project], by_name),
              title_he="שַׁחֲרִית לִילָדִים", title_en="Morning prayer for children",
              urn=f"{S}all/shacharit/yeladim", pages=pages["yeladim"]),
-        dict(name="chol_shacharit_birchot_hashachar",
+        dict(name="all_shacharit_birchot_hashachar",
              body=unit_body_birchot(project, by_name),
              title_he="בִּרְכוֹת הַשַּֽׁחַר", title_en="Preliminary morning service",
-             urn=f"{S}chol/shacharit/birchot_hashachar", pages=pages["birchot"]),
+             urn=f"{S}all/shacharit/birchot_hashachar", pages=pages["birchot"]),
         dict(name="chol_shacharit_amidah", body=amidah_body,
              title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",
              title_en="The weekday morning Amidah",
@@ -266,7 +432,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 19), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "amidah": (81, 97)}
 
 
 def unit_body():

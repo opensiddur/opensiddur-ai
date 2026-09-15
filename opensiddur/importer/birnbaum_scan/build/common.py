@@ -36,7 +36,7 @@ IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerB
 #: its own sigil once, at import, so no call site carries it.
 SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
 SIGIL_YELADIM = "1949 all/shacharit/yeladim"
-SIGIL_BIRCHOT = "1949 chol/shacharit/birchot_hashachar"
+SIGIL_BIRCHOT = "1949 all/shacharit/birchot_hashachar"
 FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"

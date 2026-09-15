@@ -452,6 +452,39 @@ A note carries no URN of its own. `urn:x-opensiddur:notes:` names an apparatus *
 one edition's notes can be swapped for another's; a note is not a text, and `@target`
 already says what it annotates.
 
+## Known defect in the calendar: the second day of a two-day Rosh Ḥodesh computes as 0
+
+Not caused by this work and not fixed by it, but found by it and load-bearing for anything
+conditioned on Rosh Ḥodesh — which in this book is Ya'aleh v'Yavo in the Amidah as well as
+the musaf passage on printed 35.
+
+`opensiddur.exporter.calendar.compute` marks the days of Rosh Ḥodesh like this, in 5786:
+
+| date | Hebrew date | `opensiddur:holiday/rosh-hodesh` |
+|---|---|---|
+| 19 Jan 2026 | 1 Shevat | 1 |
+| 17 Feb 2026 | 30 Shevat | 2 |
+| **18 Feb 2026** | **1 Adar** | **0** |
+| 19 Mar 2026 | 1 Nisan | 1 |
+| 17 Apr 2026 | 30 Nisan | 2 |
+| **18 Apr 2026** | **1 Iyar** | **0** |
+
+A one-day Rosh Ḥodesh is 1 and is right. A two-day Rosh Ḥodesh gives **2 on its first day
+and 0 on its second**, so the second day is not Rosh Ḥodesh at all as far as any condition
+can tell. Seven of the twelve months in 5786 have a two-day Rosh Ḥodesh, so this is close
+to half of all Rosh Ḥodesh mornings.
+
+The condition itself is written correctly — `<tei:numeric value="1" max="2"/>` means "any of
+its up to two days", and `condition_eval` compares it as a range. The defect is upstream of
+that, in what the calendar computes.
+
+**How it surfaced, and why it matters for method.** Choosing 18 April 2026 to test the
+Sabbath and Rosh Ḥodesh conditionals together — a Saturday that is also Rosh Ḥodesh — showed
+the Sabbath passage appearing and the Rosh Ḥodesh passage not. A settings file chosen without
+that care would have shown the Rosh Ḥodesh conditional resolving false and been read as
+proof it worked. `settings_rosh_chodesh_jerusalem.yaml` therefore names 17 May 2026, a
+**one-day** Rosh Ḥodesh, and says in its own comments why.
+
 ## Known defects in the parallel PDF
 
 Found by compiling this unit two-column; both are in the exporter, not in the TEI.

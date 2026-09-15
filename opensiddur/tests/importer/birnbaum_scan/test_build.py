@@ -284,7 +284,7 @@ class TestUnitAssembly(unittest.TestCase):
             return [u["name"] for u in self.build_he.units(
                 project, pages, build.BY_NAME, build.unit_body())]
 
-        expected = ["all_shacharit_yeladim", "chol_shacharit_birchot_hashachar",
+        expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
                     "chol_shacharit_amidah"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
@@ -416,7 +416,7 @@ class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
                 (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
                 (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
             targets = self._unit_targets(
-                build, project, pages)["chol_shacharit_birchot_hashachar"]
+                build, project, pages)["all_shacharit_birchot_hashachar"]
             joined = " ".join(targets)
             for slug in ("birchot_hashachar/shelo_asani_aved",
                          "birchot_hashachar/hamaavir_shenah",

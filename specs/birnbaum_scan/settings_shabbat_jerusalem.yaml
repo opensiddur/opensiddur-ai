@@ -1,0 +1,44 @@
+# A named day and place: 18 April 2026 in Jerusalem, at the Reader's repetition.
+#
+# **A Sabbath.** Every other settings file in this directory names a weekday, so until this
+# one existed Birkhoth ha-Shaḥar's Sabbath musaf conditional had only ever been shown
+# resolving to *false* -- and an assertion that cannot fail proves nothing. While the unit
+# was filed under `chol` it could not have fired on any date whatever, which is how it stood
+# without anyone noticing.
+#
+# Nothing conditional should survive this compile except the gendered blessings, which have
+# no default because no calendar can settle who is praying.
+# Birnbaum sets his rubrics mid-passage, not at paragraph boundaries, so the two columns
+# are not aligned at a rubric's own position. Deduplicating them would leave the English
+# column with no rubric anywhere near the passage its rubric is about. See
+# doc/typography.md, `instructions`.
+typography:
+  instructions:
+    from: both
+priority:
+# Ordered: the Hebrew wins wherever both projects realise a URN, which is
+# everywhere in the body. The English is the fallback for the front matter
+# Birnbaum wrote only in English -- his introduction has no Hebrew counterpart
+# to prefer, and without a fallback the transclusion would fail rather than
+# quietly resolve to the one project that carries it.
+  transclusion: [birnbaum_ashkenaz_he_1949, birnbaum_ashkenaz_en_1949]
+# Birnbaum's own footnotes. The apparatus is realised in the English project only -- the
+# commentary is English prose about Hebrew words, as his introduction is -- so this names
+# the one project that carries it. In a parallel compile each column narrows this to its
+# own project, which is what keeps a note attached to a text both sides realise from being
+# printed in both columns.
+annotations: [birnbaum_ashkenaz_en_1949]
+parallel:
+  projects: [birnbaum_ashkenaz_en_1949]
+declarations:
+  opensiddur:gregorian-date:
+    year: 2026
+    month: 4
+    day: 18
+  opensiddur:location:
+    latitude: 31.78
+    longitude: 35.22
+  opensiddur:service-time:
+    shaharit: true
+  opensiddur:recitation:
+    repetition: true

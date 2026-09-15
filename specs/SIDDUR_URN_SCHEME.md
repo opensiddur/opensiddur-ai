@@ -76,10 +76,32 @@ urn:x-opensiddur:text:siddur:chol/shacharit/amidah@birnbaum_ashkenaz_he_1949
 
 `all` is for a unit said at its service **whatever the occasion** — not a unit said on
 every occasion *in addition* to what the occasion calls for, which is `hosafot`. Prefer a
-named occasion wherever the book confines a unit to one: `all` is a claim that no occasion
-changes the unit, and it is wrong the moment some occasion does. Birnbaum's Shaḥarith
-li-Yladim is the first of these — a child says it every morning, Sabbaths and festivals
-included, so filing it under `chol` would say something the book does not.
+named occasion wherever the book confines a unit to one. Birnbaum's Shaḥarith li-Yladim is
+the first of these — a child says it every morning, Sabbaths and festivals included, so
+filing it under `chol` would say something the book does not.
+
+**`all` is about which unit stands there, not about whether anything inside it varies.**
+This once read "`all` is a claim that no occasion changes the unit, and it is wrong the
+moment some occasion does", which is too strong and contradicts what this document says
+three sections down about `prayer:`: *a passage said only on some occasion keeps its own
+name and is wrapped in `j:conditional`*. If a conditional inside a unit disqualified `all`,
+the conditional mechanism would have nothing to do.
+
+The test is **replacement**: file a unit under a named occasion when the book puts a
+*different* unit in its place on another occasion, as it does for the Amidah — the Sabbath
+morning Amidah is another text, not this one with an insert. File it under `all` when the
+same unit is said and the occasion only changes what is said *within* it.
+
+Birkhoth ha-Shaḥar is the case that settled this, and the print settles it twice on its own
+pages: `On Sabbath say:` stands inside the section, and the section ends *"On Sabbaths and
+on major festivals the service is continued on page 299."* A unit that tells you what to add
+on the Sabbath and where to go next afterwards is plainly said on the Sabbath.
+
+The practical consequence is not cosmetic. Under `chol` the unit declared `shabbat: false`,
+which resolved its own Sabbath rubric away in **every** compile, including the undecided one
+— a conditional that could never be true, inside a unit whose rubric says when to say it.
+Validation, the registry and the reference database all passed; only compiling it and
+looking for the passage found it.
 
 **service** — `arvit`, `shacharit`, `musaf`, `minchah`, `neilah`, `selichot`. Omitted for
 occasions that are not services.

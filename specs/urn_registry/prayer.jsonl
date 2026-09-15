@@ -1,3 +1,5 @@
+{"urn": "urn:x-opensiddur:text:prayer:akedah", "status": "canonical", "label_he": "פָּרָשַׁת הָעֲקֵדָה", "label_en": "The binding of Isaac"}
+{"urn": "urn:x-opensiddur:text:prayer:akedah/ribbono_shel_olam", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:akedah", "label_he": "רִבּוֹנוֹ שֶׁל עוֹלָם", "label_en": "Master of the world, may it be thy will"}
 {"urn": "urn:x-opensiddur:text:prayer:al_achilat_matzah", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:al_hanissim", "status": "canonical", "label_he": "עַל הַנִּסִּים", "label_en": "Al ha-Nissim"}
 {"urn": "urn:x-opensiddur:text:prayer:al_hanissim/chanukah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:al_hanissim", "label_he": "עַל הַנִּסִּים לַחֲנֻכָּה", "label_en": "Al ha-Nissim for Hanukkah"}
@@ -203,11 +205,38 @@
 {"urn": "urn:x-opensiddur:text:prayer:amidah/zekhor_shenaym_asar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah", "label_he": "זְכוֹר שְׁנֵים עָשָׂר"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah/zekhor_taan_maqlo", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah", "label_he": "זְכוֹר טָעַן מַקְלוֹ"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah/zokhraynu_hashem_elohaynu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah", "label_he": "זׇכְרֵֽנוּ יְיָ אֱלֹהֵֽינוּ"}
+{"urn": "urn:x-opensiddur:text:prayer:asher_yatzar", "status": "canonical", "label_en": "Asher Yatzar", "label_he": "אֲשֶׁר יָצַר"}
 {"urn": "urn:x-opensiddur:text:prayer:ashrei", "status": "canonical", "label_en": "Ashrei"}
 {"urn": "urn:x-opensiddur:text:prayer:ashrei/tehila_ledavid", "parent": "urn:x-opensiddur:text:prayer:ashrei", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:atah_hu", "status": "context", "note": "A grouping only. Printed 25 parts the passage at a Reader label, so its two halves are separate texts; nothing says the whole."}
+{"urn": "urn:x-opensiddur:text:prayer:atah_hu/ad_shelo", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "אַתָּה הוּא עַד שֶׁלֹּא נִבְרָא הָעוֹלָם", "label_en": "Thou wast the same before the world was created"}
+{"urn": "urn:x-opensiddur:text:prayer:atah_hu/bashamayim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "אַתָּה הוּא בַּשָּׁמַֽיִם וּבָאָֽרֶץ", "label_en": "Thou, Lord our God, art in heaven and on earth"}
+{"urn": "urn:x-opensiddur:text:prayer:atah_hu/uvishuatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "וּבִישׁוּעָתְךָ תָּרוּם", "label_en": "May our strength rise and be exalted"}
+{"urn": "urn:x-opensiddur:text:prayer:aval_anachnu", "status": "canonical", "label_he": "אֲבָל אֲנַֽחְנוּ עַמְּךָ", "label_en": "However, we are thy people"}
 {"urn": "urn:x-opensiddur:text:prayer:berakhah_acharonah", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:berakhah_acharonah/al_hagefen", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:berakhah_acharonah"}
 {"urn": "urn:x-opensiddur:text:prayer:bfi_yesharim", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar", "status": "canonical", "label_en": "The morning blessings", "label_he": "בִּרְכוֹת הַשַּֽׁחַר"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/gomel_chasadim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who bestows lovingkindness on his people Israel"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hamaavir_shenah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who removes sleep from the eyes"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hamekhin", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who guides the steps of man"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hanoten_layaef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who gives strength to the weary"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/lasekhvi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who gives the cock understanding"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/malbish_arumim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who clothes the naked"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/matir_asurim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who sets the captives free"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/oter_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who crowns Israel with glory"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/ozer_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who girds Israel with might"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/pokeach_ivrim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who opens the eyes of the blind"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/roka_haaretz", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who spreads the earth above the waters"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/sheasah_li", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has provided for all my needs"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/sheasani_kirtzono", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has made me according to his will (said by women)"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_aved", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a slave"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_goy", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a heathen"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_ishah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a woman (said by men)"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shetargilenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Yehi Ratzon: that thou accustom us to thy Torah"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shetatzileni", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Yehi Ratzon: that thou deliver me today"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/zochreinu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Remember us with a good remembrance"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/zokef_kefufim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who raises up those bowed down"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/bamarom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/eloheinu_avinu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon"}
@@ -239,7 +268,23 @@
 {"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/hav_lan", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/nevarekh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun/yehi_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkat_hamazon/zimmun"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_kohanim", "status": "canonical", "label_en": "The Priestly Blessing (Numbers 6:24-26)", "label_he": "בִּרְכַּת כֹּהֲנִים"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "status": "canonical", "label_en": "The blessings over the Torah", "label_he": "בִּרְכוֹת הַתּוֹרָה"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/asher_bachar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Blessing over the giving of the Torah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/laasok", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Blessing over engaging in words of Torah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/vehaarev", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Ve-haarev na"}
 {"urn": "urn:x-opensiddur:text:prayer:borei_pri_hagafen", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "status": "context", "note": "A grouping only. The eight mishnayoth of Zevahim 5 are addressed one at a time; the chapter as a whole is not a liturgical text."}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/1", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן א", "label_en": "Zevaḥim 5:1"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/2", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ב", "label_en": "Zevaḥim 5:2"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/3", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ג", "label_en": "Zevaḥim 5:3"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/4", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ד", "label_en": "Zevaḥim 5:4"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/5", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ה", "label_en": "Zevaḥim 5:5"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/6", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ו", "label_en": "Zevaḥim 5:6"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/7", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ז", "label_en": "Zevaḥim 5:7"}
+{"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/8", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ח", "label_en": "Zevaḥim 5:8"}
+{"urn": "urn:x-opensiddur:text:prayer:elohai_neshamah", "status": "canonical", "label_en": "Elohai Neshamah", "label_he": "אֱלֹהַי נְשָׁמָה"}
+{"urn": "urn:x-opensiddur:text:prayer:elu_devarim", "status": "canonical", "label_en": "Elu Devarim (Mishnah Peah 1:1; Shabbath 127a)", "label_he": "אֵֽלּוּ דְבָרִים"}
 {"urn": "urn:x-opensiddur:text:prayer:ha_el_btaatzumot", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_113", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
@@ -251,6 +296,55 @@
 {"urn": "urn:x-opensiddur:text:prayer:hallel/yehalelukha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel_hagadol", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hamotzi", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "status": "context", "note": "A grouping only. The Kaddish's paragraphs are addressed one at a time because the congregation answers between them."}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/al_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "עַל יִשְׂרָאֵל וְעַל רַבָּנָן", "label_en": "We pray for Israel and for our teachers"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/oseh_shalom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "עֹשֶׂה שָׁלוֹם בִּמְרוֹמָיו", "label_en": "He who creates peace in his celestial heights"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yehe_shlama", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יְהֵא שְׁלָמָא רַבָּא", "label_en": "May there be abundant peace from heaven"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yehe_shmeh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יְהֵא שְׁמֵהּ רַבָּא מְבָרַךְ", "label_en": "May his great name be blessed"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yitbarakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יִתְבָּרַךְ וְיִשְׁתַּבַּח", "label_en": "Blessed and praised, glorified and exalted"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yitgadal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יִתְגַּדַּל וְיִתְקַדַּשׁ", "label_en": "Glorified and sanctified be God's great name"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot", "status": "context", "note": "A grouping only. The korbanot are a run of separate scriptural and rabbinic passages with their own citations, not one text."}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/atah_hu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "אַתָּה הוּא יְיָ אֱלֹהֵֽינוּ שֶׁהִקְטִֽירוּ", "label_en": "Thou art the Lord our God before whom our forefathers burned"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/atah_seter", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "אַתָּה סֵֽתֶר לִי", "label_en": "Thou art my shelter"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/ketoret", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "פָּרָשַׁת הַקְּטֹֽרֶת", "label_en": "The incense"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/kiyor", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "פָּרָשַׁת הַכִּיּוֹר", "label_en": "The laver"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/musaf", "status": "context", "note": "A grouping only. The Sabbath and Rosh Hodesh passages are exclusive of each other and there is no combined text."}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/musaf/rosh_chodesh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot/musaf", "label_he": "מוּסַף שֶׁל רֹאשׁ חֹֽדֶשׁ", "label_en": "The Rosh Ḥodesh musaf offering"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/musaf/shabbat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot/musaf", "label_he": "מוּסַף שֶׁל שַׁבָּת", "label_en": "The Sabbath musaf offering"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/pesukim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "יְיָ צְבָאוֹת עִמָּֽנוּ", "label_en": "The Lord of hosts is with us"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "פִּטּוּם הַקְּטֹֽרֶת", "label_en": "The compounding of the incense"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret/bar_kappara", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret", "label_he": "תַּנְיָא, בַּר קַפָּרָא אוֹמֵר", "label_en": "Bar Kappara says"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret/rabbi_natan", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret", "label_he": "תַּנְיָא, רַבִּי נָתָן אוֹמֵר", "label_en": "Rabbi Nathan says"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret/rashbag", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot/pittum_haketoret", "label_he": "רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל", "label_en": "Rabbi Simeon ben Gamaliel says"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/ribbon_haolamim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "רִבּוֹן הָעוֹלָמִים", "label_en": "Lord of the universe, thou hast commanded us"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/seder_hamaarakhah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "סֵֽדֶר הַמַּעֲרָכָה", "label_en": "Abbaye's order of the Temple service"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/tamid", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "פָּרָשַׁת הַתָּמִיד", "label_en": "The daily offering"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/ushchat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "וְשָׁחַט אֹתוֹ", "label_en": "He shall slaughter it on the north side"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/vearvah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "וְעָרְבָה לַייָ", "label_en": "The offering of Judah and Jerusalem"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/yehi_ratzon_amirah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "יְהִי רָצוֹן שֶׁתְּהֵא אֲמִירָה זוֹ", "label_en": "May it be thy will, that this recital be accepted"}
+{"urn": "urn:x-opensiddur:text:prayer:korbanot/yehi_ratzon_miqdash", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "יְהִי רָצוֹן שֶׁתְּרַחֵם עָלֵֽינוּ", "label_en": "May it be thy will, to have mercy on us"}
+{"urn": "urn:x-opensiddur:text:prayer:lefikhakh", "status": "canonical", "label_he": "לְפִיכָךְ אֲנַֽחְנוּ חַיָּבִים", "label_en": "Therefore it is our duty to give thanks"}
+{"urn": "urn:x-opensiddur:text:prayer:lefikhakh/ashrenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:lefikhakh", "label_he": "אַשְׁרֵֽינוּ שֶׁאֲנַֽחְנוּ מַשְׁכִּימִים", "label_en": "Happy are we who, early and late"}
+{"urn": "urn:x-opensiddur:text:prayer:leolam_yehe_adam", "status": "canonical", "label_he": "לְעוֹלָם יְהֵא אָדָם", "label_en": "Man should ever be God-fearing"}
+{"urn": "urn:x-opensiddur:text:prayer:mah_tovu", "status": "canonical", "label_en": "Mah Tovu", "label_he": "מַה טֹּֽבוּ"}
+{"urn": "urn:x-opensiddur:text:prayer:mah_tovu/mah_tovu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:mah_tovu", "label_en": "How goodly are your tents (Numbers 24:5)"}
+{"urn": "urn:x-opensiddur:text:prayer:mah_tovu/varani", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:mah_tovu", "label_en": "By thy abundant grace (Psalms 5:8; 26:8; 95:6; 69:14)"}
+{"urn": "urn:x-opensiddur:text:prayer:middot", "status": "context", "note": "A grouping only. Birnbaum's own apparatus keys a note to each rule separately, so the thirteen are addressed one at a time."}
+{"urn": "urn:x-opensiddur:text:prayer:middot/1", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה א", "label_en": "The 1th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/10", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה י", "label_en": "The 10th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/11", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה יא", "label_en": "The 11th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/12", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה יב", "label_en": "The 12th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/13", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה יג", "label_en": "The 13th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/2", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ב", "label_en": "The 2th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/3", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ג", "label_en": "The 3th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/4", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ד", "label_en": "The 4th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/5", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ה", "label_en": "The 5th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/6", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ו", "label_en": "The 6th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/7", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ז", "label_en": "The 7th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/8", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ח", "label_en": "The 8th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/9", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ט", "label_en": "The 9th of Rabbi Ishmael's thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/lead", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "רַבִּי יִשְׁמָעֵאל אוֹמֵר", "label_en": "Rabbi Ishmael says: the Torah is interpreted by thirteen rules"}
+{"urn": "urn:x-opensiddur:text:prayer:middot/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "יְהִי רָצוֹן שֶׁיִּבָּנֶה בֵּית הַמִּקְדָּשׁ", "label_en": "May it be thy will, that the Temple be speedily rebuilt"}
 {"urn": "urn:x-opensiddur:text:prayer:modeh_ani", "status": "canonical", "label_he": "מוֹדֶה אֲנִי", "label_en": "Modeh Ani"}
 {"urn": "urn:x-opensiddur:text:prayer:nishmat", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical", "label_en": "Verses of Praise"}
@@ -259,12 +353,27 @@
 {"urn": "urn:x-opensiddur:text:prayer:qiddush/asher_bachar_banu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
 {"urn": "urn:x-opensiddur:text:prayer:qiddush/savri", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
 {"urn": "urn:x-opensiddur:text:prayer:qiddush/vayekhulu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim", "status": "canonical", "label_he": "רִבּוֹן כָּל הָעוֹלָמִים", "label_en": "Master of all worlds"}
 {"urn": "urn:x-opensiddur:text:prayer:sefirat_haomer", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:shehecheyanu", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:shema", "status": "canonical", "label_he": "שְׁמַע", "label_en": "The Shema"}
 {"urn": "urn:x-opensiddur:text:prayer:shema/barukh_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_he": "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד"}
 {"urn": "urn:x-opensiddur:text:prayer:shema/shema_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_he": "שְׁמַע יִשְׂרָאֵל", "label_en": "Deuteronomy 6:4"}
 {"urn": "urn:x-opensiddur:text:prayer:shokhen_ad", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith", "status": "canonical", "label_en": "Putting on the tallith", "label_he": "סֵֽדֶר עֲטִיפַת טַלִּית"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/barkhi_nafshi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Bless the Lord, O my soul (Psalm 104:1-2)"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/hineni_mitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "I am enwrapping myself", "label_he": "הִנְנִי מִתְעַטֵּף"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/lehitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Blessing over wrapping in the tallith"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/mah_yakar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "How precious is thy kindness (Psalm 36:8-11)"}
+{"urn": "urn:x-opensiddur:text:prayer:tallith/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "May it be thy will, after wrapping"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin", "status": "canonical", "label_en": "Putting on the tefillin", "label_he": "סֵֽדֶר הַנָּחַת תְּפִלִּין"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/al_mitzvat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Blessing over the precept of tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Meditation before putting on the tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/lehaniach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Blessing over binding the tefillin"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/parashiyot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "The four sections of the tefillin (Exodus 13:1-16)"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/umechokhmatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Supreme God, thou wilt imbue me"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/verastikh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "I will betroth you to myself (Hosea 2:21-22)"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillin/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "May it be thy will, after putting on the tefillin"}
 {"urn": "urn:x-opensiddur:text:prayer:torah_tziva", "status": "canonical", "label_he": "תּוֹרָה צִוָּה לָֽנוּ מֹשֶׁה", "label_en": "The composite of verses said by a child on dressing"}
 {"urn": "urn:x-opensiddur:text:prayer:torah_tziva/berakhot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "בְּרָכוֹת יָחֻֽלוּ עַל רֹאשִׁי"}
 {"urn": "urn:x-opensiddur:text:prayer:torah_tziva/el_melekh_neeman", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:torah_tziva", "label_he": "אֵל מֶֽלֶךְ נֶאֱמָן"}
@@ -283,49 +392,3 @@
 {"urn": "urn:x-opensiddur:text:prayer:yeladim", "status": "canonical", "label_he": "לִילָדִים", "label_en": "Texts the book prints for children, in the form it prints for them"}
 {"urn": "urn:x-opensiddur:text:prayer:yeladim/elohai_netzor", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yeladim", "label_he": "אֱלֹהַי נְצֹר", "label_en": "The abridged meditation printed for children; not amidah/elohai_netzor, which is a longer text"}
 {"urn": "urn:x-opensiddur:text:prayer:yishtabach", "status": "canonical"}
-{"urn": "urn:x-opensiddur:text:prayer:mah_tovu", "status": "canonical", "label_en": "Mah Tovu", "label_he": "מַה טֹּֽבוּ"}
-{"urn": "urn:x-opensiddur:text:prayer:mah_tovu/mah_tovu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:mah_tovu", "label_en": "How goodly are your tents (Numbers 24:5)"}
-{"urn": "urn:x-opensiddur:text:prayer:mah_tovu/varani", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:mah_tovu", "label_en": "By thy abundant grace (Psalms 5:8; 26:8; 95:6; 69:14)"}
-{"urn": "urn:x-opensiddur:text:prayer:tallith", "status": "canonical", "label_en": "Putting on the tallith", "label_he": "סֵֽדֶר עֲטִיפַת טַלִּית"}
-{"urn": "urn:x-opensiddur:text:prayer:tallith/barkhi_nafshi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Bless the Lord, O my soul (Psalm 104:1-2)"}
-{"urn": "urn:x-opensiddur:text:prayer:tallith/hineni_mitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "I am enwrapping myself", "label_he": "הִנְנִי מִתְעַטֵּף"}
-{"urn": "urn:x-opensiddur:text:prayer:tallith/lehitatef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "Blessing over wrapping in the tallith"}
-{"urn": "urn:x-opensiddur:text:prayer:tallith/mah_yakar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "How precious is thy kindness (Psalm 36:8-11)"}
-{"urn": "urn:x-opensiddur:text:prayer:tallith/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tallith", "label_en": "May it be thy will, after wrapping"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin", "status": "canonical", "label_en": "Putting on the tefillin", "label_he": "סֵֽדֶר הַנָּחַת תְּפִלִּין"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Meditation before putting on the tefillin"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/lehaniach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Blessing over binding the tefillin"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/al_mitzvat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Blessing over the precept of tefillin"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/umechokhmatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "Supreme God, thou wilt imbue me"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/verastikh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "I will betroth you to myself (Hosea 2:21-22)"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "May it be thy will, after putting on the tefillin"}
-{"urn": "urn:x-opensiddur:text:prayer:tefillin/parashiyot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "The four sections of the tefillin (Exodus 13:1-16)"}
-{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "status": "canonical", "label_en": "The blessings over the Torah", "label_he": "בִּרְכוֹת הַתּוֹרָה"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar", "status": "canonical", "label_en": "The morning blessings", "label_he": "בִּרְכוֹת הַשַּֽׁחַר"}
-{"urn": "urn:x-opensiddur:text:prayer:asher_yatzar", "status": "canonical", "label_en": "Asher Yatzar", "label_he": "אֲשֶׁר יָצַר"}
-{"urn": "urn:x-opensiddur:text:prayer:birkat_kohanim", "status": "canonical", "label_en": "The Priestly Blessing (Numbers 6:24-26)", "label_he": "בִּרְכַּת כֹּהֲנִים"}
-{"urn": "urn:x-opensiddur:text:prayer:elu_devarim", "status": "canonical", "label_en": "Elu Devarim (Mishnah Peah 1:1; Shabbath 127a)", "label_he": "אֵֽלּוּ דְבָרִים"}
-{"urn": "urn:x-opensiddur:text:prayer:elohai_neshamah", "status": "canonical", "label_en": "Elohai Neshamah", "label_he": "אֱלֹהַי נְשָׁמָה"}
-{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/laasok", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Blessing over engaging in words of Torah"}
-{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/vehaarev", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Ve-haarev na"}
-{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/asher_bachar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Blessing over the giving of the Torah"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/lasekhvi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who gives the cock understanding"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_goy", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a heathen"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_aved", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a slave"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_ishah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a woman (said by men)"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/sheasani_kirtzono", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has made me according to his will (said by women)"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/pokeach_ivrim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who opens the eyes of the blind"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/malbish_arumim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who clothes the naked"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/matir_asurim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who sets the captives free"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/zokef_kefufim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who raises up those bowed down"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/roka_haaretz", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who spreads the earth above the waters"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/sheasah_li", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has provided for all my needs"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hamekhin", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who guides the steps of man"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/ozer_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who girds Israel with might"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/oter_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who crowns Israel with glory"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hanoten_layaef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who gives strength to the weary"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hamaavir_shenah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who removes sleep from the eyes"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shetargilenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Yehi Ratzon: that thou accustom us to thy Torah"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/gomel_chasadim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who bestows lovingkindness on his people Israel"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shetatzileni", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Yehi Ratzon: that thou deliver me today"}
-{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/zochreinu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Remember us with a good remembrance"}
