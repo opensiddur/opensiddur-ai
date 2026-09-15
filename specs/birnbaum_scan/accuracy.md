@@ -32,17 +32,20 @@ adjudicated by going back to the page image.
 | 25 | 181 | 3 | 0 | 8 | 0 (1 caught before committing) |
 | 27 | 176 | 0 | 0 | 13 | 0 (none needed) |
 | 29 | 186 | 0 | 0 | 10 | 0 (none needed) |
+| 31 | 206 | 0 | 0 | 8 | 0 (none needed) |
+| 33 | 159 | 0 | 0 | 10 | 0 (none needed) |
+| 35 | 163 | 1 | 0 | 5 | 0 (none needed) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
-| **total** | **2667** | **4** | **11** | **115** | **0** |
+| **total** | **3195** | **5** | **11** | **138** | **0** |
 
-**No misreading survives in 2667 words.** But the second number in that column has grown
+**No misreading survives in 3195 words.** But the second number in that column has grown
 faster than the first, and it is now the one that matters: **twenty-nine readings have been
 corrected, nearly all of them points, and every one was caught by the diff rather than
 by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
-reliable *for consonants* — the skeleton has not been wrong once in 2667 words. It is not
+reliable *for consonants* — the skeleton has not been wrong once in 3195 words. It is not
 reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
 differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
 neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
