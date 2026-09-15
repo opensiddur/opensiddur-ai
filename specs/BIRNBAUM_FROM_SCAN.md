@@ -564,11 +564,16 @@ same page cannot be measured while a two-column PDF carries one note, and report
 measurement as passing on a document with one note in it would be the same mistake as
 reporting it passing on a document with none.
 
-## Known defect in the calendar: the second day of a two-day Rosh Ḥodesh computes as 0
+## Known defect in the calendar: `rosh-hodesh` is wrong on most Rosh Ḥodesh days
 
-Not caused by this work and not fixed by it, but found by it and load-bearing for anything
-conditioned on Rosh Ḥodesh — which in this book is Ya'aleh v'Yavo in the Amidah as well as
-the musaf passage on printed 35.
+**[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125)**. Not caused
+by this work and not fixed by it, but found by it and load-bearing for anything conditioned
+on Rosh Ḥodesh — which in this book is Ya'aleh v'Yavo in the Amidah as well as the musaf
+passage on printed 35.
+
+It is worse than it first looked. In 5786 the value is right on 5 of the 17 days that are
+Rosh Ḥodesh: six compute as `0`, six carry the wrong day number, and Rosh Hashanah is
+reported as Rosh Ḥodesh. The issue carries the full table and a fix.
 
 `opensiddur.exporter.calendar.compute` marks the days of Rosh Ḥodesh like this, in 5786:
 
@@ -583,8 +588,13 @@ the musaf passage on printed 35.
 
 A one-day Rosh Ḥodesh is 1 and is right. A two-day Rosh Ḥodesh gives **2 on its first day
 and 0 on its second**, so the second day is not Rosh Ḥodesh at all as far as any condition
-can tell. Seven of the twelve months in 5786 have a two-day Rosh Ḥodesh, so this is close
-to half of all Rosh Ḥodesh mornings.
+can tell — and the day numbering is inverted besides, since the 30th of the previous month
+is the *first* of the two days. Six of the twelve months in 5786 have a two-day Rosh Ḥodesh.
+
+The cause is one line, `compute.py:550`: `heb.month in (1, 3, 5, 7, 9, 11)` admits only the
+odd-numbered Hebrew months, and the second day of a two-day Rosh Ḥodesh always falls on the
+1st of an even one. The same file's `compute_torah_reading` tests `day in (1, 30)` with no
+month filter, which is the right test.
 
 The condition itself is written correctly — `<tei:numeric value="1" max="2"/>` means "any of
 its up to two days", and `condition_eval` compares it as a range. The defect is upstream of
