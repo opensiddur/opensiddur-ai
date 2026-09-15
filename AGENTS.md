@@ -20,6 +20,7 @@ This repository has 3 parts:
  (b) export the intermediate format into finalized consumable forms (currently PDF via LuaLaTeX).
 
 Any specifications for agents to build code should be stored in the specs/ directory.
+Specifications and plans for bug fixes are temporary working artifacts and must not be committed.
 
 ## Commands
 

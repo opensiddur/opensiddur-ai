@@ -1064,6 +1064,12 @@ From the dates, times, and locations, the holiday calendar is calculated:
 
 A `0` value indicates that it is definitely not that holiday. Any other value indicates that it is exactly that day.
 
+For `rosh-hodesh`, `1` is the sole day of a one-day Rosh Hodesh or the first day
+of a two-day Rosh Hodesh; `2` is its second day. A month's 30th is day `1`, and
+the following month's 1st is day `2`. When the preceding month has 29 days,
+the new month's 1st is the sole day (`1`). The exception is 1 Tishrei, which is
+Rosh Hashanah and has `rosh-hodesh` value `0`.
+
 Further derived values are also available and calculated from the above
 ```xml
 <tei:fs type="opensiddur:holiday-aggregate">
