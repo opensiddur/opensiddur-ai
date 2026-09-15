@@ -265,6 +265,14 @@ check that silently measures nothing is worse than no check, because it is belie
   by `refdb`, resolve every target and pass the registry while a two-column compile emits
   none of it. Nothing short of compiling the way it will be read, and looking for the notes,
   catches that — and a unit with a single note can look as though it works. Count them.
+- **A Hebrew run inside a note is set in the note's direction, not its own.** `note-content`
+  forces `\textdir TLT` on an English note, and anything Hebrew left unwrapped inside one is
+  laid out left to right and renders reversed. `tei:foreign` had the wrapper; the apparatus
+  **catchword** did not, because it is a quotation of the text and so a `tei:label` — and
+  every one of forty-seven lemma-keyed notes printed its catchword backwards.
+- **`pdftotext` shows a reversed Hebrew run the right way round.** It reorders RTL on output,
+  so the extracted text of a broken page reads correctly and every text-level assertion
+  passes. Render the page and look at it, or take the glyphs' own x coordinates.
 - **Three words of English are not a fingerprint.** Measuring whether a note is set twice by
   matching its first three long words reported two false duplicates; six words showed each
   note on exactly one page. A measurement that cannot tell a duplicate from a coincidence
