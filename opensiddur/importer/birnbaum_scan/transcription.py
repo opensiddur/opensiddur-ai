@@ -145,11 +145,14 @@ TRANSCLUSION = re.compile(r"\{\{#קטע:[^|}]*?/([^/|}]+)\|([^|}]+)\}\}")
 #: Span names say what a span is, and three kinds are not the print's Hebrew words.
 #:
 #: `הוראה` is a rubric: the edition renders Birnbaum's *English* rubrics into Hebrew, so
-#: there is nothing on his Hebrew page to compare one against. `מקור` is the edition's own
-#: scripture citation, which Birnbaum gives in an English footnote and not in the Hebrew
-#: column. `כותרת` is a heading, which he does print in Hebrew -- but headings are read off
-#: the image into `readings/`, not into `hebrew/`, so comparing them would report every
-#: heading as missing from the reading.
+#: there is nothing on his Hebrew page to compare one against.
+#:
+#: `כותרת` is a heading and `מקור` a scripture citation, and he prints **both** in the
+#: Hebrew column -- the korbanot pages set `שמות ל, יז-כא` over the passage in small type,
+#: and the Akedah on printed page 19 carries `בראשית כב, א-יט` the same way. They are left
+#: out all the same, because a heading and a citation are read off the image into
+#: `readings/` and never into `hebrew/`: including them on the transcription side alone
+#: would report every one of them as a word the reading had dropped.
 #:
 #: Both sides of the comparison must hold the same kind of thing or the tally is noise.
 SKIP_PREFIXES = ("כותרת ", "הוראה ", "מקור ")

@@ -197,9 +197,11 @@ check that silently measures nothing is worse than no check, because it is belie
   wrapper holds braces of its own, so a rule that removes only brace-free templates either
   leaves its braces behind or, run after substitution, deletes the words inside it.
 - **Both sides of the comparison must hold the same kind of thing.** Span names say which
-  kind: `הוראה` is the edition's Hebrew rendering of an *English* rubric, `מקור` is its own
-  scripture citation, `כותרת` is a heading that is read into `readings/` and not into
-  `hebrew/`. Include any of them on one side only and the tally is noise.
+  kind: `הוראה` is the edition's Hebrew rendering of an *English* rubric, so there is
+  nothing on his page to compare it against; `כותרת` is a heading and `מקור` a scripture
+  citation, and he prints both in the Hebrew column but they are read into `readings/`
+  rather than `hebrew/`. Leave out all three, on both sides. Include any of them on one
+  side only and the tally is noise.
 - **A missing span must refuse to write the file.** Page files and foundation pages get
   snapshotted at different revisions, so a rename or a typo fixed on one side reads as a
   span that is not there. Record the known ones by name; never fall back to a guess, and

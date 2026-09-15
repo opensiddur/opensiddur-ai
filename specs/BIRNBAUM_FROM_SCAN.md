@@ -349,6 +349,23 @@ way:
 So a transcription that omits the holam under a combined dot is wrong, and the diff will
 report it as a difference in *vowels* -- which is how this was found on printed 23.
 
+### Printed page 29 proves it, because the edition's editors disagreed with themselves
+
+Pittum ha-Ketoreth sets `שלש` twice and `ושלשה` once, each with **one dot** between the
+lamed and the shin. The Wikisource editors had to decide what that dot was, and within
+eight words they decided both ways:
+
+| the print | the edition | what it dropped |
+|---|---|---|
+| `שלש` (twice) | `שְׁלֹש` | the final shin's dot |
+| `ושלשה` | `וּשְׁלשָׁה` | the lamed's holam |
+
+Neither is defensible on its own: `שְׁלֹשׁ` needs a holam *and* a shin dot or it is not
+that word. So the single printed dot cannot be either mark alone, and the only account that
+fits the page is that it is both. That is an argument from the evidence rather than from
+convention, and it is the strongest one available -- no crop at any magnification could
+have settled it, because there is genuinely only one dot there.
+
 ## The footnote apparatus
 
 The print carries two apparatuses. *Commentary* sits at the foot of the Hebrew page, keyed
@@ -382,8 +399,11 @@ Printed pages 21-26 settle the shape, and page 24 shows both apparatuses at once
 - **A note that runs across the opening is set once, continuously.** Page 24's block opens
   mid-sentence with no lemma, being the tail of the note whose head is under Hebrew page
   23. Two feet, one note — which is the fifth PDF measurement this unit owes.
-- **A lemma is unpointed**, and one covering a span joins its ends with an en dash:
-  `קדש את שמך–ברבים`. Hebrew also appears inside a note's own prose, inline and unpointed.
+- **A lemma is unpointed**, and one covering a span joins its ends in one of two ways: an
+  en dash (`קדש את שמך–ברבים`, page 25) or a spaced ellipsis (`וידבר . . . ועשית כיור`,
+  page 27). Both mean a lemma with two ends, so the printed form is carried and not
+  normalised to one of them. Hebrew also appears inside a note's own prose, inline and
+  unpointed.
 - **A note's page is decided by which apparatus it belongs to, not by where its text is.**
   English page 22 has no apparatus at all, because the note on its text (`בהר ה' יראה`) is
   commentary and is set under Hebrew page 21. The English Wikisource transcription attaches
