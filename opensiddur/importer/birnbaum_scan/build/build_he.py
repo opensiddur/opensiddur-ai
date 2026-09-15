@@ -113,12 +113,17 @@ TEFILLIN_RUBRICS = (
     ("", ["tefillin_yehi_ratzon", "tefillin_parashiyot"]),
 )
 
-#: The source citation over Psalm 36:8-11, which the two sides punctuate differently: the
+#: The source citation over Psalm 36:8–11, which the two sides punctuate differently: the
 #: Hebrew page separates chapter from verse with a comma and the English page with a
 #: colon. Both are his, and the separator belongs to the language the citation is set in.
+#:
+#: **The range takes an en dash on both sides.** Checked at 8x on printed 6; the reading
+#: says so too. The hyphen that stood here until now came from the English Wikisource
+#: transcription, which sets a hyphen in every range on every page of this book -- a
+#: systematic departure, and one `reverse` cannot see because it checks the Hebrew side.
 BIRCHOT_CITATION = {
     PROJECT_HE: '        <tei:head xml:lang="he">תהלים לו, ח–יא</tei:head>',
-    PROJECT_EN: '        <tei:head xml:lang="en">Psalm 36:8-11</tei:head>',
+    PROJECT_EN: '        <tei:head xml:lang="en">Psalm 36:8–11</tei:head>',
 }
 
 #: Hebrew on the Hebrew page, English on the English one -- as the children's unit heads
