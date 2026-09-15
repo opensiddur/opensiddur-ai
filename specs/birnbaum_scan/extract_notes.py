@@ -57,9 +57,15 @@ ILLUSTRATION = re.compile(r"^(\d+)\.\s")
 #: tefillin heading opens `The תפילין, known as …` and is plainly commentary. Length and
 #: shape tell them apart, and the boundary is not close: the longest citation in the book is
 #: nine words and the shortest commentary is twenty-eight.
-CITATION = re.compile(
-    r'^[\s\'"]*(?:I{1,3}\s+)?[A-Z][A-Za-z\']*(?:\s+[A-Z][A-Za-z\']*)*[\s\'"]*'
-    r'[\d:;,\s.\u2013-]+$')
+#: A reference: a book name and its numbers. A citation is a run of them, because one note
+#: often gives several -- `Numbers 24:5; Psalms 5:8; 26:8; 95:6; 69:14.` is one citation on
+#: printed 4, and `Deuteronomy 6:4-9; 11:13-21; Exodus 13:1-10; 11-16.` is one on printed 6.
+#:
+#: A first version anchored the book name at the start only, so both of those came through
+#: as commentary. The readings caught it: they record three citations on printed 4 and two
+#: on printed 6, and the extraction was finding two and one.
+REFERENCE = r"(?:I{1,3}\s+)?[A-Z][A-Za-z']*(?:\s+[A-Z][A-Za-z']*)*[\s\d:;,.\u2013-]+"
+CITATION = re.compile(rf"^[\s'\"]*(?:{REFERENCE})+$")
 
 
 def _is_citation(body: str) -> bool:
@@ -120,6 +126,8 @@ def _fold(text: str) -> str:
 
 def anchors(printed: int):
     raw = (ST / "en" / "text" / f"{printed + 25:03d}.txt").read_text(encoding="utf-8")
+    for was, now in TEXT_CORRECTIONS.items():
+        raw = raw.replace(was, now)
     for m in REF.finditer(raw):
         before = raw[:m.start()]
         before = REF.sub("", before)
@@ -155,6 +163,34 @@ BY_LEMMA = {
 #: canonical URN, which is the rule for every note in this apparatus.
 BY_OPENING = {
     "The <tei:foreign": "urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven",
+}
+
+#: Set as printed, and **not** a transcription error, so that nobody tidies it later: the
+#: second citation on printed 34 reads `Psalms 46:8; 84:13: 20:10; 32:7.` with a colon where
+#: every other separator in the same note is a semicolon. Checked at 7x on the page's own
+#: foot. His slip, faithfully transcribed.
+PRINTS_ITS_OWN_SLIP = "''Psalms'' 46:8; 84:13: 20:10; 32:7."
+
+#: How many numbered citations each English page carries, where the page's foot has been
+#: read. An independent record: these come from `readings/english_*.md` and the images, and
+#: the extraction derives its own count from the transcription. Two witnesses that were made
+#: separately, so a disagreement is a finding.
+#:
+#: It has already been one. A first version of `CITATION` anchored the book name at the
+#: start of the note, so `Numbers 24:5; Psalms 5:8; …` and `Deuteronomy 6:4-9; …; Exodus
+#: 13:1-10; …` came through as commentary -- printed 4 counted two where the page prints
+#: three, and printed 6 counted one where it prints two.
+EXPECTED_CITATIONS = {4: 3, 6: 2, 8: 2, 10: 0, 24: 1, 26: 1, 28: 0, 34: 4, 48: 0}
+
+#: Errors in the notes' own text, settled on the image.
+TEXT_CORRECTIONS = {
+    # Printed 4's first citation, at 7x: `Numbers 24:5; Psalms 5:8` -- semicolon, as it is
+    # between every other pair of references in the same note. The transcription sets a
+    # colon.
+    "''Numbers'' 24:5: ''Psalms'' 5:8": "''Numbers'' 24:5; ''Psalms'' 5:8",
+    # Printed 28's note, at 7x. The transcription drops a letter and sets a backtick.
+    "wll forgive": "will forgive",
+    "Ta`nith 27b": "Ta'anith 27b",
 }
 
 #: Lemmas the transcription gets wrong, settled on the image. The catchword is quoted from
@@ -269,6 +305,12 @@ def main():
                             target=target, text=text, outside=outside,
                             anchor=" ".join(tail[-8:])))
     _write_module(out)
+    for page, expected in sorted(EXPECTED_CITATIONS.items()):
+        got = sum(1 for n in out if n["page"] == page and n["kind"] == "citation")
+        if got != expected:
+            raise SystemExit(
+                f"printed {page}: the reading records {expected} numbered citation(s) and "
+                f"the transcription yields {got}")
     outside = sum(1 for n in out if n["outside"])
     print(f"# {len(out)} notes, {outside} on text these projects do not hold, "
           f"{unmatched} without a target", file=sys.stderr)

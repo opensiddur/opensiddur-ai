@@ -337,11 +337,12 @@ BIRCHOT_NOTES = [
         ],
     ),
     dict(
-        kind="commentary",
+        kind="citation",
+        n="1",
         target="urn:x-opensiddur:text:prayer:mah_tovu",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Numbers</tei:hi> 24:5: <tei:hi "
+                "<tei:hi rend=\"italic\">Numbers</tei:hi> 24:5; <tei:hi "
                 "rend=\"italic\">Psalms</tei:hi> 5:8; 26:8; 95:6; 69:14."
             )),
         ],
@@ -383,7 +384,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="citation",
-        n="1",
+        n="2",
         target="urn:x-opensiddur:text:prayer:tallith/barkhi_nafshi",
         paras=[
             dict(text=(
@@ -393,7 +394,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="citation",
-        n="2",
+        n="3",
         target="urn:x-opensiddur:text:prayer:tallith/hineni_mitatef",
         paras=[
             dict(text=(
@@ -467,7 +468,8 @@ BIRCHOT_NOTES = [
         ],
     ),
     dict(
-        kind="commentary",
+        kind="citation",
+        n="2",
         target="urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven",
         paras=[
             dict(text=(
@@ -794,8 +796,8 @@ BIRCHOT_NOTES = [
         paras=[
             dict(text=(
                 "According to the Talmud, God said: “Whenever they recite the order of "
-                "sacrifices, I will deem it as if they offered them before me and wll forgive "
-                "them all their sins” (Ta`nith 27b). The sacrificial system symbolized self- "
+                "sacrifices, I will deem it as if they offered them before me and will forgive "
+                "them all their sins” (Ta'anith 27b). The sacrificial system symbolized self- "
                 "surrender and devotion to the will of God. The peace-offering with its "
                 "communion-feast showed the idea of fellowship. It served to keep alive the sense "
                 "of dependence on God for the natural blessings of life, while it had the social "

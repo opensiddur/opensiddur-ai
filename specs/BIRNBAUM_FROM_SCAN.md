@@ -410,6 +410,35 @@ Printed pages 21-26 settle the shape, and page 24 shows both apparatuses at once
   every `<ref>` to the English page and so records the wrong foot for every commentary note;
   it is a guide to *which* notes a page has and not to where they sit.
 
+### The notes are read from the transcription, and checked three ways
+
+Eighty-six notes is too many to retype, and the English Wikisource transcription of this
+scan carries every one at the point the print marks it. So they are extracted, and then
+checked — because the transcription is a second look at the same evidence and not a second
+witness.
+
+**The lemma must be a quotation of the text it annotates.** Every catchword is quoted from
+the prayer, so its consonantal skeleton has to appear in that prayer's skeleton. 37 of the 47
+lemma-keyed notes pass outright. The ten that do not are the print's own practice, not
+errors: seven **name** a prayer or a person rather than quoting it (`קדושה`, `יעלה ויבוא`,
+`רבי ישמעאל בן אלישע`), and three are spelled **plene** where the pointed text is defective
+(`עושה` for `עֹשֶׂה`, `נצור` for `נְצֹר`), because an unpointed catchword has to be readable
+without points. Confirmed on printed 48's own foot.
+
+**The count of numbered citations must match the reading.** The readings record the feet of
+nine English pages independently of the transcription, and `EXPECTED_CITATIONS` asserts the
+two agree. They did not at first: a citation naming more than one book — `Numbers 24:5;
+Psalms 5:8; 26:8; 95:6; 69:14.` — was classified as commentary, so printed 4 counted two
+where the page prints three.
+
+**The total must add up.** 86 read, 84 encoded, and the two left out are named: they annotate
+Mi Khamokha and Adonai Yimlokh, in the Ge'ulah blessing of the Shema, which these projects do
+not hold. A note quietly missing is indistinguishable from a note never read, so the number
+is carried in the generated module's docstring and asserted in the tests.
+
+One lemma and three words of note text are corrected against the images; one apparent error
+is **his**, and is set as printed — see `readings/english_28_48.md`, "A slip of his own".
+
 ### A note is keyed to the nearest canonical URN, not to an id
 
 Three ways were available, and the choice is not obvious:
