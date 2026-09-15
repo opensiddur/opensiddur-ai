@@ -479,6 +479,43 @@ as starting at 10. Neither was in the document.
 That is the same shape as everything else this pass turned up: **the step being done by
 hand, or by a rule invented on the spot, is the step that is wrong.**
 
+## Known defect in the exporter: a parallel compile applies only the first note
+
+Found by building the apparatus and looking for it. Not caused by this work, not fixed
+here, and **it is what stands between the encoded apparatus and a rendered one**.
+
+The apparatus is correct: 84 notes, valid against the schema, indexed by `refdb`, every
+target resolving. Compiled **single-column** the unit carries all of them — 49 commentary
+and 12 citation in Birkhoth ha-Shaḥar. Compiled **two-column** it carries exactly one.
+
+    # all 61 appear
+    compiler -p birnbaum_ashkenaz_he_1949 -f all_shacharit_birchot_hashachar.xml \
+        -s <settings with no `parallel:` block>
+
+    # one appears
+    compiler -p birnbaum_ashkenaz_he_1949 -f all_shacharit_birchot_hashachar.xml \
+        -s specs/birnbaum_scan/settings_undecided.yaml
+
+The one that appears is the first in document order. Shaḥarith li-Yladim looked as though
+it worked only because it has a single note.
+
+**It is not the narrowing.** `_primary_annotations` and `_parallel_priority` are doing what
+their docstrings say. Putting the apparatus project in the *primary* column instead — so
+that nothing is narrowed away — still yields one note, not 49. Nor is it the kind of target:
+retargeting a note from a `tei:div/@corresp` to a `tei:seg/@corresp` inside the same file
+changes nothing. What separates the working case from the failing one is only whether the
+compile goes through the parallel path at all.
+
+**What it does not affect.** The notes themselves, their targets, their lemmas and their
+structure are all verifiable without the exporter, and are verified: the schema validates
+them, `refdb` indexes them, every target resolves, and the single-column compile prints
+them. So the apparatus can be landed and the exporter fixed separately.
+
+**The fifth PDF measurement is therefore still owed.** A note's mark and its text on the
+same page cannot be measured while a two-column PDF carries one note, and reporting that
+measurement as passing on a document with one note in it would be the same mistake as
+reporting it passing on a document with none.
+
 ## Known defect in the calendar: the second day of a two-day Rosh Ḥodesh computes as 0
 
 Not caused by this work and not fixed by it, but found by it and load-bearing for anything

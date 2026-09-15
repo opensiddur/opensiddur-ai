@@ -139,7 +139,10 @@ TEFILLIN_RUBRICS = (
     ("", ["tefillin_umechokhmatkha"]),
     ("When winding the retsuah three times round the middle finger:",
      ["tefillin_verastikh"]),
-    ("", ["tefillin_yehi_ratzon", "tefillin_parashiyot"]),
+    ("", ["tefillin_yehi_ratzon"]),
+    # Printed 9 sets the parashiyoth under their citation; printed 10 sets the same
+    # citation centred, and gives the four sections again as a numbered footnote.
+    ("", [("citation", "שמות יג, א–טז", "Exodus 13:1–16"), "tefillin_parashiyot"]),
 )
 
 #: The source citation over Psalm 36:8–11, which the two sides punctuate differently: the
@@ -194,6 +197,18 @@ TORAH_BLESSINGS = ("asher_yatzar", "birkhot_hatorah_laasok", "birkhot_hatorah_ve
                    "elohai_neshamah")
 
 
+def _citation(lines, project, he, en):
+    """A source citation, centred over the passage it introduces.
+
+    The print sets one on both pages, each in its own language's convention: the Hebrew
+    side parts chapter from verse with a **comma** and the English side with a **colon**,
+    and a range takes an **en dash** on both. Where a citation names more than one place,
+    a semicolon parts them.
+    """
+    lines.append('        <tei:head xml:lang="%s">%s</tei:head>'
+                 % (("he", he) if project == PROJECT_HE else ("en", en)))
+
+
 def _transclude(lines, by_name, name):
     """Transclude by prayer name, or -- when the name is already a URN -- by URN.
 
@@ -204,9 +219,23 @@ def _transclude(lines, by_name, name):
     lines.append(f'        <j:transclude type="external" target="{urn}"/>')
 
 
-def _birchot_blessings(lines, by_name):
+#: The citations printed over the Torah blessings and the three texts that follow them,
+#: each keyed to the prayer it introduces. Printed 13 sets one between the poems and the
+#: blessings; printed 15 sets three, more than any other page of the unit.
+BLESSING_CITATIONS = {
+    "yeladim_netilat_yadayim": ("מסכת ברכות יא, א; ס, ב", "Talmud Berakhoth 11a; 60b"),
+    "birkat_kohanim": ("במדבר ו, כד–כו", "Numbers 6:24–26"),
+    "elu_devarim": ("פאה א, משנה א; מסכת שבת קכז, א",
+                    "Mishnah Peah 1:1; Talmud Shabbath 127a"),
+    "elohai_neshamah": ("מסכת ברכות ס, ב", "Talmud Berakhoth 60b"),
+}
+
+
+def _birchot_blessings(lines, project, by_name):
     """Printed 13-19: the Torah blessings, then the morning blessings in page order."""
     for name in SHARED_WITH_YELADIM + TORAH_BLESSINGS:
+        if name in BLESSING_CITATIONS:
+            _citation(lines, project, *BLESSING_CITATIONS[name])
         _transclude(lines, by_name, name)
     gendered = {n for _, _, _, n in GENDERED}
     for slug, _words, _page in BLESSINGS:
@@ -373,13 +402,16 @@ def unit_body_birchot(project, by_name):
         if note:
             lines.append(f'        <tei:note type="instruction" xml:lang="en">{note}</tei:note>')
         for name in names:
-            _transclude(lines, by_name, name)
+            if isinstance(name, tuple):
+                _citation(lines, project, name[1], name[2])
+            else:
+                _transclude(lines, by_name, name)
     adon, yigdal = POEM_HEADS[project]
     for head, name in ((adon, "poem_adon_olam"), (yigdal, "poem_yigdal")):
         if head:
             lines.append(head)
         _transclude(lines, by_name, name)
-    _birchot_blessings(lines, by_name)
+    _birchot_blessings(lines, project, by_name)
     for order in (AKEDAH_ORDER, KORBANOT_ORDER, ISHMAEL_ORDER):
         _emit(lines, project, by_name, order)
     lines.append('        <j:endDeclare target="#unit_service"/>')

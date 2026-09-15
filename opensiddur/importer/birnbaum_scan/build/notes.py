@@ -28,36 +28,47 @@ not a text: it is addressed by what it annotates, and `@target` says that alread
 
 The printed numeral in `@n` is evidence, not an instruction to the renderer. Birnbaum
 restarts at 1 on every page; a PDF repaginates, so the renderer draws its own series.
-"""
-from .common import PRAYER
 
+**A third keying turns up in Rabbi Ishmael's rules.** Under printed 41 the commentary block
+carries a centred sub-heading, `ILLUSTRATIONS`, and then a numbered list of worked examples
+running 1 to 13 -- one per rule, numbered to match the rules themselves. There is no mark in
+the text and no catchword: the *number* is the key. Those are `commentary` with an `@n` and
+no `tei:label`.
+
+**A note carries block content.** Printed 41's is the largest in the book: prose, a
+sub-heading, a numbered list with lettered sub-items, and a reference to another page. Any
+assumption that a note is a paragraph of inline prose is contradicted by that one page.
+"""
 #: What the apparatus is attached to, per unit. `target` is a `@corresp` URN that the
 #: text already carries -- never an `#id`, which `refdb` resolves only inside one file.
-YELADIM_NOTES = [
-    dict(
-        kind="commentary",
-        target=PRAYER + "torah_tziva/morasha",
-        lemma="תורה צוה לנו",
-        text=("(Deuteronomy 33:4) is the first Hebrew verse which a father is directed "
-              "to teach his child at a very early age (Sukkah 42a; Maimonides, "
-              "<tei:hi rend=\"italic\">Talmud Torah</tei:hi> 1:6). Although the child is "
-              "held to be free from religious duties, his father is required to make him "
-              "amenable to them."),
-    ),
-]
+#:
+#: The notes themselves are in `notes_data`, generated from the English transcription and
+#: keyed to URNs by matching against the authored text -- see
+#: `specs/birnbaum_scan/extract_notes.py`. They were written out by hand here while there
+#: was one of them; there are eighty-four.
+from .notes_data import AMIDAH_NOTES, BIRCHOT_NOTES, YELADIM_NOTES   # noqa: F401
 
 
 def note(entry: dict, *, indent: int = 4) -> str:
-    """One `tei:note` in the apparatus."""
+    """One `tei:note` in the apparatus, as the block content a note actually carries."""
     pad = " " * indent
     attrs = [f'type="{entry["kind"]}"']
     if entry.get("n"):
         attrs.append(f'n="{entry["n"]}"')
     attrs.append(f'target="{entry["target"]}"')
-    opening = f'{pad}<tei:note {" ".join(attrs)}>'
-    if entry.get("lemma"):
-        opening += f'<tei:label xml:lang="he">{entry["lemma"]}</tei:label> '
-    return f'{opening}{entry["text"]}</tei:note>'
+    out = [f'{pad}<tei:note {" ".join(attrs)}>']
+    paras = entry["paras"]
+    for index, para in enumerate(paras):
+        rend = f' rend="{para["rend"]}"' if para.get("rend") else ""
+        label = ""
+        if index == 0 and entry.get("lemma"):
+            # No space before the punctuation that follows a catchword: the print sets
+            # `רבי ישמעאל בן אלישע, a contemporary of Rabbi Akiba`, comma tight.
+            gap = "" if para["text"][:1] in ",.;:?!" else " "
+            label = f'<tei:label xml:lang="he">{entry["lemma"]}</tei:label>{gap}'
+        out.append(f'{pad}  <tei:p{rend}>{label}{para["text"]}</tei:p>')
+    out.append(f"{pad}</tei:note>")
+    return "\n".join(out)
 
 
 def standoff(entries: list[dict], *, indent: int = 4) -> str:

@@ -38,6 +38,11 @@ EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "amidah": (82, 98)}
 APPARATUS = {
     "notes_yeladim": dict(entries=apparatus.YELADIM_NOTES, slug="birnbaum_1949/yeladim",
                           title="Notes on Shaḥarith li-Yladim", first=1, last=1),
+    "notes_birchot": dict(entries=apparatus.BIRCHOT_NOTES,
+                          slug="birnbaum_1949/birchot_hashachar",
+                          title="Notes on Birkhoth ha-Shaḥar", first=3, last=47),
+    "notes_amidah": dict(entries=apparatus.AMIDAH_NOTES, slug="birnbaum_1949/amidah",
+                         title="Notes on the weekday morning Amidah", first=81, last=97),
 }
 
 

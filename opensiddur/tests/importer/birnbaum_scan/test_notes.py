@@ -29,11 +29,12 @@ class TestNoteShape(unittest.TestCase):
         reader finds it. That catchword is a quotation of the text, not prose about
         it, so it is a `tei:label` rather than the first words of the note."""
         out = notes.note(dict(kind="commentary", target=common.PRAYER + "x",
-                             lemma="לֶמָּה", text="is explained."))
+                             lemma="לֶמָּה", paras=[dict(text="is explained.")]))
         el = etree.fromstring(f'<r xmlns:tei="{TEI}">{out}</r>')
         note = el[0]
         self.assertEqual(note.get("type"), "commentary")
-        label = note.find(f"{{{TEI}}}label")
+        # The catchword opens the note's first paragraph, which is where the print puts it.
+        label = note.find(f"{{{TEI}}}p/{{{TEI}}}label")
         self.assertIsNotNone(label)
         self.assertEqual(label.get(f"{{{XML}}}lang"), "he")
 
@@ -42,11 +43,12 @@ class TestNoteShape(unittest.TestCase):
         a numeral and nothing to quote. The numeral is evidence of what the page
         printed; the renderer draws its own series, because a PDF repaginates."""
         out = notes.note(dict(kind="citation", target=common.PRAYER + "x",
-                             n="3", text="<tei:bibl>Psalm 51:17</tei:bibl>"))
+                             n="3",
+                             paras=[dict(text="<tei:bibl>Psalm 51:17</tei:bibl>")]))
         note = etree.fromstring(f'<r xmlns:tei="{TEI}">{out}</r>')[0]
         self.assertEqual(note.get("type"), "citation")
         self.assertEqual(note.get("n"), "3")
-        self.assertIsNone(note.find(f"{{{TEI}}}label"))
+        self.assertIsNone(note.find(f"{{{TEI}}}p/{{{TEI}}}label"))
 
     def test_a_note_targets_a_urn_and_never_an_id(self):
         """`refdb` matches a URN target in every project but an `#id` target only inside
@@ -112,10 +114,83 @@ class TestApparatusPlacement(unittest.TestCase):
         """One printed note is one `tei:note`. A repeat would print the same commentary
         twice against the same words, and nothing downstream would object."""
         self._build()
-        seen = [(e["target"], e["kind"], e.get("n"))
+        # Several notes on one text is the print's own practice -- printed 4 sets three
+        # on Mah Tovu alone -- so the key is the note, not the text it points at.
+        seen = [(e["target"], e["kind"], e.get("n"), e.get("lemma"),
+                 tuple(p["text"] for p in e["paras"]))
                 for a in build_en.APPARATUS.values() for e in a["entries"]]
         self.assertEqual(len(seen), len(set(seen)))
 
+
+class TestTheApparatusIsBlockContent(unittest.TestCase):
+    """A note is not a paragraph of inline prose, and printed 41 proves it."""
+
+    def test_a_note_emits_one_paragraph_per_para(self):
+        xml = notes.note(dict(kind="commentary", target="urn:x", lemma="אלף",
+                              paras=[dict(text="First."), dict(text="Second.")]))
+        self.assertEqual(xml.count("<tei:p"), 2)
+
+    def test_a_centred_sub_heading_is_a_paragraph_and_not_a_head(self):
+        # `tei:head` must be a direct child of `tei:div`, and a note is not one, so
+        # `ILLUSTRATIONS` is a `tei:p[@rend]`. Emitting `tei:head` here fails Schematron.
+        xml = notes.note(dict(kind="commentary", target="urn:x",
+                              paras=[dict(rend="centred", text="ILLUSTRATIONS")]))
+        self.assertIn('<tei:p rend="centred">ILLUSTRATIONS</tei:p>', xml)
+        self.assertNotIn("tei:head", xml)
+
+    def test_the_catchword_takes_no_space_before_punctuation(self):
+        xml = notes.note(dict(kind="commentary", target="urn:x", lemma="אלף",
+                              paras=[dict(text=", a contemporary of Rabbi Akiba")]))
+        self.assertIn("</tei:label>, a contemporary", xml)
+
+    def test_the_catchword_takes_a_space_before_a_word(self):
+        xml = notes.note(dict(kind="commentary", target="urn:x", lemma="אלף",
+                              paras=[dict(text="is taken to mean")]))
+        self.assertIn("</tei:label> is taken", xml)
+
+    def test_a_citation_carries_its_printed_numeral(self):
+        xml = notes.note(dict(kind="citation", n="3", target="urn:x",
+                              paras=[dict(text="Leviticus 6:5.")]))
+        self.assertIn('type="citation"', xml)
+        self.assertIn('n="3"', xml)
+        self.assertNotIn("tei:label", xml)
+
+
+class TestEveryNoteIsWellFormedAndKeyed(unittest.TestCase):
+    """The generated apparatus, checked without reading the projects or the submodule."""
+
+    def all_notes(self):
+        from opensiddur.importer.birnbaum_scan.build import notes_data
+        return (notes_data.YELADIM_NOTES + notes_data.BIRCHOT_NOTES
+                + notes_data.AMIDAH_NOTES)
+
+    def test_eighty_four_notes_are_encoded(self):
+        # 86 read; two annotate Mi Khamokha and Adonai Yimlokh, in the Ge'ulah blessing of
+        # the Shema, which these projects do not hold. The count is what says so.
+        self.assertEqual(len(self.all_notes()), 84)
+
+    def test_every_note_targets_a_urn_and_never_an_id(self):
+        for entry in self.all_notes():
+            self.assertTrue(entry["target"].startswith("urn:x-opensiddur:text:"),
+                            entry["target"])
+
+    def test_every_note_has_content(self):
+        for entry in self.all_notes():
+            self.assertTrue(entry["paras"])
+            self.assertTrue(all(p["text"].strip() for p in entry["paras"]))
+
+    def test_a_commentary_note_carries_a_catchword_or_a_number(self):
+        # The print keys commentary three ways: a Hebrew catchword, a number matching the
+        # text it explains (Rabbi Ishmael's illustrations), or the section heading it sits
+        # under. Only the third leaves a note with neither.
+        neither = [e for e in self.all_notes()
+                   if e["kind"] == "commentary" and not e.get("lemma") and not e.get("n")]
+        self.assertLessEqual(len(neither), 5, [e["target"] for e in neither])
+
+    def test_every_citation_is_numbered(self):
+        for entry in self.all_notes():
+            if entry["kind"] == "citation":
+                self.assertTrue(entry.get("n"), entry["target"])
 
 if __name__ == "__main__":
     unittest.main()
