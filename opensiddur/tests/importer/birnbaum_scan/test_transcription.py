@@ -94,6 +94,102 @@ class TestSectionExtraction(unittest.TestCase):
     def test_a_span_that_is_not_there_is_reported_as_missing(self):
         self.assertIsNone(transcription.section("x", "לא קיים"))
 
+    def test_a_span_that_wraps_other_spans_is_taken_whole(self):
+        # The outer span closes after the inner ones; stopping at the first end tag of any
+        # name would return only the first half of the passage.
+        page = (
+            "<קטע התחלה=הכל/>"
+            "<קטע התחלה=א/>רִאשׁוֹן<קטע סוף=א/>"
+            " {{רובריקה}} "
+            "<קטע התחלה=ב/>אַחֲרוֹן<קטע סוף=ב/>"
+            "<קטע סוף=הכל/>"
+        )
+        whole = transcription.section(page, "הכל")
+        self.assertIn("רִאשׁוֹן", whole)
+        self.assertIn("אַחֲרוֹן", whole)
+
+
+class TestSpanKinds(unittest.TestCase):
+    """Only the print's own Hebrew words belong on either side of the comparison."""
+
+    def test_prayer_words_are_taken(self):
+        self.assertTrue(transcription.is_prayer_span("מה טובו"))
+        self.assertTrue(transcription.is_prayer_span("אלו דברים מילים"))
+
+    def test_a_rubric_is_not(self):
+        # The edition renders Birnbaum's *English* rubrics into Hebrew, so there is
+        # nothing on his Hebrew page to compare one against.
+        self.assertFalse(transcription.is_prayer_span("הוראה כשמלובשים"))
+
+    def test_a_heading_is_not(self):
+        # He prints Hebrew headings, but they are read into `readings/`, not `hebrew/`.
+        self.assertFalse(transcription.is_prayer_span("כותרת ברכות השחר"))
+
+    def test_a_citation_is_not(self):
+        # His citations are English footnotes; the edition sets them in the Hebrew column.
+        self.assertFalse(transcription.is_prayer_span("פרשת התמיד מקור"))
+        self.assertFalse(transcription.is_prayer_span("פיטום הקטורת מקורות"))
+        self.assertFalse(transcription.is_prayer_span("מקור לאלו דברים"))
+
+
+class TestPageSlice(unittest.TestCase):
+    """A printed page of the edition, assembled from the spans it transcludes."""
+
+    FOUNDATION = {
+        "דף": (
+            "<קטע התחלה=א/>אַלֶף<קטע סוף=א/>"
+            "<קטע התחלה=ב/>בֵּית<קטע סוף=ב/>"
+            "<קטע התחלה=כותרת ג/>כּוֹתֶֽרֶת<קטע סוף=כותרת ג/>"
+        ),
+    }
+
+    def load(self, name):
+        return self.FOUNDATION[name]
+
+    def transclude(self, span):
+        return "{{#קטע:ספר/אשכנז/דפי יסוד/דף|" + span + "}}"
+
+    def test_the_text_between_two_transclusions_is_kept(self):
+        # Printed page 1 joins five spans into one sentence with `. ` between them.
+        page = self.transclude("א") + ". " + self.transclude("ב")
+        self.assertEqual(self.slice(page).text, "אַלֶף. בֵּית")
+
+    def test_a_line_of_the_page_is_a_line_of_the_slice(self):
+        page = self.transclude("א") + "\n" + self.transclude("ב")
+        self.assertEqual(self.slice(page).text, "אַלֶף\nבֵּית")
+
+    def test_a_centring_wrapper_keeps_what_it_wraps(self):
+        # `{{מרכז|...}}` holds braces of its own, so a rule that only removes brace-free
+        # templates would leave its braces behind -- and one that ran after substitution
+        # would delete the words with it.
+        page = "{{מרכז|" + self.transclude("א") + "{{ש}}" + self.transclude("ב") + "}}"
+        self.assertEqual(self.slice(page).text, "אַלֶף\nבֵּית")
+
+    def test_a_noinclude_region_is_not_part_of_the_work(self):
+        # The page wrapper opens inside one `<noinclude>` and closes inside another, so it
+        # is only balanced once both regions are gone. Left in, the unpaired `{{name|` is
+        # not a template any rule can collapse and survives into the slice as words.
+        page = (
+            "<noinclude>{{עטיפה|</noinclude>"
+            + self.transclude("א")
+            + "<noinclude>}}</noinclude>"
+        )
+        self.assertEqual(self.slice(page).text, "אַלֶף")
+
+    def test_a_heading_span_is_left_out(self):
+        page = self.transclude("כותרת ג") + "\n" + self.transclude("א")
+        self.assertEqual(self.slice(page).text, "אַלֶף")
+
+    def test_a_span_the_foundation_page_does_not_define_is_reported(self):
+        # Never silently: a slice with a hole in it reads afterwards as a wall of
+        # consonantal differences rather than as a slice error.
+        sliced = self.slice(self.transclude("ד"))
+        self.assertEqual(sliced.missing, [("דף", "ד")])
+
+    def slice(self, page):
+        return transcription.page_slice(page, self.load)
+
+
 
 if __name__ == "__main__":
     unittest.main()

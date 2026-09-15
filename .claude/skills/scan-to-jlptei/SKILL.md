@@ -18,13 +18,14 @@ document disagree, **the document wins and this file is wrong** — fix it.
 |---|---|---|
 | 1 | Fetch and cut the leaf | `python -m opensiddur.importer.birnbaum_scan.pages 81 82 83` |
 | 2 | Read the page into prose | by hand, into `readings/{printed}.md` |
-| 3 | Diff against a transcription | `compare` — build the slice with `transcription.resolve`, never by stripping markup |
-| 4 | Adjudicate each difference | go back to the image; record in `verdicts/{printed}.json` |
-| 5 | Author the TEI | hand-written, one function per prayer |
-| 6 | Compile and render | `exporter.compiler`, then `exporter.pdf.pdf` |
-| 7 | **Measure** the PDF | `reference/measuring-the-pdf.md` |
+| 3 | Build the transcription slice | `python -m opensiddur.importer.birnbaum_scan.transcription 25` — from the page file, never by hand |
+| 4 | Diff the slice against the reading | `compare` |
+| 5 | Adjudicate each difference | go back to the image; record in `verdicts/{printed}.json` |
+| 6 | Author the TEI | hand-written, one function per prayer |
+| 7 | Compile and render | `exporter.compiler`, then `exporter.pdf.pdf` |
+| 8 | **Measure** the PDF | `reference/measuring-the-pdf.md` |
 
-Steps 1 and 3 explain themselves: the module docstrings of `opensiddur/importer/birnbaum_scan/pages.py` and `compare.py`
+Steps 1, 3 and 4 explain themselves: the module docstrings of `opensiddur/importer/birnbaum_scan/pages.py`, `transcription.py` and `compare.py`
 carry the reasoning — why a page is fetched once, why bands overlap and are enlarged, why
 differences are counted in three buckets and not merely resolved. Read them rather than a
 summary of them.
@@ -173,12 +174,37 @@ check that silently measures nothing is worse than no check, because it is belie
   an absence, or it disagrees with the reading. Those three go to a person.
 
 **The transcription**
+- **The comparison is blind to what both sides are missing.** Printed page 21's last line
+  — nine words — was absent from the reading *and* from the hand-made slice, so nothing
+  fired: 166 files validated, the suite passed, `refdb` was clean. It surfaced only when
+  the slice was rebuilt from the page file and came back nine words longer than the
+  reading. Anything that re-derives one side independently is worth more than another
+  check run over both.
 - **A wall of consonantal differences is a boundary problem, not a finding.** A real
   disagreement about consonants is rare — none survived in the first two thousand words
   once the slices were right — so a page reporting them by the dozen has a section missing
   or duplicated on one side. The signature is a word-count gap plus that wall. Find the
   section before anyone looks at a crop; a passage may have no section of its own and live
   inside a variant one, named `א` or `ב` rather than for its words.
+- **Build the slice from the page, not by hand.** The printed page's own wikitext already
+  records which foundation spans it sets and in what order; deciding that again by eye is
+  how a span goes missing. `transcription.page_slice` renders the page and the CLI writes
+  the file. Three things a hand-assembled slice got wrong, all found by mechanising it:
+  a span that *wraps* other spans is truncated at the first inner `<קטע סוף=` unless the
+  end tag is matched **by name**; the text *between* two transclusions is part of the
+  reading, so concatenating spans manufactures paragraph breaks and eats sentence-final
+  punctuation that `compare` then reports as real differences; and a `{{מרכז|...}}`
+  wrapper holds braces of its own, so a rule that removes only brace-free templates either
+  leaves its braces behind or, run after substitution, deletes the words inside it.
+- **Both sides of the comparison must hold the same kind of thing.** Span names say which
+  kind: `הוראה` is the edition's Hebrew rendering of an *English* rubric, `מקור` is its own
+  scripture citation, `כותרת` is a heading that is read into `readings/` and not into
+  `hebrew/`. Include any of them on one side only and the tally is noise.
+- **A missing span must refuse to write the file.** Page files and foundation pages get
+  snapshotted at different revisions, so a rename or a typo fixed on one side reads as a
+  span that is not there. Record the known ones by name; never fall back to a guess, and
+  never write a slice with a hole in it — a hole reads downstream as a wall of consonantal
+  differences, which is the one signature below that sends people looking at crops.
 - **Resolve `{{נוסח}}`; never strip it.** The Wikisource foundation text marks the places
   its editors knew the print differs from what they set, and names Birnbaum's own reading
   in the template. Stripping it as markup throws away precisely what the comparison is

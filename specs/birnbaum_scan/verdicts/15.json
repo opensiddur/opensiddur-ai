@@ -1,7 +1,4 @@
 {
-  "consonants:3:|אָמֵן.": "print",
-  "consonants:8:|אָמֵן.": "print",
-  "consonants:15:|אָמֵן.": "print",
   "vowels:94:כָּל|כׇּל": "print",
   "vowels:106:כָּל|כׇל": "print",
   "vowels:141:גּוֹי.|[גּוֹי": "print",

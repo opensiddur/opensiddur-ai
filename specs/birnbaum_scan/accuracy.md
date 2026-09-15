@@ -17,29 +17,30 @@ adjudicated by going back to the page image.
 
 | page | words | whitespace | consonants | vowels | misreadings |
 |---|---:|---:|---:|---:|---:|
-| 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
+| 1 | 111 | 0 | 1 | 1 | 0 (1 caught before committing) |
 | 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
 | 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing) |
 | 7 | 162 | 0 | 0 | 9 | 0 (6 caught before committing) |
-| 9 | 219 | 1 | 0 | 21 | 0 (3 caught before committing) |
-| 11 | 148 | 13 | 1 | 7 | 0 (1 caught before committing) |
-| 13 | 188 | 7 | 1 | 6 | 0 (none needed) |
-| 15 | 142 | 0 | 5 | 4 | 0 (1 caught before committing) |
+| 9 | 219 | 1 | 0 | 19 | 0 (3 caught before committing) |
+| 11 | 148 | 0 | 1 | 7 | 0 (1 caught before committing) |
+| 13 | 188 | 0 | 1 | 6 | 0 (none needed) |
+| 15 | 142 | 0 | 2 | 4 | 0 (1 caught before committing) |
 | 17 | 163 | 0 | 0 | 3 | 0 (none needed) |
-| 19 | 203 | 0 | 0 | 9 | 0 (1 caught before committing) |
-| 21 | 218 | 0 | 0 | 4 | 0 (2 caught before committing) |
+| 19 | 203 | 0 | 0 | 9 | 0 (2 caught before committing) |
+| 21 | 227 | 0 | 0 | 5 | 0 (3 caught before committing) |
 | 23 | 193 | 0 | 0 | 8 | 0 (4 caught before committing) |
+| 25 | 181 | 3 | 0 | 8 | 0 (1 caught before committing) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
-| **total** | **2115** | **21** | **15** | **85** | **0** |
+| **total** | **2305** | **4** | **11** | **92** | **0** |
 
-**No misreading survives in 2115 words.** But the second number in that column has grown
-faster than the first, and it is now the one that matters: **nineteen readings have been
-corrected, all of them points, and every one was caught by the diff rather than
+**No misreading survives in 2305 words.** But the second number in that column has grown
+faster than the first, and it is now the one that matters: **twenty-nine readings have been
+corrected, nearly all of them points, and every one was caught by the diff rather than
 by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
-reliable *for consonants* — the skeleton has not been wrong once in 2115 words. It is not
+reliable *for consonants* — the skeleton has not been wrong once in 2305 words. It is not
 reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
 differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
 neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
@@ -128,10 +129,57 @@ would have got half of them wrong. Only reading each one gives that distribution
 So metegs are not a class that can be settled in bulk, and the queue should keep bringing
 them one at a time.
 
+## The slice is derived, and was not
+
+Every `transcription/{page}.txt` up to this point was assembled by hand: reading the
+printed page's wikitext, deciding which foundation spans it sets, and pasting them
+together. `transcription.page_slice` now does it from the page file, and
+`python -m opensiddur.importer.birnbaum_scan.transcription <pages>` writes the files.
+
+Re-slicing the twelve pages already measured changed five of them, and the changes say
+what a hand-made slice gets wrong:
+
+**Printed page 21 lost its last line — in both witnesses, the same way.** The page ends
+`רִבּוֹנוֹ שֶׁל עוֹלָם, יְהִי רָצוֹן מִלְּפָנֶֽיךָ, יְיָ אֱלֹהֵֽינוּ וֵאלֹהֵי`, nine words
+that were absent from the reading *and* from the slice. A comparison can only report a
+disagreement between its two sides; where both sides are missing the same thing it reports
+nothing, and every check downstream stays green. This is the failure mode
+`SKILL.md` names as the one the reverse check exists for, caught here by a different
+route: the machine assembled the slice from the page's own transclusions and the reading
+then had nine words too few.
+
+**Nested spans truncate silently.** `אתה הוא עד שלא נברא הכל` wraps `... א` and `... ב`
+with the reader's rubric between them, and `section()` closed on the first
+`<קטע סוף=` of any name — returning the first half. The diagnostic signature is the one
+printed page 19 established: a word-count gap plus a wall of consonantal differences.
+
+**The join between two spans is part of the reading.** Printed page 1 sets five spans as
+one paragraph with `. ` between them. A slicer that concatenates spans manufactures four
+paragraph breaks and loses four sentence-final periods, and `compare` then reports them as
+whitespace and vowel differences that are the slicer's own doing. Page 1 fell from twelve
+differences to two, page 11 from twenty-one to eight, page 13 from fourteen to seven. Those
+were never disagreements with the edition.
+
+**Both sides must hold the same kind of thing.** The edition's rubric spans (`הוראה`) are
+its editors' Hebrew standing where Birnbaum sets English, and its citation spans (`מקור`)
+are its own apparatus; its headings (`כותרת`) he does print, but headings are read into
+`readings/` rather than `hebrew/`. All three are left out, by name.
+
+**Two spans a page transcludes no longer exist under that name**, because the page files
+and the foundation pages were snapshotted at different revisions — one rename and one
+typo fixed on one side only. They are recorded in `RENAMED_SPANS` rather than guessed at,
+and an unrecognised missing span refuses to write the file at all.
+
+One thing the hand slices carried that the machine does not: printed page 15's three
+`אָמֵן.` after the Priestly Blessing. The current snapshot's span has no such word, so
+the file now matches what the edition sets. The reading never had them and the print does
+not carry them, so the adjudication is unchanged; what changed is that the slice can be
+regenerated and checked.
+
 ## Corrections are data now, not prose
 
 `corrections.jsonl` records every reading corrected so far -- what it was, what the print
-carries, what settled it, and whether it was caught before or after committing. Fourteen
+carries, what settled it, and whether it was caught before or after committing. Twenty-nine
 entries.
 
 It exists because a correction has nowhere else to live. Once a reading is fixed the
@@ -140,8 +188,8 @@ matches nothing and `compare` rightly warns about it. Verdict files describe liv
 differences; corrections describe ones that are gone. Keeping them in the same file made
 the second kind either noisy or invisible.
 
-The counts in the table above are therefore checkable rather than asserted: thirteen of
-the fourteen were caught before committing, and the fourteenth is page 83's.
+The counts in the table above are therefore checkable rather than asserted: twenty-eight of
+the twenty-nine were caught before committing, and the twenty-ninth is page 83's.
 
 ## Page 7: the queue's first run
 

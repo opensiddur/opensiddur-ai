@@ -41,6 +41,8 @@ class Resolution:
     text: str
     comments: list[str] = field(default_factory=list)
     substitutions: list[tuple[str, str]] = field(default_factory=list)
+    #: Spans a page transcludes that its foundation page does not define.
+    missing: list[tuple[str, str]] = field(default_factory=list)
 
 
 def _split_params(body: str) -> tuple[str, dict[str, str], str]:
@@ -121,6 +123,196 @@ def strip_markup(text: str) -> str:
 
 
 def section(page_text: str, name: str) -> str | None:
-    """One named `<קטע>` span out of a foundation page."""
-    m = re.search(r"<קטע התחלה=" + re.escape(name) + r"/>(.*?)<קטע סוף=", page_text, re.S)
+    """One named `<קטע>` span out of a foundation page.
+
+    Spans nest: `אתה הוא עד שלא נברא הכל` wraps `... א` and `... ב`, with the reader's
+    rubric between them. Closing on the first `<קטע סוף=` of any name would end the outer
+    span at the inner one's close -- half the passage, with the missing half showing up in
+    `compare` as a word-count gap and a wall of consonantal differences rather than as a
+    slice error. Close only on the end tag that names this span.
+    """
+    m = re.search(
+        r"<קטע התחלה=" + re.escape(name) + r"/>(.*?)<קטע סוף=" + re.escape(name) + r"/>",
+        page_text,
+        re.S,
+    )
     return m.group(1) if m else None
+
+
+#: A printed page transcludes foundation spans: `{{#קטע:<path>/<page>|<span>}}`.
+TRANSCLUSION = re.compile(r"\{\{#קטע:[^|}]*?/([^/|}]+)\|([^|}]+)\}\}")
+
+#: Span names say what a span is, and three kinds are not the print's Hebrew words.
+#:
+#: `הוראה` is a rubric: the edition renders Birnbaum's *English* rubrics into Hebrew, so
+#: there is nothing on his Hebrew page to compare one against. `מקור` is the edition's own
+#: scripture citation, which Birnbaum gives in an English footnote and not in the Hebrew
+#: column. `כותרת` is a heading, which he does print in Hebrew -- but headings are read off
+#: the image into `readings/`, not into `hebrew/`, so comparing them would report every
+#: heading as missing from the reading.
+#:
+#: Both sides of the comparison must hold the same kind of thing or the tally is noise.
+SKIP_PREFIXES = ("כותרת ", "הוראה ", "מקור ")
+SKIP_SUFFIXES = (" מקור", " מקורות")
+
+
+#: Spans a printed page transcludes under a name its foundation page no longer defines.
+#:
+#: The page files and the foundation pages were snapshotted at different revisions, so a
+#: span renamed or a typo fixed on one side reads here as a missing span. Both are recorded
+#: rather than guessed: the first is a rename, the second a typo corrected in the
+#: foundation page and left standing in the page that transcludes it.
+RENAMED_SPANS = {
+    ("קריאת התורה", "ואתם הדבקים"): "ואתם הדבקים מילים",
+    ("ברכות השחר וקרבנות", "הוראה לתפילה פני שמתעטפים בטלית"): (
+        "הוראה לתפילה לפני שמתעטפים בטלית"
+    ),
+}
+
+
+def is_prayer_span(name: str) -> bool:
+    """Whether a span name promises the print's own Hebrew words."""
+    return not (name.startswith(SKIP_PREFIXES) or name.endswith(SKIP_SUFFIXES))
+
+
+#: What the printed page does *not* transclude into the work.
+#:
+#: The page wrapper `{{סידור בירנבוים תפילה|` opens inside one `<noinclude>` and closes
+#: inside another, so removing these regions is also what leaves the rest of the page with
+#: balanced braces to evaluate.
+NOINCLUDE = re.compile(r"<noinclude>.*?</noinclude>", re.S)
+
+#: Layout templates that wrap text which is part of the work: centring and two heading
+#: sizes. Everything else -- the running head, the interwiki link, the "paragraph continues"
+#: marker, and the rubric and citation wrappers -- is the edition's furniture and goes.
+KEEP_WRAPPERS = ("מרכז", "ג", "גג")
+
+#: An innermost template: one holding no braces of its own.
+INNERMOST = re.compile(r"\{\{([^{}|]*)(?:\|([^{}]*))?\}\}")
+
+
+def _evaluate_templates(text: str) -> str:
+    """Collapse templates from the inside out, keeping what the work itself sets."""
+    def _one(match: re.Match) -> str:
+        name, body = match.group(1).strip(), match.group(2) or ""
+        if name == "ש":  # an explicit line break
+            return "\n"
+        return body if name in KEEP_WRAPPERS else " "
+
+    previous = None
+    while previous != text:
+        previous, text = text, INNERMOST.sub(_one, text)
+    return text
+
+
+def page_slice(page_text: str, load) -> Resolution:
+    """Render one printed page of the edition from the foundation spans it transcludes.
+
+    `load(foundation_page_name)` returns that foundation page's wikitext.
+
+    The page is rendered rather than having its spans concatenated, because the text
+    *between* two transclusions is part of the reading: printed page 1 joins five spans
+    into one paragraph with `. ` between them, and a slicer that concatenated them would
+    manufacture four paragraph breaks and lose four sentence-final periods -- reported
+    afterwards as whitespace and vowel differences that are the slicer's own doing.
+    """
+    result = Resolution(text="")
+
+    def _substitute(match: re.Match) -> str:
+        foundation, name = match.group(1), match.group(2)
+        if not is_prayer_span(name):
+            return " "
+        page = load(foundation)
+        span = section(page, name)
+        if span is None:
+            renamed = RENAMED_SPANS.get((foundation, name))
+            if renamed is not None:
+                span = section(page, renamed)
+        if span is None:
+            # The page file and the foundation page were snapshotted at different
+            # revisions, so a span was renamed or a typo in the name was fixed on one side
+            # only. Record the gap; a slice with a hole in it is not a slice, and the
+            # caller must not quietly write one.
+            result.missing.append((foundation, name))
+            return " "
+        resolved = resolve(span)
+        result.comments.extend(resolved.comments)
+        result.substitutions.extend(resolved.substitutions)
+        return resolved.text
+
+    text = NOINCLUDE.sub(" ", page_text)
+    text = TRANSCLUSION.sub(_substitute, text)
+    text = _evaluate_templates(text)
+    text = strip_markup(text)
+    # `strip_markup` flattens runs of spaces but leaves the page's own line structure, so
+    # the paragraphing the edition sets survives to be compared.
+    paragraphs = [" ".join(line.split()) for line in text.split("\n")]
+    result.text = "\n".join(p for p in paragraphs).strip()
+    result.text = re.sub(r"\n{3,}", "\n\n", result.text)
+    return result
+
+
+def _cli(argv: list[str] | None = None) -> int:
+    """Write `transcription/{printed}.txt` for each printed page named.
+
+    Doing this by hand is how printed page 19 lost a span and printed page 25 nearly lost
+    one: the slice is a judgement about which foundation spans a page sets, and the page
+    file already records that judgement. Read it from there.
+    """
+    import argparse
+    import sys
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description=_cli.__doc__)
+    parser.add_argument("pages", type=int, nargs="+", help="Printed page numbers.")
+    parser.add_argument(
+        "--sourcetexts",
+        type=Path,
+        default=Path("sourcetexts"),
+        help="Root of the sourcetexts checkout holding this book.",
+    )
+    parser.add_argument(
+        "--scan-offset", type=int, default=25, help="scan leaf = printed page + this."
+    )
+    parser.add_argument("--stdout", action="store_true", help="Print instead of writing.")
+    parser.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="Write the slice even though a span it transcludes could not be found.",
+    )
+    args = parser.parse_args(argv)
+
+    book = args.sourcetexts / "sources" / "birnbaum_siddur"
+    foundation = book / "source" / "text" / "אשכנז" / "דפי יסוד"
+    out_dir = book / "scan_reading" / "transcription"
+
+    def load(name: str) -> str:
+        return (foundation / f"{name}.txt").read_text(encoding="utf-8")
+
+    status = 0
+    for printed in args.pages:
+        page_file = book / "text" / f"{printed + args.scan_offset:03d}.txt"
+        sliced = page_slice(page_file.read_text(encoding="utf-8"), load)
+        def report(message: str) -> None:
+            print(f"{printed}: {message}", file=sys.stderr)
+
+        for comment in sliced.comments:
+            report(f"comment: {comment}")
+        for was, now in sliced.substitutions:
+            report(f"reads {now} where the edition sets {was}")
+        for foundation, name in sliced.missing:
+            report(f"MISSING SPAN {name!r} in {foundation!r}")
+        if sliced.missing and not (args.stdout or args.allow_missing):
+            status = 1
+            report("not written -- the slice has a hole in it")
+            continue
+        if args.stdout:
+            print(sliced.text)
+        else:
+            (out_dir / f"{printed}.txt").write_text(sliced.text + "\n", encoding="utf-8")
+            report(f"{len(sliced.text.split())} words -> {out_dir}/{printed}.txt")
+    return status
+
+
+if __name__ == "__main__":
+    raise SystemExit(_cli())

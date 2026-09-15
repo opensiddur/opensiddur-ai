@@ -1,0 +1,13 @@
+{
+  "vowels:24:שֶׁאֲנַֽחְנוּ|שֶׁאֲנַחְנוּ": "print",
+  "vowels:31:בְּכָל|בְּכׇל": "print",
+  "vowels:36:אֱלֹהֵֽינוּ,|אֱלֹהֵינוּ,": "print",
+  "vowels:130:כָּל|כׇּל": "print",
+  "vowels:134:בְּכָל|בְּכׇל": "print",
+  "vowels:144:אָבִֽינוּ|אָבִינוּ": "print",
+  "vowels:157:אֱלֹהֵֽינוּ,|אֶלֹהֵֽינוּ,": "print",
+  "whitespace:32:'\\n\\n'|'\\n'": "print",
+  "whitespace:38:'\\n\\n'|'\\n'": "print",
+  "whitespace:44:'\\n\\n'|'\\n'": "print",
+  "vowels:110:כָל|כׇל": "print"
+}

@@ -362,6 +362,34 @@ They are `tei:note` in one `tei:standOff[@type="notes"]`, told apart by `@type`:
 in `@n`. The apparatus is its own file, with a header and no `tei:text` of its own --
 valid, because `tei:standOff` is a `model.resource` exactly as `tei:text` is.
 
+### What the foot of a page actually holds
+
+Printed pages 21-26 settle the shape, and page 24 shows both apparatuses at once:
+
+    ────────────────────────────────────────
+    were posted in the synagogues to watch the services. … The additional
+    word ובגלוי is not found in early texts.
+        רבון כל העולמים is mentioned in Yoma 87b as a Yom Kippur prayer.
+    ──────────
+    ¹ Leviticus 26:42.
+
+- **Two blocks, each under its own rule, in a fixed order.** The full-measure rule
+  separates the body from the commentary; a short rule separates the commentary from the
+  citations. Commentary first, citations second.
+- **A commentary note carries no mark in the running text.** Not a numeral, not an
+  asterisk, not a dagger. It finds its text through the quoted lemma alone. Only the
+  citations are marked, with superscript numerals that restart at 1 on every page.
+- **A note that runs across the opening is set once, continuously.** Page 24's block opens
+  mid-sentence with no lemma, being the tail of the note whose head is under Hebrew page
+  23. Two feet, one note — which is the fifth PDF measurement this unit owes.
+- **A lemma is unpointed**, and one covering a span joins its ends with an en dash:
+  `קדש את שמך–ברבים`. Hebrew also appears inside a note's own prose, inline and unpointed.
+- **A note's page is decided by which apparatus it belongs to, not by where its text is.**
+  English page 22 has no apparatus at all, because the note on its text (`בהר ה' יראה`) is
+  commentary and is set under Hebrew page 21. The English Wikisource transcription attaches
+  every `<ref>` to the English page and so records the wrong foot for every commentary note;
+  it is a guide to *which* notes a page has and not to where they sit.
+
 ### A note is keyed to the nearest canonical URN, not to an id
 
 Three ways were available, and the choice is not obvious:
