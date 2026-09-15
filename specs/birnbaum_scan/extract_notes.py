@@ -92,6 +92,7 @@ def _tei(text: str):
             piece = HE.sub(
                 lambda m: f'<tei:foreign xml:lang="he">{m.group(1)}</tei:foreign>', piece)
             piece = ITALIC.sub(r'<tei:hi rend="italic">\1</tei:hi>', piece)
+            piece = RANGE.sub("\u2013", piece)
             piece = " ".join(piece.split())
             if piece:
                 out.append({"rend": rend, "text": piece})
@@ -164,6 +165,12 @@ BY_LEMMA = {
 BY_OPENING = {
     "The <tei:foreign": "urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven",
 }
+
+#: The transcription sets a **hyphen** in every numeric range; the print sets an **en dash**.
+#: Not only verse ranges: printed 6's foot has `13:1–10; 11–16.`, where the second range has
+#: no chapter at all, and `Rabbi Isaiah Horowitz (1555–1630)` in the note above it. So the
+#: rule is any number, dash, number -- checked at 7x on that page.
+RANGE = re.compile(r"(?<=\d)-(?=\d)")
 
 #: Set as printed, and **not** a transcription error, so that nobody tidies it later: the
 #: second citation on printed 34 reads `Psalms 46:8; 84:13: 20:10; 32:7.` with a colon where

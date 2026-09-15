@@ -276,7 +276,7 @@ AMIDAH_NOTES = [
         target="urn:x-opensiddur:text:prayer:amidah/birkat_kohanim",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Numbers</tei:hi> 6:24-26."
+                "<tei:hi rend=\"italic\">Numbers</tei:hi> 6:24–26."
             )),
         ],
     ),
@@ -388,7 +388,7 @@ BIRCHOT_NOTES = [
         target="urn:x-opensiddur:text:prayer:tallith/barkhi_nafshi",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Psalm</tei:hi> 104:1-2."
+                "<tei:hi rend=\"italic\">Psalm</tei:hi> 104:1–2."
             )),
         ],
     ),
@@ -448,7 +448,7 @@ BIRCHOT_NOTES = [
         lemma="הנני מכון...",
         paras=[
             dict(text=(
-                "is derived from the Siddur of Rabbi Isaiah Horowitz (1555-1630), author of "
+                "is derived from the Siddur of Rabbi Isaiah Horowitz (1555–1630), author of "
                 "<tei:foreign xml:lang=\"he\">שני לוחות הברית</tei:foreign> <tei:foreign "
                 "xml:lang=\"he\">(של\"ה)</tei:foreign>. This meditation contains the thought that "
                 "by wearing the <tei:hi rend=\"italic\">tefillin</tei:hi> on the head and near "
@@ -473,8 +473,8 @@ BIRCHOT_NOTES = [
         target="urn:x-opensiddur:text:prayer:tefillin/hineni_mekhaven",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Deuteronomy</tei:hi> 6:4-9; 11:13-21; <tei:hi "
-                "rend=\"italic\">Exodus</tei:hi> 13:1-10; 11-16."
+                "<tei:hi rend=\"italic\">Deuteronomy</tei:hi> 6:4–9; 11:13–21; <tei:hi "
+                "rend=\"italic\">Exodus</tei:hi> 13:1–10; 11–16."
             )),
         ],
     ),
@@ -516,7 +516,7 @@ BIRCHOT_NOTES = [
         target="urn:x-opensiddur:text:prayer:tefillin/verastikh",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Hosea</tei:hi> 2:21-22."
+                "<tei:hi rend=\"italic\">Hosea</tei:hi> 2:21–22."
             )),
         ],
     ),
@@ -547,8 +547,8 @@ BIRCHOT_NOTES = [
                 "<tei:foreign xml:lang=\"he\">וכל נוצר</tei:foreign> in the fifth line brings out "
                 "the full meaning of Maimonides’ fifth principle that God alone must be "
                 "worshiped. <tei:foreign xml:lang=\"he\">יורה</tei:foreign> is used here in the "
-                "sense of <tei:foreign xml:lang=\"he\">יגיד, יספר</tei:foreign> (see Job 12:7-8; "
-                "Psalm 145:6-12). In Erubin 65a, <tei:foreign xml:lang=\"he\">יורה</tei:foreign> "
+                "sense of <tei:foreign xml:lang=\"he\">יגיד, יספר</tei:foreign> (see Job 12:7–8; "
+                "Psalm 145:6–12). In Erubin 65a, <tei:foreign xml:lang=\"he\">יורה</tei:foreign> "
                 "is taken as the equivalent of <tei:foreign xml:lang=\"he\">יתפלל</tei:foreign>."
             )),
         ],
@@ -582,7 +582,7 @@ BIRCHOT_NOTES = [
         paras=[
             dict(text=(
                 "The nature and value of the offering which all male Israelites were required to "
-                "present at the Temple is not defined in Deuteronomy 16:16-17."
+                "present at the Temple is not defined in Deuteronomy 16:16–17."
             )),
         ],
     ),
@@ -947,7 +947,7 @@ BIRCHOT_NOTES = [
                 "(a) From Deuteronomy 24:6 (“No one shall take a handmill or an upper millstone "
                 "in pledge, for he would be taking a life in pledge”) the Rabbis concluded: "
                 "‘‘Everything which is used for preparing food is forbidden to be taken in "
-                "pledge.” (b) From Exodus 21:26-27 (“If a man strikes the eye of his slave... and "
+                "pledge.” (b) From Exodus 21:26–27 (“If a man strikes the eye of his slave... and "
                 "destroys it, he must let him go free in compensation for his eye. If he knocks "
                 "out the tooth of his slave... he must let him go free...”) the Rabbis concluded "
                 "that when <tei:hi rend=\"italic\">any</tei:hi> part of the slave's body is "
@@ -1038,7 +1038,7 @@ BIRCHOT_NOTES = [
         target="urn:x-opensiddur:text:prayer:middot/9",
         paras=[
             dict(text=(
-                "In Exodus 35:2-3 we read: “Whoever does any work on the Sabbath shall be put to "
+                "In Exodus 35:2–3 we read: “Whoever does any work on the Sabbath shall be put to "
                 "death; you shall not light a fire on the sabbath day.” The law against lighting "
                 "a fire on the Sabbath, though already implied in “any work”, is mentioned "
                 "separately in order to indicate that the penalty for lighting a fire on the "
@@ -1052,7 +1052,7 @@ BIRCHOT_NOTES = [
         target="urn:x-opensiddur:text:prayer:middot/10",
         paras=[
             dict(text=(
-                "According to Exodus 21:29-30, the proprietor of a vicious animal which has "
+                "According to Exodus 21:29–30, the proprietor of a vicious animal which has "
                 "killed a man or woman must pay such compensation as may be imposed on him by the "
                 "court. In a succeeding verse the Torah adds: “If the ox gores a slave, male or "
                 "female, he must pay the master thirty shekels of silver.” The case of a slave, "
@@ -1072,7 +1072,7 @@ BIRCHOT_NOTES = [
             dict(text=(
                 "The guilt-offering which a cured leper had to bring was unlike all other guilt- "
                 "offerings in this, that some of its blood was sprinkled on the person who "
-                "offered it (Leviticus 14:13-14). On account of this peculiarity none of the "
+                "offered it (Leviticus 14:13–14). On account of this peculiarity none of the "
                 "rules connected with other offerings would apply to that brought by a cured "
                 "leper, had not the Torah expressly added: “As the sin-offering so is the guilt- "
                 "offering.”"
@@ -1191,7 +1191,7 @@ BIRCHOT_NOTES = [
                 "קדיש</tei:foreign>, the half-Kaddish, recited by the Reader between sections of "
                 "the service; 4) <tei:foreign xml:lang=\"he\">קדיש יתום</tei:foreign> the "
                 "mourners’ Kaddish, recited by the mourners after the service and after the "
-                "recitation of certain psalms, such as the Psalm of the Day (pages 139-147) ; 5) "
+                "recitation of certain psalms, such as the Psalm of the Day (pages 139–147) ; 5) "
                 "<tei:foreign xml:lang=\"he\">קדיש ל(את)חדתא</tei:foreign>, an expanded form of "
                 "the mourners’ Kaddish, recited at the cemetery after a burial."
             )),
