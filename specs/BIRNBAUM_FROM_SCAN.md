@@ -479,32 +479,39 @@ as starting at 10. Neither was in the document.
 That is the same shape as everything else this pass turned up: **the step being done by
 hand, or by a rule invented on the spot, is the step that is wrong.**
 
-## Known defect in the exporter: a parallel compile applies only the first note
+## Known defect in the exporter: a parallel compile drops the apparatus
 
-Found by building the apparatus and looking for it. Not caused by this work, not fixed
-here, and **it is what stands between the encoded apparatus and a rendered one**.
+**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124)**, with a
+minimal two-project reproduction that has nothing of this book in it. Not caused by this
+work, not fixed here, and **it is what stands between the encoded apparatus and a rendered
+one**.
 
 The apparatus is correct: 84 notes, valid against the schema, indexed by `refdb`, every
 target resolving. Compiled **single-column** the unit carries all of them — 49 commentary
-and 12 citation in Birkhoth ha-Shaḥar. Compiled **two-column** it carries exactly one.
+and 12 citation in Birkhoth ha-Shaḥar. Compiled **two-column** it carries **none**.
 
     # all 61 appear
     compiler -p birnbaum_ashkenaz_he_1949 -f all_shacharit_birchot_hashachar.xml \
         -s <settings with no `parallel:` block>
 
-    # one appears
+    # none appear
     compiler -p birnbaum_ashkenaz_he_1949 -f all_shacharit_birchot_hashachar.xml \
         -s specs/birnbaum_scan/settings_undecided.yaml
 
-The one that appears is the first in document order. Shaḥarith li-Yladim looked as though
-it worked only because it has a single note.
+**It is not the narrowing.** `_primary_annotations` and `_parallel_priority` do what their
+docstrings say, and every placement of the apparatus loses the notes — including a third
+project that is not a column at all, which is the case `_primary_annotations`'s docstring
+says should still work.
 
-**It is not the narrowing.** `_primary_annotations` and `_parallel_priority` are doing what
-their docstrings say. Putting the apparatus project in the *primary* column instead — so
-that nothing is narrowed away — still yields one note, not 49. Nor is it the kind of target:
-retargeting a note from a `tei:div/@corresp` to a `tei:seg/@corresp` inside the same file
-changes nothing. What separates the working case from the failing one is only whether the
-compile goes through the parallel path at all.
+**`_annotate` is simply never called.** In `external_compiler._process_element`,
+`_transclude` resolves the transclusion into a finished `p:parallel` block and returns
+before the annotation pass.
+
+Shaḥarith li-Yladim looked as though it worked because its one note targets a `tei:seg`
+*inside* the transcluded content rather than the prayer's own `@corresp`. In the minimal
+reproduction a seg target does survive a parallel compile; here it does not, so the div/seg
+distinction is not the whole mechanism, and the issue reports that as observed rather than
+explained.
 
 **What it does not affect.** The notes themselves, their targets, their lemmas and their
 structure are all verifiable without the exporter, and are verified: the schema validates
