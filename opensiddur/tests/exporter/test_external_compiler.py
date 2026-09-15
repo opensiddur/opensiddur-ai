@@ -1839,6 +1839,10 @@ class TestPrimaryColumnAnnotations(unittest.TestCase):
     reader gets it twice per opening. Narrowing the parallel column alone does not fix it:
     the primary column still holds the configured list, and the whole point of that list
     is that it names the project carrying the apparatus.
+
+    The helper takes the column being compiled against, so it drops that one project rather
+    than every project that happens to be a column -- which is what lets an apparatus
+    annotating both sides from outside still reach the primary one.
     """
 
     def _processor(self, *, annotations, parallel):
@@ -1862,19 +1866,19 @@ class TestPrimaryColumnAnnotations(unittest.TestCase):
 
     def test_a_project_supplying_a_column_does_not_annotate_the_other_one(self):
         proc = self._processor(annotations=["en"], parallel=["en"])
-        with proc._primary_annotations():
+        with proc._primary_annotations("en"):
             self.assertEqual(proc.linear_data.annotation_projects, [])
 
     def test_an_apparatus_project_that_is_not_a_column_still_reaches_the_primary(self):
         """Removing every annotation project would break commentary that annotates both
         sides from outside. Only the projects that are themselves columns are dropped."""
         proc = self._processor(annotations=["en", "wlc"], parallel=["en"])
-        with proc._primary_annotations():
+        with proc._primary_annotations("en"):
             self.assertEqual(proc.linear_data.annotation_projects, ["wlc"])
 
     def test_the_configured_list_is_put_back_afterwards(self):
         proc = self._processor(annotations=["en"], parallel=["en"])
-        with proc._primary_annotations():
+        with proc._primary_annotations("en"):
             pass
         self.assertEqual(proc.linear_data.annotation_projects, ["en"])
 

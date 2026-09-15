@@ -250,6 +250,14 @@ check that silently measures nothing is worse than no check, because it is belie
   a prayer, where the diff then reports it as the print's own words.
 
 **The apparatus**
+- **A note that never renders still validates.** An apparatus can be schema-valid, indexed
+  by `refdb`, resolve every target and pass the registry while a two-column compile emits
+  none of it. Nothing short of compiling the way it will be read, and looking for the notes,
+  catches that — and a unit with a single note can look as though it works. Count them.
+- **Three words of English are not a fingerprint.** Measuring whether a note is set twice by
+  matching its first three long words reported two false duplicates; six words showed each
+  note on exactly one page. A measurement that cannot tell a duplicate from a coincidence
+  has not measured anything.
 - **A note keys to the nearest canonical URN.** An `#id` target resolves only inside the
   one file that declares it — `refdb.get_references_to` scopes id lookups by project *and*
   file name — so an apparatus in its own file can reach the text only by URN. That is also

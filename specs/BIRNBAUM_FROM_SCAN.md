@@ -520,49 +520,37 @@ as starting at 10. Neither was in the document.
 That is the same shape as everything else this pass turned up: **the step being done by
 hand, or by a rule invented on the spot, is the step that is wrong.**
 
-## Known defect in the exporter: a parallel compile drops the apparatus
+## The apparatus renders (was: a parallel compile dropped it)
 
-**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124)**, with a
-minimal two-project reproduction that has nothing of this book in it. Not caused by this
-work, not fixed here, and **it is what stands between the encoded apparatus and a rendered
-one**.
+**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124), fixed in
+[#126](https://github.com/opensiddur/opensiddur-ai/pull/126).** Kept here because the
+symptom is worth recognising again: while it stood, a single-column compile carried all 61
+notes of this unit and a two-column compile carried none, and everything else was green --
+the apparatus validated, `refdb` indexed it, every target resolved, the registry was clean.
+Only compiling two-column and looking for the notes found it.
 
-The apparatus is correct: 84 notes, valid against the schema, indexed by `refdb`, every
-target resolving. Compiled **single-column** the unit carries all of them — 49 commentary
-and 12 citation in Birkhoth ha-Shaḥar. Compiled **two-column** it carries **none**.
+Against the fix, the three units carry **84 notes in a parallel compile**: 61 in Birkhoth
+ha-Shaḥar, 22 in the Amidah, 1 in Shaḥarith li-Yladim. None is duplicated, and all of them
+sit in the English column -- the one project that realises the apparatus.
 
-    # all 61 appear
-    compiler -p birnbaum_ashkenaz_he_1949 -f all_shacharit_birchot_hashachar.xml \
-        -s <settings with no `parallel:` block>
+### The fifth measurement, now that there is something to measure
 
-    # none appear
-    compiler -p birnbaum_ashkenaz_he_1949 -f all_shacharit_birchot_hashachar.xml \
-        -s specs/birnbaum_scan/settings_undecided.yaml
+`\Bfootnote` appears 61 times in the TeX and 61 marks with it. In the PDF:
 
-**It is not the narrowing.** `_primary_annotations` and `_parallel_priority` do what their
-docstrings say, and every placement of the apparatus loses the notes — including a third
-project that is not a column at all, which is the case `_primary_annotations`'s docstring
-says should still work.
+- **Every note is set once.** Each note's opening words appear on exactly one page. Nothing
+  is emitted into both columns, which is what `_primary_annotations` exists to prevent.
+- **Every note's opening is on a page**; none is lost.
+- **Two long notes continue overleaf** -- Yigdal's on printed 12 and the laver's on printed
+  28. That is what a note longer than the page's apparatus does, and what the print does
+  itself: his long notes run across the opening.
 
-**`_annotate` is simply never called.** In `external_compiler._process_element`,
-`_transclude` resolves the transclusion into a finished `p:parallel` block and returns
-before the annotation pass.
+A caution about the measurement rather than the document: a first pass matched each note by
+its first three long words and reported two notes "set on two pages". Widening the window to
+six showed each on exactly one. **Three words of English are not a fingerprint**, and a
+measurement that cannot tell a duplicate from a coincidence has not measured anything.
 
-Shaḥarith li-Yladim looked as though it worked because its one note targets a `tei:seg`
-*inside* the transcluded content rather than the prayer's own `@corresp`. In the minimal
-reproduction a seg target does survive a parallel compile; here it does not, so the div/seg
-distinction is not the whole mechanism, and the issue reports that as observed rather than
-explained.
-
-**What it does not affect.** The notes themselves, their targets, their lemmas and their
-structure are all verifiable without the exporter, and are verified: the schema validates
-them, `refdb` indexes them, every target resolves, and the single-column compile prints
-them. So the apparatus can be landed and the exporter fixed separately.
-
-**The fifth PDF measurement is therefore still owed.** A note's mark and its text on the
-same page cannot be measured while a two-column PDF carries one note, and reporting that
-measurement as passing on a document with one note in it would be the same mistake as
-reporting it passing on a document with none.
+What is given up remains as recorded above: the commentary begins physically under the
+Hebrew page in the print, and in the rendered PDF it is in the English column.
 
 ## Known defect in the calendar: `rosh-hodesh` is wrong on most Rosh Ḥodesh days
 
