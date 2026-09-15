@@ -20,3 +20,7 @@
 {"page": "19", "was": "וַיַּחֲבשׁ", "is": "וַיַּחֲבֹשׁ", "kind": "vowels", "settled_by": "editor", "found_by": "open question 19.1", "before_commit": true}
 {"page": "21", "was": "אָמַר", "is": "אָֽמַר", "kind": "meteg", "settled_by": "editor", "found_by": "open question 21.2", "before_commit": true}
 {"page": "21", "was": "יִרְאֶה;", "is": "יִרְאֶה,", "kind": "punctuation", "settled_by": "editor", "found_by": "open question 21.3", "before_commit": true}
+{"page": "23", "was": "וְיִגּֽלּוּ", "is": "וְיָגֺֽלּוֹ", "kind": "vowels", "settled_by": "editor", "found_by": "open question 23.1", "before_commit": true, "note": "several marks differed at once, which meant a different word rather than different pointing"}
+{"page": "23", "was": "בְּסֵֽתֶר", "is": "בַּסֵּֽתֶר", "kind": "vowels", "settled_by": "editor", "found_by": "open question 23.5", "before_commit": true}
+{"page": "23", "was": "יְשׁוּעָתֵֽנוּ", "is": "יְּשׁוּעָתֵֽנוּ", "kind": "dagesh", "settled_by": "editor", "found_by": "open question 23.7", "before_commit": true}
+{"page": "23", "was": "הַמּוֹרִיָּה", "is": "הַמֹּרִיָּה", "kind": "consonants", "settled_by": "editor", "found_by": "open question 23.9", "before_commit": true}

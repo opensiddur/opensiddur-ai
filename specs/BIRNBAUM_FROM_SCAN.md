@@ -321,6 +321,34 @@ nothing. `settings_undecided.yaml` declares the service and the recitation and n
 every day-dependent reading survives with its rubric; `settings_15jan_jerusalem.yaml`
 names a day and a place, and nothing conditional should survive it.
 
+## A combined shin dot and holam is two marks, and both are encoded
+
+**Decision.** Where a holam falls on the letter before a shin, or on the shin itself,
+Birnbaum prints **one dot** doing the work of both the holam and the shin dot. Many
+printers do the same; it is a typographic economy, not a claim about the word.
+
+The holam is logically present, so **both characters are encoded** -- U+05B9 for the holam
+and the shin dot -- even though only one dot is on the page. `מֹשֶׁה` is written with its
+holam, not as `משֶׁה`.
+
+**This is the one place the reading deliberately departs from what the page shows**, and it
+is worth being explicit about why, because everything else in this procedure runs the other
+way:
+
+- The rule everywhere else is that the page is the evidence and the reading records what is
+  printed. Qamats qatan is refused for exactly that reason: this print has one qamats glyph
+  and U+05C7 would be an interpretation laid over it.
+- The combined dot is not the same case. A qamats qatan is a *reading* of a mark that is
+  genuinely there; the combined dot is a *single mark standing for two* that the language
+  requires and the compositor merged to save a dot. Encoding one character would not be
+  faithfulness to the page -- it would make the text say something Hebrew does not.
+- The test that separates them: ask whether dropping the mark changes what the word **is**.
+  Writing U+05B8 where an editor would read U+05C7 leaves the word intact. Dropping the
+  holam from `מֹשֶׁה` does not.
+
+So a transcription that omits the holam under a combined dot is wrong, and the diff will
+report it as a difference in *vowels* -- which is how this was found on printed 23.
+
 ## The footnote apparatus
 
 The print carries two apparatuses. *Commentary* sits at the foot of the Hebrew page, keyed

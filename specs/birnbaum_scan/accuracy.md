@@ -28,17 +28,18 @@ adjudicated by going back to the page image.
 | 17 | 163 | 0 | 0 | 3 | 0 (none needed) |
 | 19 | 203 | 0 | 0 | 9 | 0 (1 caught before committing) |
 | 21 | 218 | 0 | 0 | 4 | 0 (2 caught before committing) |
+| 23 | 193 | 0 | 0 | 8 | 0 (4 caught before committing) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
 | 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
-| **total** | **1922** | **21** | **15** | **77** | **0** |
+| **total** | **2115** | **21** | **15** | **85** | **0** |
 
-**No misreading survives in 1922 words.** But the second number in that column has grown
+**No misreading survives in 2115 words.** But the second number in that column has grown
 faster than the first, and it is now the one that matters: **nineteen readings have been
 corrected, all of them points, and every one was caught by the diff rather than
 by looking harder.**
 
 That revises what the first three pages concluded. Reading this scan in enlarged bands is
-reliable *for consonants* — the skeleton has not been wrong once in 1922 words. It is not
+reliable *for consonants* — the skeleton has not been wrong once in 2115 words. It is not
 reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
 differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
 neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach

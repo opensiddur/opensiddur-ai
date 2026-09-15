@@ -116,6 +116,12 @@ check that silently measures nothing is worse than no check, because it is belie
   reading follows from knowing the text: a sin dot that will not resolve in the crop is
   still settled if the word is עָשָׂה. From inside the crop the two failure modes look
   identical, so ask what the word is before blaming the scan.
+- **One dot can be two marks: a combined shin dot and holam is encoded as both.** Birnbaum
+  prints a single dot where a holam meets a shin, and the holam is still logically there,
+  so both characters go in -- `מֹשֶׁה`, not `משֶׁה`. This is the one deliberate departure
+  from recording what the page shows, and the test that licenses it is whether dropping the
+  mark changes what the word *is*: a qamats read as qamats qatan leaves the word intact, a
+  dropped holam does not. `specs/BIRNBAUM_FROM_SCAN.md` has the full decision.
 - **A meteg is decided on the image, one at a time, never in bulk.** On a single page the
   disputed metegs have fallen in both directions at once -- some the reading invented, some
   it missed -- so any rule of thumb gets half of them wrong. There is no shortcut here and
