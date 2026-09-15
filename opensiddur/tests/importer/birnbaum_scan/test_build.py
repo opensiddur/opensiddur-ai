@@ -9,6 +9,7 @@ contents would be transcribing the book a second time into a test. Where a praye
 list is used at all, it is a synthetic one.
 """
 
+import re
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -376,6 +377,67 @@ class TestThePoems(unittest.TestCase):
         for side in (self.he, self.en):
             self.assertIn("tei:pb", side["poem_yigdal"]["body"])
             self.assertNotIn("tei:pb", side["poem_adon_olam"]["body"])
+
+
+class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
+    """A text must be transcluded by the unit whose pages print it, and by no other.
+
+    This exists because the morning blessings were once emitted into the children's unit
+    by a patch that matched the wrong function, and *every* other check passed: 166 files
+    validated, the suite was green, refdb indexed cleanly and the registry reported no
+    errors. Filing printed 13-19 under a unit covering printed 1-2 is structurally
+    impeccable and completely wrong, so nothing but an assertion about which unit holds
+    what was ever going to catch it.
+    """
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan.build import build_he, build_en
+        self.build_he, self.build_en = build_he, build_en
+
+    def _unit_targets(self, build, project, pages):
+        out = {}
+        by_name = {p["name"]: p for p in build.PRAYERS}
+        for unit in self.build_he.units(project, pages, by_name, build.unit_body()):
+            out[unit["name"]] = re.findall(r'target="(urn:[^"]+)"', unit["body"])
+        return out
+
+    def test_the_childrens_unit_holds_only_the_childrens_page(self):
+        for build, project, pages in (
+                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
+            targets = self._unit_targets(build, project, pages)["all_shacharit_yeladim"]
+            for urn in targets:
+                self.assertNotIn("birchot_hashachar/", urn)
+                self.assertNotIn("birkhot_hatorah/", urn)
+                self.assertNotIn(":poem:", urn)
+
+    def test_the_morning_blessings_are_in_the_unit_whose_pages_print_them(self):
+        for build, project, pages in (
+                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
+            targets = self._unit_targets(
+                build, project, pages)["chol_shacharit_birchot_hashachar"]
+            joined = " ".join(targets)
+            for slug in ("birchot_hashachar/shelo_asani_aved",
+                         "birchot_hashachar/hamaavir_shenah",
+                         "birkhot_hatorah/laasok", "poem:adon_olam"):
+                self.assertIn(slug, joined)
+
+    def test_no_text_is_transcluded_by_two_units(self):
+        """Except one, knowingly: the washing blessing is printed on 1 and again on 13."""
+        allowed = {"urn:x-opensiddur:text:prayer:al_netilat_yadayim"}
+        for build, project, pages in (
+                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
+            seen = {}
+            for unit, targets in self._unit_targets(build, project, pages).items():
+                for urn in targets:
+                    if urn.startswith("urn:x-opensiddur:text:prayer:") or ":poem:" in urn:
+                        seen.setdefault(urn, []).append(unit)
+            for urn, units in seen.items():
+                if urn in allowed:
+                    continue
+                self.assertEqual(len(set(units)), 1, f"{urn} transcluded by {units}")
 
 
 class TestBuilders(unittest.TestCase):

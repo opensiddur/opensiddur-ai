@@ -300,3 +300,32 @@
 {"urn": "urn:x-opensiddur:text:prayer:tefillin/verastikh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "I will betroth you to myself (Hosea 2:21-22)"}
 {"urn": "urn:x-opensiddur:text:prayer:tefillin/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "May it be thy will, after putting on the tefillin"}
 {"urn": "urn:x-opensiddur:text:prayer:tefillin/parashiyot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:tefillin", "label_en": "The four sections of the tefillin (Exodus 13:1-16)"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "status": "canonical", "label_en": "The blessings over the Torah", "label_he": "בִּרְכוֹת הַתּוֹרָה"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar", "status": "canonical", "label_en": "The morning blessings", "label_he": "בִּרְכוֹת הַשַּֽׁחַר"}
+{"urn": "urn:x-opensiddur:text:prayer:asher_yatzar", "status": "canonical", "label_en": "Asher Yatzar", "label_he": "אֲשֶׁר יָצַר"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_kohanim", "status": "canonical", "label_en": "The Priestly Blessing (Numbers 6:24-26)", "label_he": "בִּרְכַּת כֹּהֲנִים"}
+{"urn": "urn:x-opensiddur:text:prayer:elu_devarim", "status": "canonical", "label_en": "Elu Devarim (Mishnah Peah 1:1; Shabbath 127a)", "label_he": "אֵֽלּוּ דְבָרִים"}
+{"urn": "urn:x-opensiddur:text:prayer:elohai_neshamah", "status": "canonical", "label_en": "Elohai Neshamah", "label_he": "אֱלֹהַי נְשָׁמָה"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/laasok", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Blessing over engaging in words of Torah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/vehaarev", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Ve-haarev na"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/asher_bachar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah", "label_en": "Blessing over the giving of the Torah"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/lasekhvi", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who gives the cock understanding"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_goy", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a heathen"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_aved", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a slave"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_ishah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has not made me a woman (said by men)"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/sheasani_kirtzono", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has made me according to his will (said by women)"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/pokeach_ivrim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who opens the eyes of the blind"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/malbish_arumim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who clothes the naked"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/matir_asurim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who sets the captives free"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/zokef_kefufim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who raises up those bowed down"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/roka_haaretz", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who spreads the earth above the waters"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/sheasah_li", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who has provided for all my needs"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hamekhin", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who guides the steps of man"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/ozer_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who girds Israel with might"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/oter_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who crowns Israel with glory"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hanoten_layaef", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who gives strength to the weary"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/hamaavir_shenah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who removes sleep from the eyes"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shetargilenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Yehi Ratzon: that thou accustom us to thy Torah"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/gomel_chasadim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "who bestows lovingkindness on his people Israel"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/shetatzileni", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Yehi Ratzon: that thou deliver me today"}
+{"urn": "urn:x-opensiddur:text:prayer:birchot_hashachar/zochreinu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:birchot_hashachar", "label_en": "Remember us with a good remembrance"}

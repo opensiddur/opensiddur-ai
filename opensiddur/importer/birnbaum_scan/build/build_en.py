@@ -11,19 +11,20 @@ from .en_yeladim import PRAYERS as YELADIM_PRAYERS
 from .en_tallith import PRAYERS as TALLITH_PRAYERS
 from .en_tefillin import PRAYERS as TEFILLIN_PRAYERS
 from .en_poems import PRAYERS as POEM_PRAYERS
+from .en_berakhot import PRAYERS as BERAKHOT_PRAYERS
 from . import build_he
 from . import notes as apparatus
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
-           + TEFILLIN_PRAYERS + POEM_PRAYERS)
+           + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the English side of the opening.
-EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 14), "amidah": (82, 98)}
+EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 20), "amidah": (82, 98)}
 
 #: Birnbaum's footnotes, one apparatus file per unit. They are written here and not in
 #: `build_he` because the commentary is English prose, as his introduction is: the

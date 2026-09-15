@@ -4,7 +4,7 @@ import argparse
 import sys
 from .common import set_project_directory
 from .common import (PROJECT_EN, PROJECT_HE, PRAYER, SIDDUR, document, write, cond,
-                    endcond, feature, SERVICE, AGG)
+                    endcond, feature, SERVICE, AGG, PERSON)
 from .front import SECTIONS, front_block, section_body
 from .index import index
 from .he_prayers import PRAYERS as AMIDAH_PRAYERS
@@ -12,10 +12,11 @@ from .he_yeladim import PRAYERS as YELADIM_PRAYERS
 from .he_tallith import PRAYERS as TALLITH_PRAYERS
 from .he_tefillin import PRAYERS as TEFILLIN_PRAYERS
 from .he_poems import PRAYERS as POEM_PRAYERS
+from .he_berakhot import PRAYERS as BERAKHOT_PRAYERS, BLESSINGS
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
-           + TEFILLIN_PRAYERS + POEM_PRAYERS)
+           + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -143,6 +144,48 @@ POEM_HEADS = {
 }
 
 
+GENDERED = (
+    ("cond_blessing_men", "Men say:", "male", "birchot_shelo_asani_ishah"),
+    ("cond_blessing_women", "Women say:", "female", "birchot_sheasani_kirtzono"),
+)
+
+#: Printed 13 sets the washing blessing word for word as printed 1 does. The children's
+#: unit realises it, so this transcludes -- refdb refuses a text URN mapped twice in one
+#: project. Which unit ought to realise it is for when the whole book is read; the
+#: children's page is certainly not its home.
+SHARED_WITH_YELADIM = ("yeladim_netilat_yadayim",)
+
+TORAH_BLESSINGS = ("asher_yatzar", "birkhot_hatorah_laasok", "birkhot_hatorah_vehaarev",
+                   "birkhot_hatorah_asher_bachar", "birkat_kohanim", "elu_devarim",
+                   "elohai_neshamah")
+
+
+def _transclude(lines, by_name, name):
+    lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+
+
+def _birchot_blessings(lines, by_name):
+    """Printed 13-19: the Torah blessings, then the morning blessings in page order."""
+    for name in SHARED_WITH_YELADIM + TORAH_BLESSINGS:
+        _transclude(lines, by_name, name)
+    gendered = {n for _, _, _, n in GENDERED}
+    for slug, _words, _page in BLESSINGS:
+        name = f"birchot_{slug}"
+        if name in gendered:
+            continue
+        _transclude(lines, by_name, name)
+        if slug == "shelo_asani_aved":
+            for cid, note, value, gname in GENDERED:
+                lines.append(cond(cid, note=note,
+                                  fs=feature(PERSON, "gender",
+                                             f'<tei:symbol value="{value}"/>')))
+                _transclude(lines, by_name, gname)
+                lines.append(endcond(cid))
+    for name in ("birchot_shetargilenu", "birchot_gomel_chasadim",
+                 "birchot_shetatzileni", "birchot_zochreinu"):
+        _transclude(lines, by_name, name)
+
+
 def unit_body_birchot(project, by_name):
     """Birkhoth ha-Shaḥar, as far as it has been read: Mah Tovu and the tallith order."""
     lines = [f'      <tei:div corresp="{S}chol/shacharit/birchot_hashachar">',
@@ -167,6 +210,7 @@ def unit_body_birchot(project, by_name):
         if head:
             lines.append(head)
         lines.append(f'        <j:transclude type="external" target="{by_name[name]["urn"]}"/>')
+    _birchot_blessings(lines, by_name)
     lines.append('        <j:endDeclare target="#unit_service"/>')
     lines.append("      </tei:div>")
     return "\n".join(lines)
@@ -217,7 +261,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 13), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 19), "amidah": (81, 97)}
 
 
 def unit_body():
