@@ -51,6 +51,16 @@ passes by luck whenever no numbered line happens to be full measure.
 page's lowest number in each column should be 5. The right-hand series has its own
 switches; a left column that resets while the right runs on to 320 is the signature.
 
+**Every Hebrew run is set right to left.** Not only headings, and not only the main columns:
+a lemma in a footnote, a quoted phrase in the introduction, a label in a list. The check that
+scales to a whole book is `specs/birnbaum_scan/check_pdf_hebrew_direction.py` — sort each
+line's glyphs by their own x, which is what a reader sees left to right, and score that
+against the source's Hebrew letter n-grams both ways round. Correctly set Hebrew scores
+higher reversed. It needs no pairing between note and page and no font table, so it covers
+every run in the document at once, including the ones no assertion was written for.
+
+Run it with `--control`, which re-runs over reversed runs: it should flag nearly everything.
+
 **A Latin heading is painted left to right.** Where the two columns head a section in
 different languages, the facing title is set inside the other column's direction, and a
 reversed heading is a real defect that reads perfectly in `pdftotext` output. Take the
@@ -78,6 +88,22 @@ is adjacent — not by pattern.
 Latin heading typeset right to left comes back in the correct order and looks fine. Only
 the glyph coordinates show it. The same caution applies to any assertion about order taken
 from `pdftotext` text output rather than from `-bbox`.
+
+**A regex over the emitted TeX is not a check on the PDF, and a one-line window is not a
+check on anything.** After fixing the backwards apparatus catchword I verified it with
+`re.finditer(r"\\Bfootnote\{.*?\n(.*?)\n", tex, re.S)` and a `\\texthebrew\{[^{}]*\}` strip,
+and reported that no Hebrew remained unwrapped in any of the book's 101 footnotes. The
+capture took **one line** after `\Bfootnote{`, so every multi-paragraph note went unexamined,
+and `[^{}]*` cannot strip a group containing braces. The all-clear was false and the user
+had to say so. Two rules out of it: match balanced braces, and confirm a rendering fix
+against the rendering.
+
+**The extractor's character order is not the page's order.** `mutool ... -F stext` normalises
+some lines to logical order and leaves others in visual order, in the same document — the
+main Hebrew column of one page came out each way. So "the characters came out left to right"
+flagged 1537 runs, nearly all of them correctly set. Only the glyphs' x coordinates, scored
+against text you already know, answer the question. (`pdftotext` has the matching failure,
+above.)
 
 **A window after a macro name is not its argument.** Slicing a fixed number of characters
 after `\\OSheadTranslation{` reaches past the argument into the `\\addcontentsline` that
