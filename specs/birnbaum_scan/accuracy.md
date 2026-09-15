@@ -112,6 +112,21 @@ have one in the meditation. It has been left as the editor answered rather than 
 a machine's say-so; if the dagesh is right, the claim that the two occurrences differ comes
 out of `readings/7.md` and out of this file with it.
 
+## How a meteg verdict is reached
+
+**Every meteg in `verdicts/` was decided by looking at the page image**, not by convention,
+not by grammar, and not by which witness tends to carry more of them. That is the editor's
+stated practice and it is recorded here because it is provenance: a reader who wants to
+know what a `print` verdict on a meteg rests on should know it rests on the scan.
+
+It also explains a pattern that would otherwise look like noise. On printed 21 the four
+disputed metegs fell in **both** directions -- two the reading had and the print did not,
+two the transcription had and the reading had missed. A rule of thumb, applied either way,
+would have got half of them wrong. Only reading each one gives that distribution.
+
+So metegs are not a class that can be settled in bulk, and the queue should keep bringing
+them one at a time.
+
 ## Corrections are data now, not prose
 
 `corrections.jsonl` records every reading corrected so far -- what it was, what the print

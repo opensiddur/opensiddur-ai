@@ -116,6 +116,10 @@ check that silently measures nothing is worse than no check, because it is belie
   reading follows from knowing the text: a sin dot that will not resolve in the crop is
   still settled if the word is עָשָׂה. From inside the crop the two failure modes look
   identical, so ask what the word is before blaming the scan.
+- **A meteg is decided on the image, one at a time, never in bulk.** On a single page the
+  disputed metegs have fallen in both directions at once -- some the reading invented, some
+  it missed -- so any rule of thumb gets half of them wrong. There is no shortcut here and
+  the queue should keep surfacing them individually.
 - **A comma read off a band at 3x is not evidence.** This print uses commas *and*
   semicolons, sometimes in one line, and at band magnification the semicolon's upper dot
   merges into the comma's body. Two of the first three misreadings on printed page 3 were
