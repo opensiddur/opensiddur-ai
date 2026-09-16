@@ -105,6 +105,16 @@ flagged 1537 runs, nearly all of them correctly set. Only the glyphs' x coordina
 against text you already know, answer the question. (`pdftotext` has the matching failure,
 above.)
 
+**Matching \pstart counts do not mean the text is in the column.** reledmac's `\pstart`
+takes two optional bracket arguments, and TeX skips whitespace and newlines looking for one,
+so a paragraph whose first character is `[` is read as `\pstart`'s argument and executed
+instead of typeset. Birnbaum's `[We pray] for Israel` came out as a bare "We pray" in the
+gutter between the columns, brackets gone, the paragraph starting at "for". Every alignment
+assertion stayed green throughout, because swallowing an optional argument removes text from
+the paragraph without unbalancing anything either side counts. The same trap waits behind any
+macro with an optional argument -- `\\`, `\item` -- so if text can start a paragraph, it can
+start with a bracket.
+
 **A window after a macro name is not its argument.** Slicing a fixed number of characters
 after `\\OSheadTranslation{` reaches past the argument into the `\\addcontentsline` that
 follows, which carries a direction wrapper of its own — so an assertion about the
