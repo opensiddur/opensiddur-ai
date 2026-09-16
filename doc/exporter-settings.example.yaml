@@ -85,7 +85,11 @@ typography:
   # `latin` and `hebrew` always exist; declaring one replaces its default chain.
   # Declare your own and point a style at it by name.
   fonts:
-    hebrew: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"]
+    hebrew:
+      - {name: "Frank Ruehl CLM", normal_size: 12}  # points; defines named size "normal"
+      - {name: "Ezra SIL", normal_size: 12}
+      - {name: "SBL Hebrew", normal_size: 13}
+      - {name: "FreeSerif", normal_size: 12}
     latin: ["Linux Libertine O", "TeX Gyre Pagella", "FreeSerif"]
 
   page:
@@ -114,7 +118,8 @@ typography:
   # The appearance of each kind of text. Every role takes the same keys — font,
   # size, weight, style, variant, align, space_before, space_after — and an
   # omitted one leaves that aspect as the surrounding text has it. Sizes are the
-  # named ladder (xxx-small ... xxxx-large), which follows base_font_size, or an
+  # named ladder (xxx-small ... xxxx-large), which follows the chosen font’s
+  # normal_size (or the document base_font_size when omitted), or an
   # absolute length like 9pt, which does not.
   styles:
     heading1: {size: xx-large, weight: bold, align: center}

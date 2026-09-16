@@ -41,8 +41,9 @@ typography:
 
 ### The size ladder
 
-A named size follows `page.base_font_size`, so raising the document from 11pt to 12pt scales
-every named size with it. An absolute length pins a role to an exact size regardless. Each
+A named size follows the selected font’s `normal_size`, or `page.base_font_size` when
+that is omitted. Named sizes preserve the document class’s size ladder proportions relative
+to normal. An absolute length pins a role to an exact size regardless of the selected font. Each
 step of the ladder is roughly 1.2 times the one below it.
 
 | Name | Relative size | | Name | Relative size |
@@ -73,6 +74,30 @@ typography:
     latin: "Linux Libertine O"                                           # the default
     note-sans: ["DejaVu Sans"]                                           # your own
 ```
+
+Each entry can instead specify `name` and `normal_size`, a positive finite number in
+points (without a `pt` suffix). The first installed entry supplies **both** the font and
+its normal size, so different fallback fonts can have different sizes:
+
+```yaml
+typography:
+  fonts:
+    hebrew:
+      - {name: "Frank Ruehl CLM", normal_size: 12}
+      - {name: "Ezra SIL", normal_size: 12}
+      - {name: "SBL Hebrew", normal_size: 13}
+      - {name: "FreeSerif", normal_size: 12}
+    latin:
+      - {name: "Linux Libertine O", normal_size: 11}
+```
+
+String entries and entries without `normal_size` retain the document class’s sizes.
+They may be mixed with sized entries in the same list. These settings work for custom
+families too. Font switches preserve the surrounding role’s relative size; explicit
+style sizes such as `9pt` remain exact even across font switches. Line spacing scales
+with relative sizes. Omitting all per-font sizes preserves existing output. The book
+class’s `11pt` option actually uses 10.95pt normal text; an explicit `normal_size: 11`
+means exactly 11pt.
 
 **Only a chain you write is checked.** The two defaults are not: a document that asked for
 nothing must still export on a machine that does not have this project's house fonts, so the
