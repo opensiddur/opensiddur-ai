@@ -33,6 +33,7 @@ from opensiddur.exporter.typography import (
     ChapterStart,
     ColumnPosition,
     ConditionalBlock,
+    FontFace,
     FontStyle,
     FontVariant,
     FontWeight,
@@ -237,7 +238,10 @@ def documentclass_options(config: TypographyConfig) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _font_declaration(command: str, options: str, names: list[str]) -> list[str]:
+def _font_declaration(
+    command: str, options: str, names: list[str],
+    entries: Optional[list[FontFace]] = None, selector: str = "",
+) -> list[str]:
     """Declare a font family, falling back through the chain if need be.
 
     When fontconfig can tell us which of the names is installed, the declaration
@@ -246,16 +250,23 @@ def _font_declaration(command: str, options: str, names: list[str]) -> list[str]
     at compile time. The chain is known to contain an installed font either way:
     settings validation refuses one that does not.
     """
+    def declaration(index: int) -> str:
+        result = f"{command}{options}{{{names[index]}}}"
+        if entries is not None and entries[index].normal_size is not None:
+            size = str(entries[index].normal_size)
+            result += rf"\OSRegisterFontSize{{{selector}}}{{{size}}}"
+        return result
+
     resolved = resolve_font(names)
     if resolved is not None:
-        return [f"{command}{options}{{{resolved}}}"]
+        return [declaration(names.index(resolved))]
 
     lines: list[str] = []
     for depth, name in enumerate(names[:-1]):
         lines.append("  " * depth + rf"\IfFontExistsTF{{{name}}}{{")
-        lines.append("  " * (depth + 1) + f"{command}{options}{{{name}}}")
+        lines.append("  " * (depth + 1) + declaration(depth))
         lines.append("  " * depth + "}{")
-    lines.append("  " * (len(names) - 1) + f"{command}{options}{{{names[-1]}}}")
+    lines.append("  " * (len(names) - 1) + declaration(len(names) - 1))
     lines.extend("  " * depth + "}" for depth in reversed(range(len(names) - 1)))
     return lines
 
@@ -268,27 +279,83 @@ _HEBREW_FONT_OPTIONS = "[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBo
 
 
 def _fonts_section(config: TypographyConfig) -> list[str]:
-    lines: list[str] = []
+    sized = any(
+        entry.normal_size is not None
+        for spec in config.fonts.values() for entry in spec.entries
+    )
+    lines: list[str] = [
+        r"\makeatletter",
+        r"\newcommand{\OSRegisterFontSize}[2]{{#1\expandafter\xdef\csname OSnormal@\f@family\endcsname{#2}}}",
+        r"\makeatother",
+    ] if sized else []
     for family, spec in sorted(config.fonts.items()):
         if family in (LATIN_FAMILY, HEBREW_FAMILY) and family not in config.declared_fonts:
             # The stylesheet already declares these, with the same chain.
             continue
+        options = _HEBREW_FONT_OPTIONS if family == HEBREW_FAMILY else ""
+        if any(entry.normal_size is not None for entry in spec.entries):
+            # fontspec otherwise shares NFSS identities for identical faces. Two
+            # configured families may choose that same face at different sizes.
+            identity = "OS" + family.encode("utf-8").hex()
+            options = (options[:-1] + "," if options else "[") + f"NFSSFamily={identity}]"
         if family == LATIN_FAMILY:
-            lines.extend(_font_declaration(r"\setmainfont", "", spec.names))
+            lines.extend(_font_declaration(r"\setmainfont", options, spec.names, spec.entries, r"\rmfamily"))
         elif family == HEBREW_FAMILY:
             # \hebrewfont already exists — the stylesheet declared it — so this
             # has to renew rather than declare.
             lines.extend(
-                _font_declaration(r"\renewfontfamily\hebrewfont", _HEBREW_FONT_OPTIONS, spec.names)
+                _font_declaration(r"\renewfontfamily\hebrewfont", options, spec.names, spec.entries, r"\hebrewfont")
             )
             lines.append(r"\let\hebrewfontsf\hebrewfont")
         else:
             lines.extend(
                 _font_declaration(
-                    "\\newfontfamily\\" + _family_macro_name(family), "", spec.names
+                    "\\newfontfamily\\" + _family_macro_name(family), options, spec.names,
+                    spec.entries, _font_command(family)
                 )
             )
+    if sized:
+        lines.extend(_font_size_support().splitlines())
     return lines
+
+
+def _font_size_support() -> str:
+    """Keep logical role sizes separate from the selected family's physical size.
+
+    NFSS family selection covers script switches, normalfont, and custom families.
+    All state is group-local, so nested language switches restore their caller.
+    Capture the class's actual normal size (11pt book uses 10.95pt), not its label.
+    """
+    return r"""\makeatletter
+\begingroup\normalsize\xdef\OSdocumentnormal{\f@size}\endgroup
+\edef\OSlogicalsize{\f@size}
+\edef\OSlogicalbaseline{\f@baselineskip}
+\newif\ifOSabsolute
+\let\OSoriginalfontsize\fontsize
+\let\OSoriginalselectfont\selectfont
+\ExplSyntaxOn
+\cs_new:Npn \OSscaled #1#2 { \fp_eval:n { (#1) * (#2) } }
+\cs_new:Npn \OSratio #1 { \fp_eval:n { (#1) / \OSdocumentnormal } }
+\cs_new:Npn \OSbaselinepoints { \dim_to_fp:n { \OSlogicalbaseline } }
+\ExplSyntaxOff
+\protected\def\fontsize#1#2{%
+  \OSoriginalfontsize{#1}{#2}%
+  \edef\OSlogicalsize{\f@size}%
+  \edef\OSlogicalbaseline{\f@baselineskip}%
+  \OSabsolutefalse}
+\newcommand{\OSabsoluteSize}[2]{\fontsize{#1}{#2}\OSabsolutetrue}
+\protected\def\selectfont{%
+  \def\OSfactor{1}%
+  \ifOSabsolute\else
+    \ifcsname OSnormal@\f@family\endcsname
+      \edef\OSfactor{\OSratio{\csname OSnormal@\f@family\endcsname}}%
+    \fi
+  \fi
+  \OSoriginalfontsize{\OSscaled{\OSlogicalsize}{\OSfactor}}%
+    {\OSscaled{\OSbaselinepoints}{\OSfactor}}%
+  \OSoriginalselectfont}
+\selectfont
+\makeatother"""
 
 
 def _geometry_section(config: TypographyConfig) -> list[str]:
@@ -707,9 +774,17 @@ def build_typography_preamble(
         ("Lists", _lists_section(config)),
         ("Parallel columns", _parallel_section(config, has_parallel)),
     ]
+    sized = any(
+        entry.normal_size is not None
+        for spec in config.fonts.values() for entry in spec.entries
+    )
     lines: list[str] = []
     for title, section in sections:
         if section:
             lines.append(f"% --- {title} (typography settings) ---")
+            # All explicit style sizes originate in _size_command; mark them
+            # absolute without changing legacy preambles or the support macros.
+            if sized and title != "Fonts":
+                section = [line.replace(r"\fontsize{", r"\OSabsoluteSize{") for line in section]
             lines.extend(section)
     return "\n".join(lines) + "\n" if lines else ""

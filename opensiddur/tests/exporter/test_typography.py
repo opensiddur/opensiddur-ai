@@ -383,6 +383,26 @@ class TestWhatTheUserWrote(unittest.TestCase):
         self.assertIn("increment", config.line_numbers.model_fields_set)
 
 
+class TestFontNormalSizes(unittest.TestCase):
+    def test_mixed_legacy_and_sized_entries(self):
+        family = FontFamily.model_validate([
+            {"name": "One", "normal_size": 12}, "Two", {"name": "Three"},
+        ])
+        self.assertEqual(family.names, ["One", "Two", "Three"])
+        self.assertEqual([entry.normal_size for entry in family.entries], [12, None, None])
+        self.assertEqual(FontFamily.model_validate(family.model_dump()), family)
+
+    def test_invalid_sizes_are_rejected(self):
+        for size in [0, -1, float("inf"), float("nan"), True, "12pt", "12"]:
+            with self.subTest(size=size), self.assertRaises(ValueError):
+                FontFamily.model_validate([{"name": "One", "normal_size": size}])
+
+    def test_entry_keys_and_name_are_validated(self):
+        for entry in [{"normal_size": 12}, {"name": ""}, {"name": "One", "size": 12}]:
+            with self.subTest(entry=entry), self.assertRaises(ValueError):
+                FontFamily.model_validate([entry])
+
+
 class TestTextStyle(unittest.TestCase):
     def test_an_empty_style_says_nothing(self):
         self.assertTrue(TextStyle().is_empty())
