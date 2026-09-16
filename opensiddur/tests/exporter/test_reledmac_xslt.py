@@ -273,7 +273,7 @@ class TestSingleStreamMapping(unittest.TestCase):
         #
         # The chapter milestone is not in a div[@type='book'], so it emits nothing
         # and does not open a pstart of its own.
-        self.assertEqual(out.count(r"\pstart \vno{"), 1)
+        self.assertEqual(out.count(r"\pstart\relax \vno{"), 1)
         self.assertEqual(out.count(r"\pend"), 1)
 
     def test_chapter_milestone_is_not_a_section(self):
@@ -1426,7 +1426,7 @@ class TestStructuralElements(unittest.TestCase):
         # sit alone in a skipnumbering pstart so it is a real, unnumbered heading.
         # The running-head marks precede it inside the same pstart.
         self.assertIn(
-            "\\pstart \\skipnumbering\n"
+            "\\pstart\\relax \\skipnumbering\n"
             r"\InsertMark{OSheadA}{{\textdir TLT\foreignlanguage{english}{Genesis}}}"
             r"\InsertMark{OSheadAny}{{\textdir TLT\foreignlanguage{english}{Genesis}}}"
             r"\OSheadA{{\textdir TLT\foreignlanguage{english}{Genesis}}}",
@@ -2144,7 +2144,7 @@ class TestCitationMilestone(unittest.TestCase):
         body = self._body(out)
         self.assertIn(r"\OScitation{", body)
         before = body.split(r"\OScitation{", 1)[0]
-        self.assertTrue(before.rstrip().endswith(r"\pstart \skipnumbering"))
+        self.assertTrue(before.rstrip().endswith(r"\pstart\relax \skipnumbering"))
 
     def test_the_citation_macro_is_defined_in_the_preamble(self):
         out = self._transform_body("""<tei:p>text</tei:p>""")
@@ -2250,7 +2250,7 @@ class TestUnrenderedMilestones(unittest.TestCase):
 
     def test_no_empty_paragraph_is_emitted(self):
         out = _transform(self.XML)
-        self.assertNotIn(r"\pstart \pend", out)
+        self.assertNotIn(r"\pstart\relax \pend", out)
         self.assertNotIn("\\pstart\n\\pend", out)
 
     def test_the_verse_before_it_is_still_set(self):
@@ -3314,14 +3314,14 @@ class TestLabelledLists(unittest.TestCase):
         for text in ("Blessed art thou.", "Through thy abundant goodness.",
                      "Blessed art thou, who feedest."):
             with self.subTest(text=text):
-                self.assertIn(r"\pstart \OSListItemPar " + text, front)
+                self.assertIn(r"\pstart\relax \OSListItemPar " + text, front)
 
     def test_prose_around_the_list_is_not_indented(self):
         front = self._front()
         for text in ("The following parallel columns",
                      "Here and there new interpretations"):
             with self.subTest(text=text):
-                self.assertIn(r"\pstart " + text, front)
+                self.assertIn(r"\pstart\relax " + text, front)
                 self.assertNotIn(r"\OSListItemPar " + text, front)
 
     def test_the_label_is_not_a_heading(self):
@@ -3329,7 +3329,7 @@ class TestLabelledLists(unittest.TestCase):
         no running-head mark and no place in the PDF outline, and it stays out of the
         line numbering, which cites lines of the text."""
         front = self._front()
-        self.assertIn("\\pstart \\skipnumbering\n\\OSListLabel{", front)
+        self.assertIn("\\pstart\\relax \\skipnumbering\n\\OSListLabel{", front)
         self.assertNotIn(r"\InsertMark{OShead", front)
         self.assertNotIn(r"\addcontentsline", front)
 
@@ -3357,9 +3357,9 @@ class TestLabelledLists(unittest.TestCase):
           </tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
-        self.assertIn(r"\pstart \OSListItemPar Alpha\pend", out)
-        self.assertIn(r"\pstart \OSListItemPar Beta\pend", out)
-        self.assertIn(r"\pstart After.\pend", out)
+        self.assertIn(r"\pstart\relax \OSListItemPar Alpha\pend", out)
+        self.assertIn(r"\pstart\relax \OSListItemPar Beta\pend", out)
+        self.assertIn(r"\pstart\relax After.\pend", out)
 
     def test_an_item_of_paragraphs_gets_no_second_break(self):
         r"""The item's last tei:p has already emitted one. A second would be a no-op
@@ -3431,3 +3431,82 @@ class TestLabelledLists(unittest.TestCase):
         # Scoped to the body: \OSListLabel is always defined in the preamble.
         body = out[out.index(r"\begin{document}"):]
         self.assertNotIn(r"\OSListLabel", body)
+
+
+class TestParagraphOpeningBracket(unittest.TestCase):
+    r"""A paragraph may begin with "[", and reledmac will eat it if we let it.
+
+    ``\pstart`` is declared ``\newcommandx*{\pstart}[2][1,2,usedefault]`` -- **two**
+    optional, bracket-delimited arguments -- and TeX skips spaces and newlines while
+    scanning for one. Emitting
+
+        \pstart
+                  [We pray] for Israel, ...
+
+    therefore parses as ``\pstart[We pray]``: the words become code run before the
+    paragraph instead of text inside it, and the brackets vanish as delimiters. In the
+    parallel Birnbaum that put a bare "We pray" in the gutter between the columns, with the
+    English paragraph starting at "for Israel".
+
+    Nothing else notices. The ``\pstart`` counts still match side for side, so the
+    alignment invariants this module calls critical all stay green while the text is being
+    set outside its column.
+
+    Birnbaum's Kaddish de-Rabbanan and the Feinstein haggadah's
+    "[This verse can be explained as follows:]" are both real instances.
+    """
+
+    #: ``\pstart`` followed only by whitespace and then a bracket: the defect itself.
+    SWALLOWED = re.compile(r"\\pstart\s*\[")
+
+    SINGLE = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+      <tei:text><tei:body>
+        <tei:div><tei:p>[We pray] for Israel, for our teachers.</tei:p></tei:div>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    PARALLEL = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+             xmlns:p="http://jewishliturgy.org/ns/processing">
+      <tei:text><tei:body>
+        <p:parallel column-order="primary_first">
+          <p:parallelItem role="primary" xml:lang="he"><tei:p>עַל יִשְׂרָאֵל</tei:p></p:parallelItem>
+          <p:parallelItem role="parallel" xml:lang="en"><tei:p>[We pray] for Israel.</tei:p></p:parallelItem>
+        </p:parallel>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    def test_no_pstart_hands_the_paragraph_to_reledmac_as_an_option(self):
+        self.assertIsNone(self.SWALLOWED.search(_transform(self.SINGLE)))
+
+    def test_the_bracket_and_its_words_survive_into_the_paragraph(self):
+        out = _transform(self.SINGLE)
+        self.assertIn("[We pray] for Israel, for our teachers.", out)
+
+    def test_the_same_holds_in_a_parallel_block(self):
+        out = _transform(self.PARALLEL, layout="pairs")
+        self.assertIsNone(self.SWALLOWED.search(out))
+        self.assertIn("[We pray] for Israel.", out)
+
+    def test_the_columns_still_pair_pstart_for_pstart(self):
+        r"""Whatever stops the scan must not add or drop a ``\pstart`` on one side: that
+        would trade a typesetting bug for an alignment one."""
+        out = _transform(self.PARALLEL, layout="pairs")
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
+        self.assertEqual(left.count(r"\pend"), right.count(r"\pend"))
+
+    def test_skipnumbering_still_follows_its_pstart(self):
+        r"""Three emission sites write ``\pstart \skipnumbering``. Whatever is inserted
+        between them must leave ``\skipnumbering`` applying to that same paragraph."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body>
+            <tei:div><tei:head>A Heading</tei:head><tei:p>Text.</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertTrue(re.search(r"\\pstart\S*\s*\\skipnumbering", out),
+                        "\\skipnumbering no longer follows its \\pstart")
