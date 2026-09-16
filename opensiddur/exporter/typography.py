@@ -91,8 +91,8 @@ Percent = Annotated[
 class NamedSize(StrEnum):
     """ A font size relative to the document's base size.
 
-    A named size follows ``page.base_font_size``, so raising the document from
-    11pt to 12pt scales every heading with it. Use an absolute
+    A named size follows the selected font’s ``normal_size``, falling back to
+    the document class sizes from ``page.base_font_size``. Use an absolute
     :data:`Length` instead when a role needs an exact size regardless.
 
     The ladder is symmetric around ``normal`` and each step is roughly 1.2x.
@@ -305,24 +305,28 @@ class ForbidExtra(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class FontFace(ForbidExtra):
+    """One fallback face and its optional normal size, in points."""
+
+    name: str = Field(min_length=1)
+    normal_size: Optional[float] = Field(default=None, gt=0, allow_inf_nan=False, strict=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def accept_name(cls, value: object) -> object:
+        return {"name": value} if isinstance(value, str) else value
+
+
 class FontFamily(ForbidExtra):
-    """ A font, given as a chain of names tried in order.
+    """Ordered fallback faces; legacy strings inherit the document's normal size."""
 
-    The chain exists because the faces this project sets Hebrew in are not
-    installed everywhere: naming several lets one settings file work on a
-    machine that has ``Frank Ruehl CLM`` and on one that only has ``FreeSerif``.
-    The first name that is installed wins. If *none* of them is, that is an
-    error — a fallback to whatever the renderer would have picked produces a
-    document that is quietly not the one that was asked for, and for Hebrew it
-    is usually one with no vowels or cantillation.
+    model_config = ConfigDict(populate_by_name=True)
 
-    A bare string is accepted as shorthand for a one-element chain.
-    """
+    entries: list[FontFace] = Field(alias="names", min_length=1)
 
-    names: list[str] = Field(
-        min_length=1,
-        description="Font names, most preferred first. The first one installed is used.",
-    )
+    @property
+    def names(self) -> list[str]:
+        return [entry.name for entry in self.entries]
 
     @model_validator(mode="before")
     @classmethod
@@ -426,7 +430,8 @@ class TextStyle(ForbidExtra):
         default=None,
         description=(
             "A named size (xxx-small ... xxxx-large), which follows "
-            "`page.base_font_size`, or an absolute length such as `9pt`."
+            "the selected font’s normal_size (or page.base_font_size when omitted), "
+            "or an absolute length such as `9pt`."
         ),
     )
     weight: Optional[FontWeight] = Field(default=None, description="normal | bold")
@@ -1032,7 +1037,7 @@ class TypographyConfig(ForbidExtra):
     fonts: dict[str, FontFamily] = Field(
         default_factory=dict,
         description=(
-            "Named font families, each a chain of names tried in order. "
+            "Named font families, each a chain of names or {name, normal_size} entries tried in order. "
             "`latin` and `hebrew` always exist and are used for Latin-script and "
             "Hebrew-script text respectively; add your own and point a style at "
             "them by name."
