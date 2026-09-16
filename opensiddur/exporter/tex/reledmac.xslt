@@ -1079,6 +1079,27 @@
          so polyglossia handles direction and font for everything inside.
          ==================================================================== -->
 
+    <!-- Every \pstart in the emitted document goes through here.
+
+         reledmac declares \newcommandx*{\pstart}[2][1,2,usedefault] — two optional,
+         bracket-delimited arguments — and TeX skips spaces and newlines while scanning
+         for one. So a paragraph whose first character is "[" is read as \pstart's
+         argument and *executed* rather than typeset. Birnbaum's "[We pray] for Israel"
+         came out as a bare "We pray" set in the gutter outside the column, with the
+         brackets consumed as delimiters and the paragraph beginning at "for"; the
+         Feinstein haggadah's "[This verse can be explained as follows:]" is the same.
+
+         Nothing downstream catches it: the \pstart counts still pair side for side, so
+         every alignment assertion stays green while the words are set outside the column.
+
+         \relax is not "[", so the scan stops at it, and it typesets nothing. It has to be
+         emitted unconditionally rather than only for paragraphs that happen to start with
+         a bracket — the emission sites below do not all know what follows them, and the
+         one that forgot would reopen this. -->
+    <xsl:template name="pstart">
+        <xsl:text>\pstart\relax </xsl:text>
+    </xsl:template>
+
     <xsl:template name="numbered-stream">
         <xsl:param name="nodes" as="node()*"/>
         <xsl:param name="lang" as="xs:string?" select="''"/>
@@ -1157,7 +1178,7 @@
                 <!-- reledpar requires at least one \pstart...\pend in each side.
                      When single-pstart is requested, open it up-front so even
                      chapter-only or whitespace-leading blocks satisfy this. -->
-                <xsl:text>\pstart </xsl:text>
+                <xsl:call-template name="pstart"/>
             </xsl:if>
 
             <xsl:iterate select="$leaves">
@@ -1201,7 +1222,7 @@
                         <xsl:choose>
                             <xsl:when test="ancestor::tei:div[@type='book']">
                                 <xsl:if test="not($in-pstart)">
-                                    <xsl:text>\pstart </xsl:text>
+                                    <xsl:call-template name="pstart"/>
                                 </xsl:if>
                                 <xsl:text>\chno{</xsl:text>
                                 <xsl:choose>
@@ -1246,7 +1267,7 @@
                                         <xsl:text>\par&#10;</xsl:text>
                                     </xsl:when>
                                     <xsl:otherwise>
-                                        <xsl:text>\pstart </xsl:text>
+                                        <xsl:call-template name="pstart"/>
                                     </xsl:otherwise>
                                 </xsl:choose>
                                 <xsl:text>\OScitation{</xsl:text>
@@ -1261,7 +1282,7 @@
                                 <xsl:if test="$in-pstart">
                                     <xsl:text>\pend&#10;</xsl:text>
                                 </xsl:if>
-                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
+                                <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
                                 <xsl:text>\OScitation{</xsl:text>
                                 <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
                                 <xsl:text>}</xsl:text>
@@ -1278,7 +1299,7 @@
                                 <xsl:if test="$in-pstart">
                                     <xsl:text>\pend&#10;</xsl:text>
                                 </xsl:if>
-                                <xsl:text>\pstart \vno{</xsl:text>
+                                <xsl:call-template name="pstart"/><xsl:text>\vno{</xsl:text>
                                 <xsl:value-of select="f:escape-tex(string(@n))"/>
                                 <xsl:text>}</xsl:text>
                                 <xsl:next-iteration>
@@ -1289,7 +1310,7 @@
                                 <!-- Non-parallel flow: keep verse numbers inline so
                                      prose/paragraph formatting is preserved. -->
                                 <xsl:if test="not($in-pstart)">
-                                    <xsl:text>\pstart </xsl:text>
+                                    <xsl:call-template name="pstart"/>
                                 </xsl:if>
                                 <xsl:text>\vno{</xsl:text>
                                 <xsl:value-of select="f:escape-tex(string(@n))"/>
@@ -1306,7 +1327,7 @@
                              verse the division begins on. See \OSaliyah in the preamble for
                              why these are inline and not breaks. -->
                         <xsl:if test="not($in-pstart)">
-                            <xsl:text>\pstart </xsl:text>
+                            <xsl:call-template name="pstart"/>
                         </xsl:if>
                         <xsl:text>\OSaliyah{</xsl:text>
                         <xsl:value-of select="f:escape-tex(string(@n))"/>
@@ -1336,7 +1357,7 @@
                              their own, so the name shares a line with the parsha's first
                              verse. -->
                         <xsl:if test="not($in-pstart)">
-                            <xsl:text>\pstart </xsl:text>
+                            <xsl:call-template name="pstart"/>
                         </xsl:if>
                         <xsl:text>\OSParsha{</xsl:text>
                         <xsl:choose>
@@ -1395,7 +1416,7 @@
                                         <xsl:text>\par&#10;</xsl:text>
                                     </xsl:when>
                                     <xsl:otherwise>
-                                        <xsl:text>\pstart </xsl:text>
+                                        <xsl:call-template name="pstart"/>
                                     </xsl:otherwise>
                                 </xsl:choose>
                                 <xsl:call-template name="heading">
@@ -1416,7 +1437,7 @@
                                 </xsl:if>
                                 <!-- The heading gets its own paragraph in the numbered stream,
                                      excluded from line numbering. -->
-                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
+                                <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
                                 <xsl:call-template name="heading">
                                     <xsl:with-param name="stream" select="$stream"/>
                                     <xsl:with-param name="has-alt-column"
@@ -1451,7 +1472,7 @@
                                         <xsl:text>\par&#10;</xsl:text>
                                     </xsl:when>
                                     <xsl:otherwise>
-                                        <xsl:text>\pstart </xsl:text>
+                                        <xsl:call-template name="pstart"/>
                                     </xsl:otherwise>
                                 </xsl:choose>
                                 <xsl:call-template name="list-label"/>
@@ -1467,7 +1488,7 @@
                                 <!-- Its own paragraph, out of the line numbering: the
                                      label is apparatus for the item, and numbering it
                                      would cite it as a line of the text. -->
-                                <xsl:text>\pstart \skipnumbering&#10;</xsl:text>
+                                <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
                                 <xsl:call-template name="list-label"/>
                                 <xsl:text>&#10;\pend&#10;</xsl:text>
                                 <xsl:next-iteration>
@@ -1544,7 +1565,7 @@
                                 <xsl:if test="$in-pstart">
                                     <xsl:text>\pend&#10;</xsl:text>
                                 </xsl:if>
-                                <xsl:text>\pstart </xsl:text>
+                                <xsl:call-template name="pstart"/>
                                 <xsl:next-iteration>
                                     <xsl:with-param name="in-pstart" select="true()"/>
                                 </xsl:next-iteration>
@@ -1553,7 +1574,7 @@
                     </xsl:when>
                     <xsl:otherwise>
                         <xsl:if test="not($in-pstart)">
-                            <xsl:text>\pstart </xsl:text>
+                            <xsl:call-template name="pstart"/>
                             <!-- Indent the paragraphs of a list item, so an item reads as
                                  a block set off from the prose around it rather than as
                                  more of the same prose. Pass 1 emits leaves as the source
