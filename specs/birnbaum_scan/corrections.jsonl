@@ -1,0 +1,29 @@
+{"page": "1", "was": "יָחֹֽלוּ", "is": "יָחֻֽלוּ", "kind": "vowels", "settled_by": "image", "found_by": "transcription", "before_commit": true}
+{"page": "3", "was": "יְיָ,", "is": "יְיָ;", "kind": "punctuation", "settled_by": "image at 12x", "found_by": "transcription", "before_commit": true}
+{"page": "3", "was": "רָצוֹן,", "is": "רָצוֹן;", "kind": "punctuation", "settled_by": "image at 12x", "found_by": "transcription", "before_commit": true}
+{"page": "3", "was": "מְּאֹד", "is": "מְאֹד", "kind": "dagesh", "settled_by": "image at 18x", "found_by": "transcription", "before_commit": true}
+{"page": "5", "was": "בַּהֲנָחַת", "is": "בְּהַנָּחַת", "kind": "vowels", "settled_by": "image at 14x", "found_by": "transcription", "before_commit": true}
+{"page": "5", "was": "לְהָנִֽיחַ", "is": "לְהַנִּֽיחַ", "kind": "vowels", "settled_by": "image at 14x", "found_by": "transcription (נוסח template)", "before_commit": true}
+{"page": "5", "was": "יְבִאֲךָ", "is": "יְבִיאֲךָ", "kind": "consonants", "settled_by": "image", "found_by": "transcription", "before_commit": true}
+{"page": "7", "was": "זְרוֹעַ", "is": "זְרוֹעוֹ", "kind": "consonants", "settled_by": "image at 10x", "found_by": "transcription", "before_commit": true}
+{"page": "7", "was": "לְהָנִֽיחַ", "is": "לְהַנִּֽיחַ", "kind": "vowels", "settled_by": "image at 18x", "found_by": "transcription", "before_commit": true, "note": "the blessing; the meditation on the same page is a different word"}
+{"page": "7", "was": "לְהָנִֽיחַ", "is": "לְהַנִֽיחַ", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.1", "before_commit": true, "note": "the meditation. Neither the reading nor the transcription had this form: both set a qamats where the print has a pataḥ"}
+{"page": "7", "was": "וּמַחְשָׁבוֹת", "is": "וּמַחֲשָׁבוֹת", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.2", "before_commit": true}
+{"page": "7", "was": "יִתְגָּרֶה", "is": "יִתְגָּֽרֶה", "kind": "meteg", "settled_by": "editor", "found_by": "open question 7.3", "before_commit": true}
+{"page": "7", "was": "וְקָמָי;", "is": "וְקָמַי;", "kind": "vowels", "settled_by": "editor", "found_by": "open question 7.4", "before_commit": true}
+{"page": "83", "was": "יֹאמֵֽרוּ—", "is": "יֹאמֵֽרוּ–", "kind": "punctuation", "settled_by": "editor", "found_by": "transcription", "before_commit": false, "note": "em dash for en dash; the first correction to an already-merged page"}
+{"page": "9", "was": "לָתֶת", "is": "לָֽתֶת", "kind": "meteg", "settled_by": "editor", "found_by": "open question 9.2", "before_commit": true}
+{"page": "9", "was": "לַיְיָ.", "is": "לַייָ.", "kind": "vowels", "settled_by": "editor", "found_by": "open question 9.3", "before_commit": true}
+{"page": "9", "was": "אֶל מֹשֶׁה", "is": "אֶל־מֹשֶׁה", "kind": "maqqef", "settled_by": "editor", "found_by": "open question 9.12", "before_commit": true}
+{"page": "11", "was": "בְּטֶֽרֶם־כָּל", "is": "בְּטֶֽרֶם כָּל", "kind": "maqqef", "settled_by": "editor", "found_by": "open question 11.3", "before_commit": true, "note": "a maqqef read where the print sets a space -- the opposite of page 9, where one was dropped"}
+{"page": "15", "was": "וְהָרֵאָיוֹן", "is": "וְהָרְאָיוֹן", "kind": "vowels", "settled_by": "editor", "found_by": "open question 15.1", "before_commit": true}
+{"page": "19", "was": "וַיַּחֲבשׁ", "is": "וַיַּחֲבֹשׁ", "kind": "vowels", "settled_by": "editor", "found_by": "open question 19.1", "before_commit": true}
+{"page": "21", "was": "אָמַר", "is": "אָֽמַר", "kind": "meteg", "settled_by": "editor", "found_by": "open question 21.2", "before_commit": true}
+{"page": "21", "was": "יִרְאֶה;", "is": "יִרְאֶה,", "kind": "punctuation", "settled_by": "editor", "found_by": "open question 21.3", "before_commit": true}
+{"page": "23", "was": "וְיִגּֽלּוּ", "is": "וְיָגֺֽלּוֹ", "kind": "vowels", "settled_by": "editor", "found_by": "open question 23.1", "before_commit": true, "note": "several marks differed at once, which meant a different word rather than different pointing"}
+{"page": "23", "was": "בְּסֵֽתֶר", "is": "בַּסֵּֽתֶר", "kind": "vowels", "settled_by": "editor", "found_by": "open question 23.5", "before_commit": true}
+{"page": "23", "was": "יְשׁוּעָתֵֽנוּ", "is": "יְּשׁוּעָתֵֽנוּ", "kind": "dagesh", "settled_by": "editor", "found_by": "open question 23.7", "before_commit": true}
+{"page": "23", "was": "הַמּוֹרִיָּה", "is": "הַמֹּרִיָּה", "kind": "consonants", "settled_by": "editor", "found_by": "open question 23.9", "before_commit": true}
+{"page": "25", "was": "כָּל", "is": "כָל", "kind": "dagesh", "settled_by": "image", "found_by": "compare", "before_commit": true, "note": "the bet of בָּאֵי on the same line carries a visible dot and this kaf carries none"}
+{"page": "21", "was": "", "is": "רִבּוֹנוֹ שֶׁל עוֹלָם, יְהִי רָצוֹן מִלְּפָנֶֽיךָ, יְיָ אֱלֹהֵֽינוּ וֵאלֹהֵי", "kind": "omission", "settled_by": "image", "found_by": "mechanical re-slice of the transcription", "before_commit": true, "note": "the page's last line was absent from the reading and from the hand-made slice in the same way, so the comparison reported nothing; nine words"}
+{"page": "19", "was": "לְהִשְׁתַּעְבֶּד־לָךְ.\n\nוּתְנֵֽנוּ", "is": "לְהִשְׁתַּעְבֶּד־לָךְ. וּתְנֵֽנוּ", "kind": "paragraphing", "settled_by": "image", "found_by": "mechanical re-slice of the transcription", "before_commit": true, "note": "the print runs on; the break was the reading marking where the marginal Reader label falls"}

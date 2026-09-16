@@ -6,7 +6,20 @@
 # are not aligned at a rubric's own position. Deduplicating them would leave the English
 # column with no rubric anywhere near the passage its rubric is about. See
 # doc/typography.md, `instructions`.
+# Hebrew names its own normal size. Frank Ruehl CLM draws small for its nominal size, so
+# Hebrew set at the same nominal size as the facing 11pt Latin came out visibly smaller than
+# the column beside it, which is not what the print does. Naming 12 here is what makes the
+# two columns match: it moves the body Hebrew to 10.0pt against Latin's 10.9, and the
+# apparatus to 8.2 against 9.0. Every face in the chain gets it -- the fallbacks are
+# substitutes for the same role, so they have to set at the same size as the face they
+# stand in for.
 typography:
+  fonts:
+    hebrew:
+      - {name: "Frank Ruehl CLM", normal_size: 12}
+      - {name: "Ezra SIL", normal_size: 12}
+      - {name: "SBL Hebrew", normal_size: 12}
+      - {name: "FreeSerif", normal_size: 12}
   instructions:
     from: both
 priority:
@@ -16,5 +29,11 @@ priority:
 # to prefer, and without a fallback the transclusion would fail rather than
 # quietly resolve to the one project that carries it.
   transclusion: [birnbaum_ashkenaz_he_1949, birnbaum_ashkenaz_en_1949]
+# Birnbaum's own footnotes. The apparatus is realised in the English project only -- the
+# commentary is English prose about Hebrew words, as his introduction is -- so this names
+# the one project that carries it. In a parallel compile each column narrows this to its
+# own project, which is what keeps a note attached to a text both sides realise from being
+# printed in both columns.
+annotations: [birnbaum_ashkenaz_en_1949]
 parallel:
   projects: [birnbaum_ashkenaz_en_1949]

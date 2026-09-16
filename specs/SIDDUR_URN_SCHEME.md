@@ -76,10 +76,32 @@ urn:x-opensiddur:text:siddur:chol/shacharit/amidah@birnbaum_ashkenaz_he_1949
 
 `all` is for a unit said at its service **whatever the occasion** — not a unit said on
 every occasion *in addition* to what the occasion calls for, which is `hosafot`. Prefer a
-named occasion wherever the book confines a unit to one: `all` is a claim that no occasion
-changes the unit, and it is wrong the moment some occasion does. Birnbaum's Shaḥarith
-li-Yladim is the first of these — a child says it every morning, Sabbaths and festivals
-included, so filing it under `chol` would say something the book does not.
+named occasion wherever the book confines a unit to one. Birnbaum's Shaḥarith li-Yladim is
+the first of these — a child says it every morning, Sabbaths and festivals included, so
+filing it under `chol` would say something the book does not.
+
+**`all` is about which unit stands there, not about whether anything inside it varies.**
+This once read "`all` is a claim that no occasion changes the unit, and it is wrong the
+moment some occasion does", which is too strong and contradicts what this document says
+three sections down about `prayer:`: *a passage said only on some occasion keeps its own
+name and is wrapped in `j:conditional`*. If a conditional inside a unit disqualified `all`,
+the conditional mechanism would have nothing to do.
+
+The test is **replacement**: file a unit under a named occasion when the book puts a
+*different* unit in its place on another occasion, as it does for the Amidah — the Sabbath
+morning Amidah is another text, not this one with an insert. File it under `all` when the
+same unit is said and the occasion only changes what is said *within* it.
+
+Birkhoth ha-Shaḥar is the case that settled this, and the print settles it twice on its own
+pages: `On Sabbath say:` stands inside the section, and the section ends *"On Sabbaths and
+on major festivals the service is continued on page 299."* A unit that tells you what to add
+on the Sabbath and where to go next afterwards is plainly said on the Sabbath.
+
+The practical consequence is not cosmetic. Under `chol` the unit declared `shabbat: false`,
+which resolved its own Sabbath rubric away in **every** compile, including the undecided one
+— a conditional that could never be true, inside a unit whose rubric says when to say it.
+Validation, the registry and the reference database all passed; only compiling it and
+looking for the passage found it.
 
 **service** — `arvit`, `shacharit`, `musaf`, `minchah`, `neilah`, `selichot`. Omitted for
 occasions that are not services.
@@ -216,6 +238,25 @@ Note that `@corresp` holds **one** URN. `refdb.add_urn_mapping` indexes the attr
 whole and does not split on whitespace, so a space-separated list would be recorded as a
 single nonexistent URN. Correspondence to two URNs at once is expressed by nesting, not
 by listing.
+
+### Where a shared text lives is revisited as the book grows
+
+The first unit to print a text is not thereby its home. A name is chosen from what the
+text *is*, and early in a conversion the only evidence available is the one place it has
+been read so far — which is a fact about the reading order, not about the liturgy.
+
+Birnbaum's Shema is the case that shows it. The two verses were first read inside the
+run-on paragraph on printed page 1, in Shaḥarith li-Yladim, and so were first realised
+there. They belong to Keriath Shema, which this conversion has not reached. When it is
+reached, the realisation moves there and the children's page transcludes it; the URNs do
+not change, but which file *realises* them does.
+
+> **Expect to move the realisation of a shared text as later units are read. What may
+> not change under it is the URN itself, because that is what two projects join on.**
+
+This is not churn to be avoided. Leaving a text realised in the first unit that happened
+to print it would make the running order of one conversion into a claim about the
+liturgy, and every later unit would have to defer to an accident.
 
 ### Conditions belong to the context, not to the shared text
 

@@ -2146,8 +2146,12 @@
         <xsl:text>\leavevmode\\{}&#10;</xsl:text>
     </xsl:template>
 
-    <!-- tei:anchor: linkage ids only; editorial notes are already inlined in the body. -->
-    <xsl:template match="tei:anchor" mode="emit"/>
+    <!-- tei:anchor carries no text of its own, but the compiler inserts a standoff note
+         it is the target of as its child. Descend, or that note is built and then
+         silently dropped: the mark never appears and the apparatus is short by one. -->
+    <xsl:template match="tei:anchor" mode="emit">
+        <xsl:apply-templates mode="emit"/>
+    </xsl:template>
 
     <xsl:template match="tei:hi[@rend='small-caps']" mode="emit" priority="10">
         <xsl:text>\textsc{</xsl:text>
@@ -2201,6 +2205,33 @@
         <xsl:text>\texthebrew{</xsl:text>
         <xsl:apply-templates mode="emit"/>
         <xsl:text>}</xsl:text>
+    </xsl:template>
+
+    <!-- An apparatus catchword, which is a quotation of the text and therefore a
+         tei:label rather than a tei:foreign.
+
+         `note-content` forces a direction on the whole note: an English commentary note
+         is set inside \textdir TLT. A Hebrew run left bare inside that is laid out left
+         to right and comes out reversed, which is what happened to the catchword of every
+         lemma-keyed note in Birnbaum's apparatus — forty-seven of them, `אהליך` reading
+         backwards at the head of its note.
+
+         tei:foreign already had the wrapper and the catchword missed it because it is not
+         a foreign phrase. Matched on direction rather than on `he` alone, for the reason
+         f:is-rtl-lang exists: Yiddish is written in the same script and has the same
+         problem. Priority 12 so it also takes precedence over the list-label template
+         below, whose \OSListLabelStyle is applied here too rather than lost. -->
+    <xsl:template match="tei:label[@xml:lang][f:is-rtl-lang(string(@xml:lang))]"
+                  mode="emit" priority="12">
+        <xsl:if test="parent::tei:list">
+            <xsl:text>\OSListLabelStyle{</xsl:text>
+        </xsl:if>
+        <xsl:text>\texthebrew{</xsl:text>
+        <xsl:apply-templates mode="emit"/>
+        <xsl:text>}</xsl:text>
+        <xsl:if test="parent::tei:list">
+            <xsl:text>}\ </xsl:text>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="tei:foreign" mode="emit">

@@ -321,6 +321,373 @@ nothing. `settings_undecided.yaml` declares the service and the recitation and n
 every day-dependent reading survives with its rubric; `settings_15jan_jerusalem.yaml`
 names a day and a place, and nothing conditional should survive it.
 
+## A combined shin dot and holam is two marks, and both are encoded
+
+**Decision.** Where a holam falls on the letter before a shin, or on the shin itself,
+Birnbaum prints **one dot** doing the work of both the holam and the shin dot. Many
+printers do the same; it is a typographic economy, not a claim about the word.
+
+The holam is logically present, so **both characters are encoded** -- U+05B9 for the holam
+and the shin dot -- even though only one dot is on the page. `מֹשֶׁה` is written with its
+holam, not as `משֶׁה`.
+
+**This is the one place the reading deliberately departs from what the page shows**, and it
+is worth being explicit about why, because everything else in this procedure runs the other
+way:
+
+- The rule everywhere else is that the page is the evidence and the reading records what is
+  printed. Qamats qatan is refused for exactly that reason: this print has one qamats glyph
+  and U+05C7 would be an interpretation laid over it.
+- The combined dot is not the same case. A qamats qatan is a *reading* of a mark that is
+  genuinely there; the combined dot is a *single mark standing for two* that the language
+  requires and the compositor merged to save a dot. Encoding one character would not be
+  faithfulness to the page -- it would make the text say something Hebrew does not.
+- The test that separates them: ask whether dropping the mark changes what the word **is**.
+  Writing U+05B8 where an editor would read U+05C7 leaves the word intact. Dropping the
+  holam from `מֹשֶׁה` does not.
+
+So a transcription that omits the holam under a combined dot is wrong, and the diff will
+report it as a difference in *vowels* -- which is how this was found on printed 23.
+
+### Printed page 29 proves it, because the edition's editors disagreed with themselves
+
+Pittum ha-Ketoreth sets `שלש` twice and `ושלשה` once, each with **one dot** between the
+lamed and the shin. The Wikisource editors had to decide what that dot was, and within
+eight words they decided both ways:
+
+| the print | the edition | what it dropped |
+|---|---|---|
+| `שלש` (twice) | `שְׁלֹש` | the final shin's dot |
+| `ושלשה` | `וּשְׁלשָׁה` | the lamed's holam |
+
+Neither is defensible on its own: `שְׁלֹשׁ` needs a holam *and* a shin dot or it is not
+that word. So the single printed dot cannot be either mark alone, and the only account that
+fits the page is that it is both. That is an argument from the evidence rather than from
+convention, and it is the strongest one available -- no crop at any magnification could
+have settled it, because there is genuinely only one dot there.
+
+## The footnote apparatus
+
+The print carries two apparatuses. *Commentary* sits at the foot of the Hebrew page, keyed
+by a Hebrew catchword set in bold, and runs across the opening: a note begun under a
+Hebrew page finishes under the facing English one. *Scripture citations* are numbered,
+keyed to superscripts, and printed on the English pages only. Both are Birnbaum's own
+statements about his book, in his introduction, and both are confirmed by every page read.
+
+They are `tei:note` in one `tei:standOff[@type="notes"]`, told apart by `@type`:
+`commentary` carries the catchword in `tei:label`, `citation` carries the printed numeral
+in `@n`. The apparatus is its own file, with a header and no `tei:text` of its own --
+valid, because `tei:standOff` is a `model.resource` exactly as `tei:text` is.
+
+### What the foot of a page actually holds
+
+Printed pages 21-26 settle the shape, and page 24 shows both apparatuses at once:
+
+    ────────────────────────────────────────
+    were posted in the synagogues to watch the services. … The additional
+    word ובגלוי is not found in early texts.
+        רבון כל העולמים is mentioned in Yoma 87b as a Yom Kippur prayer.
+    ──────────
+    ¹ Leviticus 26:42.
+
+- **Two blocks, each under its own rule, in a fixed order.** The full-measure rule
+  separates the body from the commentary; a short rule separates the commentary from the
+  citations. Commentary first, citations second.
+- **A commentary note carries no mark in the running text.** Not a numeral, not an
+  asterisk, not a dagger. It finds its text through the quoted lemma alone. Only the
+  citations are marked, with superscript numerals that restart at 1 on every page.
+- **A note that runs across the opening is set once, continuously.** Page 24's block opens
+  mid-sentence with no lemma, being the tail of the note whose head is under Hebrew page
+  23. Two feet, one note — which is the fifth PDF measurement this unit owes.
+- **A lemma is unpointed**, and one covering a span joins its ends in one of two ways: an
+  en dash (`קדש את שמך–ברבים`, page 25) or a spaced ellipsis (`וידבר . . . ועשית כיור`,
+  page 27). Both mean a lemma with two ends, so the printed form is carried and not
+  normalised to one of them. Hebrew also appears inside a note's own prose, inline and
+  unpointed.
+- **A note's page is decided by which apparatus it belongs to, not by where its text is.**
+  English page 22 has no apparatus at all, because the note on its text (`בהר ה' יראה`) is
+  commentary and is set under Hebrew page 21. The English Wikisource transcription attaches
+  every `<ref>` to the English page and so records the wrong foot for every commentary note;
+  it is a guide to *which* notes a page has and not to where they sit.
+
+### The notes are read from the transcription, and checked three ways
+
+Eighty-six notes is too many to retype, and the English Wikisource transcription of this
+scan carries every one at the point the print marks it. So they are extracted, and then
+checked — because the transcription is a second look at the same evidence and not a second
+witness.
+
+**The lemma must be a quotation of the text it annotates.** Every catchword is quoted from
+the prayer, so its consonantal skeleton has to appear in that prayer's skeleton. 37 of the 47
+lemma-keyed notes pass outright. The ten that do not are the print's own practice, not
+errors: seven **name** a prayer or a person rather than quoting it (`קדושה`, `יעלה ויבוא`,
+`רבי ישמעאל בן אלישע`), and three are spelled **plene** where the pointed text is defective
+(`עושה` for `עֹשֶׂה`, `נצור` for `נְצֹר`), because an unpointed catchword has to be readable
+without points. Confirmed on printed 48's own foot.
+
+**The count of numbered citations must match the reading.** The readings record the feet of
+nine English pages independently of the transcription, and `EXPECTED_CITATIONS` asserts the
+two agree. They did not at first: a citation naming more than one book — `Numbers 24:5;
+Psalms 5:8; 26:8; 95:6; 69:14.` — was classified as commentary, so printed 4 counted two
+where the page prints three.
+
+**The Archive's own OCR is a third reading of the same images**, made by a process that
+never saw the transcription, and it is good enough on English prose to answer one question:
+are these words on the page at all? `check_notes_against_ocr.py` scores every commentary
+note against the OCR of its opening. **Median 95%**, two below 75% — and reading those two
+found one real error (printed 84's note drops two letters) and one false alarm (printed 86's
+page carries a damaged glyph, `wh.ch`, and the transcription reads it correctly).
+
+Fifty of the eighty-six notes sit on page feet not read during this pass. That check is what
+put two of them in front of a pair of eyes instead of sixteen page images, and it is a
+ranking rather than a verdict — the dropped letters it led to are `is` and `in`, too short
+for it to have scored at all.
+
+**The total must add up.** 86 read, 84 encoded, and the two left out are named: they annotate
+Mi Khamokha and Adonai Yimlokh, in the Ge'ulah blessing of the Shema, which these projects do
+not hold. A note quietly missing is indistinguishable from a note never read, so the number
+is carried in the generated module's docstring and asserted in the tests.
+
+One lemma and three words of note text are corrected against the images; one apparent error
+is **his**, and is set as printed — see `readings/english_28_48.md`, "A slip of his own".
+
+### A note is keyed to the nearest canonical URN, not to an id
+
+Three ways were available, and the choice is not obvious:
+
+1. **An `xml:id` in the annotated file, with the apparatus in that same file.** This is
+   what `jps1917` and `miqra_al_pi_hamasorah` do, and it is forced rather than chosen:
+   `refdb.get_references_to` matches an `#id` target only within the one project and file
+   that declares it, so an id cannot reach across a file boundary at all. It also welds
+   the apparatus to the text, and a note set that cannot be detached cannot be exchanged.
+2. **A citation-target URN emitted at every annotatable position.** Any note could then
+   key to any position -- but the registry would have to carry the citation targets of
+   every source, which is a large permanent cost for positions most of which nothing ever
+   annotates.
+3. **The nearest canonical URN the text already carries.** Chosen.
+
+Three wins because it is the only one that lets note sources be **switched and combined
+across projects**: a second edition's commentary on the same liturgy targets the same
+URNs and drops straight in beside this one, and either can be left out. Nothing new is
+emitted for it, and nothing already generated changed when the apparatus was added.
+
+The cost is that a note is only as precisely placed as the nearest URN. Where a lemma
+falls mid-paragraph with no URN at that point, **the fix is to give that phrase a
+`tei:seg` with its own canonical URN** -- which is what the alignment of the two columns
+would want anyway -- and never to reach for an anchor.
+
+### A note is realised once, and not in both columns
+
+A note reaches its text by URN, and `refdb` matches a URN target in every project. The two
+sides of a parallel text realise the same URNs -- that is what makes them parallel -- so a
+note attached to either is found while compiling *both*, and the reader gets it twice per
+opening. Each column now drops the projects that are themselves columns; an apparatus
+project that is not a column still reaches the primary one.
+
+The apparatus is realised in the English project, as the introduction is, because the
+commentary is English prose about Hebrew words. What that gives up is real and worth
+stating: the commentary begins physically under the Hebrew page in the print, and will not
+in the rendered PDF.
+
+A note carries no URN of its own. `urn:x-opensiddur:notes:` names an apparatus *file*, so
+one edition's notes can be swapped for another's; a note is not a text, and `@target`
+already says what it annotates.
+
+## The section as compiled, measured
+
+31 pages two-column, from `settings_undecided.yaml`. What was measured and what it said:
+
+- **Every parallel block has two columns.** 210 blocks, none with fewer. Of these 120 carry
+  both scripts; the rest carry one, and every one of those is a rubric or a heading the print
+  sets in English **on both pages** — his practice throughout this book — or a poem heading
+  the English page has and the Hebrew page does not.
+- **Line numbers are in the margins and restart per page.** Left column right-aligned at the
+  measure's left, right column left-aligned at its right; page 3's left series runs 5, 10, 15,
+  20 and page 2's right series restarts within the page at each `\pstart` group.
+- **The section's headings are painted left to right**, including the two the English page
+  carries alone.
+- **A footnote's mark and its text are on the same page** — *nothing to measure*. The
+  apparatus is not built yet, so this measurement is reported as having no input rather than
+  as passing. An assertion with nothing to assert on is not a green light.
+
+**Two false positives are worth recording, because both came from the measurement and not
+from the PDF.** A first version called any numeral a line number, and reported `rules 4 and
+5 do not apply` — words in Rabbi Ishmael's seventh rule — as two numbers colliding with the
+text. A second clustered margin numbers by their left edge, which is right for the right
+column and wrong for the left, where they are right-aligned; it then reported twenty pages
+as starting at 10. Neither was in the document.
+
+That is the same shape as everything else this pass turned up: **the step being done by
+hand, or by a rule invented on the spot, is the step that is wrong.**
+
+## The apparatus renders (was: a parallel compile dropped it)
+
+**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124), fixed in
+[#126](https://github.com/opensiddur/opensiddur-ai/pull/126).** Kept here because the
+symptom is worth recognising again: while it stood, a single-column compile carried all 61
+notes of this unit and a two-column compile carried none, and everything else was green --
+the apparatus validated, `refdb` indexed it, every target resolved, the registry was clean.
+Only compiling two-column and looking for the notes found it.
+
+Against the fix, the three units carry **84 notes in a parallel compile**: 61 in Birkhoth
+ha-Shaḥar, 22 in the Amidah, 1 in Shaḥarith li-Yladim. None is duplicated, and all of them
+sit in the English column -- the one project that realises the apparatus.
+
+### The fifth measurement, now that there is something to measure
+
+`\Bfootnote` appears 61 times in the TeX and 61 marks with it. In the PDF:
+
+- **Every note is set once.** Each note's opening words appear on exactly one page. Nothing
+  is emitted into both columns, which is what `_primary_annotations` exists to prevent.
+- **Every note's opening is on a page**; none is lost.
+- **Two long notes continue overleaf** -- Yigdal's on printed 12 and the laver's on printed
+  28. That is what a note longer than the page's apparatus does, and what the print does
+  itself: his long notes run across the opening.
+
+A caution about the measurement rather than the document: a first pass matched each note by
+its first three long words and reported two notes "set on two pages". Widening the window to
+six showed each on exactly one. **Three words of English are not a fingerprint**, and a
+measurement that cannot tell a duplicate from a coincidence has not measured anything.
+
+What is given up remains as recorded above: the commentary begins physically under the
+Hebrew page in the print, and in the rendered PDF it is in the English column.
+
+## Rosh Ḥodesh is computed correctly (was: wrong on most Rosh Ḥodesh days)
+
+**[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125), fixed in
+[#127](https://github.com/opensiddur/opensiddur-ai/pull/127).** Kept here for how it was
+found rather than for what it was.
+
+While it stood, `opensiddur:holiday/rosh-hodesh` was right on 5 of the 17 days that are
+Rosh Ḥodesh in 5786: six computed as `0`, six carried an inverted day number, and Rosh
+Hashanah was reported as Rosh Ḥodesh. One line did all three —
+`heb.month in (1, 3, 5, 7, 9, 11)` admitted only the odd-numbered Hebrew months, and the
+second day of a two-day Rosh Ḥodesh always falls on the 1st of an even one. Ya'aleh v'Yavo
+in the Amidah is conditioned the same way, so it was affected too.
+
+Against the fix all nineteen of 5786's Rosh Ḥodesh days compute correctly, and this unit's
+two musaf conditionals resolve as they should on every settings file:
+
+| settings | Sabbath musaf | Rosh Ḥodesh musaf |
+|---|---|---|
+| `undecided` | stands, with its rubric | stands, with its rubric |
+| `shabbat_rosh_chodesh_jerusalem` (18 Apr 2026) | said | said |
+| `rosh_chodesh_jerusalem` (17 May 2026) | dropped | said |
+| `15jan_jerusalem` and the other weekdays | dropped | dropped |
+
+**How it was found is the part worth keeping.** Every settings file in this directory named
+a weekday, so the Rosh Ḥodesh conditional had only ever been seen resolving to *false*. It
+took writing a settings file for the purpose of making it fire — and then the date chosen,
+18 April 2026, was a Sabbath that is also Rosh Ḥodesh, so the Sabbath passage appeared and
+the Rosh Ḥodesh passage did not. A date picked with less care would have shown a conditional
+resolving false, and that would have been read as proof it worked.
+
+The two settings files are kept apart deliberately: one names the **second day of a two-day**
+Rosh Ḥodesh and the other a **one-day** Rosh Ḥodesh, and `compute._rosh_hodesh_day`
+distinguishes them.
+
+## The section as compiled, measured
+
+31 pages two-column, from `settings_undecided.yaml`. What was measured and what it said:
+
+- **Every parallel block has two columns.** 210 blocks, none with fewer. Of these 120 carry
+  both scripts; the rest carry one, and every one of those is a rubric or a heading the print
+  sets in English **on both pages** — his practice throughout this book — or a poem heading
+  the English page has and the Hebrew page does not.
+- **Line numbers are in the margins and restart per page.** Left column right-aligned at the
+  measure's left, right column left-aligned at its right; page 3's left series runs 5, 10, 15,
+  20 and page 2's right series restarts within the page at each `\pstart` group.
+- **The section's headings are painted left to right**, including the two the English page
+  carries alone.
+- **A footnote's mark and its text are on the same page** — *nothing to measure*. The
+  apparatus is not built yet, so this measurement is reported as having no input rather than
+  as passing. An assertion with nothing to assert on is not a green light.
+
+**Two false positives are worth recording, because both came from the measurement and not
+from the PDF.** A first version called any numeral a line number, and reported `rules 4 and
+5 do not apply` — words in Rabbi Ishmael's seventh rule — as two numbers colliding with the
+text. A second clustered margin numbers by their left edge, which is right for the right
+column and wrong for the left, where they are right-aligned; it then reported twenty pages
+as starting at 10. Neither was in the document.
+
+That is the same shape as everything else this pass turned up: **the step being done by
+hand, or by a rule invented on the spot, is the step that is wrong.**
+
+## The apparatus renders (was: a parallel compile dropped it)
+
+**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124), fixed in
+[#126](https://github.com/opensiddur/opensiddur-ai/pull/126).** Kept here because the
+symptom is worth recognising again: while it stood, a single-column compile carried all 61
+notes of this unit and a two-column compile carried none, and everything else was green --
+the apparatus validated, `refdb` indexed it, every target resolved, the registry was clean.
+Only compiling two-column and looking for the notes found it.
+
+Against the fix, the three units carry **84 notes in a parallel compile**: 61 in Birkhoth
+ha-Shaḥar, 22 in the Amidah, 1 in Shaḥarith li-Yladim. None is duplicated, and all of them
+sit in the English column -- the one project that realises the apparatus.
+
+### The fifth measurement, now that there is something to measure
+
+`\Bfootnote` appears 61 times in the TeX and 61 marks with it. In the PDF:
+
+- **Every note is set once.** Each note's opening words appear on exactly one page. Nothing
+  is emitted into both columns, which is what `_primary_annotations` exists to prevent.
+- **Every note's opening is on a page**; none is lost.
+- **Two long notes continue overleaf** -- Yigdal's on printed 12 and the laver's on printed
+  28. That is what a note longer than the page's apparatus does, and what the print does
+  itself: his long notes run across the opening.
+
+A caution about the measurement rather than the document: a first pass matched each note by
+its first three long words and reported two notes "set on two pages". Widening the window to
+six showed each on exactly one. **Three words of English are not a fingerprint**, and a
+measurement that cannot tell a duplicate from a coincidence has not measured anything.
+
+What is given up remains as recorded above: the commentary begins physically under the
+Hebrew page in the print, and in the rendered PDF it is in the English column.
+
+## Known defect in the calendar: `rosh-hodesh` is wrong on most Rosh Ḥodesh days
+
+**[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125)**. Not caused
+by this work and not fixed by it, but found by it and load-bearing for anything conditioned
+on Rosh Ḥodesh — which in this book is Ya'aleh v'Yavo in the Amidah as well as the musaf
+passage on printed 35.
+
+It is worse than it first looked. In 5786 the value is right on 5 of the 17 days that are
+Rosh Ḥodesh: six compute as `0`, six carry the wrong day number, and Rosh Hashanah is
+reported as Rosh Ḥodesh. The issue carries the full table and a fix.
+
+`opensiddur.exporter.calendar.compute` marks the days of Rosh Ḥodesh like this, in 5786:
+
+| date | Hebrew date | `opensiddur:holiday/rosh-hodesh` |
+|---|---|---|
+| 19 Jan 2026 | 1 Shevat | 1 |
+| 17 Feb 2026 | 30 Shevat | 2 |
+| **18 Feb 2026** | **1 Adar** | **0** |
+| 19 Mar 2026 | 1 Nisan | 1 |
+| 17 Apr 2026 | 30 Nisan | 2 |
+| **18 Apr 2026** | **1 Iyar** | **0** |
+
+A one-day Rosh Ḥodesh is 1 and is right. A two-day Rosh Ḥodesh gives **2 on its first day
+and 0 on its second**, so the second day is not Rosh Ḥodesh at all as far as any condition
+can tell — and the day numbering is inverted besides, since the 30th of the previous month
+is the *first* of the two days. Six of the twelve months in 5786 have a two-day Rosh Ḥodesh.
+
+The cause is one line, `compute.py:550`: `heb.month in (1, 3, 5, 7, 9, 11)` admits only the
+odd-numbered Hebrew months, and the second day of a two-day Rosh Ḥodesh always falls on the
+1st of an even one. The same file's `compute_torah_reading` tests `day in (1, 30)` with no
+month filter, which is the right test.
+
+The condition itself is written correctly — `<tei:numeric value="1" max="2"/>` means "any of
+its up to two days", and `condition_eval` compares it as a range. The defect is upstream of
+that, in what the calendar computes.
+
+**How it surfaced, and why it matters for method.** Choosing 18 April 2026 to test the
+Sabbath and Rosh Ḥodesh conditionals together — a Saturday that is also Rosh Ḥodesh — showed
+the Sabbath passage appearing and the Rosh Ḥodesh passage not. A settings file chosen without
+that care would have shown the Rosh Ḥodesh conditional resolving false and been read as
+proof it worked. `settings_rosh_chodesh_jerusalem.yaml` therefore names 17 May 2026, a
+**one-day** Rosh Ḥodesh, and says in its own comments why.
+
 ## Known defects in the parallel PDF
 
 Found by compiling this unit two-column; both are in the exporter, not in the TEI.

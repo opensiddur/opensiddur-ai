@@ -706,6 +706,25 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn("commentary", out)
         self.assertNotIn(r"\footnote{", out)
 
+    def test_an_anchor_emits_the_note_the_compiler_put_inside_it(self):
+        """A standoff note reaches the text as a child of the anchor it targets.
+
+        The template for tei:anchor used to be empty, on the premise that an anchor
+        carries no text of its own. It does not, but the compiler puts the note it is
+        the target of inside it, so an empty template built the note and then dropped
+        it: no mark, and an apparatus one note short, with nothing anywhere saying so.
+        """
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>Body<tei:anchor xml:id="a1"
+              ><tei:note>from the apparatus</tei:note></tei:anchor>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn("from the apparatus", out)
+        self.assertIn(r"\Bfootnote{", out)
+
     def test_notes_can_be_collected_as_endnotes(self):
         """The apparatus series is the same; only where it is printed changes."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -1040,6 +1059,53 @@ class TestSectionSeparator(unittest.TestCase):
         self.assertIn(
             r"\newcommand{\OSSectionSeparatorStyle}[1]{\begin{center}#1\end{center}}", out
         )
+
+
+class TestApparatusCatchwordDirection(unittest.TestCase):
+    r"""A Hebrew catchword inside an English note must be wrapped, or it renders reversed.
+
+    `note-content` forces a direction on the whole note: an English commentary note is set
+    inside `\textdir TLT`. A Hebrew run left bare inside that is laid out left to right, so
+    `אהליך` came out as `דילהא` at the head of every lemma-keyed note in Birnbaum's
+    apparatus — forty-seven of them.
+
+    `tei:foreign[@xml:lang='he']` already had the wrapper. The catchword missed it because
+    it is a quotation of the text rather than a foreign phrase, and so is a `tei:label`.
+
+    Nothing else in the pass could see it: the note validates, `refdb` indexes it, the
+    registry is clean, and `pdftotext` reorders an RTL run on output, so even reading the
+    extracted text of the PDF shows it the right way round. It was found by looking at the
+    rendered page.
+    """
+
+    def _note(self, label_lang="he", note_lang="en"):
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="{note_lang}">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/>text
+            <tei:note type="commentary" xml:lang="{note_lang}"><tei:p>
+              <tei:label xml:lang="{label_lang}">אהליך</tei:label> is glossed.
+            </tei:p></tei:note>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+
+    def test_a_hebrew_catchword_is_wrapped(self):
+        out = _transform(self._note())
+        self.assertIn(r"\texthebrew{אהליך}", out)
+
+    def test_the_note_around_it_still_runs_left_to_right(self):
+        out = _transform(self._note())
+        self.assertIn(r"\textdir TLT", out)
+
+    def test_a_yiddish_catchword_is_wrapped_too(self):
+        """Matched on direction, not on `he`: Yiddish is the same script and the same
+        problem."""
+        out = _transform(self._note(label_lang="yi"))
+        self.assertIn(r"\texthebrew{", out)
+
+    def test_a_latin_catchword_is_not_wrapped(self):
+        out = _transform(self._note(label_lang="en"))
+        self.assertNotIn(r"\texthebrew{", out)
 
 
 class TestInlineFormatting(unittest.TestCase):

@@ -196,5 +196,36 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertEqual(compare.PRINT, payload["differences"][0]["verdict"])
 
 
+class TestQamatsQatanIsSettledByRule(unittest.TestCase):
+    """The one class of difference the scan does not have to settle."""
+
+    def comparison(self, ours, theirs):
+        return compare.compare(ours, theirs, page="x")
+
+    def test_a_word_differing_only_in_qamats_qatan_is_settled(self):
+        c = self.comparison("בְּכָל", "בְּכׇל")
+        self.assertEqual(list(c.qamats_qatan_verdicts().values()), [compare.PRINT])
+
+    def test_only_the_qamats_that_differs_has_to_be_the_qatan(self):
+        # `קָדָשִׁים` has two qamatsim and only the first is written qatan.
+        c = self.comparison("קָדָשִׁים", "קׇדָשִׁים")
+        self.assertEqual(len(c.qamats_qatan_verdicts()), 1)
+
+    def test_a_meteg_riding_along_is_not_settled(self):
+        # The point of the rule is that nothing else may differ. A word carrying a meteg
+        # difference as well has to be looked at, and writing `print` on it would be
+        # claiming an adjudication that never happened.
+        c = self.comparison("בְּכָל", "בְּכׇֽל")
+        self.assertEqual(c.qamats_qatan_verdicts(), {})
+
+    def test_a_difference_that_is_not_about_qamats_is_not_settled(self):
+        c = self.comparison("שֶׁעָשָׂה", "שֶׁעָשָׁה")
+        self.assertEqual(c.qamats_qatan_verdicts(), {})
+
+    def test_a_consonantal_difference_is_never_settled_this_way(self):
+        c = self.comparison("נְצֹר", "נְצוֹר")
+        self.assertEqual(c.qamats_qatan_verdicts(), {})
+
+
 if __name__ == "__main__":
     unittest.main()

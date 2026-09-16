@@ -17,24 +17,334 @@ adjudicated by going back to the page image.
 
 | page | words | whitespace | consonants | vowels | misreadings |
 |---|---:|---:|---:|---:|---:|
-| 1 | 111 | 0 | 2 | 1 | 0 (1 caught before committing) |
+| 1 | 111 | 0 | 1 | 1 | 0 (1 caught before committing) |
+| 3 | 94 | 0 | 0 | 4 | 0 (3 caught before committing) |
+| 5 | 110 | 0 | 0 | 3 | 0 (3 caught before committing) |
+| 7 | 162 | 0 | 0 | 9 | 0 (6 caught before committing) |
+| 9 | 219 | 1 | 0 | 19 | 0 (3 caught before committing) |
+| 11 | 148 | 0 | 1 | 7 | 0 (1 caught before committing) |
+| 13 | 188 | 0 | 1 | 6 | 0 (none needed) |
+| 15 | 142 | 0 | 2 | 4 | 0 (1 caught before committing) |
+| 17 | 163 | 0 | 0 | 3 | 0 (none needed) |
+| 19 | 203 | 0 | 0 | 9 | 0 (2 caught before committing) |
+| 21 | 227 | 0 | 0 | 5 | 0 (3 caught before committing) |
+| 23 | 193 | 0 | 0 | 8 | 0 (4 caught before committing) |
+| 25 | 181 | 3 | 0 | 8 | 0 (1 caught before committing) |
+| 27 | 176 | 0 | 0 | 13 | 0 (none needed) |
+| 29 | 186 | 0 | 0 | 10 | 0 (none needed) |
+| 31 | 206 | 0 | 0 | 8 | 0 (none needed) |
+| 33 | 159 | 0 | 0 | 10 | 0 (none needed) |
+| 35 | 163 | 1 | 0 | 5 | 0 (none needed) |
+| 37 | 185 | 0 | 0 | 5 | 0 (none needed) |
+| 39 | 167 | 0 | 0 | 15 | 0 (none needed) |
+| 41 | 67 | 0 | 0 | 3 | 0 (none needed) |
+| 43 | 84 | 0 | 0 | 4 | 0 (none needed) |
+| 45 | 64 | 0 | 0 | 2 | 0 (none needed) |
+| 47 | 92 | 0 | 1 | 9 | 0 (none needed) |
 | 81 | 39 | 0 | 0 | 0 | 0 |
-| 83 | 125 | 0 | 6 | 7 | 0 |
-| **total** | **275** | **0** | **8** | **8** | **0** |
+| 83 | 125 | 0 | 6 | 6 | 0 (1 caught **after** committing) |
+| **total** | **3854** | **5** | **12** | **176** | **0** |
 
-**No misreading survives in 275 words**, and every difference that does is the
-transcription departing from the print. Reading pointed Hebrew off a 1541 px scan, in
-enlarged bands, is reliable — the 4x crop is doing the work, and the band upscaling does
-not need raising.
+**No misreading survives in 3854 words.** But the second number in that column has grown
+faster than the first, and it is now the one that matters: **twenty-nine readings have been
+corrected, nearly all of them points, and every one was caught by the diff rather than
+by looking harder.**
+
+That revises what the first three pages concluded. Reading this scan in enlarged bands is
+reliable *for consonants* — the skeleton has not been wrong once in 3854 words. It is not
+reliable for pointing. At 3x a semicolon and a comma are one mark, a patach and a qamats
+differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot that the
+neighbouring letter can lend it. Page 5 alone gave up a shva read as a patach, a patach
+read as a qamats, and a defective spelling read where the print is plene.
+
+So the transcription is not a formality to be run after the reading is finished. **It is
+the instrument that finds the pointing errors**, and where it disagrees the presumption
+should be that it is worth a 12x crop, not that the reading stands. Where it flags a
+variant in a `{{נוסח}}` template it has been right every time so far: both of page 5's
+tefillin readings were templates naming Birnbaum's own spelling, and both times the
+reading was wrong and the template was right.
+
+**This bears on pages 81-97, which were read the same way before any of it was known.**
+Page 83's seven vowel differences were all adjudicated for the print, and page 81's
+thirty-nine words produced none at all. Those verdicts were reached at band magnification.
+They should be re-checked at 12x before the Amidah is treated as settled; that re-check is
+not part of this pass and has not been done.
 
 But page 1 is the first page on which the check earned its keep in the other direction.
 The first draft of the reading had `יָחֹֽלוּ` where the transcription had `יָחֻֽלוּ`; going
 back to the image settled it **for the transcription** — three dots set diagonally under
 the ḥet, and no dot above it. The reading was corrected before it was committed, so the
 difference is not in the table above; recording it here is the only way it is not simply
-lost. One catch in 275 words is the honest error rate of this method, and it is not
+lost. Four catches in 369 words is the honest error rate of this method, and it is not
 zero. It also shows the check working as designed: the transcription is not a source,
 but it is a competent second reader.
+
+## Page 83 carried a misreading through to a merged branch
+
+The Amidah pages were read before any of the above was known, and this file recorded
+zero misreadings for them. That is no longer true for page 83, whose dash before the
+Kedushah response was read as an em dash where the print sets an **en dash**. It has been
+corrected and the tally above now says so.
+
+Three things make it worth more than the one character it changes.
+
+**It confirms the re-check rather than merely suggesting it.** The warning below this
+section said pages 81-97 should be re-examined because they were read at band
+magnification. One of them has now been shown to carry an error, so the re-check is owed
+and not optional.
+
+**It was not found by a crop.** It was settled by someone who knew what the page should
+say. The reading had recorded a difference and left it `unresolved`, which meant the
+transcription had already flagged the right character and the reading declined to take
+its side. That is the same failure as page 5's sin dot: reaching for "the scan cannot
+settle it" when the answer was available.
+
+**A correction after committing has nowhere good to live.** Once the reading is fixed the
+difference disappears, so the `reading` verdict that should record it matches nothing --
+`compare` prints `warning: no difference matches the verdict`, which is the tool behaving
+correctly and still leaving the catch with no home but this paragraph. Nine of the other
+ten corrections are in the same position. Until a verdict file can say *this was corrected
+and here is what it was*, the error rate of this method is prose, and prose is not
+checkable.
+
+## Open: whether the meditation's לְהַנִֽיחַ carries a dagesh
+
+**Contested, and the text currently follows the editor.** Printed page 7 sets the word twice
+— once in the tefillin meditation and once in the blessing. The blessing is recorded with a
+dagesh in the nun, the meditation without one, and this file previously treated that
+difference as a finding.
+
+A blind second reader put on the meditation instance reported a dagesh in **both**, and
+called them the same word. Measuring the coordinates it gave: an isolated ink blob sits
+inside the letter in each instance, at min gray 76 and 57 against blank paper at 252 and a
+known ink stroke at 79, alike in size and shape and clearly separate from the strokes
+around them.
+
+So the evidence on the scan favours a dagesh in both, and the reading as it stands does not
+have one in the meditation. It has been left as the editor answered rather than changed on
+a machine's say-so; if the dagesh is right, the claim that the two occurrences differ comes
+out of `readings/7.md` and out of this file with it.
+
+## How a meteg verdict is reached
+
+**Every meteg in `verdicts/` was decided by looking at the page image**, not by convention,
+not by grammar, and not by which witness tends to carry more of them. That is the editor's
+stated practice and it is recorded here because it is provenance: a reader who wants to
+know what a `print` verdict on a meteg rests on should know it rests on the scan.
+
+It also explains a pattern that would otherwise look like noise. On printed 21 the four
+disputed metegs fell in **both** directions -- two the reading had and the print did not,
+two the transcription had and the reading had missed. A rule of thumb, applied either way,
+would have got half of them wrong. Only reading each one gives that distribution.
+
+So metegs are not a class that can be settled in bulk, and the queue should keep bringing
+them one at a time.
+
+## The slice is derived, and was not
+
+Every `transcription/{page}.txt` up to this point was assembled by hand: reading the
+printed page's wikitext, deciding which foundation spans it sets, and pasting them
+together. `transcription.page_slice` now does it from the page file, and
+`python -m opensiddur.importer.birnbaum_scan.transcription <pages>` writes the files.
+
+Re-slicing the twelve pages already measured changed five of them, and the changes say
+what a hand-made slice gets wrong:
+
+**Printed page 21 lost its last line — in both witnesses, the same way.** The page ends
+`רִבּוֹנוֹ שֶׁל עוֹלָם, יְהִי רָצוֹן מִלְּפָנֶֽיךָ, יְיָ אֱלֹהֵֽינוּ וֵאלֹהֵי`, nine words
+that were absent from the reading *and* from the slice. A comparison can only report a
+disagreement between its two sides; where both sides are missing the same thing it reports
+nothing, and every check downstream stays green. This is the failure mode
+`SKILL.md` names as the one the reverse check exists for, caught here by a different
+route: the machine assembled the slice from the page's own transclusions and the reading
+then had nine words too few.
+
+**Nested spans truncate silently.** `אתה הוא עד שלא נברא הכל` wraps `... א` and `... ב`
+with the reader's rubric between them, and `section()` closed on the first
+`<קטע סוף=` of any name — returning the first half. The diagnostic signature is the one
+printed page 19 established: a word-count gap plus a wall of consonantal differences.
+
+**The join between two spans is part of the reading.** Printed page 1 sets five spans as
+one paragraph with `. ` between them. A slicer that concatenates spans manufactures four
+paragraph breaks and loses four sentence-final periods, and `compare` then reports them as
+whitespace and vowel differences that are the slicer's own doing. Page 1 fell from twelve
+differences to two, page 11 from twenty-one to eight, page 13 from fourteen to seven. Those
+were never disagreements with the edition.
+
+**Both sides must hold the same kind of thing.** The edition's rubric spans (`הוראה`) are
+its editors' Hebrew standing where Birnbaum sets English. Its heading spans (`כותרת`) and
+citation spans (`מקור`) are a different case: he prints both in the Hebrew column — the
+Akedah stands under `בראשית כב, א-יט` and the korbanot passages under theirs — but a
+heading and a citation are read into `readings/` and never into `hebrew/`. All three are
+left out by name, on both sides.
+
+**Two spans a page transcludes no longer exist under that name**, because the page files
+and the foundation pages were snapshotted at different revisions — one rename and one
+typo fixed on one side only. They are recorded in `RENAMED_SPANS` rather than guessed at,
+and an unrecognised missing span refuses to write the file at all.
+
+One thing the hand slices carried that the machine does not: printed page 15's three
+`אָמֵן.` after the Priestly Blessing. The current snapshot's span has no such word, so
+the file now matches what the edition sets. The reading never had them and the print does
+not carry them, so the adjudication is unchanged; what changed is that the slice can be
+regenerated and checked.
+
+## The qamats-qatan rule is applied by a tool now, and it found two mistakes
+
+Qamats qatan is the only class this comparison settles without going back to the image: the
+print has one qamats glyph, the edition writes U+05C7 where its editors read the vowel as
+qatan, and that is their interpretation rather than something on the page. Applying it is
+therefore mechanical -- and it was being applied by hand, page after page, which is copying.
+
+`compare --settle-qamats-qatan` records the rule's verdicts and **refuses every difference
+the rule does not wholly cover**: the two words must be identical once U+05C7 and U+05B8 are
+folded together. Run over the twenty pages already adjudicated it accepted 89 differences and
+declined two that had been filed under the rule:
+
+| page | the print | the edition |
+|---|---|---|
+| 15 | `רִבּוֹן כָּל הַמַּעֲשִׂים` | `רִבּוֹן כׇל` |
+| 17 | `לִי כָּל צָרְכִּי` | `לִי כׇל` |
+
+In both the edition drops the **dagesh** as well as reading the vowel as qatan. Two things
+differ, the rule covers neither, and the readings said "settled by rule" about a difference
+it does not touch. Both have now been checked at 25× and both verdicts stand -- the print
+carries the dagesh -- so nothing in the tally changes. What changes is that the reason is
+true.
+
+**And `כל` turns out not to be a class at all.** The edition is inconsistent about it within
+eight words on page 15, and so is the print across pages: printed 25 sets
+`וְיֵדְעוּ כָל בָּאֵי עוֹלָם` with no dagesh, and that correction was itself found by going
+to the image. A word that looks settleable in bulk is worth one page of checking before it
+is treated that way.
+
+## The whole Hebrew side of Birchot ha-Shaḥar is now read
+
+Printed 3 through 47, twenty-three pages, **3,854 words counting the Amidah's two**. No
+misreading survives, and the last nine pages produced nothing that had to be put to a
+person: every difference was either the qamats-qatan rule or settled on the image.
+
+That is a change in the shape of the work, and it has a cause. The korbanot and Eizehu
+Mekoman are Mishnah and Talmud, texts both witnesses were copying rather than deciding
+about; printed 37 and 39 between them produced twenty differences of which every one was
+the rule. The pages that generate questions are the ones where the edition's editors had
+something to choose -- and they cluster in the blessings and the prayers, not the rabbinic
+material.
+
+Three defects in the tooling were found in the course of it, each by the reading rather
+than by a test:
+
+- The slice was built by hand. Rebuilt from the page file it found printed 21 nine words
+  short **in both witnesses at once**.
+- The qamats-qatan rule was applied by hand. Applied by the tool it found two pages where
+  the edition had also dropped a dagesh.
+- The `{{נוסח}}` resolver closed on the first `}}`. The Kaddish is the one place a template
+  holds a template, so it broke on the last page of the section and nowhere else.
+
+The common shape: **the step being done by hand was the step that was wrong**, and each
+was found by mechanising it rather than by checking it again.
+
+## Corrections are data now, not prose
+
+`corrections.jsonl` records every reading corrected so far -- what it was, what the print
+carries, what settled it, and whether it was caught before or after committing. Twenty-nine
+entries.
+
+It exists because a correction has nowhere else to live. Once a reading is fixed the
+difference disappears from the comparison, so the `reading` verdict that recorded it
+matches nothing and `compare` rightly warns about it. Verdict files describe live
+differences; corrections describe ones that are gone. Keeping them in the same file made
+the second kind either noisy or invisible.
+
+The counts in the table above are therefore checkable rather than asserted: twenty-eight of
+the twenty-nine were caught before committing, and the twenty-ninth is page 83's.
+
+## Page 7: the queue's first run
+
+Page 7's six open questions were the first put through `OPEN_QUESTIONS.md` and answered by
+the editor rather than by another crop. Five behaved as expected. **The sixth did not, and
+it is the useful one.**
+
+Question 7.1 asked whether the meditation's לְהָנִֽיחַ carried a meteg, the reading and the
+transcription differing by that alone. The answer was neither: the print sets a **pataḥ**
+where both of them set a qamats. Two independent witnesses agreed with each other and were
+both wrong, and the only reason it came out is that the queue asks what the print carries
+rather than which of two candidates to pick.
+
+That is an argument for the queue's refusal to guess. An answer that matches neither form
+is an error, not a third option to be coerced into one of the two -- and here the error
+was the right outcome, because it meant the reading had to be fixed before the verdict
+could be recorded at all.
+
+Note also that the page's two occurrences of the word remain genuinely different --
+לְהַנִֽיחַ in the meditation, לְהַנִּֽיחַ in the blessing -- which is now confirmed by
+someone who knows the text rather than inferred from a crop.
+
+**The correction reached the reading and not the TEI.** `hebrew/7.txt` was fixed,
+`corrections.jsonl` recorded it, and `he_tefillin.py` went on emitting the pre-correction
+`לְהָנִיחַ` for months. Nothing could see it: the reading and the transcription now agree,
+so `compare` reports nothing, and the schema, the registry and the reference database have
+no opinion about which vowel a word carries. It was found by `reverse`, which asks the
+question none of them ask -- whether the authored text *is* the reading.
+
+Page 7's two catches were `זְרוֹעַ` for **זְרוֹעוֹ** and, in the blessing, `לְהָנִֽיחַ`
+for **לְהַנִּֽיחַ** — the same word page 5 had to correct, so the spelling is his and
+consistent. The page's two occurrences are genuinely different: the blessing sets
+לְהַנִּֽיחַ and the meditation לְהַנִֽיחַ, pataḥ in both and dagesh only in the blessing.
+
+**Six differences are recorded with no verdict, and that is the honest state rather than a
+gap.** All six are meteg, a shva against a ḥataf-pataḥ, a qamats against a pataḥ, or a
+comma — the exact class this reading has repeatedly got wrong — and none was settled on the
+image in this pass. Two ways of clearing them were available and both are wrong: writing
+`print` on the strength of the first reading is what the corrections above disprove, and
+writing the transcription's side would make a check into a source. They stay open until
+someone crops them at 12x.
+
+The `unresolved` column therefore carries exactly one meaning at present — **not yet
+done** — and page 7's six entries are all of it.
+
+It briefly carried a second. Page 5's שֶׂ/שׁ was recorded as undecidable, on the ground
+that the dot could not be placed at any magnification this scan supports. That was a
+statement about the scan when it should have been a question about the word: עָשָׂה takes
+a sin, so the print's reading was never in doubt and the transcription's shin is its own
+error. It is now `print`. **Worth keeping as a caution: "the image cannot settle it" is
+easy to reach for when what is actually missing is knowledge of the text, and the two
+failure modes look identical from inside the crop.**
+
+## Page 3: four differences, and three catches going the other way
+
+Page 3's four surviving differences are all the transcription interpreting rather than
+reading: two are qamats qatan written U+05C7 where this print has the one qamats glyph and
+nothing else, and two are a dagesh and a segol the print carries and the transcription
+drops. Verified at 9-20x.
+
+**The three caught before committing are the more useful number.** The first draft of this
+reading had a comma twice where the print sets a semicolon, and a dagesh in the mem of
+מְאֹד that is not there. All three were settled *for the transcription* by going back to
+the image at 12-18x. Recording them here is the only way they are not simply lost, and
+they raise the honest error rate of this method to four catches in 369 words.
+
+The two semicolons are worth naming as a class. Birnbaum uses both commas and semicolons,
+sometimes in one line, and at 3x they are one mark; the semicolon's upper dot merges with
+the comma's body. **A comma read off a band at 3x is not evidence.** Where the punctuation
+carries a sense break, crop it.
+
+### The transcription's variant templates are evidence, not markup
+
+The Hebrew Wikisource foundation text marks the places its editors knew the print differs
+from what they set, in a `{{נוסח}}` template that names the editions. Stripping those
+templates -- the obvious thing to do with wiki markup -- throws away exactly what the
+comparison is for, and it silently manufactures differences: both of page 3's apparent
+dropped words were a stripped template, and both would have been recorded as the
+transcription failing where in fact it was flagging a variant *and naming Birnbaum's side
+of it*.
+
+`opensiddur/importer/birnbaum_scan/transcription.py` resolves them. Four conventions are
+in use and one inverts -- `{{נוסח|X|=בירנבוים|אחרים=Y}}` makes **X** the reading, so a
+rule that simply prefers a `בירנבוים=` parameter takes the variant on every one of them.
+One value is a sentence about how he sets two Torah portions rather than a word to
+substitute, so a value that is not a short run of pointed Hebrew is kept out of the text
+and reported.
 
 ## Page 1: three differences, all of them the transcription
 

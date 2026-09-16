@@ -9,6 +9,7 @@ contents would be transcribing the book a second time into a test. Where a praye
 list is used at all, it is a synthetic one.
 """
 
+import re
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -277,16 +278,166 @@ class TestUnitAssembly(unittest.TestCase):
         self.assertEqual(targets(self.build_he), targets(self.build_en))
 
     def test_the_two_projects_hold_the_same_units_in_the_book_s_order(self):
-        """Printed pages 1-2 come before 81-97, and a unit cannot exist on one side only."""
+        """The units stand in the order the book prints them, and a unit cannot exist on
+        one side only. Printed pages 1-2, then 3-48, then 81-97."""
         def names(build, project, pages):
             return [u["name"] for u in self.build_he.units(
                 project, pages, build.BY_NAME, build.unit_body())]
 
-        expected = ["all_shacharit_yeladim", "chol_shacharit_amidah"]
+        expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
+                    "chol_shacharit_amidah"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(
             names(self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES), expected)
+
+
+class TestTheTallithSubUnit(unittest.TestCase):
+    """Mah Tovu is one paragraph in Hebrew and two in English.
+
+    The two sides join on exact URN equality, so a parting made on one side and not the
+    other pairs the columns at the top of the passage and lets them drift through the
+    rest. These check that the parting is named on both sides while each side keeps the
+    paragraphing the print gives it.
+    """
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan.build import he_tallith, en_tallith
+        self.he = {p["name"]: p for p in he_tallith.PRAYERS}
+        self.en = {p["name"]: p for p in en_tallith.PRAYERS}
+
+    def test_both_sides_carry_the_same_prayers_under_the_same_urns(self):
+        self.assertEqual(sorted(self.he), sorted(self.en))
+        for name in self.he:
+            self.assertEqual(self.he[name]["urn"], self.en[name]["urn"], name)
+
+    def test_the_mah_tovu_parting_is_named_on_both_sides(self):
+        for side in (self.he, self.en):
+            body = side["birchot_mah_tovu"]["body"]
+            self.assertIn("mah_tovu/mah_tovu", body)
+            self.assertIn("mah_tovu/varani", body)
+
+    def test_the_hebrew_keeps_one_paragraph_and_the_english_two(self):
+        """The parting must not be bought by reflowing either side."""
+        self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:p>"), 1)
+        self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:seg "), 2)
+        self.assertEqual(self.en["birchot_mah_tovu"]["body"].count("<tei:p "), 2)
+        self.assertNotIn("<tei:seg ", self.en["birchot_mah_tovu"]["body"])
+
+    def test_every_page_break_belongs_to_this_unit(self):
+        from opensiddur.importer.birnbaum_scan.build import common
+        for side in (self.he, self.en):
+            for name, prayer in side.items():
+                for line in prayer["body"].splitlines():
+                    if "tei:pb" in line:
+                        self.assertIn(common.SIGIL_BIRCHOT, line, name)
+
+
+class TestThePoems(unittest.TestCase):
+    """Adon Olam and Yigdal are set two ways and are the same poem.
+
+    The Hebrew page sets each line of verse as two hemistichs in two columns; the English
+    sets it as two stacked lines in one. Birnbaum's footnote says ten lines and thirteen,
+    and both sides give that, so each `tei:l` holds a whole line on both sides.
+    """
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan.build import he_poems, en_poems
+        self.he = {p["name"]: p for p in he_poems.PRAYERS}
+        self.en = {p["name"]: p for p in en_poems.PRAYERS}
+
+    def _lines(self, body):
+        return body.count("<tei:l>") + body.count("<tei:l ")
+
+    def test_both_sides_give_the_number_of_lines_the_footnote_claims(self):
+        for side in (self.he, self.en):
+            self.assertEqual(self._lines(side["poem_adon_olam"]["body"]), 10)
+            self.assertEqual(self._lines(side["poem_yigdal"]["body"]), 13)
+
+    def test_the_two_sides_carry_the_same_urns(self):
+        self.assertEqual(sorted(p["urn"] for p in self.he.values()),
+                         sorted(p["urn"] for p in self.en.values()))
+
+    def test_the_poems_take_the_poem_namespace_not_the_prayer_one(self):
+        for side in (self.he, self.en):
+            for prayer in side.values():
+                self.assertIn(":poem:", prayer["urn"])
+
+    def test_only_the_english_numbers_yigdal(self):
+        """The numerals are the print's, on one side only, and are not words in the text.
+
+        Asserted on the *lines* rather than on any `@n` in the body: `tei:pb` carries the
+        printed page number in `@n` too, so a bare search finds the page break and says
+        the Hebrew numbers its lines when it does not.
+        """
+        self.assertEqual(self.en["poem_yigdal"]["body"].count('<tei:l n="'), 13)
+        self.assertEqual(self.he["poem_yigdal"]["body"].count('<tei:l n="'), 0)
+
+    def test_yigdal_breaks_over_the_page_on_both_sides(self):
+        for side in (self.he, self.en):
+            self.assertIn("tei:pb", side["poem_yigdal"]["body"])
+            self.assertNotIn("tei:pb", side["poem_adon_olam"]["body"])
+
+
+class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
+    """A text must be transcluded by the unit whose pages print it, and by no other.
+
+    This exists because the morning blessings were once emitted into the children's unit
+    by a patch that matched the wrong function, and *every* other check passed: 166 files
+    validated, the suite was green, refdb indexed cleanly and the registry reported no
+    errors. Filing printed 13-19 under a unit covering printed 1-2 is structurally
+    impeccable and completely wrong, so nothing but an assertion about which unit holds
+    what was ever going to catch it.
+    """
+
+    def setUp(self):
+        from opensiddur.importer.birnbaum_scan.build import build_he, build_en
+        self.build_he, self.build_en = build_he, build_en
+
+    def _unit_targets(self, build, project, pages):
+        out = {}
+        by_name = {p["name"]: p for p in build.PRAYERS}
+        for unit in self.build_he.units(project, pages, by_name, build.unit_body()):
+            out[unit["name"]] = re.findall(r'target="(urn:[^"]+)"', unit["body"])
+        return out
+
+    def test_the_childrens_unit_holds_only_the_childrens_page(self):
+        for build, project, pages in (
+                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
+            targets = self._unit_targets(build, project, pages)["all_shacharit_yeladim"]
+            for urn in targets:
+                self.assertNotIn("birchot_hashachar/", urn)
+                self.assertNotIn("birkhot_hatorah/", urn)
+                self.assertNotIn(":poem:", urn)
+
+    def test_the_morning_blessings_are_in_the_unit_whose_pages_print_them(self):
+        for build, project, pages in (
+                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
+            targets = self._unit_targets(
+                build, project, pages)["all_shacharit_birchot_hashachar"]
+            joined = " ".join(targets)
+            for slug in ("birchot_hashachar/shelo_asani_aved",
+                         "birchot_hashachar/hamaavir_shenah",
+                         "birkhot_hatorah/laasok", "poem:adon_olam"):
+                self.assertIn(slug, joined)
+
+    def test_no_text_is_transcluded_by_two_units(self):
+        """Except one, knowingly: the washing blessing is printed on 1 and again on 13."""
+        allowed = {"urn:x-opensiddur:text:prayer:al_netilat_yadayim"}
+        for build, project, pages in (
+                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
+            seen = {}
+            for unit, targets in self._unit_targets(build, project, pages).items():
+                for urn in targets:
+                    if urn.startswith("urn:x-opensiddur:text:prayer:") or ":poem:" in urn:
+                        seen.setdefault(urn, []).append(unit)
+            for urn, units in seen.items():
+                if urn in allowed:
+                    continue
+                self.assertEqual(len(set(units)), 1, f"{urn} transcluded by {units}")
 
 
 class TestBuilders(unittest.TestCase):
@@ -317,13 +468,17 @@ class TestBuilders(unittest.TestCase):
                 self.assertIn("chol_shacharit_amidah.xml", written)
                 self.assertIn("all_shacharit_yeladim.xml", written)
                 # index, one file per unit, one per prayer -- and, in the English
-                # project, one per front-matter section Birnbaum wrote only in English.
+                # project, one per front-matter section Birnbaum wrote only in English
+                # and one apparatus file per unit whose footnotes have been read.
                 pages = (build.EN_UNIT_PAGES if project == common.PROJECT_EN
                          else build.HE_UNIT_PAGES)
                 units = len(self.build_he.units(
                     project, pages, build.BY_NAME, build.unit_body()))
                 extra = len(front.SECTIONS) if project == common.PROJECT_EN else 0
-                self.assertEqual(len(written), len(build.PRAYERS) + 1 + units + extra)
+                apparatus = (len([a for a in build.APPARATUS.values() if a["entries"]])
+                             if project == common.PROJECT_EN else 0)
+                self.assertEqual(len(written),
+                                 len(build.PRAYERS) + 1 + units + extra + apparatus)
 
     def test_everything_written_parses_and_names_its_own_project(self):
         self.build_he.main(["--project-directory", str(self.directory)])

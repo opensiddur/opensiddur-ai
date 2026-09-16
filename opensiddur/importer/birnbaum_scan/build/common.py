@@ -36,11 +36,18 @@ IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerB
 #: its own sigil once, at import, so no call site carries it.
 SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
 SIGIL_YELADIM = "1949 all/shacharit/yeladim"
+SIGIL_BIRCHOT = "1949 all/shacharit/birchot_hashachar"
 FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
 SIDDUR = "urn:x-opensiddur:text:siddur:"
+#: Piyyutim and zemiroth. `SIDDUR_URN_SCHEME.md` names Adon Olam and Yigdal
+#: here rather than under `prayer:`, and addresses their stanzas by incipit.
+POEM = "urn:x-opensiddur:text:poem:"
 FRONT = "urn:x-opensiddur:text:front:"
+#: A note is not a text. It takes no `text:` URN -- it is addressed by what it
+#: annotates -- and `notes:` names the apparatus file itself, not anything in it.
+NOTES = "urn:x-opensiddur:notes:"
 
 
 #: IA leaf `n` is scan page `n + 1`, for the whole of this item. Fixed by how the Archive
@@ -53,7 +60,7 @@ LEAF_OFFSET = -1
 #: The +25 offset in fact holds for every numbered page in the book. The table is kept to
 #: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
 #: deep-linking a leaf nobody has looked at.
-SCAN_PAGE = {p: p + 25 for p in (*range(1, 3), *range(81, 99))}
+SCAN_PAGE = {p: p + 25 for p in (*range(1, 49), *range(81, 99))}
 
 
 def leaf(page) -> int:
@@ -181,3 +188,27 @@ HOL = "opensiddur:holiday"
 SERVICE = "opensiddur:service-time"
 RECITATION = "opensiddur:recitation"
 QUORUM = "opensiddur:quorum"
+#: Who is saying it. Birnbaum sets two columns headed "Men say:" and "Women say:",
+#: which no calendar can settle -- like the quorum, it is a fact about the people
+#: praying. It takes no default, so a text compiled without knowing who will say it
+#: keeps both columns with the rubrics that say who each is for.
+PERSON = "opensiddur:person"
+
+
+def standoff_document(*, notes: str, lang: str, **kw) -> str:
+    """An apparatus file: a header and a tei:standOff, and no tei:text of its own.
+
+    Birnbaum's footnotes annotate words that live in other files, so the apparatus has no
+    text to carry. `tei:standOff` is a `model.resource` like `tei:text` is, so a document
+    may hold one without the other -- which is what lets the apparatus be its own file
+    rather than a tail on every prayer.
+
+    The notes target `@corresp` URNs, never `#id`s. `refdb.get_references_to` matches a
+    URN target across every project, and an `#id` target only within the one file that
+    declares it, so an apparatus in its own file can only reach the text by URN.
+    """
+    return (f'<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" '
+            f'xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="{lang}">\n'
+            f'{header(lang=lang, **kw)}\n'
+            f'  <tei:standOff type="notes">\n{notes}\n  </tei:standOff>\n'
+            f'</tei:TEI>\n')
