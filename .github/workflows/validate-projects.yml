@@ -63,7 +63,7 @@ jobs:
         run: uv sync --all-groups
 
       - name: Cache built schema
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             opensiddur-ai/schema/*.relaxng
