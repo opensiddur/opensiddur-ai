@@ -130,7 +130,7 @@ AMIDAH_NOTES = [
                 "considered as great a manifestation of the divine power as the resurrection of "
                 "the dead (Ta‘anith 2a); hence <tei:foreign xml:lang=\"he\">משיב "
                 "הרוח</tei:foreign> is inserted in the passage <tei:foreign xml:lang=\"he\">אתה "
-                "גבור... מחיה המתים</tei:foreign>."
+                "גבור... מחיה מתים</tei:foreign>."
             )),
         ],
     ),
@@ -1204,7 +1204,8 @@ BIRCHOT_NOTES = [
         paras=[
             dict(text=(
                 "refers to the hymns of praise contained in the Psalms of David; compare the "
-                "expression <tei:foreign xml:lang=\"he\">על כל דברי שירות ותשבחות</tei:foreign>."
+                "expression <tei:foreign xml:lang=\"he\">על כל דברי שירות ותשבחות "
+                "דוד</tei:foreign>."
             )),
             dict(text=(
                 "<tei:foreign xml:lang=\"he\">לעלא לעלא</tei:foreign> is said between <tei:hi "
