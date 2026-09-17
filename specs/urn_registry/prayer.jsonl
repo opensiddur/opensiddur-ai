@@ -296,6 +296,8 @@
 {"urn": "urn:x-opensiddur:text:prayer:hallel/yehalelukha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel_hagadol", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hamotzi", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:hareni_mezamen", "status": "canonical", "label_he": "הֲרֵינִי מְזַמֵּן", "label_en": "Preparation for the verses of praise"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish", "status": "canonical", "label_he": "קַדִּישׁ", "label_en": "Kaddish"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "status": "context", "note": "A grouping only. The Kaddish's paragraphs are addressed one at a time because the congregation answers between them."}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/al_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "עַל יִשְׂרָאֵל וְעַל רַבָּנָן", "label_en": "We pray for Israel and for our teachers"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/oseh_shalom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "עֹשֶׂה שָׁלוֹם בִּמְרוֹמָיו", "label_en": "He who creates peace in his celestial heights"}
@@ -303,6 +305,12 @@
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yehe_shmeh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יְהֵא שְׁמֵהּ רַבָּא מְבָרַךְ", "label_en": "May his great name be blessed"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yitbarakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יִתְבָּרַךְ וְיִשְׁתַּבַּח", "label_en": "Blessed and praised, glorified and exalted"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/yitgadal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "יִתְגַּדַּל וְיִתְקַדַּשׁ", "label_en": "Glorified and sanctified be God's great name"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/yatom", "status": "canonical", "label_he": "קַדִּישׁ יָתוֹם", "label_en": "Mourners’ Kaddish", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/yatom/oseh_shalom", "parent": "urn:x-opensiddur:text:prayer:kaddish/yatom", "status": "canonical", "label_en": "He who creates peace"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/yatom/yehe_shlama", "parent": "urn:x-opensiddur:text:prayer:kaddish/yatom", "status": "canonical", "label_en": "May there be abundant peace"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/yehe_shmeh", "status": "canonical", "label_he": "יְהֵא שְׁמֵהּ רַבָּא", "label_en": "May his great name be blessed", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/yitbarakh", "status": "canonical", "label_he": "יִתְבָּרַךְ וְיִשְׁתַּבַּח", "label_en": "Blessed and praised", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/yitgadal", "status": "canonical", "label_he": "יִתְגַּדַּל וְיִתְקַדַּשׁ", "label_en": "Glorified and sanctified", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
 {"urn": "urn:x-opensiddur:text:prayer:korbanot", "status": "context", "note": "A grouping only. The korbanot are a run of separate scriptural and rabbinic passages with their own citations, not one text."}
 {"urn": "urn:x-opensiddur:text:prayer:korbanot/atah_hu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "אַתָּה הוּא יְיָ אֱלֹהֵֽינוּ שֶׁהִקְטִֽירוּ", "label_en": "Thou art the Lord our God before whom our forefathers burned"}
 {"urn": "urn:x-opensiddur:text:prayer:korbanot/atah_seter", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:korbanot", "label_he": "אַתָּה סֵֽתֶר לִי", "label_en": "Thou art my shelter"}
@@ -345,10 +353,15 @@
 {"urn": "urn:x-opensiddur:text:prayer:middot/9", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "מִדָּה ט", "label_en": "The 9th of Rabbi Ishmael's thirteen rules"}
 {"urn": "urn:x-opensiddur:text:prayer:middot/lead", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "רַבִּי יִשְׁמָעֵאל אוֹמֵר", "label_en": "Rabbi Ishmael says: the Torah is interpreted by thirteen rules"}
 {"urn": "urn:x-opensiddur:text:prayer:middot/yehi_ratzon", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:middot", "label_he": "יְהִי רָצוֹן שֶׁיִּבָּנֶה בֵּית הַמִּקְדָּשׁ", "label_en": "May it be thy will, that the Temple be speedily rebuilt"}
+{"urn": "urn:x-opensiddur:text:prayer:mizmor_shir_chanukat_habayit", "status": "canonical", "label_he": "מִזְמוֹר שִׁיר חֲנֻכַּת הַבַּיִת", "label_en": "Psalm 30"}
+{"urn": "urn:x-opensiddur:text:prayer:mizmor_shir_chanukat_habayit/aromimkha", "status": "canonical", "label_he": "אֲרוֹמִמְךָ", "label_en": "Psalm 30, opening through verse 12", "parent": "urn:x-opensiddur:text:prayer:mizmor_shir_chanukat_habayit"}
+{"urn": "urn:x-opensiddur:text:prayer:mizmor_shir_chanukat_habayit/lemaan", "status": "canonical", "label_he": "לְמַעַן יְזַמֶּרְךָ", "label_en": "Psalm 30, final verse", "parent": "urn:x-opensiddur:text:prayer:mizmor_shir_chanukat_habayit"}
 {"urn": "urn:x-opensiddur:text:prayer:modeh_ani", "status": "canonical", "label_he": "מוֹדֶה אֲנִי", "label_en": "Modeh Ani"}
 {"urn": "urn:x-opensiddur:text:prayer:nishmat", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical", "label_en": "Verses of Praise"}
 {"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar", "parent": "urn:x-opensiddur:text:prayer:pesukei_dezimra", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar/barukh", "status": "canonical", "label_he": "בָּרוּךְ שֶׁאָמַר", "label_en": "Blessed be he who spoke", "parent": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar"}
+{"urn": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar/yachid", "status": "canonical", "label_he": "יָחִיד חֵי הָעוֹלָמִים", "label_en": "Thou who art One", "parent": "urn:x-opensiddur:text:prayer:pesukei_dezimra/barukh_sheamar"}
 {"urn": "urn:x-opensiddur:text:prayer:qiddush", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:qiddush/asher_bachar_banu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}
 {"urn": "urn:x-opensiddur:text:prayer:qiddush/savri", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:qiddush"}

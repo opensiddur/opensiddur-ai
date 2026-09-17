@@ -435,6 +435,38 @@ Hebrew Wikisource sections for those pages are named in the unit file's own page
   three pages it disclosed four things wrong with itself, and caught one thing wrong
   with the reading — which is precisely the division of labour intended for it.
 
+## Printed 49 and 51: the weekday opening through Barukh sheamar
+
+Checked directly against IA leaves n73 and n75, and against the resolved Wikisource
+spans afterwards. The reading of 51 ends at Barukh sheamar, before Hodu.
+
+No consonantal differences. Seven differences are the transcription’s qamats-qatan
+interpretation of the print’s undifferentiated qamats. On 51 it also omits the stress
+mark in the first `מֶֽלֶךְ` of the blessing and replaces the maqqef in `עֲדֵי־עַד`
+with a space; both marks are visible in the enlarged scan.
+
+
+### Printed 49
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 5 | 5 | 0 | 0 |
+
+149 words read.
+
+
+### Printed 51
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 1 | 1 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 3 | 3 | 0 | 0 |
+
+120 words read.
+
 ## The apparatus's Hebrew, read against the print
 
 The footnotes were extracted from the English Wikisource transcription, and their **Hebrew**

@@ -1,0 +1,6 @@
+{
+  "vowels:8:כָּל|כׇּל": "print",
+  "vowels:20:כָּל|כׇּל": "print",
+  "vowels:75:מֶֽלֶךְ|מֶלֶךְ": "print",
+  "whitespace:110:'־'|' '": "print"
+}

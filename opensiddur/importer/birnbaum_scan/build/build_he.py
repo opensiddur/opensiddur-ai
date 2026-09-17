@@ -16,11 +16,12 @@ from .he_berakhot import PRAYERS as BERAKHOT_PRAYERS, BLESSINGS
 from .he_akedah import PRAYERS as AKEDAH_PRAYERS
 from .he_korbanot import PRAYERS as KORBANOT_PRAYERS
 from .he_ishmael import PRAYERS as ISHMAEL_PRAYERS
+from .he_pesukei import PRAYERS as PESUKEI_PRAYERS
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -419,6 +420,22 @@ def unit_body_birchot(project, by_name):
     return "\n".join(lines)
 
 
+def unit_body_pesukei(project, by_name):
+    """The reviewed opening only: Psalm 30 through Barukh sheamar, before Hodu."""
+    he = project == PROJECT_HE
+    lines = [f'<tei:div corresp="{S}chol/shacharit/pesukei_dezimra">',
+             declaration(),
+             '<tei:head xml:lang="he">תְּפִלַּת שַׁחֲרִית</tei:head>' if he else
+             '<tei:head xml:lang="en">MORNING SERVICE</tei:head>']
+    _transclude(lines, by_name, "mizmor_shir_chanukat_habayit")
+    lines.append('<tei:head xml:lang="en">MOURNERS’ KADDISH</tei:head>')
+    _transclude(lines, by_name, "kaddish_yatom")
+    _transclude(lines, by_name, "hareni_mezamen")
+    _transclude(lines, by_name, "barukh_sheamar")
+    lines += ['<j:endDeclare target="#unit_service"/>', '</tei:div>']
+    return "\n".join(lines)
+
+
 #: The book's running order: the children's page is printed first, and comes first here.
 #: Each entry is what write() needs to put one unit file on disk. Both projects build
 #: their units from this one function, so a unit cannot exist on one side only.
@@ -437,6 +454,10 @@ def units(project, pages, by_name, amidah_body):
              body=unit_body_birchot(project, by_name),
              title_he="בִּרְכוֹת הַשַּֽׁחַר", title_en="Preliminary morning service",
              urn=f"{S}all/shacharit/birchot_hashachar", pages=pages["birchot"]),
+        dict(name="chol_shacharit_pesukei_dezimra",
+             body=unit_body_pesukei(project, by_name),
+             title_he="תְּפִלַּת שַׁחֲרִית", title_en="Morning service (through Barukh sheamar)",
+             urn=f"{S}chol/shacharit/pesukei_dezimra", pages=pages["pesukei"]),
         dict(name="chol_shacharit_amidah", body=amidah_body,
              title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",
              title_en="The weekday morning Amidah",
@@ -464,7 +485,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "pesukei": (49, 51), "amidah": (81, 97)}
 
 
 def unit_body():

@@ -90,6 +90,8 @@
 {"urn": "urn:x-opensiddur:instruction:amidah/yismechu_vemalkhutekha", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ישמחו במלכותך"}
 {"urn": "urn:x-opensiddur:instruction:amidah/yom_rishon_shel_sukot", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "יום ראשון של סוכות"}
 {"urn": "urn:x-opensiddur:instruction:amidah/zokhraynu_lechayim_melekh", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "זׇכְרֵֽנוּ לְחַיִּים מֶֽלֶךְ"}
+{"urn": "urn:x-opensiddur:instruction:aseret_yemei_teshuvah", "status": "context", "label_en": "Ten Days of Repentance", "note": "Organizational parent for Ten Days instructions; no shared instruction text at this level."}
+{"urn": "urn:x-opensiddur:instruction:aseret_yemei_teshuvah/add", "parent": "urn:x-opensiddur:instruction:aseret_yemei_teshuvah", "status": "canonical", "label_en": "During the Ten Days of Repentance, add:", "note": "Standard editorial instruction for a conditional addition; not a quotation of Birnbaum’s printed rubric."}
 {"urn": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Who recites"}
 {"urn": "urn:x-opensiddur:instruction:role/congregation", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Congregation"}
 {"urn": "urn:x-opensiddur:instruction:role/congregation_then_reader", "parent": "urn:x-opensiddur:instruction:role", "status": "canonical", "label_en": "Congregation then reader"}
