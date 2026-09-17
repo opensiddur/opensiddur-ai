@@ -37,6 +37,7 @@ IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerB
 SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
 SIGIL_YELADIM = "1949 all/shacharit/yeladim"
 SIGIL_BIRCHOT = "1949 all/shacharit/birchot_hashachar"
+SIGIL_PESUKEI = "1949 chol/shacharit/pesukei_dezimra"
 FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
@@ -60,7 +61,7 @@ LEAF_OFFSET = -1
 #: The +25 offset in fact holds for every numbered page in the book. The table is kept to
 #: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
 #: deep-linking a leaf nobody has looked at.
-SCAN_PAGE = {p: p + 25 for p in (*range(1, 49), *range(81, 99))}
+SCAN_PAGE = {p: p + 25 for p in (*range(1, 53), *range(81, 99))}
 
 
 def leaf(page) -> int:
@@ -156,11 +157,14 @@ def write(project: str, name: str, text: str) -> Path:
     return path
 
 
-def cond(cid: str, *, note: str = "", note_lang: str = "en", fs: str = "", negate: bool = False) -> str:
+def cond(cid: str, *, note: str = "", note_lang: str = "en", fs: str = "", negate: bool = False,
+         note_urn: str = "", note_resp: str = "") -> str:
     """A j:conditional: the rubric the edition prints, and the test it states."""
     parts = [f'        <j:conditional xml:id="{cid}">']
     if note:
-        parts.append(f'          <tei:note type="instruction" xml:lang="{note_lang}">{note}</tei:note>')
+        attributes = (f' corresp="{note_urn}"' if note_urn else "")
+        attributes += f' resp="{note_resp}"' if note_resp else ""
+        parts.append(f'          <tei:note type="instruction" xml:lang="{note_lang}"{attributes}>{note}</tei:note>')
     if negate:
         parts.append("          <j:none>")
         parts.append(fs)
@@ -193,6 +197,25 @@ QUORUM = "opensiddur:quorum"
 #: praying. It takes no default, so a text compiled without knowing who will say it
 #: keeps both columns with the rubrics that say who each is for.
 PERSON = "opensiddur:person"
+
+
+# Editorial wording, rather than a rubric attributed to the scanned edition.
+# Both Kaddishes use the same conditional through their shared Yitbarakh segment.
+TEN_DAYS_ADDITION = "During the Ten Days of Repentance, add:"
+TEN_DAYS_ADDITION_URN = "urn:x-opensiddur:instruction:aseret_yemei_teshuvah/add"
+
+
+def ten_days_addition(cid: str) -> str:
+    """A standard instruction for an addition whose date may be undecided.
+
+    The renderer places the instruction before brackets around the added words.
+    Do not also encode the print's parentheses.
+    The raw scan reading retains those diplomatic punctuation marks.
+    """
+    return cond(cid, note=TEN_DAYS_ADDITION,
+                note_urn=TEN_DAYS_ADDITION_URN,
+                note_resp="urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein",
+                fs=feature(AGG, "aseret-ymei-tshuva"))
 
 
 def standoff_document(*, notes: str, lang: str, **kw) -> str:

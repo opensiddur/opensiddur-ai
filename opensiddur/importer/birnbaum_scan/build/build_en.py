@@ -15,20 +15,22 @@ from .en_berakhot import PRAYERS as BERAKHOT_PRAYERS
 from .en_akedah import PRAYERS as AKEDAH_PRAYERS
 from .en_korbanot import PRAYERS as KORBANOT_PRAYERS
 from .en_ishmael import PRAYERS as ISHMAEL_PRAYERS
+from .en_pesukei import PRAYERS as PESUKEI_PRAYERS
 from . import build_he
 from . import notes as apparatus
+from .notes_pesukei import PESUKEI_NOTES
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the English side of the opening.
-EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "amidah": (82, 98)}
+EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "pesukei": (50, 52), "amidah": (82, 98)}
 
 #: Birnbaum's footnotes, one apparatus file per unit. They are written here and not in
 #: `build_he` because the commentary is English prose, as his introduction is: the
@@ -36,6 +38,8 @@ EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "amidah": (82, 98)}
 #: are the pages the notes were read from, which for the commentary are the *Hebrew*
 #: pages -- that is where the print sets it.
 APPARATUS = {
+    "notes_pesukei": dict(entries=PESUKEI_NOTES, slug="birnbaum_1949/pesukei_dezimra",
+                          title="Notes on the opening of the morning service", first=49, last=52),
     "notes_yeladim": dict(entries=apparatus.YELADIM_NOTES, slug="birnbaum_1949/yeladim",
                           title="Notes on Shaḥarith li-Yladim", first=1, last=1),
     "notes_birchot": dict(entries=apparatus.BIRCHOT_NOTES,

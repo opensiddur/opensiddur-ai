@@ -1366,6 +1366,32 @@ class TestConditionalRendering(unittest.TestCase):
         # punctuation beside it.
         self.assertNotIn(r"\OSCondStartInline{}", body)
 
+    def test_instruction_does_not_hide_inline_addition_boundary(self):
+        out = self._transform_body(
+            f"""<tei:p>Always before
+              <j:conditional xml:id="c">
+                <tei:note type="instruction">During the Ten Days of Repentance, add:</tei:note>{self.CONDITION}
+              </j:conditional>EXTRA<j:endConditional target="#c"/> always after</tei:p>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartInline{}EXTRA\OSCondEndInline{} always after", body)
+        self.assertEqual(body.count("During the Ten Days of Repentance, add:"), 1)
+        self.assertLess(body.index("During the Ten Days"), body.index(r"\OSCondStartInline{}"))
+
+    def test_parallel_instruction_preserves_both_addition_brackets(self):
+        out = self._transform_body(
+            f"""<p:parallel xmlns:p="http://jewishliturgy.org/ns/processing">
+              <p:parallelItem role="primary" xml:lang="he"><tei:p>לפני
+                <j:conditional xml:id="c"><tei:note type="instruction" xml:lang="en">During the Ten Days, add:</tei:note>{self.CONDITION}</j:conditional>לעלא<j:endConditional target="#c"/> אחרי
+              </tei:p></p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en"><tei:p>Translation</tei:p></p:parallelItem>
+            </p:parallel>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartInline{}לעלא\OSCondEndInline{} אחרי", body)
+        self.assertEqual(body.count("During the Ten Days, add:"), 1)
+        self.assertLess(body.index("During the Ten Days"), body.index(r"\OSCondStartInline{}"))
+
     def test_conditional_macros_are_defined(self):
         out = self._transform_body(
             """<tei:p><tei:milestone unit="verse" n="1"/>x</tei:p>"""

@@ -134,8 +134,10 @@ and its own parentheses. Not one passage with a variable middle.
 (p. 84), ABRIDGED SHEMONEH ESREH (p. 97 — on a *Hebrew* page). Everything else that
 structures these pages is a rubric, "Priestly blessing recited by Reader:" included.
 
-**Parentheses are his.** An optional passage is printed in parentheses, and they belong to
-the text.
+**Parentheses are his.** Preserve printed parentheses in the raw scan reading.
+When parentheses only mark a conditional addition, the functional encoding may
+replace them with the conditional’s brackets or an explicit instruction; do not
+render two sets of optional-passage delimiters.
 
 **The two sides cite different pages for the same cross-reference.** Hallel is page 565 on
 the Hebrew side and 566 on the English; each points at its own language. Verified at 3× on
@@ -763,3 +765,84 @@ Next, in the order the evidence suggests:
 3. **Finish the accuracy measurement** for pages 85–97, which is cheap now and is the
    evidence for whether this scales.
 4. **The surrounding units**, page by page.
+
+## Weekday opening: IA n73–n76, printed 49–52
+
+The next reviewed installment is Psalm 30, Mourners’ Kaddish, Hareni mezamen, and
+Barukh sheamar. **It stops before Hodu**, even though Hodu begins on the same opening.
+The unit is `chol_shacharit_pesukei_dezimra.xml`; its name is the full unit's name,
+but its present contents and bibliography cover only this reviewed opening. Extend
+that unit as subsequent pages are read, rather than creating a unit per scan batch.
+
+`he_pesukei.py` and `en_pesukei.py` hold the text. The scan readings are recorded in
+`sourcetexts/sources/birnbaum_siddur/scan_reading/{hebrew,english,readings}/49–52`;
+`hebrew/51.txt` and `english/52.txt` are explicitly partial-page readings. The two
+commentary notes begin under 49 and 51 and end under 50 and 52. `notes_pesukei.py`
+records them; the Hodu note is deferred with Hodu itself.
+
+### Shared Kaddish, without another printing's page break
+
+The first three paragraphs are word-for-word the earlier Kaddish d’Rabbanan.
+Their existing context divisions remain, and **nested `tei:seg`s** give the common
+words the canonical names `prayer:kaddish/yitgadal`, `/yehe_shmeh`, `/yitbarakh`.
+Mourners’ Kaddish transcludes those segments. The earlier page break sits outside
+the shared segment, so printed 47 does not turn up inside printed 49. Its final two
+paragraphs have their own names under `kaddish/yatom`: they omit `טובים` and
+`ברחמיו`, respectively, and cannot reuse d’Rabbanan's ending.
+
+The second `לעלא` carries the Ten Days condition. Both Kaddishes share that
+condition and the standardized instruction **“During the Ten Days of Repentance,
+add:”**, registered as `instruction:aseret_yemei_teshuvah/add` and supplied by
+`ten_days_addition()` in the builder’s common module. Its `resp` marks editorial
+responsibility: this wording is not presented as a quotation from Birnbaum.
+The raw reading retains the printed parentheses; the functional encoding omits
+them. The renderer places the instruction before a single pair of conditional
+brackets around only the added word, so the rest of the paragraph is visibly
+outside the addition. Instructions within paragraphs do not suppress these
+scope brackets; an instruction alone cannot show where the addition ends. The earlier preview had only
+literal parentheses, explaining its different appearance.
+
+When the condition is MAYBE, the instruction accompanies the second word in both
+Kaddishes. Compiling for 15 January 2026 in Jerusalem leaves one occurrence;
+16 September 2026 leaves two. Neither dated compile leaves an unresolved
+conditional. As for existing instruction-bearing conditionals, the compiler
+retains the instruction when TRUE and removes it with the passage when FALSE.
+
+### An untranslated passage needs an empty alignment position
+
+Hareni mezamen is printed only in Hebrew. The English project records an empty
+corresponding division, with an XML comment saying no English text is printed.
+This supplies an alignment position, **not a translation**. Omitting the English
+position caused the sequence aligner to pair English Barukh sheamar with Hebrew
+Hareni and leave Hebrew Barukh sheamar without its facing text. The empty position
+keeps the English column blank there and the next prayer aligned.
+
+Psalm 30's citation is inside its prayer file, beneath the service heading. Putting
+both consecutive headings in the unit caused the PDF to repeat the English service
+heading. Its biblical correspondence encloses the whole psalm, including the final
+Reader passage. The two Reader labels are Hebrew-side only.
+
+### Reproduce and review this installment
+
+Use new worktrees in all three repositories. From the code worktree:
+
+```bash
+W=../../opensiddur-projects/feat_birnbaum-shacharit-opening/project
+O=../../output/birnbaum_shacharit_opening
+uv run python -m opensiddur.importer.birnbaum_scan.build.build_he --project-directory "$W"
+uv run python -m opensiddur.importer.birnbaum_scan.build.build_en --project-directory "$W"
+uv run python -m opensiddur.exporter.refdb --project-directory "$W"
+uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
+  -f chol_shacharit_pesukei_dezimra.xml -s specs/birnbaum_scan/settings_undecided.yaml \
+  --project-directory "$W" -o "$O/parallel.xml"
+uv run python -m opensiddur.exporter.pdf.pdf "$O/parallel.xml" "$O/parallel.pdf" \
+  -s specs/birnbaum_scan/settings_undecided.yaml --project-directory "$W"
+```
+
+Checked: both compiled languages equal the readings word for word, apart from
+removing the conditional word’s literal parentheses and adding the identified
+editorial instruction (268 Hebrew and 555 English whitespace-delimited words), four source page breaks (49–52), two notes
+once each, no Hodu, both date outcomes, schema validity and resolved references.
+The four-page review PDF includes the exporter's metadata. The printed Reader
+passages carry matching subpart URNs; the PDF aligns the enclosing prayer as a whole,
+so the final Reader lines need not sit at the same vertical position as their English.

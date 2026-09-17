@@ -147,6 +147,17 @@ class TestDocument(unittest.TestCase):
 
 class TestConditional(unittest.TestCase):
 
+    def test_standard_ten_days_instruction_is_attached_to_the_calendar_condition(self):
+        element = fragment(common.ten_days_addition("ten_days"))[0]
+        note = element.find("tei:note", NS)
+        self.assertEqual(note.get("type"), "instruction")
+        self.assertEqual(note.get("corresp"), common.TEN_DAYS_ADDITION_URN)
+        self.assertEqual(note.text, common.TEN_DAYS_ADDITION)
+        self.assertIsNotNone(note.get("resp"), "the added instruction is editorial")
+        feature = element.find("tei:fs/tei:f", NS)
+        self.assertEqual(feature.get("name"), "aseret-ymei-tshuva")
+        self.assertEqual(feature.find("tei:binary", NS).get("value"), "true")
+
     def test_states_the_rubric_the_edition_prints_and_the_test_it_stands_for(self):
         element = fragment(common.cond(
             "c1", note="On a fast day add:",
@@ -279,13 +290,13 @@ class TestUnitAssembly(unittest.TestCase):
 
     def test_the_two_projects_hold_the_same_units_in_the_book_s_order(self):
         """The units stand in the order the book prints them, and a unit cannot exist on
-        one side only. Printed pages 1-2, then 3-48, then 81-97."""
+        one side only. Printed pages 1-2, then 3-48, then 49-52, then 81-97."""
         def names(build, project, pages):
             return [u["name"] for u in self.build_he.units(
                 project, pages, build.BY_NAME, build.unit_body())]
 
         expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
-                    "chol_shacharit_amidah"]
+                    "chol_shacharit_pesukei_dezimra", "chol_shacharit_amidah"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(

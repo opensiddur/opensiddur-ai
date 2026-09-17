@@ -1890,6 +1890,17 @@
          line. -->
     <xsl:mode name="stamp-rubric" on-no-match="shallow-copy"/>
 
+    <!-- Preserve scope classification before copying detaches the conditional from
+         its paragraph and matching end marker in a parallel stream. -->
+    <xsl:template match="j:conditional" mode="stamp-rubric">
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <xsl:attribute name="f:inline" select="f:is-inline-conditional(.)"/>
+            <xsl:attribute name="f:in-paragraph" select="exists(ancestor::tei:p | ancestor::tei:l)"/>
+            <xsl:apply-templates mode="stamp-rubric"/>
+        </xsl:copy>
+    </xsl:template>
+
     <xsl:template match="tei:note[@type='instruction']" mode="stamp-rubric">
         <xsl:param name="echoed" as="xs:boolean" tunnel="yes"/>
         <xsl:param name="note-lang" as="xs:string" tunnel="yes"/>
@@ -2407,11 +2418,12 @@
          a rule, because brackets several lines apart do not read as a pair. -->
     <xsl:template match="j:conditional" mode="emit">
         <xsl:choose>
-            <!-- A conditional that announces itself needs no bracket either: the
-                 instruction says which passage this is and on what it depends, and the
-                 bracket beside it reads as stray punctuation. -->
-            <xsl:when test="tei:note[@type='instruction'] and f:is-inline-conditional(.)"/>
+            <!-- Marker-only instructions announce their own labels. Within a paragraph
+                 or verse, however, the instruction cannot show where an addition ends. -->
+            <xsl:when test="tei:note[@type='instruction'] and f:is-inline-conditional(.)
+                            and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true')"/>
             <xsl:when test="f:is-inline-conditional(.)">
+                <xsl:apply-templates select="tei:note" mode="emit"/>
                 <xsl:text>\OSCondStartInline{}</xsl:text>
             </xsl:when>
             <!-- A block that announces itself needs no rule to open it: the instruction
@@ -2424,7 +2436,10 @@
             </xsl:otherwise>
         </xsl:choose>
         <!-- The note, when there is one, explains the condition the reader must judge. -->
-        <xsl:apply-templates select="tei:note" mode="emit"/>
+        <xsl:if test="not(f:is-inline-conditional(.))
+                      or (tei:note[@type='instruction'] and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true'))">
+            <xsl:apply-templates select="tei:note" mode="emit"/>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="j:endConditional" mode="emit">
@@ -2433,7 +2448,8 @@
             <!-- Matching the opening: a scope whose instruction stands in for its
                  opening bracket takes no closing one. -->
             <xsl:when test="exists($start/tei:note[@type='instruction'])
-                            and f:is-inline-conditional($start)"/>
+                            and f:is-inline-conditional($start)
+                            and not($start/ancestor::tei:p or $start/ancestor::tei:l)"/>
             <xsl:when test="if (exists($start))
                             then f:is-inline-conditional($start)
                             else (ancestor::tei:p or ancestor::tei:l)">
@@ -2772,7 +2788,8 @@
          tei:div, as the humash's do. -->
     <xsl:function name="f:is-inline-conditional" as="xs:boolean">
         <xsl:param name="start" as="element()"/>
-        <xsl:sequence select="exists($start/ancestor::tei:p) or exists($start/ancestor::tei:l)
+        <xsl:sequence select="if ($start/@f:inline) then $start/@f:inline = 'true' else
+            exists($start/ancestor::tei:p) or exists($start/ancestor::tei:l)
             or (exists(f:matching-end($start))
                 and empty(f:governed-nodes($start)[
                     self::tei:p or self::tei:ab or self::tei:l or self::tei:lg
