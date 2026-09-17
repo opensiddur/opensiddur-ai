@@ -6,6 +6,19 @@ point the print marks, which is the one thing it is better placed to give than t
 is: the notes are long English prose, and transcribing eighty-six of them by hand is the
 kind of work that went wrong six words at a time in `he_akedah`.
 
+**The transcription is not the print, and for the Hebrew inside a note that matters.** The
+English prose it gives is worth taking; the Hebrew it quotes has been silently normalised in
+at least two places. Printed 48 sets `על כל דברי שירות ותשבחות דוד` and the transcription
+drops `דוד` -- the last word of the phrase, and the point of the comparison, since the note
+is about praise contained in *David's* psalms. Printed 84 sets `מחיה מתים` and the
+transcription adds a definite article, making the quoted passage name agree with the form the
+blessing's own closing uses. Neither is visible from inside the transcription: both read as
+perfectly ordinary Hebrew, and only the image says otherwise.
+
+So every Hebrew run a note carries has to be read off the page image, exactly as the liturgy
+is, and `TEXT_CORRECTIONS` is where the difference is recorded. English prose can be taken on
+the transcription's word; Hebrew cannot.
+
 What it does **not** give is where a note sits on the page. It attaches every `<ref>` to
 the English page, and the print sets the commentary under the **Hebrew** page of the
 opening — recorded in `readings/english_22_26.md`. So the transcription says *which* notes
@@ -36,13 +49,21 @@ Run from the repository root:
 """
 import json
 import textwrap
+import os
 import pathlib
 import re
 import sys
 
 sys.path.insert(0, ".")
 
-ST = pathlib.Path("/home/efeins/src/opensiddur-repos/sourcetexts/feat_birnbaum-birchot-hashachar/sources/birnbaum_siddur")
+#: The sources this reads. Default to the `sourcetexts` submodule, which every checkout
+#: has once `git submodule update --init` has run; `$OPENSIDDUR_SOURCETEXTS` points it at
+#: a standalone worktree instead. This was an absolute path into one particular worktree,
+#: which meant the generator stopped running the moment that worktree was closed out --
+#: and a generator that cannot be re-run cannot be corrected.
+ST = pathlib.Path(
+    os.environ.get("OPENSIDDUR_SOURCETEXTS", pathlib.Path(__file__).resolve().parents[2] / "sourcetexts")
+) / "sources/birnbaum_siddur"
 
 REF = re.compile(r"<ref>(.*?)</ref>", re.S)
 HE = re.compile(r"\{\{he\|([^|{}]*)(?:\|([^{}]*))?\}\}")
@@ -205,6 +226,14 @@ TEXT_CORRECTIONS = {
     # -- this one scored 74% where the median is 95%.
     "kingship of God s to be made n public service only":
         "kingship of God is to be made in public service only",
+    # Printed 48's foot, at 4x: the expression ends `ותשבחות דוד`. The transcription drops
+    # `דוד`. It is the phrase from Nishmath, and the last word is the point of the
+    # comparison -- the note is about praise contained in *David's* psalms.
+    "על כל דברי שירות ותשבחות": "על כל דברי שירות ותשבחות דוד",
+    # Printed 84's foot, at 4.5x: `מחיה מתים`, no article. The transcription adds a `ה`,
+    # normalising the quotation to the form the blessing's closing uses. Birnbaum is
+    # naming the passage, and he sets it as printed.
+    "אתה גבור... מחיה המתים": "אתה גבור... מחיה מתים",
 }
 
 #: Lemmas the transcription gets wrong, settled on the image. The catchword is quoted from

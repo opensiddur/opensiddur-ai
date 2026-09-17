@@ -466,3 +466,28 @@ with a space; both marks are visible in the enlarged scan.
 | vowels | 3 | 3 | 0 | 0 |
 
 120 words read.
+
+## The apparatus's Hebrew, read against the print
+
+The footnotes were extracted from the English Wikisource transcription, and their **Hebrew**
+was never read off the page. That is the one place this conversion took a transcription as a
+source rather than as a check, and it cost two errors, both invisible from inside the
+transcription because both read as ordinary Hebrew:
+
+| printed | transcription | print | |
+|---|---|---|---|
+| 48 | `על כל דברי שירות ותשבחות` | `על כל דברי שירות ותשבחות דוד` | a word dropped |
+| 84 | `אתה גבור... מחיה המתים` | `אתה גבור... מחיה מתים` | an article added |
+
+Both are in `corrections.jsonl` and in `extract_notes.TEXT_CORRECTIONS`, so a regeneration
+keeps them.
+
+**Openings read so far:** printed 4, 6, 18, 20, 24, 26, 48, 82, 84, 92 — ten of the
+twenty-four that carry Hebrew in their notes. Two errors in ten openings is not a rate that
+justifies assuming the rest are clean.
+
+**Still owed:** the other fourteen — printed 2, 8, 12, 16, 22, 28, 34, 42, 46, 86, 88, 90,
+94, 96, and the odd-numbered feet where a note begins before running across its opening. The
+method is settled and cheap: crop the foot of the page image, and compare every Hebrew run in
+that page's notes against it. `check_pdf_hebrew_direction.py` does not cover this — it asks
+whether a run is set the right way round, not whether it is the right words.
