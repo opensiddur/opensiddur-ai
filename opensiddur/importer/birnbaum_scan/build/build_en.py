@@ -30,7 +30,7 @@ U, S = PRAYER, SIDDUR
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the English side of the opening.
-EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "pesukei": (50, 52), "amidah": (82, 98)}
+EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "opening": (50, 52), "pesukei": (52, 58), "amidah": (82, 98)}
 
 #: Birnbaum's footnotes, one apparatus file per unit. They are written here and not in
 #: `build_he` because the commentary is English prose, as his introduction is: the
@@ -39,7 +39,7 @@ EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "pesukei": (50, 52), "am
 #: pages -- that is where the print sets it.
 APPARATUS = {
     "notes_pesukei": dict(entries=PESUKEI_NOTES, slug="birnbaum_1949/pesukei_dezimra",
-                          title="Notes on the opening of the morning service", first=49, last=52),
+                          title="Notes on the opening of the morning service", first=49, last=58),
     "notes_yeladim": dict(entries=apparatus.YELADIM_NOTES, slug="birnbaum_1949/yeladim",
                           title="Notes on Shaḥarith li-Yladim", first=1, last=1),
     "notes_birchot": dict(entries=apparatus.BIRCHOT_NOTES,

@@ -290,13 +290,14 @@ class TestUnitAssembly(unittest.TestCase):
 
     def test_the_two_projects_hold_the_same_units_in_the_book_s_order(self):
         """The units stand in the order the book prints them, and a unit cannot exist on
-        one side only. Printed pages 1-2, then 3-48, then 49-52, then 81-97."""
+        one side only. The morning opening precedes the separate verses-of-praise unit."""
         def names(build, project, pages):
             return [u["name"] for u in self.build_he.units(
                 project, pages, build.BY_NAME, build.unit_body())]
 
         expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
-                    "chol_shacharit_pesukei_dezimra", "chol_shacharit_amidah"]
+                    "chol_shacharit_opening", "chol_shacharit_pesukei_dezimra",
+                    "chol_shacharit_amidah"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(

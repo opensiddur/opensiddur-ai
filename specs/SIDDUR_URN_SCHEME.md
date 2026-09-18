@@ -566,3 +566,17 @@ registry records them as needing review rather than guessing.
 What stays in `haggadah:` is what is genuinely seder-specific: the fifteen simanim as an
 ordering, the Magid narrative, Shefokh Chamatkha, the Nirtzah songs, and the pre-Pesach
 observances.
+
+### Birnbaum's composite verse paragraphs
+
+The Hodu-to-Ashrei installment explicitly assigns its ordered composite paragraphs
+`siddur:chol/shacharit/pesukei_dezimra/{incipit}` URNs. This is a scoped extension of
+the skeleton-only convention above: the paragraph records this book's arrangement
+of verses, with the actual words in nested `bible:` segments. The liturgical joining
+phrase “יְיָ מֶלֶךְ, יְיָ מָלָךְ” has its own `siddur:` subpart identity rather than
+an invented biblical address. Its following clause is Exodus 15:18.
+
+Each distinct verse is canonically mapped once. A repeated occurrence may carry its
+biblical URN in `tei:seg/@source` when its pointing or punctuation differs, preserving
+the printed occurrence without creating a duplicate canonical `corresp` mapping.
+The enclosing paragraph's `siddur:` URN supplies bilingual alignment.

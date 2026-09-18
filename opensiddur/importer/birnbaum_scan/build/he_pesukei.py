@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Weekday Shacharit through Barukh sheamar, printed 49 and 51.
-Read from IA leaves n73–n76; the reading stops before Hodu.
-The first three Kaddish paragraphs reuse the shared segments in Kaddish d'Rabbanan.
-Hareni mezamen has no English translation in this printing.
+"""Weekday opening and verses of praise, printed 49–57, ending before Ashrei.
+The new biblical passages are built by pesukei_passages; the preceding opening
+remains separate from the wrapper that begins at Hareni mezamen.
 """
 import functools
 from . import common
@@ -65,3 +64,7 @@ prayer('barukh_sheamar', 'בָּרוּךְ שֶׁאָמַר', 'pesukei_dezimra/b
         '<tei:note type="instruction" xml:lang="en">Reader</tei:note>',
         d(U + "pesukei_dezimra/barukh_sheamar/yachid", 'יָחִיד, חֵי הָעוֹלָמִים, מֶֽלֶךְ, מְשֻׁבָּח וּמְפֹאָר עֲדֵי־עַד שְׁמוֹ הַגָּדוֹל. בָּרוּךְ אַתָּה, יְיָ, מֶֽלֶךְ מְהֻלָּל בַּתִּשְׁבָּחוֹת.'),
         "</tei:div>"]))
+
+# Continuing the scan through the paragraph before Ashrei.
+from .pesukei_passages import prayers
+PRAYERS += prayers("he")
