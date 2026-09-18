@@ -491,3 +491,75 @@ justifies assuming the rest are clean.
 method is settled and cheap: crop the foot of the page image, and compare every Hebrew run in
 that page's notes against it. `check_pdf_hebrew_direction.py` does not cover this — it asks
 whether a run is set the right way round, not whether it is the right words.
+
+## Hodu through Yehi khevod (printed 51–58)
+
+Read from the images first, then compared with resolved Wikisource slices. Ashrei is excluded.
+
+The review corrected full/defective spellings, punctuation and stress marks in the first reading. Notably, the print and the comparison both set `קִרְאוֹ` (holam) at the start of Hodu; it is preserved, not silently corrected to the familiar shuruq. The remaining differences are supported by the enlarged scan: qamats/qamats-qatan, punctuation, meteg and maqqef, plus the Unicode holam-haser distinction on vav. Psalm 20:10 has a meteg in `הַמֶּֽלֶךְ` on 57 but not on 55; both occurrences retain their printed pointing.
+
+
+### hodu
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 15 | 15 | 0 | 0 |
+
+229 words read.
+
+
+### romemu
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+18 words read.
+
+
+### vehu_rahum
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 1 | 1 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 5 | 5 | 0 | 0 |
+
+89 words read.
+
+
+### hoshia_et_amekha
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+71 words read.
+
+
+### mizmor_letodah
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+43 words read.
+
+
+### yehi_khevod
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 5 | 5 | 0 | 0 |
+
+137 words read.

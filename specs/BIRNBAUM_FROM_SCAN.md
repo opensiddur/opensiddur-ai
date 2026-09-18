@@ -846,3 +846,81 @@ once each, no Hodu, both date outcomes, schema validity and resolved references.
 The four-page review PDF includes the exporter's metadata. The printed Reader
 passages carry matching subpart URNs; the PDF aligns the enclosing prayer as a whole,
 so the final Reader lines need not sit at the same vertical position as their English.
+
+## Hodu through Yehi khevod: printed 51–58, IA n75–n82
+
+This installment ends **before Ashrei**, including neither its opening verses nor its
+commentary. `chol_shacharit_pesukei_dezimra.xml` now starts at **Hareni mezamen**,
+then Barukh sheamar, Hodu, Romemu, Vehu rahum, Hoshia et amekha, Psalm 100, and
+Yehi khevod. Psalm 30 and Mourners’ Kaddish move to `chol_shacharit_opening.xml`,
+which the index places immediately before this wrapper. Their text is unchanged.
+The wrapper remains partial and can grow through the rest of Pesukei dezimrah.
+
+### Biblical identity and composite paragraphs
+
+The ordered paragraphs use `siddur:chol/shacharit/pesukei_dezimra/{incipit}` URNs,
+as requested for this installment. Individual verses use `bible:` URNs. Hodu's
+verses are I Chronicles 16:8–36; Psalm 100 has the chapter URN and five verse URNs.
+The other paragraphs collect verses from different psalms; Yehi khevod also uses
+I Chronicles 16:31, Proverbs 19:21 and Exodus 15:18. The edition's reference note
+omits Exodus 15:18, so the encoded identification supplies it without altering the
+printed note. “יְיָ מֶלֶךְ, יְיָ מָלָךְ” is liturgical text, not a complete biblical
+verse, and has a `siddur:` subpart URN. The scriptural continuation uses Exodus's URN.
+
+`pesukei_data.py` records each Hebrew/English verse pair read from the scan, including
+page turns. `pesukei_passages.py` emits one canonical `corresp` per distinct verse.
+Subsequent occurrences retain their own words with a biblical `source` pointer:
+English I Chronicles 16:31 changes punctuation; Hebrew Psalm 20:10 has a meteg in
+`הַמֶּֽלֶךְ` on 57 but not on 55. The occurrences are not silently harmonized.
+Reader labels are outside the verse segments and appear only on the Hebrew side.
+
+Inline transclusion of these segments currently fails the parallel compiler's
+structural-frame reconstruction; citation pointers allow this installment to retain
+biblical identity and paragraph alignment without changing the compiler. They identify
+repeated scripture but do not create second canonical mappings or force an identical
+reading. That implementation limitation is separate from the textual variation.
+
+### Reading and verification
+
+Read the scan first, including enlarged details, then compare resolved Wikisource
+slices. The comparison is stored by passage (`transcription/*_51_58.txt`), since the
+spans run across printed page turns. Verdicts and tallies are in the usual code-side
+locations. The first reading's full/defective spellings and pointing were corrected
+against the enlarged images; the retained `קִרְאוֹ` at Hodu's beginning is what the
+print shows, despite the expected shuruq. The raw reading preserves the book rather
+than correcting it to another Bible edition.
+
+The Hebrew page starts the Psalm 100 omission rubric; its facing English page repeats
+it. The conditional excludes 9 Tishri, 14 Nisan, and the conjunction of Pesaḥ and
+Ḥol ha-Mo‘ed. It does not incorrectly exclude Ḥol ha-Mo‘ed Sukkot. Compilation checks
+cover all three exclusions plus an ordinary weekday and Ḥol ha-Mo‘ed Sukkot.
+
+The excerpt's primary and parallel bodies match their raw readings: 679 Hebrew and
+1,306 English whitespace-delimited words, seven commentary notes, and no Ashrei or
+Mourners’ Kaddish. Psalm 100 retains its complete biblical identity while its English
+superscription starts on a separate line. The page turn inside English “for-ever”
+is encoded inside the joined word “forever”. XML and URN validation pass.
+
+Use the `feat_birnbaum-hodu` worktrees in all three repositories. The generated excerpt
+is `output/birnbaum_hodu/parallel.pdf`; `output/birnbaum_parallel.pdf` is the complete
+encoded book so far. Both use `specs/birnbaum_scan/settings_undecided.yaml`.
+The environment's sandbox prevented running the schema container and snap-packaged uv;
+validation used the main checkout's compiled schemas after confirming identical ODD
+source, and its existing Python environment with imports from the new worktree.
+
+From the new code worktree, regenerate with:
+
+```bash
+W=../../opensiddur-projects/feat_birnbaum-hodu/project
+O=../../output/birnbaum_hodu
+uv run python -m opensiddur.importer.birnbaum_scan.build.build_he --project-directory "$W"
+uv run python -m opensiddur.importer.birnbaum_scan.build.build_en --project-directory "$W"
+uv run python -m opensiddur.exporter.refdb --project-directory "$W"
+uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
+  -f chol_shacharit_pesukei_dezimra.xml -s specs/birnbaum_scan/settings_undecided.yaml \
+  --project-directory "$W" -o "$O/parallel.xml"
+uv run python -m opensiddur.exporter.pdf.pdf "$O/parallel.xml" "$O/parallel.pdf" \
+  -s specs/birnbaum_scan/settings_undecided.yaml --project-directory "$W"
+```
+
+For the entire book, compile `index.xml` instead of the excerpt filename.

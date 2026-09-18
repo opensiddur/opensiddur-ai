@@ -420,18 +420,45 @@ def unit_body_birchot(project, by_name):
     return "\n".join(lines)
 
 
-def unit_body_pesukei(project, by_name):
-    """The reviewed opening only: Psalm 30 through Barukh sheamar, before Hodu."""
+def unit_body_opening(project, by_name):
+    """Psalm 30 and Mourners’ Kaddish precede Pesukei dezimrah."""
     he = project == PROJECT_HE
-    lines = [f'<tei:div corresp="{S}chol/shacharit/pesukei_dezimra">',
-             declaration(),
+    lines = [f'<tei:div corresp="{S}chol/shacharit/opening">', declaration(),
              '<tei:head xml:lang="he">תְּפִלַּת שַׁחֲרִית</tei:head>' if he else
              '<tei:head xml:lang="en">MORNING SERVICE</tei:head>']
     _transclude(lines, by_name, "mizmor_shir_chanukat_habayit")
     lines.append('<tei:head xml:lang="en">MOURNERS’ KADDISH</tei:head>')
     _transclude(lines, by_name, "kaddish_yatom")
-    _transclude(lines, by_name, "hareni_mezamen")
-    _transclude(lines, by_name, "barukh_sheamar")
+    lines += ['<j:endDeclare target="#unit_service"/>', '</tei:div>']
+    return "\n".join(lines)
+
+
+def todah_condition():
+    """The three omissions printed on 55–56; Hebrew months use Nisan=1."""
+    def date(month, day):
+        return (f'<tei:fs type="opensiddur:hebrew-date">'
+                f'<tei:f name="month"><tei:numeric value="{month}"/></tei:f>'
+                f'<tei:f name="day"><tei:numeric value="{day}"/></tei:f></tei:fs>')
+    return cond('cond_mizmor_letodah', negate=True,
+                note=('The following psalm is omitted on '
+                      '<tei:foreign xml:lang="he-Latn">Erev Yom Kippur</tei:foreign>, '
+                      '<tei:foreign xml:lang="he-Latn">Erev Pesaḥ</tei:foreign> and '
+                      '<tei:foreign xml:lang="he-Latn">Ḥol ha-Mo‘ed Pesaḥ</tei:foreign>.'),
+                fs=date(7, 9) + date(1, 14) + '<j:all>' +
+                feature(AGG, 'chol-hamoed') +
+                feature(HOL, 'pesah', '<tei:numeric value="1" max="8"/>') + '</j:all>')
+
+
+def unit_body_pesukei(project, by_name):
+    """Hareni mezamen through Yehi khevod; Ashrei is not yet encoded."""
+    lines = [f'<tei:div corresp="{S}chol/shacharit/pesukei_dezimra">', declaration()]
+    for name in ('hareni_mezamen', 'barukh_sheamar', 'hodu', 'romemu',
+                 'vehu_rahum', 'hoshia_et_amekha'):
+        _transclude(lines, by_name, name)
+    lines.append(todah_condition())
+    _transclude(lines, by_name, 'mizmor_letodah')
+    lines.append(endcond('cond_mizmor_letodah'))
+    _transclude(lines, by_name, 'yehi_khevod')
     lines += ['<j:endDeclare target="#unit_service"/>', '</tei:div>']
     return "\n".join(lines)
 
@@ -454,9 +481,13 @@ def units(project, pages, by_name, amidah_body):
              body=unit_body_birchot(project, by_name),
              title_he="בִּרְכוֹת הַשַּֽׁחַר", title_en="Preliminary morning service",
              urn=f"{S}all/shacharit/birchot_hashachar", pages=pages["birchot"]),
+        dict(name="chol_shacharit_opening",
+             body=unit_body_opening(project, by_name),
+             title_he="תְּפִלַּת שַׁחֲרִית", title_en="Morning service opening",
+             urn=f"{S}chol/shacharit/opening", pages=pages["opening"]),
         dict(name="chol_shacharit_pesukei_dezimra",
              body=unit_body_pesukei(project, by_name),
-             title_he="תְּפִלַּת שַׁחֲרִית", title_en="Morning service (through Barukh sheamar)",
+             title_he="פְּסוּקֵי דְזִמְרָה", title_en="Verses of praise (before Ashrei)",
              urn=f"{S}chol/shacharit/pesukei_dezimra", pages=pages["pesukei"]),
         dict(name="chol_shacharit_amidah", body=amidah_body,
              title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",
@@ -485,7 +516,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "pesukei": (49, 51), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "opening": (49, 51), "pesukei": (51, 57), "amidah": (81, 97)}
 
 
 def unit_body():
