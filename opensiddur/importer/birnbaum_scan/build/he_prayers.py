@@ -205,7 +205,7 @@ prayer("amidah_shanim", "בִּרְכַּת הַשָּׁנִים", "amidah/shani
          fs=feature(AGG, "tal-umatar")),
     d(U + "amidah/shanim/vetein_tal_umatar", "וְתֵן טַל וּמָטָר לִבְרָכָה", indent=10),
     endcond("cond_shanim_tal_umatar"),
-    d(U + "amidah/shanim/al_penei_haadamah", "עַל פְּנֵי הָאֲדָמָה, וְשַׂבְּעֵֽנוּ מִטּוּבֶֽךָ, וּבָרֵךְ שְׁנָתֵֽנוּ כַּשָּׁנִים הַטּוֹבוֹת. "
+    d(U + "amidah/shanim/al_penei_haadamah", "עַל פְּנֵי הָאֲדָמָה, וְשַׂבְּעֵֽנוּ מִטּוּבָהּ, וּבָרֵךְ שְׁנָתֵֽנוּ כַּשָּׁנִים הַטּוֹבוֹת. "
             "בָּרוּךְ אַתָּה, יְיָ, מְבָרֵךְ הַשָּׁנִים.", indent=10),
     "        </tei:div>"]))
 

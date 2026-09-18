@@ -51,7 +51,7 @@ APPARATUS = {
                           slug="birnbaum_1949/birchot_hashachar",
                           title="Notes on Birkhoth ha-Shaḥar", first=3, last=47),
     "notes_amidah": dict(entries=apparatus.AMIDAH_NOTES, slug="birnbaum_1949/amidah",
-                         title="Notes on the weekday morning Amidah", first=81, last=97),
+                         title="Notes on the weekday morning Amidah", first=81, last=98),
 }
 
 
@@ -64,14 +64,7 @@ def unit_body():
         if name == "amidah_qedushah":
             lines.append('        <tei:head xml:lang="en">KEDUSHAH</tei:head>')
         lines.append(f'        <j:transclude type="external" target="{BY_NAME[name]["urn"]}"/>')
-    lines.append(cond("cond_unit_hallel",
-                      note="Hallel (page 566) is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.",
-                      fs="\n".join(["          <j:any>",
-                                    feature("opensiddur:holiday", "rosh-hodesh", '<tei:numeric value="1" max="2"/>'),
-                                    feature(AGG, "chol-hamoed"),
-                                    feature("opensiddur:holiday", "hanukkah", '<tei:numeric value="1" max="8"/>'),
-                                    "          </j:any>"])))
-    lines.append(endcond("cond_unit_hallel"))
+    lines.append('        <tei:note type="instruction" xml:lang="en">Hallel (page 566) is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.</tei:note>')
     lines.append('        <tei:div>')
     lines.append('          <tei:head xml:lang="en">ABRIDGED SHEMONEH ESREH</tei:head>')
     lines.append('          <tei:note type="instruction" xml:lang="en">Used when one is unable to recite the complete Amidah</tei:note>')

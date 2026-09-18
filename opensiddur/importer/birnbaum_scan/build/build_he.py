@@ -538,14 +538,7 @@ def unit_body():
             lines.append('        <tei:head xml:lang="en">KEDUSHAH</tei:head>')
         lines.append(f'        <j:transclude type="external" target="{BY_NAME[name]["urn"]}"/>')
     # A cross-reference rubric: it names a page in this book and governs nothing here.
-    lines.append(cond("cond_unit_hallel",
-                      note="Hallel (page 565) is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.",
-                      fs="\n".join(["          <j:any>",
-                                    feature("opensiddur:holiday", "rosh-hodesh", '<tei:numeric value="1" max="2"/>'),
-                                    feature(AGG, "chol-hamoed"),
-                                    feature("opensiddur:holiday", "hanukkah", '<tei:numeric value="1" max="8"/>'),
-                                    "          </j:any>"])))
-    lines.append(endcond("cond_unit_hallel"))
+    lines.append('        <tei:note type="instruction" xml:lang="en">Hallel (page 565) is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.</tei:note>')
     lines.append('        <tei:div>')
     lines.append('          <tei:head xml:lang="en">ABRIDGED SHEMONEH ESREH</tei:head>')
     lines.append('          <tei:note type="instruction" xml:lang="en">Used when one is unable to recite the complete Amidah</tei:note>')
