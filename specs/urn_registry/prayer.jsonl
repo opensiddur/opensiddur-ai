@@ -1,3 +1,6 @@
+{"urn": "urn:x-opensiddur:text:prayer:ahavah_rabbah", "status": "canonical", "label_en": "ahavah rabbah"}
+{"urn": "urn:x-opensiddur:text:prayer:ahavah_rabbah/ahavah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:ahavah_rabbah", "label_en": "ahavah rabbah / ahavah"}
+{"urn": "urn:x-opensiddur:text:prayer:ahavah_rabbah/vahavienu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:ahavah_rabbah", "label_en": "ahavah rabbah / vahavienu"}
 {"urn": "urn:x-opensiddur:text:prayer:akedah", "status": "canonical", "label_he": "פָּרָשַׁת הָעֲקֵדָה", "label_en": "The binding of Isaac"}
 {"urn": "urn:x-opensiddur:text:prayer:akedah/ribbono_shel_olam", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:akedah", "label_he": "רִבּוֹנוֹ שֶׁל עוֹלָם", "label_en": "Master of the world, may it be thy will"}
 {"urn": "urn:x-opensiddur:text:prayer:al_achilat_matzah", "status": "canonical"}
@@ -213,6 +216,10 @@
 {"urn": "urn:x-opensiddur:text:prayer:atah_hu/bashamayim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "אַתָּה הוּא בַּשָּׁמַֽיִם וּבָאָֽרֶץ", "label_en": "Thou, Lord our God, art in heaven and on earth"}
 {"urn": "urn:x-opensiddur:text:prayer:atah_hu/uvishuatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "וּבִישׁוּעָתְךָ תָּרוּם", "label_en": "May our strength rise and be exalted"}
 {"urn": "urn:x-opensiddur:text:prayer:aval_anachnu", "status": "canonical", "label_he": "אֲבָל אֲנַֽחְנוּ עַמְּךָ", "label_en": "However, we are thy people"}
+{"urn": "urn:x-opensiddur:text:prayer:barekhu", "status": "canonical", "label_en": "barekhu"}
+{"urn": "urn:x-opensiddur:text:prayer:barekhu/call", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:barekhu", "label_en": "barekhu / call"}
+{"urn": "urn:x-opensiddur:text:prayer:barekhu/response", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:barekhu", "label_en": "barekhu / response"}
+{"urn": "urn:x-opensiddur:text:prayer:barekhu/yitbarakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:barekhu", "label_en": "barekhu / yitbarakh"}
 {"urn": "urn:x-opensiddur:text:prayer:berakhah_acharonah", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:berakhah_acharonah/al_hagefen", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:berakhah_acharonah"}
 {"urn": "urn:x-opensiddur:text:prayer:bfi_yesharim", "status": "canonical"}
@@ -285,6 +292,16 @@
 {"urn": "urn:x-opensiddur:text:prayer:eizehu_mekoman/8", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:eizehu_mekoman", "label_he": "אֵיזֶֽהוּ מְקוֹמָן ח", "label_en": "Zevaḥim 5:8"}
 {"urn": "urn:x-opensiddur:text:prayer:elohai_neshamah", "status": "canonical", "label_en": "Elohai Neshamah", "label_he": "אֱלֹהַי נְשָׁמָה"}
 {"urn": "urn:x-opensiddur:text:prayer:elu_devarim", "status": "canonical", "label_en": "Elu Devarim (Mishnah Peah 1:1; Shabbath 127a)", "label_he": "אֵֽלּוּ דְבָרִים"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv", "status": "canonical", "label_en": "emet veyatziv"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/adonai_yimlokh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / adonai yimlokh"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/al_harishonim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / al harishonim"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/al_zot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / al zot"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/emet", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / emet"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/ezrat", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / ezrat"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/mi_khamokha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / mi khamokha"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/moshe", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / moshe"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/shirah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / shirah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veyatziv/tzur_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:emet_veyatziv", "label_en": "emet veyatziv / tzur yisrael"}
 {"urn": "urn:x-opensiddur:text:prayer:ha_el_btaatzumot", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel/psalm_113", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
@@ -372,6 +389,7 @@
 {"urn": "urn:x-opensiddur:text:prayer:shehecheyanu", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:shema", "status": "canonical", "label_he": "שְׁמַע", "label_en": "The Shema"}
 {"urn": "urn:x-opensiddur:text:prayer:shema/barukh_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_he": "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד"}
+{"urn": "urn:x-opensiddur:text:prayer:shema/el_melekh_neeman", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_en": "shema / el melekh neeman"}
 {"urn": "urn:x-opensiddur:text:prayer:shema/shema_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:shema", "label_he": "שְׁמַע יִשְׂרָאֵל", "label_en": "Deuteronomy 6:4"}
 {"urn": "urn:x-opensiddur:text:prayer:shokhen_ad", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:tallith", "status": "canonical", "label_en": "Putting on the tallith", "label_he": "סֵֽדֶר עֲטִיפַת טַלִּית"}
@@ -406,3 +424,14 @@
 {"urn": "urn:x-opensiddur:text:prayer:yeladim", "status": "canonical", "label_he": "לִילָדִים", "label_en": "Texts the book prints for children, in the form it prints for them"}
 {"urn": "urn:x-opensiddur:text:prayer:yeladim/elohai_netzor", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yeladim", "label_he": "אֱלֹהַי נְצֹר", "label_en": "The abridged meditation printed for children; not amidah/elohai_netzor, which is a longer text"}
 {"urn": "urn:x-opensiddur:text:prayer:yishtabach", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or", "status": "canonical", "label_en": "yotzer or"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/barukh_kevod", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / barukh kevod"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/el_barukh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / el barukh"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/et_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / et shem"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/hameir", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / hameir"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/lael_barukh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / lael barukh"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / opening"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/or_hadash", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / or hadash"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/qadosh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / qadosh"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/titbarakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / titbarakh"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/vehaofanim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / vehaofanim"}

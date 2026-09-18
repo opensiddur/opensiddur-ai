@@ -38,6 +38,7 @@ SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
 SIGIL_YELADIM = "1949 all/shacharit/yeladim"
 SIGIL_BIRCHOT = "1949 all/shacharit/birchot_hashachar"
 SIGIL_PESUKEI = "1949 chol/shacharit/pesukei_dezimra"
+SIGIL_SHEMA = "1949 chol/shacharit/shema"
 FRONT_SIGIL = "1949"
 
 PRAYER = "urn:x-opensiddur:text:prayer:"
@@ -61,7 +62,7 @@ LEAF_OFFSET = -1
 #: The +25 offset in fact holds for every numbered page in the book. The table is kept to
 #: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
 #: deep-linking a leaf nobody has looked at.
-SCAN_PAGE = {p: p + 25 for p in (*range(1, 71), *range(81, 99))}
+SCAN_PAGE = {p: p + 25 for p in range(1, 99)}
 
 
 def leaf(page) -> int:
