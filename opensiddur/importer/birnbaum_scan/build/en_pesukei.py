@@ -78,3 +78,6 @@ prayer('barukh_sheamar', 'Blessed be he who spoke', 'pesukei_dezimra/barukh_shea
 # Continuing the scan through the paragraph before Ashrei.
 from .pesukei_passages import prayers
 PRAYERS += prayers("en")
+
+from .pesukei_completion import prayers as completion_prayers
+PRAYERS += completion_prayers("en")

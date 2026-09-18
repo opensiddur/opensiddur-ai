@@ -924,3 +924,55 @@ uv run python -m opensiddur.exporter.pdf.pdf "$O/parallel.xml" "$O/parallel.pdf"
 ```
 
 For the entire book, compile `index.xml` instead of the excerpt filename.
+
+## Ashrei through Half Kaddish: printed 57–70, IA n81–n94
+
+The weekday Pesukei dezimrah wrapper now runs from Hareni mezamen through the
+concluding Half Kaddish, inclusive. The preceding Mourners’ Kaddish remains in the
+opening file. The next unencoded passage begins on printed 71–72.
+
+`pesukei_completion_data.py` records the paired scan readings; `pesukei_completion.py`
+builds their biblical mappings and printed order. Ashrei contains Psalms 84:5 and
+144:15, the complete Psalm 145, and Psalm 115:18. Psalms 145–150 each have a chapter
+URN containing all their verse URNs, with the Psalm 145 superscription inside verse
+1. The remaining scripture uses verse URNs in Psalms, I Chronicles, Nehemiah,
+Exodus, Obadiah and Zechariah. Composite liturgical arrangements use the siddur
+namespace; Yishtabach and Half Kaddish use their prayer URNs.
+
+Repeated scripture retains occurrence-specific text and a biblical `source` pointer.
+The repeated Psalm 150:6 sits outside the complete chapter mapping; it is printed
+only in Hebrew, so the English retains an empty corresponding division. Exodus
+15:18 occurs twice in both languages; the Hebrew first occurrence spells לעֹלם
+without vav and the repetition spells לעולם with vav. The preceding Yehi khevod
+already defines the verse's canonical mapping. Nehemiah 9:8 retains a line break
+before וכרות inside the same verse; Birnbaum's note explains the paragraph division
+and the circumcision custom. No additional calendar condition is inferred from it.
+
+Half Kaddish reuses the three shared Kaddish segments, including the standardized
+Ten Days instruction and a conditional around only the second לעילא. Compilation
+for 2026-01-15 yields one occurrence; 2026-09-16 yields two. Neither dated result
+contains unresolved conditions or page breaks from the earlier Kaddish printing.
+
+The page readings complete the previously partial 57–58 files and add 59–70 in
+both languages. Enlarged scan bands were checked against the later Wikisource
+comparison; the stored comparison slices, verdicts, and accuracy report document
+the retained differences. Nineteen additional apparatus entries preserve the
+printed commentary and numbered scripture references.
+
+Verification: both projects validate; the URN registry has no errors or warnings;
+each complete psalm has exactly its expected verses; the compiled wrapper contains
+26 commentary notes. Its body matches the page readings (1,823 Hebrew and 3,524
+English whitespace-delimited words), after removing the printed conditional's
+literal parentheses. Focused importer tests pass (177 tests, 286 subtests).
+
+Use the `feat_birnbaum-ashrei` worktrees in all three repositories. The review
+excerpt is `output/birnbaum_ashrei/parallel.pdf`, and the entire encoded book is
+`output/birnbaum_ashrei/full_parallel.pdf`. Build and compile commands are as in
+the preceding installment, substituting these worktree/output paths; compile
+`index.xml` for the full book. All previews use `settings_undecided.yaml`.
+
+Visual review: the excerpt is 16 pages including metadata. Its Kaddish shows one
+pair of brackets around only the added לעילא. The exporter aligns enclosing
+passages, so English Psalm 145 continues below its Hebrew counterpart. Adjacent
+commentary/reference markers at the same Ashrei anchor overlap in this preview;
+both notes themselves are present and legible. This remains a rendering limitation.

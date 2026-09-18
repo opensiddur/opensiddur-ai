@@ -450,7 +450,7 @@ def todah_condition():
 
 
 def unit_body_pesukei(project, by_name):
-    """Hareni mezamen through Yehi khevod; Ashrei is not yet encoded."""
+    """Hareni mezamen through the concluding Half Kaddish."""
     lines = [f'<tei:div corresp="{S}chol/shacharit/pesukei_dezimra">', declaration()]
     for name in ('hareni_mezamen', 'barukh_sheamar', 'hodu', 'romemu',
                  'vehu_rahum', 'hoshia_et_amekha'):
@@ -459,6 +459,9 @@ def unit_body_pesukei(project, by_name):
     _transclude(lines, by_name, 'mizmor_letodah')
     lines.append(endcond('cond_mizmor_letodah'))
     _transclude(lines, by_name, 'yehi_khevod')
+    from .pesukei_completion import ORDER
+    for name in ORDER:
+        _transclude(lines, by_name, name)
     lines += ['<j:endDeclare target="#unit_service"/>', '</tei:div>']
     return "\n".join(lines)
 
@@ -516,7 +519,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "opening": (49, 51), "pesukei": (51, 57), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "opening": (49, 51), "pesukei": (51, 69), "amidah": (81, 97)}
 
 
 def unit_body():

@@ -563,3 +563,172 @@ The review corrected full/defective spellings, punctuation and stress marks in t
 | vowels | 5 | 5 | 0 | 0 |
 
 137 words read.
+
+## Ashrei through Half Kaddish (printed 57–70, IA n81–n94)
+
+The Hebrew and English were read from the images before the Hebrew Wikisource comparison. Enlarged bands resolved spelling, stress marks and punctuation. The comparison corrected full/defective spellings in Psalms 145–147 and Nehemiah 9, among other first-pass pointing errors. The retained differences include the repeated closing verses (Psalm 150:6 and Exodus 15:18), qamats versus qamats qatan, punctuation, and the missing sin dot in the transcription’s Psalm 145:9. The first Exodus 15:18 has defective לעֹלם; the repetition has plene לעולם. Psalm 150:6 is printed twice in Hebrew and only once in English. The existing shared Kaddish was separately checked against printed 69–70; its conditional replaces the literal parentheses.
+
+
+### ashrei_prefix
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 0 | 0 | 0 | 0 |
+
+14 words read.
+
+
+### psalm_145
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 19 | 19 | 0 | 0 |
+
+152 words read.
+
+
+### ashrei_suffix
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+7 words read.
+
+
+### psalm_146
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+83 words read.
+
+
+### psalm_147
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+139 words read.
+
+
+### psalm_148
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 11 | 11 | 0 | 0 |
+
+109 words read.
+
+
+### psalm_149
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 2 | 2 | 0 | 0 |
+
+61 words read.
+
+
+### psalm_150
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 5 | 5 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+40 words read.
+
+
+### barukh_adonai
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 1 | 1 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 2 | 2 | 0 | 0 |
+
+30 words read.
+
+
+### vayevarekh_david
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+56 words read.
+
+
+### atah_hu
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 6 | 6 | 0 | 0 |
+
+111 words read.
+
+
+### vayosha
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 0 | 0 | 0 | 0 |
+
+33 words read.
+
+
+### az_yashir
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 4 | 4 | 0 | 0 |
+| vowels | 2 | 2 | 0 | 0 |
+
+183 words read.
+
+
+### ki_ladonai
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 1 | 1 | 0 | 0 |
+
+29 words read.
+
+
+### yishtabach
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 0 | 0 | 0 | 0 |
+
+53 words read.
