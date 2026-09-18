@@ -976,3 +976,61 @@ pair of brackets around only the added לעילא. The exporter aligns enclosing
 passages, so English Psalm 145 continues below its Hebrew counterpart. Adjacent
 commentary/reference markers at the same Ashrei anchor overlap in this preview;
 both notes themselves are present and legible. This remains a rendering limitation.
+
+## Shema and its blessings: printed 71–82, IA n95–n106
+
+The weekday morning service now continues from Half Kaddish through Barekhu,
+Yotzer or, Ahavah rabbah, Shema and Emet veyatziv, ending at Gaal Yisrael before
+the existing Amidah instructions. `chol_shacharit_shema.xml` is a separate unit
+between Pesukei dezimrah and the Amidah. The obsolete “before Ashrei” subtitle
+has also been removed from the completed Pesukei unit's metadata.
+
+`shema_data.py` contains the paired scan readings; `shema.py` builds the five
+prayer files and wrapper. All twenty verses of Deuteronomy 6:4–9, 11:13–21 and
+Numbers 15:37–41 have biblical URNs. The concluding Exodus quotations retain
+occurrence-specific wording and biblical source pointers, since their canonical
+mappings already occur in Pesukei dezimrah. The Kedushah responses cite their
+partial Bible verses without claiming the entire verses. Barukh shem reuses the
+existing prayer text inside an occurrence-specific siddur division, so its new
+commentary does not attach to the earlier recitations.
+
+Barekhu preserves the Reader, congregation-and-Reader and silent-meditation
+rubrics. Reader labels within the blessings remain where the scan prints them.
+El melekh neeman is conditional on `opensiddur:quorum/minyan = false`, as
+requested. The conditional is inside its paragraph: unknown minyan status shows
+the printed instruction and one bracket pair around only the addition. The
+book's surrounding parentheses are retained in the raw reading, not doubled in
+TEI. Compilation with minyan true omits the addition; false includes it. The
+Reader's three-word repetition is discussed in Birnbaum's commentary but is not
+separately printed in the body; the encoding does not invent another occurrence.
+
+Page breaks include the English division inside “compassionate.” Printed 81's
+Hebrew raw reading is completed before its existing Amidah portion; the new
+English 82 raw file contains only this installment's pre-Amidah text. Sixteen
+apparatus entries preserve the commentary and numbered references. Enlarged
+scan bands were used to decide the later Wikisource comparison; passage slices,
+verdicts and measurements are recorded alongside previous installments.
+
+Checks: the new files and both indexes pass RelaxNG/Schematron validation; the
+URN registry has no errors or warnings. Compiled bodies match the scan readings
+(952 Hebrew and 1,827 English whitespace-delimited words), all twenty Torah
+verses are present in order, and all sixteen apparatus notes survive compilation.
+Both minyan settings resolve correctly. The focused importer suite passes
+177 tests and 302 subtests; its existing unit-order expectation includes Shema.
+
+Worktrees in all three repositories: `feat_birnbaum-shema`. Build commands are
+as above with that worktree name. Compile `chol_shacharit_shema.xml` for the
+excerpt or `index.xml` for the whole book. The previews are
+`output/birnbaum_shema/parallel.pdf` and
+`output/birnbaum_shema/full_parallel.pdf`, using `settings_undecided.yaml`.
+As before, validation uses copied compiled schemas after verifying identical ODD
+source, because the local schema container cannot start in this sandbox.
+
+Visual review: the excerpt is ten pages including metadata. The private addition
+has one bracket pair in each language and the excerpt ends at Gaal Yisrael.
+Existing exporter limitations remain visible: enclosing prayer alignment leaves
+unequal column lengths, and multiple apparatus markers at one anchor can overlap.
+The note bodies are present; those rendering issues are not new encoding rules.
+The regenerated full parallel is 88 pages, also copied to
+`output/birnbaum_parallel.pdf`. Each new prayer is transcluded once in the full
+book; Shema's compiled division is split around its shared Barukh shem transclusion.

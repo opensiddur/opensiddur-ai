@@ -20,4 +20,6 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/vehu_rahum", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra", "status": "canonical", "label_en": "Collected verses beginning Vehu rahum"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra", "status": "canonical", "label_en": "Collected verses beginning Yehi khevod"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod/adonai_melekh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod", "status": "canonical", "label_en": "The Lord is King; the Lord was King"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/shema", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "label_en": "chol / shacharit / shema"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/shema/barukh_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/shema", "label_en": "chol / shacharit / shema / barukh shem"}
 {"urn": "urn:x-opensiddur:text:siddur:siddur", "status": "canonical", "label_en": "The Complete Siddur"}

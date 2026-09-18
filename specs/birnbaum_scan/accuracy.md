@@ -732,3 +732,62 @@ The Hebrew and English were read from the images before the Hebrew Wikisource co
 | vowels | 0 | 0 | 0 | 0 |
 
 53 words read.
+
+## Shema and its blessings (printed 71–82, IA n95–n106)
+
+The first reading was entered from the scans before consulting Wikisource. Enlarged bands settled differences in spelling, dagesh, meteg and punctuation. Retained differences include defective זמרות, plene לעולם at the closing Exodus quotation, and the absence of ישראל after תהילות לאל עליון. Qamats uses U+05B8, and holam on consonantal vav uses U+05B9, following the encoding of preceding installments. Logical shin dots and holam are both encoded even when the print combines their glyphs. Verse/paragraph whitespace and dash length also differ from the comparison transcription. The two Kedushah responses were checked directly against the images; this comparison omits them because their transcription is shared with the Amidah.
+
+
+### barekhu
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 3 | 3 | 0 | 0 |
+
+55 words read.
+
+
+### yotzer_or
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 1 | 1 | 0 | 0 |
+| vowels | 6 | 6 | 0 | 0 |
+
+256 words read.
+
+
+### ahavah_rabbah
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 0 | 0 | 0 | 0 |
+| vowels | 6 | 6 | 0 | 0 |
+
+103 words read.
+
+
+### shema
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 1 | 1 | 0 | 0 |
+| consonants | 1 | 1 | 0 | 0 |
+| vowels | 15 | 15 | 0 | 0 |
+
+248 words read.
+
+
+### emet_veyatziv
+
+| bucket | total | print | reading | unresolved |
+|---|---:|---:|---:|---:|
+| whitespace | 0 | 0 | 0 | 0 |
+| consonants | 2 | 2 | 0 | 0 |
+| vowels | 2 | 2 | 0 | 0 |
+
+277 words read.

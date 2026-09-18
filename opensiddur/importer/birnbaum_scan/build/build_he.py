@@ -17,11 +17,13 @@ from .he_akedah import PRAYERS as AKEDAH_PRAYERS
 from .he_korbanot import PRAYERS as KORBANOT_PRAYERS
 from .he_ishmael import PRAYERS as ISHMAEL_PRAYERS
 from .he_pesukei import PRAYERS as PESUKEI_PRAYERS
+from .shema import prayers as shema_prayers
+SHEMA_PRAYERS = shema_prayers("he")
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -475,6 +477,7 @@ def units(project, pages, by_name, amidah_body):
     The two projects foliate differently -- the Hebrew is on 1 and 81-97, the English on
     2 and 82-98 -- which is the same thing the Amidah already does across an opening.
     """
+    from .shema import unit_body as shema_body
     return (
         dict(name="all_shacharit_yeladim",
              body=unit_body_yeladim(YELADIM_HEAD[project], by_name),
@@ -490,8 +493,11 @@ def units(project, pages, by_name, amidah_body):
              urn=f"{S}chol/shacharit/opening", pages=pages["opening"]),
         dict(name="chol_shacharit_pesukei_dezimra",
              body=unit_body_pesukei(project, by_name),
-             title_he="פְּסוּקֵי דְזִמְרָה", title_en="Verses of praise (before Ashrei)",
+             title_he="פְּסוּקֵי דְזִמְרָה", title_en="Verses of praise",
              urn=f"{S}chol/shacharit/pesukei_dezimra", pages=pages["pesukei"]),
+        dict(name="chol_shacharit_shema", body=shema_body(project, by_name),
+             title_he="קְרִיאַת שְׁמַע וּבִרְכוֹתֶיהָ", title_en="Shema and its blessings",
+             urn=f"{S}chol/shacharit/shema", pages=pages["shema"]),
         dict(name="chol_shacharit_amidah", body=amidah_body,
              title_he="תְּפִלַּת הָעֲמִידָה לְשַׁחֲרִית בְּחוֹל",
              title_en="The weekday morning Amidah",
@@ -519,7 +525,7 @@ ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedus
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "opening": (49, 51), "pesukei": (51, 69), "amidah": (81, 97)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "opening": (49, 51), "pesukei": (51, 69), "shema": (71, 81), "amidah": (81, 97)}
 
 
 def unit_body():
