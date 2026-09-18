@@ -164,10 +164,10 @@ class TestEveryNoteIsWellFormedAndKeyed(unittest.TestCase):
         return (notes_data.YELADIM_NOTES + notes_data.BIRCHOT_NOTES
                 + notes_data.AMIDAH_NOTES)
 
-    def test_eighty_four_notes_are_encoded(self):
-        # 86 read; two annotate Mi Khamokha and Adonai Yimlokh, in the Ge'ulah blessing of
-        # the Shema, which these projects do not hold. The count is what says so.
-        self.assertEqual(len(self.all_notes()), 84)
+    def test_eighty_five_notes_are_encoded(self):
+        # The original 84 notes plus the recovered Havineinu commentary (printed 97).
+        # Shema and Pesukei de-Zimra have separate apparatus inventories.
+        self.assertEqual(len(self.all_notes()), 85)
 
     def test_every_note_targets_a_urn_and_never_an_id(self):
         for entry in self.all_notes():

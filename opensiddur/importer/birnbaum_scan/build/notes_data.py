@@ -38,8 +38,8 @@ AMIDAH_NOTES = [
                 "<tei:hi rend=\"italic\">Shemoneh Esreh</tei:hi> consisted of eighteen blessings; "
                 "in its present form, however, there are nineteen. The addition of the paragraph "
                 "concerning the slanderers was made toward the end of the first century at the "
-                "direction of of Rabban Gamaliel II, head of the Sanhedrin of Yabneh. The Talmud "
-                "offers a variety of reasons fo the number eighteen. It corresponds to the "
+                "direction of Rabban Gamaliel II, head of the Sanhedrin of Yabneh. The Talmud "
+                "offers a variety of reasons for the number eighteen. It corresponds to the "
                 "eighteen times God is mentioned in Psalm 29 as well as in the <tei:hi "
                 "rend=\"italic\">Shema</tei:hi>. The three patriarchs, Abraham, Isaac and Jacob "
                 "are mentioned eighteen times in the Bible. This number also corresponds to the "
@@ -63,9 +63,9 @@ AMIDAH_NOTES = [
                 "xml:lang=\"he\">סליחה</tei:foreign>; 7) <tei:foreign "
                 "xml:lang=\"he\">גאולה</tei:foreign>; 8) <tei:foreign "
                 "xml:lang=\"he\">רפואה</tei:foreign>; 9) <tei:foreign xml:lang=\"he\">ברכת "
-                "השנים</tei:foreign>; 10); <tei:foreign xml:lang=\"he\">קבוץ גליות</tei:foreign> "
-                "11); <tei:foreign xml:lang=\"he\">ברכת משפט</tei:foreign>; 12) <tei:foreign "
-                "xml:lang=\"he\">ברכת המינים</tei:foreign> 13); <tei:foreign xml:lang=\"he\">ברכת "
+                "השנים</tei:foreign>; 10) <tei:foreign xml:lang=\"he\">קבוץ גליות</tei:foreign>; "
+                "11) <tei:foreign xml:lang=\"he\">ברכת משפט</tei:foreign>; 12) <tei:foreign "
+                "xml:lang=\"he\">ברכת המינים</tei:foreign>; 13) <tei:foreign xml:lang=\"he\">ברכת "
                 "צדיקים</tei:foreign>; 14) <tei:foreign xml:lang=\"he\">ברכת "
                 "ירושלים</tei:foreign>; 15) <tei:foreign xml:lang=\"he\">ברכת דוד</tei:foreign>; "
                 "16) <tei:foreign xml:lang=\"he\">תפלה</tei:foreign>; 17) <tei:foreign "
@@ -81,13 +81,13 @@ AMIDAH_NOTES = [
         target="urn:x-opensiddur:text:prayer:amidah/adonai_sefatai",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Psalm</tei:hi> 51:17"
+                "<tei:hi rend=\"italic\">Psalm</tei:hi> 51:17."
             )),
         ],
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/avot",
+        target="urn:x-opensiddur:text:prayer:amidah/avot/barukh_atah",
         lemma="אבות",
         paras=[
             dict(text=(
@@ -98,7 +98,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/avot",
+        target="urn:x-opensiddur:text:prayer:amidah/avot/zokhrenu",
         lemma="זכרנו",
         paras=[
             dict(text=(
@@ -110,7 +110,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/gevurot",
+        target="urn:x-opensiddur:text:prayer:amidah/gevurot/atah_gibor",
         lemma="גבורות",
         paras=[
             dict(text=(
@@ -121,7 +121,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/gevurot",
+        target="urn:x-opensiddur:text:prayer:amidah/gevurot/mashiv_haruach",
         lemma="משיב הרוח",
         paras=[
             dict(text=(
@@ -151,7 +151,7 @@ AMIDAH_NOTES = [
     dict(
         kind="citation",
         n="1",
-        target="urn:x-opensiddur:text:prayer:amidah/qedushah",
+        target="urn:x-opensiddur:text:prayer:amidah/qedushah/qadosh",
         paras=[
             dict(text=(
                 "<tei:hi rend=\"italic\">Isaiah</tei:hi> 6:3."
@@ -161,7 +161,7 @@ AMIDAH_NOTES = [
     dict(
         kind="citation",
         n="2",
-        target="urn:x-opensiddur:text:prayer:amidah/qedushah",
+        target="urn:x-opensiddur:text:prayer:amidah/qedushah/barukh_kevod",
         paras=[
             dict(text=(
                 "<tei:hi rend=\"italic\">Ezekiel</tei:hi> 3:12."
@@ -171,7 +171,7 @@ AMIDAH_NOTES = [
     dict(
         kind="citation",
         n="3",
-        target="urn:x-opensiddur:text:prayer:amidah/qedushah",
+        target="urn:x-opensiddur:text:prayer:amidah/qedushah/yimlokh",
         paras=[
             dict(text=(
                 "<tei:hi rend=\"italic\">Psalm</tei:hi> 146:10."
@@ -192,10 +192,10 @@ AMIDAH_NOTES = [
     dict(
         kind="citation",
         n="1",
-        target="urn:x-opensiddur:text:prayer:amidah/geulah",
+        target="urn:x-opensiddur:text:prayer:amidah/aneinu",
         paras=[
             dict(text=(
-                "<tei:hi rend=\"italic\">Isaiah</tei:hi> 65:24"
+                "<tei:hi rend=\"italic\">Isaiah</tei:hi> 65:24."
             )),
         ],
     ),
@@ -211,32 +211,32 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/avodah",
+        target="urn:x-opensiddur:text:prayer:amidah/avodah/retzeh",
         lemma="רצה",
         paras=[
             dict(text=(
                 ", as well as <tei:foreign xml:lang=\"he\">מודים</tei:foreign> and <tei:foreign "
-                "xml:lang=\"he\">שים שלום</tei:foreign>, was recited by the priests in the "
-                "Temple. However, the phrase \"restore the worship to thy sanctuary” could not be "
+                "xml:lang=\"he\">שים שלום</tei:foreign>, was daily recited by the priests in the "
+                "Temple. However, the phrase “restore the worship to thy sanctuary” could not be "
                 "used when the Temple was still in existence."
             )),
         ],
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/avodah",
+        target="urn:x-opensiddur:text:prayer:yaaleh_veyavo/elohenu_velohei",
         lemma="יעלה ויבוא",
         paras=[
             dict(text=(
                 "is mentioned in Sofrim 19:7, and is based on the following passage: “On your "
-                "feasts and new moon festivals you shall sound the trumpets...they will serve as "
-                "a reminder of you before your God\" (Numbers 10:10)."
+                "feasts and new moon festivals you shall sound the trumpets . . . they will serve as "
+                "a reminder of you before your God” (Numbers 10:10)."
             )),
         ],
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/hodaah",
+        target="urn:x-opensiddur:text:prayer:amidah/hodaah/modim",
         lemma="מודים",
         paras=[
             dict(text=(
@@ -248,7 +248,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/hodaah",
+        target="urn:x-opensiddur:text:prayer:amidah/hodaah/modim_derabbanan",
         lemma="מודים דרבנן",
         paras=[
             dict(text=(
@@ -309,6 +309,25 @@ AMIDAH_NOTES = [
         paras=[
             dict(text=(
                 "<tei:hi rend=\"italic\">Malachi</tei:hi> 3:4."
+            )),
+        ],
+    ),
+    dict(
+        kind="commentary",
+        target="urn:x-opensiddur:text:prayer:amidah/havinenu",
+        lemma="הביננו",
+        paras=[
+            dict(text=(
+                ', called <tei:foreign xml:lang="he">מעין שמונה עשרה</tei:foreign> '
+                '(“abstract of the <tei:hi rend="italic">Shemoneh Esreh</tei:hi>”), was composed '
+                'by Rabbi Samuel, one of the first generation of the Babylonian authors of the '
+                'Talmud, who lived in the third century. This prayer (Berakhoth 29a) is a synopsis '
+                'of the middle thirteen petitions of the <tei:hi rend="italic">Shemoneh Esreh</tei:hi>, '
+                'from <tei:foreign xml:lang="he">אתה חונן</tei:foreign> until '
+                '<tei:foreign xml:lang="he">רצה</tei:foreign>. When recited on urgent occasions, '
+                '<tei:foreign xml:lang="he">הביננו</tei:foreign> is preceded by the opening three '
+                'blessings and concluded by the last three blessings of the original '
+                '<tei:hi rend="italic">Shemoneh Esreh</tei:hi>.'
             )),
         ],
     ),
