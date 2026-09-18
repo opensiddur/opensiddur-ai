@@ -297,7 +297,8 @@ class TestUnitAssembly(unittest.TestCase):
 
         expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
                     "chol_shacharit_opening", "chol_shacharit_pesukei_dezimra",
-                    "chol_shacharit_shema", "chol_shacharit_amidah"]
+                    "chol_shacharit_shema", "chol_shacharit_amidah",
+                    "chol_shacharit_avinu_malkenu"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(

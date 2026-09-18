@@ -216,6 +216,58 @@
 {"urn": "urn:x-opensiddur:text:prayer:atah_hu/bashamayim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "אַתָּה הוּא בַּשָּׁמַֽיִם וּבָאָֽרֶץ", "label_en": "Thou, Lord our God, art in heaven and on earth"}
 {"urn": "urn:x-opensiddur:text:prayer:atah_hu/uvishuatkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:atah_hu", "label_he": "וּבִישׁוּעָתְךָ תָּרוּם", "label_en": "May our strength rise and be exalted"}
 {"urn": "urn:x-opensiddur:text:prayer:aval_anachnu", "status": "canonical", "label_he": "אֲבָל אֲנַֽחְנוּ עַמְּךָ", "label_en": "However, we are thy people"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu", "status": "canonical", "label_he": "אבינו מלכנו", "label_en": "Avinu Malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/al_teshivenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_baei", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_harugim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_imanu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_lemaanekha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_rachamekha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_shimkha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_tevuchim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/aseh_vehoshienu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/barekh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/batel_gezerot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/batel_machshevot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/chadesh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/chamol", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/chatanu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/chonenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/ein_lanu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/hachazirenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/hafer", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/harem_meshichekha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/harem_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/hatzmach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/inscriptions", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kaleh_dever", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kaleh_tzar", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kotvenu_chayim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kotvenu_geulah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kotvenu_parnasah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kotvenu_selichah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/kotvenu_zekhuyot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/male_asamenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/male_yadenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/mecheh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/mechoq", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/mena", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/neqom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/petach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/qabbel", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/qera", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/selach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/setom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/shelach", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/shema", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/tehe", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zekhor", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zokhrenu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zokhrenu_chayim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zokhrenu_geulah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zokhrenu_parnasah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zokhrenu_selichah", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
+{"urn": "urn:x-opensiddur:text:prayer:avinu_malkenu/zokhrenu_zekhuyot", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:avinu_malkenu"}
 {"urn": "urn:x-opensiddur:text:prayer:barekhu", "status": "canonical", "label_en": "barekhu"}
 {"urn": "urn:x-opensiddur:text:prayer:barekhu/call", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:barekhu", "label_en": "barekhu / call"}
 {"urn": "urn:x-opensiddur:text:prayer:barekhu/response", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:barekhu", "label_en": "barekhu / response"}
