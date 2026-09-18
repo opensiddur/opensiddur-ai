@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Weekday opening and verses of praise, printed 49–57, ending before Ashrei.
+"""Weekday opening and verses of praise, printed 49–69, through Half Kaddish.
 The new biblical passages are built by pesukei_passages; the preceding opening
 remains separate from the wrapper that begins at Hareni mezamen.
 """
@@ -65,6 +65,9 @@ prayer('barukh_sheamar', 'בָּרוּךְ שֶׁאָמַר', 'pesukei_dezimra/b
         d(U + "pesukei_dezimra/barukh_sheamar/yachid", 'יָחִיד, חֵי הָעוֹלָמִים, מֶֽלֶךְ, מְשֻׁבָּח וּמְפֹאָר עֲדֵי־עַד שְׁמוֹ הַגָּדוֹל. בָּרוּךְ אַתָּה, יְיָ, מֶֽלֶךְ מְהֻלָּל בַּתִּשְׁבָּחוֹת.'),
         "</tei:div>"]))
 
-# Continuing the scan through the paragraph before Ashrei.
+# Biblical passages before Ashrei.
 from .pesukei_passages import prayers
 PRAYERS += prayers("he")
+
+from .pesukei_completion import prayers as completion_prayers
+PRAYERS += completion_prayers("he")

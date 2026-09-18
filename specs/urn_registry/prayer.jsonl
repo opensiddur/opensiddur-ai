@@ -298,6 +298,7 @@
 {"urn": "urn:x-opensiddur:text:prayer:hamotzi", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:prayer:hareni_mezamen", "status": "canonical", "label_he": "הֲרֵינִי מְזַמֵּן", "label_en": "Preparation for the verses of praise"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish", "status": "canonical", "label_he": "קַדִּישׁ", "label_en": "Kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/chatzi", "parent": "urn:x-opensiddur:text:prayer:kaddish", "status": "canonical", "label_en": "Half Kaddish"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "status": "context", "note": "A grouping only. The Kaddish's paragraphs are addressed one at a time because the congregation answers between them."}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/al_yisrael", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "עַל יִשְׂרָאֵל וְעַל רַבָּנָן", "label_en": "We pray for Israel and for our teachers"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/derabbanan/oseh_shalom", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/derabbanan", "label_he": "עֹשֶׂה שָׁלוֹם בִּמְרוֹמָיו", "label_en": "He who creates peace in his celestial heights"}
