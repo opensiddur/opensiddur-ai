@@ -17,6 +17,7 @@ from opensiddur.exporter.external_compiler import (
     STRUCTURAL_BLOCKS,
     TEI_NS,
     ExternalCompilerProcessor,
+    _shared_split_points,
 )
 from opensiddur.exporter.linear import (
     LinearData,
@@ -379,8 +380,18 @@ class TestAssembleParallelStreams(unittest.TestCase):
             "the half-verses should not have suspended anything",
         )
 
-    def test_a_division_with_no_container_in_common_keeps_its_own_row(self):
-        """Folding only ever moves text onto a URN this side actually marks."""
+    def _assert_no_half_empty_row(self, rows):
+        """Both sides had content, so no row may face an empty cell."""
+        for i, (primary_text, parallel_text) in enumerate(rows):
+            self.assertTrue(primary_text.strip(), f"row {i} has an empty primary: {rows}")
+            self.assertTrue(parallel_text.strip(), f"row {i} has an empty parallel: {rows}")
+
+    def test_a_division_the_other_side_does_not_mark_is_not_a_row_boundary(self):
+        """Folding only ever moves text onto a URN both sides actually mark.
+
+        Neither of these URNs is one, so neither is a boundary: the two texts are set
+        against each other whole, which is the only correspondence declared.
+        """
         prim = self._transclude(
             "urn:o@orig", self._milestone("urn:v/9/a", unit="half-verse"), self._div("orphan"))
         par = self._transclude(
@@ -389,7 +400,148 @@ class TestAssembleParallelStreams(unittest.TestCase):
         result = self._assemble([prim], [par])
 
         rows = self._rows_by_corresp(result)
-        self.assertTrue(any("orphan" in row[0] for row in rows), rows)
+        self.assertEqual(len(rows), 1, rows)
+        self.assertIn("orphan", rows[0][0])
+        self.assertIn("elsewhere", rows[0][1])
+
+    def test_disjoint_milestone_sets_produce_one_row_with_both_columns(self):
+        """The Heidenheim Psalm 126 shape: the two sides divide on different URN axes.
+
+        The Hebrew is divided by biblical chapter and verse, the translation by haggadah
+        paragraph. Nothing is shared, so promoting either side's URNs to boundaries set the
+        whole psalm in rows facing nothing and printed the translation below the Hebrew
+        instead of beside it.
+        """
+        prim = self._transclude(
+            "urn:o@orig",
+            self._milestone("urn:x-opensiddur:text:bible:psalms/126", unit="chapter"),
+            self._milestone("urn:x-opensiddur:text:bible:psalms/126/1"),
+            self._div("hebrew-one"),
+            self._milestone("urn:x-opensiddur:text:bible:psalms/126/2"),
+            self._div("hebrew-two"),
+            self._milestone("urn:x-opensiddur:text:bible:psalms/126/3"),
+            self._div("hebrew-three"),
+        )
+        par = self._transclude(
+            "urn:o@trans",
+            self._milestone(
+                "urn:x-opensiddur:text:haggadah:barech/psalm_126/1", unit="paragraph"),
+            self._div("the whole translation"),
+        )
+
+        result = self._assemble([prim], [par])
+
+        assert_parallel_invariants(self, result)
+        rows = self._rows_by_corresp(result)
+        self.assertEqual(len(rows), 1, rows)
+        self._assert_no_half_empty_row(rows)
+        for verse in ("hebrew-one", "hebrew-two", "hebrew-three"):
+            self.assertIn(verse, rows[0][0])
+        self.assertIn("the whole translation", rows[0][1])
+
+    def test_a_side_with_no_milestones_at_all_pairs_with_the_whole_other_side(self):
+        """An undivided translation faces the whole of what it translates."""
+        prim = self._transclude(
+            "urn:o@orig",
+            self._milestone("urn:v/1"), self._div("one"),
+            self._milestone("urn:v/2"), self._div("two"),
+            self._milestone("urn:v/3"), self._div("three"),
+        )
+        par = self._transclude("urn:o@trans", self._div("undivided"))
+
+        result = self._assemble([prim], [par])
+
+        rows = self._rows_by_corresp(result)
+        self.assertEqual(len(rows), 1, rows)
+        self._assert_no_half_empty_row(rows)
+        self.assertIn("undivided", rows[0][1])
+
+    def test_a_one_sided_division_folds_inline_rather_than_trailing(self):
+        """The jps1917 parsha shape: one side marks a division the other has no notion of.
+
+        Parallel-only keys were ordered after every primary key, so such a milestone did not
+        merely get a row of its own — it got it at the end of the book.
+        """
+        prim = self._transclude(
+            "urn:o@orig",
+            self._milestone("urn:b/1"), self._div("orig-one"),
+            self._milestone("urn:b/2"), self._div("orig-two"),
+        )
+        par = self._transclude(
+            "urn:o@trans",
+            self._milestone("urn:b/1"), self._div("trans-one"),
+            self._milestone("urn:b/bereshit", unit="parsha"), self._div("parsha-text"),
+            self._milestone("urn:b/2"), self._div("trans-two"),
+        )
+
+        result = self._assemble([prim], [par])
+
+        assert_parallel_invariants(self, result)
+        rows = self._rows_by_corresp(result)
+        self.assertEqual(len(rows), 2, rows)
+        self._assert_no_half_empty_row(rows)
+        # The parsha text stays in the row of the shared division it falls under, and the
+        # last row is still the last shared division — nothing trails the text.
+        self.assertIn("parsha-text", rows[0][1])
+        self.assertIn("orig-two", rows[1][0])
+        self.assertIn("trans-two", rows[1][1])
+
+    def test_a_preamble_on_only_the_parallel_side_stays_first(self):
+        """Leading text belongs at the top of the block, not after every row of it."""
+        prim = self._transclude(
+            "urn:o@orig",
+            self._milestone("urn:v/1"), self._div("orig-one"),
+            self._milestone("urn:v/2"), self._div("orig-two"),
+        )
+        par = self._transclude(
+            "urn:o@trans",
+            self._div("leading-translation"),
+            self._milestone("urn:v/1"), self._div("trans-one"),
+            self._milestone("urn:v/2"), self._div("trans-two"),
+        )
+
+        result = self._assemble([prim], [par])
+
+        rows = self._rows_by_corresp(result)
+        self.assertIn("leading-translation", rows[0][1], rows)
+        self.assertIn("trans-two", rows[-1][1], rows)
+
+    def test_disjoint_divisions_are_reported(self):
+        """The fold is right, but the encoding that forced it is worth naming."""
+        prim = self._transclude(
+            "urn:o@orig", self._milestone("urn:bible:psalms/126/1"), self._div("hebrew"))
+        par = self._transclude(
+            "urn:o@trans",
+            self._milestone("urn:haggadah:barech/psalm_126/1"), self._div("english"))
+
+        with self.assertLogs(
+                "opensiddur.exporter.external_compiler", level="WARNING") as logged:
+            self._assemble([prim], [par])
+
+        message = "\n".join(logged.output)
+        self.assertIn("a.xml", message)
+        self.assertIn("b.xml", message)
+
+    def test_a_shared_division_is_not_reported(self):
+        """The warning names a real encoding gap, so it must not cry wolf."""
+        prim = self._transclude(
+            "urn:o@orig", self._milestone("urn:v/1"), self._div("hebrew"))
+        par = self._transclude(
+            "urn:o@trans", self._milestone("urn:v/1"), self._div("english"))
+
+        with self.assertNoLogs(
+                "opensiddur.exporter.external_compiler", level="WARNING"):
+            self._assemble([prim], [par])
+
+    def test_an_undivided_side_is_not_reported(self):
+        """Unsegmented prose is not a mismatch of axes."""
+        prim = self._transclude(
+            "urn:o@orig", self._milestone("urn:v/1"), self._div("hebrew"))
+        par = self._transclude("urn:o@trans", self._div("english"))
+
+        with self.assertNoLogs(
+                "opensiddur.exporter.external_compiler", level="WARNING"):
+            self._assemble([prim], [par])
 
     def test_mismatched_transclude_counts(self):
         t1 = self._transclude()
@@ -427,6 +579,40 @@ class _ProcessorBase(unittest.TestCase):
             self.project, "index.xml",
             linear_data=self.linear_data,
         )
+
+
+# ── _shared_split_points ────────────────────────────────────────────────────
+
+class TestSharedSplitPoints(unittest.TestCase):
+
+    def test_is_symmetric(self):
+        """Both streams are cut at one key set, so the argument order cannot matter."""
+        a = {"urn:v/1", "urn:v/1/a", "urn:v/2"}
+        b = {"urn:v/1", "urn:v/3"}
+        self.assertEqual(_shared_split_points(a, b), _shared_split_points(b, a))
+
+    def test_keeps_what_both_sides_mark(self):
+        self.assertEqual(
+            _shared_split_points({"urn:v/1", "urn:v/2"}, {"urn:v/2", "urn:v/3"}),
+            {"urn:v/2"},
+        )
+
+    def test_is_empty_when_the_sets_are_disjoint(self):
+        """The Psalm 126 case: nothing shared, so nothing is a boundary."""
+        self.assertEqual(
+            _shared_split_points(
+                {"urn:x-opensiddur:text:bible:psalms/126/1"},
+                {"urn:x-opensiddur:text:haggadah:barech/psalm_126/1"},
+            ),
+            set(),
+        )
+
+    def test_a_containing_division_is_not_a_boundary_unless_marked(self):
+        """Containment is not marking: `urn:v` divides nothing this side declared."""
+        self.assertEqual(_shared_split_points({"urn:v/1"}, {"urn:v"}), set())
+
+    def test_an_undivided_side_shares_nothing(self):
+        self.assertEqual(_shared_split_points({"urn:v/1", "urn:v/2"}, set()), set())
 
 
 # ── _split_at_milestones ────────────────────────────────────────────────────

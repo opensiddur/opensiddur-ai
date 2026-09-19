@@ -34,20 +34,6 @@ from opensiddur.exporter.marker_reconstruct import (
 logger = logging.getLogger(__name__)
 
 
-def _urn_prefixes(urn: str) -> list[str]:
-    """The URNs of the divisions containing `urn`, innermost first.
-
-    Path components only: the first component carries the scheme, the namespace and the
-    work, and nothing above the work is a division of it.
-    """
-    prefixes = []
-    head = urn
-    while '/' in head:
-        head = head.rpartition('/')[0]
-        prefixes.append(head)
-    return prefixes
-
-
 def _milestone_corresps(elements: list[ElementBase]) -> set[str]:
     """The URNs of the milestones in a flat marker stream."""
     tei_milestone_tag = f"{{{TEI_NS}}}milestone"
@@ -57,26 +43,35 @@ def _milestone_corresps(elements: list[ElementBase]) -> set[str]:
     }
 
 
-def _common_split_points(ours: set[str], theirs: set[str]) -> set[str]:
-    """Which of `ours` are boundaries when the text is set beside a stream marking `theirs`.
+def _shared_split_points(a: set[str], b: set[str]) -> set[str]:
+    """The divisions two streams set beside each other are both cut at.
 
-    Two editions need not divide the text alike below the verse: the Hebrew is divided at
-    its accents and a translation cannot be. A division the other side does not carry is not
-    a row boundary — its text belongs in the row of the nearest division that both carry, or
-    the halves of a Hebrew verse would face an empty English cell and the English verse an
-    empty Hebrew one.
+    Two editions need not divide the text alike: the Hebrew is divided at its accents and a
+    translation cannot be, and one edition marks the parshiyot where the other marks only
+    chapters. A division the other side does not carry is not a row boundary — its text
+    belongs in the row of the nearest preceding division both carry, or the halves of a
+    Hebrew verse would face an empty English cell and the English verse an empty Hebrew one.
 
-    A division with no such container is kept as a boundary of its own. It gets a row facing
-    nothing, which is what a URN only one side has did before any of this.
+    So a boundary is a URN *both* sides mark, and nothing else. Both streams are therefore
+    cut at one identical key set, which is what every row having both its columns rests on,
+    and in turn what reledpar's pairing of the Nth chunk on each side rests on. Where the two
+    sides share no division at all they are set as a single row: the text of one beside the
+    text of the other, which is the only correspondence the encoding actually declares.
 
-    Only a division *both* sides mark can absorb another's text: falling back on one this
-    side does not itself mark would put the text under a URN it never claimed.
+    Falling back on a division only one side marks is what this must not do. It would put the
+    text under a URN that side never claimed, and — since the fallback differs per side — cut
+    the two streams at different keys, which is the bug this replaced: an original marking
+    `bible:psalms/126/1`..`/6` beside a translation marking only
+    `haggadah:barech/psalm_126/1` promoted all seven URNs to boundaries, and the psalm was
+    set as six Hebrew rows facing nothing followed by its translation facing nothing.
+
+    Not done here: if one side marked *only* ancestors of the other's marks, across more than
+    one such ancestor (`…/1/1`..`/1/6`, `/2/1`..`/2/8` beside `…/1`, `…/2`), a row per
+    ancestor would beat the single row this gives. That needs a corresp → row-key mapping
+    returned from here and honoured by `_split_at_milestones` in place of `@corresp`. No
+    project has that shape, and this rule is a strict improvement on every one that exists.
     """
-    common = ours & theirs
-    return common | {
-        corresp for corresp in ours - common
-        if not any(prefix in common for prefix in _urn_prefixes(corresp))
-    }
+    return a & b
 
 
 def _attrs_structural_original(source: ElementBase) -> dict[str, str]:
@@ -467,16 +462,28 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return transclude_el.get(xml_lang) or default_lang
 
         def make_rows(prim_flat, par_flat, prim_src, par_src, prim_lang, par_lang):
-            # Only divisions both sides carry are row boundaries — see _common_split_points.
-            # Deciding this before splitting rather than merging the rows afterwards matters:
-            # every split suspends and resumes the structure open across it, and those
-            # carriers would survive a merge and break the verse into pieces inside its row.
+            # Only divisions both sides carry are row boundaries — see _shared_split_points.
+            # One set, cutting both streams: the rows can only line up if the two sides are
+            # cut at the same keys. Deciding this before splitting rather than merging the
+            # rows afterwards matters too: every split suspends and resumes the structure
+            # open across it, and those carriers would survive a merge and break the verse
+            # into pieces inside its row.
             prim_corresps = _milestone_corresps(prim_flat)
             par_corresps = _milestone_corresps(par_flat)
+            split_at = _shared_split_points(prim_corresps, par_corresps)
+            if prim_corresps and par_corresps and not split_at:
+                logger.warning(
+                    "parallel: %s/%s and %s/%s divide this text on different URN axes "
+                    "(%s beside %s) and so share no alignment division; setting each "
+                    "beside the other as a single row. Give both sides a common corresp "
+                    "to align them more finely.",
+                    prim_src[0], prim_src[1], par_src[0], par_src[1],
+                    min(prim_corresps), min(par_corresps),
+                )
             prim_sub = ExternalCompilerProcessor._split_at_milestones(
-                prim_flat, ns_map, _common_split_points(prim_corresps, par_corresps))
+                prim_flat, ns_map, split_at)
             par_sub = ExternalCompilerProcessor._split_at_milestones(
-                par_flat, ns_map, _common_split_points(par_corresps, prim_corresps))
+                par_flat, ns_map, split_at)
 
             prim_by_c: dict[Optional[str], list] = {}
             for c, els in prim_sub:
@@ -488,12 +495,26 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 if c not in par_by_c:
                     par_by_c[c] = els
 
+            # The preamble — content before the first shared division — is the first row
+            # whichever side carries it. _split_at_milestones drops an empty one, so a
+            # primary that opens exactly on a shared division has no None segment, and
+            # taking document order from it alone would order the parallel's opening text
+            # after every row: the same "prints below instead of beside" failure, in
+            # miniature. Merging a one-sided preamble into the row after it is not the
+            # answer — it ends in p:suspend carriers the next segment resumes, and joining
+            # them would leave that pair stranded mid-row.
             seen: set = set()
-            ordered = []
+            ordered: list = []
+            if prim_by_c.get(None) or par_by_c.get(None):
+                seen.add(None)
+                ordered.append(None)
             for c, _ in prim_sub:
                 if c not in seen:
                     seen.add(c)
                     ordered.append(c)
+            # Both sides are cut at one key set, so this second pass should find nothing
+            # new. It stays as a safety net: a stream that omits a shared corresp still
+            # contributes its rows here rather than losing them.
             for c, _ in par_sub:
                 if c not in seen:
                     seen.add(c)

@@ -263,6 +263,17 @@ rather than failing loudly, so they are asserted in the parallel test suites.
    `reledmac.xslt` find the blocks and emit `\begin{pairs}`, and the copy inside each column
    is what keeps `ancestor::tei:div[@type='book']` true so chapter numbers still render.
 
+5. **Both columns of a `p:parallel` are cut at one identical key set.** A row boundary is a
+   `tei:milestone/@corresp` URN *both* streams mark (`_shared_split_points`); anything else
+   stays in the row of the nearest preceding shared division, or in the opening preamble row.
+   Two editions need not divide alike — the Hebrew divides at its accents and a translation
+   cannot, one edition marks the parshiyot where the other marks only chapters — and where
+   they share no division at all they are set as a single row. This is what makes every row
+   carry both its columns, which in turn is what `reledpar` pairing the Nth chunk on each
+   side depends on. Splitting each side at its *own* divisions instead put one edition's
+   finer divisions in rows facing empty cells: the translation printed below the original
+   rather than beside it.
+
 So the shape is a flat alternation at each level, recursively:
 
 ```
