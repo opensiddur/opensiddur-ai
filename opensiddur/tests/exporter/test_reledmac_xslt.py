@@ -1715,10 +1715,13 @@ class TestStructuralElements(unittest.TestCase):
         # material: the preamble defines macros that legitimately use \quad themselves.
         body = out.split(r"\begin{document}", 1)[1]
         self.assertNotIn(r"\quad", body.split(r"\OSheadA", 1)[0])
-        # The bookmark still takes the flattened form: \addcontentsline builds a PDF
-        # string and cannot carry markup.
+        # The contents entry takes the flattened title — \addcontentsline cannot carry
+        # markup — with each run wrapped for its direction, so the Hebrew stays Hebrew on
+        # a contents page whichever way that page runs. hyperref strips both wrappers, so
+        # the PDF outline still reads "רותRUTH".
         self.assertIn(
-            r"\addcontentsline{toc}{section}{{\textdir TLT\foreignlanguage{english}{רותRUTH}}}",
+            r"\addcontentsline{toc}{section}"
+            r"{\texthebrew{רות}{\textdir TLT\foreignlanguage{english}{RUTH}}}",
             out,
         )
 
@@ -2009,6 +2012,31 @@ class TestTableOfContents(unittest.TestCase):
         out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
         self.assertIn(r"\addcontentsline{toc}{section}", out)
         self.assertIn(r"\addcontentsline{toc}{subsection}", out)
+
+    def test_hebrew_entries_are_wrapped_for_the_contents_page(self):
+        """A contents entry is typeset in the table of contents, whose direction is the
+        document class's and not the heading's. A Hebrew title left bare there is laid
+        out left to right, one character at a time, so every line of a Hebrew contents
+        page reads backwards. Each run takes its own wrapper instead."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+          <tei:text><tei:body>
+            <tei:div><tei:head>בְּדִיקַת חָמֵץ</tei:head><tei:p>שלום</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml, **{"table-of-contents": True})
+        self.assertIn(
+            r"\addcontentsline{toc}{section}{\texthebrew{בְּדִיקַת חָמֵץ}}",
+            out,
+        )
+
+    def test_hebrew_entries_reach_the_pdf_outline_unwrapped(self):
+        """\\texthebrew is markup, and a PDF string carries none: hyperref must strip it
+        the way it already strips the direction and language switches, or the outline
+        entry reads "\\texthebrewבדיקת חמץ"."""
+        out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
+        disabled = out.split(r"\pdfstringdefDisableCommands{", 1)[1].split("\n}", 1)[0]
+        self.assertIn(r"\def\texthebrew#1{#1}", disabled)
 
     def test_frontmatter_emitted_even_without_tei_front(self):
         """A document with no tei:front still needs \\frontmatter/\\mainmatter so the TOC
@@ -2408,8 +2436,9 @@ class TestMultilingualBookmarks(unittest.TestCase):
     def _outline_entry(out: str) -> str:
         r"""The bookmark as a PDF reader sees it.
 
-        f:emit-bidi-text wraps each Latin run against the stream it sits in, so the TeX
-        reads {{\textdir TLT\foreignlanguage{english}{Grace}}} {{...after}}. The preamble's
+        f:emit-bidi-mark wraps each run against the slot it sits in, Hebrew in
+        \texthebrew and everything else in \textdir TLT, so a contents entry reads
+        \texthebrew{ברך}{\textdir TLT\foreignlanguage{english}{ · Grace}}. The preamble's
         \pdfstringdefDisableCommands strips exactly those commands when hyperref builds
         the PDF string, so undoing them here makes an assertion mean what the reader will
         see rather than what the TeX happens to look like.
@@ -2429,6 +2458,7 @@ class TestMultilingualBookmarks(unittest.TestCase):
                 depth -= 1
         title = after[:end]
         return (title.replace("{\\textdir TLT\\foreignlanguage{english}{", "")
+                     .replace("\\texthebrew", "")
                      .replace("{", "").replace("}", "").strip())
 
     PARALLEL = """<?xml version="1.0" encoding="UTF-8"?>
@@ -2597,10 +2627,12 @@ class TestMultilingualBookmarks(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertEqual(2, out.count(r"\addcontentsline"))
-        # Each piece takes its own counterpart, not the first one twice.
-        self.assertIn("ראשון · First", out)
-        self.assertIn("שני · Second", out)
-        self.assertNotIn("שני · First", out)
+        # Each piece takes its own counterpart, not the first one twice. The entry is
+        # wrapped run by run for the typeset contents page, so match on that form.
+        english = r"{\textdir TLT\foreignlanguage{english}{"
+        self.assertIn("\\texthebrew{ראשון}" + english + " · First}}", out)
+        self.assertIn("\\texthebrew{שני}" + english + " · Second}}", out)
+        self.assertNotIn("\\texthebrew{שני}" + english + " · First}}", out)
 
     def test_from_alt_on_a_single_text_takes_the_divisions_second_head(self):
         """'alt' means the other title, not the other column. A single text titled twice
