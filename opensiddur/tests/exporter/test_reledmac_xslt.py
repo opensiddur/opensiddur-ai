@@ -866,6 +866,48 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn(r"\instructionnote{", out)
         self.assertNotIn(r"\OSInstructionBlock{", out)
 
+    def test_a_rubric_inheriting_its_language_is_still_set_in_that_direction(self):
+        r"""A rubric written in the language around it carries no @xml:lang of its own, as
+        every Hebrew rubric in the Heidenheim haggadah does not. Pairing the two columns
+        copies the note out of its tree to stamp it, which severs the ancestors the
+        inherited language was read from, so it fell to the LTR branch and was typeset left
+        to right -- `בזימון` reading backwards on the page. The language pairing records on
+        the note is what survives that copy."""
+        out = _transform(self._rubric_in_parallel("he", "בזימון"))
+        self.assertIn(r"\textdir TRT\foreignlanguage{hebrew}{בזימון}", out)
+        self.assertNotIn(r"\foreignlanguage{english}{בזימון}", out)
+
+    def test_a_rubric_is_placed_by_its_direction_not_by_being_hebrew(self):
+        r"""The same reason f:is-rtl-lang exists: Yiddish is written in the same script and
+        reverses the same way. Testing the language for `he` alone also put this rubric's
+        direction at odds with the macro chosen for it, which asks f:is-rtl-lang -- so it
+        both shared the line with the Hebrew and ran against it."""
+        out = _transform(self._rubric_in_parallel("yi", "רבותי"))
+        self.assertIn(r"\textdir TRT\foreignlanguage{hebrew}{רבותי}", out)
+        self.assertNotIn(r"\foreignlanguage{english}{רבותי}", out)
+
+    @staticmethod
+    def _rubric_in_parallel(lang: str, rubric: str) -> str:
+        """One Hebrew-script column facing an English one, the rubric taking its language
+        from the column rather than stating one."""
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="{lang}">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="{lang}">
+                <tei:div>
+                  <tei:note type="instruction">{rubric}</tei:note>
+                  <tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div><tei:p>Hello</tei:p></tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
     def test_body_editorial_note_emits_apparatus(self):
         """Compiler inlines editorial tei:note in the body; XSLT maps it to B-series."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -2822,6 +2864,37 @@ class TestParallelHeadings(unittest.TestCase):
         self.assertIn(r"\textdir TLT", translation)
         self.assertIn(r"\foreignlanguage{english}", translation)
 
+    def test_a_facing_title_takes_its_column_language_over_the_compiled_root(self):
+        r"""A unit file states its language once, on its own tei:TEI, and titles its
+        divisions without repeating it. Compiling two projects in parallel puts both under
+        one root, which can only carry one language -- the primary project's -- and records
+        each column's on its p:parallelItem. Reading the root and not the column made every
+        English title in a Hebrew book Hebrew, so it was set \texthebrew and its words,
+        each separately wrapped against the Hebrew around them, were laid out right to
+        left: "Blessing After Meals" printed as "Meals After Blessing"."""
+        out = _transform(f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">
+                <tei:div corresp="urn:x-opensiddur:text:haggadah:barech">
+                  <tei:head>בָּרֵךְ</tei:head><tei:p>שלום</tei:p>
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div corresp="urn:x-opensiddur:text:haggadah:barech">
+                  <tei:head>Blessing After Meals</tei:head><tei:p>Hello</tei:p>
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>""")
+        translation = self._translation_arg(out)
+        self.assertNotIn(r"\texthebrew", translation)
+        self.assertIn(r"{\textdir TLT\foreignlanguage{english}{Blessing After Meals}}",
+                      translation)
+
     def test_a_facing_hebrew_title_under_a_latin_one_is_wrapped_too(self):
         """The same requirement the other way round: the wrapper follows the title's own
         language, not the language of the heading it is set beneath."""
@@ -2830,13 +2903,13 @@ class TestParallelHeadings(unittest.TestCase):
         translation = self._translation_arg(out)
         self.assertIn(r"\texthebrew{", translation)
 
-    def test_an_undeclared_title_language_falls_back_to_the_latin_wrapper(self):
-        """`f:section-title-lang` reads the head, then its tei:div ancestors, then the
-        tei:TEI — never the p:parallelItem. A head that declares no language anywhere in
-        that chain is treated as Latin. The project's unit files always declare one, so
-        this is the shape of the fallback rather than a case they rely on; it is asserted
-        so that widening the chain later is a deliberate change and not a surprise."""
-        out = _transform(self._parallel(self.SAME, self.OTHER))
+    def test_a_title_language_undeclared_anywhere_falls_back_to_the_latin_wrapper(self):
+        """`f:section-title-lang` takes the nearest ancestor declaring a language, which is
+        usually the head's own tei:div or its column. Where nothing on the way up declares
+        one at all, the title is treated as Latin. Asserted as the shape of the fallback,
+        not a case the projects rely on: their unit files all declare a language."""
+        out = _transform(self._parallel(self.SAME, self.OTHER).replace(
+            ' xml:lang="he"', "").replace(' xml:lang="en"', ""))
         translation = self._translation_arg(out)
         self.assertIn(r"\foreignlanguage{english}", translation)
 
