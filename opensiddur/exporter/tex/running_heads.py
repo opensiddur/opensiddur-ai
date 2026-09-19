@@ -256,8 +256,9 @@ class RunningHeadConfig(BaseModel):
     default-constructed so that "declared but empty" stays distinguishable from
     "not declared", which the exclusivity check needs.
 
-    Nothing declared means "leave the book-class defaults alone" — the presence
-    of content is the switch, so there is no separate `enabled` flag.
+    Nothing declared means no head at all: fancyhdr leaves the slots empty. That
+    is a real choice a settings file can make (`page_header: {}`), distinct from
+    saying nothing, which takes ``default_page_header()``.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -292,11 +293,45 @@ class RunningHeadConfig(BaseModel):
         ]
 
 
+# An unconfigured document still gets a running head. Every heading already
+# records itself with \InsertMark (see the `heading` template in reledmac.xslt)
+# and {section-title} reads the last of them, so naming the current section
+# costs nothing that is not already emitted. The arrangement is book.cls's own —
+# title inner, page number outer, where inner is the left of an odd page, the
+# same sense `geometry` is given its margins in — so a document that configures
+# nothing keeps its page number where it has always been. Under `page.sides:
+# one` fancyhdr treats every page as odd, so the `odd` slots are the ones that
+# apply.
+# `page_header: {}` in a settings file is the way to ask for no head at all.
+DEFAULT_PAGE_HEADER = {
+    "odd": {"left": "{section-title}", "right": "{page}"},
+    "even": {"left": "{page}", "right": "{section-title}"},
+}
+
+
+def default_page_header() -> RunningHeadConfig:
+    """The running head a settings file gets when it declares none.
+
+    A fresh instance each time: a shared model would be handed to every
+    ``TypographyConfig`` at once.
+    """
+    return RunningHeadConfig.model_validate(DEFAULT_PAGE_HEADER)
+
+
 # ---------------------------------------------------------------------------
 # TeX generation
 # ---------------------------------------------------------------------------
 
 _SLOT_LETTERS = (("left", "L"), ("center", "C"), ("right", "R"))
+
+# Nothing in this exporter sets \leftmark/\rightmark deliberately: running heads
+# come from fancyhdr slots driven by the kernel's mark classes, and \OSheadA-D
+# are plain macros that never call \@mkboth. But book.cls's \tableofcontents
+# issues \@mkboth{CONTENTS}{CONTENTS}, and with no later \markboth anywhere that
+# head would stay in force for the rest of the book — which is exactly what it
+# did. Silence automatic marks outright, so a document can only ever show a head
+# it asked for.
+_SILENCE_AUTOMATIC_MARKS = "\\makeatletter\n\\let\\@mkboth\\@gobbletwo\n\\makeatother\n"
 
 
 def render_position(
@@ -350,8 +385,10 @@ def build_page_style_tex(
 ) -> str:
     """Build the fancyhdr preamble block for the configured headers and footers.
 
-    Returns the empty string when nothing is configured, which leaves the
-    book-class page style untouched.
+    Always silences the document class's automatic marks. When nothing is
+    configured — which a settings file asks for with ``page_header: {}`` — that
+    is all it emits: the book-class page style is left in place, but with no
+    head it can carry but the page number.
 
     ``L``/``C``/``R`` are *physical* page positions; ``O``/``E`` are odd and
     even pages, which ``book`` distinguishes because it is twoside by default.
@@ -361,7 +398,7 @@ def build_page_style_tex(
     header_empty = page_header is None or page_header.is_empty()
     footer_empty = page_footer is None or page_footer.is_empty()
     if header_empty and footer_empty:
-        return ""
+        return _SILENCE_AUTOMATIC_MARKS
 
     slots: list[str] = []
     if not header_empty:
@@ -372,6 +409,7 @@ def build_page_style_tex(
             slots.extend(_render_side("fancyfoot", suffix, side, default_language))
 
     lines = [
+        _SILENCE_AUTOMATIC_MARKS.rstrip("\n"),
         r"\usepackage{fancyhdr}",
         r"\pagestyle{fancy}",
         r"\fancyhf{}",

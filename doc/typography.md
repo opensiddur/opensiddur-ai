@@ -380,8 +380,12 @@ other column does not have, or has fewer of, is always kept.
 
 ## `page_header` and `page_footer`
 
-Running heads and feet. Empty by default, which leaves the document class's own page style
-alone. Each takes either `all` — the same content on every page — or `odd` and/or `even` to
+Running heads and feet. `page_header` defaults to the current section title on the inner edge
+and the page number on the outer — the marks it reads are recorded at every heading whether or
+not anything asks for them, so this costs nothing a document was not already paying. Write
+`page_header: {}` for no head at all. `page_footer` is empty unless asked for.
+
+Each takes either `all` — the same content on every page — or `odd` and/or `even` to
 differentiate them; combining `all` with either is an error.
 
 ```yaml
