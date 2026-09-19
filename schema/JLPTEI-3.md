@@ -1586,3 +1586,11 @@ corresponding to several of another's. Two texts therefore align correctly only 
 canonically — see [Versification](#versification) — and a `@corresp` repeated within a document breaks the join
 silently, because only the first segment carrying a given URN is kept.
 
+Where the two texts divide differently, only the URNs *both* mark become alignment boundaries: a division one
+side does not carry is set within the nearest preceding division both carry. So a Hebrew divided at its accents
+into `…/31/a` and `…/31/b` aligns against a translation that marks only `…/31`, and an edition that marks the
+parshiyot aligns against one that marks only chapters. Where the two share no URN at all — an original divided
+by biblical chapter and verse beside a translation divided by paragraph — they align only at the correspondence
+that contains them, and are set as a single row: one text beside the other, whole. That is usually not what was
+wanted, and the compiler warns when it happens; the remedy is to give both sides a common `@corresp`.
+
