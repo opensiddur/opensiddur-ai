@@ -298,7 +298,8 @@ class TestUnitAssembly(unittest.TestCase):
         expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
                     "chol_shacharit_opening", "chol_shacharit_pesukei_dezimra",
                     "chol_shacharit_shema", "chol_shacharit_amidah",
-                    "chol_shacharit_avinu_malkenu"]
+                    "chol_shacharit_avinu_malkenu", "chol_shacharit_tachanun",
+                    "chol_shacharit_kaddish_after_tachanun", "chol_shacharit_torah_intro"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(
@@ -437,8 +438,9 @@ class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
                 self.assertIn(slug, joined)
 
     def test_no_text_is_transcluded_by_two_units(self):
-        """Except one, knowingly: the washing blessing is printed on 1 and again on 13."""
-        allowed = {"urn:x-opensiddur:text:prayer:al_netilat_yadayim"}
+        """Allow passages the print repeats at distinct places in the service."""
+        allowed = {"urn:x-opensiddur:text:prayer:al_netilat_yadayim",
+                   "urn:x-opensiddur:text:prayer:kaddish/chatzi"}
         for build, project, pages in (
                 (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
                 (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):

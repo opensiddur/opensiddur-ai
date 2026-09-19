@@ -6,6 +6,7 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol", "label_en": "Weekday morning service"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/amidah", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "label_en": "The Amidah for the weekday morning service"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/avinu_malkenu", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "label_en": "Avinu Malkenu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/kaddish_after_tachanun", "status": "canonical", "label_en": "Kaddish after tachanun", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/opening", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "status": "canonical", "label_en": "Psalm 30 and Mourners’ Kaddish before the verses of praise"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "status": "canonical", "label_en": "Weekday morning verses of praise"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/atah_hu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra", "status": "canonical", "label_en": "Nehemiah 9:6–11"}
@@ -23,4 +24,47 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod/adonai_melekh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod", "status": "canonical", "label_en": "The Lord is King; the Lord was King"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/shema", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit", "label_en": "chol / shacharit / shema"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/shema/barukh_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/shema", "label_en": "chol / shacharit / shema / barukh shem"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun", "status": "canonical", "label_en": "Tachanun", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh", "status": "canonical", "label_en": "Hateh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/adonai_shemaah", "status": "canonical", "label_en": "Adonai shemaah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/avinu", "status": "canonical", "label_en": "Avinu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/chusah", "status": "canonical", "label_en": "Chusah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/hateh", "status": "canonical", "label_en": "Hateh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/hoshienu", "status": "canonical", "label_en": "Hoshienu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/text", "status": "canonical", "label_en": "Text", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/veatah", "status": "canonical", "label_en": "Veatah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh/yadanu", "status": "canonical", "label_en": "Yadanu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/hateh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long", "status": "canonical", "label_en": "Long", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long/closing", "status": "canonical", "label_en": "Closing", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long/nefilah", "status": "canonical", "label_en": "Nefilah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long/opening", "status": "canonical", "label_en": "Opening", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/long"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/psalm6", "status": "canonical", "label_en": "Psalm6", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/short", "status": "canonical", "label_en": "Short", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu", "status": "canonical", "label_en": "Vaanachnu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/al_tizkor", "status": "canonical", "label_en": "Al tizkor", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/berogez", "status": "canonical", "label_en": "Berogez", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/chonenu", "status": "canonical", "label_en": "Chonenu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/ki_hu", "status": "canonical", "label_en": "Ki hu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/ozrenu", "status": "canonical", "label_en": "Ozrenu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/text", "status": "canonical", "label_en": "Text", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/vaanachnu", "status": "canonical", "label_en": "Vaanachnu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/yehi", "status": "canonical", "label_en": "Yehi", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu/zekhor", "status": "canonical", "label_en": "Zekhor", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vaanachnu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu", "status": "canonical", "label_en": "Vehu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/adonai", "status": "canonical", "label_en": "Adonai", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/adonai_hoshiah", "status": "canonical", "label_en": "Adonai hoshiah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/atah", "status": "canonical", "label_en": "Atah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/avinu", "status": "canonical", "label_en": "Avinu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/hoshienu", "status": "canonical", "label_en": "Hoshienu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/im_avonenu", "status": "canonical", "label_en": "Im avonenu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/im_avonot", "status": "canonical", "label_en": "Im avonot", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/ki_imekha", "status": "canonical", "label_en": "Ki imekha", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/lo_khataenu", "status": "canonical", "label_en": "Lo khataenu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/text", "status": "canonical", "label_en": "Text", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/veatah", "status": "canonical", "label_en": "Veatah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/veatah_shema", "status": "canonical", "label_en": "Veatah shema", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/vehu_rachum", "status": "canonical", "label_en": "Vehu rachum", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/yaanenu", "status": "canonical", "label_en": "Yaanenu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/zekhor", "status": "canonical", "label_en": "Zekhor", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah_intro", "status": "canonical", "label_en": "Torah intro", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit"}
 {"urn": "urn:x-opensiddur:text:siddur:siddur", "status": "canonical", "label_en": "The Complete Siddur"}
