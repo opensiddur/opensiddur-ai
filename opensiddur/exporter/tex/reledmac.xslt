@@ -2609,9 +2609,17 @@
     </xsl:template>
 
     <xsl:template name="note-content">
-        <xsl:variable name="note-lang" select="string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
+        <!-- The same language the macro was chosen by, computed the same way, so the two
+             cannot disagree about one note. @f:note-lang because pairing the columns copies
+             a rubric out of its tree to stamp it, and a rubric written in the language
+             around it — which is most of them — states no language of its own and had
+             nothing left to inherit from: every such rubric came out reversed. Tested by
+             direction rather than for `he`, for the reason f:is-rtl-lang exists. -->
+        <xsl:variable name="note-lang"
+                      select="if (@f:note-lang) then string(@f:note-lang)
+                              else string((ancestor-or-self::*[@xml:lang][1])/@xml:lang)"/>
         <xsl:choose>
-            <xsl:when test="$note-lang='he'">
+            <xsl:when test="f:is-rtl-lang($note-lang)">
                 <!-- Force explicit RTL direction inside notes even when nested
                      in an LTR context.
                      Use {{\textdir TRT ...}} (regular braces) to avoid leaking
@@ -2914,13 +2922,17 @@
     </xsl:function>
 
     <!-- Language for the tei:head used in \OSheadA/B/C titles. -->
+    <!-- The nearest declaration of any kind, rather than the head's own, then a tei:div,
+         then the tei:TEI. A unit file states its language once on its own tei:TEI and
+         titles its divisions without repeating it, so most heads declare nothing; compiling
+         two projects in parallel puts both under one root, which can carry only the primary
+         project's language, and records each column's on its p:parallelItem. Naming the
+         element types skipped that, and every English title in a Hebrew book was taken for
+         Hebrew — set \texthebrew, its words each wrapped against the Hebrew around them,
+         and so laid out right to left. -->
     <xsl:function name="f:section-title-lang" as="xs:string">
         <xsl:param name="head" as="element(tei:head)"/>
-        <xsl:sequence select="string((
-            $head/@xml:lang,
-            $head/ancestor::tei:div[@xml:lang][1]/@xml:lang,
-            $head/ancestor::tei:TEI[@xml:lang][1]/@xml:lang
-        )[1])"/>
+        <xsl:sequence select="string($head/ancestor-or-self::*[@xml:lang][1]/@xml:lang)"/>
     </xsl:function>
 
     <!-- Hebrew titles stay in the stream direction, but any embedded digit range (e.g. a
