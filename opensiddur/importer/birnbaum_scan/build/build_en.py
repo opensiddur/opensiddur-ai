@@ -20,6 +20,8 @@ from .shema import prayers as shema_prayers
 SHEMA_PRAYERS = shema_prayers("en")
 from .avinu_malkenu import prayers as avinu_prayers
 AVINU_PRAYERS = avinu_prayers("en")
+from .tachanun import prayers as tachanun_prayers
+TACHANUN_PRAYERS = tachanun_prayers("en")
 from . import build_he
 from . import notes as apparatus
 from .notes_pesukei import PESUKEI_NOTES
@@ -28,7 +30,7 @@ from .notes_shema import SHEMA_NOTES
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -44,7 +46,11 @@ EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "opening": (50, 52), "pe
 #: pages -- that is where the print sets it.
 from .avinu_malkenu import NOTES as AVINU_NOTES
 
+from .notes_tachanun import NOTES as TACHANUN_NOTES
+
 APPARATUS = {
+    "notes_tachanun": dict(entries=TACHANUN_NOTES, slug="birnbaum_1949/tachanun",
+                           title="Notes on Tachanun", first=103, last=118),
     "notes_avinu_malkenu": dict(entries=AVINU_NOTES, slug="birnbaum_1949/avinu_malkenu",
                                 title="Notes on Avinu Malkenu", first=98, last=100),
     "notes_shema": dict(entries=SHEMA_NOTES, slug="birnbaum_1949/shema",

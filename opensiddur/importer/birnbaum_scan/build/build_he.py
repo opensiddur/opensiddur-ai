@@ -21,11 +21,13 @@ from .shema import prayers as shema_prayers
 SHEMA_PRAYERS = shema_prayers("he")
 from .avinu_malkenu import prayers as avinu_prayers
 AVINU_PRAYERS = avinu_prayers("he")
+from .tachanun import prayers as tachanun_prayers
+TACHANUN_PRAYERS = tachanun_prayers("he")
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -481,6 +483,8 @@ def units(project, pages, by_name, amidah_body):
     """
     from .shema import unit_body as shema_body
     from .avinu_malkenu import unit_body as avinu_body
+    from .tachanun import unit_body as tachanun_body, kaddish_body, torah_intro_body
+    side = 0 if project == "birnbaum_ashkenaz_he_1949" else 1
     return (
         dict(name="all_shacharit_yeladim",
              body=unit_body_yeladim(YELADIM_HEAD[project], by_name),
@@ -508,6 +512,15 @@ def units(project, pages, by_name, amidah_body):
         dict(name="chol_shacharit_avinu_malkenu", body=avinu_body(project, by_name),
              title_he="אָבִֽינוּ מַלְכֵּֽנוּ", title_en="Avinu Malkenu",
              urn=f"{S}chol/shacharit/avinu_malkenu", pages=pages["avinu"]),
+        dict(name="chol_shacharit_tachanun", body=tachanun_body(project),
+             title_he="תַּחֲנוּן", title_en="Tachanun",
+             urn=f"{S}chol/shacharit/tachanun", pages=(103 + side, 117 + side)),
+        dict(name="chol_shacharit_kaddish_after_tachanun", body=kaddish_body(project),
+             title_he="חֲצִי קַדִּישׁ", title_en="Half Kaddish after Tachanun",
+             urn=f"{S}chol/shacharit/kaddish_after_tachanun", pages=(117 + side, 117 + side)),
+        dict(name="chol_shacharit_torah_intro", body=torah_intro_body(project),
+             title_he="אֵל אֶֽרֶךְ אַפַּֽיִם", title_en="Introduction to the Torah service",
+             urn=f"{S}chol/shacharit/torah_intro", pages=(117 + side, 117 + side)),
     )
 
 
