@@ -51,7 +51,7 @@ def prayers(lang):
             body.append('<tei:p>')
             for verse, he, en in row['verses']:
                 body.append(f'<tei:milestone unit="verse" corresp="{BIBLE}psalms/6/{verse}"/>'
-                            + text_xml(he if lang == 'he' else en) + ' ')
+                            + text_xml(he if lang == 'he' else en))
             body.append('</tei:p>')
         elif 'chunks' in row:
             body.append(f'<tei:p><tei:milestone unit="prayer" corresp="{urn}/text"/>')
