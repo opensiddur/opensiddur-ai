@@ -15,6 +15,7 @@ from opensiddur.exporter.tex.running_heads import (
     RunningHeadPosition,
     RunningHeadSide,
     build_page_style_tex,
+    default_page_header,
     expand_template,
     parse_template,
     render_position,
@@ -263,20 +264,68 @@ class TestRunningHeadModels(unittest.TestCase):
         config = RunningHeadConfig.model_validate({"all": {"center": ""}})
         self.assertTrue(config.is_empty())
 
-    def test_typography_defaults_to_no_running_heads(self):
+    def test_typography_defaults_to_a_section_title_head_and_no_foot(self):
         typography = TypographyConfig()
-        self.assertTrue(typography.page_header.is_empty())
+        self.assertEqual(typography.page_header, default_page_header())
         self.assertTrue(typography.page_footer.is_empty())
+
+    def test_settings_can_ask_for_no_head_at_all(self):
+        """An empty mapping is a real choice, distinct from saying nothing."""
+        typography = TypographyConfig.model_validate({"page_header": {}})
+        self.assertTrue(typography.page_header.is_empty())
+
+
+class TestDefaultPageHeader(unittest.TestCase):
+    """The head a settings file gets when it declares none."""
+
+    def test_default_is_not_empty(self):
+        self.assertFalse(default_page_header().is_empty())
+
+    def test_default_is_a_fresh_instance_each_call(self):
+        self.assertIsNot(default_page_header(), default_page_header())
+
+    def test_default_names_the_section_and_numbers_the_page(self):
+        """The marks it reads are already inserted at every heading."""
+        out = build_page_style_tex(default_page_header(), None, "he")
+        for slot in ("LO", "RO", "LE", "RE"):
+            with self.subTest(slot=slot):
+                self.assertIn(r"\fancyhead[%s]{" % slot, out)
+        # Title inner, page number outer: inner is the left of an odd page, the
+        # same sense `geometry` is given its margins in.
+        self.assertIn(r"\fancyhead[LO]{{\textdir TRT\foreignlanguage{hebrew}{\LastMark{OSheadAny}}}}", out)
+        self.assertIn(r"\fancyhead[RE]{{\textdir TRT\foreignlanguage{hebrew}{\LastMark{OSheadAny}}}}", out)
+        self.assertEqual(out.count(r"\thepage"), 4)  # RO and LE, once per page style
+
+    def test_default_never_reads_the_class_marks(self):
+        """\\leftmark/\\rightmark are what carried "CONTENTS" through the book."""
+        out = build_page_style_tex(default_page_header(), None, "he")
+        self.assertNotIn(r"\leftmark", out)
+        self.assertNotIn(r"\rightmark", out)
 
 
 class TestBuildPageStyleTex(unittest.TestCase):
     """The fancyhdr block: nothing at all unless something is configured."""
 
-    def test_nothing_configured_produces_no_page_style(self):
-        self.assertEqual(build_page_style_tex(None, None), "")
-        self.assertEqual(
-            build_page_style_tex(RunningHeadConfig(), RunningHeadConfig()), ""
-        )
+    def test_explicitly_empty_head_and_foot_silence_automatic_marks(self):
+        """A document asking for no head must not inherit the class's own.
+
+        book.cls's \\tableofcontents issues \\@mkboth{CONTENTS}{CONTENTS}, and
+        nothing here ever sets another mark, so without this "CONTENTS" stayed
+        in the running head for the rest of the book.
+        """
+        for page_header, page_footer in (
+            (None, None),
+            (RunningHeadConfig(), RunningHeadConfig()),
+        ):
+            with self.subTest(page_header=page_header):
+                out = build_page_style_tex(page_header, page_footer)
+                self.assertIn(r"\let\@mkboth\@gobbletwo", out)
+                self.assertNotIn("fancyhdr", out)
+                self.assertNotIn(r"\pagestyle{fancy}", out)
+
+    def test_configured_page_style_also_silences_automatic_marks(self):
+        header = RunningHeadConfig.model_validate({"all": {"left": "{page}"}})
+        self.assertIn(r"\let\@mkboth\@gobbletwo", build_page_style_tex(header, None))
 
     def test_configured_header_loads_fancyhdr_and_switches_page_style(self):
         header = RunningHeadConfig.model_validate({"all": {"left": "{page}"}})

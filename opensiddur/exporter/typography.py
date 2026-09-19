@@ -40,7 +40,7 @@ from pydantic import (
     model_validator,
 )
 
-from opensiddur.exporter.tex.running_heads import RunningHeadConfig
+from opensiddur.exporter.tex.running_heads import RunningHeadConfig, default_page_header
 
 
 # ---------------------------------------------------------------------------
@@ -1087,14 +1087,16 @@ class TypographyConfig(ForbidExtra):
         description="Rubrics, where a work prints the same one in both columns.",
     )
     page_header: RunningHeadConfig = Field(
-        default_factory=RunningHeadConfig,
+        default_factory=default_page_header,
         description=(
-            "Running head. Empty by default, which leaves the renderer's own "
-            "page style alone. See doc/typography.md for the template codes."
+            "Running head. Defaults to the current section title on the inner "
+            "edge and the page number on the outer; write `{}` for no head at "
+            "all. See doc/typography.md for the template codes."
         ),
     )
     page_footer: RunningHeadConfig = Field(
-        default_factory=RunningHeadConfig, description="Running foot; same shape as `page_header`."
+        default_factory=RunningHeadConfig,
+        description="Running foot; same shape as `page_header`, but empty by default.",
     )
 
     # Which families the settings file actually named, as opposed to the ones

@@ -34,6 +34,7 @@ from opensiddur.exporter.typography import (
     Visibility,
     resolve_font,
 )
+from opensiddur.exporter.tex.running_heads import default_page_header
 
 
 def _validate(data: dict) -> TypographyConfig:
@@ -115,8 +116,8 @@ class TestDefaults(unittest.TestCase):
         self.assertFalse(self.config.table_of_contents.enabled)
         self.assertEqual(self.config.table_of_contents.depth, 4)
 
-    def test_running_heads_default_to_nothing(self):
-        self.assertTrue(self.config.page_header.is_empty())
+    def test_running_head_defaults_to_the_section_title_and_the_foot_to_nothing(self):
+        self.assertEqual(self.config.page_header, default_page_header())
         self.assertTrue(self.config.page_footer.is_empty())
 
 

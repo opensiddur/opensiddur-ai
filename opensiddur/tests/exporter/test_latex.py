@@ -885,15 +885,54 @@ typography:
         self.assertIn(r"\fancyhead[LO]{", out)
         self.assertIn(r"\fancyfoot[C]{", out)
 
-    def test_no_running_heads_configured_emits_no_page_style(self):
-        xml = b"""<?xml version="1.0"?>
+    _PLAIN_TEI = b"""<?xml version="1.0"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
         </tei:TEI>"""
-        f = self._create("p", "input.xml", xml)
+
+    def test_default_typography_heads_the_page_with_its_section_title(self):
+        f = self._create("p", "input.xml", self._PLAIN_TEI)
         with patch.object(latex_module, "projects_source_root", self.test_dir):
             out = transform_xml_to_tex(f, typography=TypographyConfig())
+        self.assertIn(r"\usepackage{fancyhdr}", out)
+        self.assertIn(r"\LastMark{OSheadAny}", out)
+
+    def test_table_of_contents_does_not_leak_into_the_running_head(self):
+        """Regression: the Heidenheim haggadah showed "CONTENTS" on every page.
+
+        book.cls's \\tableofcontents issues \\@mkboth{CONTENTS}{CONTENTS}. With no
+        page style of our own, the class's `headings` style read that mark back
+        and, since nothing here ever sets another, kept it for the whole book.
+        """
+        xml = b"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div><tei:head>Section One</tei:head><tei:p>x</tei:p></tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        f = self._create("p", "input.xml", xml)
+        typography = TypographyConfig.model_validate(
+            {"table_of_contents": {"enabled": True}}
+        )
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=typography)
+
+        self.assertIn(r"\tableofcontents", out)
+        self.assertIn(r"\let\@mkboth\@gobbletwo", out)
+        # The head names the section it is on, read from a mark the heading
+        # already inserted -- never \leftmark/\rightmark, which carried CONTENTS.
+        self.assertIn(r"\LastMark{OSheadAny}", out)
+        self.assertNotIn(r"\leftmark", out)
+        self.assertNotIn(r"\rightmark", out)
+
+    def test_empty_page_header_emits_no_page_style_but_still_silences_marks(self):
+        """Asking for no head must not fall back to the class's own marks."""
+        f = self._create("p", "input.xml", self._PLAIN_TEI)
+        typography = TypographyConfig.model_validate({"page_header": {}})
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=typography)
         self.assertNotIn("fancyhdr", out)
+        self.assertIn(r"\let\@mkboth\@gobbletwo", out)
 
     def test_document_language_fills_in_for_slots_that_declare_none(self):
         xml = """<?xml version="1.0"?>

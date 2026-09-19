@@ -174,8 +174,9 @@ typography:
     enabled: false
     depth: 4                 # 1-4; independent of the PDF bookmark depth
 
-  # Running heads and feet. Omit both sections to leave the book class's own
-  # page style alone.
+  # Running heads and feet. Omitted, `page_header` names the current section on
+  # the inner edge and numbers the page on the outer; `page_footer` stays empty.
+  # Write `page_header: {}` for no running head at all.
   #
   # Each takes either `all` (the same on every page) or `odd` and/or `even`.
   # Combining `all` with `odd` or `even` is an error.
