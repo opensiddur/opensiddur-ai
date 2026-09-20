@@ -74,6 +74,9 @@ class LinearData(BaseModel):
         arbitrary_types_allowed=True,
         validate_assignment=True)
 
+    # Logical headed-division nesting, preserved while parallel assembly splits containers.
+    heading_depth: int = 0
+
     # parsed XML cache
     xml_cache: XMLCache = Field(default_factory=XMLCache)
     # scoped conditional setting stack (init, declared, derived entries)
