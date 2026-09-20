@@ -1074,6 +1074,110 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn("EVR-II-B-8", out)
 
 
+class TestSourceWhitespaceIsNotAParagraphBreak(unittest.TestCase):
+    r"""Pretty-printing whitespace must never come out as a blank line.
+
+    The stylesheet separates paragraphs with an explicit ``\par`` or ``\newline``,
+    never with a blank line, so a blank line in a numbered stream is always an
+    accident of how the source happens to be indented. It is not a harmless one:
+    a note that annotates the block after it is emitted as
+    ``\leavevmode{...\edtext{\OSInterlinearNotemark{n}}...}``, which has already
+    opened the paragraph, so a ``\par`` behind it spends a row on the mark alone
+    and starts the text on the next line. In a parallel block the facing column
+    discards the same whitespace in vertical mode and does not spend that row, so
+    the two columns drift apart by a line as well.
+
+    The indentation in these fixtures is the thing under test; do not tidy it.
+    """
+
+    @staticmethod
+    def _document_body(tex: str) -> str:
+        return tex.split(r"\begin{document}", 1)[1]
+
+    def _transform_body(self, body: str, **params) -> str:
+        return _transform(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                     xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:lang="en">
+              <tei:text><tei:body>{body}</tei:body></tei:text>
+            </tei:TEI>""",
+            **params,
+        )
+
+    def test_a_note_anchor_is_not_separated_from_the_text_it_annotates(self):
+        """The note is a preceding sibling of the paragraph it annotates, which is
+        how a standoff note targeting a whole block is compiled in."""
+        out = self._transform_body(
+            """<tei:div><tei:note>Psalm 34:4.</tei:note>
+            <tei:p>
+            Exalt the Lord with me, and let us extol his name together.
+            </tei:p></tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertNotRegex(body, r"\}\}\}\}[ \t]*\n[ \t]*\n")
+        # Exactly one newline between the closed anchor and the text: a space, not a \par.
+        self.assertRegex(body, r"\\notenote\{.*?\}{4,}\nExalt the Lord with me")
+
+    def test_a_note_anchor_is_not_separated_from_the_instruction_it_precedes(self):
+        """Same shape, but a rubric follows. In the text's own language the rubric
+        is the inline ``\\instructionnote``, so nothing else would end the line."""
+        out = self._transform_body(
+            """<tei:div><tei:note>On the institution of the reading.</tei:note>
+
+            <tei:note type="instruction">The Torah is read on Mondays and Thursdays.</tei:note>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\instructionnote{", body)
+        self.assertNotRegex(body, r"\n[ \t]*\n[ \t]*\\instructionnote")
+        self.assertRegex(body, r"\\notenote\{.*?\}{4,}\n\\instructionnote\{")
+
+    def test_no_blank_line_survives_anywhere_in_a_stream(self):
+        """The guard for the whole class, not just the note case."""
+        out = self._transform_body(
+            """<tei:div>
+              <tei:head>A Heading</tei:head>
+              <tei:note>A comment on what follows.</tei:note>
+              <tei:p>
+                First paragraph.
+              </tei:p>
+
+              <tei:note type="instruction">Reader and Congregation:</tei:note>
+
+              <tei:p>
+                Second paragraph.
+              </tei:p>
+            </tei:div>"""
+        )
+        stream = self._document_body(out)
+        stream = stream.split(r"\beginnumbering", 1)[1].split(r"\endnumbering", 1)[0]
+        self.assertIsNone(re.search(r"\n[ \t]*\n", stream))
+
+    def test_whitespace_between_two_inline_leaves_stays_one_space(self):
+        """The guard against over-fixing: a newline between two leaves is a space
+        in TeX, and often the only thing separating two words. Collapsing a run of
+        newlines must keep one, not drop them all."""
+        out = self._transform_body(
+            """<tei:p><tei:hi rend="italic">word</tei:hi>
+            <tei:hi rend="italic">next</tei:hi></tei:p>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn("wordnext", body)
+        self.assertNotIn(r"}\textit{next", body)
+        # A single-newline run is left exactly as it was: the space survives.
+        self.assertRegex(body, r"word\}\n[ \t]*\\textit\{next")
+
+    def test_the_postamble_keeps_its_blank_lines(self):
+        """Why the collapse is scoped to a numbered stream and not applied to the
+        whole document: bibtex.xslt ends every record with a blank line, and the
+        licence block sets its paragraphs with them."""
+        out = self._transform_body(
+            "<tei:p>Text</tei:p>",
+            **{"additional-postamble": "first\n\nsecond\n"},
+        )
+        self.assertIn("first\n\nsecond", out)
+
+
 class TestSectionSeparator(unittest.TestCase):
     """A milestone[@rend='****'] separates sections that carry no heading."""
 
@@ -3158,6 +3262,30 @@ class TestParallelParagraphSpacing(unittest.TestCase):
         left, right = self._sides(out)
         self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
         self.assertEqual(left.count(r"\pend"), right.count(r"\pend"))
+
+    def test_a_note_anchor_spends_no_row_of_its_own(self):
+        r"""A note annotating the block after it is compiled in as a preceding sibling,
+        and the source whitespace between the two used to reach the output as a blank
+        line. The anchor's own \leavevmode has already opened the paragraph, so that
+        \par set the mark alone on a row the Hebrew column — where the same whitespace
+        lands in vertical mode and is discarded — never spent, and the columns drifted.
+        """
+        out = _transform(
+            self._parallel(
+                """<tei:p>
+                שלום
+                </tei:p>""",
+                """<tei:note>Psalm 34:4.</tei:note>
+                <tei:p>
+                Exalt the Lord with me.
+                </tei:p>""",
+            ),
+            layout="pairs",
+        )
+        left, right = self._sides(out)
+        self.assertIn(r"\OSInterlinearNotemark{1}", right)
+        self.assertIsNone(re.search(r"\n[ \t]*\n", right))
+        self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
 
     def test_a_single_column_document_keeps_its_parskip(self):
         """Confined to parallel mode: nothing here touches ordinary numbered text."""
