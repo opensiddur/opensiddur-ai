@@ -37,10 +37,6 @@ def d(urn, *paras, indent=8):
     return f'{pad}<tei:div corresp="{urn}">\n{inner}\n{pad}</tei:div>'
 
 
-def seg(slug, text):
-    return f'<tei:seg corresp="{U}{slug}">{text}</tei:seg>'
-
-
 prayer('asher_yatzar', 'Asher Yatzar', 'asher_yatzar', 14, 14,
        d(U + 'asher_yatzar', 'Blessed art thou, Lord our God, King of the universe, who hast formed man in wisdom, and created in him a system of veins and arteries. It is well known before thy glorious throne that if but one of these be opened, or if one of those be closed, it would be impossible to exist in thy presence. Blessed art thou, O Lord, who healest all creatures and doest wonders.'))
 

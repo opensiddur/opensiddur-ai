@@ -11,7 +11,7 @@ Two things on this page that the Amidah's pages never asked for:
 "When dressed:" the print sets Deuteronomy 33:4, a blessing line, Proverbs 1:8, a
 two-clause declaration, the first verse of the Shema with its response, Deuteronomy 4:4
 and Genesis 49:18 as ONE run-on paragraph, and the facing English does the same. Nothing
-in the layout separates them. They are therefore paired at ``tei:seg`` level inside the
+in the layout separates them. They are therefore paired by ``tei:milestone`` boundaries inside the
 single ``tei:p``: the two sides join on exact URN equality, so a passage that must line
 up with its translation needs a URN of its own, and there is nothing else here to line
 up on. Splitting them into transcluded files would align them too, and would destroy the
@@ -24,6 +24,7 @@ Different words, so a different text and its own URN -- ``prayer:yeladim/elohai_
 """
 import functools
 
+from .milestones import marked
 from .common import PRAYER
 from . import common
 
@@ -62,9 +63,9 @@ def wrap(urn, inner):
     return f'        <tei:div corresp="{urn}">\n{inner}\n        </tei:div>'
 
 
-def seg(slug, text):
+def passage(slug, text):
     """One text inside a shared printed paragraph, named so the two sides can join."""
-    return f'<tei:seg corresp="{U}{slug}">{text}</tei:seg>'
+    return marked(U + slug, text)
 
 
 PRAYERS = []
@@ -97,15 +98,15 @@ prayer("yeladim_tzitzit", "בִּרְכַּת צִיצִת", "al_mitzvat_tzitzit
 # prints them, and a later unit that prints them must align with this one.
 prayer("yeladim_torah_tziva", "תּוֹרָה צִוָּה לָֽנוּ מֹשֶׁה", "torah_tziva", 1, 1,
     wrap(U + "torah_tziva", d(None, " ".join([
-        seg("torah_tziva/morasha", "תּוֹרָה צִוָּה לָֽנוּ מֹשֶׁה, מוֹרָשָׁה קְהִלַּת יַעֲקֹב."),
-        seg("torah_tziva/berakhot", "בְּרָכוֹת יָחֻֽלוּ עַל רֹאשִׁי."),
-        seg("torah_tziva/shema_beni", "שְׁמַע בְּנִי מוּסַר אָבִֽיךָ, וְאַל תִּטֹּשׁ תּוֹרַת אִמֶּֽךָ."),
-        seg("torah_tziva/torah_tehi", "תּוֹרָה תְּהִי אֱמוּנָתִי, וְאֵל שַׁדַּי בְּעֶזְרָתִי."),
-        seg("torah_tziva/el_melekh_neeman", "אֵל מֶֽלֶךְ נֶאֱמָן."),
-        seg("shema/shema_yisrael", "שְׁמַע יִשְׂרָאֵל, יְיָ אֱלֹהֵֽינוּ, יְיָ אֶחָד."),
-        seg("shema/barukh_shem", "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד."),
-        seg("torah_tziva/veatem_hadveqim", "וְאַתֶּם הַדְּבֵקִים בַּייָ אֱלֹהֵיכֶם, חַיִּים כֻּלְּכֶם הַיּוֹם."),
-        seg("torah_tziva/lishuatkha", "לִישׁוּעָתְךָ קִוִּֽיתִי, יְיָ."),
+        passage("torah_tziva/morasha", "תּוֹרָה צִוָּה לָֽנוּ מֹשֶׁה, מוֹרָשָׁה קְהִלַּת יַעֲקֹב."),
+        passage("torah_tziva/berakhot", "בְּרָכוֹת יָחֻֽלוּ עַל רֹאשִׁי."),
+        passage("torah_tziva/shema_beni", "שְׁמַע בְּנִי מוּסַר אָבִֽיךָ, וְאַל תִּטֹּשׁ תּוֹרַת אִמֶּֽךָ."),
+        passage("torah_tziva/torah_tehi", "תּוֹרָה תְּהִי אֱמוּנָתִי, וְאֵל שַׁדַּי בְּעֶזְרָתִי."),
+        passage("torah_tziva/el_melekh_neeman", "אֵל מֶֽלֶךְ נֶאֱמָן."),
+        passage("shema/shema_yisrael", "שְׁמַע יִשְׂרָאֵל, יְיָ אֱלֹהֵֽינוּ, יְיָ אֶחָד."),
+        passage("shema/barukh_shem", "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד."),
+        passage("torah_tziva/veatem_hadveqim", "וְאַתֶּם הַדְּבֵקִים בַּייָ אֱלֹהֵיכֶם, חַיִּים כֻּלְּכֶם הַיּוֹם."),
+        passage("torah_tziva/lishuatkha", "לִישׁוּעָתְךָ קִוִּֽיתִי, יְיָ."),
     ]), indent=10)))
 
 prayer("yeladim_elohai_netzor", "אֱלֹהַי נְצֹר", "yeladim/elohai_netzor", 1, 1,

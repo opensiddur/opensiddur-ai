@@ -3,6 +3,7 @@ import re
 from html import escape
 from .common import PRAYER, SIDDUR, SIGIL_SHEMA, pb, cond, endcond, feature, QUORUM
 from .shema_data import ROWS
+from .milestones import Correspondences
 
 BIBLE = 'urn:x-opensiddur:text:bible:'
 ORDER = ('barekhu', 'yotzer_or', 'ahavah_rabbah', 'shema', 'emet_veyatziv')
@@ -36,12 +37,13 @@ def prayers(lang):
         if name == 'shema' and lang == 'en':
             parts.append('<tei:head xml:lang="en">SHEMA</tei:head>')
         scripture_open = False
+        marks = Correspondences()
         for ref, text in groups[name]:
             # Consecutive Torah verses share one paragraph, as in the print.
             torah = ref.startswith(('bible:deuteronomy/', 'bible:numbers/'))
             new_para = ref in CITATIONS or ref == 'bible:deuteronomy/6/5' or (lang == 'he' and ref == 'bible:deuteronomy/11/21')
             if scripture_open and (not torah or new_para):
-                parts.append('</tei:p></tei:div>')
+                parts.append(marks.close() + '</tei:p></tei:div>')
                 scripture_open = False
             if torah:
                 if not scripture_open:
@@ -50,7 +52,7 @@ def prayers(lang):
                         parts.append(f'<tei:head xml:lang="{lang}">{CITATIONS[ref][side]}</tei:head>')
                     parts.append('<tei:p>')
                     scripture_open = True
-                parts.append(f'<tei:seg corresp="{BIBLE}{ref[6:]}">{text_xml(text)}</tei:seg> ')
+                parts.append(marks.start(BIBLE + ref[6:]) + text_xml(text) + ' ')
             elif ref.startswith('bible:'):
                 # These Exodus verses already occur in the Song at the Sea.
                 key = 'mi_khamokha' if ref.endswith('/11') else 'adonai_yimlokh'
@@ -71,7 +73,7 @@ def prayers(lang):
                     value = f'<tei:seg source="{BIBLE}{quote}">{value}</tei:seg>'
                 parts.append(f'<tei:div corresp="{PRAYER}{ref}"><tei:p>{value}</tei:p></tei:div>')
         if scripture_open:
-            parts.append('</tei:p></tei:div>')
+            parts.append(marks.close() + '</tei:p></tei:div>')
         parts.append('</tei:div>')
         result.append(dict(name=name, title=title[side], urn=PRAYER+name,
                            first=pages[0]+side, last=pages[1]+side, body=''.join(parts)))

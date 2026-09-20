@@ -24,6 +24,7 @@ leave the rest to the typography.
 """
 import functools
 
+from .milestones import marked
 from .common import PRAYER
 from . import common
 
@@ -65,9 +66,9 @@ def wrap(urn, inner):
     return f'        <tei:div corresp="{urn}">\n{inner}\n        </tei:div>'
 
 
-def seg(slug, text):
+def passage(slug, text):
     """One text inside a shared printed paragraph, named so the two sides can join."""
-    return f'<tei:seg corresp="{U}{slug}">{text}</tei:seg>'
+    return marked(U + slug, text)
 
 
 PRAYERS = []
@@ -89,15 +90,15 @@ prayer("yeladim_tzitzit", "Blessing for the tsitsith", "al_mitzvat_tzitzit", 2, 
 
 prayer("yeladim_torah_tziva", "The Torah which Moses handed down to us", "torah_tziva", 2, 2,
     wrap(U + "torah_tziva", d(None, " ".join([
-        seg("torah_tziva/morasha", "The Torah which Moses handed down to us is the heritage of the community of Jacob."),
-        seg("torah_tziva/berakhot", "May blessings rest on my head."),
-        seg("torah_tziva/shema_beni", "Hear, my son, your father’s instruction, and reject not your mother’s teaching."),
-        seg("torah_tziva/torah_tehi", "The Torah shall be my trust, and the Almighty my help."),
-        seg("torah_tziva/el_melekh_neeman", "God is a faithful King."),
-        seg("shema/shema_yisrael", "Hear, O Israel, the Lord is our God, the Lord is One."),
-        seg("shema/barukh_shem", "Blessed be the name of his glorious majesty forever and ever."),
-        seg("torah_tziva/veatem_hadveqim", "You who cling to the Lord are all alive today."),
-        seg("torah_tziva/lishuatkha", "For thy salvation I hope, O Lord."),
+        passage("torah_tziva/morasha", "The Torah which Moses handed down to us is the heritage of the community of Jacob."),
+        passage("torah_tziva/berakhot", "May blessings rest on my head."),
+        passage("torah_tziva/shema_beni", "Hear, my son, your father’s instruction, and reject not your mother’s teaching."),
+        passage("torah_tziva/torah_tehi", "The Torah shall be my trust, and the Almighty my help."),
+        passage("torah_tziva/el_melekh_neeman", "God is a faithful King."),
+        passage("shema/shema_yisrael", "Hear, O Israel, the Lord is our God, the Lord is One."),
+        passage("shema/barukh_shem", "Blessed be the name of his glorious majesty forever and ever."),
+        passage("torah_tziva/veatem_hadveqim", "You who cling to the Lord are all alive today."),
+        passage("torah_tziva/lishuatkha", "For thy salvation I hope, O Lord."),
     ]), indent=10)))
 
 prayer("yeladim_elohai_netzor", "My God, guard my tongue", "yeladim/elohai_netzor", 2, 2,

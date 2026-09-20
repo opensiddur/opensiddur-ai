@@ -38,6 +38,15 @@ The final result must be well-formed XML and valid according to a subset of the 
 If you make an errors, your answer will be returned to you with an error message and
 you will correct the error.
 
+# Correspondence boundaries
+Prefer tei:milestone with corresp and a consistent unit for repeating verses,
+prayer parts, petitions, and stanzas, following the Tanach pattern. Keep printed
+paragraphs and poetic lines independent of those boundaries. Higher divisions
+may retain corresp on tei:div. Reserve tei:seg for bounded quotations or other
+inline semantics. Explicitly close a reference sequence with a same-unit
+milestone without corresp before unrelated text or rubrics; preserve source
+attributes and the exact text covered by each URN.
+
 # Examples
 <tei:text xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
     <tei:front>

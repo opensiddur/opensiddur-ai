@@ -118,23 +118,23 @@ prayer("ishmael_yehi_ratzon", "יְהִי רָצוֹן שֶׁיִּבָּנֶה 
 #: break opens the next passage rather than sitting inside this one.
 prayer("kaddish_derabbanan_yitgadal", "יִתְגַּדַּל וְיִתְקַדַּשׁ", "kaddish/derabbanan/yitgadal", 45, 45,
        d(U + "kaddish/derabbanan/yitgadal",
-         f'<tei:seg corresp="{U}kaddish/yitgadal">'
+         f'<tei:milestone unit="prayer-part" corresp="{U}kaddish/yitgadal"/>'
          "יִתְגַּדַּל וְיִתְקַדַּשׁ שְׁמֵהּ רַבָּא בְּעָלְמָא דִּי בְרָא "
          "כִרְעוּתֵהּ; וְיַמְלִיךְ מַלְכוּתֵהּ בְּחַיֵּיכוֹן וּבְיוֹמֵיכוֹן, "
          "וּבְחַיֵּי דְכָל בֵּית יִשְׂרָאֵל, בַּעֲגָלָא וּבִזְמַן קָרִיב, "
          "וְאִמְרוּ אָמֵן."
-         '</tei:seg>'))
+         '<tei:milestone unit="prayer-part"/>'))
 
 prayer("kaddish_derabbanan_yehe_shmeh", "יְהֵא שְׁמֵהּ רַבָּא מְבָרַךְ", "kaddish/derabbanan/yehe_shmeh", 45, 45,
        d(U + "kaddish/derabbanan/yehe_shmeh",
-         f'<tei:seg corresp="{U}kaddish/yehe_shmeh">'
+         f'<tei:milestone unit="prayer-part" corresp="{U}kaddish/yehe_shmeh"/>'
          "יְהֵא שְׁמֵהּ רַבָּא מְבָרַךְ לְעָלַם וּלְעָלְמֵי עָלְמַיָּא."
-         '</tei:seg>'))
+         '<tei:milestone unit="prayer-part"/>'))
 
 prayer("kaddish_derabbanan_yitbarakh", "יִתְבָּרַךְ וְיִשְׁתַּבַּח", "kaddish/derabbanan/yitbarakh", 47, 47,
        d(U + "kaddish/derabbanan/yitbarakh",
          f'{pb(47)}'
-         f'<tei:seg corresp="{U}kaddish/yitbarakh">'
+         f'<tei:milestone unit="prayer-part" corresp="{U}kaddish/yitbarakh"/>'
          "יִתְבָּרַךְ וְיִשְׁתַּבַּח, וְיִתְפָּאַר וְיִתְרוֹמָם, וְיִתְנַשֵּׂא "
          "וְיִתְהַדָּר, וְיִתְעַלֶּה וְיִתְהַלָּל שְׁמֵהּ דְּקֻדְשָׁא, בְּרִיךְ "
          "הוּא, לְעֵֽלָּא "
@@ -142,7 +142,7 @@ prayer("kaddish_derabbanan_yitbarakh", "יִתְבָּרַךְ וְיִשְׁת�
          + "לְעֵֽלָּא" + endcond("cond_kaddish_aseret")
          + " מִן כָּל בִּרְכָתָא וְשִׁירָתָא, "
          "תֻּשְׁבְּחָתָא וְנֶחֱמָתָא, דַּאֲמִירָן בְּעָלְמָא, וְאִמְרוּ אָמֵן."
-         '</tei:seg>'))
+         '<tei:milestone unit="prayer-part"/>'))
 
 prayer("kaddish_derabbanan_al_yisrael", "עַל יִשְׂרָאֵל וְעַל רַבָּנָן", "kaddish/derabbanan/al_yisrael", 47, 47,
        d(U + "kaddish/derabbanan/al_yisrael",

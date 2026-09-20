@@ -7,6 +7,7 @@ from .common import (PRAYER, SIDDUR, PROJECT_HE, QUORUM, PERSON, AGG,
 from .tachanun_conditions import MON_THU, holiday, occasion
 from .avinu_malkenu import FAST
 from .torah_data import PASSAGES
+from .milestones import Correspondences
 
 ROOT = SIDDUR + 'chol/shacharit/torah'
 BIBLE = 'urn:x-opensiddur:text:bible:'
@@ -80,6 +81,7 @@ def prayers(lang):
         if key == 'psalm24':
             parts.append(f'<tei:head xml:lang="{lang}">' + ('תהלים כד' if side == 0 else 'Psalm 24') + '</tei:head>')
         parts.append('<tei:p>')
+        marks = Correspondences()
         for i, (name, source, he, en) in enumerate(passage['rows']):
             # Paragraphs and role changes follow the print; verse boundaries alone
             # do not introduce paragraphs in the prose Psalms or verse composites.
@@ -91,9 +93,9 @@ def prayers(lang):
             if new_para:
                 parts.append('</tei:p><tei:p>')
             if key in ('barekhu', 'hagomel') and name == 'response':
-                parts.append(instruction('Congregation responds:'))
+                parts.append(marks.close() + instruction('Congregation responds:'))
             if key == 'yehalelu' and name == 'congregation':
-                parts.append(instruction('Congregation:'))
+                parts.append(marks.close() + instruction('Congregation:'))
             ref = anchor(key, name, source)
             attributes = f' source="{BIBLE}{source}"' if source and not ref.startswith(BIBLE) else ''
             if key in ('barekhu', 'asher_bachar'):
@@ -103,8 +105,10 @@ def prayers(lang):
             if key in ('gadelu', 'veatem'):
                 parts.append(value)
             else:
-                parts.append(f'<tei:seg corresp="{ref}"{attributes}>{value}</tei:seg>')
-        parts += ['</tei:p>', '</tei:div>']
+                if attributes:
+                    value = f'<tei:seg{attributes}>{value}</tei:seg>'
+                parts.append(marks.start(ref) + value)
+        parts += [marks.close(), '</tei:p>', '</tei:div>']
         title = ' '.join(passage['rows'][0][2].split()[:3]) if side == 0 else key.replace('_', ' ').capitalize()
         result.append(dict(name='torah_' + key, title=title, urn=urn,
             first=passage['first'] + side, last=passage['last'] + side,

@@ -5,6 +5,7 @@ from .common import PRAYER, SIGIL_PESUKEI, pb
 from .pesukei_passages import BIBLE, ROOT, READER
 from .pesukei_data import PASSAGES as EARLIER
 from .pesukei_completion_data import PASSAGES
+from .milestones import Correspondences
 
 ORDER = ('ashrei', 'psalm_146', 'psalm_147', 'psalm_148', 'psalm_149',
          'psalm_150', 'barukh_adonai', 'vayevarekh_david', 'atah_hu',
@@ -36,24 +37,28 @@ def prayers(lang):
 
     def paragraph(name, enclosing=None):
         parts = ['<tei:p>']
+        marks = Correspondences()
         for ref, he, en in PASSAGES[name]:
             value = he if lang == 'he' else en
             urn = PRAYER + ref[7:] if ref.startswith('prayer:') else BIBLE + ref
             if value.startswith('{reader}'):
-                parts.append(READER)
+                parts.append(marks.close() + READER)
                 value = value.removeprefix('{reader}')
             xml = re.sub(r'\{pb:(\d+)\}', lambda m: pb(int(m[1]), sigil=SIGIL_PESUKEI), escape(value))
             xml = xml.replace('{lb}', '<tei:lb/>').replace('{reader}', READER)
             if urn == enclosing:
-                parts.append(xml)
+                parts.append(marks.close() + xml)
             elif not value:
                 parts.append('<!-- No corresponding repetition printed in English. -->')
             else:
                 attr = 'source' if urn in seen else 'corresp'
-                parts.append(f'<tei:seg {attr}="{urn}">{xml}</tei:seg>')
+                if attr == 'source':
+                    parts.append(marks.close() + f'<tei:seg source="{urn}">{xml}</tei:seg>')
+                else:
+                    parts.append(marks.start(urn) + xml)
             seen.add(urn)
             parts.append('<tei:lb/>' if name == 'psalm_145' else ' ')
-        parts.append('</tei:p>')
+        parts.append(marks.close() + '</tei:p>')
         return ''.join(parts)
 
     def citation(name):

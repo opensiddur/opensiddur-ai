@@ -137,12 +137,14 @@ class InlineCompilerProcessor(CompilerProcessor):
         if transcluded is not None:
             # Don't process children of j:transclude elements - just return the p:transclude
             # The tail will be handled by the parent's processing
+            self._update_processing_context_after(element)
             return transcluded
 
         annotations, annotation_command = self._annotate(element, root)
         if annotation_command == _AnnotationCommand.REPLACE:
             # This is a case of an instructional notation that needs to replace the current element
             # and *not* be treated as inline text
+            self._update_processing_context_after(element)
             return annotations[0]
         elif annotation_command == _AnnotationCommand.KEEP:
             # This is a case of an instructional notation that needs to be kept as is
@@ -158,6 +160,7 @@ class InlineCompilerProcessor(CompilerProcessor):
                 and processor.root_language != context_lang
                 and not processed_element.get('{http://www.w3.org/XML/1998/namespace}lang')):
                 processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', processor.root_language)
+            self._update_processing_context_after(element)
             return processed_element
 
         element_lang = element.get('{http://www.w3.org/XML/1998/namespace}lang')

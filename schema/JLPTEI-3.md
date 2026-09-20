@@ -144,6 +144,37 @@ All URIs reference the following scopes:
 
 4. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
 
+### Prefer milestones for repeating reference units
+
+As in the Tanach encodings, mark successive verses, prayer parts, petitions, and
+stanzas with `tei:milestone/@corresp` and a consistent `@unit`, rather than
+wrapping each unit in a `tei:seg` or a separate correspondence-bearing container.
+The reference boundaries are independent of the printed `tei:p`, `tei:lg`, and
+`tei:l` structure; retain that structure even when the facing translation has
+different paragraph breaks. Higher divisions such as whole prayers, chapters,
+and service sections may keep their correspondence on `tei:div`.
+
+```xml
+<tei:div corresp="urn:x-opensiddur:text:bible:psalms/24">
+  <tei:p><tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:psalms/24/1"/>…
+  <tei:milestone unit="verse" corresp="urn:x-opensiddur:text:bible:psalms/24/2"/>…
+  <tei:milestone unit="verse"/></tei:p>
+</tei:div>
+```
+
+Use `verse` for biblical verses and a descriptive unit such as `prayer-part` or
+`petition` for the repeated liturgical unit. Adjacent units of the same kind
+share a boundary. Explicitly terminate the sequence before unrelated prose,
+speaker rubrics, source-only repetitions, or a switch of unit type; a paragraph
+or division closing tag is not a milestone terminator. Preserve the former
+wrapper's scope when converting existing encodings, and verify resolved URN
+ranges as well as parallel rendering.
+
+A `tei:seg` remains appropriate for a bounded quotation carrying `source`, a
+language change, or other inline semantics. If that passage also needs a
+correspondence, place its milestone before the semantic span. Do not duplicate
+a canonical URN merely because the text is printed again elsewhere.
+
 ### Terminating a scope
 
 Rule 2 runs a scope to the end of the file when nothing of the same unit follows, which
