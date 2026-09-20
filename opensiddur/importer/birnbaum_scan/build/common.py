@@ -62,7 +62,7 @@ LEAF_OFFSET = -1
 #: The +25 offset in fact holds for every numbered page in the book. The table is kept to
 #: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
 #: deep-linking a leaf nobody has looked at.
-SCAN_PAGE = {p: p + 25 for p in range(1, 129)}
+SCAN_PAGE = {p: p + 25 for p in range(1, 153)}
 
 
 def leaf(page) -> int:
@@ -97,7 +97,7 @@ def pb(page, *, sigil: str, n: str | None = None) -> str:
 
 
 def header(*, title_he: str, title_en: str, urn: str, project: str,
-           first: int, last: int, lang: str) -> str:
+           first: int, last: int, lang: str, printings=()) -> str:
     """The teiHeader every file carries.
 
     Philip Birnbaum gets no respStmt: a respStmt records who *digitised* a text, and he
@@ -112,6 +112,8 @@ def header(*, title_he: str, title_en: str, urn: str, project: str,
         titles = f'<tei:title type="main" xml:lang="en">{title_en}</tei:title>'
     scope = (f'<tei:biblScope unit="pages" from="{first}" to="{last}"/>'
              if first else "")
+    scope += ''.join(f'\n          <tei:biblScope unit="pages" from="{a}" to="{b}"/>'
+                     for a, b in printings)
     return f"""  <tei:teiHeader>
     <tei:fileDesc>
       <tei:titleStmt>

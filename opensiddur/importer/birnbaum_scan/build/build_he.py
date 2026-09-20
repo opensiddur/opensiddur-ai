@@ -30,6 +30,9 @@ TORAH_PRAYERS = torah_prayers("he")
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
            + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS + TORAH_PRAYERS)
+from .conclusion import prayers as conclusion_prayers
+PRAYERS += conclusion_prayers("he", PRAYERS)
+
 
 U, S = PRAYER, SIDDUR
 
@@ -487,6 +490,7 @@ def units(project, pages, by_name, amidah_body):
     from .avinu_malkenu import unit_body as avinu_body
     from .tachanun import unit_body as tachanun_body, kaddish_body, torah_intro_body
     from .torah import unit_body as torah_body
+    from .conclusion import unit_body as conclusion_body, psalms_body
     side = 0 if project == "birnbaum_ashkenaz_he_1949" else 1
     return (
         dict(name="all_shacharit_yeladim",
@@ -527,6 +531,12 @@ def units(project, pages, by_name, amidah_body):
         dict(name="chol_shacharit_torah", body=torah_body(project),
              title_he="קְרִיאַת הַתּוֹרָה", title_en="Reading of the Torah",
              urn=f"{S}chol/shacharit/torah", pages=(119 + side, 127 + side)),
+        dict(name="chol_shacharit_conclusion", body=conclusion_body(project),
+             title_he="סיום תפילת שחרית", title_en="Conclusion of the morning service",
+             urn=f"{S}chol/shacharit/conclusion", pages=(127 + side, 137 + side)),
+        dict(name="chol_shacharit_psalms", body=psalms_body(project),
+             title_he="מזמורים לימים ולמועדים", title_en="Psalms for days and occasions",
+             urn=f"{S}chol/shacharit/psalms", pages=(139 + side, 151 + side)),
     )
 
 
@@ -595,7 +605,7 @@ def main(argv=None):
     for p in PRAYERS:
         written.append(write(PROJECT_HE, p["name"], document(
             body=p["body"], lang="he", title_he=p["title"], title_en="",
-            urn=p["urn"], project=PROJECT_HE, first=p["first"], last=p["last"])))
+            urn=p["urn"], project=PROJECT_HE, first=p["first"], last=p["last"], printings=p.get("printings", ()))))
     print(f"{len(written)} files")
     for w in written:
         print(" ", w.name)

@@ -43,6 +43,8 @@ BODY = f"""      <tei:div corresp="{S}siddur">
             <j:transclude type="external" target="{S}chol/shacharit/kaddish_after_tachanun"/>
             <j:transclude type="external" target="{S}chol/shacharit/torah_intro"/>
             <j:transclude type="external" target="{S}chol/shacharit/torah"/>
+            <j:transclude type="external" target="{S}chol/shacharit/conclusion"/>
+            <j:transclude type="external" target="{S}chol/shacharit/psalms"/>
           </tei:div>
         </tei:div>
       </tei:div>"""

@@ -541,3 +541,5 @@
 {"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/besorot", "status": "canonical", "label_en": "Besorot", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
 {"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/chakhmei", "status": "canonical", "label_en": "Chakhmei", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
 {"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/lerachem", "status": "canonical", "label_en": "Lerachem", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/titkabal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish", "label_en": "Kaddish: Titkabal"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/titkabal/text", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/titkabal", "label_en": "Kaddish: Titkabal / text"}
