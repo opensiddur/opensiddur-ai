@@ -22,6 +22,8 @@ from .avinu_malkenu import prayers as avinu_prayers
 AVINU_PRAYERS = avinu_prayers("en")
 from .tachanun import prayers as tachanun_prayers
 TACHANUN_PRAYERS = tachanun_prayers("en")
+from .torah import prayers as torah_prayers
+TORAH_PRAYERS = torah_prayers("en")
 from . import build_he
 from . import notes as apparatus
 from .notes_pesukei import PESUKEI_NOTES
@@ -30,7 +32,7 @@ from .notes_shema import SHEMA_NOTES
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS + TORAH_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -48,7 +50,11 @@ from .avinu_malkenu import NOTES as AVINU_NOTES
 
 from .notes_tachanun import NOTES as TACHANUN_NOTES
 
+from .notes_torah import NOTES as TORAH_NOTES
+
 APPARATUS = {
+    "notes_torah": dict(entries=TORAH_NOTES, slug="birnbaum_1949/torah",
+                        title="Notes on the weekday Torah service", first=119, last=128),
     "notes_tachanun": dict(entries=TACHANUN_NOTES, slug="birnbaum_1949/tachanun",
                            title="Notes on Tachanun", first=103, last=118),
     "notes_avinu_malkenu": dict(entries=AVINU_NOTES, slug="birnbaum_1949/avinu_malkenu",
