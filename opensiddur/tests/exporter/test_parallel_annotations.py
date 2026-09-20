@@ -89,6 +89,77 @@ class TestParallelAnnotations(unittest.TestCase):
             './/p:parallelItem//p:transclude', namespaces=NS))
         self.assertFalse(root.xpath('//*[@p:start or @p:end or @p:suspend or @p:resume]', namespaces=NS))
 
+    def test_milestone_notes_follow_their_verse_in_both_columns_and_plain_text(self):
+        from opensiddur.common.xslt import xslt_transform_string
+        from opensiddur.exporter.tex.latex import XSLT_FILE
+        for project in ('he', 'en'):
+            self.write(project, 'index.xml', f'''<tei:div corresp="{URN}unit"><tei:p>
+              <tei:milestone unit="verse" corresp="{URN}1"/>First verse.
+              <tei:milestone unit="verse" corresp="{URN}2"/>Second verse.
+              <tei:milestone unit="verse"/>Unrelated text.</tei:p></tei:div>''')
+        self.write('en', 'notes.xml', ''.join(
+            f'<tei:note type="commentary" target="{URN}{n}">APPARATUS{n}</tei:note>'
+            for n in (1, 2)), notes=True)
+        for primary in ('he', 'en'):
+            for parallel in (False, True):
+                with self.subTest(primary=primary, parallel=parallel):
+                    root = self.compile(primary=primary, parallel=parallel)
+                    notes = root.xpath('.//tei:body//tei:note', namespaces=NS)
+                    self.assertEqual(len(notes), 2)
+                    for n, note in enumerate(notes, 1):
+                        paragraph = note.xpath('ancestor::tei:p[1]', namespaces=NS)[0]
+                        text = ''.join(paragraph.itertext())
+                        self.assertLess(text.index(('First', 'Second')[n-1] + ' verse.'), text.index(f'APPARATUS{n}'))
+                        if parallel:
+                            row = note.xpath('ancestor::p:parallel[1]', namespaces=NS)[0]
+                            self.assertEqual(len(row.xpath(f'.//tei:milestone[@corresp="{URN}{n}"]', namespaces=NS)), 2)
+                    if not parallel:
+                        continue
+                    tex = xslt_transform_string(XSLT_FILE, etree.tostring(root[0], encoding='unicode'),
+                        xslt_params={'additional-preamble': '', 'additional-postamble': ''})
+                    self.assertLess(tex.index('First verse.'), tex.index('APPARATUS1'))
+                    self.assertLess(tex.index('Second verse.'), tex.index('APPARATUS2'))
+
+    def test_id_targeted_milestone_note_survives_repeated_range_transclusion(self):
+        for project in ('he', 'en'):
+            self.write(project, 'index.xml', f'<tei:div corresp="{URN}unit">'
+                       f'<j:transclude target="{URN}1"/><j:transclude target="{URN}1"/></tei:div>')
+            self.write(project, 'source.xml', f'''<tei:div><tei:p>
+              <tei:milestone xml:id="verse" unit="verse" corresp="{URN}1"/>Addressed words.
+              <tei:milestone unit="verse" corresp="{URN}2"/>Outside the range.
+              </tei:p></tei:div>''')
+        path = self.base / 'en' / 'source.xml'
+        tree = etree.parse(str(path))
+        stand = etree.SubElement(tree.getroot(), f'{{{NS["tei"]}}}standOff', type='notes')
+        note = etree.SubElement(stand, f'{{{NS["tei"]}}}note', type='commentary', target='#verse')
+        note.text = 'ID APPARATUS'
+        tree.write(str(path))
+        self.db.remove_file('source.xml', 'en')
+        self.db.index_file(path, 'en', 'source.xml')
+        root = self.compile()
+        notes = root.xpath('.//tei:body//tei:note', namespaces=NS)
+        self.assertEqual(len(notes), 2)
+        for note in notes:
+            row = note.xpath('ancestor::p:parallelItem[1]', namespaces=NS)[0]
+            text = ''.join(row.itertext())
+            self.assertLess(text.index('Addressed words.'), text.index('ID APPARATUS'))
+            self.assertNotIn('Outside the range', text)
+
+    def test_instruction_annotation_stays_before_milestone_text_in_same_row(self):
+        for project in ('he', 'en'):
+            self.write(project, 'index.xml', f'<tei:div corresp="{URN}unit"><tei:p>'
+                       f'<tei:milestone unit="verse" corresp="{URN}1"/>Verse words.'
+                       '<tei:milestone unit="verse"/></tei:p></tei:div>')
+        self.write('en', 'notes.xml',
+                   f'<tei:note type="instruction" target="{URN}1">READ THIS</tei:note>'
+                   f'<tei:note type="commentary" target="{URN}1">APPARATUS</tei:note>', notes=True)
+        root = self.compile()
+        note = root.xpath('.//tei:body//tei:note[@type="instruction"]', namespaces=NS)[0]
+        row = note.xpath('ancestor::p:parallelItem[1]', namespaces=NS)[0]
+        text = ''.join(row.itertext())
+        self.assertLess(text.index('READ THIS'), text.index('Verse words.'))
+        self.assertLess(text.index('Verse words.'), text.index('APPARATUS'))
+
     def test_structural_notes_in_both_pairing_paths_and_columns(self):
         for root_pair in (True, False):
             for apparatus in ('he', 'en', 'notes'):

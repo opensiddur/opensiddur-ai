@@ -68,6 +68,37 @@ class TestConditionalIntegration(unittest.TestCase):
             }),
         )
 
+    def test_nested_rubric_does_not_escape_false_ancestor(self):
+        from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
+        from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
+        for processor in (CompilerProcessor, ExternalCompilerProcessor, InlineCompilerProcessor):
+            for value in ('true', 'false', 'undefined'):
+                with self.subTest(processor=processor.__name__, value=value):
+                    reset_linear_data()
+                    get_linear_data().xml_cache.base_path = self.base
+                    condition = ('<tei:binary value="' + value + '"/>' if value != 'undefined'
+                                 else '<tei:symbol value="undefined"/>')
+                    filename = self._write("nested.xml", f'''<tei:p>
+                      <j:declare xml:id="d"><tei:fs type="test">
+                        <tei:f name="outer"><tei:binary value="false"/></tei:f>
+                        <tei:f name="inner">{condition}</tei:f>
+                      </tei:fs></j:declare>
+                      <j:conditional xml:id="outer"><tei:fs type="test"><tei:f name="outer"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+                      <j:conditional xml:id="inner"><tei:note type="instruction">HIDDEN RUBRIC</tei:note><tei:fs type="test"><tei:f name="inner"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+                      <tei:seg>HIDDEN PASSAGE</tei:seg><j:endConditional target="#inner"/>
+                      <j:endConditional target="#outer"/>
+                      <tei:seg>VISIBLE AFTER</tei:seg><j:endDeclare target="#d"/>
+                    </tei:p>''')
+                    kwargs = {"from_start": None, "to_end": None} if processor is InlineCompilerProcessor else {}
+                    result = processor("test_project", filename, **kwargs).process()
+                    roots = result if isinstance(result, list) else [result]
+                    output = ''.join(etree.tostring(root, encoding='unicode') for root in roots)
+                    self.assertNotIn('HIDDEN', output)
+                    self.assertNotIn('Conditional', output)
+                    self.assertNotIn('conditional', output)
+                    self.assertIn('VISIBLE AFTER', output)
+                    self.assertEqual(get_linear_data().conditional_scope_stack, [])
+
     def test_date_derived_rosh_hodesh_selects_passage(self):
         for month, day, included in (
             (4, 17, True), (4, 18, True), (3, 19, True),

@@ -58,6 +58,7 @@ from opensiddur.exporter.condition_eval import (
     parse_condition_element,
 )
 from opensiddur.exporter.refdb import ReferenceDatabase
+from opensiddur.exporter.milestone_annotations import place_milestone_annotations
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
@@ -829,6 +830,10 @@ class CompilerProcessor:
             node = parse_condition_element(element)
             result = evaluate_condition(node, self)
             self._push_conditional_scope(scoped_id, result)
+            # Nested controls must maintain the scope stack even in omitted
+            # text, but their rubrics and brackets must not escape that scope.
+            if self._should_skip_conditional_content():
+                return True, None
             if result == TriState.UNDEFINED:
                 return True, self._copy_element_subtree(element)
             if result == TriState.TRUE:
@@ -854,7 +859,7 @@ class CompilerProcessor:
                 )
             scoped_id = self._scoped_declare_id(bare_id, conditional_el)
             scope = self._pop_conditional_scope(scoped_id)
-            if scope.result == TriState.UNDEFINED.value:
+            if scope.result == TriState.UNDEFINED.value and not self._should_skip_conditional_content():
                 return True, self._copy_element_subtree(element)
             return True, None
 
@@ -947,6 +952,7 @@ class CompilerProcessor:
             ))
 
             copied = self._process_element(root, root)
+            place_milestone_annotations([copied])
             copied = self._mark_file_source(copied)
             # pop the processing context
             self.linear_data.processing_context.pop()

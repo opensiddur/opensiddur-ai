@@ -31,6 +31,8 @@ from opensiddur.exporter.marker_reconstruct import (
     reconstruct_markered_document,
 )
 
+from opensiddur.exporter.milestone_annotations import place_milestone_annotations
+
 logger = logging.getLogger(__name__)
 
 
@@ -1126,7 +1128,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         # around them is document text. See _carry_dropped_tail.
                         self._carry_dropped_tail(append_to, child)
 
-        if annotation_command == _AnnotationCommand.INSERT:
+        if annotation_command == _AnnotationCommand.INSERT and element.tag == f"{{{TEI_NS}}}milestone":
+            # Keep apparatus with its opening milestone until the entire source
+            # span is compiled, then place it at the end before parallel splitting.
+            copied.extend(note for note in annotations if note.get('type') != 'instruction')
+            # Rubrics belong before the addressed words, inside their new row.
+            processed.extend(note for note in annotations if note.get('type') == 'instruction')
+        elif annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
                 # ExternalCompilerProcessor returns a list[Element]; insertion is at the
                 # sequence level, not as a child of an element.
@@ -1196,6 +1204,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             finally:
                 # A failed counterpart must not leave its context in the fallback.
                 self.linear_data.processing_context.pop()
+
+        place_milestone_annotations(processed)
 
         # When processing the full file (not a range transclusion), mark the file source on the root element
         # so that get_file_references() can find source files for metadata extraction
