@@ -32,6 +32,8 @@ PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS + TORAH_PRAYERS)
 from .conclusion import prayers as conclusion_prayers
 PRAYERS += conclusion_prayers("he", PRAYERS)
+from .shacharit_end import prayers as final_prayers
+PRAYERS += final_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -491,8 +493,10 @@ def units(project, pages, by_name, amidah_body):
     from .tachanun import unit_body as tachanun_body, kaddish_body, torah_intro_body
     from .torah import unit_body as torah_body
     from .conclusion import unit_body as conclusion_body, psalms_body
+    from .shacharit_end import service_body, unit_body as final_body, editorial_head
     side = 0 if project == "birnbaum_ashkenaz_he_1949" else 1
-    return (
+    lang = "he" if side == 0 else "en"
+    result = (
         dict(name="all_shacharit_yeladim",
              body=unit_body_yeladim(YELADIM_HEAD[project], by_name),
              title_he="שַׁחֲרִית לִילָדִים", title_en="Morning prayer for children",
@@ -537,7 +541,21 @@ def units(project, pages, by_name, amidah_body):
         dict(name="chol_shacharit_psalms", body=psalms_body(project),
              title_he="מזמורים לימים ולמועדים", title_en="Psalms for days and occasions",
              urn=f"{S}chol/shacharit/psalms", pages=(139 + side, 151 + side)),
+        dict(name="chol_shacharit_final_readings", body=final_body(lang),
+             title_he="קריאות לסיום שחרית", title_en="Final readings",
+             urn=f"{S}chol/shacharit/final_readings", pages=(151 + side, 155 + side)),
+        dict(name="chol_shacharit", body=service_body(lang),
+             title_he="תפילת שחרית ליום חול", title_en="Weekday Shacharit",
+             urn=f"{S}chol/shacharit", pages=(3 + side, 155 + side)),
     )
+    # Explicit editorial section headings supply navigation where the printed
+    # book relies on placement. Prayer headings remain inside their sections.
+    for unit in result:
+        if unit['name'] in ('chol_shacharit_pesukei_dezimra', 'chol_shacharit_shema',
+                            'chol_shacharit_conclusion', 'chol_shacharit_psalms'):
+            start, rest = unit['body'].split('>', 1)
+            unit['body'] = start + '>\n' + editorial_head(lang, unit['title_he'], unit['title_en']) + rest
+    return result
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

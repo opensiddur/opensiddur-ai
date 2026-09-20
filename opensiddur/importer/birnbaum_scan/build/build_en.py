@@ -35,6 +35,8 @@ PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS + TORAH_PRAYERS)
 from .conclusion import prayers as conclusion_prayers
 PRAYERS += conclusion_prayers("en", PRAYERS)
+from .shacharit_end import prayers as final_prayers
+PRAYERS += final_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -59,7 +61,11 @@ from .notes_conclusion import make_notes
 from .conclusion import ANCHORS
 CONCLUSION_NOTES = make_notes(ANCHORS)
 
+from .shacharit_end import NOTES as FINAL_NOTES
+
 APPARATUS = {
+    "notes_shacharit_end": dict(entries=FINAL_NOTES, slug="birnbaum_1949/shacharit_end",
+                               title="Notes on the final morning readings", first=151, last=156),
     "notes_conclusion": dict(entries=CONCLUSION_NOTES, slug="birnbaum_1949/conclusion",
                              title="Notes on the conclusion and psalms", first=128, last=152),
     "notes_torah": dict(entries=TORAH_NOTES, slug="birnbaum_1949/torah",
