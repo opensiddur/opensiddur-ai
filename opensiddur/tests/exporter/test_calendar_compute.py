@@ -909,3 +909,11 @@ class TestTorahServiceCalendar(unittest.TestCase):
                         snap = TestRoshHodesh._snap(civil.year, civil.month, civil.day, israel=israel)
                         expected = (16 if israel else 17) <= day <= last
                         self.assertEqual(compute_holiday_aggregate(snap)["chol-hamoed"], expected)
+
+    def test_gedaliah_fast_uses_library_name_and_observed_date(self):
+        for year, month, day, fast in ((2025, 9, 25, True), (2024, 10, 5, False),
+                                       (2024, 10, 6, True), (2024, 10, 7, False)):
+            with self.subTest(date=(year, month, day)):
+                snap = TestRoshHodesh._snap(year, month, day)
+                self.assertEqual(compute_holiday(snap)["tzom-gedalia"], int(fast))
+                self.assertEqual(compute_holiday_aggregate(snap)["minor-fast"], fast)

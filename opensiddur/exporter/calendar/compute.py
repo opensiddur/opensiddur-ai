@@ -530,7 +530,7 @@ def _map_hdate_holidays(
             values["shushan-purim"] = 1
         elif name == "tzom_tammuz":
             values["tzom-tammuz"] = 1
-        elif name == "tzom_gedalia":
+        elif name in ("tzom_gedalia", "tzom_gedaliah"):
             values["tzom-gedalia"] = 1
         elif name == "asara_btevet":
             values["asara-btevet"] = 1
