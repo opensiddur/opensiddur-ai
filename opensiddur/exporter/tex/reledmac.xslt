@@ -2035,7 +2035,9 @@
                      when the splitter happened not to cut between them. -->
                 <xsl:with-param name="alt-head" select="tei:head[2]"/>
                 <xsl:with-param name="level"
-                                select="min((count(ancestor::tei:div[tei:head]) + 1, 4))"/>
+                                select="if (tei:head[1]/@p:heading-level)
+                                        then min((xs:integer(tei:head[1]/@p:heading-level), 4))
+                                        else min((count(ancestor::tei:div[tei:head]) + 1, 4))"/>
             </xsl:call-template>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
