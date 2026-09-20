@@ -415,6 +415,7 @@ class TestComputeFunctions(unittest.TestCase):
             ("chanuka", "hanukkah", 1),
             ("purim", "purim", 1),
             ("shushan_purim", "shushan-purim", 1),
+            ("tzom_tammuz", "tzom-tammuz", 1),
             ("tzom_gedalia", "tzom-gedalia", 1),
             ("asara_btevet", "asara-btevet", 1),
             ("taanit_esther", "taanit-esther", 1),
@@ -887,3 +888,24 @@ class TestRainSeasons(unittest.TestCase):
         self.assertTrue(found["geshem"])          # needs no location
         self.assertNotIn("tal-umatar", found)     # does
 
+
+
+class TestTorahServiceCalendar(unittest.TestCase):
+    def test_tammuz_fast_uses_observed_date_and_minor_fast_aggregate(self):
+        for year, month, day, fast in ((2026, 7, 2, True), (2026, 7, 3, False),
+                                       (2022, 7, 16, False), (2022, 7, 17, True)):
+            for israel in (True, False):
+                with self.subTest(date=(year, month, day), israel=israel):
+                    snap = TestRoshHodesh._snap(year, month, day, israel=israel)
+                    self.assertEqual(compute_holiday(snap)["tzom-tammuz"], int(fast))
+                    self.assertEqual(compute_holiday_aggregate(snap)["minor-fast"], fast)
+
+    def test_chol_hamoed_boundaries_depend_on_location_and_festival(self):
+        for month, last in ((1, 20), (7, 21)):
+            for day in (15, 16, 17, 20, 21, 22):
+                for israel in (True, False):
+                    with self.subTest(month=month, day=day, israel=israel):
+                        civil = pyluach_dates.HebrewDate(5786, month, day).to_greg()
+                        snap = TestRoshHodesh._snap(civil.year, civil.month, civil.day, israel=israel)
+                        expected = (16 if israel else 17) <= day <= last
+                        self.assertEqual(compute_holiday_aggregate(snap)["chol-hamoed"], expected)

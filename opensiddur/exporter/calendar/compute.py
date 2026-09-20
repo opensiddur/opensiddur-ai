@@ -528,6 +528,8 @@ def _map_hdate_holidays(
             values["purim"] = 1
         elif name == "shushan_purim":
             values["shushan-purim"] = 1
+        elif name == "tzom_tammuz":
+            values["tzom-tammuz"] = 1
         elif name == "tzom_gedalia":
             values["tzom-gedalia"] = 1
         elif name == "asara_btevet":
@@ -624,7 +626,10 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
     gdate = _effective_gregorian_date(snapshot)
     yom_tov = gdate is not None and hdate.HDateInfo(
         gdate, diaspora=snapshot.is_diaspora()).is_yom_tov
-    chol_hamoed = holidays.get("pesah", 0) in (3, 4, 5, 6) or holidays.get("sukkot", 0) in (3, 4, 5, 6)
+    # Israel begins on day 2; Hoshana Rabba (Sukkot day 7) is still chol hamoed.
+    first_intermediate_day = 3 if snapshot.is_diaspora() else 2
+    chol_hamoed = (first_intermediate_day <= holidays.get("pesah", 0) <= 6
+                   or first_intermediate_day <= holidays.get("sukkot", 0) <= 7)
     regalim = holidays.get("pesah", 0) > 0 or holidays.get("shavuot", 0) > 0 or holidays.get("sukkot", 0) > 0
     aseret = (
         heb is not None
@@ -640,7 +645,7 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
         "hoshana-rabba": holidays.get("sukkot", 0) == 7,
         "high-holidays": holidays.get("rosh-hashana", 0) > 0 or holidays.get("yom-kippur", 0) > 0,
         "aseret-ymei-tshuva": aseret,
-        "minor-fast": any(holidays.get(k, 0) > 0 for k in ("tzom-gedalia", "asara-btevet", "taanit-esther", "tisha-bav")),
+        "minor-fast": any(holidays.get(k, 0) > 0 for k in ("tzom-gedalia", "asara-btevet", "taanit-esther", "tzom-tammuz", "tisha-bav")),
         "eruv-tavshilin": _needs_eruv_tavshilin(snapshot),
         "day-before-holiday": False,
         "day-after-holiday": False,
