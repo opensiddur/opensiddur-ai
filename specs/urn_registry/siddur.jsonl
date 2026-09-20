@@ -68,3 +68,28 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu/zekhor", "status": "canonical", "label_en": "Zekhor", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/tachanun/vehu"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah_intro", "status": "canonical", "label_en": "Torah intro", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit"}
 {"urn": "urn:x-opensiddur:text:siddur:siddur", "status": "canonical", "label_en": "The Complete Siddur"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah", "status": "canonical", "label_en": "Torah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/asher_bachar", "status": "canonical", "label_en": "Asher bachar", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/asher_bachar/text", "status": "canonical", "label_en": "Text", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/asher_bachar"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/barekhu", "status": "canonical", "label_en": "Barekhu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/barekhu/call", "status": "canonical", "label_en": "Call", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/barekhu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/barekhu/response", "status": "canonical", "label_en": "Response", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/barekhu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai", "status": "canonical", "label_en": "Lekha adonai", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai/lekha", "status": "canonical", "label_en": "Lekha", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai/romemu_hadom", "status": "canonical", "label_en": "Romemu hadom", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai/romemu_har", "status": "canonical", "label_en": "Romemu har", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/lekha_adonai"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/uvnucho", "status": "canonical", "label_en": "Uvnucho", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/uvnucho/derakheha", "status": "canonical", "label_en": "Derakheha", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/uvnucho"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/uvnucho/etz", "status": "canonical", "label_en": "Etz", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/uvnucho"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vayehi_binsoa", "status": "canonical", "label_en": "Vayehi binsoa", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vayehi_binsoa/barukh", "status": "canonical", "label_en": "Barukh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vayehi_binsoa"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vayehi_binsoa/ki_mitzion", "status": "canonical", "label_en": "Ki mitzion", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vayehi_binsoa"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vetiggaleh", "status": "canonical", "label_en": "Vetiggaleh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vetiggaleh/barukh", "status": "canonical", "label_en": "Barukh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vetiggaleh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vetiggaleh/vetiggaleh", "status": "canonical", "label_en": "Vetiggaleh", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vetiggaleh"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vezot_hatorah", "status": "canonical", "label_en": "Vezot hatorah", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vezot_hatorah/al_pi", "status": "canonical", "label_en": "Al pi", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/vezot_hatorah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu", "status": "canonical", "label_en": "Yehalelu", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu/congregation", "status": "canonical", "label_en": "Congregation", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu/reader", "status": "canonical", "label_en": "Reader", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu/vayarem", "status": "canonical", "label_en": "Vayarem", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/torah/yehalelu"}

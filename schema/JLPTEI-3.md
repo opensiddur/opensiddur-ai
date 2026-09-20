@@ -1352,6 +1352,11 @@ and two binaries can be set both true.
 </tei:fs>
 ```
 
+The binary `opensiddur:person/birkat-hagomel` records whether the person has come
+safely through a dangerous experience and is to recite the thanksgiving blessing.
+It is explicitly supplied, has no default, and is not derived from the calendar;
+when unknown, the blessing remains with its recitation instruction.
+
 Nor is which recitation of a prayer said more than once in a service this is. Every Amidah
 is said silently and then, when a minyan is present, repeated aloud: the Kedushah belongs
 to the repetition and `אַתָּה קָדוֹשׁ` to the silent one. This is independent of *which*

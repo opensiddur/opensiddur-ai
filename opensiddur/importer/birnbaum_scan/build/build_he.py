@@ -23,11 +23,13 @@ from .avinu_malkenu import prayers as avinu_prayers
 AVINU_PRAYERS = avinu_prayers("he")
 from .tachanun import prayers as tachanun_prayers
 TACHANUN_PRAYERS = tachanun_prayers("he")
+from .torah import prayers as torah_prayers
+TORAH_PRAYERS = torah_prayers("he")
 
 #: Every prayer file this project writes, both units.
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
-           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS)
+           + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS + TORAH_PRAYERS)
 
 U, S = PRAYER, SIDDUR
 
@@ -484,6 +486,7 @@ def units(project, pages, by_name, amidah_body):
     from .shema import unit_body as shema_body
     from .avinu_malkenu import unit_body as avinu_body
     from .tachanun import unit_body as tachanun_body, kaddish_body, torah_intro_body
+    from .torah import unit_body as torah_body
     side = 0 if project == "birnbaum_ashkenaz_he_1949" else 1
     return (
         dict(name="all_shacharit_yeladim",
@@ -521,6 +524,9 @@ def units(project, pages, by_name, amidah_body):
         dict(name="chol_shacharit_torah_intro", body=torah_intro_body(project),
              title_he="אֵל אֶֽרֶךְ אַפַּֽיִם", title_en="Introduction to the Torah service",
              urn=f"{S}chol/shacharit/torah_intro", pages=(117 + side, 117 + side)),
+        dict(name="chol_shacharit_torah", body=torah_body(project),
+             title_he="קְרִיאַת הַתּוֹרָה", title_en="Reading of the Torah",
+             urn=f"{S}chol/shacharit/torah", pages=(119 + side, 127 + side)),
     )
 
 

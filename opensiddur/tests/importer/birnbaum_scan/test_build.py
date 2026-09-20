@@ -299,7 +299,8 @@ class TestUnitAssembly(unittest.TestCase):
                     "chol_shacharit_opening", "chol_shacharit_pesukei_dezimra",
                     "chol_shacharit_shema", "chol_shacharit_amidah",
                     "chol_shacharit_avinu_malkenu", "chol_shacharit_tachanun",
-                    "chol_shacharit_kaddish_after_tachanun", "chol_shacharit_torah_intro"]
+                    "chol_shacharit_kaddish_after_tachanun", "chol_shacharit_torah_intro",
+                    "chol_shacharit_torah"]
         self.assertEqual(
             names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
         self.assertEqual(

@@ -524,3 +524,20 @@
 {"urn": "urn:x-opensiddur:text:prayer:yotzer_or/qadosh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / qadosh"}
 {"urn": "urn:x-opensiddur:text:prayer:yotzer_or/titbarakh", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / titbarakh"}
 {"urn": "urn:x-opensiddur:text:prayer:yotzer_or/vehaofanim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:yotzer_or", "label_en": "yotzer or / vehaofanim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim", "status": "canonical", "label_en": "Av harachamim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/hu_yerachem", "status": "canonical", "label_en": "Hu yerachem", "parent": "urn:x-opensiddur:text:prayer:av_harachamim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/hu_yerachem/text", "status": "canonical", "label_en": "Text", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/hu_yerachem"}
+{"urn": "urn:x-opensiddur:text:prayer:berikh_shemeh", "status": "canonical", "label_en": "Berikh shemeh"}
+{"urn": "urn:x-opensiddur:text:prayer:berikh_shemeh/berikh", "status": "canonical", "label_en": "Berikh", "parent": "urn:x-opensiddur:text:prayer:berikh_shemeh"}
+{"urn": "urn:x-opensiddur:text:prayer:berikh_shemeh/velehevei", "status": "canonical", "label_en": "Velehevei", "parent": "urn:x-opensiddur:text:prayer:berikh_shemeh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hagomel", "status": "canonical", "label_en": "Birkat hagomel"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hagomel/blessing", "status": "canonical", "label_en": "Blessing", "parent": "urn:x-opensiddur:text:prayer:birkat_hagomel"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hagomel/response", "status": "canonical", "label_en": "Response", "parent": "urn:x-opensiddur:text:prayer:birkat_hagomel"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/asher_natan", "status": "canonical", "label_en": "Asher natan", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_hatorah/asher_natan/text", "status": "canonical", "label_en": "Text", "parent": "urn:x-opensiddur:text:prayer:birkhot_hatorah/asher_natan"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu", "status": "canonical", "label_en": "Yehi ratzon milifnei avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/achenu", "status": "canonical", "label_en": "Achenu", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/beit_chayenu", "status": "canonical", "label_en": "Beit chayenu", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/besorot", "status": "canonical", "label_en": "Besorot", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/chakhmei", "status": "canonical", "label_en": "Chakhmei", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/lerachem", "status": "canonical", "label_en": "Lerachem", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
