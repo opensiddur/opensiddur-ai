@@ -1035,6 +1035,20 @@ class ExternalCompilerProcessor(CompilerProcessor):
         return context
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
+        # The final parallel tree no longer contains all source ancestors. Carry
+        # their logical heading depth while recursing, including across files.
+        depth = self.linear_data.heading_depth
+        headed = (element.tag == f"{{{TEI_NS}}}div"
+                  and element.find(f"{{{TEI_NS}}}head") is not None)
+        before_start = self.linear_data.processing_context[-1].get('before_start', False)
+        if headed and (not before_start or element is self.start_element):
+            self.linear_data.heading_depth = depth + 1
+        try:
+            return self._process_element_with_heading_depth(element, root)
+        finally:
+            self.linear_data.heading_depth = depth
+
+    def _process_element_with_heading_depth(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
         """
         Process the given element and return the list of processed elements.
         """
@@ -1109,6 +1123,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
             copied.text = element.text
             processed.append(copied)
             append_to = copied
+
+        if element.tag == f"{{{TEI_NS}}}head" and context["command"] != _ProcessingCommand.RECURSE:
+            copied.set(f"{{{PROCESSING_NAMESPACE}}}heading-level", str(max(1, self.linear_data.heading_depth)))
 
         for child in element:
             child_result = self._process_element(child, root)

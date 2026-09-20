@@ -290,3 +290,49 @@ class TestParallelAnnotations(unittest.TestCase):
         self.assertEqual(len(notes), 1)
         self.assertEqual(notes[0].getparent().tag, f'{{{NS["tei"]}}}p')
         self.assertEqual(notes[0].xpath('ancestor::p:parallelItem/@role', namespaces=NS), ['parallel'])
+
+    def test_bookmark_depth_survives_splits_and_nested_transclusions(self):
+        from opensiddur.common.xslt import xslt_transform_string
+        from opensiddur.exporter.tex.latex import XSLT_FILE
+        for project in ('he', 'en'):
+            self.write(project, 'index.xml', f'''<tei:div corresp="{URN}unit">
+              <tei:head>Days</tei:head>
+              <tei:div><tei:head>First</tei:head><tei:p>One.</tei:p></tei:div>
+              <j:transclude target="{URN}second"/>
+              <tei:div><tei:head>Third</tei:head><tei:p>Three.</tei:p></tei:div>
+              </tei:div><tei:div><tei:head>Next</tei:head><tei:p>Next section.</tei:p></tei:div>''')
+            self.write(project, 'second.xml', f'''<tei:div corresp="{URN}second">
+              <tei:head>Second</tei:head><tei:p>Two.</tei:p>
+              <j:transclude target="{URN}nested"/></tei:div>''')
+            self.write(project, 'nested.xml', f'''<tei:div corresp="{URN}nested">
+              <tei:head>Nested</tei:head><tei:p>Nested text.</tei:p></tei:div>''')
+        for parallel in (False, True):
+            with self.subTest(parallel=parallel):
+                root = self.compile(apparatus=None, parallel=parallel)
+                heads = root.xpath('.//tei:head', namespaces=NS)
+                expected = {'Days': '1', 'First': '2', 'Second': '2', 'Nested': '3', 'Third': '2', 'Next': '1'}
+                self.assertEqual({h.text for h in heads}, set(expected))
+                for head in heads:
+                    self.assertEqual(head.get(f'{{{NS["p"]}}}heading-level'), expected[head.text])
+                tex = xslt_transform_string(XSLT_FILE, etree.tostring(root[0], encoding='unicode'))
+                for title, level in expected.items():
+                    outline = next(line for line in tex.splitlines()
+                                   if 'addcontentsline' in line and title in line)
+                    toc = {'1': 'section', '2': 'subsection', '3': 'subsubsection'}[level]
+                    self.assertIn('{toc}{' + toc + '}', outline)
+
+    def test_range_heading_depth_excludes_unselected_ancestor_heading(self):
+        self.write('he', 'index.xml', f'''<tei:div><tei:head>Unselected</tei:head>
+          <tei:div corresp="{URN}selected"><tei:head>Selected</tei:head><tei:p>Text.</tei:p></tei:div>
+          </tei:div>''')
+        data = LinearData()
+        data.xml_cache.base_path = self.base
+        tree = etree.parse(str(self.base / 'he/index.xml'))
+        selected = tree.xpath('//*[@corresp]')[0]
+        processor = ExternalCompilerProcessor('he', 'index.xml',
+            from_start=tree.getpath(selected), to_end=tree.getpath(selected),
+            linear_data=data, reference_database=self.db)
+        result = processor.process()
+        heads = [h for el in result for h in el.xpath('.//tei:head', namespaces=NS)]
+        self.assertEqual([(h.text, h.get(f'{{{NS["p"]}}}heading-level')) for h in heads], [('Selected', '1')])
+        self.assertEqual(data.heading_depth, 0)
