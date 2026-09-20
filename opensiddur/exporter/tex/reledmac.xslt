@@ -1103,7 +1103,65 @@
         <xsl:text>\pstart\relax </xsl:text>
     </xsl:template>
 
+    <!-- Source whitespace must never reach the output as a blank line. This stylesheet
+         separates paragraphs with an explicit \par (the f:para-break branch below) or a
+         \newline, and never with a blank line: there is not one &#10;&#10; in the file.
+         But pretty-printed source puts a newline between two siblings and another at the
+         head of the second, and the two meet in the output. A note that annotates the
+         block after it —
+
+             </tei:note>&#10;<tei:p>&#10;Exalt the Lord with me...
+
+         — is one whitespace leaf followed by a content leaf opening with a newline, and
+         together they are a blank line, i.e. \par. The anchor has already begun the
+         paragraph with \leavevmode, so that \par spends a row on the mark alone and
+         starts the text on the next one. In a parallel block the facing column, where the
+         same whitespace lands in vertical mode and is discarded, does not spend that row,
+         and the two columns drift apart by one line.
+
+         The two newlines belong to different leaves, so no per-leaf template can see both,
+         and rewriting the content leaf is not open to us: the emit templates read the
+         ancestor and preceding axes of the original node — note serials off
+         f:editorial-note-emissions-before, in-scope language, list membership — so a leaf
+         has to reach them as itself, which is the constraint f:resolve-markers is written
+         to. The join is only visible once the leaves are text, which is here.
+
+         One newline, not none. A newline is a space in TeX, and between two leaves it is
+         often the only thing separating two words; collapsing keeps that space and drops
+         only the break. It also keeps a \par out of \Bfootnote content, which breaks
+         reledmac's apparatus grouping.
+
+         Scoped to a stream on purpose: $additional-preamble and $additional-postamble are
+         written elsewhere and do use blank lines deliberately — bibtex.xslt ends every
+         record with one, and the licence block sets paragraphs with them — so the
+         invariant is this stylesheet's own, not theirs. -->
     <xsl:template name="numbered-stream">
+        <xsl:param name="nodes" as="node()*"/>
+        <xsl:param name="lang" as="xs:string?" select="''"/>
+        <xsl:param name="align-verses" as="xs:boolean" select="false()"/>
+        <xsl:param name="single-pstart" as="xs:boolean" select="false()"/>
+        <xsl:param name="stream" as="xs:string" select="'primary'"/>
+        <xsl:param name="alt-nodes" as="node()*" select="()"/>
+        <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+
+        <!-- The whole body, not just its xsl:iterate: a partial capture would leave a seam
+             (\beginnumbering&#10; against a leading whitespace leaf) across which a blank
+             line could still form. -->
+        <xsl:variable name="tex">
+            <xsl:call-template name="numbered-stream-body">
+                <xsl:with-param name="nodes" select="$nodes"/>
+                <xsl:with-param name="lang" select="$lang"/>
+                <xsl:with-param name="align-verses" select="$align-verses"/>
+                <xsl:with-param name="single-pstart" select="$single-pstart"/>
+                <xsl:with-param name="stream" select="$stream"/>
+                <xsl:with-param name="alt-nodes" select="$alt-nodes"/>
+                <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+            </xsl:call-template>
+        </xsl:variable>
+        <xsl:value-of select="f:collapse-blank-lines(string($tex))"/>
+    </xsl:template>
+
+    <xsl:template name="numbered-stream-body">
         <xsl:param name="nodes" as="node()*"/>
         <xsl:param name="lang" as="xs:string?" select="''"/>
         <!-- When true, emit one \pstart...\pend per verse (required for reledpar
@@ -2751,6 +2809,17 @@
             <xsl:sequence select="$group[position() le $last-ink
                                          or exists(self::f:block-break)]"/>
         </xsl:for-each-group>
+    </xsl:function>
+
+    <!-- A run of newlines, with whatever indentation the source pretty-printer left
+         between them, reduced to the one newline that carries the inter-word space.
+         The indentation of the surviving line goes with it: TeX discards spaces at the
+         start of a line, so it was never anything but noise. A run of exactly one
+         newline is left alone, so every separation that is already right is untouched.
+         See the comment on numbered-stream for why this is done on the emitted text. -->
+    <xsl:function name="f:collapse-blank-lines" as="xs:string">
+        <xsl:param name="tex" as="xs:string"/>
+        <xsl:sequence select="replace($tex, '\n[ \t]*(\n[ \t]*)+', '&#10;')"/>
     </xsl:function>
 
     <!-- The endConditional that closes a conditional, and the nodes between the two.
