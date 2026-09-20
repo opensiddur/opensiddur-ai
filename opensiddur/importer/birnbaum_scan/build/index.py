@@ -29,23 +29,10 @@ BODY = f"""      <tei:div corresp="{S}siddur">
         <tei:div corresp="{S}all">
           <tei:div corresp="{S}all/shacharit">
             <j:transclude type="external" target="{S}all/shacharit/yeladim"/>
-            <j:transclude type="external" target="{S}all/shacharit/birchot_hashachar"/>
           </tei:div>
         </tei:div>
         <tei:div corresp="{S}chol">
-          <tei:div corresp="{S}chol/shacharit">
-            <j:transclude type="external" target="{S}chol/shacharit/opening"/>
-            <j:transclude type="external" target="{S}chol/shacharit/pesukei_dezimra"/>
-            <j:transclude type="external" target="{S}chol/shacharit/shema"/>
-            <j:transclude type="external" target="{S}chol/shacharit/amidah"/>
-            <j:transclude type="external" target="{S}chol/shacharit/avinu_malkenu"/>
-            <j:transclude type="external" target="{S}chol/shacharit/tachanun"/>
-            <j:transclude type="external" target="{S}chol/shacharit/kaddish_after_tachanun"/>
-            <j:transclude type="external" target="{S}chol/shacharit/torah_intro"/>
-            <j:transclude type="external" target="{S}chol/shacharit/torah"/>
-            <j:transclude type="external" target="{S}chol/shacharit/conclusion"/>
-            <j:transclude type="external" target="{S}chol/shacharit/psalms"/>
-          </tei:div>
+          <j:transclude type="external" target="{S}chol/shacharit"/>
         </tei:div>
       </tei:div>"""
 

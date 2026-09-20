@@ -543,3 +543,17 @@
 {"urn": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu/lerachem", "status": "canonical", "label_en": "Lerachem", "parent": "urn:x-opensiddur:text:prayer:yehi_ratzon_milifnei_avinu"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/titkabal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish", "label_en": "Kaddish: Titkabal"}
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/titkabal/text", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish/titkabal", "label_en": "Kaddish: Titkabal / text"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin", "status": "canonical", "label_en": "Thirteen principles of faith"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/1", "status": "canonical", "label_en": "Principle 1", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/2", "status": "canonical", "label_en": "Principle 2", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/3", "status": "canonical", "label_en": "Principle 3", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/4", "status": "canonical", "label_en": "Principle 4", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/5", "status": "canonical", "label_en": "Principle 5", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/6", "status": "canonical", "label_en": "Principle 6", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/7", "status": "canonical", "label_en": "Principle 7", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/8", "status": "canonical", "label_en": "Principle 8", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/9", "status": "canonical", "label_en": "Principle 9", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/10", "status": "canonical", "label_en": "Principle 10", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/11", "status": "canonical", "label_en": "Principle 11", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/12", "status": "canonical", "label_en": "Principle 12", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:ani_maamin/13", "status": "canonical", "label_en": "Principle 13", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}

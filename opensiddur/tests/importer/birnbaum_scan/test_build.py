@@ -301,8 +301,17 @@ class TestUnitAssembly(unittest.TestCase):
         from opensiddur.importer.birnbaum_scan.build.index import BODY
         units = self.build_he.units(common.PROJECT_HE, self.build_he.HE_UNIT_PAGES,
                                    self.build_he.BY_NAME, self.build_he.unit_body())
-        self.assertEqual([u['urn'] for u in units],
-                         fragment(BODY).xpath('.//j:transclude/@target', namespaces=NS))
+        bodies = {u['urn']: u['body'] for u in units}
+        reached = set()
+
+        def follow(body):
+            for target in fragment(body).xpath('.//j:transclude/@target', namespaces=NS):
+                if target in bodies and target not in reached:
+                    reached.add(target)
+                    follow(bodies[target])
+
+        follow(BODY)
+        self.assertEqual(reached, set(bodies))
 
 
 
