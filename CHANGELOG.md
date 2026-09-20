@@ -83,6 +83,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alternative names for a service.
 
 ### Fixed
+- Hebrew reads the right way round in the table of contents. A contents entry is written once
+  and read twice — hyperref builds a PDF outline string from it, and `\tableofcontents`
+  typesets it on a page — and only the outline existed when it was first written, so the entry
+  took the heading's own language and left Hebrew titles unwrapped. The contents page runs in
+  the document class's direction, not the heading's, so every Hebrew line of it came out
+  reversed. Each run now takes its own wrapper, as a running head already did.
 - Contributor URNs are validated. Nothing checked them before: `specs/urn_registry/` had no
   contributor file and the reference validator looked only at `@target`/`@targetEnd`, so a
   misspelt identifier on `tei:name/@ref` was not a broken link but a different person, credited

@@ -190,6 +190,9 @@
         <!-- Two arguments, and the title is the second: \def\foreignlanguage#1#2{#1}
              would put the language name in the bookmark and throw the title away. -->
         <xsl:text>  \def\foreignlanguage#1#2{#2}&#10;</xsl:text>
+        <!-- Hebrew runs in a contents entry are wrapped for the typeset table of
+             contents (see f:format-section-title); the outline wants the text alone. -->
+        <xsl:text>  \def\texthebrew#1{#1}&#10;</xsl:text>
         <xsl:text>}&#10;</xsl:text>
 
         <!-- ================================================================
@@ -908,7 +911,7 @@
                 then concat(string($head/@title), ' &#xB7; ', string($second/@title))
                 else if ($bookmarks-from = 'alt' and exists($alt-head))
                 then string($alt-head/@title)
-                else string($head/@title), $lang)"/>
+                else string($head/@title))"/>
             <xsl:text>}&#10;</xsl:text>
         </xsl:if>
     </xsl:template>
@@ -1740,7 +1743,7 @@
             <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
             <xsl:value-of select="f:heading-toc-level(xs:integer(@level))"/>
             <xsl:text>}{</xsl:text>
-            <xsl:value-of select="f:format-section-title($outline-title, $lang)"/>
+            <xsl:value-of select="f:format-section-title($outline-title)"/>
             <xsl:text>}</xsl:text>
         </xsl:if>
     </xsl:template>
@@ -2935,21 +2938,21 @@
         <xsl:sequence select="string($head/ancestor-or-self::*[@xml:lang][1]/@xml:lang)"/>
     </xsl:function>
 
-    <!-- Hebrew titles stay in the stream direction, but any embedded digit range (e.g. a
-         "52:13" citation inside a Hebrew heading) still needs an LTR wrap kept together as
-         one run or it renders reversed — see f:emit-bidi-text. Other languages need the
-         whole title wrapped, since it's Latin throughout. -->
+    <!-- A \addcontentsline entry, which is written once and read in two places: hyperref
+         builds a PDF string from it for the outline, and \tableofcontents typesets it on
+         a page. The typeset one is the constraint. Its slot is the table of contents,
+         whose direction is the document class's, not the heading's, so the heading's own
+         language may not be assumed — exactly the running-head problem, and answered the
+         same way, by f:emit-bidi-mark: every Hebrew run takes \texthebrew and every other
+         run an LTR wrap, so neither reverses whichever way the slot runs.
+
+         Keying on the heading's language instead left Hebrew titles bare, correct in a
+         Hebrew stream and back-to-front in an LTR table of contents — a whole Hebrew
+         contents page read in reverse. The outline is unaffected either way:
+         \pdfstringdefDisableCommands strips both wrappers. -->
     <xsl:function name="f:format-section-title" as="xs:string">
         <xsl:param name="title" as="xs:string"/>
-        <xsl:param name="lang" as="xs:string"/>
-        <xsl:choose>
-            <xsl:when test="$lang = 'he' or starts-with($lang, 'he-')">
-                <xsl:sequence select="f:emit-bidi-text($title)"/>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:sequence select="concat('{\textdir TLT\foreignlanguage{english}{', f:escape-tex($title), '}}')"/>
-            </xsl:otherwise>
-        </xsl:choose>
+        <xsl:sequence select="f:emit-bidi-mark($title)"/>
     </xsl:function>
 
     <!-- Recursively replace p:transclude / p:transcludeInline wrappers with their children.
@@ -3019,10 +3022,9 @@
          Each run is wrapped whole. f:emit-bidi-text is not reused for the Latin
          side because it joins only the words of a siglum, so "A Section" would
          become two separate embeddings and read "Section A" in an RTL slot.
-         f:format-section-title is not reused either: it wraps a whole
-         non-Hebrew title in one LTR group, which is harmless in a PDF bookmark
-         (where \textdir is gobbled) but reverses embedded Hebrew on a visible
-         page. -->
+
+         A table-of-contents entry is the same problem in another slot, so
+         f:format-section-title calls this too. -->
     <xsl:function name="f:emit-bidi-mark" as="xs:string">
         <xsl:param name="s" as="xs:string"/>
         <xsl:variable name="parts" as="xs:string*">
