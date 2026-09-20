@@ -37,3 +37,8 @@ priority:
 annotations: [birnbaum_ashkenaz_en_1949]
 parallel:
   projects: [birnbaum_ashkenaz_en_1949]
+# Keep the house-of-mourning text visible, with its conditional rubric, in this
+# edition with no occasion selected. The exporter's general override default is false.
+declarations:
+  opensiddur:override:
+    house-of-mourning: null

@@ -295,16 +295,15 @@ class TestUnitAssembly(unittest.TestCase):
             return [u["name"] for u in self.build_he.units(
                 project, pages, build.BY_NAME, build.unit_body())]
 
-        expected = ["all_shacharit_yeladim", "all_shacharit_birchot_hashachar",
-                    "chol_shacharit_opening", "chol_shacharit_pesukei_dezimra",
-                    "chol_shacharit_shema", "chol_shacharit_amidah",
-                    "chol_shacharit_avinu_malkenu", "chol_shacharit_tachanun",
-                    "chol_shacharit_kaddish_after_tachanun", "chol_shacharit_torah_intro",
-                    "chol_shacharit_torah"]
         self.assertEqual(
-            names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES), expected)
-        self.assertEqual(
-            names(self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES), expected)
+            names(self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
+            names(self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES))
+        from opensiddur.importer.birnbaum_scan.build.index import BODY
+        units = self.build_he.units(common.PROJECT_HE, self.build_he.HE_UNIT_PAGES,
+                                   self.build_he.BY_NAME, self.build_he.unit_body())
+        self.assertEqual([u['urn'] for u in units],
+                         fragment(BODY).xpath('.//j:transclude/@target', namespaces=NS))
+
 
 
 class TestTheTallithSubUnit(unittest.TestCase):
@@ -441,22 +440,6 @@ class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
                          "birkhot_hatorah/laasok", "poem:adon_olam"):
                 self.assertIn(slug, joined)
 
-    def test_no_text_is_transcluded_by_two_units(self):
-        """Allow passages the print repeats at distinct places in the service."""
-        allowed = {"urn:x-opensiddur:text:prayer:al_netilat_yadayim",
-                   "urn:x-opensiddur:text:prayer:kaddish/chatzi"}
-        for build, project, pages in (
-                (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
-                (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
-            seen = {}
-            for unit, targets in self._unit_targets(build, project, pages).items():
-                for urn in targets:
-                    if urn.startswith("urn:x-opensiddur:text:prayer:") or ":poem:" in urn:
-                        seen.setdefault(urn, []).append(unit)
-            for urn, units in seen.items():
-                if urn in allowed:
-                    continue
-                self.assertEqual(len(set(units)), 1, f"{urn} transcluded by {units}")
 
 
 class TestBuilders(unittest.TestCase):

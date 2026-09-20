@@ -45,6 +45,8 @@ def prayers(lang):
                 parts.append(marks.close() + READER)
                 value = value.removeprefix('{reader}')
             xml = re.sub(r'\{pb:(\d+)\}', lambda m: pb(int(m[1]), sigil=SIGIL_PESUKEI), escape(value))
+            if ref == 'psalms/145/2':
+                xml = pb(129 + offset, sigil='1949 chol/shacharit/conclusion') + xml
             xml = xml.replace('{lb}', '<tei:lb/>').replace('{reader}', READER)
             if urn == enclosing:
                 parts.append(marks.close() + xml)
@@ -94,5 +96,5 @@ def prayers(lang):
         body.append('</tei:div>')
         first, last = PAGES[name]
         result.append(dict(name=name, title=TITLES[name][offset], urn=urn,
-                           first=first+offset, last=last+offset, body='\n'.join(body)))
+                           first=first+offset, last=last+offset, printings=((127+offset,129+offset),) if name == "ashrei" else (), body='\n'.join(body)))
     return result

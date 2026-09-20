@@ -33,6 +33,9 @@ from .notes_shema import SHEMA_NOTES
 PRAYERS = (AMIDAH_PRAYERS + YELADIM_PRAYERS + TALLITH_PRAYERS
            + TEFILLIN_PRAYERS + POEM_PRAYERS + BERAKHOT_PRAYERS
            + AKEDAH_PRAYERS + KORBANOT_PRAYERS + ISHMAEL_PRAYERS + PESUKEI_PRAYERS + SHEMA_PRAYERS + AVINU_PRAYERS + TACHANUN_PRAYERS + TORAH_PRAYERS)
+from .conclusion import prayers as conclusion_prayers
+PRAYERS += conclusion_prayers("en", PRAYERS)
+
 
 U, S = PRAYER, SIDDUR
 
@@ -52,7 +55,13 @@ from .notes_tachanun import NOTES as TACHANUN_NOTES
 
 from .notes_torah import NOTES as TORAH_NOTES
 
+from .notes_conclusion import make_notes
+from .conclusion import ANCHORS
+CONCLUSION_NOTES = make_notes(ANCHORS)
+
 APPARATUS = {
+    "notes_conclusion": dict(entries=CONCLUSION_NOTES, slug="birnbaum_1949/conclusion",
+                             title="Notes on the conclusion and psalms", first=128, last=152),
     "notes_torah": dict(entries=TORAH_NOTES, slug="birnbaum_1949/torah",
                         title="Notes on the weekday Torah service", first=119, last=128),
     "notes_tachanun": dict(entries=TACHANUN_NOTES, slug="birnbaum_1949/tachanun",
@@ -128,7 +137,7 @@ def main(argv=None):
     for p in PRAYERS:
         write(PROJECT_EN, p["name"], document(
             body=p["body"], lang="en", title_he="", title_en=p["title"],
-            urn=p["urn"], project=PROJECT_EN, first=p["first"], last=p["last"])); n += 1
+            urn=p["urn"], project=PROJECT_EN, first=p["first"], last=p["last"], printings=p.get("printings", ()))); n += 1
     print(f"{n} files")
 
 
