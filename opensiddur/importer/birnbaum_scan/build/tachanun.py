@@ -4,6 +4,7 @@ from html import escape
 
 from .common import PRAYER, SIDDUR, PROJECT_HE, QUORUM, cond, endcond, feature, pb
 from .tachanun_data import PASSAGES
+from .milestones import Correspondences
 from .tachanun_conditions import occasion, EL_EREKH_OCCASION
 
 ROOT = SIDDUR + 'chol/shacharit/tachanun'
@@ -54,15 +55,18 @@ def prayers(lang):
                             + text_xml(he if lang == 'he' else en))
             body.append('</tei:p>')
         elif 'chunks' in row:
+            marks = Correspondences()
             body.append(f'<tei:p><tei:milestone unit="prayer" corresp="{urn}/text"/>')
             for chunk in row['chunks']:
                 value = chunk[lang]
                 source = f' source="{BIBLE}{chunk["source"]}"' if chunk['source'] else ''
-                body.append(f'<tei:seg corresp="{urn}/{chunk["anchor"]}"{source}>'
-                            + text_xml(value.removesuffix('{p}')) + '</tei:seg>')
+                text = text_xml(value.removesuffix('{p}'))
+                if source:
+                    text = f'<tei:seg{source}>{text}</tei:seg>'
+                body.append(marks.start(urn + '/' + chunk['anchor']) + text.rstrip())
                 if value.endswith('{p}'):
                     body.append('</tei:p><tei:p>')
-            body.append('</tei:p>')
+            body.append(marks.close() + '</tei:p>')
         else:
             # Milestones align the shared passage at each occurrence in both forms.
             marker = '' if urn.startswith(BIBLE) else f'<tei:milestone unit="prayer" corresp="{urn}/text"/>'

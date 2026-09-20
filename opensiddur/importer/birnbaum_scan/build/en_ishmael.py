@@ -127,27 +127,27 @@ prayer("ishmael_yehi_ratzon", "May it be thy will, that the Temple be rebuilt", 
 
 prayer("kaddish_derabbanan_yitgadal", "Glorified and sanctified", "kaddish/derabbanan/yitgadal", 46, 46,
        d(U + "kaddish/derabbanan/yitgadal",
-         f'<tei:seg corresp="{U}kaddish/yitgadal">'
+         f'<tei:milestone unit="prayer-part" corresp="{U}kaddish/yitgadal"/>'
          "Glorified and sanctified be God’s great name throughout the world which he "
          "has created according to his will. May he establish his kingdom in your "
          "lifetime and during your days, and within the life of the entire house of "
          "Israel, speedily and soon; and say, Amen."
-         '</tei:seg>'))
+         '<tei:milestone unit="prayer-part"/>'))
 
 prayer("kaddish_derabbanan_yehe_shmeh", "May his great name be blessed", "kaddish/derabbanan/yehe_shmeh", 46, 46,
        d(U + "kaddish/derabbanan/yehe_shmeh",
-         f'<tei:seg corresp="{U}kaddish/yehe_shmeh">'
+         f'<tei:milestone unit="prayer-part" corresp="{U}kaddish/yehe_shmeh"/>'
          "May his great name be blessed forever and to all eternity."
-         '</tei:seg>'))
+         '<tei:milestone unit="prayer-part"/>'))
 
 prayer("kaddish_derabbanan_yitbarakh", "Blessed and praised", "kaddish/derabbanan/yitbarakh", 48, 48,
        d(U + "kaddish/derabbanan/yitbarakh",
-         f'<tei:seg corresp="{U}kaddish/yitbarakh">'
+         f'<tei:milestone unit="prayer-part" corresp="{U}kaddish/yitbarakh"/>'
          "Blessed and praised, glorified and exalted, extolled and honored, adored "
          "and lauded be the name of the Holy One, blessed be he, beyond all the "
          "blessings and hymns, praises and consolations that are ever spoken in the "
          "world; and say, Amen."
-         '</tei:seg>'))
+         '<tei:milestone unit="prayer-part"/>'))
 
 prayer("kaddish_derabbanan_al_yisrael", "We pray for Israel", "kaddish/derabbanan/al_yisrael", 48, 48,
        d(U + "kaddish/derabbanan/al_yisrael",

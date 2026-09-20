@@ -7,7 +7,7 @@ the Hebrew page sets the whole catena as one paragraph and this page sets it as 
 each side keeps its own paragraphing and the two halves carry the URNs that pair them.
 
 See `he_tallith` for the argument. Here it means two ``tei:p`` where the Hebrew has two
-``tei:seg`` inside one.
+milestone ranges inside one; both sides use the same milestone units.
 """
 import functools
 
@@ -34,13 +34,13 @@ def d(urn, *paras, indent=8):
 
 prayer("birchot_mah_tovu", "Mah Tovu", "mah_tovu", 4, 4, "\n".join([
     f'        <tei:div corresp="{U}mah_tovu">',
-    f'          <tei:p corresp="{U}mah_tovu/mah_tovu">How goodly are your tents, '
-    'O Jacob, your habitations, O Israel!</tei:p>',
-    f'          <tei:p corresp="{U}mah_tovu/varani">By thy abundant grace I enter thy '
+    f'          <tei:p><tei:milestone unit="prayer-part" corresp="{U}mah_tovu/mah_tovu"/>How goodly are your tents, '
+    'O Jacob, your habitations, O Israel!<tei:milestone unit="prayer-part"/></tei:p>',
+    f'          <tei:p><tei:milestone unit="prayer-part" corresp="{U}mah_tovu/varani"/>By thy abundant grace I enter thy '
     'house; I worship before thy holy shrine with reverence. O Lord, I love thy abode, '
     'the place where thy glory dwells. I will worship and bow down; I will bend the knee '
     'before the Lord my Maker. I offer my prayer to thee, O Lord, at a time of grace. '
-    'O God, in thy abundant kindness, answer me with thy saving truth.</tei:p>',
+    'O God, in thy abundant kindness, answer me with thy saving truth.<tei:milestone unit="prayer-part"/></tei:p>',
     '        </tei:div>']))
 
 prayer("tallith_barkhi_nafshi", "Bless the Lord, O my soul", "tallith/barkhi_nafshi",

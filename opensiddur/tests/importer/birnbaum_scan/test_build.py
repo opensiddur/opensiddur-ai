@@ -335,8 +335,11 @@ class TestTheTallithSubUnit(unittest.TestCase):
     def test_the_hebrew_keeps_one_paragraph_and_the_english_two(self):
         """The parting must not be bought by reflowing either side."""
         self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:p>"), 1)
-        self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:seg "), 2)
-        self.assertEqual(self.en["birchot_mah_tovu"]["body"].count("<tei:p "), 2)
+        self.assertEqual(len(fragment(self.he["birchot_mah_tovu"]["body"]).findall(
+            ".//tei:milestone[@corresp]", NS)), 2)
+        self.assertEqual(self.en["birchot_mah_tovu"]["body"].count("<tei:p>"), 2)
+        self.assertEqual(len(fragment(self.en["birchot_mah_tovu"]["body"]).findall(
+            ".//tei:milestone[@corresp]", NS)), 2)
         self.assertNotIn("<tei:seg ", self.en["birchot_mah_tovu"]["body"])
 
     def test_every_page_break_belongs_to_this_unit(self):

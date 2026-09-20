@@ -3,6 +3,7 @@ import re
 from html import escape
 from .common import SIDDUR, SIGIL_PESUKEI, pb
 from .pesukei_data import PASSAGES
+from .milestones import Correspondences
 
 BIBLE = 'urn:x-opensiddur:text:bible:'
 ROOT = SIDDUR + 'chol/shacharit/pesukei_dezimra/'
@@ -26,7 +27,7 @@ def prayers(lang):
     redefining its canonical URN. This preserves punctuation and pointing changes
     (I Chronicles 16:31 in English; Psalm 20:10 in Hebrew), and avoids the current
     parallel compiler's unclosed frames for inline transclusions in paragraphs.
-    Reader instructions stay outside the reusable verse segments.
+    Reader instructions stay outside the reusable verse ranges.
     """
     result, seen = [], {}
     for name, rows in PASSAGES.items():
@@ -39,12 +40,13 @@ def prayers(lang):
             citation = 'תהלים ק' if lang == 'he' else 'Psalm 100'
             body.append(f'<tei:head xml:lang="{lang}">{citation}</tei:head>')
         body.append('<tei:p>')
+        marks = Correspondences()
         for ref, he, en in rows:
             text = he if lang == 'he' else en
             reader = text.startswith('{reader}')
             text = text.removeprefix('{reader}')
             if reader:
-                body.append(READER)
+                body.append(marks.close() + READER)
             verse_urn = ROOT + 'yehi_khevod/' + ref.split(':')[1] if ref.startswith('siddur:') else BIBLE + ref
             attr = 'source' if verse_urn in seen else 'corresp'
             seen.setdefault(verse_urn, text)
@@ -52,8 +54,11 @@ def prayers(lang):
             if name == 'mizmor_letodah' and lang == 'en' and ref.endswith('/1'):
                 # The English gives the psalm superscription a paragraph of its own.
                 xml = xml.replace('thank-offering. ', 'thank-offering.<tei:lb/>')
-            body.append(f'<tei:seg {attr}="{verse_urn}">{xml}</tei:seg> ')
-        body += ['</tei:p>', '</tei:div>']
+            if attr == 'source':
+                body.append(marks.close() + f'<tei:seg source="{verse_urn}">{xml}</tei:seg>')
+            else:
+                body.append(marks.start(verse_urn) + xml)
+        body += [marks.close(), '</tei:p>', '</tei:div>']
         first, last = PAGES[name]
         offset = 0 if lang == 'he' else 1
         result.append(dict(name=name, title=TITLES[name][offset], urn=urn,

@@ -191,6 +191,18 @@ an unregistered one is a typo, and a typo credits a different person.
 - `tei:titlePage` goes in `tei:front`; `tei:titlePart[@type]` is a *different*, open list (`main`, `sub`, `alt`, `short`, `desc`) from `tei:title[@type]`
 - `tei:imprimatur` takes inline content only — a `tei:p` inside it is invalid (`tei:epigraph` does take `tei:p`)
 
+**Prefer milestone correspondences.** For repeated reference units (verses, prayer
+parts, petitions, or stanzas), put the URN on `tei:milestone/@corresp` with a
+consistent `@unit`, following the Tanach encodings. Keep the printed paragraph
+and line structure independent of these boundaries. Higher-level `tei:div`
+correspondences are appropriate for whole prayers and sections. Use `tei:seg`
+for bounded quotations or other inline semantics, not merely to wrap each
+repeating unit. When replacing a wrapper, preserve its exact reference scope:
+terminate the milestone before unrelated text, rubrics, or a different unit
+sequence using a same-unit milestone with no `corresp`. Retain `source` and
+other semantic markup on the quoted span, and verify both transclusion ranges
+and Hebrew/English alignment after regeneration.
+
 **URN/`corresp` scoping**: A `corresp` on a `tei:milestone` scopes from that milestone to the next same-unit milestone, or end of file. This is the basis for parallel-text alignment: two documents share an alignment segment when they carry identical `corresp` values on their milestones.
 
 **Project layout**: Every `project/<name>/` directory must have `index.xml` as its entry point. Individual text files refer back to the index via `tei:sourceDesc/tei:p/tei:ref` or a `tei:bibl/tei:ptr`.

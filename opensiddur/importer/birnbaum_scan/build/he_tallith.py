@@ -13,12 +13,13 @@ not the other pairs the columns at the top of the passage and lets them drift th
 rest of it.
 
 So the parting is named on both sides and the paragraphing of each is kept: here two
-``tei:seg`` inside the one printed paragraph, there two ``tei:p``. That is the same device
+milestone ranges inside the one printed paragraph, there the same ranges in two ``tei:p``. That is the same device
 page 1 uses for its run-on paragraph, applied in the other direction -- there the print
 ran several texts together on both sides, here it runs them together on one side only.
 """
 import functools
 
+from .milestones import marked
 from .common import PRAYER
 from . import common
 
@@ -42,17 +43,17 @@ def d(urn, *paras, indent=8):
     return f'{pad}<tei:div corresp="{urn}">\n{inner}\n{pad}</tei:div>'
 
 
-def seg(slug, text):
-    return f'<tei:seg corresp="{U}{slug}">{text}</tei:seg>'
+def passage(slug, text):
+    return marked(U + slug, text)
 
 
 prayer("birchot_mah_tovu", "מַה טֹּֽבוּ", "mah_tovu", 3, 3, "\n".join([
     f'        <tei:div corresp="{U}mah_tovu">',
     '          <tei:p>'
-    + seg("mah_tovu/mah_tovu",
+    + passage("mah_tovu/mah_tovu",
           "מַה טֹּֽבוּ אֹהָלֶֽיךָ יַעֲקֹב, מִשְׁכְּנֹתֶֽיךָ יִשְׂרָאֵל.")
     + " "
-    + seg("mah_tovu/varani",
+    + passage("mah_tovu/varani",
           "וַאֲנִי בְּרֹב חַסְדְּךָ אָבֹא בֵיתֶֽךָ, אֶשְׁתַּחֲוֶה אֶל הֵיכַל "
           "קָדְשְׁךָ בְּיִרְאָתֶֽךָ. יְיָ, אָהַֽבְתִּי מְעוֹן בֵּיתֶֽךָ, וּמְקוֹם "
           "מִשְׁכַּן כְּבוֹדֶֽךָ. וַאֲנִי אֶשְׁתַּחֲוֶה וְאֶכְרָֽעָה, אֶבְרְכָה "

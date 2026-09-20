@@ -198,15 +198,16 @@ cup, a note, a conditional — and reaches the shared words in one of two ways:
 
 - **Transclude it.** `<j:transclude target="urn:x-opensiddur:text:prayer:borei_pri_hagafen"/>`
   inside the context's division. Right when the context adds nothing to the words.
-- **Declare partial correspondence by nesting.** The outer element carries the context
-  URN, an inner element carries the common one. This is the pattern
+- **Declare partial correspondence with milestones.** The outer division carries the
+  context URN; milestones inside it identify the shared text independently of paragraphs. This is the pattern
   `heidenheim_haggadah_1822/psalm_126.xml` already uses, where a `tei:div` with the
   haggadah's URN contains milestones with canonical `bible:` URNs.
 
 ```xml
 <tei:div corresp="urn:x-opensiddur:text:haggadah:barech/kos_shlishi">
   <tei:note type="instruction" corresp="urn:x-opensiddur:instruction:…"/>
-  <tei:seg corresp="urn:x-opensiddur:text:prayer:borei_pri_hagafen">…</tei:seg>
+  <tei:p><tei:milestone unit="prayer" corresp="urn:x-opensiddur:text:prayer:borei_pri_hagafen"/>…
+  <tei:milestone unit="prayer"/></tei:p>
 </tei:div>
 ```
 
