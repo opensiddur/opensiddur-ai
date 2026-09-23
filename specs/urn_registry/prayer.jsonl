@@ -566,3 +566,22 @@
 {"urn": "urn:x-opensiddur:text:prayer:amidah/tefilah/seal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/tefilah", "label_en": "amidah — tefilah — seal"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah/yerushalayim/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/yerushalayim", "label_en": "amidah — yerushalayim — opening"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah/yerushalayim/seal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/yerushalayim", "label_en": "amidah — yerushalayim — seal"}
+{"urn": "urn:x-opensiddur:text:prayer:ahavat_olam_arvit", "status": "canonical", "label_en": "ahavat olam arvit"}
+{"urn": "urn:x-opensiddur:text:prayer:ahavat_olam_arvit/opening", "status": "canonical", "label_en": "ahavat olam arvit — opening", "parent": "urn:x-opensiddur:text:prayer:ahavat_olam_arvit"}
+{"urn": "urn:x-opensiddur:text:prayer:ahavat_olam_arvit/seal", "status": "canonical", "label_en": "ahavat olam arvit — seal", "parent": "urn:x-opensiddur:text:prayer:ahavat_olam_arvit"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/atah_chonantanu/text", "status": "canonical", "label_en": "amidah — atah chonantanu — text", "parent": "urn:x-opensiddur:text:prayer:amidah/atah_chonantanu"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/binah/conclusion", "status": "canonical", "label_en": "amidah — binah — conclusion", "parent": "urn:x-opensiddur:text:prayer:amidah/binah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/binah/opening", "status": "canonical", "label_en": "amidah — binah — opening", "parent": "urn:x-opensiddur:text:prayer:amidah/binah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah", "status": "canonical", "label_en": "emet veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah/malkhutkha", "status": "canonical", "label_en": "emet veemunah — malkhutkha", "parent": "urn:x-opensiddur:text:prayer:emet_veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah/mi_khamokha", "status": "canonical", "label_en": "emet veemunah — mi khamokha", "parent": "urn:x-opensiddur:text:prayer:emet_veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah/moshe", "status": "canonical", "label_en": "emet veemunah — moshe", "parent": "urn:x-opensiddur:text:prayer:emet_veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah/opening", "status": "canonical", "label_en": "emet veemunah — opening", "parent": "urn:x-opensiddur:text:prayer:emet_veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah/seal", "status": "canonical", "label_en": "emet veemunah — seal", "parent": "urn:x-opensiddur:text:prayer:emet_veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:emet_veemunah/yimlokh", "status": "canonical", "label_en": "emet veemunah — yimlokh", "parent": "urn:x-opensiddur:text:prayer:emet_veemunah"}
+{"urn": "urn:x-opensiddur:text:prayer:hashkivenu", "status": "canonical", "label_en": "hashkivenu"}
+{"urn": "urn:x-opensiddur:text:prayer:hashkivenu/opening", "status": "canonical", "label_en": "hashkivenu — opening", "parent": "urn:x-opensiddur:text:prayer:hashkivenu"}
+{"urn": "urn:x-opensiddur:text:prayer:hashkivenu/seal", "status": "canonical", "label_en": "hashkivenu — seal", "parent": "urn:x-opensiddur:text:prayer:hashkivenu"}
+{"urn": "urn:x-opensiddur:text:prayer:maariv_aravim", "status": "canonical", "label_en": "maariv aravim"}
+{"urn": "urn:x-opensiddur:text:prayer:maariv_aravim/opening", "status": "canonical", "label_en": "maariv aravim — opening", "parent": "urn:x-opensiddur:text:prayer:maariv_aravim"}
+{"urn": "urn:x-opensiddur:text:prayer:maariv_aravim/seal", "status": "canonical", "label_en": "maariv aravim — seal", "parent": "urn:x-opensiddur:text:prayer:maariv_aravim"}

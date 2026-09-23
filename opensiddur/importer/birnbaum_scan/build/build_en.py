@@ -39,6 +39,9 @@ from .shacharit_end import prayers as final_prayers
 PRAYERS += final_prayers("en")
 from .minchah import shared as minchah_shared, prayers as minchah_prayers
 PRAYERS = minchah_shared("en", PRAYERS) + minchah_prayers("en")
+from .arvit import shared as arvit_shared, prayers as arvit_prayers
+PRAYERS = arvit_shared("en", PRAYERS)
+PRAYERS += arvit_prayers("en", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -67,7 +70,11 @@ from .shacharit_end import NOTES as FINAL_NOTES
 
 from .notes_minchah import NOTES as MINCHAH_NOTES
 
+from .notes_arvit import NOTES as ARVIT_NOTES
+
 APPARATUS = {
+    "notes_arvit": dict(entries=ARVIT_NOTES, slug="birnbaum_1949/arvit",
+                        title="Notes on the evening service", first=189, last=220),
     "notes_minchah": dict(entries=MINCHAH_NOTES, slug="birnbaum_1949/minchah",
                           title="Notes on the afternoon service", first=157, last=188),
     "notes_shacharit_end": dict(entries=FINAL_NOTES, slug="birnbaum_1949/shacharit_end",

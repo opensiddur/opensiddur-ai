@@ -34,8 +34,12 @@ def prayers(lang):
     result = []
     for name, title, pages in zip(ORDER, TITLES, PAGES):
         parts = [f'<tei:div corresp="{PRAYER}{name}">']
-        if name == 'shema' and lang == 'en':
-            parts.append('<tei:head xml:lang="en">SHEMA</tei:head>')
+        if name == 'shema':
+            if lang == 'en':
+                parts.append('<tei:head xml:lang="en">SHEMA</tei:head>')
+            else:
+                from .shacharit_end import editorial_head
+                parts.append(editorial_head(lang, 'שְׁמַע', 'Shema'))
         scripture_open = False
         marks = Correspondences()
         for ref, text in groups[name]:
