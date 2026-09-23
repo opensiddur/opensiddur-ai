@@ -1034,3 +1034,30 @@ The note bodies are present; those rendering issues are not new encoding rules.
 The regenerated full parallel is 88 pages, also copied to
 `output/birnbaum_parallel.pdf`. Each new prayer is transcluded once in the full
 book; Shema's compiled division is split around its shared Barukh shem transclusion.
+
+## Weekday Arvit, printed 189–220 (IA n213–n244)
+
+The service is addressable as `siddur:chol/arvit`, with section wrappers for the optional
+opening, blessings before Shema, Shema, blessings after Shema, Amidah, Kaddish, Alenu,
+seasonal Psalm 27 and the house-of-mourning Psalm 49. The wrappers declare `maariv`
+and silent recitation; repetition is false even if a containing export selected the
+Reader's repetition for daytime services. Conditions for whole prayers belong to these
+callers. Shared Shema, Amidah, Kaddish and closing texts retain their existing URNs and
+receive the additional Arvit printings and page turns.
+
+`opensiddur:service-context / immediately-after-minha` is a boolean supplied by the
+caller. True omits the Psalm 134 opening; false includes it on ordinary weekdays;
+undefined leaves the opening MAYBE with Birnbaum's rubric. Saturday night instead
+retains the printed direction to Psalms 144 and 67 on pages 535–536. The Saturday-night
+continuation after Half Kaddish and the Omer counting are likewise printed directions
+to later pages, whose texts are not included in this installment.
+
+Ata Chonantanu is selected on Hebrew Sunday at Arvit or the night following the last
+festival day, with separate Israel/Diaspora dates. The shared knowledge blessing has
+milestone boundaries around its opening and conclusion to allow the insertion; its
+Hebrew conjunction is conditional on that same Arvit occasion. Shalom Rav is used as
+printed; the fast-day Sim Shalom choice in Mincha does not carry over into Arvit.
+
+Psalm 27 uses the previously confirmed seasonal endpoint, and Psalm 49 uses the existing
+house-of-mourning setting (MAYBE in the undecided edition). A printed instruction to say
+Kaddish is realized by transcluding it, without a second redundant instruction after it.
