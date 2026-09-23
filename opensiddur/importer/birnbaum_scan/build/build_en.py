@@ -42,6 +42,8 @@ PRAYERS = minchah_shared("en", PRAYERS) + minchah_prayers("en")
 from .arvit import shared as arvit_shared, prayers as arvit_prayers
 PRAYERS = arvit_shared("en", PRAYERS)
 PRAYERS += arvit_prayers("en", PRAYERS)
+from .shabbat_opening import shared as shabbat_shared, prayers as shabbat_prayers
+PRAYERS = shabbat_shared("en", PRAYERS) + shabbat_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -72,7 +74,11 @@ from .notes_minchah import NOTES as MINCHAH_NOTES
 
 from .notes_arvit import NOTES as ARVIT_NOTES
 
+from .notes_shabbat_opening import NOTES as SHABBAT_OPENING_NOTES
+
 APPARATUS = {
+    "notes_shabbat_opening": dict(entries=SHABBAT_OPENING_NOTES, slug="birnbaum_1949/shabbat_opening",
+                        title="Notes on candle lighting, parental blessing and Song of Songs", first=221, last=236),
     "notes_arvit": dict(entries=ARVIT_NOTES, slug="birnbaum_1949/arvit",
                         title="Notes on the evening service", first=189, last=220),
     "notes_minchah": dict(entries=MINCHAH_NOTES, slug="birnbaum_1949/minchah",

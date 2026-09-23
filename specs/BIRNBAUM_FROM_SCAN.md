@@ -1061,3 +1061,27 @@ printed; the fast-day Sim Shalom choice in Mincha does not carry over into Arvit
 Psalm 27 uses the previously confirmed seasonal endpoint, and Psalm 49 uses the existing
 house-of-mourning setting (MAYBE in the undecided edition). A printed instruction to say
 Kaddish is realized by transcluding it, without a second redundant instruction after it.
+
+## Before the Sabbath service, printed 221–236 (IA n245–n260)
+
+`shabbat/preparations` groups the Sabbath candle-lighting blessing, parental blessing,
+and complete Song of Songs. It has its own bookmark hierarchy and follows weekday Arvit
+in the index; it does not claim to be the complete Sabbath service.
+
+Song of Songs uses `bible:song_of_songs`, eight chapter divisions, and 117 biblical verse
+milestones. The Hebrew and English preserve their own paragraphs and page turns;
+English 7:1 and 8:5 each cross a paragraph boundary within a single verse. Chapter 7
+begins with “Return, return”, following the printed Hebrew numbering. The small written
+form marker at 2:13 is retained as `tei:choice` with `j:written` and `j:read`.
+
+The shared priestly blessing gains biblical milestones for Numbers 6:24–26 and its
+additional printing at 221–222. The parental blessing transcludes that biblical range.
+The sons’ opening quotes only part of Genesis 48:20 and retains that source on a bounded
+quotation; the daughters’ opening has its own prayer URN. Select these formulas with
+`opensiddur:blessing-recipient / gender` (`male` or `female`), not the reciter’s personal
+setting. An unspecified recipient keeps both alternatives MAYBE with the printed rubrics.
+
+All forty commentary/citation entries on these pages are retained, including the two
+introductions continued across pages. Preserve Birnbaum’s translation even where it
+differs from a familiar Bible rendering, notably “do not tell him” (5:8), “Your chest”
+(7:3), and “topaz pink” (5:14).

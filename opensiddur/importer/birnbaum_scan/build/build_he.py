@@ -39,6 +39,8 @@ PRAYERS = minchah_shared("he", PRAYERS) + minchah_prayers("he")
 from .arvit import shared as arvit_shared, prayers as arvit_prayers
 PRAYERS = arvit_shared("he", PRAYERS)
 PRAYERS += arvit_prayers("he", PRAYERS)
+from .shabbat_opening import shared as shabbat_shared, prayers as shabbat_prayers
+PRAYERS = shabbat_shared("he", PRAYERS) + shabbat_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -562,7 +564,8 @@ def units(project, pages, by_name, amidah_body):
             unit['body'] = start + '>\n' + editorial_head(lang, unit['title_he'], unit['title_en']) + rest
     from .minchah import units as minchah_units
     from .arvit import units as arvit_units
-    return result + minchah_units(project, by_name) + arvit_units(project, by_name)
+    from .shabbat_opening import units as shabbat_units
+    return result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three
