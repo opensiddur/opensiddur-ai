@@ -195,3 +195,5 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/arvit/shema/vehu_rachum", "status": "canonical", "label_en": "chol — arvit — shema — vehu rachum", "parent": "urn:x-opensiddur:text:siddur:chol/arvit/shema"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/arvit/shema/vehu_rachum/psalms_20_10", "status": "canonical", "label_en": "chol — arvit — shema — vehu rachum — psalms 20 10", "parent": "urn:x-opensiddur:text:siddur:chol/arvit/shema/vehu_rachum"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/arvit/shema/vehu_rachum/psalms_78_38", "status": "canonical", "label_en": "chol — arvit — shema — vehu rachum — psalms 78 38", "parent": "urn:x-opensiddur:text:siddur:chol/arvit/shema/vehu_rachum"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat", "status": "canonical", "label_en": "Sabbath", "label_he": "שבת"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/preparations", "status": "canonical", "label_en": "Before the Sabbath service", "label_he": "הכנות לשבת", "parent": "urn:x-opensiddur:text:siddur:shabbat"}
