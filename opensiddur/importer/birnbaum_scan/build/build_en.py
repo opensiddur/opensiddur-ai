@@ -37,6 +37,8 @@ from .conclusion import prayers as conclusion_prayers
 PRAYERS += conclusion_prayers("en", PRAYERS)
 from .shacharit_end import prayers as final_prayers
 PRAYERS += final_prayers("en")
+from .minchah import shared as minchah_shared, prayers as minchah_prayers
+PRAYERS = minchah_shared("en", PRAYERS) + minchah_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -63,7 +65,11 @@ CONCLUSION_NOTES = make_notes(ANCHORS)
 
 from .shacharit_end import NOTES as FINAL_NOTES
 
+from .notes_minchah import NOTES as MINCHAH_NOTES
+
 APPARATUS = {
+    "notes_minchah": dict(entries=MINCHAH_NOTES, slug="birnbaum_1949/minchah",
+                          title="Notes on the afternoon service", first=157, last=188),
     "notes_shacharit_end": dict(entries=FINAL_NOTES, slug="birnbaum_1949/shacharit_end",
                                title="Notes on the final morning readings", first=151, last=156),
     "notes_conclusion": dict(entries=CONCLUSION_NOTES, slug="birnbaum_1949/conclusion",

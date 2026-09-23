@@ -152,3 +152,16 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/final_readings/lishuatkha_kiviti/permutation_2", "status": "canonical", "label_en": "Second permutation", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/final_readings/lishuatkha_kiviti"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/final_readings/lishuatkha_kiviti/permutation_3", "status": "canonical", "label_en": "Third permutation", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/final_readings/lishuatkha_kiviti"}
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/final_readings/lishuatkha_kiviti/targum", "status": "canonical", "label_en": "Aramaic paraphrase and permutations", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/final_readings/lishuatkha_kiviti"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol", "label_en": "Weekday afternoon service"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/amidah", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "Weekday afternoon Amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/avinu_malkenu", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "Avinu Malkenu at Minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/avinu_malkenu/tehe", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah/avinu_malkenu", "label_en": "May this year be a year of mercy"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "Alenu and conclusion"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion", "label_en": "Kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "Kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/ki_shem", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "When I proclaim the name of the Lord"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "Ashrei and Half Kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/tachanun", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah", "label_en": "Afternoon Tachanun"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish/response", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish", "label_en": "Congregational response in the concluding Kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish/praise", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish", "label_en": "Yitbarakh in the concluding Kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish/peace", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/minchah/conclusion/kaddish", "label_en": "Oseh Shalom in the concluding Kaddish"}

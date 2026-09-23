@@ -557,3 +557,12 @@
 {"urn": "urn:x-opensiddur:text:prayer:ani_maamin/11", "status": "canonical", "label_en": "Principle 11", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
 {"urn": "urn:x-opensiddur:text:prayer:ani_maamin/12", "status": "canonical", "label_en": "Principle 12", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
 {"urn": "urn:x-opensiddur:text:prayer:ani_maamin/13", "status": "canonical", "label_en": "Principle 13", "parent": "urn:x-opensiddur:text:prayer:ani_maamin"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/aneinu/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/aneinu", "label_en": "amidah — aneinu — opening"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/aneinu/seal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/aneinu", "label_en": "amidah — aneinu — seal"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/nachaym_hashem_elohaynu/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/nachaym_hashem_elohaynu", "label_en": "amidah — nachaym hashem elohaynu — opening"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/nachaym_hashem_elohaynu/quotation", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/nachaym_hashem_elohaynu", "label_en": "amidah — nachaym hashem elohaynu — quotation"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/nachaym_hashem_elohaynu/seal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/nachaym_hashem_elohaynu", "label_en": "amidah — nachaym hashem elohaynu — seal"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/tefilah/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/tefilah", "label_en": "amidah — tefilah — opening"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/tefilah/seal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/tefilah", "label_en": "amidah — tefilah — seal"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/yerushalayim/opening", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/yerushalayim", "label_en": "amidah — yerushalayim — opening"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/yerushalayim/seal", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/yerushalayim", "label_en": "amidah — yerushalayim — seal"}

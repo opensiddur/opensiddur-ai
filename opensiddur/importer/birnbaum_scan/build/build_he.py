@@ -34,6 +34,8 @@ from .conclusion import prayers as conclusion_prayers
 PRAYERS += conclusion_prayers("he", PRAYERS)
 from .shacharit_end import prayers as final_prayers
 PRAYERS += final_prayers("he")
+from .minchah import shared as minchah_shared, prayers as minchah_prayers
+PRAYERS = minchah_shared("he", PRAYERS) + minchah_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -42,9 +44,9 @@ U, S = PRAYER, SIDDUR
 # an undeclared false is undefined, and undefined keeps the text, so declaring shaharit
 # alone would leave every other service's readings standing. It declares NOTHING about
 # the date, so the rain seasons, the Ten Days, Ya'aleh v'Yavo and עננו stay open.
-def declaration():
+def declaration(service="shaharit"):
     svc = "\n".join(
-        f'          <tei:f name="{n}">\n            <tei:binary value="{"true" if n=="shaharit" else "false"}"/>\n          </tei:f>'
+        f'          <tei:f name="{n}">\n            <tei:binary value="{"true" if n==service else "false"}"/>\n          </tei:f>'
         for n in ("shaharit", "minha", "maariv", "musaf", "neila", "slihot"))
     agg = "\n".join(
         f'          <tei:f name="{n}">\n            <tei:binary value="false"/>\n          </tei:f>'
@@ -555,7 +557,8 @@ def units(project, pages, by_name, amidah_body):
                             'chol_shacharit_conclusion', 'chol_shacharit_psalms'):
             start, rest = unit['body'].split('>', 1)
             unit['body'] = start + '>\n' + editorial_head(lang, unit['title_he'], unit['title_en']) + rest
-    return result
+    from .minchah import units as minchah_units
+    return result + minchah_units(project, by_name)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

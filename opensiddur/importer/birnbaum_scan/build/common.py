@@ -62,7 +62,7 @@ LEAF_OFFSET = -1
 #: The +25 offset in fact holds for every numbered page in the book. The table is kept to
 #: the pages actually read anyway, so that ``pb(500)`` raises rather than quietly
 #: deep-linking a leaf nobody has looked at.
-SCAN_PAGE = {p: p + 25 for p in range(1, 157)}
+SCAN_PAGE = {p: p + 25 for p in range(1, 189)}
 
 
 def leaf(page) -> int:
