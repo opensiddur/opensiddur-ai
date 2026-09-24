@@ -791,3 +791,24 @@ The first reading was entered from the scans before consulting Wikisource. Enlar
 | vowels | 2 | 2 | 0 | 0 |
 
 277 words read.
+
+## Sabbath and festival Arvit, printed 257–284 (IA n281–n308)
+
+The scan has been read through Adon Olam, including its last four lines at the top of
+283/284. The home service below it is outside this installment. The source reading
+`scan_reading/readings/shabbat_arvit.md` records the order, rubrics, shared passages,
+new text, commentary and source footnotes.
+
+The shared weekday Arvit readings retain their established text and gain repeat-printing
+provenance. The new Sabbath Hashkivenu ending, Atah Kidashta, Me‘ein Sheva and synagogue
+Kiddush have their own readings. Me‘ein Sheva's English closing blessing differs from
+the Amidah's (“deliverance”, “in truth”, “who hallow thy name”), and the thanksgiving
+seal on 272 says “O God” where the earlier weekday printing says “O Lord”. Both variants
+are retained locally. Page 262 also prints Jeremiah 31:11 rather than 196's 31:10;
+its printed reference is retained at the new occurrence.
+
+Comparison with the local Wikisource snapshot followed the direct scan reading.
+The enlarged 263 scan confirms segol in בַּכֶּֽסֶה, the form היא in Veshamru, and
+defective לְעֹלָם. The enlarged 273 scan confirms וְגוֹאֲלִי, which agrees with the
+already encoded shared meditation. The English page does not translate סברי מרנן
+ורבותי; its explanatory footnote is retained without supplying new liturgical text.

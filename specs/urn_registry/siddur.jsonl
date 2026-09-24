@@ -211,3 +211,23 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/kabbalat_shabbat/study", "status": "canonical", "label_en": "Study closing Kabbalat Shabbat", "parent": "urn:x-opensiddur:text:siddur:shabbat/kabbalat_shabbat"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/kabbalat_shabbat/study_kaddish", "status": "canonical", "label_en": "Kaddish d’Rabbanan after Bameh Madlikin", "parent": "urn:x-opensiddur:text:siddur:shabbat/kabbalat_shabbat"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/kabbalat_shabbat/study_kaddish/yehe_shlama", "status": "canonical", "label_en": "Peace petition after Bameh Madlikin", "parent": "urn:x-opensiddur:text:siddur:shabbat/kabbalat_shabbat/study_kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit", "status": "canonical", "label_en": "Evening service for Sabbaths and festivals", "parent": "urn:x-opensiddur:text:siddur:shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/adon_olam", "status": "canonical", "label_en": "ADON OLAM", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/after_amidah", "status": "canonical", "label_en": "Vaykhullu and Me‘ein Sheva", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah", "status": "canonical", "label_en": "Amidah for the Sabbath", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/blessings_after_shema", "status": "canonical", "label_en": "Blessings after Shema", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/blessings_before_shema", "status": "canonical", "label_en": "Blessings before Shema", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/conclusion", "status": "canonical", "label_en": "Alenu and conclusion", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/kaddish", "status": "canonical", "label_en": "Full Kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/kiddush", "status": "canonical", "label_en": "Kiddush in the synagogue", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/psalm27", "status": "canonical", "label_en": "Psalm 27 for the season of repentance", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/shema", "status": "canonical", "label_en": "Shema", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/vaykhulu", "status": "canonical", "label_en": "ויכלו", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah/hatov_shimkha", "status": "canonical", "label_en": "Shabbat evening service — hatov shimkha", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/kiddush/savri", "status": "canonical", "label_en": "Shabbat evening service — savri", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku", "status": "canonical", "label_en": "תקעו בחדש שופר"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/veshamru", "status": "canonical", "label_en": "ושמרו"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku/psalms_81_4", "status": "canonical", "label_en": "Shabbat evening service — psalms 81 4", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku/psalms_81_5", "status": "canonical", "label_en": "Shabbat evening service — psalms 81 5", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah/meditation", "status": "canonical", "label_en": "Shabbat evening service — meditation", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/blessings_after_shema/emet_seal", "status": "canonical", "label_en": "Shabbat evening service — emet seal", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/blessings_after_shema"}
