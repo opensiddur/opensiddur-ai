@@ -589,3 +589,5 @@
 {"urn": "urn:x-opensiddur:text:prayer:birkat_horim", "status": "canonical", "label_en": "Parental blessing", "label_he": "ברכת הורים"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_horim/sons", "status": "canonical", "label_en": "Parental blessing for sons", "label_he": "ברכת הבנים", "parent": "urn:x-opensiddur:text:prayer:birkat_horim"}
 {"urn": "urn:x-opensiddur:text:prayer:birkat_horim/daughters", "status": "canonical", "label_en": "Parental blessing for daughters", "label_he": "ברכת הבנות", "parent": "urn:x-opensiddur:text:prayer:birkat_horim"}
+{"urn": "urn:x-opensiddur:text:prayer:nichum_avelim", "status": "context", "label_en": "Comforting mourners", "note": "Organizational parent for condolence formulas; no shared text at this level."}
+{"urn": "urn:x-opensiddur:text:prayer:nichum_avelim/hamakom_yenachem", "status": "canonical", "label_en": "May God console you among the mourners of Zion and Jerusalem", "parent": "urn:x-opensiddur:text:prayer:nichum_avelim"}
