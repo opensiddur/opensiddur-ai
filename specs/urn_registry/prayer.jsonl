@@ -591,3 +591,13 @@
 {"urn": "urn:x-opensiddur:text:prayer:birkat_horim/daughters", "status": "canonical", "label_en": "Parental blessing for daughters", "label_he": "ברכת הבנות", "parent": "urn:x-opensiddur:text:prayer:birkat_horim"}
 {"urn": "urn:x-opensiddur:text:prayer:nichum_avelim", "status": "context", "label_en": "Comforting mourners", "note": "Organizational parent for condolence formulas; no shared text at this level."}
 {"urn": "urn:x-opensiddur:text:prayer:nichum_avelim/hamakom_yenachem", "status": "canonical", "label_en": "May God console you among the mourners of Zion and Jerusalem", "parent": "urn:x-opensiddur:text:prayer:nichum_avelim"}
+{"urn": "urn:x-opensiddur:text:prayer:me_ein_sheva", "status": "canonical", "label_en": "Blessing embodying the seven blessings"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_pri_hagafen/text", "status": "canonical", "label_en": "Shabbat evening service — text", "parent": "urn:x-opensiddur:text:prayer:borei_pri_hagafen"}
+{"urn": "urn:x-opensiddur:text:prayer:hashkivenu/hapores_sukkat_shalom", "status": "canonical", "label_en": "Who spreadest the shelter of peace", "parent": "urn:x-opensiddur:text:prayer:hashkivenu"}
+{"urn": "urn:x-opensiddur:text:prayer:kiddush/asher_kiddeshanu", "status": "canonical", "label_en": "Kiddush: who hast sanctified us"}
+{"urn": "urn:x-opensiddur:text:prayer:me_ein_sheva/retzeh", "status": "canonical", "label_en": "Shabbat evening service — retzeh", "parent": "urn:x-opensiddur:text:prayer:me_ein_sheva"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/atah_qidashta_et/text", "status": "canonical", "label_en": "Shabbat evening service — text", "parent": "urn:x-opensiddur:text:prayer:amidah/atah_qidashta_et"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/retzay_vimnuchataynu/text", "status": "canonical", "label_en": "Shabbat evening service — text", "parent": "urn:x-opensiddur:text:prayer:amidah/retzay_vimnuchataynu"}
+{"urn": "urn:x-opensiddur:text:prayer:hashkivenu/hapores_sukkat_shalom/text", "status": "canonical", "label_en": "Shabbat evening service — text", "parent": "urn:x-opensiddur:text:prayer:hashkivenu/hapores_sukkat_shalom"}
+{"urn": "urn:x-opensiddur:text:prayer:kiddush/asher_kiddeshanu/text", "status": "canonical", "label_en": "Shabbat evening service — text", "parent": "urn:x-opensiddur:text:prayer:kiddush/asher_kiddeshanu"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/elohai_netzor/text", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah/elohai_netzor", "label_en": "Elohai netzor, without the service-specific rubric"}
