@@ -1,4 +1,5 @@
-{"urn": "urn:x-opensiddur:text:mishnah:shabbat/2", "status": "canonical", "label_en": "Mishnah Shabbat, chapter 2 (Bameh Madlikin)"}
+{"urn": "urn:x-opensiddur:text:mishnah:shabbat", "status": "context", "label_en": "Mishnah Shabbat", "note": "Tractate-level grouping for numbered chapters and mishnayot. Birnbaum realizes chapter 2, not the entire tractate."}
+{"urn": "urn:x-opensiddur:text:mishnah:shabbat/2", "status": "canonical", "label_en": "Mishnah Shabbat, chapter 2 (Bameh Madlikin)", "parent": "urn:x-opensiddur:text:mishnah:shabbat"}
 {"urn": "urn:x-opensiddur:text:mishnah:shabbat/2/1", "status": "canonical", "label_en": "Mishnah Shabbat 2:1", "parent": "urn:x-opensiddur:text:mishnah:shabbat/2"}
 {"urn": "urn:x-opensiddur:text:mishnah:shabbat/2/2", "status": "canonical", "label_en": "Mishnah Shabbat 2:2", "parent": "urn:x-opensiddur:text:mishnah:shabbat/2"}
 {"urn": "urn:x-opensiddur:text:mishnah:shabbat/2/3", "status": "canonical", "label_en": "Mishnah Shabbat 2:3", "parent": "urn:x-opensiddur:text:mishnah:shabbat/2"}
