@@ -1127,3 +1127,37 @@ paragraphs on Psalm 93 share one occurrence-specific anchor. Join commentary con
 across facing pages. English biblical verses and paragraphs have independent boundaries,
 notably within 95:9, 96:10, 96:13 and 98:9. Hebrew Reader cues close the preceding verse
 scope before the instruction and reopen at the following verse.
+
+## Bameh Madlikin — printed 251–256 (IA n275–n280)
+
+The Kabbalat Shabbat wrapper now continues through all seven mishnayot of Shabbat
+chapter 2, the Rabbi Elazar passage from Berakhot 64a, and Kaddish d’Rabbanan.
+The direct six-page reading is in `scan_reading/readings/bameh_madlikin.md`.
+
+The chapter uses `mishnah:shabbat/2` and `mishnah:shabbat/2/1`–`/7`, with
+`unit="mishnah"` milestones independent of page breaks. Its festival omission
+belongs to the study caller, not to the reusable chapter. “Omitted on festivals”
+is interpreted to cover both a festival Friday and a festival Shabbat; the former
+uses the existing incoming-date calculation with Israel/Diaspora distinctions.
+The following Rabbi Elazar passage and Kaddish are outside that chapter gate.
+The service caller still omits the entire Kabbalat Shabbat on a festival Shabbat.
+
+The Talmud excerpt uses `talmud:berakhot/64a/amar_rabbi_elazar`; its biblical
+quotations retain local milestones with biblical `source` spans. This preserves
+Birnbaum’s wording while leaving canonical biblical mappings unambiguous.
+Eleven commentary paragraphs and both numbered source notes are encoded, including
+the continued דמאי note. Notes sharing an anchor retain separate paragraphs.
+
+The closing Kaddish is separate from the chapter, with its own bookmark and minyan
+gate. Its Hebrew and five English paragraphs reuse the earlier Kaddish d’Rabbanan.
+The English peace petition here says “and a happy life”, where printed 48 says
+“and life”; an occurrence-specific realization preserves this difference without
+changing the earlier prayer. Shared printings retain the earlier stress marks
+and punctuation. The second לעילא uses the established Ten Days conditional
+and its instruction, without duplicating the print’s parentheses.
+
+The local peace petition derives its Hebrew from the shared importer reading;
+five other Kaddish paragraphs are transcluded. Both sides use the local milestone
+for this petition, keeping their paragraphs aligned. The exporter also displays
+earlier commentary attached to shared Kaddish texts at this new occurrence;
+those inherited notes are additional to the thirteen paragraphs on these pages.
