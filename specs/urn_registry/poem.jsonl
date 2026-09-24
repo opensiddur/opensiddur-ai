@@ -1,3 +1,31 @@
 {"urn": "urn:x-opensiddur:text:poem:adon_olam", "status": "canonical", "label_he": "אֲדוֹן עוֹלָם", "label_en": "Adon Olam"}
 {"urn": "urn:x-opensiddur:text:poem:ana_bekhoach", "status": "canonical", "label_he": "אָנָּא בְּכֹֽחַ"}
 {"urn": "urn:x-opensiddur:text:poem:yigdal", "status": "canonical", "label_he": "יִגְדַּל", "label_en": "Yigdal"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi", "status": "canonical", "label_en": "Lecha Dodi"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/1", "status": "canonical", "label_en": "Ana Bekoach — stanza 1", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/2", "status": "canonical", "label_en": "Ana Bekoach — stanza 2", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/3", "status": "canonical", "label_en": "Ana Bekoach — stanza 3", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/4", "status": "canonical", "label_en": "Ana Bekoach — stanza 4", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/5", "status": "canonical", "label_en": "Ana Bekoach — stanza 5", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/6", "status": "canonical", "label_en": "Ana Bekoach — stanza 6", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:ana_bekhoach/7", "status": "canonical", "label_en": "Ana Bekoach — stanza 7", "parent": "urn:x-opensiddur:text:poem:ana_bekhoach"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/1", "status": "canonical", "label_en": "Lecha Dodi — stanza 1", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/2", "status": "canonical", "label_en": "Lecha Dodi — stanza 2", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/3", "status": "canonical", "label_en": "Lecha Dodi — stanza 3", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/4", "status": "canonical", "label_en": "Lecha Dodi — stanza 4", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/5", "status": "canonical", "label_en": "Lecha Dodi — stanza 5", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/6", "status": "canonical", "label_en": "Lecha Dodi — stanza 6", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/7", "status": "canonical", "label_en": "Lecha Dodi — stanza 7", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/8", "status": "canonical", "label_en": "Lecha Dodi — stanza 8", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/9", "status": "canonical", "label_en": "Lecha Dodi — stanza 9", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain", "status": "canonical", "label_en": "Lecha Dodi refrain", "parent": "urn:x-opensiddur:text:poem:lecha_dodi"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/1", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 1", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/2", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 2", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/3", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 3", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/4", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 4", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/5", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 5", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/6", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 6", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/7", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 7", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/8", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 8", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/9", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 9", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/opening_repeat", "status": "canonical", "label_en": "Lecha Dodi — repeated opening refrain", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}

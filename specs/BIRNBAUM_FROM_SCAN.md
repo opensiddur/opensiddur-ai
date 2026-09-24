@@ -1085,3 +1085,45 @@ All forty commentary/citation entries on these pages are retained, including the
 introductions continued across pages. Preserve Birnbaum’s translation even where it
 differs from a familiar Bible rendering, notably “do not tell him” (5:8), “Your chest”
 (7:3), and “topaz pink” (5:14).
+
+## Kabbalat Shabbat, printed 237–250 (IA n261–n274)
+
+`shabbat/kabbalat_shabbat` contains Psalms 95–99 and 29, Ana Bekoach and Barukh Shem,
+Lecha Dodi, the welcome for mourners, Psalms 92–93, and Mourners’ Kaddish. Its separate
+`shabbat/kabbalat_service` caller applies the whole-service festival omission. The book
+index groups it and the preceding preparations under `shabbat`, outside `chol`.
+
+The calendar is that of the incoming Shabbat. When Shabbat itself is Yom Tov, omit the
+whole section. When the preceding Friday is Yom Tov, begin at Psalm 92; use the last
+festival day appropriate to Israel or the Diaspora. The Friday exception is in the
+section wrapper, not in the reusable psalm or poem files. Unknown calendar settings
+remain MAYBE with explanatory rubrics. `opensiddur:service-context / mourners-present`
+is a separate, initially unknown setting for the condolence formula; it must not be
+inferred from the reciter being a mourner or from a house-of-mourning setting. Kaddish
+uses the existing minyan gate and Ten Days of Repentance wording.
+
+All eight psalms (86 verses) have biblical chapter/verse addresses. Full chapters now
+own the six biblical addresses previously carried by isolated excerpts from Psalms
+29, 95 and 99. Those earlier excerpts keep their exact printed text, local milestone
+correspondences, and biblical `source` spans. This prevents ambiguous resolution while
+preserving such differences as “powers” in the Wednesday Psalm 95:3 excerpt and “gods”
+in its complete chapter. Psalm 93 is transcluded from the earlier Friday psalm.
+
+Ana Bekoach is shared in full, with seven stanza milestone ranges added. Enlargement
+of printed 243 confirms `ושמע` in line seven; it is not a variant omitting the conjunction.
+Barukh Shem and the five Kaddish paragraphs also reuse their existing texts. Shared
+passages retain their earlier stress marks and punctuation, and any commentary already
+attached to their canonical text remains available at the repeated occurrence.
+
+Lecha Dodi has nine stanza milestones and separately addressed refrains. Printed 243
+has the opening refrain twice in Hebrew, while 244 translates it once; retain that
+asymmetry. Hebrew stanzas have four hemistichs, represented by four `tei:l` elements;
+English stanzas are paragraphs. Preserve the instruction before the stanzas and the
+instruction to rise and turn toward the door before the last stanza. Biblical allusions
+in the poem do not make it a sequence of complete biblical verses: it uses poem URNs.
+
+The thirteen new commentary paragraphs are represented by twelve entries: the two
+paragraphs on Psalm 93 share one occurrence-specific anchor. Join commentary continued
+across facing pages. English biblical verses and paragraphs have independent boundaries,
+notably within 95:9, 96:10, 96:13 and 98:9. Hebrew Reader cues close the preceding verse
+scope before the instruction and reopen at the following verse.
