@@ -46,6 +46,8 @@ from .shabbat_opening import shared as shabbat_shared, prayers as shabbat_prayer
 PRAYERS = shabbat_shared("en", PRAYERS) + shabbat_prayers("en")
 from .kabbalat_shabbat import shared as kabbalat_shared, prayers as kabbalat_prayers
 PRAYERS = kabbalat_shared("en", PRAYERS) + kabbalat_prayers("en")
+from .bameh_madlikin import shared as bameh_shared, prayers as bameh_prayers
+PRAYERS = bameh_shared("en", PRAYERS) + bameh_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -80,7 +82,11 @@ from .notes_shabbat_opening import NOTES as SHABBAT_OPENING_NOTES
 
 from .notes_kabbalat_shabbat import NOTES as KABBALAT_NOTES
 
+from .notes_bameh_madlikin import NOTES as BAMEH_NOTES
+
 APPARATUS = {
+    "notes_bameh_madlikin": dict(entries=BAMEH_NOTES, slug="birnbaum_1949/bameh_madlikin",
+        title="Notes on Bameh Madlikin", first=251, last=256),
     "notes_kabbalat_shabbat": dict(entries=KABBALAT_NOTES, slug="birnbaum_1949/kabbalat_shabbat",
         title="Notes on welcoming the Sabbath", first=237, last=250),
     "notes_shabbat_opening": dict(entries=SHABBAT_OPENING_NOTES, slug="birnbaum_1949/shabbat_opening",

@@ -1,4 +1,4 @@
-"""Kabbalat Shabbat, printed 237–250; occasion gates belong to callers."""
+"""Kabbalat Shabbat, printed 237–256; occasion gates belong to callers."""
 import re
 from .common import PRAYER, POEM, SIDDUR, PROJECT_HE, AGG, cond, endcond, feature, pb
 from .conclusion import BIBLE, instruction, transclude, text_xml, MINYAN
@@ -145,10 +145,11 @@ def units(project):
     content=conditional('friday_festival',FRIDAY_RUBRIC,FULL,before)
     content+=instruction('If a festival occurs on Friday, the evening service begins here.')
     content+=transclude(BIBLE+'psalms/92')+transclude(ROOT+'/psalm_93')+transclude(ROOT+'/kaddish')
-    add('kabbalat_shabbat',ROOT,'קַבָּלַת שַׁבָּת','WELCOMING THE SABBATH',237,249,content)
+    content+=transclude(ROOT+'/study')
+    add('kabbalat_shabbat',ROOT,'קַבָּלַת שַׁבָּת','WELCOMING THE SABBATH',237,255,content)
     # Whole-service omission is outside the reusable Kabbalat Shabbat file.
     body='<j:declare xml:id="shabbat_opening_day">'+feature(AGG,'shabbat')+'</j:declare>'
     body+=conditional('festival',RUBRIC.format(page=257+side),FESTIVAL,transclude(ROOT),negate=True)
     body+='<j:endDeclare target="#shabbat_opening_day"/>'
-    add('shabbat_kabbalat_service',SIDDUR+'shabbat/kabbalat_service','קבלת שבת','Welcoming the Sabbath',237,249,body,head=False)
+    add('shabbat_kabbalat_service',SIDDUR+'shabbat/kabbalat_service','קבלת שבת','Welcoming the Sabbath',237,255,body,head=False)
     return tuple(result)
