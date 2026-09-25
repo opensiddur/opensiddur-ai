@@ -54,6 +54,9 @@ PRAYERS += leil_shabbat_prayers("he", PRAYERS)
 from .shabbat_pesukei import shared as shabbat_pesukei_shared, prayers as shabbat_pesukei_prayers
 PRAYERS = shabbat_pesukei_shared("he", PRAYERS)
 PRAYERS += shabbat_pesukei_prayers("he")
+from .shabbat_shema import shared as shabbat_shema_shared, prayers as shabbat_shema_prayers
+PRAYERS = shabbat_shema_shared("he", PRAYERS)
+PRAYERS += shabbat_shema_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -583,7 +586,8 @@ def units(project, pages, by_name, amidah_body):
     from .shabbat_arvit import units as shabbat_arvit_units
     from .leil_shabbat import units as leil_shabbat_units
     from .shabbat_pesukei import units as shabbat_pesukei_units
-    return result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project) + kabbalat_units(project) + bameh_units(project) + shabbat_arvit_units(project, by_name) + leil_shabbat_units(project) + shabbat_pesukei_units(project, by_name)
+    from .shabbat_shema import units as shabbat_shema_units, extend_service
+    return extend_service(result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project) + kabbalat_units(project) + bameh_units(project) + shabbat_arvit_units(project, by_name) + leil_shabbat_units(project) + shabbat_pesukei_units(project, by_name)) + shabbat_shema_units(project, by_name)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

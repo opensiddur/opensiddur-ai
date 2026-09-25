@@ -1,0 +1,9 @@
+"""New occurrence commentary, printed 337–340; other notes are shared."""
+from .notes_minchah import note
+from .shabbat_shema import YOTZER,EL_ADON,LAEL
+
+NOTES = [
+note(YOTZER+'/festival/el_barukh','is an alphabetic acrostic ending with <tei:foreign xml:lang="he">תמיד</tei:foreign>.',lemma='אל ברוך גדול דעה'),
+note(EL_ADON,'is an alphabetical hymn, generally attributed to the <tei:hi rend="italic">Yorde Merkavah</tei:hi>, mystics of the eighth century, who applied their minds to theosophy. The <tei:hi rend="italic">Tur</tei:hi> mentions a variant reading, <tei:foreign xml:lang="he">והקטין</tei:foreign> instead of <tei:foreign xml:lang="he">והתקין</tei:foreign>, according to which the clause concerning the moon refers to the talmudic tradition that God diminished the original size of the moon (Ḥullin 60b). <tei:hi rend="italic">El Adon</tei:hi> is a praise of God who created the seven seemingly “wandering” celestial bodies (<tei:foreign xml:lang="he">כוכבי לכת</tei:foreign>). Having spoken of the sun and the moon, the poet alludes to the five planets Saturn (<tei:foreign xml:lang="he">שבתאי</tei:foreign>), Venus (<tei:foreign xml:lang="he">נוגה</tei:foreign>), Mercury (<tei:foreign xml:lang="he">כוכב</tei:foreign>), Jupiter (<tei:foreign xml:lang="he">צדק</tei:foreign>), and Mars (<tei:foreign xml:lang="he">מאדים</tei:foreign>), by means of the initials of the words <tei:foreign xml:lang="he">שבח נותנים כל צבא מרום</tei:foreign>.',lemma='אל אדון'),
+note(LAEL,'is found in the geonic liturgy. Like the other Sabbath additions to the <tei:hi rend="italic">Yotser</tei:hi> benediction, it probably belongs to the talmudic period. According to the Midrash, Adam and the Sabbath sang in unison: “It is good to give thanks to the Lord”; hence <tei:foreign xml:lang="he">ויום השביעי משבח ואומר</tei:foreign>.',lemma='לאל אשר שבת'),
+]

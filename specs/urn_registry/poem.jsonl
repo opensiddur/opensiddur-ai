@@ -70,3 +70,10 @@
 {"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/3", "status": "canonical", "label_en": "Yah Ribbon — refrain 3", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/4", "status": "canonical", "label_en": "Yah Ribbon — refrain 4", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/5", "status": "canonical", "label_en": "Yah Ribbon — refrain 5", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon", "status": "canonical", "label_en": "el adon"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon/1", "status": "canonical", "label_en": "el adon — 1", "parent": "urn:x-opensiddur:text:poem:el_adon"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon/2", "status": "canonical", "label_en": "el adon — 2", "parent": "urn:x-opensiddur:text:poem:el_adon"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon/3", "status": "canonical", "label_en": "el adon — 3", "parent": "urn:x-opensiddur:text:poem:el_adon"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon/4", "status": "canonical", "label_en": "el adon — 4", "parent": "urn:x-opensiddur:text:poem:el_adon"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon/5", "status": "canonical", "label_en": "el adon — 5", "parent": "urn:x-opensiddur:text:poem:el_adon"}
+{"urn": "urn:x-opensiddur:text:poem:el_adon/6", "status": "canonical", "label_en": "el adon — 6", "parent": "urn:x-opensiddur:text:poem:el_adon"}
