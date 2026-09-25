@@ -920,3 +920,50 @@ and the closing redemption blessing. Artifact:
 The regenerated complete parallel edition has 363 pages. Its outline places this
 section under Sabbath/festival Shacharit, following Pesukei Dezimrah. The full
 artifact is refreshed at `output/birnbaum_parallel.pdf`.
+
+## Sabbath morning Amidah and common Kaddish, printed 349–362 (IA n373–n386)
+
+All fourteen images were read directly, from the Amidah instructions through
+Full Kaddish, stopping before the Torah-service heading. Paired new readings,
+shared text, page turns, instructions, three new commentary paragraphs and
+eight printed source citations are recorded in
+`scan_reading/readings/shabbat_amidah.md`. The local Wikisource snapshot was
+compared afterward; enlarged scans confirm סִינָי, full לוּחוֹת, the shared
+shin/holam dot in משֶׁה, and the Hebrew quotation in the Amram Gaon note.
+
+The four new prayer paragraphs use existing canonical prayer URNs. Veshamru
+and the closing Kedushat Hayom paragraph reuse the Sabbath evening readings;
+the common opening and closing blessings reuse the weekday Amidah. Nekadesh
+has a local correspondence for the English “in the world” variant, aligned
+with its matching Hebrew. Repeat-printing provenance records the shared texts.
+Six Kedushah responses and two Hodaah passages move into reusable files so
+transclusions do not inherit the weekday caller’s enclosing instruction.
+Their original callers retain their conditions, text and addresses.
+
+The service caller selects the Sabbath Amidah on Shabbat except Yom Tov.
+Shabbat Chol Hamoed uses this Amidah with Ya‘aleh Veyavo. Actual-date
+compilations verify 19 Tishrei 5786 and 17 Nisan 5786 in Israel and the
+Diaspora, including the correct holiday name. The unknown-calendar instruction
+explicitly includes Chol Hamoed. Reader-only passages require both repetition
+and a minyan; the silent meditation uses the opposite condition. The Hallel
+navigation instruction and Full Kaddish are outside the Amidah calendar gate.
+Kaddish is a service sibling and a common return address for the later
+festival Amidah.
+
+All 79 changed/new XML documents validate, both language projects resolve all
+references, and the full-corpus registry check reports no errors or warnings.
+All 235 importer tests pass. Compiled audits cover ordinary Sabbath, Reader’s
+repetition, private prayer, festival Sabbath, festival weekday, Ten Days,
+unknown settings and the four actual Chol Hamoed date/location combinations.
+All new commentary is present, the reused Kedushat Hayom remains shared, and
+all earlier liturgical text is unchanged in both languages.
+
+The 12-page section proof was visually checked at Kedushah, the shared
+Kedushat Hayom, holiday additions, meditation and the separate Kaddish.
+Artifact: `output/birnbaum_shabbat_amidah/parallel.pdf`.
+
+The regenerated complete parallel edition has 374 pages. Its outline places
+Amidah and Full Kaddish as siblings beneath Sabbath/festival Shacharit, with
+Kedushah beneath the Amidah. The full-book Amidah opening, explicit Chol Hamoed
+instruction and Hallel/Kaddish boundary were visually checked. The refreshed
+complete artifact is `output/birnbaum_parallel.pdf`.

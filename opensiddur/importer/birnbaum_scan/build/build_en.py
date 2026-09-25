@@ -60,6 +60,9 @@ PRAYERS += shabbat_pesukei_prayers("en")
 from .shabbat_shema import shared as shabbat_shema_shared, prayers as shabbat_shema_prayers
 PRAYERS = shabbat_shema_shared("en", PRAYERS)
 PRAYERS += shabbat_shema_prayers("en")
+from .shabbat_amidah import shared as shabbat_amidah_shared, prayers as shabbat_amidah_prayers
+PRAYERS = shabbat_amidah_shared("en", PRAYERS)
+PRAYERS += shabbat_amidah_prayers("en", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -104,7 +107,10 @@ from .notes_shabbat_pesukei import NOTES as SHABBAT_PESUKEI_NOTES
 
 from .notes_shabbat_shema import NOTES as SHABBAT_SHEMA_NOTES
 
+from .notes_shabbat_amidah import NOTES as SHABBAT_AMIDAH_NOTES
+
 APPARATUS = {
+    "notes_shabbat_amidah": dict(entries=SHABBAT_AMIDAH_NOTES, slug="birnbaum_1949/shabbat_amidah", title="Notes on Sabbath morning Amidah", first=352, last=360),
     "notes_shabbat_shema": dict(entries=SHABBAT_SHEMA_NOTES, slug="birnbaum_1949/shabbat_shema", title="Notes on Sabbath and festival Shema blessings", first=337, last=340),
     "notes_shabbat_pesukei": dict(entries=SHABBAT_PESUKEI_NOTES, slug="birnbaum_1949/shabbat_pesukei",
         title="Notes on Sabbath and festival verses of praise", first=305, last=334),
