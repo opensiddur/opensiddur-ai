@@ -48,6 +48,9 @@ PRAYERS = bameh_shared("he", PRAYERS) + bameh_prayers("he")
 from .shabbat_arvit import shared as shabbat_arvit_shared, prayers as shabbat_arvit_prayers
 PRAYERS = shabbat_arvit_shared("he", PRAYERS)
 PRAYERS += shabbat_arvit_prayers("he", PRAYERS)
+from .leil_shabbat import shared as leil_shabbat_shared, prayers as leil_shabbat_prayers
+PRAYERS = leil_shabbat_shared("he", PRAYERS)
+PRAYERS += leil_shabbat_prayers("he", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -575,7 +578,8 @@ def units(project, pages, by_name, amidah_body):
     from .kabbalat_shabbat import units as kabbalat_units
     from .bameh_madlikin import units as bameh_units
     from .shabbat_arvit import units as shabbat_arvit_units
-    return result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project) + kabbalat_units(project) + bameh_units(project) + shabbat_arvit_units(project, by_name)
+    from .leil_shabbat import units as leil_shabbat_units
+    return result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project) + kabbalat_units(project) + bameh_units(project) + shabbat_arvit_units(project, by_name) + leil_shabbat_units(project)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

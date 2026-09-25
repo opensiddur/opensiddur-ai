@@ -231,3 +231,10 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku/psalms_81_5", "status": "canonical", "label_en": "Shabbat evening service — psalms 81 5", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/verses/tiku"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah/meditation", "status": "canonical", "label_en": "Shabbat evening service — meditation", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/amidah"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/arvit/blessings_after_shema/emet_seal", "status": "canonical", "label_en": "Shabbat evening service — emet seal", "parent": "urn:x-opensiddur:text:siddur:shabbat/arvit/blessings_after_shema"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat", "status": "canonical", "label_en": "Friday-night home prayers and hymns", "parent": "urn:x-opensiddur:text:siddur:shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/eshet_chayil", "status": "canonical", "label_en": "Eshet Ḥayil (Proverbs 31:10–31)", "parent": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/guarding_verses", "status": "canonical", "label_en": "Verses of protection after Shalom Aleichem", "parent": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/kiddush", "status": "canonical", "label_en": "KIDDUSH", "parent": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/zemirot", "status": "canonical", "label_en": "SABBATH EVE HYMNS", "parent": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/kiddush/opening", "status": "canonical", "label_en": "KIDDUSH — opening", "parent": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/kiddush/savri", "status": "canonical", "label_en": "KIDDUSH — savri", "parent": "urn:x-opensiddur:text:siddur:shabbat/leil_shabbat/kiddush"}

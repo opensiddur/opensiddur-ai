@@ -29,3 +29,44 @@
 {"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/8", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 8", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/9", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 9", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/opening_repeat", "status": "canonical", "label_en": "Lecha Dodi — repeated opening refrain", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh", "status": "canonical", "label_en": "Kol Mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha", "status": "canonical", "label_en": "Menuḥah Vesimḥah"}
+{"urn": "urn:x-opensiddur:text:poem:shalom_aleichem", "status": "canonical", "label_en": "Shalom Aleichem"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo", "status": "canonical", "label_en": "Tzur Mishelo"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon", "status": "canonical", "label_en": "Yah Ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/1", "status": "canonical", "label_en": "Kol Mekadesh — 1", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/2", "status": "canonical", "label_en": "Kol Mekadesh — 2", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/3", "status": "canonical", "label_en": "Kol Mekadesh — 3", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/4", "status": "canonical", "label_en": "Kol Mekadesh — 4", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/5", "status": "canonical", "label_en": "Kol Mekadesh — 5", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/6", "status": "canonical", "label_en": "Kol Mekadesh — 6", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/7", "status": "canonical", "label_en": "Kol Mekadesh — 7", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
+{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/1", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 1", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/2", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 2", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/3", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 3", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/4", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 4", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/5", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 5", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/1", "status": "canonical", "label_en": "Shalom Aleichem — 1", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
+{"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/2", "status": "canonical", "label_en": "Shalom Aleichem — 2", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
+{"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/3", "status": "canonical", "label_en": "Shalom Aleichem — 3", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
+{"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/4", "status": "canonical", "label_en": "Shalom Aleichem — 4", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/1", "status": "canonical", "label_en": "Tzur Mishelo — 1", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/2", "status": "canonical", "label_en": "Tzur Mishelo — 2", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/3", "status": "canonical", "label_en": "Tzur Mishelo — 3", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/4", "status": "canonical", "label_en": "Tzur Mishelo — 4", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain", "status": "canonical", "label_en": "Tzur Mishelo — refrain", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/1", "status": "canonical", "label_en": "Yah Ribbon — 1", "parent": "urn:x-opensiddur:text:poem:yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/2", "status": "canonical", "label_en": "Yah Ribbon — 2", "parent": "urn:x-opensiddur:text:poem:yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/3", "status": "canonical", "label_en": "Yah Ribbon — 3", "parent": "urn:x-opensiddur:text:poem:yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/4", "status": "canonical", "label_en": "Yah Ribbon — 4", "parent": "urn:x-opensiddur:text:poem:yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/5", "status": "canonical", "label_en": "Yah Ribbon — 5", "parent": "urn:x-opensiddur:text:poem:yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain", "status": "canonical", "label_en": "Yah Ribbon — refrain", "parent": "urn:x-opensiddur:text:poem:yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain/1", "status": "canonical", "label_en": "Tzur Mishelo — refrain 1", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain/2", "status": "canonical", "label_en": "Tzur Mishelo — refrain 2", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain/3", "status": "canonical", "label_en": "Tzur Mishelo — refrain 3", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain/4", "status": "canonical", "label_en": "Tzur Mishelo — refrain 4", "parent": "urn:x-opensiddur:text:poem:tzur_mishelo/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/1", "status": "canonical", "label_en": "Yah Ribbon — refrain 1", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/2", "status": "canonical", "label_en": "Yah Ribbon — refrain 2", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/3", "status": "canonical", "label_en": "Yah Ribbon — refrain 3", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/4", "status": "canonical", "label_en": "Yah Ribbon — refrain 4", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yah_ribbon/refrain/5", "status": "canonical", "label_en": "Yah Ribbon — refrain 5", "parent": "urn:x-opensiddur:text:poem:yah_ribbon/refrain"}
