@@ -976,3 +976,64 @@ to `מֹשֶׁה` (U+05B9 on mem, U+05C1 on shin). The other candidates were nor
 vowel-letter spellings, final consonants or words joined by maqqef. Existing
 pointed occurrences elsewhere already encode both marks. Raw comparison
 transcriptions and examples documenting their omissions remain unchanged.
+
+## Sabbath and festival Torah service — printed 361–390 (IA n385–n414)
+
+Read all thirty images directly before secondary Hebrew collation. The new
+source-reading record preserves the paired readings, commentary, page order,
+shared passages, and user-confirmed interpretation of the rubrics. The final
+facing English page (n414) completes the requested Hebrew endpoint n413.
+
+The morning-service hierarchy now continues through taking out the Torah,
+Torah blessings and personal Mi Sheberakh prayers, Haftarah blessings, Yekum
+Purkan, government prayer, blessing of the month, martyrs’ memorial, Ashrei,
+and returning the Torah. Half Kaddish before Musaf is a separately addressable
+sibling after the Torah-service wrapper. Shared prayers remain transclusions;
+new biblical verses use Bible milestones and unique prayer parts use prayer
+milestones. New printings and page turns are recorded on shared texts.
+
+The user specified the Sabbath Haftarah ending on Chol Hamoed Pesach and the
+festival ending on Chol Hamoed Sukkot. Av Harachamim is omitted on festivals,
+Shabbat Rosh Hodesh, Shekalim, Zachor, Parah, HaChodesh, HaGadol, Shuva,
+Nachamu, and Mevarchim; Chazon retains it. Customs retaining the memorial on
+Mevarchim Iyar/Sivan were explicitly noted by the user but are not specified
+by Birnbaum and have not been silently added to the default rule.
+
+The calendar now computes `opensiddur:torah-reading/shabbat-mevarchim` from
+the first day of the upcoming Rosh Hodesh, excluding Tishrei. Tests cover
+single-day and two-day Rosh Hodesh and a Sabbath which is itself day 30.
+Occurrence conditions remain in service wrappers. The first Yekum Purkan is
+retained in private prayer; the second and communal Mi Sheberakh require a
+minyan. The new person features `bar-mitzvah-father`, `naming-daughter`,
+`prayer-for-sick-man`, and `prayer-for-sick-woman` have no default and stay
+MAYBE when unspecified, as does the existing Hagomel feature.
+
+Scan checks corrected the festival translation (“may he live to celebrate
+festivals in Jerusalem”), festival names in the Haftarah blessing, Aramaic
+pointing and defective spellings, and logical holam beside shin dots. The
+scan’s sick-person blessings omit the secondary source’s added יברך. The
+blessing before the Haftarah retains its cantillation. Printed parentheses
+are removed where the same scope already has conditional markup.
+
+Validation: 309 importer/calendar tests pass; all 115 changed/new XML
+files pass RelaxNG and Schematron. The synchronized reference database and
+registry check reports no errors or warnings. Actual-date compilation checks
+13 dates in Israel and the Diaspora, including both Chol Hamoed cases, the
+specified special Sabbaths, Chazon, and Mevarchim Iyar/Sivan. Private-prayer
+compilation retains only the first Yekum Purkan. All new commentary survives
+parallel compilation. Earlier prayer text remains unchanged apart from the
+previously authorized holam correction already on the base branch.
+
+Artifacts: `output/birnbaum_shabbat_torah/parallel.pdf` and the regenerated
+complete `output/birnbaum_parallel.pdf`.
+
+Additional regression checks: 125 derived-settings, condition-evaluation and
+URN-registry tests pass. All eight newly introduced biblical verse anchors are
+unique within each language project. The inclusive installment proof has 25
+pages; its final Half Kaddish bookmark is a sibling of the Torah-service parent.
+The final Torah-service and Half Kaddish bookmarks are siblings within Sabbath
+morning Shacharit; the printed festival Musaf return instruction follows the
+Kaddish. Identical source citations inherited from shared weekday passages are
+not duplicated in the new apparatus; their printed references remain in the
+source-reading record. The return-to-ark source citation occurs once in the PDF.
+The cleaned full-book PDF settled at 392 pages after two refresh passes.

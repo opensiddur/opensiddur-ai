@@ -687,12 +687,23 @@ class TestSpecialShabbatot(unittest.TestCase):
         }
         self.assertEqual(actual, set(expected))
 
+    def test_mevarchim_precedes_first_day_of_rosh_hodesh(self):
+        for day, expected in [((2025, 12, 13), True),  # Kislev 23
+                              ((2025, 12, 20), False), # Kislev 30, first RH day
+                              ((2025, 2, 22), True),  # Shevat 24, RH Fri/Sat
+                              ((2025, 3, 1), False),
+                              ((2025, 3, 29), True),  # single-day RH Sunday
+                              ((2023, 9, 9), False),  # never announce Tishrei
+                              ((2023, 9, 16), False)]:
+            with self.subTest(day=day):
+                self.assertEqual(self._reading(*day)["shabbat-mevarchim"], expected)
+
     def test_four_parshiyot_in_a_leap_year(self):
         """5784 is a leap year, so these hang off Adar II rather than Adar."""
-        self._assert_only((2024, 3, 9), "shabbat-shkalim", "shabbat-mahar-hodesh")
+        self._assert_only((2024, 3, 9), "shabbat-shkalim", "shabbat-mahar-hodesh", "shabbat-mevarchim")
         self._assert_only((2024, 3, 23), "shabbat-zachor")
         self._assert_only((2024, 3, 30), "shabbat-parah")
-        self._assert_only((2024, 4, 6), "shabbat-hahodesh")
+        self._assert_only((2024, 4, 6), "shabbat-hahodesh", "shabbat-mevarchim")
 
     def test_four_parshiyot_in_an_ordinary_year(self):
         """5785 is not a leap year, so the same readings hang off Adar."""
@@ -702,7 +713,7 @@ class TestSpecialShabbatot(unittest.TestCase):
         self._assert_only((2025, 3, 8), "shabbat-zachor")
         self._assert_only((2025, 3, 22), "shabbat-parah")
         # 29 Adar, the last Shabbat before 1 Nisan — which is therefore also Mahar Hodesh.
-        self._assert_only((2025, 3, 29), "shabbat-hahodesh", "shabbat-mahar-hodesh")
+        self._assert_only((2025, 3, 29), "shabbat-hahodesh", "shabbat-mahar-hodesh", "shabbat-mevarchim")
 
     def test_shabbat_hagadol_shuva_hazon_and_nahamu(self):
         self._assert_only((2024, 4, 20), "shabbat-hagadol")
