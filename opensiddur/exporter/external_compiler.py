@@ -31,6 +31,10 @@ from opensiddur.exporter.marker_reconstruct import (
     reconstruct_markered_document,
 )
 
+from opensiddur.exporter.annotation_placement import (
+    place_structural_annotations,
+    place_structural_annotations_in_stream,
+)
 from opensiddur.exporter.milestone_annotations import place_milestone_annotations
 
 logger = logging.getLogger(__name__)
@@ -232,13 +236,21 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         self.marker_stack.append((p_id, element))
         result = [start_marker]
+        # Resolved once at the source opening, not at its later resumed fragments. A
+        # rubric is a block in its own right and stays there; the rest of the apparatus
+        # is anchored on the element's first words once its content is compiled, below.
+        # Ids are rewritten here, while the processing context _get_path_hash reads is
+        # still the one the notes were resolved in.
+        movable, opening = [], []
         if annotations:
-            # Insert once at the source opening, not at its later resumed fragments.
+            for note in self._rewrite_ids(annotations):
+                (opening if note.get('type') == 'instruction' else movable).append(note)
+        if opening:
             # Original leading text must follow the apparatus, just as child insertion
             # in the ordinary compiler moves element.text behind the inserted notes.
-            annotations[-1].tail = (annotations[-1].tail or '') + (start_marker.tail or '')
+            opening[-1].tail = (opening[-1].tail or '') + (start_marker.tail or '')
             start_marker.tail = None
-            result.extend(self._rewrite_ids(annotations))
+            result.extend(opening)
 
         for child in element:
             is_external_transclude = (
@@ -300,6 +312,15 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         self._carry_dropped_tail(result, child)
 
         self.marker_stack.pop()
+
+        if movable and not place_structural_annotations_in_stream(result, start_marker, movable):
+            # Nothing of the element's own to anchor on — an empty block, or one whose
+            # whole content is a transclusion. Keep the apparatus at the opening.
+            holder = opening[-1] if opening else start_marker
+            movable[-1].tail = (movable[-1].tail or '') + (holder.tail or '')
+            holder.tail = None
+            index = result.index(holder) + 1
+            result[index:index] = movable
 
         end_marker = etree.Element(element.tag, nsmap=self.ns_map)
         end_marker.set(f"{{{p_ns}}}end", p_id)
@@ -1158,6 +1179,18 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 processed.insert(0, annotation)
 
         processed = self._rewrite_ids(processed)
+
+        if annotation_command == _AnnotationCommand.INSERT and element.tag != f"{{{TEI_NS}}}milestone":
+            # The notes went in at the head of the sequence, ahead of the element's
+            # heading and its first alignment boundary. Anchor them on its first words
+            # instead, now that their ids have been rewritten as top-level members.
+            movable = [note for note in annotations if note.get('type') != 'instruction']
+            if movable:
+                for note in movable:
+                    processed.remove(note)
+                if not place_structural_annotations(processed, movable, container=processed):
+                    for note in reversed(movable):
+                        processed.insert(0, note)
 
         self._update_processing_context_after(element)
         return processed

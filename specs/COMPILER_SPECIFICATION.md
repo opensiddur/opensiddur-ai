@@ -125,7 +125,8 @@ For each element, the processor:
 6. **Handle Replacement**: If annotation command is REPLACE, return replacement element
 7. **Copy Element**: Create new element with same tag and attributes
 8. **Process Children**: Recursively process all children
-9. **Handle Insertions**: Insert annotations if command is INSERT
+9. **Handle Insertions**: Insert annotations if command is INSERT (placement
+   resolved against the target's completed content)
 10. **Rewrite IDs**: Update `xml:id`, `target`, and `targetEnd` attributes with path hash
 11. **Update Context After**: Update state flags (especially `after_end`)
 12. **Return**: Return processed element(s)
@@ -336,16 +337,31 @@ Three mechanisms, all required:
    - Look up references by `@corresp` or `@xml:id`
    - Filter by `annotation_projects`
    - Prioritize by project priority
-   - INSERT as first children in the base compiler; the external compiler emits
-     notes before ordinary elements in its output sequence, or just inside the
-     opening marker of a structural element in marker mode
+   - INSERT at the target's first substantive text slot: the position immediately
+     before the first non-whitespace character of the target's own body text. The
+     search walks the target's compiled content in document order, skips a
+     `tei:head` whole, does not descend into a `tei:milestone` (whose children may
+     be apparatus parked for the milestone pass) but does consider its tail, stops
+     in front of any other note, and gives up at a transclusion or a `p:suspend`
+     carrier. Anchoring behind the first `tei:milestone[@corresp]` is what keeps a
+     note and its words in the same parallel row.
+   - A target with no substantive text of its own — an empty or heading-only
+     element, or one whose whole content is transcluded — keeps the older
+     placement, so an apparatus is never lost: first children in the base
+     compiler; before ordinary elements in the external compiler's output
+     sequence; just inside the opening marker in marker mode
+   - Instruction notes are rubrics, which are blocks in their own right: they are
+     never relocated, and a commentary note that reaches one is anchored in front
+     of it
 
 ### Parallel annotation lifecycle
 
 Annotations are resolved once per eligible source occurrence, before structural
 elements become markers. Range, conditional, and settings checks still apply.
-Notes precede the target's original text, retain their language and provenance,
-and are not repeated on suspend/resume markers or reconstructed fragments.
+Notes precede the first words of the target's text, inside whatever paragraph,
+line or verse segment holds them, so that a note and the words it annotates land
+in the same parallel row. They retain their language and provenance, and are not
+repeated on suspend/resume markers or reconstructed fragments.
 Intentional repeated transclusions each retain their own apparatus.
 
 The successfully selected parallel column receives its own project's apparatus
@@ -362,8 +378,9 @@ and an English `p`), so both structural and ordinary paths must support it.
 
 ### Annotation Commands
 
-- **INSERT**: Insert annotations at the start of the target's content or output
-  sequence, according to the processor representation described above
+- **INSERT**: Insert annotations at the target's first substantive text slot, per
+  the placement rule above, falling back to the start of the target's content or
+  output sequence when it has no text of its own
 - **REPLACE**: Replace element with annotation
 - **KEEP**: Keep element as-is (for instructions without alternatives)
 - **NONE**: No annotation action needed
@@ -423,7 +440,7 @@ The compiled output:
 - Uses processing namespace (`p:`) for metadata
 - Contains all transcluded content inline
 - Has unique IDs via rewriting
-- Includes annotations as first children
+- Anchors annotations before the first words of their target
 - Preserves language attributes where needed
 - Marks file sources for traceability
 
@@ -600,7 +617,7 @@ Example:
    - Process the referenced note element
    - Mark file source if from different project
    - Add language attribute if different from context
-6. INSERT all annotations as first children
+6. INSERT all annotations at the target's first substantive text slot
 
 ## Implementation Details
 
@@ -664,7 +681,7 @@ The compiler raises `ValueError` for:
 2. Use InlineCompilerProcessor to extract text
 3. Create `p:transcludeInline` with text content
 4. Look up annotations for `xml:id="verse1"`
-5. Insert annotations as first children of `p`
+5. Insert annotations before the first words of `p`
 
 ### Example 3: Instructional Note Replacement
 
