@@ -3152,6 +3152,31 @@ class TestParallelInstructions(unittest.TestCase):
                     self._counts(_transform(self._parallel(*titles),
                                             **{"instructions-from": "both"})))
 
+    def test_block_rubrics_start_following_text_on_a_new_line_in_both_columns(self):
+        out = _transform(self._parallel(self.SAME, self.SAME))
+        for side in ("Leftside", "Rightside"):
+            with self.subTest(side=side):
+                stream = out.split(r"\begin{" + side + "}")[1].split(
+                    r"\end{" + side + "}")[0]
+                self.assertIn(r"\OSInstructionBlock{", stream)
+                self.assertNotIn(r"\instructionnote{", stream)
+
+    def test_conditional_block_rubrics_keep_both_prayers_below_the_instruction(self):
+        xml = self._parallel(self.SAME, self.SAME).replace(
+            'xmlns:p="http://jewishliturgy.org/ns/processing"',
+            'xmlns:p="http://jewishliturgy.org/ns/processing" '
+            'xmlns:j="http://jewishliturgy.org/ns/jlptei/2"')
+        xml = xml.replace('<tei:note type="instruction"',
+                          '<j:conditional><tei:note type="instruction"').replace(
+                              '</tei:note>', '</tei:note></j:conditional>')
+        out = _transform(xml)
+        for side in ("Leftside", "Rightside"):
+            with self.subTest(side=side):
+                stream = out.split(r"\begin{" + side + "}")[1].split(
+                    r"\end{" + side + "}")[0]
+                self.assertIn(r"\OSInstructionBlock{", stream)
+                self.assertNotIn(r"\instructionnote{", stream)
+
     def test_a_kept_rubric_stays_in_its_column(self):
         """Unlike a heading, which is hoisted out of the columns entirely."""
         out = _transform(self._parallel(self.SAME, self.SAME),

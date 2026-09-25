@@ -40,16 +40,60 @@ from opensiddur.exporter.milestone_annotations import place_milestone_annotation
 logger = logging.getLogger(__name__)
 
 
-def _milestone_corresps(elements: list[ElementBase]) -> set[str]:
-    """The URNs of the milestones in a flat marker stream."""
-    tei_milestone_tag = f"{{{TEI_NS}}}milestone"
-    return {
-        el.get('corresp') for el in elements
-        if el.tag == tei_milestone_tag and el.get('corresp')
-    }
+# End keys are distinct from URNs: a bounded structural correspondence also
+# aligns the continuation after it, without pretending it is another milestone.
+AlignmentKey = str | tuple[str, str]
 
 
-def _shared_split_points(a: set[str], b: set[str]) -> set[str]:
+def _alignment_boundaries(elements: list[ElementBase]) -> list[Optional[AlignmentKey]]:
+    """Keys before milestones and the opening/closing markers of bounded units."""
+    structural: dict[str, str] = {}
+    boundaries = []
+    for el in elements:
+        corresp = el.get("corresp")
+        start = el.get(f"{{{PROCESSING_NAMESPACE}}}start")
+        resume = el.get(f"{{{PROCESSING_NAMESPACE}}}resume")
+        end = el.get(f"{{{PROCESSING_NAMESPACE}}}end")
+        key = None
+        if el.tag == f"{{{TEI_NS}}}milestone":
+            key = corresp
+        elif el.tag in STRUCTURAL_BLOCKS:
+            if corresp and (start or resume):
+                structural[start or resume] = corresp
+                # A resumed container was already opened in an earlier stream.
+                if start:
+                    key = corresp
+            elif end and end in structural:
+                key = (structural.pop(end), "end")
+        boundaries.append(key)
+    # A rubric introducing a division belongs in its new row. Conditional
+    # instructions live inside the opening control element, before the div.
+    for index, key in enumerate(list(boundaries)):
+        if key is None or isinstance(key, tuple):
+            continue
+        beginning = index
+        while beginning:
+            previous = elements[beginning - 1]
+            opening_rubric = (
+                previous.tag == f"{{{JLPTEI_NAMESPACE}}}conditional"
+                or (previous.tag == f"{{{TEI_NS}}}note"
+                    and previous.get("type") == "instruction")
+            )
+            if (not opening_rubric or (previous.tail or "").strip()
+                    or boundaries[beginning - 1] is not None):
+                break
+            beginning -= 1
+        if beginning != index:
+            boundaries[beginning], boundaries[index] = key, None
+    return boundaries
+
+
+def _alignment_corresps(elements: list[ElementBase]) -> set[AlignmentKey]:
+    """The alignment boundaries declared in a flat marker stream."""
+    return {key for key in _alignment_boundaries(elements) if key is not None}
+
+
+def _shared_split_points(a: set[AlignmentKey], b: set[AlignmentKey]) -> set[AlignmentKey]:
     """The divisions two streams set beside each other are both cut at.
 
     Two editions need not divide the text alike: the Hebrew is divided at its accents and a
@@ -342,33 +386,29 @@ class ExternalCompilerProcessor(CompilerProcessor):
     def _split_at_milestones(
         elements: list[ElementBase],
         ns_map: dict,
-        split_at: Optional[set[str]] = None,
-    ) -> list[tuple[Optional[str], list[ElementBase]]]:
-        """Split a flat marker stream at tei:milestone[@corresp] boundaries.
+        split_at: Optional[set[AlignmentKey]] = None,
+    ) -> list[tuple[Optional[AlignmentKey], list[ElementBase]]]:
+        """Split at shared milestone and bounded structural correspondences.
 
         Returns a list of (corresp_or_None, [elements]) tuples.
         corresp_or_None is None for content before the first milestone.
-        At each milestone, open structural markers are suspended (LIFO) into the
+        At each boundary, open structural markers are suspended (LIFO) into the
         current sub-segment and resumed (FIFO) into the new sub-segment.
 
-        `split_at` limits which URNs are boundaries; a milestone outside it stays where it
-        is, inside the sub-segment it falls in. None means every milestone with a @corresp.
+        `split_at` limits which shared keys are boundaries. None selects every
+        milestone and structural correspondence, including structural end keys.
         """
         p_ns = PROCESSING_NAMESPACE
-        tei_milestone_tag = f"{{{TEI_NS}}}milestone"
-
         open_stack: list[dict[str, Any]] = []  # id, tag, attrs (no xml:id, no p:*)
-        result: list[tuple[Optional[str], list]] = [(None, [])]
+        result: list[tuple[Optional[AlignmentKey], list]] = [(None, [])]
 
-        for el in elements:
+        for el, boundary in zip(elements, _alignment_boundaries(elements)):
             p_start = el.get(f"{{{p_ns}}}start")
             p_end = el.get(f"{{{p_ns}}}end")
             p_suspend = el.get(f"{{{p_ns}}}suspend")
             p_resume = el.get(f"{{{p_ns}}}resume")
 
-            if (el.tag == tei_milestone_tag and el.get('corresp')
-                    and (split_at is None or el.get('corresp') in split_at)):
-                corresp = el.get('corresp')
+            if boundary is not None and (split_at is None or boundary in split_at):
 
                 # Close current sub-segment: emit suspends LIFO (carry TEI/XML attrs)
                 for item in reversed(open_stack):
@@ -379,7 +419,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     result[-1][1].append(s)
 
                 # Start new sub-segment
-                result.append((corresp, []))
+                result.append((boundary, []))
 
                 # Open new sub-segment: emit resumes FIFO
                 for item in open_stack:
@@ -389,26 +429,19 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     r.set(f"{{{p_ns}}}resume", item["id"])
                     result[-1][1].append(r)
 
-                result[-1][1].append(el)
-            else:
-                if p_start:
-                    open_stack.append({
-                        "id": p_start,
-                        "tag": el.tag,
-                        "attrs": _carrier_attrs_from_marker_el(el, p_ns),
-                    })
-                elif p_resume:
-                    open_stack.append({
-                        "id": p_resume,
-                        "tag": el.tag,
-                        "attrs": _carrier_attrs_from_marker_el(el, p_ns),
-                    })
-                elif p_end:
-                    open_stack = [x for x in open_stack if x["id"] != p_end]
-                elif p_suspend:
-                    open_stack = [x for x in open_stack if x["id"] != p_suspend]
+            # Track markers even when the marker itself opened an alignment row.
+            # At a structural end, the resumed carrier closes before its tail, so
+            # text following the bounded unit belongs to the new continuation row.
+            if p_start or p_resume:
+                open_stack.append({
+                    "id": p_start or p_resume,
+                    "tag": el.tag,
+                    "attrs": _carrier_attrs_from_marker_el(el, p_ns),
+                })
+            elif p_end or p_suspend:
+                open_stack = [x for x in open_stack if x["id"] != (p_end or p_suspend)]
 
-                result[-1][1].append(el)
+            result[-1][1].append(el)
 
         result = [(c, els) for c, els in result if els]
         return result if result else [(None, [])]
@@ -428,7 +461,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
     ) -> list[ElementBase]:
         """Zip primary and parallel flat streams into p:parallel / p:transclude pairs.
 
-        Splits each stream at p:transclude elements and at tei:milestone[@corresp]
+        Splits each stream at p:transclude elements and shared milestone/structural
         boundaries. Returns a list: [p:parallel, p:transclude, p:parallel, ...].
         """
         p_ns = PROCESSING_NAMESPACE
@@ -491,8 +524,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             # rows afterwards matters too: every split suspends and resumes the structure
             # open across it, and those carriers would survive a merge and break the verse
             # into pieces inside its row.
-            prim_corresps = _milestone_corresps(prim_flat)
-            par_corresps = _milestone_corresps(par_flat)
+            prim_corresps = _alignment_corresps(prim_flat)
+            par_corresps = _alignment_corresps(par_flat)
             split_at = _shared_split_points(prim_corresps, par_corresps)
             if prim_corresps and par_corresps and not split_at:
                 logger.warning(
@@ -501,19 +534,19 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     "beside the other as a single row. Give both sides a common corresp "
                     "to align them more finely.",
                     prim_src[0], prim_src[1], par_src[0], par_src[1],
-                    min(prim_corresps), min(par_corresps),
+                    min(prim_corresps, key=str), min(par_corresps, key=str),
                 )
             prim_sub = ExternalCompilerProcessor._split_at_milestones(
                 prim_flat, ns_map, split_at)
             par_sub = ExternalCompilerProcessor._split_at_milestones(
                 par_flat, ns_map, split_at)
 
-            prim_by_c: dict[Optional[str], list] = {}
+            prim_by_c: dict[Optional[AlignmentKey], list] = {}
             for c, els in prim_sub:
                 if c not in prim_by_c:
                     prim_by_c[c] = els
 
-            par_by_c: dict[Optional[str], list] = {}
+            par_by_c: dict[Optional[AlignmentKey], list] = {}
             for c, els in par_sub:
                 if c not in par_by_c:
                     par_by_c[c] = els

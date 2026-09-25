@@ -1970,6 +1970,13 @@
             <xsl:copy-of select="@*"/>
             <xsl:attribute name="f:note-lang" select="$note-lang"/>
             <xsl:attribute name="f:text-lang" select="$text-lang"/>
+            <!-- A block rubric introduces a new paragraph in both parallel
+                 columns, even when its language matches one column. Otherwise
+                 the translation runs onto the rubric's last line while the
+                 facing Hebrew starts below it. Preserve this before copying. -->
+            <xsl:attribute name="f:parallel-block"
+                           select="exists(ancestor::p:parallelItem)
+                                   and not(ancestor::tei:p or ancestor::tei:l)"/>
             <xsl:if test="$echoed">
                 <xsl:attribute name="f:echoed" select="'true'"/>
             </xsl:if>
@@ -2585,7 +2592,8 @@
                       select="f:is-rtl-lang($note-lang) ne f:is-rtl-lang($text-lang)"/>
         <xsl:variable name="within" select="exists(ancestor::tei:p | ancestor::tei:l)"/>
         <xsl:text>\</xsl:text>
-        <xsl:value-of select="if (not($crosses)) then 'instructionnote'
+        <xsl:value-of select="if (@f:parallel-block = 'true') then 'OSInstructionBlock'
+                              else if (not($crosses)) then 'instructionnote'
                               else if ($within) then 'OSInstructionLine'
                               else 'OSInstructionBlock'"/>
         <xsl:text>{</xsl:text>

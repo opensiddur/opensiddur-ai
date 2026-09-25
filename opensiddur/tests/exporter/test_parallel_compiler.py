@@ -543,6 +543,80 @@ class TestAssembleParallelStreams(unittest.TestCase):
                 "opensiddur.exporter.external_compiler", level="WARNING"):
             self._assemble([prim], [par])
 
+    def _bounded_stream(self, prefix, corresp="urn:insertion", rubric=False):
+        before = self._div(prefix + " before")
+        start = etree.Element(f"{{{TEI_NS}}}div", corresp=corresp)
+        start.set(f"{{{P_NS}}}start", prefix + "-insertion")
+        end = etree.Element(f"{{{TEI_NS}}}div")
+        end.set(f"{{{P_NS}}}end", prefix + "-insertion")
+        end.tail = prefix + " continuation"
+        stream = [before]
+        if rubric:
+            condition = etree.Element(f"{{{J_NS}}}conditional")
+            instruction = etree.SubElement(condition, f"{{{TEI_NS}}}note", type="instruction")
+            instruction.text = prefix + " rubric"
+            stream.append(condition)
+        stream.extend([start, self._div(prefix + " insertion"), end])
+        return stream
+
+    def test_bounded_correspondences_align_insertion_and_continuation(self):
+        result = self._assemble(self._bounded_stream("he"), self._bounded_stream("en"))
+        rows = [["".join(item.itertext()) for item in row] for row in result]
+        self.assertEqual(rows, [
+            ["he before", "en before"],
+            ["he insertion", "en insertion"],
+            ["he continuation", "en continuation"],
+        ])
+        assert_parallel_invariants(self, result)
+        insertion = result[1][0]
+        self.assertEqual(insertion[-1].get(f"{{{P_NS}}}suspend"), "he-insertion")
+        continuation = result[2][0]
+        self.assertEqual(continuation[0].get(f"{{{P_NS}}}resume"), "he-insertion")
+
+    def test_conditional_rubric_follows_its_structural_alignment_boundary(self):
+        result = self._assemble(
+            self._bounded_stream("he", rubric=True), self._bounded_stream("en", rubric=True))
+        rows = [["".join(item.itertext()) for item in row] for row in result]
+        self.assertEqual(rows[0], ["he before", "en before"])
+        self.assertEqual(rows[1], ["he rubriche insertion",
+                                  "en rubricen insertion"])
+
+    def test_structural_correspondence_can_align_with_a_milestone(self):
+        result = self._assemble(
+            self._bounded_stream("he"),
+            [self._div("en before"), self._milestone("urn:insertion"),
+             self._div("en insertion and continuation")])
+        rows = [["".join(item.itertext()) for item in row] for row in result]
+        self.assertEqual(rows, [
+            ["he before", "en before"],
+            ["he insertionhe continuation", "en insertion and continuation"],
+        ])
+
+    def test_nested_structural_correspondences_preserve_all_text(self):
+        def stream(prefix):
+            start = etree.Element(f"{{{TEI_NS}}}div", corresp="urn:outer")
+            start.set(f"{{{P_NS}}}start", prefix + "-outer")
+            end = etree.Element(f"{{{TEI_NS}}}div")
+            end.set(f"{{{P_NS}}}end", prefix + "-outer")
+            end.tail = prefix + " outside"
+            return [start, *self._bounded_stream(prefix), end]
+
+        result = self._assemble(stream("he"), stream("en"))
+        rows = [["".join(item.itertext()) for item in row] for row in result]
+        self.assertEqual(rows, [
+            ["he before", "en before"],
+            ["he insertion", "en insertion"],
+            ["he continuation", "en continuation"],
+            ["he outside", "en outside"],
+        ])
+
+    def test_unshared_bounded_correspondence_does_not_split(self):
+        result = self._assemble(
+            self._bounded_stream("he"), self._bounded_stream("en", corresp="urn:different"))
+        self.assertEqual(len(result), 1)
+        self.assertIn("he continuation", "".join(result[0][0].itertext()))
+        self.assertIn("en insertion", "".join(result[0][1].itertext()))
+
     def test_mismatched_transclude_counts(self):
         t1 = self._transclude()
         prim = [self._div("a"), t1, self._div("b")]  # 1 transclude
