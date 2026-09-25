@@ -336,3 +336,110 @@ class TestParallelAnnotations(unittest.TestCase):
         heads = [h for el in result for h in el.xpath('.//tei:head', namespaces=NS)]
         self.assertEqual([(h.text, h.get(f'{{{NS["p"]}}}heading-level')) for h in heads], [('Selected', '1')])
         self.assertEqual(data.heading_depth, 0)
+
+
+class TestStructuralAnnotationSharesItsRow(unittest.TestCase):
+    """A note on a whole section is anchored on the words it annotates.
+
+    It used to be inserted as the section's first child, which is ahead of the
+    section's heading and ahead of its first ``tei:milestone[@corresp]`` — the
+    boundary parallel alignment cuts on. The anchor then landed in the row before
+    the one holding its words: on the Hebrew side there was nothing to put there,
+    so reledmac spent a whole row on the mark alone and the columns drifted.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.base = Path(self.tmp.name)
+        self.db = ReferenceDatabase(self.base / 'index.sqlite')
+        self.addCleanup(self.db.close)
+
+    def write(self, project, name, body, notes=False):
+        directory = self.base / project
+        directory.mkdir(exist_ok=True)
+        content = (f'<tei:TEI xmlns:tei="{NS["tei"]}" '
+                   'xmlns:j="http://jewishliturgy.org/ns/jlptei/2" '
+                   f'xml:lang="{"he" if project == "he" else "en"}">')
+        content += (f'<tei:standOff type="notes">{body}</tei:standOff>' if notes
+                    else f'<tei:text><tei:body>{body}</tei:body></tei:text>')
+        path = directory / name
+        path.write_text(content + '</tei:TEI>')
+        self.db.index_file(path, project, name)
+
+    def fixture(self, heading=''):
+        """A section whose text opens on a shared verse milestone, noted from 'en'."""
+        for project, words in (('he', 'HEBREW VERSE'), ('en', 'ENGLISH VERSE')):
+            self.write(project, 'index.xml',
+                       f'<tei:div corresp="{URN}unit">{heading}<tei:p>'
+                       f'<tei:milestone unit="verse" corresp="{URN}unit/v1"/>{words}'
+                       '</tei:p></tei:div>')
+        self.write('en', 'notes.xml',
+                   f'<tei:note type="commentary" xml:id="n" target="{URN}unit">'
+                   '<tei:p>APPARATUS</tei:p></tei:note>', notes=True)
+
+    def compile(self):
+        data = LinearData()
+        data.xml_cache.base_path = self.base
+        data.project_priority = ['he', 'en']
+        data.annotation_projects = ['en']
+        data.parallel_projects = ['en']
+        result = ExternalCompilerProcessor(
+            'he', 'index.xml', linear_data=data,
+            reference_database=self.db).process()
+        root = etree.Element('result')
+        root.extend(result)
+        return root
+
+    def assert_shares_the_verse_row(self, root):
+        notes = root.xpath('.//tei:note[@type="commentary"]', namespaces=NS)
+        self.assertEqual(len(notes), 1)
+        row = notes[0].xpath('ancestor::p:parallel[1]', namespaces=NS)
+        self.assertTrue(row, 'the apparatus is not in a parallel row at all')
+        self.assertIn('ENGLISH VERSE', ''.join(row[0].itertext()))
+        self.assertIn('HEBREW VERSE', ''.join(row[0].itertext()))
+        # And it is behind the alignment boundary, which is what put it in this row.
+        self.assertTrue(notes[0].xpath(
+            'preceding-sibling::tei:milestone[@corresp]', namespaces=NS))
+
+    def assert_no_row_carries_only_apparatus(self, root):
+        for row in root.xpath('.//p:parallel', namespaces=NS):
+            items = row.xpath('p:parallelItem', namespaces=NS)
+            filled = [i for i in items if ''.join(i.itertext()).strip()]
+            if len(filled) == len(items):
+                continue
+            for item in filled:
+                self.assertNotEqual(
+                    ''.join(item.itertext()).strip(), 'APPARATUS',
+                    'a row holds apparatus facing an empty column')
+
+    def test_a_note_on_a_section_lands_in_the_row_of_its_first_verse(self):
+        self.fixture()
+        root = self.compile()
+        self.assert_shares_the_verse_row(root)
+        self.assert_no_row_carries_only_apparatus(root)
+
+    def test_a_heading_does_not_keep_the_anchor_out_of_the_verse_row(self):
+        self.fixture(heading='<tei:head>A Heading</tei:head>')
+        root = self.compile()
+        self.assert_shares_the_verse_row(root)
+        self.assert_no_row_carries_only_apparatus(root)
+        self.assertNotIn('APPARATUS', ''.join(
+            root.xpath('.//tei:head', namespaces=NS)[0].itertext()))
+
+    def test_the_columns_do_not_drift_in_the_rendered_tex(self):
+        from opensiddur.common.xslt import xslt_transform_string
+        from opensiddur.exporter.tex.latex import XSLT_FILE
+        self.fixture(heading='<tei:head>A Heading</tei:head>')
+        tex = xslt_transform_string(
+            XSLT_FILE, etree.tostring(self.compile()[0], encoding='unicode'),
+            xslt_params={'additional-preamble': '', 'additional-postamble': ''})
+        left = tex.split(r'\begin{Leftside}', 1)[1].split(r'\end{Leftside}', 1)[0]
+        right = tex.split(r'\begin{Rightside}', 1)[1].split(r'\end{Rightside}', 1)[0]
+        self.assertEqual(left.count(r'\pstart'), right.count(r'\pstart'))
+        self.assertEqual(left.count(r'\pend'), right.count(r'\pend'))
+        # No \pstart whose whole content is the mark, and none empty facing it.
+        self.assertNotRegex(right, r'\\pstart\\relax \\leavevmode\{[^\n]*\}\\pend')
+        self.assertNotRegex(left, r'\\pstart\\relax \\pend')
+        # The mark sits against the words it annotates.
+        self.assertRegex(right, r'\\notenote\{.*?\}{4,}ENGLISH VERSE')

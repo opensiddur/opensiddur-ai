@@ -58,6 +58,7 @@ from opensiddur.exporter.condition_eval import (
     parse_condition_element,
 )
 from opensiddur.exporter.refdb import ReferenceDatabase
+from opensiddur.exporter.annotation_placement import place_structural_annotations_in_tree
 from opensiddur.exporter.milestone_annotations import place_milestone_annotations
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
 from opensiddur.common.constants import PROJECT_DIRECTORY
@@ -916,8 +917,17 @@ class CompilerProcessor:
             copied.append(processed)
 
         if annotation_command == _AnnotationCommand.INSERT:
+            # Apparatus is anchored on the first words of the element it annotates, not
+            # dropped in front of its heading and its first alignment boundary. Rubrics
+            # are blocks of their own and keep the opening position; so does everything
+            # else when the element has no text to anchor on. See annotation_placement.
+            movable = [note for note in annotated if note.get('type') != 'instruction']
+            anchored = (set() if not (movable and
+                                      place_structural_annotations_in_tree(copied, movable))
+                        else {id(note) for note in movable})
             for annotated_element in reversed(annotated):
-                self._insert_first_element(copied, annotated_element)
+                if id(annotated_element) not in anchored:
+                    self._insert_first_element(copied, annotated_element)
 
         copied = self._rewrite_ids(copied)
         
