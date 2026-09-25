@@ -16,17 +16,31 @@ Typical CI use, validating every file in the projects a PR touched::
     python -m opensiddur.exporter.validate_schema \\
         --project-directory "$GITHUB_WORKSPACE/projects/project" \\
         --repo-root "$GITHUB_WORKSPACE" --github-annotations \\
+        --cache "$RUNNER_TEMP/schema-validation.json" \\
         --project humash --project wlc
 
 With no ``--project`` and no ``--files-from`` every project under ``--project-directory``
 is validated.
+
+``--cache PATH`` skips files that already passed: it names a JSON file of the content hashes of
+files that validated cleanly, stamped with a :func:`schema_fingerprint`. A file whose hash is
+recorded there is reported valid without running the validators; a stamp that does not match the
+current schema and validator code discards every recorded hash. Only passing files are recorded,
+so a failing file is revalidated -- and its errors reported -- on every run. Validity here is a
+property of one file's content alone (the Schematron reads no other document), so this cache
+cannot mask a cross-file problem; referential integrity across files is the business of
+:mod:`opensiddur.exporter.validate_urn_references` and ``urn_registry --check``, which are not
+cached.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import re
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -34,6 +48,8 @@ from typing import Optional
 from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.importer.util import validation as _validation
+from opensiddur.importer.util.constants import SCHEMA_RNG_PATH, SCHEMA_SCH_XSLT_PATH
 from opensiddur.importer.util.validation import relaxng_validate, schematron_validate
 
 #: A cleaned Jing line: ``XML:<line>:<col>: <level>: <message>`` (the temp path is replaced
@@ -49,6 +65,8 @@ class FileResult:
 
     path: Path
     errors: tuple[str, ...] = ()
+    #: True when the result came from ``--cache`` instead of running the validators.
+    cached: bool = False
 
     @property
     def ok(self) -> bool:
@@ -69,6 +87,96 @@ class SchemaReport:
     @property
     def ok(self) -> bool:
         return not self.failures
+
+    @property
+    def cached(self) -> int:
+        return sum(1 for r in self.results if r.cached)
+
+
+def _file_hash(file_path: Path | str) -> str:
+    """The sha256 of a file's contents -- what decides whether it must be revalidated.
+
+    Not the mtime: a fresh checkout gives every file an mtime of "now" (as in
+    ``refdb._file_hash``).
+    """
+    return hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
+
+
+def _canonical_xml(path: Path) -> bytes:
+    """``path`` in canonical form with comments removed.
+
+    The built RelaxNG carries a "Schema generated from ODD source <timestamp>" comment, so a
+    raw hash would change on every schema build even when the schema did not.
+    """
+    tree = etree.parse(str(path), etree.XMLParser(remove_comments=True))
+    return etree.tostring(tree, method="c14n")
+
+
+def schema_fingerprint(
+    rng: Path = SCHEMA_RNG_PATH, sch_xslt: Path = SCHEMA_SCH_XSLT_PATH
+) -> str:
+    """A hash of everything besides a file's own content that decides whether it is valid.
+
+    That is the two built schemas (canonicalised, see :func:`_canonical_xml`) and the source
+    of this module and of the validation module, so that a change in how validation runs or
+    reports cannot reuse results recorded under the old code.
+    """
+    digest = hashlib.sha256()
+    for part in (
+        _canonical_xml(Path(rng)),
+        _canonical_xml(Path(sch_xslt)),
+        Path(__file__).read_bytes(),
+        Path(_validation.__file__).read_bytes(),
+    ):
+        digest.update(hashlib.sha256(part).digest())
+    return digest.hexdigest()
+
+
+class ValidationCache:
+    """The content hashes of files that passed validation under one schema fingerprint.
+
+    Stored as JSON: ``{"fingerprint": "...", "valid": ["<sha256>", ...]}``.
+    """
+
+    def __init__(self, fingerprint: str, valid: Optional[set[str]] = None):
+        self.fingerprint = fingerprint
+        self.valid: set[str] = set(valid or ())
+
+    @classmethod
+    def load(cls, path: Path, fingerprint: str) -> "ValidationCache":
+        """The cache at ``path``, or an empty one.
+
+        A missing or unreadable file, or one recorded under a different fingerprint, gives an
+        empty cache (so everything is validated) rather than an error.
+        """
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+            if data.get("fingerprint") == fingerprint:
+                return cls(fingerprint, {str(h) for h in data.get("valid", [])})
+        except (OSError, ValueError, AttributeError, TypeError):
+            pass
+        return cls(fingerprint)
+
+    def is_valid(self, file_hash: str) -> bool:
+        return file_hash in self.valid
+
+    def add(self, file_hash: str) -> None:
+        self.valid.add(file_hash)
+
+    def save(self, path: Path, keep: set[str]) -> None:
+        """Write the cache, keeping only the hashes in ``keep``.
+
+        ``keep`` is the hashes of the files that exist now, so hashes of edited or deleted
+        files drop out instead of accumulating from one restored cache to the next.
+        """
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {"fingerprint": self.fingerprint, "valid": sorted(self.valid & keep)}
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=path.parent, suffix=".tmp", delete=False
+        ) as out:
+            json.dump(data, out, indent=0)
+        os.replace(out.name, path)
 
 
 def iter_target_files(
@@ -141,8 +249,27 @@ def validate_file(path: Path) -> FileResult:
     return FileResult(Path(path), tuple(errors_rng) + tuple(errors_sch))
 
 
-def validate_files(paths: list[Path]) -> list[FileResult]:
-    return [validate_file(path) for path in paths]
+def validate_files(
+    paths: list[Path], cache: Optional[ValidationCache] = None
+) -> list[FileResult]:
+    """Validate each of ``paths``, skipping any whose content ``cache`` records as valid."""
+    if cache is None:
+        return [validate_file(path) for path in paths]
+    results = []
+    for path in paths:
+        try:
+            file_hash = _file_hash(path)
+        except OSError:
+            results.append(validate_file(path))  # reports the read error
+            continue
+        if cache.is_valid(file_hash):
+            results.append(FileResult(Path(path), cached=True))
+            continue
+        result = validate_file(path)
+        if result.ok:
+            cache.add(file_hash)
+        results.append(result)
+    return results
 
 
 def format_annotation(file_path: str, error: str) -> str:
@@ -170,11 +297,22 @@ def validate_schema(
     project_directory: Path = PROJECT_DIRECTORY,
     projects: Optional[list[str]] = None,
     files_from: Optional[list[Path]] = None,
+    cache_path: Optional[Path] = None,
 ) -> SchemaReport:
     files, skipped = iter_target_files(
         project_directory=project_directory, projects=projects, files_from=files_from
     )
-    return SchemaReport(results=validate_files(files), skipped_projects=skipped)
+    if cache_path is None:
+        return SchemaReport(results=validate_files(files), skipped_projects=skipped)
+
+    cache = ValidationCache.load(cache_path, schema_fingerprint())
+    results = validate_files(files, cache)
+    # Keep the hashes of every file that exists now, not only the ones validated in this run:
+    # a PR run validates only the projects it touched and must not drop the rest.
+    current = {_file_hash(path) for path in Path(project_directory).glob("*/*.xml")}
+    current |= {_file_hash(r.path) for r in results if r.ok and Path(r.path).is_file()}
+    cache.save(cache_path, keep=current)
+    return SchemaReport(results=results, skipped_projects=skipped)
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -209,6 +347,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         action="store_true",
         help="Also emit ::error file=...,line=...:: workflow commands.",
     )
+    parser.add_argument(
+        "--cache",
+        type=Path,
+        help="JSON file of files already known to be valid (created if missing). A file whose "
+        "content and schema are unchanged since it last passed is not revalidated.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Also list files that passed.")
     args = parser.parse_args(argv)
 
@@ -224,6 +368,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         project_directory=args.project_directory,
         projects=args.projects,
         files_from=files_from,
+        cache_path=args.cache,
     )
 
     def rel(path: Path) -> str:
@@ -238,7 +383,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     for result in report.results:
         if result.ok:
             if args.verbose:
-                print(f"OK    {rel(result.path)}")
+                print(f"OK    {rel(result.path)}{' (cached)' if result.cached else ''}")
             continue
         print(f"FAIL  {rel(result.path)}")
         for error in result.errors:
@@ -248,7 +393,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     checked = len(report.results)
     if report.ok:
-        print(f"OK: {checked} file(s) valid")
+        from_cache = f" ({report.cached} from cache)" if args.cache else ""
+        print(f"OK: {checked} file(s) valid{from_cache}")
         return 0
     print(f"FAILED: {len(report.failures)} of {checked} file(s) invalid")
     return 1
