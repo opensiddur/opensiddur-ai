@@ -35,6 +35,10 @@ priority:
 # own project, which is what keeps a note attached to a text both sides realise from being
 # printed in both columns.
 annotations: [birnbaum_ashkenaz_en_1949]
+# The book sets each commentary once, where its text first appears, though the text
+# itself is printed again in every service that uses it.
+print_once:
+  commentary: true
 parallel:
   projects: [birnbaum_ashkenaz_en_1949]
 # Keep the house-of-mourning text visible, with its conditional rubric, in this

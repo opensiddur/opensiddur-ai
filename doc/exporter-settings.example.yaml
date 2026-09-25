@@ -27,6 +27,13 @@ annotations:
   - wlc
   - jps1917
 
+# Optional. Set the notes of each type only at the first occurrence of their target,
+# instead of at every place its text is transcluded. The note's @type selects the flag.
+# Instructions and citations are always set at every occurrence.
+print_once:
+  commentary: false
+  editorial: false
+
 # Optional parallel-text configuration. Omit to disable.
 parallel:
   # Projects to search for parallel text content (in priority order)

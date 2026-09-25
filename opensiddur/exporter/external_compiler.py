@@ -750,7 +750,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     continue
                 p_project, p_file, p_start, p_end, p_tail = resolved
                 try:
-                    with self._parallel_priority(p_project):
+                    with self._printed_annotations_rollback(), self._parallel_priority(p_project):
                         parallel_proc = ExternalCompilerProcessor(
                             p_project, p_file,
                             from_start=p_start,
@@ -930,7 +930,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         with self._parallel_sub_compilation():
             try:
-                with self._parallel_priority(parallel_project):
+                with self._printed_annotations_rollback(), self._parallel_priority(parallel_project):
                     parallel_proc = ExternalCompilerProcessor(
                         parallel_project, parallel_file,
                         linear_data=self.linear_data,

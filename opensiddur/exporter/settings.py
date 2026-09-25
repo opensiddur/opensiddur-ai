@@ -71,6 +71,22 @@ class ParallelConfig(BaseModel):
         return _validate_project_list(v, _project_directory_from_context(info))
 
 
+class PrintOnceSettings(BaseModel):
+    """ Annotation types printed only the first time the book reaches them.
+
+    Each flag governs the notes whose @type has the same name. Instructions and
+    citations belong to every occurrence of their text and cannot be listed.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    commentary: bool = False
+    editorial: bool = False
+
+    def note_types(self) -> set[str]:
+        """ The note @type values that are printed once. """
+        return {note_type for note_type, once in self.model_dump().items() if once}
+
+
 class SettingsYaml(BaseModel):
     """ A settings file, whole.
 
@@ -83,6 +99,7 @@ class SettingsYaml(BaseModel):
 
     priority: Prioritizations
     annotations: list[str] = Field(default_factory=list)
+    print_once: PrintOnceSettings = Field(default_factory=PrintOnceSettings)
     parallel: Optional[ParallelConfig] = None
     typography: TypographyConfig = Field(default_factory=TypographyConfig)
     declarations: dict[str, dict[str, DeclarationFeatureValue]] = Field(default_factory=dict)
@@ -111,6 +128,7 @@ def load_settings(
     linear_data.project_priority = settings.priority.transclusion
     linear_data.instruction_priority = settings.priority.instructions
     linear_data.annotation_projects = settings.annotations
+    linear_data.annotation_print_once_types = settings.print_once.note_types()
     if settings.parallel:
         linear_data.parallel_projects = settings.parallel.projects
         linear_data.parallel_column_order = settings.parallel.column_order

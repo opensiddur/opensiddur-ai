@@ -445,6 +445,50 @@
       </constraintSpec>
     </elementSpec>
 
+    <elementSpec ident="condition" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
+      <desc>
+        A condition on whether the standoff <gi>tei:note</gi> that contains it is printed at all.
+        It is evaluated against the settings in scope where the note would be inserted: if it
+        is false, the note (and its reference mark) is omitted; if it is true or undefined, the
+        note is printed. Unlike <gi>conditional</gi>, it opens no scope and has no end marker.
+        Conditioning part of a note's text is done with <gi>conditional</gi> inside the note.
+      </desc>
+      <classes>
+        <memberOf key="att.global"/>
+      </classes>
+      <content>
+        <classRef key="model.featureVal.complex" minOccurs="1" maxOccurs="unbounded"/>
+      </content>
+      <constraintSpec ident="condition-placement" scheme="schematron">
+        <desc>
+          A <gi>condition</gi> is the first child of a standoff note that is not an instruction.
+        </desc>
+        <constraint>
+          <sch:rule context="j:condition" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+            <sch:assert test="parent::tei:note and not(preceding-sibling::*)">
+              A <gi>condition</gi> must be the first child of a <gi>tei:note</gi>.
+            </sch:assert>
+            <sch:assert test="ancestor::tei:standOff[@type='notes']">
+              A <gi>condition</gi> applies to notes in a notes standOff; text is conditioned
+              with <gi>conditional</gi>.
+            </sch:assert>
+            <sch:assert test="not(parent::tei:note[@type='instruction'])">
+              Instructions are conditioned with <gi>conditional</gi>, not <gi>condition</gi>.
+            </sch:assert>
+          </sch:rule>
+        </constraint>
+      </constraintSpec>
+    </elementSpec>
+
+    <elementSpec ident="note" module="core" mode="change">
+      <content>
+        <sequence>
+          <elementRef key="condition" minOccurs="0"/>
+          <macroRef key="macro.specialPara"/>
+        </sequence>
+      </content>
+    </elementSpec>
+
     <elementSpec ident="endConditional" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
       <desc>
         Marks the end of the scope of a <gi>conditional</gi> element. The <gi>endConditional</gi> element must have a required <att>target</att> attribute, which points to the <att>xml:id</att> of the corresponding <gi>conditional</gi> element in the same file.

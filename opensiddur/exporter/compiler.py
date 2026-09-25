@@ -45,6 +45,7 @@ from opensiddur.exporter.linear import (
 )
 from opensiddur.exporter.conditional_settings import (
     CONDITIONAL_CONTROL_TAGS,
+    J_CONDITION,
     J_CONDITIONAL,
     J_DECLARE,
     J_END_CONDITIONAL,
@@ -471,6 +472,11 @@ class CompilerProcessor:
             result_elements = []
             if limited_references:
                 for reference in limited_references:
+                    # A note of a print-once type is printed only where the book first reaches it
+                    printed_key = (reference.project, reference.file_name, reference.element_path)
+                    print_once = reference.element_type in self.linear_data.annotation_print_once_types
+                    if print_once and printed_key in self.linear_data.printed_annotations:
+                        continue
                     processor = CompilerProcessor(
                         reference.project,
                         reference.file_name,
@@ -481,6 +487,9 @@ class CompilerProcessor:
                     if not reference_element:
                         raise ValueError(f"Reference element {reference.element_path=} not found")
                     reference_element = reference_element[0]
+                    if not self._annotation_condition_holds(reference_element):
+                        # Out of context here. It has not been printed, so it keeps its print-once slot.
+                        continue
                     processed_element = processor.process(reference_element)
                     if not(reference.project == self.project and reference.file_name == self.file_name):
                         self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
@@ -491,6 +500,8 @@ class CompilerProcessor:
                         processed_element.set('{http://www.w3.org/XML/1998/namespace}lang', annotation_lang)
 
                     result_elements.append(processed_element)
+                    if print_once:
+                        self.linear_data.printed_annotations.add(printed_key)
             if result_elements:
                 annotation_command = _AnnotationCommand.INSERT
             else:
@@ -779,6 +790,31 @@ class CompilerProcessor:
             for name in feature_names
         }
 
+    def _annotation_condition_holds(self, note: ElementBase) -> bool:
+        """Evaluate a note's j:condition against the settings in scope where it would be inserted.
+
+        The condition decides whether the note is printed at all: only FALSE omits it. A note
+        without one always holds. (Conditioning part of a note's text is j:conditional's job.)
+        """
+        condition = note.find(J_CONDITION)
+        if condition is None:
+            return True
+        return evaluate_condition(parse_condition_element(condition), self) != TriState.FALSE
+
+    @contextmanager
+    def _printed_annotations_rollback(self):
+        """Forget print-once annotations registered by a compilation that fails.
+
+        A failed parallel counterpart is discarded, and the fallback that replaces it must
+        still print the notes the counterpart had claimed.
+        """
+        saved = set(self.linear_data.printed_annotations)
+        try:
+            yield
+        except BaseException:
+            self.linear_data.printed_annotations = saved
+            raise
+
     @contextmanager
     def _conditional_settings_checkpoint(self):
         """Truncate conditional_settings and scope stack to pre-process depth on exit."""
@@ -819,10 +855,13 @@ class CompilerProcessor:
         return False
 
     def _handle_conditional_element(self, element: ElementBase) -> tuple[bool, ElementBase | None]:
-        """Process j:conditional / j:endConditional.
+        """Process j:conditional / j:endConditional, and strip j:condition.
 
         Returns (handled, result). result is None when stripped, or an element copy when retained.
         """
+        if element.tag == J_CONDITION:
+            # A note's own condition was evaluated when the note was selected; it is never text.
+            return True, None
         if element.tag == J_CONDITIONAL:
             xml_id = element.get(XML_ID)
             if not xml_id:

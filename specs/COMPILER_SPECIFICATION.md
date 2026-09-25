@@ -362,7 +362,8 @@ Notes precede the first words of the target's text, inside whatever paragraph,
 line or verse segment holds them, so that a note and the words it annotates land
 in the same parallel row. They retain their language and provenance, and are not
 repeated on suspend/resume markers or reconstructed fragments.
-Intentional repeated transclusions each retain their own apparatus.
+Intentional repeated transclusions each retain their own apparatus, unless
+`print_once` is enabled for the note's type (see below).
 
 The successfully selected parallel column receives its own project's apparatus
 only when enabled in `annotations`. The primary column receives the remaining
@@ -375,6 +376,37 @@ Row assembly and marker reconstruction preserve already compiled notes; they do
 not perform reference lookup or a second annotation pass. A correspondence URN
 may identify different element kinds in each column (for example, a Hebrew `seg`
 and an English `p`), so both structural and ordinary paths must support it.
+
+### Conditional annotations
+
+A standoff note whose first child is `j:condition` is selected only where its
+condition holds. The condition is evaluated in `_annotate`, against the settings in
+scope at the opening of the annotated element: every `j:declare` before it along the
+whole transclusion chain, but not a `j:declare` inside the annotated element itself.
+FALSE omits the note, so nothing of it reaches placement, markers or output; TRUE
+and UNDEFINED keep it. The `j:condition` element is stripped when the note is
+compiled.
+
+This is separate from `j:conditional` scopes inside the note's body. Those are
+processed as the note's text is compiled, against the same settings, and remove
+only the words they govern; the note is still set. In a parallel compile the
+condition is evaluated in the column that receives the note's project.
+
+### Print-once annotations
+
+The `print_once` settings block names the note types (`commentary`, `editorial`)
+that are set only at the first occurrence of their target in compile order. The
+note's `@type` (as stored in the reference database) selects which flag applies;
+notes of other types, including instructions and citations, are set at every
+occurrence. `LinearData.printed_annotations` records each printed print-once note
+by (project, file name, element path). The record is book-global and is not
+truncated by settings checkpoints.
+
+- A note is recorded only when it is set. An occurrence whose condition is false
+  does not use up the note, which is then set at the first occurrence where its
+  condition holds.
+- A parallel counterpart compilation that fails is discarded, and the notes it
+  recorded are forgotten, so that the primary fallback still sets them.
 
 ### Annotation Commands
 

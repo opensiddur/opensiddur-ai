@@ -187,6 +187,68 @@ class TestContributorRefValidation(unittest.TestCase):
         )
 
 
+class TestNoteConditionValidation(unittest.TestCase):
+    """j:condition decides whether a standoff note is printed (issue #168).
+
+    Requires the compiled schema artifacts (`bash scripts/build-schema.sh`).
+    """
+
+    SKELETON = (
+        '<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"'
+        ' xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="en">'
+        "<tei:teiHeader><tei:fileDesc>"
+        '<tei:titleStmt><tei:title type="main" xml:lang="en">t</tei:title></tei:titleStmt>'
+        "<tei:publicationStmt><tei:distributor>d</tei:distributor></tei:publicationStmt>"
+        "<tei:sourceDesc><tei:bibl><tei:title>s</tei:title></tei:bibl></tei:sourceDesc>"
+        "</tei:fileDesc></tei:teiHeader>"
+        "{standoff}"
+        '<tei:text><tei:body><tei:p>x{inline}</tei:p></tei:body></tei:text>'
+        "</tei:TEI>"
+    )
+    CONDITION = (
+        '<j:condition><tei:fs type="opensiddur:holiday-aggregate">'
+        '<tei:f name="shabbat"><tei:binary value="false"/></tei:f></tei:fs></j:condition>'
+    )
+    TARGET = 'target="urn:x-opensiddur:text:prayer:demo"'
+
+    def assertValidity(self, valid: bool, message: str, standoff: str = "", inline: str = ""):
+        from opensiddur.importer.util.validation import validate
+
+        is_valid, errors = validate(self.SKELETON.format(standoff=standoff, inline=inline))
+        self.assertEqual(is_valid, valid, f"{message}\n{errors if is_valid != valid else ''}")
+
+    def notes(self, note: str) -> str:
+        return f'<tei:standOff type="notes">{note}</tei:standOff>'
+
+    def test_a_condition_first_in_a_standoff_note_validates(self):
+        self.assertValidity(True, "a conditioned commentary note should validate", self.notes(
+            f'<tei:note type="commentary" {self.TARGET}>\n  {self.CONDITION}'
+            "<tei:p>Only on weekdays.</tei:p></tei:note>"))
+
+    def test_a_condition_combinator_validates(self):
+        self.assertValidity(True, "combinators are conditions too", self.notes(
+            f'<tei:note type="editorial" {self.TARGET}><j:condition><j:none>'
+            '<tei:fs type="opensiddur:holiday-aggregate"><tei:f name="shabbat">'
+            '<tei:binary value="true"/></tei:f></tei:fs></j:none></j:condition>'
+            "Text.</tei:note>"))
+
+    def test_a_condition_after_note_text_is_rejected(self):
+        self.assertValidity(False, "j:condition must come first", self.notes(
+            f'<tei:note type="commentary" {self.TARGET}><tei:p>Text.</tei:p>'
+            f"{self.CONDITION}</tei:note>"))
+
+    def test_a_condition_on_an_instruction_is_rejected(self):
+        self.assertValidity(False, "instructions use j:conditional", self.notes(
+            f'<tei:note type="instruction" {self.TARGET}>{self.CONDITION}Stand.</tei:note>'))
+
+    def test_a_condition_on_an_inline_note_is_rejected(self):
+        self.assertValidity(False, "j:condition is for standoff notes",
+                            inline=f'<tei:note type="commentary">{self.CONDITION}Text.</tei:note>')
+
+    def test_a_condition_outside_a_note_is_rejected(self):
+        self.assertValidity(False, "j:condition is not text", inline=self.CONDITION)
+
+
 class TestSubverseValidation(unittest.TestCase):
     """The compiled schema's behaviour on sub-verse milestones, not just the ODD's wording.
 

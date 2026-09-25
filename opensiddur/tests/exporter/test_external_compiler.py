@@ -1826,6 +1826,8 @@ def _linear_data_with_root_parallel(root: etree._Element):
         parallel_projects = ["primary", "bad", "parallel"]
         parallel_column_order = 0
         parallel_compilation_depth = 0
+        annotation_print_once_types = set()
+        printed_annotations = set()
 
     return _LD()
 
@@ -1862,6 +1864,8 @@ class TestPrimaryColumnAnnotations(unittest.TestCase):
             parallel_projects = parallel
             parallel_column_order = 0
             parallel_compilation_depth = 0
+            annotation_print_once_types = set()
+            printed_annotations = set()
         return ExternalCompilerProcessor("he", "a.xml", linear_data=_LD())
 
     def test_a_project_supplying_a_column_does_not_annotate_the_other_one(self):
