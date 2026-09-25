@@ -1230,7 +1230,7 @@
                               else $paired"/>
 
         <xsl:if test="exists($leaves)">
-            <xsl:if test="$lang = 'he'">
+            <xsl:if test="f:is-hebrew-lang(string($lang))">
                 <xsl:text>\begin{hebrew}&#10;</xsl:text>
             </xsl:if>
 
@@ -1668,7 +1668,7 @@
 
             <xsl:text>\endnumbering&#10;</xsl:text>
 
-            <xsl:if test="$lang = 'he'">
+            <xsl:if test="f:is-hebrew-lang(string($lang))">
                 <xsl:text>\end{hebrew}&#10;</xsl:text>
             </xsl:if>
         </xsl:if>
@@ -2992,7 +2992,10 @@
 
     <xsl:function name="f:is-hebrew-lang" as="xs:boolean">
         <xsl:param name="lang" as="xs:string"/>
-        <xsl:sequence select="$lang = 'he' or starts-with($lang, 'he-')"/>
+        <!-- An explicit Hebrew script subtag also covers Aramaic (arc-Hebr).
+             The Polyglossia Hebrew environment supplies its script and direction. -->
+        <xsl:sequence select="$lang = 'he' or starts-with($lang, 'he-')
+                              or tokenize(lower-case($lang), '-')[2] = 'hebr'"/>
     </xsl:function>
 
     <!-- Language for the tei:head used in \OSheadA/B/C titles. -->

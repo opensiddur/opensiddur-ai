@@ -812,3 +812,26 @@ The enlarged 263 scan confirms segol in בַּכֶּֽסֶה, the form היא in
 defective לְעֹלָם. The enlarged 273 scan confirms וְגוֹאֲלִי, which agrees with the
 already encoded shared meditation. The English page does not translate סברי מרנן
 ורבותי; its explanatory footnote is retained without supplying new liturgical text.
+
+## Friday-night home prayers and hymns, printed 283–298 (IA n307–n322)
+
+All sixteen images were read, starting below Adon Olam at Shalom Aleichem and ending
+with Tzur Mishelo and its notes. `scan_reading/readings/leil_shabbat.md` records
+both languages, rubrics, shared readings, commentary, and encoding decisions.
+Enlarged crops were checked for the meditation, zemirot, and the Hebrew stanza
+quoted in the Kol Mekadesh note. The local Wikisource snapshot was compared only
+after the direct reading; its editorial additions are not imported.
+
+Eshet Ḥayil has 22 biblical verse milestones. Hymn stanzas and refrains have separate
+milestones, retaining the printed abbreviated English refrains. The additional
+Kol Mekadesh stanza stays in the commentary. Vaykhullu and the Kiddush blessings
+reuse existing texts with repeat-printing provenance. Ribbon kol ha‘olamim is
+addressed separately from the morning prayer with the same opening words.
+The Friday-night home section and its four-hymn zemirot wrapper have their own URNs
+and hierarchical bookmarks, separate from synagogue Arvit.
+
+Yah Ribbon uses `xml:lang="arc-Hebr"`. The renderer now honors explicit Hebrew-script
+language tags for numbered streams; a synthetic regression test covers Aramaic,
+Hebrew, regional Hebrew, and Latin-script Aramaic. Kiddush transcludes the three
+Genesis verses individually to avoid inheriting the synagogue occurrence’s separate
+source note alongside the combined Genesis 1:31; 2:1–3 note printed here.

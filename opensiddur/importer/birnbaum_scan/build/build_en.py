@@ -51,6 +51,9 @@ PRAYERS = bameh_shared("en", PRAYERS) + bameh_prayers("en")
 from .shabbat_arvit import shared as shabbat_arvit_shared, prayers as shabbat_arvit_prayers
 PRAYERS = shabbat_arvit_shared("en", PRAYERS)
 PRAYERS += shabbat_arvit_prayers("en", PRAYERS)
+from .leil_shabbat import shared as leil_shabbat_shared, prayers as leil_shabbat_prayers
+PRAYERS = leil_shabbat_shared("en", PRAYERS)
+PRAYERS += leil_shabbat_prayers("en", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -89,7 +92,11 @@ from .notes_bameh_madlikin import NOTES as BAMEH_NOTES
 
 from .notes_shabbat_arvit import NOTES as SHABBAT_ARVIT_NOTES
 
+from .notes_leil_shabbat import NOTES as LEIL_SHABBAT_NOTES
+
 APPARATUS = {
+    "notes_leil_shabbat": dict(entries=LEIL_SHABBAT_NOTES, slug="birnbaum_1949/leil_shabbat",
+        title="Notes on the Friday-night home prayers and hymns", first=283, last=298),
     "notes_shabbat_arvit": dict(entries=SHABBAT_ARVIT_NOTES, slug="birnbaum_1949/shabbat_arvit",
         title="Notes on the Sabbath and festival evening service", first=262, last=280),
     "notes_bameh_madlikin": dict(entries=BAMEH_NOTES, slug="birnbaum_1949/bameh_madlikin",
