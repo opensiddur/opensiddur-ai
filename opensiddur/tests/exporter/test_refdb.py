@@ -6,8 +6,10 @@ import tempfile
 from pathlib import Path
 import time
 import os
+from unittest import mock
 from lxml import etree
 from lxml.etree import ElementBase
+from opensiddur.exporter import refdb
 from opensiddur.exporter.refdb import (
     DuplicateUrnError,
     ReferenceDatabase,
@@ -220,16 +222,47 @@ class TestInstructionUrnCollisions(unittest.TestCase):
             self.db.add_urn_mapping("proj", "b.xml", self._note(urn, "another wording"))
 
 
-class TestElementTextColumnUpgrade(unittest.TestCase):
-    """element_text was added to a table already in use, and there is no migration step."""
+class TestVersionStamp(unittest.TestCase):
+    """A database built by other indexing code is rebuilt rather than trusted (#165)."""
 
-    def test_a_database_without_element_text_gains_the_column(self):
+    def setUp(self):
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
-        db_path = Path(temp_dir.name) / 'old.db'
+        self.db_path = Path(temp_dir.name) / 'reference.db'
 
-        # A database on the pre-element_text shape, with a row already in it.
-        old = sqlite3.connect(db_path)
+    def _populate(self):
+        with ReferenceDatabase(self.db_path) as db:
+            root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+            div = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+            div.set("corresp", "urn:x-opensiddur:text:test/1")
+            db.add_urn_mapping("proj", "doc.xml", div)
+            db.conn.execute(
+                "INSERT INTO indexed_files (project, file_name, content_hash) "
+                "VALUES ('proj', 'doc.xml', 'abc')")
+            db.conn.commit()
+
+    def _stored_version(self, db):
+        return db.conn.execute(
+            "SELECT value FROM refdb_meta WHERE key = 'version'").fetchone()['value']
+
+    def test_same_version_keeps_the_data(self):
+        self._populate()
+        with ReferenceDatabase(self.db_path) as db:
+            self.assertEqual(len(db.get_urns_by_project("proj")), 1)
+            self.assertEqual(db.get_files_by_project("proj"), ["doc.xml"])
+            self.assertEqual(self._stored_version(db), refdb.REFDB_VERSION)
+
+    def test_a_different_version_rebuilds_from_scratch(self):
+        self._populate()
+        with mock.patch.object(refdb, 'REFDB_VERSION', 'some-other-version'):
+            with ReferenceDatabase(self.db_path) as db:
+                self.assertEqual(db.get_urns_by_project("proj"), [])
+                self.assertEqual(db.list_projects(), [])
+                self.assertEqual(self._stored_version(db), 'some-other-version')
+
+    def test_a_database_without_a_stamp_is_rebuilt_on_the_current_shape(self):
+        # A database from before the stamp existed, on the pre-element_text shape.
+        old = sqlite3.connect(self.db_path)
         old.execute("""
             CREATE TABLE urn_mappings (
                 urn TEXT NOT NULL,
@@ -252,25 +285,11 @@ class TestElementTextColumnUpgrade(unittest.TestCase):
         old.commit()
         old.close()
 
-        db = ReferenceDatabase(db_path)
-        self.addCleanup(db.close)
-
-        columns = {row[1] for row in db.conn.execute("PRAGMA table_info(urn_mappings)")}
-        self.assertIn('element_text', columns)
-
-        # The pre-existing row has no text, so it cannot contradict anything.
-        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
-        note = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}note")
-        note.set("type", "instruction")
-        note.set("corresp", "urn:x-opensiddur:instruction:role/reader")
-        note.text = "Reader"
-        with self.assertNoLogs("opensiddur.exporter.refdb", level="WARNING"):
-            db.add_urn_mapping("proj", "new.xml", note)
-
-        stored = db.conn.execute(
-            "SELECT element_text FROM urn_mappings WHERE project = 'proj'"
-        ).fetchone()
-        self.assertEqual(stored['element_text'], "Reader")
+        with ReferenceDatabase(self.db_path) as db:
+            columns = {row[1] for row in db.conn.execute("PRAGMA table_info(urn_mappings)")}
+            self.assertIn('element_text', columns)
+            self.assertEqual(db.list_projects(), [])
+            self.assertEqual(self._stored_version(db), refdb.REFDB_VERSION)
 
 
 class TestReferenceDatabaseGetUrnMappings(unittest.TestCase):
@@ -737,15 +756,8 @@ class TestReferenceDatabaseSync(unittest.TestCase):
         file_path = self._create_xml_file("test_proj", "doc1.xml", ["urn:x-opensiddur:test:1"])
         self.db.index_file(file_path, "test_proj", "doc1.xml")
         
-        # Wait to ensure different timestamp (1 second to be safe)
-        time.sleep(1.1)
-        
         # Modify file
-        file_path = self._create_xml_file("test_proj", "doc1.xml", ["urn:x-opensiddur:test:1", "urn:x-opensiddur:test:2"])
-        
-        # Explicitly update file modification time to current time
-        now = time.time()
-        os.utime(file_path, (now, now))
+        self._create_xml_file("test_proj", "doc1.xml", ["urn:x-opensiddur:test:1", "urn:x-opensiddur:test:2"])
         
         # Sync the modified file
         result = self.db.sync_file("doc1.xml", "test_proj", self.project_dir)
@@ -856,6 +868,167 @@ class TestReferenceDatabaseSync(unittest.TestCase):
         # Database should be empty
         projects = self.db.list_projects()
         self.assertEqual(projects, [])
+
+
+class TestIncrementalSync(unittest.TestCase):
+    """Incremental sync decides by content, and ends where a fresh build would (#165)."""
+
+    TEI = "http://www.tei-c.org/ns/1.0"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.project_dir = Path(self.temp_dir.name) / 'projects'
+        self.project_dir.mkdir()
+        self.db = self._open('incremental.db')
+
+    def _open(self, name: str) -> ReferenceDatabase:
+        db = ReferenceDatabase(Path(self.temp_dir.name) / name)
+        self.addCleanup(db.close)
+        return db
+
+    def _write(self, project: str, file_name: str, urns=(), targets=()) -> Path:
+        """Write a synthetic file carrying `urns` as div/@corresp and `targets` as ptr/@target."""
+        project_path = self.project_dir / project
+        project_path.mkdir(exist_ok=True)
+        root = etree.Element(f"{{{self.TEI}}}TEI")
+        text = etree.SubElement(root, f"{{{self.TEI}}}text")
+        for urn in urns:
+            etree.SubElement(text, f"{{{self.TEI}}}div").set("corresp", urn)
+        for target in targets:
+            etree.SubElement(text, f"{{{self.TEI}}}ptr").set("target", target)
+        file_path = project_path / file_name
+        etree.ElementTree(root).write(str(file_path), encoding='utf-8', xml_declaration=True)
+        return file_path
+
+    @staticmethod
+    def _dump(db: ReferenceDatabase) -> tuple[list, list, list]:
+        """Everything the database says, without the timestamps that differ between builds."""
+        urns = db.conn.execute(
+            "SELECT urn, project, file_name, element_path, element_tag, element_type, "
+            "end_element_path, end_includes_tail, element_text FROM urn_mappings "
+            "ORDER BY project, urn").fetchall()
+        references = db.conn.execute(
+            "SELECT element_path, element_tag, element_type, target_start, target_end, "
+            "target_is_id, corresponding_urn, project, file_name FROM element_references "
+            "ORDER BY project, file_name, element_path, target_start").fetchall()
+        files = db.conn.execute(
+            "SELECT project, file_name, content_hash FROM indexed_files "
+            "ORDER BY project, file_name").fetchall()
+        return ([tuple(r) for r in urns], [tuple(r) for r in references],
+                [tuple(r) for r in files])
+
+    def test_incremental_sync_matches_a_fresh_build(self):
+        self._write("proj1", "a.xml", urns=["urn:x-opensiddur:text:t/a"])
+        self._write("proj1", "b.xml", urns=["urn:x-opensiddur:text:t/b"],
+                    targets=["urn:x-opensiddur:text:t/a"])
+        self._write("proj1", "c.xml", urns=["urn:x-opensiddur:text:t/c"])
+        self._write("proj1", "old_name.xml", targets=["#x"])
+        self._write("proj2", "d.xml", urns=["urn:x-opensiddur:text:t/d"])
+        self._write("proj3", "e.xml", targets=["urn:x-opensiddur:text:t/a"])
+        self.db.sync_projects(self.project_dir)
+
+        # Modify, add, delete, rename a file, and delete a project whose files carry
+        # only references.
+        self._write("proj1", "b.xml", urns=["urn:x-opensiddur:text:t/b2"],
+                    targets=["urn:x-opensiddur:text:t/c"])
+        self._write("proj1", "new.xml", urns=["urn:x-opensiddur:text:t/new"])
+        (self.project_dir / "proj1" / "c.xml").unlink()
+        (self.project_dir / "proj1" / "old_name.xml").rename(
+            self.project_dir / "proj1" / "new_name.xml")
+        (self.project_dir / "proj3" / "e.xml").unlink()
+        (self.project_dir / "proj3").rmdir()
+
+        result = self.db.sync_projects(self.project_dir)
+
+        self.assertEqual(result['total_files_added'], 2)    # new.xml, new_name.xml
+        self.assertEqual(result['total_files_updated'], 1)  # b.xml
+        self.assertEqual(result['total_files_removed'], 2)  # c.xml, old_name.xml
+        self.assertEqual(result['total_skipped'], 2)        # a.xml, d.xml
+        self.assertEqual(result['orphaned_projects_removed'], 1)  # proj3
+
+        fresh = self._open('fresh.db')
+        fresh.sync_projects(self.project_dir)
+        self.assertEqual(self._dump(self.db), self._dump(fresh))
+        self.assertNotIn("proj3", self.db.list_projects())
+
+    def test_newer_mtime_with_the_same_content_is_skipped(self):
+        file_path = self._write("proj", "a.xml", urns=["urn:x-opensiddur:text:t/a"])
+        self.db.sync_projects(self.project_dir)
+
+        # What a fresh checkout does to every file.
+        future = time.time() + 3600
+        os.utime(file_path, (future, future))
+
+        result = self.db.sync_file("a.xml", "proj", self.project_dir)
+        self.assertEqual(result['action'], 'skipped')
+
+    def test_changed_content_with_the_same_mtime_is_updated(self):
+        file_path = self._write("proj", "a.xml", urns=["urn:x-opensiddur:text:t/a"])
+        past = time.time() - 3600
+        os.utime(file_path, (past, past))
+        self.db.sync_projects(self.project_dir)
+
+        self._write("proj", "a.xml", urns=["urn:x-opensiddur:text:t/a2"])
+        os.utime(file_path, (past, past))
+
+        result = self.db.sync_file("a.xml", "proj", self.project_dir)
+        self.assertEqual(result['action'], 'updated')
+        self.assertEqual([m.urn for m in self.db.get_urns_by_project("proj")],
+                         ["urn:x-opensiddur:text:t/a2"])
+
+    def test_a_file_with_nothing_to_index_is_skipped_once_seen(self):
+        self._write("proj", "empty.xml")
+        self.assertEqual(self.db.sync_file("empty.xml", "proj", self.project_dir)['action'],
+                         'added')
+        self.assertEqual(self.db.sync_file("empty.xml", "proj", self.project_dir)['action'],
+                         'skipped')
+
+    def test_a_file_that_fails_to_index_is_retried(self):
+        project_path = self.project_dir / "proj"
+        project_path.mkdir()
+        (project_path / "broken.xml").write_text("<TEI><unclosed></TEI>")
+
+        with mock.patch('builtins.print'):
+            first = self.db.sync_file("broken.xml", "proj", self.project_dir)
+            second = self.db.sync_file("broken.xml", "proj", self.project_dir)
+
+        self.assertEqual(first['action'], 'added')
+        self.assertEqual(second['action'], 'added')
+        self.assertIsNone(self.db._get_indexed_hash("broken.xml", "proj"))
+
+    def test_a_partial_index_is_cleared_before_the_retry(self):
+        # b.xml maps the same text URN as a.xml: indexing it writes t/stale, then stops at
+        # the duplicate, and it is left unrecorded.
+        self._write("proj", "a.xml", urns=["urn:x-opensiddur:text:t/a"])
+        self._write("proj", "b.xml", targets=["#x"])
+        self.db.sync_projects(self.project_dir)
+        self._write("proj", "b.xml", urns=["urn:x-opensiddur:text:t/stale",
+                                           "urn:x-opensiddur:text:t/a"])
+        with mock.patch('builtins.print'):
+            self.db.sync_projects(self.project_dir)
+        self.assertIsNone(self.db._get_indexed_hash("b.xml", "proj"))
+        self.assertIn("urn:x-opensiddur:text:t/stale",
+                      [m.urn for m in self.db.get_urns_by_project("proj")])
+
+        # Once the conflict is gone the retry leaves exactly what a fresh build does.
+        self._write("proj", "b.xml", urns=["urn:x-opensiddur:text:t/b"])
+        self.db.sync_projects(self.project_dir)
+        fresh = self._open('fresh.db')
+        fresh.sync_projects(self.project_dir)
+        self.assertEqual(self._dump(self.db), self._dump(fresh))
+
+    def test_a_deleted_reference_only_file_is_removed(self):
+        self._write("proj", "a.xml", urns=["urn:x-opensiddur:text:t/a"])
+        self._write("proj", "refs.xml", targets=["urn:x-opensiddur:text:t/a"])
+        self.db.sync_projects(self.project_dir)
+        self.assertEqual(len(self.db.get_references_by_project("proj")), 1)
+
+        (self.project_dir / "proj" / "refs.xml").unlink()
+        self.db.sync_projects(self.project_dir)
+
+        self.assertEqual(self.db.get_references_by_project("proj"), [])
+        self.assertEqual(self.db.get_files_by_project("proj"), ["a.xml"])
 
 
 class TestReferenceDatabaseReferences(unittest.TestCase):

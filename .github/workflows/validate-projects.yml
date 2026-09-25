@@ -113,12 +113,35 @@ jobs:
             --github-annotations \
             ${{ steps.scope.outputs.project_args }}
 
+      # The reference database is cached between runs so a PR re-indexes only the files it
+      # changed (opensiddur-ai#165). refdb decides what to re-index by content hash, not mtime,
+      # so the fresh checkout's mtimes don't matter. The key's first part is the indexing code:
+      # refdb also stamps the database with a hash of that file and rebuilds on a mismatch, so
+      # restore-keys never hands one version's database to another. The cache belongs to the
+      # caller (opensiddur-projects); PRs restore from the one its `main` runs keep warm.
+      # Restore and save are separate steps so the database is saved even when a later
+      # validation step fails the job.
+      - name: Restore the reference database cache
+        id: refdb_cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/reference.db
+          key: refdb-${{ hashFiles('opensiddur-ai/opensiddur/exporter/refdb.py') }}-${{ hashFiles('projects/project/**/*.xml') }}
+          restore-keys: refdb-${{ hashFiles('opensiddur-ai/opensiddur/exporter/refdb.py') }}-
+
       - name: Build the reference database
         working-directory: opensiddur-ai
         run: |
           uv run python -m opensiddur.exporter.refdb \
             --project-directory "$GITHUB_WORKSPACE/projects/project" \
             --reference-db "$RUNNER_TEMP/reference.db"
+
+      - name: Save the reference database cache
+        if: steps.refdb_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/reference.db
+          key: ${{ steps.refdb_cache.outputs.cache-primary-key }}
 
       - name: Validate URN reference resolution
         id: urn_references
