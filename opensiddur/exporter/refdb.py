@@ -1,6 +1,7 @@
 """ Reference Database """
 
 import argparse
+import hashlib
 import logging
 from pathlib import Path
 import re
@@ -15,6 +16,16 @@ from opensiddur.common.constants import PROJECT_DIRECTORY, INDEX_DB_DIRECTORY
 logger = logging.getLogger(__name__)
 
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
+
+#: Identifies the indexing code that built a database. A database is only valid for the code
+#: that wrote it: a change to how elements are indexed, or to the tables, makes every stored
+#: row suspect. Hashing this module's own source means no one has to remember to bump a
+#: number, and the validation workflow keys its cached database on the same file
+#: (opensiddur-ai#165). All of the indexing logic lives in this module.
+REFDB_VERSION = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+#: Every table the database holds, dropped together when the version stamp does not match.
+_TABLES = ('urn_mappings', 'element_references', 'indexed_files', 'refdb_meta')
 
 #: URNs under this prefix identify a stretch of text, so they must be unique within a
 #: project. Other URN types (condition, notes) are names and are meant to be shared.
@@ -31,6 +42,15 @@ INSTRUCTION_URN_PREFIX = "urn:x-opensiddur:instruction:"
 
 class DuplicateUrnError(ValueError):
     """A text URN is mapped to more than one place within a single project."""
+
+
+def _file_hash(file_path: Path | str) -> str:
+    """The sha256 of a file's contents, which is what decides whether it needs re-indexing.
+
+    Not the mtime: a fresh checkout gives every file an mtime of "now", which would make a
+    database restored from a cache look older than every file in it.
+    """
+    return hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
 
 
 # Which milestone units contain which others.
@@ -217,9 +237,26 @@ class ReferenceDatabase:
         self.conn.row_factory = sqlite3.Row  # Return rows as dictionaries
         self._init_database()
     
+    def _stored_version(self) -> str | None:
+        """The REFDB_VERSION that built this database, or None if it has no stamp."""
+        try:
+            row = self.conn.execute(
+                "SELECT value FROM refdb_meta WHERE key = 'version'").fetchone()
+        except sqlite3.OperationalError:
+            return None
+        return row['value'] if row else None
+
     def _init_database(self):
-        """Initialize the database schema if it doesn't exist."""
+        """Initialize the database schema if it doesn't exist.
+
+        A database written by different indexing code (or by code that predates the version
+        stamp) is dropped and rebuilt empty; the next sync then indexes every file again.
+        This also stands in for migrations: a change to a table changes REFDB_VERSION.
+        """
         cursor = self.conn.cursor()
+        if self._stored_version() != REFDB_VERSION:
+            for table in _TABLES:
+                cursor.execute(f'DROP TABLE IF EXISTS {table}')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS urn_mappings (
                 urn TEXT NOT NULL,
@@ -246,13 +283,6 @@ class ReferenceDatabase:
             CREATE INDEX IF NOT EXISTS idx_project 
             ON urn_mappings(project)
         ''')
-
-        # element_text was added after the table was in use and there is no migration
-        # framework here -- CREATE TABLE IF NOT EXISTS leaves an existing database on the
-        # old shape -- so add the column in place when it is missing.
-        columns = {row[1] for row in cursor.execute('PRAGMA table_info(urn_mappings)')}
-        if 'element_text' not in columns:
-            cursor.execute('ALTER TABLE urn_mappings ADD COLUMN element_text TEXT')
 
         # Create table for element_references
         # This table indicates that an element of the given tag and type 
@@ -292,6 +322,28 @@ class ReferenceDatabase:
             CREATE INDEX IF NOT EXISTS idx_ref_corresponding_urn 
             ON element_references(corresponding_urn)
         ''')
+
+        # One row per file that indexed successfully, with the hash of the contents it was
+        # indexed from. A file can contribute no URNs and no references, so this -- not the
+        # other two tables -- is what says a file has been seen.
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS indexed_files (
+                project TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                content_hash TEXT NOT NULL,
+                PRIMARY KEY (project, file_name)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS refdb_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        ''')
+        cursor.execute(
+            "INSERT OR REPLACE INTO refdb_meta (key, value) VALUES ('version', ?)",
+            (REFDB_VERSION,))
         self.conn.commit()
 
     def get_urn_mappings(self, urn: Optional[str] = None, project: Optional[str] = None) -> list[UrnMapping]:
@@ -535,10 +587,15 @@ class ReferenceDatabase:
         Returns:
             List of file names (sorted alphabetically)
         """
+        # A file that holds only references, or nothing at all, is still a file in the
+        # project, and must be found here for sync to remove it once it is deleted.
         cursor = self.conn.cursor()
         cursor.execute(
-            'SELECT DISTINCT file_name FROM urn_mappings WHERE project = ? ORDER BY file_name',
-            (project,)
+            '''SELECT file_name FROM urn_mappings WHERE project = ?
+            UNION SELECT file_name FROM element_references WHERE project = ?
+            UNION SELECT file_name FROM indexed_files WHERE project = ?
+            ORDER BY file_name''',
+            (project, project, project)
         )
         return [row['file_name'] for row in cursor.fetchall()]
     
@@ -566,7 +623,11 @@ class ReferenceDatabase:
             List of project names (sorted alphabetically)
         """
         cursor = self.conn.cursor()
-        cursor.execute('SELECT DISTINCT project FROM urn_mappings ORDER BY project')
+        cursor.execute(
+            '''SELECT project FROM urn_mappings
+            UNION SELECT project FROM element_references
+            UNION SELECT project FROM indexed_files
+            ORDER BY project''')
         return [row['project'] for row in cursor.fetchall()]
     
     def index_file(self, file_path: Path | str, project: str, file_name: str) -> int:
@@ -606,11 +667,19 @@ class ReferenceDatabase:
             for element in elements_with_reference:
                 self.add_reference(project, file_name, element)
                 count += 1
-
-            return count
         except Exception as e:
             print(f"Error indexing {file_path}: {e}")
             return 0
+
+        # Only a file that indexed cleanly is recorded as indexed. One that failed partway
+        # stays unrecorded, so the next sync retries it and reports the error again instead
+        # of skipping it with whatever it managed to write.
+        self.conn.execute(
+            '''INSERT INTO indexed_files (project, file_name, content_hash) VALUES (?, ?, ?)
+            ON CONFLICT(project, file_name) DO UPDATE SET content_hash = excluded.content_hash''',
+            (project, file_name, _file_hash(file_path)))
+        self.conn.commit()
+        return count
     
     def index_project(self, project: str, project_directory: Path = PROJECT_DIRECTORY) -> int:
         """Index all URNs/references from XML files in a project directory.
@@ -664,6 +733,11 @@ class ReferenceDatabase:
             (file_name, project)
         )
         deleted_count += cursor.rowcount
+
+        cursor.execute(
+            'DELETE FROM indexed_files WHERE file_name = ? AND project = ?',
+            (file_name, project)
+        )
         self.conn.commit()
         return deleted_count
     
@@ -689,54 +763,24 @@ class ReferenceDatabase:
         )
         deleted_count += cursor.rowcount
 
+        cursor.execute('DELETE FROM indexed_files WHERE project = ?', (project,))
         self.conn.commit()
         return deleted_count
     
-    def _get_file_last_updated(self, file_name: str, project: str) -> float | None:
-        """Get the last updated timestamp for a file in the database.
-        
-        Args:
-            file_name: The file name
-            project: The project name
-            
-        Returns:
-            Timestamp (as float seconds since epoch, in UTC) or None if not found
-        """
-        cursor = self.conn.cursor()
-        cursor.execute(
-            '''SELECT MAX(updated_at) as last_updated FROM urn_mappings WHERE file_name = ? AND project = ?
-            UNION ALL
-            SELECT MAX(updated_at) as last_updated FROM element_references WHERE file_name = ? AND project = ?''',
-            (file_name, project, file_name, project)
-        )
-        rows = cursor.fetchall()
-        dts = []
-        for row in rows:
-            if row and row['last_updated']:
-                # Parse SQLite timestamp to seconds since epoch
-                # SQLite's CURRENT_TIMESTAMP returns UTC time
-                from datetime import datetime, timezone
-                timestamp_str = row['last_updated']
-                # Handle SQLite's default timestamp format
-                # Try to parse with space separator first, then 'T' separator
-                try:
-                    dt = datetime.fromisoformat(timestamp_str.replace(' ', 'T'))
-                except ValueError:
-                    dt = datetime.fromisoformat(timestamp_str)
-                # Assume UTC if no timezone info
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                dts.append(dt.timestamp())
-        if not dts:
-            return None
-        return max(dts)
-            
-    
+    def _get_indexed_hash(self, file_name: str, project: str) -> str | None:
+        """The content hash a file was last indexed from, or None if it is not indexed."""
+        row = self.conn.execute(
+            'SELECT content_hash FROM indexed_files WHERE file_name = ? AND project = ?',
+            (file_name, project)
+        ).fetchone()
+        return row['content_hash'] if row else None
+
     def sync_file(self, file_name: str, project: str, project_directory: Path = PROJECT_DIRECTORY) -> dict:
         """Synchronize a file with the database.
         
-        Checks if the file exists and if it's been modified since last indexing.
-        If modified, removes old entries and re-indexes. If doesn't exist, removes from database.
+        Checks if the file exists and if its contents differ from those it was last indexed
+        from. If they do, removes old entries and re-indexes. If it doesn't exist, removes it
+        from the database. Modification times are not consulted (see `_file_hash`).
         
         Args:
             file_name: The file name (e.g., 'genesis.xml')
@@ -755,19 +799,16 @@ class ReferenceDatabase:
             removed = self.remove_file(file_name, project)
             return {'action': 'removed', 'references': removed}
         
-        # Get file modification time
-        file_mtime = file_path.stat().st_mtime
-        
-        # Get last updated time from database
-        db_last_updated = self._get_file_last_updated(file_name, project)
-        
-        # If not in database or file is newer, (re)index it
-        if db_last_updated is None:
-            # File not in database, add it
+        indexed_hash = self._get_indexed_hash(file_name, project)
+
+        if indexed_hash is None:
+            # Not indexed yet, or its last indexing failed. Clear anything a failed attempt
+            # left behind before indexing it.
+            self.remove_file(file_name, project)
             count = self.index_file(file_path, project, file_name)
             return {'action': 'added', 'references': count}
-        elif file_mtime > db_last_updated:
-            # File modified since last index, re-index
+        elif indexed_hash != _file_hash(file_path):
+            # Contents changed since last index, re-index
             self.remove_file(file_name, project)
             count = self.index_file(file_path, project, file_name)
             return {'action': 'updated', 'references': count}
@@ -786,7 +827,8 @@ class ReferenceDatabase:
             project_directory: Base directory containing project subdirectories
             
         Returns:
-            Dictionary with counts: added, updated, removed, skipped
+            Dictionary with reference counts (added, updated, removed) and file counts
+            (files_added, files_updated, files_removed, skipped)
         """
         project_path = Path(project_directory) / project
         
@@ -795,7 +837,8 @@ class ReferenceDatabase:
             # Project doesn't exist, remove from database
             removed = self.remove_project(project)
             return {'action': 'project_removed', 'references': removed, 
-                   'added': 0, 'updated': 0, 'removed': removed, 'skipped': 0}
+                   'added': 0, 'updated': 0, 'removed': removed, 'skipped': 0,
+                   'files_added': 0, 'files_updated': 0, 'files_removed': 0}
         
         # Get list of XML files on disk
         disk_files = {f.name for f in project_path.glob('*.xml')}
@@ -813,13 +856,17 @@ class ReferenceDatabase:
         added_count = 0
         updated_count = 0
         skipped_count = 0
+        files_added = 0
+        files_updated = 0
         
-        for file_name in disk_files:
+        for file_name in sorted(disk_files):
             result = self.sync_file(file_name, project, project_directory)
             if result['action'] == 'added':
                 added_count += result['references']
+                files_added += 1
             elif result['action'] == 'updated':
                 updated_count += result['references']
+                files_updated += 1
             elif result['action'] == 'skipped':
                 skipped_count += 1
         
@@ -828,7 +875,10 @@ class ReferenceDatabase:
             'added': added_count,
             'updated': updated_count,
             'removed': removed_count,
-            'skipped': skipped_count
+            'skipped': skipped_count,
+            'files_added': files_added,
+            'files_updated': files_updated,
+            'files_removed': len(orphaned_files),
         }
     
     def sync_projects(self, project_directory: Path = PROJECT_DIRECTORY) -> dict:
@@ -864,15 +914,21 @@ class ReferenceDatabase:
         total_added = 0
         total_updated = 0
         total_skipped = 0
+        total_files_added = 0
+        total_files_updated = 0
+        total_files_removed = 0
         project_results = {}
         
-        for project in disk_projects:
+        for project in sorted(disk_projects):
             result = self.sync_project(project, project_directory)
             project_results[project] = result
             total_added += result.get('added', 0)
             total_updated += result.get('updated', 0)
             total_removed += result.get('removed', 0)
             total_skipped += result.get('skipped', 0)
+            total_files_added += result.get('files_added', 0)
+            total_files_updated += result.get('files_updated', 0)
+            total_files_removed += result.get('files_removed', 0)
         
         return {
             'action': 'projects_synced',
@@ -880,6 +936,9 @@ class ReferenceDatabase:
             'total_updated': total_updated,
             'total_removed': total_removed,
             'total_skipped': total_skipped,
+            'total_files_added': total_files_added,
+            'total_files_updated': total_files_updated,
+            'total_files_removed': total_files_removed,
             'projects': project_results,
             'orphaned_projects_removed': len(orphaned_projects)
         }
@@ -935,10 +994,13 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
             print("=" * 70)
             print("Synchronization Complete")
             print("=" * 70)
+            print(f"Files added:     {result['total_files_added']}")
+            print(f"Files updated:   {result['total_files_updated']}")
+            print(f"Files removed:   {result['total_files_removed']}")
+            print(f"Files unchanged: {result['total_skipped']}")
             print(f"Total references added:   {result['total_added']}")
             print(f"Total references updated: {result['total_updated']}")
             print(f"Total references removed: {result['total_removed']}")
-            print(f"Total references skipped: {result['total_skipped']}")
             print(f"Orphaned projects removed: {result['orphaned_projects_removed']}")
             
             # Print per-project details
@@ -947,10 +1009,13 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
                 print("-" * 70)
                 for project, proj_result in sorted(result['projects'].items()):
                     print(f"  {project}:")
-                    print(f"    Added: {proj_result.get('added', 0)}, "
-                          f"Updated: {proj_result.get('updated', 0)}, "
-                          f"Removed: {proj_result.get('removed', 0)}, "
-                          f"Skipped: {proj_result.get('skipped', 0)}")
+                    print(f"    Files added: {proj_result.get('files_added', 0)}, "
+                          f"updated: {proj_result.get('files_updated', 0)}, "
+                          f"removed: {proj_result.get('files_removed', 0)}, "
+                          f"unchanged: {proj_result.get('skipped', 0)}; "
+                          f"references added: {proj_result.get('added', 0)}, "
+                          f"updated: {proj_result.get('updated', 0)}, "
+                          f"removed: {proj_result.get('removed', 0)}")
             
             # Print final database state
             print("\nDatabase State:")
