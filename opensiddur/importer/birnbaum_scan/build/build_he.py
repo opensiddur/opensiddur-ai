@@ -60,6 +60,9 @@ PRAYERS += shabbat_shema_prayers("he")
 from .shabbat_amidah import shared as shabbat_amidah_shared, prayers as shabbat_amidah_prayers
 PRAYERS = shabbat_amidah_shared("he", PRAYERS)
 PRAYERS += shabbat_amidah_prayers("he", PRAYERS)
+from .shabbat_torah import shared as shabbat_torah_shared, prayers as shabbat_torah_prayers
+PRAYERS = shabbat_torah_shared("he", PRAYERS)
+PRAYERS += shabbat_torah_prayers("he", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -592,7 +595,8 @@ def units(project, pages, by_name, amidah_body):
     from .shabbat_shema import units as shabbat_shema_units, extend_service
     from .shabbat_amidah import units as shabbat_amidah_units, extend_service as extend_amidah
     complete = extend_service(result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project) + kabbalat_units(project) + bameh_units(project) + shabbat_arvit_units(project, by_name) + leil_shabbat_units(project) + shabbat_pesukei_units(project, by_name)) + shabbat_shema_units(project, by_name)
-    return extend_amidah(complete, "he" if project==PROJECT_HE else "en") + shabbat_amidah_units(project, by_name)
+    from .shabbat_torah import units as torah_units, extend_service as extend_torah
+    return extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

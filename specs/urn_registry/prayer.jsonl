@@ -615,3 +615,81 @@
 {"urn": "urn:x-opensiddur:text:prayer:yotzer_or/hakol_yodukha", "status": "canonical", "label_en": "yotzer or — hakol yodukha", "parent": "urn:x-opensiddur:text:prayer:yotzer_or"}
 {"urn": "urn:x-opensiddur:text:prayer:yotzer_or/lael_asher_shavat", "status": "canonical", "label_en": "yotzer or — lael asher shavat", "parent": "urn:x-opensiddur:text:prayer:yotzer_or"}
 {"urn": "urn:x-opensiddur:text:prayer:yotzer_or/el_barukh/text", "status": "canonical", "label_en": "yotzer or — el barukh — text", "parent": "urn:x-opensiddur:text:prayer:yotzer_or/el_barukh"}
+{"urn": "urn:x-opensiddur:text:prayer:al_hakol", "status": "canonical", "label_en": "al hakol"}
+{"urn": "urn:x-opensiddur:text:prayer:barukh_shepetrani", "status": "canonical", "label_en": "barukh shepetrani"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh", "status": "context", "label_en": "birkat hachodesh", "note": "Grouping for independently addressable Torah-service prayers."}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah", "status": "context", "label_en": "birkhot haftarah", "note": "Grouping for independently addressable Torah-service prayers."}
+{"urn": "urn:x-opensiddur:text:prayer:echad_elohenu", "status": "canonical", "label_en": "echad elohenu"}
+{"urn": "urn:x-opensiddur:text:prayer:ein_kamokha", "status": "canonical", "label_en": "ein kamokha"}
+{"urn": "urn:x-opensiddur:text:prayer:hanoten_teshuah", "status": "canonical", "label_en": "hanoten teshuah"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh", "status": "context", "label_en": "mi sheberakh", "note": "Grouping for independently addressable Torah-service prayers."}
+{"urn": "urn:x-opensiddur:text:prayer:ribbono_shel_olam", "status": "context", "label_en": "ribbono shel olam", "note": "Grouping for independently addressable Torah-service prayers."}
+{"urn": "urn:x-opensiddur:text:prayer:shelosh_esreh_middot", "status": "context", "label_en": "shelosh esreh middot", "note": "Grouping for independently addressable Torah-service prayers."}
+{"urn": "urn:x-opensiddur:text:prayer:vayaazor", "status": "canonical", "label_en": "vayaazor"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan", "status": "context", "label_en": "yekum purkan", "note": "Grouping for independently addressable Torah-service prayers."}
+{"urn": "urn:x-opensiddur:text:prayer:al_hakol/ayin", "status": "canonical", "label_en": "al hakol — ayin", "parent": "urn:x-opensiddur:text:prayer:al_hakol"}
+{"urn": "urn:x-opensiddur:text:prayer:al_hakol/opening", "status": "canonical", "label_en": "al hakol — opening", "parent": "urn:x-opensiddur:text:prayer:al_hakol"}
+{"urn": "urn:x-opensiddur:text:prayer:al_hakol/veniglah", "status": "canonical", "label_en": "al hakol — veniglah", "parent": "urn:x-opensiddur:text:prayer:al_hakol"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/heytivah", "status": "canonical", "label_en": "av harachamim — heytivah", "parent": "urn:x-opensiddur:text:prayer:av_harachamim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim", "status": "canonical", "label_en": "av harachamim — shokhen meromim", "parent": "urn:x-opensiddur:text:prayer:av_harachamim"}
+{"urn": "urn:x-opensiddur:text:prayer:barukh_shepetrani/text", "status": "canonical", "label_en": "barukh shepetrani — text", "parent": "urn:x-opensiddur:text:prayer:barukh_shepetrani"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/mi_sheasah", "status": "canonical", "label_en": "birkat hachodesh — mi sheasah", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/rosh_chodesh", "status": "canonical", "label_en": "birkat hachodesh — rosh chodesh", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/yechadshehu", "status": "canonical", "label_en": "birkat hachodesh — yechadshehu", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/yehi_ratzon", "status": "canonical", "label_en": "birkat hachodesh — yehi ratzon", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after", "status": "canonical", "label_en": "birkhot haftarah — after", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_festival", "status": "canonical", "label_en": "birkhot haftarah — al hatorah festival", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_shabbat", "status": "canonical", "label_en": "birkhot haftarah — al hatorah shabbat", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/asher_bachar", "status": "canonical", "label_en": "birkhot haftarah — asher bachar", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah"}
+{"urn": "urn:x-opensiddur:text:prayer:echad_elohenu/text", "status": "canonical", "label_en": "echad elohenu — text", "parent": "urn:x-opensiddur:text:prayer:echad_elohenu"}
+{"urn": "urn:x-opensiddur:text:prayer:ein_kamokha/malkhut", "status": "canonical", "label_en": "ein kamokha — malkhut", "parent": "urn:x-opensiddur:text:prayer:ein_kamokha"}
+{"urn": "urn:x-opensiddur:text:prayer:ein_kamokha/melekh", "status": "canonical", "label_en": "ein kamokha — melekh", "parent": "urn:x-opensiddur:text:prayer:ein_kamokha"}
+{"urn": "urn:x-opensiddur:text:prayer:ein_kamokha/oz", "status": "canonical", "label_en": "ein kamokha — oz", "parent": "urn:x-opensiddur:text:prayer:ein_kamokha"}
+{"urn": "urn:x-opensiddur:text:prayer:hanoten_teshuah/closing", "status": "canonical", "label_en": "hanoten teshuah — closing", "parent": "urn:x-opensiddur:text:prayer:hanoten_teshuah"}
+{"urn": "urn:x-opensiddur:text:prayer:hanoten_teshuah/officers", "status": "canonical", "label_en": "hanoten teshuah — officers", "parent": "urn:x-opensiddur:text:prayer:hanoten_teshuah"}
+{"urn": "urn:x-opensiddur:text:prayer:hanoten_teshuah/opening", "status": "canonical", "label_en": "hanoten teshuah — opening", "parent": "urn:x-opensiddur:text:prayer:hanoten_teshuah"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/cholah", "status": "canonical", "label_en": "mi sheberakh — cholah", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/choleh", "status": "canonical", "label_en": "mi sheberakh — choleh", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/kol_hakahal", "status": "canonical", "label_en": "mi sheberakh — kol hakahal", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/oleh_latorah", "status": "canonical", "label_en": "mi sheberakh — oleh latorah", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/yoledet_ubat", "status": "canonical", "label_en": "mi sheberakh — yoledet ubat", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot", "status": "canonical", "label_en": "ribbono shel olam — male mishalot", "parent": "urn:x-opensiddur:text:prayer:ribbono_shel_olam"}
+{"urn": "urn:x-opensiddur:text:prayer:shelosh_esreh_middot/torah_opening", "status": "canonical", "label_en": "shelosh esreh middot — torah opening", "parent": "urn:x-opensiddur:text:prayer:shelosh_esreh_middot"}
+{"urn": "urn:x-opensiddur:text:prayer:shema/torah_procession", "status": "canonical", "label_en": "shema — torah procession", "parent": "urn:x-opensiddur:text:prayer:shema"}
+{"urn": "urn:x-opensiddur:text:prayer:vayaazor/text", "status": "canonical", "label_en": "vayaazor — text", "parent": "urn:x-opensiddur:text:prayer:vayaazor"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation", "status": "canonical", "label_en": "yekum purkan — congregation", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars", "status": "canonical", "label_en": "yekum purkan — scholars", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/heytivah/text", "status": "canonical", "label_en": "av harachamim — heytivah — text", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/heytivah"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim/opening", "status": "canonical", "label_en": "av harachamim — shokhen meromim — opening", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim/prophets", "status": "canonical", "label_en": "av harachamim — shokhen meromim — prophets", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim/veomer", "status": "canonical", "label_en": "av harachamim — shokhen meromim — veomer", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim/veomer_again", "status": "canonical", "label_en": "av harachamim — shokhen meromim — veomer again", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim"}
+{"urn": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim/writings", "status": "canonical", "label_en": "av harachamim — shokhen meromim — writings", "parent": "urn:x-opensiddur:text:prayer:av_harachamim/shokhen_meromim"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/mi_sheasah/text", "status": "canonical", "label_en": "birkat hachodesh — mi sheasah — text", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh/mi_sheasah"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/rosh_chodesh/text", "status": "canonical", "label_en": "birkat hachodesh — rosh chodesh — text", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh/rosh_chodesh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/yechadshehu/text", "status": "canonical", "label_en": "birkat hachodesh — yechadshehu — text", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh/yechadshehu"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hachodesh/yehi_ratzon/text", "status": "canonical", "label_en": "birkat hachodesh — yehi ratzon — text", "parent": "urn:x-opensiddur:text:prayer:birkat_hachodesh/yehi_ratzon"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after/neeman", "status": "canonical", "label_en": "birkhot haftarah — after — neeman", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after/rachem", "status": "canonical", "label_en": "birkhot haftarah — after — rachem", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after/samechenu", "status": "canonical", "label_en": "birkhot haftarah — after — samechenu", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after/tzur", "status": "canonical", "label_en": "birkhot haftarah — after — tzur", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/after"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_festival/al", "status": "canonical", "label_en": "birkhot haftarah — al hatorah festival — al", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_festival"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_festival/seal", "status": "canonical", "label_en": "birkhot haftarah — al hatorah festival — seal", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_festival"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_shabbat/al", "status": "canonical", "label_en": "birkhot haftarah — al hatorah shabbat — al", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_shabbat"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_shabbat/seal", "status": "canonical", "label_en": "birkhot haftarah — al hatorah shabbat — seal", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/al_hatorah_shabbat"}
+{"urn": "urn:x-opensiddur:text:prayer:birkhot_haftarah/asher_bachar/text", "status": "canonical", "label_en": "birkhot haftarah — asher bachar — text", "parent": "urn:x-opensiddur:text:prayer:birkhot_haftarah/asher_bachar"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/cholah/text", "status": "canonical", "label_en": "mi sheberakh — cholah — text", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh/cholah"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/choleh/text", "status": "canonical", "label_en": "mi sheberakh — choleh — text", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh/choleh"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/kol_hakahal/text", "status": "canonical", "label_en": "mi sheberakh — kol hakahal — text", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh/kol_hakahal"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/oleh_latorah/opening", "status": "canonical", "label_en": "mi sheberakh — oleh latorah — opening", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh/oleh_latorah"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheberakh/yoledet_ubat/text", "status": "canonical", "label_en": "mi sheberakh — yoledet ubat — text", "parent": "urn:x-opensiddur:text:prayer:mi_sheberakh/yoledet_ubat"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot/bitachon", "status": "canonical", "label_en": "ribbono shel olam — male mishalot — bitachon", "parent": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot/opening", "status": "canonical", "label_en": "ribbono shel olam — male mishalot — opening", "parent": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot/vaani", "status": "canonical", "label_en": "ribbono shel olam — male mishalot — vaani", "parent": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot/yehi", "status": "canonical", "label_en": "ribbono shel olam — male mishalot — yehi", "parent": "urn:x-opensiddur:text:prayer:ribbono_shel_olam/male_mishalot"}
+{"urn": "urn:x-opensiddur:text:prayer:shelosh_esreh_middot/torah_opening/text", "status": "canonical", "label_en": "shelosh esreh middot — torah opening — text", "parent": "urn:x-opensiddur:text:prayer:shelosh_esreh_middot/torah_opening"}
+{"urn": "urn:x-opensiddur:text:prayer:shema/torah_procession/text", "status": "canonical", "label_en": "shema — torah procession — text", "parent": "urn:x-opensiddur:text:prayer:shema/torah_procession"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation/opening", "status": "canonical", "label_en": "yekum purkan — congregation — opening", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation/text", "status": "canonical", "label_en": "yekum purkan — congregation — text", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars/opening", "status": "canonical", "label_en": "yekum purkan — scholars — opening", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars"}
+{"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars/text", "status": "canonical", "label_en": "yekum purkan — scholars — text", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars"}

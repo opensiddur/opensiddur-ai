@@ -122,6 +122,7 @@ TORAH_FEATURES = (
     "shabbat-nahamu",
     "shabbat-rosh-hodesh",
     "shabbat-mahar-hodesh",
+    "shabbat-mevarchim",
 )
 
 # Hebrew month numbers as pyluach counts them: 1 = Nisan through 12 = Adar, with Adar I as 12
@@ -805,6 +806,26 @@ def _triennial_year(heb: pyluach_dates.HebrewDate) -> int:
     return ((year - _TRIENNIAL_EPOCH_YEAR) % 3) + 1
 
 
+def _is_shabbat_mevarchim(shabbat) -> bool:
+    """Last Sabbath strictly before Rosh Hodesh; Tishrei is not announced.
+
+    Check the first day of a possibly two-day Rosh Hodesh, so a Sabbath
+    which is itself 30 of the old month does not count a second time.
+    """
+    for days in range(1, 8):
+        candidate = shabbat.add(days=days)
+        if candidate.day not in (1, 30):
+            continue
+        first_of_month = candidate.add(days=1) if candidate.day == 30 else candidate
+        if first_of_month.month == _TISHREI:
+            return False
+        first_rosh_hodesh = first_of_month
+        if first_of_month.subtract(days=1).day == 30:
+            first_rosh_hodesh = first_of_month.subtract(days=1)
+        return shabbat < first_rosh_hodesh
+    return False
+
+
 def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     if gdate is None:
@@ -851,6 +872,7 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         # Rosh Hodesh and Mahar Hodesh each carry their own haftarah.
         "shabbat-rosh-hodesh": _rosh_hodesh_day(shabbat) > 0,
         "shabbat-mahar-hodesh": _rosh_hodesh_day(tomorrow) > 0,
+        "shabbat-mevarchim": _is_shabbat_mevarchim(shabbat),
     }
     patterns = _triennial_cycle_patterns(
         year, israel=not snapshot.is_diaspora()

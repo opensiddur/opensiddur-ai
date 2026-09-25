@@ -1217,6 +1217,9 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="shabbat-mahar-hodesh">
       <tei:binary/>
    </tei:f>
+   <tei:f name="shabbat-mevarchim">
+      <tei:binary/>
+   </tei:f>
 </tei:fs>
 ```
 
@@ -1227,6 +1230,11 @@ Every `shabbat-` feature except `shabbat-shira` is defined by the Hebrew date �
 Shabbat on or before a fixed date — not by which parshah falls that week. `shabbat-shira` is
 the exception, since Shirat ha-Yam is in Beshalach. More than one may be true at once: in
 5785, 1 Adar falls on Shabbat and is both `shabbat-shkalim` and `shabbat-rosh-hodesh`.
+
+`shabbat-mevarchim` marks the Sabbath strictly before the first day of the coming
+Rosh Hodesh, excluding Tishrei. For a two-day Rosh Hodesh, day 30 of the old month
+is already Rosh Hodesh and cannot be the announcing Sabbath. This calendar fact
+does not prescribe whether a particular minhag omits Av Harachamim.
 
 `triennial-year` is `1`, `2` or `3`, counting the modern triennial cycle from 5756. The cycle
 turns over at Simhat Torah rather than at Rosh Hashanah, so the Shabbatot of early Tishrei —
