@@ -102,6 +102,22 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Affected projects: ${affected:-<all>}"
 
+      # Schema-validation results are cached between runs so a file is revalidated only when
+      # its content or the schema changed. The cache records the content hashes of files that
+      # passed, stamped with a fingerprint of the built schema (comments stripped -- the build
+      # embeds a timestamp) and the validator code; a mismatched stamp revalidates everything,
+      # so restore-keys never hands one schema's results to another. Failing files are never
+      # recorded, so their errors are reported on every run, which also makes saving after a
+      # failed validation safe. Checks across files (the URN steps below) are not cached. Like
+      # the reference database, the cache belongs to the caller (opensiddur-projects).
+      - name: Restore the schema-validation cache
+        id: schema_cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/schema-validation.json
+          key: schemaval-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml', 'opensiddur-ai/opensiddur/exporter/validate_schema.py', 'opensiddur-ai/opensiddur/importer/util/validation.py') }}-${{ hashFiles('projects/project/**/*.xml') }}
+          restore-keys: schemaval-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml', 'opensiddur-ai/opensiddur/exporter/validate_schema.py', 'opensiddur-ai/opensiddur/importer/util/validation.py') }}-
+
       - name: Validate XML against the schema
         id: schema
         continue-on-error: true
@@ -111,7 +127,15 @@ jobs:
             --project-directory "$GITHUB_WORKSPACE/projects/project" \
             --repo-root "$GITHUB_WORKSPACE/projects" \
             --github-annotations \
+            --cache "$RUNNER_TEMP/schema-validation.json" \
             ${{ steps.scope.outputs.project_args }}
+
+      - name: Save the schema-validation cache
+        if: always() && steps.schema_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/schema-validation.json
+          key: ${{ steps.schema_cache.outputs.cache-primary-key }}
 
       # The reference database is cached between runs so a PR re-indexes only the files it
       # changed (opensiddur-ai#165). refdb decides what to re-index by content hash, not mtime,
