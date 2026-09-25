@@ -13,6 +13,11 @@ and it still wanted his rubrics entered by hand from the scan, because the trans
 does not contain them. Reading the scan first removes the distance instead of correcting
 for it.
 
+**Pointing check for every installment:** a single printed dot may represent both
+holam and a shin/sin dot. Encode each logical mark on its proper letter; for
+example, write `מֹשֶׁה` with U+05B9 on mem and U+05C1 on shin. Do not copy a
+comparison transcription’s omitted mark. See [the combined-dot rule](#a-combined-shin-dot-and-holam-is-two-marks-and-both-are-encoded).
+
 ## What is on disk
 
 The line is drawn at what a machine can remake. **Images stay out of every repository**: a

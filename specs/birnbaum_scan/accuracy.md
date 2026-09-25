@@ -928,8 +928,9 @@ Full Kaddish, stopping before the Torah-service heading. Paired new readings,
 shared text, page turns, instructions, three new commentary paragraphs and
 eight printed source citations are recorded in
 `scan_reading/readings/shabbat_amidah.md`. The local Wikisource snapshot was
-compared afterward; enlarged scans confirm סִינָי, full לוּחוֹת, the shared
-shin/holam dot in משֶׁה, and the Hebrew quotation in the Amram Gaon note.
+compared afterward; enlarged scans confirm סִינָי, full לוּחוֹת, the
+combined shin/holam glyph in מֹשֶׁה, and the Hebrew quotation in the Amram Gaon
+note. Both logical marks are encoded, following the combined-dot policy.
 
 The four new prayer paragraphs use existing canonical prayer URNs. Veshamru
 and the closing Kedushat Hayom paragraph reuse the Sabbath evening readings;
@@ -967,3 +968,11 @@ Amidah and Full Kaddish as siblings beneath Sabbath/festival Shacharit, with
 Kedushah beneath the Amidah. The full-book Amidah opening, explicit Chol Hamoed
 instruction and Hallel/Kaddish boundary were visually checked. The refreshed
 complete artifact is `output/birnbaum_parallel.pdf`.
+
+A subsequent audit of both generated Birnbaum language projects checked pointed
+words for missing vowels adjacent to shin/sin dots and missing shin/sin dots.
+It found one omitted logical holam: Moses in Yismach Moshe. This is corrected
+to `מֹשֶׁה` (U+05B9 on mem, U+05C1 on shin). The other candidates were normal
+vowel-letter spellings, final consonants or words joined by maqqef. Existing
+pointed occurrences elsewhere already encode both marks. Raw comparison
+transcriptions and examples documenting their omissions remain unchanged.
