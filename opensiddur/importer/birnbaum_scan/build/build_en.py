@@ -54,6 +54,9 @@ PRAYERS += shabbat_arvit_prayers("en", PRAYERS)
 from .leil_shabbat import shared as leil_shabbat_shared, prayers as leil_shabbat_prayers
 PRAYERS = leil_shabbat_shared("en", PRAYERS)
 PRAYERS += leil_shabbat_prayers("en", PRAYERS)
+from .shabbat_pesukei import shared as shabbat_pesukei_shared, prayers as shabbat_pesukei_prayers
+PRAYERS = shabbat_pesukei_shared("en", PRAYERS)
+PRAYERS += shabbat_pesukei_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -94,7 +97,11 @@ from .notes_shabbat_arvit import NOTES as SHABBAT_ARVIT_NOTES
 
 from .notes_leil_shabbat import NOTES as LEIL_SHABBAT_NOTES
 
+from .notes_shabbat_pesukei import NOTES as SHABBAT_PESUKEI_NOTES
+
 APPARATUS = {
+    "notes_shabbat_pesukei": dict(entries=SHABBAT_PESUKEI_NOTES, slug="birnbaum_1949/shabbat_pesukei",
+        title="Notes on Sabbath and festival verses of praise", first=305, last=334),
     "notes_leil_shabbat": dict(entries=LEIL_SHABBAT_NOTES, slug="birnbaum_1949/leil_shabbat",
         title="Notes on the Friday-night home prayers and hymns", first=283, last=298),
     "notes_shabbat_arvit": dict(entries=SHABBAT_ARVIT_NOTES, slug="birnbaum_1949/shabbat_arvit",
