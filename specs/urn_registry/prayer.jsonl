@@ -611,3 +611,7 @@
 {"urn": "urn:x-opensiddur:text:prayer:nishmat/ilu", "status": "canonical", "label_en": "nishmat — ilu", "parent": "urn:x-opensiddur:text:prayer:nishmat"}
 {"urn": "urn:x-opensiddur:text:prayer:nishmat/opening", "status": "canonical", "label_en": "nishmat — opening", "parent": "urn:x-opensiddur:text:prayer:nishmat"}
 {"urn": "urn:x-opensiddur:text:prayer:shokhen_ad/psalms_33_1", "status": "canonical", "label_en": "shokhen ad — psalms 33 1", "parent": "urn:x-opensiddur:text:prayer:shokhen_ad"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/ein_kearkekha", "status": "canonical", "label_en": "yotzer or — ein kearkekha", "parent": "urn:x-opensiddur:text:prayer:yotzer_or"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/hakol_yodukha", "status": "canonical", "label_en": "yotzer or — hakol yodukha", "parent": "urn:x-opensiddur:text:prayer:yotzer_or"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/lael_asher_shavat", "status": "canonical", "label_en": "yotzer or — lael asher shavat", "parent": "urn:x-opensiddur:text:prayer:yotzer_or"}
+{"urn": "urn:x-opensiddur:text:prayer:yotzer_or/el_barukh/text", "status": "canonical", "label_en": "yotzer or — el barukh — text", "parent": "urn:x-opensiddur:text:prayer:yotzer_or/el_barukh"}

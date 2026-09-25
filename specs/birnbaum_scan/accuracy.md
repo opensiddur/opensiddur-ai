@@ -871,3 +871,52 @@ The full-book outline places the shared preliminary service and opening under
 Sabbath/festival Shacharit, with the psalms, Nishmat and Half Kaddish beneath its
 Pesukei Dezimrah child. Artifacts: `output/birnbaum_shabbat_pesukei/parallel.pdf`
 and the refreshed `output/birnbaum_parallel.pdf`.
+
+## Sabbath and festival Shema blessings, printed 335–350 (IA n359–n374)
+
+All sixteen images were read directly, beginning at Barekhu after Half Kaddish
+and ending after the redemption blessing and festival-Amidah page reference.
+The Amidah heading, instructions and text are excluded. Paired readings,
+shared passages, rubrics, the three new notes and six repeated printed notes
+are recorded in `scan_reading/readings/shabbat_shema.md`.
+
+Yotzer Or has mutually exclusive festival-weekday and Sabbath openings. A
+festival falling on Sabbath uses the Sabbath version; unknown calendar settings
+retain both instructions. El Adon has six stanza milestones. La’el Asher
+Shavat’s Psalm 92 quotation has biblical sources, preserving the existing
+complete chapter as the canonical address. The new group extends the existing
+addressable Sabbath/festival Shacharit service after Pesukei Dezimrah.
+
+Ha-me’ir and Ahavah Rabbah preserve their locally different English wording.
+Their matching Hebrew is reused from the established readings, with local
+correspondences and source attributes; the remaining shared passages are
+transcluded with repeat-printing provenance. This keeps the English variants
+aligned with the matching Hebrew. The festival El Barukh transcludes an inner
+text range so its different printed note replaces the weekday occurrence’s
+commentary. Other commentary on shared canonical URNs follows those passages
+as in the existing encoding; the source record distinguishes it from notes
+actually repeated in this printing.
+
+The local Wikisource snapshot was compared after the direct reading. Enlarged
+crops confirm dagesh in הַמְּשֻׁבָּח, וְהַמְּפֹאָר and לְּךָ, sheva in
+כְּעֶרְכְּךָ, full סוֹבְבִים אוֹתוֹ, qamats in לָאֵל מֶלֶךְ and יִתְקַדָּשׁ,
+and נוגה in the commentary. The printed כַּייָ and לַייָ are retained without
+an additional sheva under the first yod.
+
+All 35 changed/new XML documents validate. Both projects resolve all references;
+the full-corpus registry check has zero errors or warnings. All 231 importer
+tests pass. A compiled-corpus audit checks both languages, stanza boundaries,
+complete new commentary, shared continuation once, service order, exclusion
+of Half Kaddish and Amidah, and alignment of the local translation variants.
+Sabbath, festival weekday, festival Sabbath, private and unknown-calendar
+compilations all select the expected text. Comparing the complete editions by
+language confirms that all earlier liturgical text is unchanged.
+
+The 14-page section proof was visually checked at both conditional branches,
+El Adon and its commentary, Ahavah Rabbah, Shema’s private-recitation instruction,
+and the closing redemption blessing. Artifact:
+`output/birnbaum_shabbat_shema/parallel.pdf`.
+
+The regenerated complete parallel edition has 363 pages. Its outline places this
+section under Sabbath/festival Shacharit, following Pesukei Dezimrah. The full
+artifact is refreshed at `output/birnbaum_parallel.pdf`.

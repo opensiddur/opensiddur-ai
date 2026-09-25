@@ -57,6 +57,9 @@ PRAYERS += leil_shabbat_prayers("en", PRAYERS)
 from .shabbat_pesukei import shared as shabbat_pesukei_shared, prayers as shabbat_pesukei_prayers
 PRAYERS = shabbat_pesukei_shared("en", PRAYERS)
 PRAYERS += shabbat_pesukei_prayers("en")
+from .shabbat_shema import shared as shabbat_shema_shared, prayers as shabbat_shema_prayers
+PRAYERS = shabbat_shema_shared("en", PRAYERS)
+PRAYERS += shabbat_shema_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -99,7 +102,10 @@ from .notes_leil_shabbat import NOTES as LEIL_SHABBAT_NOTES
 
 from .notes_shabbat_pesukei import NOTES as SHABBAT_PESUKEI_NOTES
 
+from .notes_shabbat_shema import NOTES as SHABBAT_SHEMA_NOTES
+
 APPARATUS = {
+    "notes_shabbat_shema": dict(entries=SHABBAT_SHEMA_NOTES, slug="birnbaum_1949/shabbat_shema", title="Notes on Sabbath and festival Shema blessings", first=337, last=340),
     "notes_shabbat_pesukei": dict(entries=SHABBAT_PESUKEI_NOTES, slug="birnbaum_1949/shabbat_pesukei",
         title="Notes on Sabbath and festival verses of praise", first=305, last=334),
     "notes_leil_shabbat": dict(entries=LEIL_SHABBAT_NOTES, slug="birnbaum_1949/leil_shabbat",
