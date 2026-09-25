@@ -835,3 +835,39 @@ language tags for numbered streams; a synthetic regression test covers Aramaic,
 Hebrew, regional Hebrew, and Latin-script Aramaic. Kiddush transcludes the three
 Genesis verses individually to avoid inheriting the synagogue occurrence’s separate
 source note alongside the combined Genesis 1:31; 2:1–3 note printed here.
+
+## Sabbath and festival Pesukei Dezimrah, printed 299–336 (IA n323–n360)
+
+All 38 images were read directly, through Half Kaddish and before Barekhu. The
+paired readings, page turns, Reader cues, twelve new notes, six repeated source
+citations, and collation decisions are recorded in
+`scan_reading/readings/shabbat_pesukei.md`. The local Wikisource snapshot was
+compared after the scan reading. Enlargements confirm the full spellings in
+Psalms 19:15, 34:23, 135:2 and 135:21, אותת in 135:9, and מֵייָ in 33:8.
+The scan's English “the the Lord” in Psalm 135:19 is retained.
+
+Seven new complete chapters (19, 34, 90, 91, 135, 136, 33) add 140 verse
+milestones per language. Psalms 92–93 and the weekday common material are reused
+with repeat-printing provenance. Earlier quotations of verses from the new
+chapters retain their own wording, local milestones, and biblical sources. The
+Hebrew-only repetition of Psalm 91:16 is outside the chapter correspondence.
+Psalm 136's refrain belongs within each verse.
+
+The addressable Sabbath/festival Shacharit service includes the shared preliminary
+morning service, Psalm 30 and Mourners' Kaddish, then its Pesukei Dezimrah child
+from Hareni Mezamen through Half Kaddish. The Reader's festival entry at Ha'el
+Betaatzumot and Sabbath entry at Shochen Ad remain performance instructions inside
+the Nishmat section. Both Kaddishes have minyan gates in their callers. The
+service declares Shacharit without forcing a calendar date.
+
+Both generated projects pass schema validation and reference resolution. The full
+corpus registry check has no errors or warnings. All 228 Birnbaum scan importer
+tests pass; a corpus audit also checks the 140 verses, migrated quotation addresses,
+service order, repeated verse, minyan gates, Reader cues, and all twelve new notes.
+
+The 37-page section proof and 352-page full parallel edition were rendered and
+visually checked at Nishmat, the two Reader entry cues, Psalm 136, and Half Kaddish.
+The full-book outline places the shared preliminary service and opening under
+Sabbath/festival Shacharit, with the psalms, Nishmat and Half Kaddish beneath its
+Pesukei Dezimrah child. Artifacts: `output/birnbaum_shabbat_pesukei/parallel.pdf`
+and the refreshed `output/birnbaum_parallel.pdf`.

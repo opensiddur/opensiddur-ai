@@ -606,3 +606,8 @@
 {"urn": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim_adon_kol_haneshamot/2", "status": "canonical", "label_en": "Ribbon kol ha‘olamim, Adon kol haneshamot (Friday-night meditation) — 2", "parent": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim_adon_kol_haneshamot"}
 {"urn": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim_adon_kol_haneshamot/3", "status": "canonical", "label_en": "Ribbon kol ha‘olamim, Adon kol haneshamot (Friday-night meditation) — 3", "parent": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim_adon_kol_haneshamot"}
 {"urn": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim_adon_kol_haneshamot/4", "status": "canonical", "label_en": "Ribbon kol ha‘olamim, Adon kol haneshamot (Friday-night meditation) — 4", "parent": "urn:x-opensiddur:text:prayer:ribbon_kol_haolamim_adon_kol_haneshamot"}
+{"urn": "urn:x-opensiddur:text:prayer:nishmat/al_ken", "status": "canonical", "label_en": "nishmat — al ken", "parent": "urn:x-opensiddur:text:prayer:nishmat"}
+{"urn": "urn:x-opensiddur:text:prayer:nishmat/elohei", "status": "canonical", "label_en": "nishmat — elohei", "parent": "urn:x-opensiddur:text:prayer:nishmat"}
+{"urn": "urn:x-opensiddur:text:prayer:nishmat/ilu", "status": "canonical", "label_en": "nishmat — ilu", "parent": "urn:x-opensiddur:text:prayer:nishmat"}
+{"urn": "urn:x-opensiddur:text:prayer:nishmat/opening", "status": "canonical", "label_en": "nishmat — opening", "parent": "urn:x-opensiddur:text:prayer:nishmat"}
+{"urn": "urn:x-opensiddur:text:prayer:shokhen_ad/psalms_33_1", "status": "canonical", "label_en": "shokhen ad — psalms 33 1", "parent": "urn:x-opensiddur:text:prayer:shokhen_ad"}

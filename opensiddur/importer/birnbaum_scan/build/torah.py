@@ -15,7 +15,7 @@ SIGIL = '1949 chol/shacharit/torah'
 URNS = {key: ROOT + '/' + key for key in PASSAGES}
 URNS.update({
     'berikh_shemeh': PRAYER + 'berikh_shemeh',
-    'gadelu': BIBLE + 'psalms/34/4',
+    'gadelu': ROOT + '/gadelu',
     'av_harachamim': PRAYER + 'av_harachamim/hu_yerachem',
     'veatem': BIBLE + 'deuteronomy/4/4',
     'asher_natan': PRAYER + 'birkhot_hatorah/asher_natan',
@@ -103,7 +103,7 @@ def prayers(lang):
                 attributes = f' source="{original}"'
             value = text_xml((he, en)[side])
             if key in ('gadelu', 'veatem'):
-                parts.append(value)
+                parts.append(f'<tei:seg{attributes}>{value}</tei:seg>' if attributes else value)
             else:
                 if attributes:
                     value = f'<tei:seg{attributes}>{value}</tei:seg>'
