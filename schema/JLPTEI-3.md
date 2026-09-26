@@ -845,6 +845,42 @@ A short section of quoted text may be used to label the note, enclosed in `tei:l
 
 Editorial and commentary notes may also have a `corresp` attribute in the `urn:x-opensiddur:notes:` namespace.
 
+#### Conditional notes
+
+A standoff note is found by its target alone, so it is set wherever its target's text is, including every place that
+text is transcluded. Some notes only make sense in some of those places: a note on the opening of the Amidah that
+speaks of the eighteen weekday benedictions does not belong in the Sabbath Amidah, which transcludes the same
+opening. Such a note begins with a `j:condition` element that holds a condition, written as for
+[`j:conditional`](#declaring-conditions) (feature structures and the `j:all`, `j:any`, `j:none` and `j:one`
+operators):
+
+```xml
+<tei:standOff type="notes">
+   <tei:note type="commentary" target="urn:x-opensiddur:text:prayer:amidah/adonai_sefatai">
+      <j:condition>
+         <tei:fs type="opensiddur:holiday-aggregate">
+            <tei:f name="shabbat"><tei:binary value="false"/></tei:f>
+            <tei:f name="yom-tov"><tei:binary value="false"/></tei:f>
+         </tei:fs>
+      </j:condition>
+      <tei:p><tei:label xml:lang="he">שמונה עשרה</tei:label> is spoken of in the Talmud as ...</tei:p>
+   </tei:note>
+</tei:standOff>
+```
+
+The condition is evaluated against the settings in scope where the note would be set, that is, at the opening of
+its target in the compiled text. If it is false, the note is not set there, and neither is its reference mark. If
+it is true or undefined, the note is set. The condition is never printed.
+
+`j:condition` decides whether the whole note is set. It is a different thing from conditional text *inside* a note,
+which is written with `j:conditional` and `j:endConditional` in the note's body as anywhere else: that note is
+always set, and only the conditional words come and go. A note may have both. `j:condition` must be the first child
+of a note in a `tei:standOff[@type="notes"]`, and may not be used on an instruction; an instruction that applies
+only under some condition goes inside the `j:conditional` that governs its text.
+
+Whether a note that *is* in context is set at every occurrence of its target, or only the first, is a choice of the
+edition rather than of the text; see `print_once` in the exporter settings.
+
 
 ### Conditional text
 
@@ -1565,6 +1601,9 @@ Within the JLPTEI processing model, if any attribute setting is changed and it 
 #### Declaring conditions
 
 The scope of a condition is started by the `j:conditional` element and closed by the `j:endConditional` element. The condition itself is specified within the `j:conditional` element.
+
+The same condition syntax is used by `j:condition`, which decides whether a standoff note is set at all (see
+[Conditional notes](#conditional-notes)).
 
 `j:conditional` elements must have an `xml:id` attribute, that `j:endConditional` elements reference in their `target` attribute to end the conditional scope.
 

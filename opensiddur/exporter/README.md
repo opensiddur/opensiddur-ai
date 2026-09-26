@@ -68,6 +68,22 @@ annotations:
 From which projects should notes (such as editorial notes or commentary) be derived?
 Unlike instructions and transclusions, annotations are not in prioritized order; the annotations from all listed projects will be included when available.
 
+### Printing annotations once
+
+```yaml
+print_once:
+  commentary: true
+  editorial: false
+```
+
+A note is set wherever its target is, so text that is transcluded more than once repeats its notes. Each flag
+makes the notes of the same `@type` set only at the first occurrence of their target in the book. Both are
+`false` by default. Instructions and citations belong to every occurrence of their text and cannot be listed.
+
+This decides how often a note is set. Whether a note belongs in a given context at all is decided by the note's own
+`j:condition` (see *Conditional notes* in `schema/JLPTEI-3.md`). A note that is out of context where its text first
+appears is set at the first occurrence where it is in context.
+
 ### Parallel texts
 
 ```yaml

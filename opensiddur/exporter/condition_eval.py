@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Protocol
 
+from lxml import etree
 from lxml.etree import ElementBase
 
 from opensiddur.exporter.conditional_settings import (
@@ -176,10 +177,11 @@ def _condition_children(conditional_el: ElementBase) -> list[ElementBase]:
 
 
 def parse_condition_element(conditional_el: ElementBase) -> ConditionNode:
-    """Parse condition specification from a j:conditional element."""
+    """Parse condition specification from a j:conditional or j:condition element."""
     children = _condition_children(conditional_el)
     if not children:
-        raise ValueError("j:conditional requires at least one condition child")
+        raise ValueError(
+            f"{etree.QName(conditional_el).localname} requires at least one condition child")
     if len(children) == 1:
         return _parse_condition_node(children[0])
     return CombinatorCondition(

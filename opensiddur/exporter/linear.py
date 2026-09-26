@@ -91,6 +91,12 @@ class LinearData(BaseModel):
     instruction_priority: list[str] = Field(default_factory=list)
     # projects from which to include annotations (not a priority list)
     annotation_projects: list[str] = Field(default_factory=list)
+    # note @type values printed only at their first occurrence in the book (settings `print_once`)
+    annotation_print_once_types: set[str] = Field(default_factory=set)
+    # (project, file_name, element_path) of every print-once annotation already printed.
+    # Book-global: never truncated by settings checkpoints, only rolled back when a parallel
+    # counterpart compilation fails and its output is discarded.
+    printed_annotations: set[tuple[str, str, str]] = Field(default_factory=set)
     # processing context includes processor-specific data. Because there is recursion, it acts as a stack.
     processing_context: list[dict[str, Any]] = Field(default_factory=list)
     # projects to search for parallel text content (in priority order)

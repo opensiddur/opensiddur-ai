@@ -173,6 +173,7 @@ The compiler uses a **processing context state machine** — see `specs/COMPILER
 - `j:read` / `j:written` — kri/ktiv pair inside `tei:choice`
 - `j:declare` / `j:endDeclare` — scoped setting declarations; every `j:declare` must have `xml:id`, and matching `j:endDeclare` uses required `target`
 - `j:conditional` / `j:endConditional` — conditional text blocks; `j:conditional` must have `xml:id` when closed by `j:endConditional`, which uses required `target`
+- `j:condition` — first child of a standoff note (not an instruction); a condition deciding whether the whole note is set, evaluated where it would be set. Not a scope (no end marker); conditional words *inside* a note still use `j:conditional`
 - `j:all` / `j:any` / `j:none` / `j:one` — boolean operators for conditions
 
 Contributor credits are **not** a `j:` element. They belong in the TEI header as `tei:respStmt` entries with contributor URNs on `tei:name/@ref` (see `schema/JLPTEI-3.md`).
