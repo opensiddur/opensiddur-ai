@@ -1321,9 +1321,9 @@ the annual reading. The humash conditions its haftarot this way:
 </j:conditional>
 ```
 
-Always one feature per test: `j:all` over a false test and an undefined one is `undefined`
-rather than false, per the truth tables below, so a condition that has to be decisive must turn
-on a single feature that always has a value. Where a reading covers several cases — the humash's
+Always one feature per test: `j:all` over a true test and an undefined one is `undefined`, per
+the truth tables below, so a condition that has to be decisive must turn on a single feature
+that always has a value. Where a reading covers several cases — the humash's
 annual haftarah stands in for the cycle years a parshah has no reading for — the tests are
 combined with `j:any`, which does answer true as soon as one of them is true.
 
@@ -1599,8 +1599,8 @@ The truth tables are here:
 | all    | True | False | Undefined |
 | --- | --- | --- | --- |
 | True | True | False | Undefined |
-| False | False | False | Undefined |
-| Undefined | Undefined | Undefined | Undefined |
+| False | False | False | False |
+| Undefined | Undefined | False | Undefined |
 
 | any    | True | False | Undefined |
 | --- | --- | --- | --- |
@@ -1619,6 +1619,21 @@ The truth tables are here:
 | True | False | False | False |
 | False | False | True | Undefined |
 | Undefined | False | Undefined | Undefined |
+
+A single `false` settles `all`, whatever else is `undefined`: if one requirement is known to
+fail, the text is known not to be said, and nothing the undefined features could turn out to be
+would change that. `all` is `undefined` only when nothing is false and something is undefined.
+The same holds for a `tei:fs` with several `tei:f` children, which is an implicit `all`.
+
+The tables extend to any number of operands:
+
+* `all` is false if any operand is false, otherwise undefined if any is undefined, otherwise true.
+* `any` is true if any operand is true, otherwise undefined if any is undefined, otherwise false.
+* `one` is false if more than one operand is true, otherwise undefined if any is undefined,
+  otherwise true if exactly one is true and false if none is.
+* `none` is false if any operand is true, otherwise undefined if any is undefined, otherwise true.
+
+With no operands, `all` and `none` are true and `any` and `one` are false.
 
 
 ### Alignment

@@ -1,6 +1,8 @@
 """Unit tests for j:conditional parsing and evaluation."""
 
+import re
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from lxml import etree
@@ -8,6 +10,7 @@ from lxml import etree
 from opensiddur.exporter.condition_eval import (
     CombinatorCondition,
     TriState,
+    _combine,
     evaluate_condition,
     parse_condition_element,
 )
@@ -16,6 +19,8 @@ from opensiddur.exporter.linear import NumericValue, Undefined
 
 TEI = TEI_NS
 J = JLPTEI_NAMESPACE
+
+SPEC = Path(__file__).resolve().parents[3] / "schema" / "JLPTEI-3.md"
 
 
 def _mock_processor(settings: dict[tuple[str, str], object]) -> MagicMock:
@@ -525,6 +530,49 @@ class TestCombinatorEdgeCases(unittest.TestCase):
         node = parse_condition_element(el)
         proc = _mock_processor({("t", "a"): False, ("t", "b"): True, ("t", "c"): True})
         self.assertEqual(evaluate_condition(node, proc), TriState.TRUE)
+
+
+class TestSpecTruthTables(unittest.TestCase):
+    """The truth tables in the spec are the ones the evaluator implements.
+
+    Anyone encoding a condition predicts its result from the tables in
+    ``schema/JLPTEI-3.md``, so every cell is checked against ``_combine``.
+    """
+
+    _SECTION = re.compile(r"^##### Truth tables\n(.*?)(?=^#)", re.MULTILINE | re.DOTALL)
+    _VALUES = {"True": TriState.TRUE, "False": TriState.FALSE, "Undefined": TriState.UNDEFINED}
+
+    def _tables(self) -> dict[str, dict[tuple[TriState, TriState], TriState]]:
+        section = self._SECTION.search(SPEC.read_text(encoding="utf-8"))
+        self.assertIsNotNone(section, "no '##### Truth tables' section in the spec")
+        tables: dict[str, dict[tuple[TriState, TriState], TriState]] = {}
+        columns: list[TriState] = []
+        table: dict[tuple[TriState, TriState], TriState] | None = None
+        for line in section.group(1).splitlines():
+            if not line.startswith("|"):
+                table = None
+                continue
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if table is None:
+                table = tables.setdefault(cells[0], {})
+                columns = [self._VALUES[cell] for cell in cells[1:]]
+            elif set(cells) != {"---"}:
+                row = self._VALUES[cells[0]]
+                for column, cell in zip(columns, cells[1:], strict=True):
+                    table[(row, column)] = self._VALUES[cell]
+        return tables
+
+    def test_every_table_is_documented_in_full(self):
+        tables = self._tables()
+        self.assertEqual(set(tables), {"all", "any", "one", "none"})
+        for op, table in tables.items():
+            self.assertEqual(len(table), 9, op)
+
+    def test_tables_match_evaluator(self):
+        for op, table in self._tables().items():
+            for (row, column), expected in table.items():
+                with self.subTest(op=op, row=row.value, column=column.value):
+                    self.assertEqual(_combine(op.upper(), [row, column]), expected)
 
 
 if __name__ == "__main__":
