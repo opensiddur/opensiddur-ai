@@ -83,6 +83,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alternative names for a service.
 
 ### Fixed
+- `ReferenceDatabase.get_references_to` dropped references in different files or projects that
+  happened to sit at the same element path, such as the first note of two notes files targeting
+  the same URN; only one of them reached the compiled output. It now treats references as the
+  same only when project, file and path all match (#173).
 - Hebrew reads the right way round in the table of contents. A contents entry is written once
   and read twice — hyperref builds a PDF outline string from it, and `\tableofcontents`
   typesets it on a page — and only the outline existed when it was first written, so the entry

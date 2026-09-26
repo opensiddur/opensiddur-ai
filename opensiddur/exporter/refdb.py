@@ -409,12 +409,15 @@ class ReferenceDatabase:
         else:
             by_id = []
 
+        # An element path is only unique within one file, so the key needs the file and project
+        # too; otherwise same-shaped files (e.g. the first note of two notes files) collapse.
         by_both = []
-        paths = set()
+        seen = set()
         for row in by_urn + by_id:
-            if row['element_path'] in paths:
+            key = (row['project'], row['file_name'], row['element_path'])
+            if key in seen:
                 continue
-            paths.add(row['element_path'])
+            seen.add(key)
             by_both.append(row)
 
         return [Reference(element_path=row['element_path'], element_tag=row['element_tag'], element_type=row['element_type'], target_start=row['target_start'], target_end=row['target_end'], target_is_id=row['target_is_id'], corresponding_urn=row['corresponding_urn'], project=row['project'], file_name=row['file_name']) for row in by_both]

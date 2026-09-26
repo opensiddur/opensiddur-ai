@@ -1189,6 +1189,49 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         element_types = {r.element_type for r in results}
         self.assertEqual(element_types, {"type1", "type2"})
 
+    def _create_first_standoff_note(self, target: str) -> ElementBase:
+        """Helper to create the first note of a standoff notes file.
+
+        Every notes file has this shape, so the note's element path is the same in all of them.
+        """
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        standoff = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}standOff")
+        note = etree.SubElement(standoff, "{http://www.tei-c.org/ns/1.0}note")
+        note.set("target", target)
+        return note
+
+    def test_get_references_to_urn_same_path_different_files(self):
+        """References at the same element path in different files are all returned."""
+        target = "urn:x-opensiddur:test:target"
+        self.db.add_reference("proj1", "notes_a.xml", self._create_first_standoff_note(target))
+        self.db.add_reference("proj1", "notes_b.xml", self._create_first_standoff_note(target))
+
+        results = self.db.get_references_to(urn=target)
+
+        self.assertEqual(len(results), 2)
+        self.assertEqual(len({r.element_path for r in results}), 1)
+        self.assertEqual({r.file_name for r in results}, {"notes_a.xml", "notes_b.xml"})
+
+    def test_get_references_to_urn_same_path_different_projects(self):
+        """References at the same element path in different projects are all returned."""
+        target = "urn:x-opensiddur:test:target"
+        self.db.add_reference("projA", "notes.xml", self._create_first_standoff_note(target))
+        self.db.add_reference("projB", "notes.xml", self._create_first_standoff_note(target))
+
+        results = self.db.get_references_to(urn=target)
+
+        self.assertEqual(len(results), 2)
+        self.assertEqual({r.project for r in results}, {"projA", "projB"})
+
+    def test_get_references_to_row_found_by_both_queries_returned_once(self):
+        """A reference that both the URN and the ID query find is returned once."""
+        self.db.add_reference("proj1", "file1.xml", self._create_element_with_target(target="#verse1"))
+
+        results = self.db.get_references_to(
+            urn="#verse1", id="verse1", project="proj1", file_name="file1.xml")
+
+        self.assertEqual(len(results), 1)
+
     def test_get_references_to_id(self):
         """Test retrieving references to an ID."""
         elem = self._create_element_with_target(target="#verse1")
