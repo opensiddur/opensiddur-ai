@@ -709,3 +709,10 @@
 {"urn": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori", "status": "canonical", "label_en": "Pittum Haketoret — shorter Hatzori passage"}
 {"urn": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori/rashbag", "status": "canonical", "label_en": "Pittum Haketoret — shorter Rabban Shimon ben Gamliel passage", "parent": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori"}
 {"urn": "urn:x-opensiddur:text:prayer:amidah/atah_echad", "status": "canonical", "label_en": "amidah — atah echad", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_meorei_haesh", "status": "canonical", "label_en": "borei meorei haesh"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_minei_vesamim", "status": "canonical", "label_en": "borei minei vesamim"}
+{"urn": "urn:x-opensiddur:text:prayer:hamavdil_bein_kodesh_lechol", "status": "canonical", "label_en": "hamavdil bein kodesh lechol"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim", "status": "canonical", "label_en": "ribbon haolamim"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim/text", "status": "canonical", "label_en": "ribbon haolamim — text"}
+{"urn": "urn:x-opensiddur:text:prayer:ufetah_lanu", "status": "canonical", "label_en": "ufetah lanu"}
+{"urn": "urn:x-opensiddur:text:prayer:ufetah_lanu/text", "status": "canonical", "label_en": "ufetah lanu — text"}

@@ -224,3 +224,10 @@ typography:
   page_footer:
     all:
       center: {text: "{page}", language: en}
+
+# Saturday-night additions (Birnbaum): opensiddur:motzaei-shabbat/omit-vihi-noam
+# is derived from the Hebrew date and Israel/diaspora locale. It is true when
+# Yom Tov falls Sunday–Friday of that Hebrew week. Erev Pesach alone does not
+# cause omission. Missing date or locale leaves this condition undecided.
+# opensiddur:observance/synagogue-havdalah selects the synagogue's shorter
+# Havdalah opening; false includes the introductory verses for home recitation.

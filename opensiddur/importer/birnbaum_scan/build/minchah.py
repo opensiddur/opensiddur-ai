@@ -116,9 +116,14 @@ def amidah(lang, by_name):
                     '<j:all>'+FAST+feature(RECITATION, 'repetition', '<tei:binary value="false"/>')+'</j:all>',
                     passage('aneinu/opening')), passage('tefilah/seal')]
         elif name == 'amidah_birkat_kohanim':
-            parts += [instruction('On fast days, the Reader recites here the priestly blessing '
+            # The surrounding rubric is English even in the Hebrew project.
+            # Mark the Hebrew title explicitly so its words render right to left.
+            peace_title = ('<tei:foreign xml:lang="he">שים שלום</tei:foreign>'
+                           if lang == 'he' else '“O grant peace…”')
+            parts += [('<tei:note type="instruction" xml:lang="en">'
+                'On fast days, the Reader recites here the priestly blessing '
                 f'(page {93+int(lang=="en")}) and instead of the following paragraph, '
-                + ('שים שלום' if lang=='he' else '“O grant peace…”') + f' is said (page {95+int(lang=="en")}).'),
+                + peace_title + f' is said (page {95+int(lang=="en")}).</tei:note>'),
                 conditional('priestly_blessing', 'On fast days, in the Reader’s repetition:',
                     '<j:all>'+FAST+REPETITION+MINYAN+'</j:all>', passage('birkat_kohanim'))]
         elif name == 'amidah_shalom':

@@ -47,7 +47,9 @@ BODY = f"""      <tei:div corresp="{S}siddur">
           <j:transclude type="external" target="{S}shabbat/day_meal"/>
           <j:transclude type="external" target="{S}shabbat/minchah"/>
           {avot_caller()}
+          <j:transclude type="external" target="{S}shabbat/conclusion"/>
         </tei:div>
+        <j:transclude type="external" target="{S}berakhot/birkat_halevanah"/>
       </tei:div>"""
 
 
