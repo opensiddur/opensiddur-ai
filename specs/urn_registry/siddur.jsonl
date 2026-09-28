@@ -323,3 +323,15 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study/elazar", "status": "canonical", "label_en": "Sabbath musaf — study — elazar", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/study"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study/elazar/al_tikra", "status": "canonical", "label_en": "Sabbath musaf — study — elazar — al tikra", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/study/elazar"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study_kaddish", "status": "canonical", "label_en": "Sabbath musaf — study kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal", "status": "canonical", "label_en": "Sabbath daytime meal", "parent": "urn:x-opensiddur:text:siddur:shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush", "status": "canonical", "label_en": "Sabbath morning Kiddush", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush/exodus_20_10", "status": "canonical", "label_en": "Sabbath morning Kiddush — Exodus 20:10", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush/exodus_20_11", "status": "canonical", "label_en": "Sabbath morning Kiddush — Exodus 20:11", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush/exodus_20_8", "status": "canonical", "label_en": "Sabbath morning Kiddush — Exodus 20:8", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush/exodus_20_9", "status": "canonical", "label_en": "Sabbath morning Kiddush — Exodus 20:9", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/tzur_mishelo", "status": "canonical", "label_en": "Tzur Mishelo — Sabbath daytime printing", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/tzur_mishelo/3", "status": "canonical", "label_en": "Tzur Mishelo — Sabbath daytime printing — stanza 3", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/tzur_mishelo"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon", "status": "canonical", "label_en": "Yah Ribbon — Sabbath daytime printing", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon/1", "status": "canonical", "label_en": "Yah Ribbon — Sabbath daytime printing — stanza 1", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon/4", "status": "canonical", "label_en": "Yah Ribbon — Sabbath daytime printing — stanza 4", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/zemirot", "status": "canonical", "label_en": "Sabbath daytime hymns", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal"}

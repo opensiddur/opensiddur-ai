@@ -116,3 +116,43 @@
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/incense", "status": "canonical", "label_en": "Ein kelohenu — incense", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/mi", "status": "canonical", "label_en": "Ein kelohenu — mi", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/nodeh", "status": "canonical", "label_en": "Ein kelohenu — nodeh", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom", "status": "canonical", "label_en": "Barukh Adonai Yom Yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/1", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 1", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/10", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 10", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/11", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 11", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/12", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 12", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/2", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 2", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/3", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 3", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/4", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 4", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/5", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 5", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/6", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 6", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/7", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 7", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/8", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 8", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom/9", "status": "canonical", "label_en": "Barukh Adonai Yom Yom — stanza 9", "parent": "urn:x-opensiddur:text:poem:barukh_adonai_yom_yom"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon", "status": "canonical", "label_en": "Barukh El Elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/1", "status": "canonical", "label_en": "Barukh El Elyon — stanza 1", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/2", "status": "canonical", "label_en": "Barukh El Elyon — stanza 2", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/3", "status": "canonical", "label_en": "Barukh El Elyon — stanza 3", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/4", "status": "canonical", "label_en": "Barukh El Elyon — stanza 4", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/5", "status": "canonical", "label_en": "Barukh El Elyon — stanza 5", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/6", "status": "canonical", "label_en": "Barukh El Elyon — stanza 6", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/7", "status": "canonical", "label_en": "Barukh El Elyon — stanza 7", "parent": "urn:x-opensiddur:text:poem:barukh_el_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/1", "status": "canonical", "label_en": "Barukh El Elyon — refrain 1"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/2", "status": "canonical", "label_en": "Barukh El Elyon — refrain 2"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/3", "status": "canonical", "label_en": "Barukh El Elyon — refrain 3"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/4", "status": "canonical", "label_en": "Barukh El Elyon — refrain 4"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/5", "status": "canonical", "label_en": "Barukh El Elyon — refrain 5"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/6", "status": "canonical", "label_en": "Barukh El Elyon — refrain 6"}
+{"urn": "urn:x-opensiddur:text:poem:barukh_el_elyon/refrain/7", "status": "canonical", "label_en": "Barukh El Elyon — refrain 7"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad", "status": "canonical", "label_en": "Yom Zeh Mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/1", "status": "canonical", "label_en": "Yom Zeh Mekhubad — stanza 1", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/2", "status": "canonical", "label_en": "Yom Zeh Mekhubad — stanza 2", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/3", "status": "canonical", "label_en": "Yom Zeh Mekhubad — stanza 3", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/4", "status": "canonical", "label_en": "Yom Zeh Mekhubad — stanza 4", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/5", "status": "canonical", "label_en": "Yom Zeh Mekhubad — stanza 5", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain", "status": "canonical", "label_en": "Yom Zeh Mekhubad — opening refrain", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/1", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 1", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/2", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 2", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/3", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 3", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/4", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 4", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/5", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 5", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
