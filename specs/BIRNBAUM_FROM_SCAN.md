@@ -1166,3 +1166,32 @@ five other Kaddish paragraphs are transcluded. Both sides use the local mileston
 for this petition, keeping their paragraphs aligned. The exporter also displays
 earlier commentary attached to shared Kaddish texts at this new occurrence;
 those inherited notes are additional to the thirteen paragraphs on these pages.
+
+## Sabbath morning Kiddush and table hymns (printed 423–436; IA n447–n460)
+
+`shabbat_day_meal.py` continues immediately after Musaf's Adon Olam. The addressable
+`shabbat/day_meal` wrapper contains `kiddush` and `zemirot`; the latter contains all
+five hymns, with child bookmarks. The direct readings and ten commentary notes are
+recorded in `scan_reading/readings/shabbat_day_meal.md` in sourcetexts.
+
+The three new poems are Barukh Adonai Yom Yom, Barukh El Elyon, and Yom Zeh Mekhubad.
+Stanzas and refrains use milestones. Yah Ribbon and Tzur Mishelo transclude their
+matching Friday-night stanzas and refrains; local variants preserve the second
+printing's English “Supreme”/“lion’s” and Hebrew `בָּא`. The wine blessing and Exodus
+31:16–17 are shared. Exodus 20:8–11 retains the Kiddush printing's unnumbered text,
+pointing, and divine-name spelling, with local milestones and biblical source spans,
+without redefining the earlier Decalogue's canonical verse correspondences.
+
+Full Hebrew refrains face the abbreviated English incipits exactly where printed.
+The paired compilation was audited for all 63 verse/stanza/refrain text units, ten
+commentary notes, and matching milestone alignment. The apparent printed citation
+error “Jeremiah 60:34” remains prose in the commentary, not a fabricated Bible URN.
+
+Regenerate with `build.build_he` and `build.build_en`, pointing `--project-directory`
+at the projects worktree. Validate the changed XML, sync both Birnbaum projects, and
+run `opensiddur.common.urn_registry --check` with that project directory **and its
+synchronized reference database**. Compile `shabbat_day_meal.xml` for the focused
+proof and `index.xml` for the complete parallel. The focused proof is ten pages
+including credits. Importer and registry regression checks: 296 tests and 1,103
+subtests passed; registry: zero errors and warnings. The previously compiled prayer
+text remains an unchanged prefix in both languages.
