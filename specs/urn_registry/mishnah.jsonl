@@ -7,3 +7,12 @@
 {"urn": "urn:x-opensiddur:text:mishnah:shabbat/2/5", "status": "canonical", "label_en": "Mishnah Shabbat 2:5", "parent": "urn:x-opensiddur:text:mishnah:shabbat/2"}
 {"urn": "urn:x-opensiddur:text:mishnah:shabbat/2/6", "status": "canonical", "label_en": "Mishnah Shabbat 2:6", "parent": "urn:x-opensiddur:text:mishnah:shabbat/2"}
 {"urn": "urn:x-opensiddur:text:mishnah:shabbat/2/7", "status": "canonical", "label_en": "Mishnah Shabbat 2:7", "parent": "urn:x-opensiddur:text:mishnah:shabbat/2"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4", "status": "canonical", "label_en": "Mishnah Tamid 7:4 — the Levites’ daily psalms"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/friday", "status": "canonical", "label_en": "Mishnah tamid 7:4 — friday", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/monday", "status": "canonical", "label_en": "Mishnah tamid 7:4 — monday", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/opening", "status": "canonical", "label_en": "Mishnah tamid 7:4 — opening", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/shabbat", "status": "canonical", "label_en": "Mishnah tamid 7:4 — shabbat", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/sunday", "status": "canonical", "label_en": "Mishnah tamid 7:4 — sunday", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/thursday", "status": "canonical", "label_en": "Mishnah tamid 7:4 — thursday", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/tuesday", "status": "canonical", "label_en": "Mishnah tamid 7:4 — tuesday", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}
+{"urn": "urn:x-opensiddur:text:mishnah:tamid/7/4/wednesday", "status": "canonical", "label_en": "Mishnah tamid 7:4 — wednesday", "parent": "urn:x-opensiddur:text:mishnah:tamid/7/4"}

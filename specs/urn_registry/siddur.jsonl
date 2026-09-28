@@ -295,3 +295,31 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/shacharit/torah/reading/hagomel", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:shabbat/shacharit/torah/reading", "label_en": "Torah service — reading — hagomel"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/shacharit/torah/reading/vezot", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:shabbat/shacharit/torah/reading", "label_en": "Torah service — reading — vezot"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/shacharit/torah/return/uvnucho", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:shabbat/shacharit/torah/return", "label_en": "Torah service — return — uvnucho"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf", "status": "canonical", "label_en": "Sabbath musaf", "parent": "urn:x-opensiddur:text:siddur:shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/adon_olam", "status": "canonical", "label_en": "Sabbath musaf — adon olam", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/aleinu", "status": "canonical", "label_en": "Sabbath musaf — aleinu", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/aleinu_kaddish", "status": "canonical", "label_en": "Sabbath musaf — aleinu kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah", "status": "canonical", "label_en": "Sabbath musaf — amidah", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah/kedushah", "status": "canonical", "label_en": "Sabbath musaf — amidah — kedushah", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah/kedushah/shema", "status": "canonical", "label_en": "Sabbath musaf — amidah — kedushah — shema", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah/kedushah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah/meditation", "status": "canonical", "label_en": "Sabbath musaf — amidah — meditation", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah/ordinary", "status": "canonical", "label_en": "Sabbath musaf — amidah — ordinary", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah/rosh_chodesh", "status": "canonical", "label_en": "Sabbath musaf — amidah — rosh chodesh", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/anim_end", "status": "canonical", "label_en": "Sabbath musaf — anim end", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/anim_end/chronicles_1_29_11", "status": "canonical", "label_en": "Sabbath musaf — anim end — chronicles 1 29 11", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/anim_end"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/anim_kaddish", "status": "canonical", "label_en": "Sabbath musaf — anim kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/anim_zemirot", "status": "canonical", "label_en": "Sabbath musaf — anim zemirot", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/ein_kelohenu", "status": "canonical", "label_en": "Sabbath musaf — ein kelohenu", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/kaddish", "status": "canonical", "label_en": "Sabbath musaf — kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/kaveh", "status": "canonical", "label_en": "Sabbath musaf — kaveh", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/kaveh/psalms_27_14", "status": "canonical", "label_en": "Sabbath musaf — kaveh — psalms 27 14", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/kaveh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/offerings", "status": "canonical", "label_en": "Sabbath musaf — offerings", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/psalm27", "status": "canonical", "label_en": "Sabbath musaf — psalm27", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/psalm27_kaddish", "status": "canonical", "label_en": "Sabbath musaf — psalm27 kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/psalm92_kaddish", "status": "canonical", "label_en": "Sabbath musaf — psalm92 kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/shir_shel_yom", "status": "canonical", "label_en": "Sabbath musaf — shir shel yom", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/shir_shel_yom/introduction", "status": "canonical", "label_en": "Sabbath musaf — shir shel yom — introduction", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/shir_shel_yom"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study", "status": "canonical", "label_en": "Sabbath musaf — study", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study/elazar", "status": "canonical", "label_en": "Sabbath musaf — study — elazar", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/study"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study/elazar/al_tikra", "status": "canonical", "label_en": "Sabbath musaf — study — elazar — al tikra", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf/study/elazar"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/musaf/study_kaddish", "status": "canonical", "label_en": "Sabbath musaf — study kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/musaf"}
