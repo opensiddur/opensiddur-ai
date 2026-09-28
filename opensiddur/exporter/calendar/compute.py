@@ -523,8 +523,9 @@ def _map_hdate_holidays(
             values["shmini-atzeret"] = 1
         elif name == "simchat_torah":
             values["shmini-atzeret"] = 2
-        elif name == "chanuka":
-            values["hanukkah"] = heb.day - 24
+        elif name in ("chanuka", "chanukah"):
+            # Hanukkah crosses into Tevet; Kislev can have 29 or 30 days.
+            values["hanukkah"] = heb - pyluach_dates.HebrewDate(heb.year, 9, 25) + 1
         elif name == "purim":
             values["purim"] = 1
         elif name == "shushan_purim":

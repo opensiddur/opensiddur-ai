@@ -77,3 +77,42 @@
 {"urn": "urn:x-opensiddur:text:poem:el_adon/4", "status": "canonical", "label_en": "el adon — 4", "parent": "urn:x-opensiddur:text:poem:el_adon"}
 {"urn": "urn:x-opensiddur:text:poem:el_adon/5", "status": "canonical", "label_en": "el adon — 5", "parent": "urn:x-opensiddur:text:poem:el_adon"}
 {"urn": "urn:x-opensiddur:text:poem:el_adon/6", "status": "canonical", "label_en": "el adon — 6", "parent": "urn:x-opensiddur:text:poem:el_adon"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot", "status": "canonical", "label_en": "Anim zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/al_ken", "status": "canonical", "label_en": "Anim zemirot — al ken", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/amusim", "status": "canonical", "label_en": "Anim zemirot — amusim", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/anim", "status": "canonical", "label_en": "Anim zemirot — anim", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/asaperah", "status": "canonical", "label_en": "Anim zemirot — asaperah", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/beyad", "status": "canonical", "label_en": "Anim zemirot — beyad", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/birkhati", "status": "canonical", "label_en": "Anim zemirot — birkhati", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/chavash", "status": "canonical", "label_en": "Anim zemirot — chavash", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/dimu", "status": "canonical", "label_en": "Anim zemirot — dimu", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/gedulatekha", "status": "canonical", "label_en": "Anim zemirot — gedulatekha", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/himshilukha", "status": "canonical", "label_en": "Anim zemirot — himshilukha", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/kesher", "status": "canonical", "label_en": "Anim zemirot — kesher", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/ketem", "status": "canonical", "label_en": "Anim zemirot — ketem", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/lechen", "status": "canonical", "label_en": "Anim zemirot — lechen", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/machlefot", "status": "canonical", "label_en": "Anim zemirot — machlefot", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/midei", "status": "canonical", "label_en": "Anim zemirot — midei", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/nafshi", "status": "canonical", "label_en": "Anim zemirot — nafshi", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/neveh", "status": "canonical", "label_en": "Anim zemirot — neveh", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/peero", "status": "canonical", "label_en": "Anim zemirot — peero", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/rosh", "status": "canonical", "label_en": "Anim zemirot — rosh", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/rotzeh", "status": "canonical", "label_en": "Anim zemirot — rotzeh", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/segulato", "status": "canonical", "label_en": "Anim zemirot — segulato", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/shit", "status": "canonical", "label_en": "Anim zemirot — shit", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/tallei", "status": "canonical", "label_en": "Anim zemirot — tallei", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/tehillati", "status": "canonical", "label_en": "Anim zemirot — tehillati", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/tikar", "status": "canonical", "label_en": "Anim zemirot — tikar", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/tzach", "status": "canonical", "label_en": "Anim zemirot — tzach", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/uvevirkhati", "status": "canonical", "label_en": "Anim zemirot — uvevirkhati", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/vayechezu", "status": "canonical", "label_en": "Anim zemirot — vayechezu", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/yeerav", "status": "canonical", "label_en": "Anim zemirot — yeerav", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/yitpaer", "status": "canonical", "label_en": "Anim zemirot — yitpaer", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:anim_zemirot/ziknah", "status": "canonical", "label_en": "Anim zemirot — ziknah", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu", "status": "canonical", "label_en": "Ein kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/atah", "status": "canonical", "label_en": "Ein kelohenu — atah", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/barukh", "status": "canonical", "label_en": "Ein kelohenu — barukh", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/ein", "status": "canonical", "label_en": "Ein kelohenu — ein", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/incense", "status": "canonical", "label_en": "Ein kelohenu — incense", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/mi", "status": "canonical", "label_en": "Ein kelohenu — mi", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/nodeh", "status": "canonical", "label_en": "Ein kelohenu — nodeh", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}

@@ -693,3 +693,18 @@
 {"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation/text", "status": "canonical", "label_en": "yekum purkan — congregation — text", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/congregation"}
 {"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars/opening", "status": "canonical", "label_en": "yekum purkan — scholars — opening", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars"}
 {"urn": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars/text", "status": "canonical", "label_en": "yekum purkan — scholars — text", "parent": "urn:x-opensiddur:text:prayer:yekum_purkan/scholars"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/atah_yatzarta", "status": "canonical", "label_en": "Amidah — atah yatzarta", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/qedushah/ani", "status": "canonical", "label_en": "Amidah — qedushah — ani", "parent": "urn:x-opensiddur:text:prayer:amidah/qedushah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/qedushah/hu", "status": "canonical", "label_en": "Amidah — qedushah — hu", "parent": "urn:x-opensiddur:text:prayer:amidah/qedushah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/qedushah/kevodo", "status": "canonical", "label_en": "Amidah — qedushah — kevodo", "parent": "urn:x-opensiddur:text:prayer:amidah/qedushah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/qedushah/mimkomo", "status": "canonical", "label_en": "Amidah — qedushah — mimkomo", "parent": "urn:x-opensiddur:text:prayer:amidah/qedushah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/qedushah/naaritz", "status": "canonical", "label_en": "Amidah — qedushah — naaritz", "parent": "urn:x-opensiddur:text:prayer:amidah/qedushah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/qedushah/uvdivrei", "status": "canonical", "label_en": "Amidah — qedushah — uvdivrei", "parent": "urn:x-opensiddur:text:prayer:amidah/qedushah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/retzeh_vechadesh", "status": "canonical", "label_en": "Amidah — retzeh vechadesh", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/retzeh_vechadesh/elohenu", "status": "canonical", "label_en": "Amidah — retzeh vechadesh — elohenu", "parent": "urn:x-opensiddur:text:prayer:amidah/retzeh_vechadesh"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/retzeh_vechadesh/ki", "status": "canonical", "label_en": "Amidah — retzeh vechadesh — ki", "parent": "urn:x-opensiddur:text:prayer:amidah/retzeh_vechadesh"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/tikanta_shabbat", "status": "canonical", "label_en": "Amidah — tikanta shabbat", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/uminchatam_veniskehem", "status": "canonical", "label_en": "Amidah — uminchatam veniskehem", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/yismechu_vemalkhutkha", "status": "canonical", "label_en": "Amidah — yismechu vemalkhutkha", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori", "status": "canonical", "label_en": "Pittum Haketoret — shorter Hatzori passage"}
+{"urn": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori/rashbag", "status": "canonical", "label_en": "Pittum Haketoret — shorter Rabban Shimon ben Gamliel passage", "parent": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori"}

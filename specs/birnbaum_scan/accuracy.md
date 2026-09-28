@@ -1037,3 +1037,50 @@ Kaddish. Identical source citations inherited from shared weekday passages are
 not duplicated in the new apparatus; their printed references remain in the
 source-reading record. The return-to-ark source citation occurs once in the PDF.
 The cleaned full-book PDF settled at 392 pages after two refresh passes.
+
+## Sabbath Musaf — printed 391–424 (IA n415–n448)
+
+All 34 scans were read directly, through Adon Olam at the top of 423/424;
+Sabbath morning Kiddush and its note are excluded. The paired reading and page
+inventory are in `scan_reading/readings/shabbat_musaf.md` in sourcetexts.
+
+The importer adds ordinary Sabbath and Sabbath–Rosh Hodesh central blessings,
+Musaf Kedushah, En Kelohenu, the shorter incense passage, Mishnah Tamid 7:4,
+Tana Devei Eliyahu, and all 31 Anim Zemirot stanzas. Shared prayers retain their
+existing URNs, with additional source-page ranges and page turns. The local
+Rabbi Elazar gloss preserves this printing's shorter English wording. All
+37 new commentary/source notes survive the parallel compilation.
+
+The scan confirms ובשביעי in Yismechu against Wikisource's והשביעי. Enlarged
+crops corrected pointing in ונקדישך, המיחדים, ונֻטל, הודעת and several Anim
+Zemirot words; the full comparison decisions are recorded with the reading.
+Logical holam and shin dots remain separate, including both instances of מֹשֶׁה.
+
+Musaf is independently addressable at `siddur:shabbat/musaf`, with a nested
+bookmark hierarchy. The ordinary and Rosh Hodesh blessings are mutually
+exclusive. Sabbath Musaf is excluded on Yom Tov and Chol Hamoed; its concluding
+Kaddish is a sibling after the Amidah, ready for the future festival Musaf return.
+There is no Yaaleh Veyavo in the Musaf Avodah. The leap-year phrase follows the
+scan's whole-year rubric, remaining MAYBE when no year is supplied.
+
+Validation: 157 changed/new XML documents pass RelaxNG and Schematron; both
+projects pass URN resolution, the canonical registry has zero errors/warnings,
+and versification passes with only the three previously documented JPS chapters.
+The focused importer and calendar suite passes 314 tests and 1301 subtests.
+Dated compilations cover ordinary Sabbath, both Rosh Hodesh day numbers,
+common/leap years, Hanukkah overlap, Shabbat Shuva, Chol Hamoed Pesach and
+Sukkot, Rosh Hashanah, and private prayer, including both Israel/diaspora and
+silent/repetition settings. Previously encoded prayer wording remains an exact
+prefix of the new full parallel compilation in each language.
+
+The Hanukkah overlap audit exposed a calendar adapter bug: the installed hdate
+library calls the holiday `chanukah`, whereas the adapter recognized only
+`chanuka`. Both spellings now work, and the day count measures from 25 Kislev
+rather than subtracting 24 from a day number in Tevet. Regression checks cover
+all eight days and both boundaries in short/full Kislev years, with Rosh Hodesh
+still recognized simultaneously.
+
+The final undecided parallel proof is 33 pages, with 21 nested bookmarks. The
+complete encoded parallel is 425 pages; its Musaf hierarchy and final Adon Olam
+endpoint were checked after the three-pass PDF render. The focused proof was
+visually inspected at the opening, leap-year insertion, and Anim Zemirot.
