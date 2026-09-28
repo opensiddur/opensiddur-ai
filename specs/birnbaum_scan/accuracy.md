@@ -1115,3 +1115,60 @@ siddur caller, a skipped week suppresses the entire unit, including its heading.
 The complete parallel siddur through Avot renders successfully in three LuaLaTeX
 passes to 497 pages. Its Avot bookmark contains all six chapter bookmarks, and
 all 114 Avot apparatus notes are present in the full compilation.
+
+## Conclusion of Shabbat and Birkat Levanah, printed 535–566
+
+Internet Archive n559–n590 was read in both languages, including the notes, with
+independent second readings and individual scan adjudication of the differences.
+The corrected page readings and adjudications are retained in sourcetexts. Hallel
+and its commentary are excluded; the three Birkat Levanah citations on 566 remain.
+The Hebrew-only prayers continue across printed 559–561, including the even page
+560; empty English realizations preserve the absence of a printed translation.
+
+The reverse comparison of generated prayer text against the corrected readings
+has no page differences. It excludes the reused Kaddish, headings and apparatus;
+those were checked separately. Biblical anthology boundaries use milestones,
+with local correspondences and bounded source quotations for alternate printings.
+Printed citation numbering is retained even where canonical verse numbering differs.
+
+The user corrected the upcoming-week rule: Erev Pesach alone does not omit Vihi
+Noam or Veatah Kadosh. Omission requires Yom Tov within Sunday–Friday, using the
+Israel/diaspora calendar. Tishah B'Av separately omits Vihi Noam and Psalm 91 while
+retaining Veatah Kadosh. Ten targeted checks pass, including settings derivation,
+the Erev Pesach
+boundary, diaspora second days, unknown settings, and distinct output filenames
+for the Hamavdil hymn and blessing (a collision found and fixed during validation).
+
+Both projects pass reference validation, and the registry reports no errors or
+warnings. All 1,119 project XML files pass RelaxNG and Schematron. The focused
+Saturday-night proof has 51 pages and the Birkat Levanah proof has six. All 34 new
+apparatus notes have matching long-word fingerprints in the rendered proofs.
+The Hebrew-only continuation and the opening of Birkat Levanah were visually
+inspected. Hebrew direction checks pass with deliberately reversed controls.
+
+The final reuse audit found a local Titkabal variant: Hebrew תִּתְקַבַּל (pataḥ),
+rather than the earlier tsere, and English “whole household of Israel,” rather
+than “whole house of Israel.” This printing now has local correspondences for
+Titkabal and Yitbarakh (whose punctuation also differs). The second l'ella alone
+retains the standardized Ten Days conditional without the printed parentheses.
+
+The complete test suite passes: 2,742 tests, 12 skipped, and 3,157 subtests.
+The added final Kaddish regression was then run with all ten focused checks.
+
+The final full parallel renders in three passes to 549 pages. The conclusion of
+Shabbat has nested section bookmarks, Birkat Levanah has its own bookmark, and all
+34 new notes have matching long-word fingerprints in the full PDF. The full-book
+Hebrew-direction measurement reports one flag among 21,250 runs: the pre-existing
+weekday Mincha rubric's unwrapped “שים שלום” on PDF page 162 (printed folio 150).
+This is outside the new installment; both focused proofs pass their direction checks.
+
+### Follow-up: weekday Mincha rubric direction
+
+The page-162 direction flag is fixed in the existing worktrees. The importer now
+marks שים שלום as Hebrew within its English instruction, and regeneration changes
+only that rubric in the Hebrew XML; the English output is identical. Both Amidah
+files pass RelaxNG and Schematron. A focused PDF made from the generated rubric
+reproduces the backwards phrase before the fix and passes the glyph-direction
+check afterward, including the deliberately reversed control. The full 549-page
+PDF above predates this follow-up; the corrected focused proof is
+`output/birnbaum_mincha_rubric_fixed.pdf`.

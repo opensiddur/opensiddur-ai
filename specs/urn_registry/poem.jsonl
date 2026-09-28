@@ -156,3 +156,49 @@
 {"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/3", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 3", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/4", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 4", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain/5", "status": "canonical", "label_en": "Yom Zeh Mekhubad — refrain 5", "parent": "urn:x-opensiddur:text:poem:yom_zeh_mekhubad/refrain"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov", "status": "canonical", "label_en": "amar adonai leyaakov"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/1", "status": "canonical", "label_en": "amar adonai leyaakov — 1"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/10", "status": "canonical", "label_en": "amar adonai leyaakov — 10"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/11", "status": "canonical", "label_en": "amar adonai leyaakov — 11"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/12", "status": "canonical", "label_en": "amar adonai leyaakov — 12"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/13", "status": "canonical", "label_en": "amar adonai leyaakov — 13"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/14", "status": "canonical", "label_en": "amar adonai leyaakov — 14"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/15", "status": "canonical", "label_en": "amar adonai leyaakov — 15"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/16", "status": "canonical", "label_en": "amar adonai leyaakov — 16"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/17", "status": "canonical", "label_en": "amar adonai leyaakov — 17"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/18", "status": "canonical", "label_en": "amar adonai leyaakov — 18"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/19", "status": "canonical", "label_en": "amar adonai leyaakov — 19"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/2", "status": "canonical", "label_en": "amar adonai leyaakov — 2"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/20", "status": "canonical", "label_en": "amar adonai leyaakov — 20"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/21", "status": "canonical", "label_en": "amar adonai leyaakov — 21"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/22", "status": "canonical", "label_en": "amar adonai leyaakov — 22"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/3", "status": "canonical", "label_en": "amar adonai leyaakov — 3"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/4", "status": "canonical", "label_en": "amar adonai leyaakov — 4"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/5", "status": "canonical", "label_en": "amar adonai leyaakov — 5"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/6", "status": "canonical", "label_en": "amar adonai leyaakov — 6"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/7", "status": "canonical", "label_en": "amar adonai leyaakov — 7"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/8", "status": "canonical", "label_en": "amar adonai leyaakov — 8"}
+{"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/9", "status": "canonical", "label_en": "amar adonai leyaakov — 9"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_gilah", "status": "canonical", "label_en": "bemotzaei yom gilah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_gilah/1", "status": "canonical", "label_en": "bemotzaei yom gilah — 1"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah", "status": "canonical", "label_en": "bemotzaei yom menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/1", "status": "canonical", "label_en": "bemotzaei yom menuhah — 1"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/10", "status": "canonical", "label_en": "bemotzaei yom menuhah — 10"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/2", "status": "canonical", "label_en": "bemotzaei yom menuhah — 2"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/3", "status": "canonical", "label_en": "bemotzaei yom menuhah — 3"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/4", "status": "canonical", "label_en": "bemotzaei yom menuhah — 4"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/5", "status": "canonical", "label_en": "bemotzaei yom menuhah — 5"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/6", "status": "canonical", "label_en": "bemotzaei yom menuhah — 6"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/7", "status": "canonical", "label_en": "bemotzaei yom menuhah — 7"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/8", "status": "canonical", "label_en": "bemotzaei yom menuhah — 8"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/9", "status": "canonical", "label_en": "bemotzaei yom menuhah — 9"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol", "status": "canonical", "label_en": "hamavdil bein kodesh lechol"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/1", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 1"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/2", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 2"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/3", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 3"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/4", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 4"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/5", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 5"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/6", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 6"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/7", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 7"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/8", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 8"}
+{"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/9", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 9"}

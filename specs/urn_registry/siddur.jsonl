@@ -390,3 +390,120 @@
 {"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/6", "status": "canonical", "label_en": "pirkei avot 6"}
 {"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/6/closing", "status": "canonical", "label_en": "pirkei avot 6 closing"}
 {"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/6/opening", "status": "canonical", "label_en": "pirkei avot 6 opening"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah", "status": "canonical", "label_en": "berakhot — birkat halevanah"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/barukh_yotzrekh", "status": "canonical", "label_en": "berakhot — birkat halevanah — barukh yotzrekh"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/blessing", "status": "canonical", "label_en": "berakhot — birkat halevanah — blessing"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/david", "status": "canonical", "label_en": "berakhot — birkat halevanah — david"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/greetings", "status": "canonical", "label_en": "berakhot — birkat halevanah — greetings"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/keshem", "status": "canonical", "label_en": "berakhot — birkat halevanah — keshem"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/kol_dodi", "status": "canonical", "label_en": "berakhot — birkat halevanah — kol dodi"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/mi_zot", "status": "canonical", "label_en": "berakhot — birkat halevanah — mi zot"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/1", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 1"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/2", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/3", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/4", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/5", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 5"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/6", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 6"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/7", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 7"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm121/8", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm121 — 8"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm148/1", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm148 — 1"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm148/2", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm148 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm148/3", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm148 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm148/4", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm148 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm148/5", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm148 — 5"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm148/6", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm148 — 6"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm150/1", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm150 — 1"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm150/2", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm150 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm150/3", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm150 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm150/4", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm150 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm150/5", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm150 — 5"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm150/6", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm150 — 6"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/siman_tov", "status": "canonical", "label_en": "berakhot — birkat halevanah — siman tov"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/tana", "status": "canonical", "label_en": "berakhot — birkat halevanah — tana"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/tippol", "status": "canonical", "label_en": "berakhot — birkat halevanah — tippol"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/yehi_ratzon", "status": "canonical", "label_en": "berakhot — birkat halevanah — yehi ratzon"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion", "status": "canonical", "label_en": "shabbat — conclusion"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/after_amidah", "status": "canonical", "label_en": "shabbat — conclusion — after amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah", "status": "canonical", "label_en": "shabbat — conclusion — havdalah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/esther/8/16", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — esther — 8 — 16"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/isaiah/12/2", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — isaiah — 12 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/isaiah/12/3", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — isaiah — 12 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/ken_tihyeh", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — ken tihyeh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/psalms/116/13", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — psalms — 116 — 13"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/psalms/20/10", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — psalms — 20 — 10"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/psalms/3/9", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — psalms — 3 — 9"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/psalms/46/8", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — psalms — 46 — 8"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/intro/psalms/84/13", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — intro — psalms — 84 — 13"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/savri", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — savri"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah/wine", "status": "canonical", "label_en": "shabbat — conclusion — havdalah — wine"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/havdalah_intro", "status": "canonical", "label_en": "shabbat — conclusion — havdalah intro"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/kaddish", "status": "canonical", "label_en": "shabbat — conclusion — kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/opening", "status": "canonical", "label_en": "shabbat — conclusion — opening"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128", "status": "canonical", "label_en": "shabbat — conclusion — psalm128"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128/1", "status": "canonical", "label_en": "shabbat — conclusion — psalm128 — 1"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128/2", "status": "canonical", "label_en": "shabbat — conclusion — psalm128 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128/3", "status": "canonical", "label_en": "shabbat — conclusion — psalm128 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128/4", "status": "canonical", "label_en": "shabbat — conclusion — psalm128 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128/5", "status": "canonical", "label_en": "shabbat — conclusion — psalm128 — 5"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm128/6", "status": "canonical", "label_en": "shabbat — conclusion — psalm128 — 6"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm144", "status": "canonical", "label_en": "shabbat — conclusion — psalm144"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm144/15", "status": "canonical", "label_en": "shabbat — conclusion — psalm144 — 15"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm67", "status": "canonical", "label_en": "shabbat — conclusion — psalm67"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91", "status": "canonical", "label_en": "shabbat — conclusion — psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/1", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 1"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/10", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 10"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/11", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 11"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/12", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 12"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/13", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 13"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/14", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 14"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/15", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 15"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/16", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 16"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/2", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/3", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/4", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/5", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 5"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/6", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 6"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/7", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 7"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/8", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 8"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/psalm91/9", "status": "canonical", "label_en": "shabbat — conclusion — psalm91 — 9"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/ashrei", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — ashrei"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/avraham", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — avraham"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/barukh", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — barukh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/barukh_elohenu", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — barukh elohenu"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/barukh_hagever", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — barukh hagever"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/bitchu", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — bitchu"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/chafetz", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — chafetz"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/hoshiah", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — hoshiah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/ki_atah", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — ki atah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/lemaan", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — lemaan"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/targum_barukh", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — targum barukh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/targum_kadosh", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — targum kadosh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/targum_yimlokh", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — targum yimlokh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/titten", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — titten"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/tzidkatkha", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — tzidkatkha"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/tzvaot", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — tzvaot"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/vatissa", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — vatissa"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/veatah", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — veatah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/vehu", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — vehu"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/vekara", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — vekara"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/veyivtechu", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — veyivtechu"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veatah_kadosh/yimlokh", "status": "canonical", "label_en": "shabbat — conclusion — veatah kadosh — yimlokh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha", "status": "canonical", "label_en": "shabbat — conclusion — veyitten lekha"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/deuteronomy/4/4", "status": "canonical", "label_en": "shabbat — conclusion — veyitten lekha — deuteronomy — 4 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/isaiah/42/21", "status": "canonical", "label_en": "shabbat — conclusion — veyitten lekha — isaiah — 42 — 21"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/psalms/29/11", "status": "canonical", "label_en": "shabbat — conclusion — veyitten lekha — psalms — 29 — 11"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/vihi_noam", "status": "canonical", "label_en": "shabbat — conclusion — vihi noam"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/vihi_noam/repeat", "status": "canonical", "label_en": "shabbat — conclusion — vihi noam — repeat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/vihi_noam/text", "status": "canonical", "label_en": "shabbat — conclusion — vihi noam — text"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/zemirot", "status": "canonical", "label_en": "shabbat — conclusion — zemirot"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/1", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 1"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/2", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 2"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/3", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 3"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/4", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 4"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/5", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 5"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/6", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 6"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/7", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 7"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/8", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 8"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/kaddish/yitbarakh", "status": "canonical", "label_en": "Saturday-night Kaddish — yitbarakh"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/kaddish/titkabal", "status": "canonical", "label_en": "Saturday-night Kaddish — titkabal"}

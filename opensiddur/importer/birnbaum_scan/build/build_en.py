@@ -77,6 +77,9 @@ PRAYERS = shabbat_minchah_shared("en", PRAYERS)
 PRAYERS += shabbat_minchah_prayers("en", PRAYERS)
 from .avot import prayers as avot_prayers
 PRAYERS += avot_prayers("en")
+from .motzaei_shabbat import prayers as motzaei_prayers, shared as motzaei_shared
+PRAYERS = motzaei_shared("en", PRAYERS)
+PRAYERS += motzaei_prayers("en", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -133,7 +136,10 @@ from .notes_shabbat_minchah import NOTES as SHABBAT_MINCHAH_NOTES
 
 from .notes_avot import NOTES as AVOT_NOTES
 
+from .notes_motzaei_shabbat import NOTES as MOTZAEI_NOTES
+
 APPARATUS = {
+    "notes_motzaei_shabbat": dict(entries=MOTZAEI_NOTES, slug="birnbaum_1949/motzaei_shabbat", title="Notes on the conclusion of Sabbath and the moon blessing", first=535, last=566),
     "notes_avot": dict(entries=AVOT_NOTES, slug="birnbaum_1949/avot", title="Notes on Pirkei Avot", first=477, last=534),
     "notes_shabbat_minchah": dict(entries=SHABBAT_MINCHAH_NOTES, slug="birnbaum_1949/shabbat_minchah", title="Notes on Sabbath Mincha and winter Psalms", first=437, last=476),
     "notes_shabbat_day_meal": dict(entries=DAY_MEAL_NOTES, slug="birnbaum_1949/shabbat_day_meal", title="Notes on Sabbath morning Kiddush and hymns", first=424, last=436),
