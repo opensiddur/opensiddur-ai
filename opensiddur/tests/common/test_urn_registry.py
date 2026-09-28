@@ -249,6 +249,25 @@ class RefdbCrossCheckTestCase(unittest.TestCase):
         ))
         self.assertEqual(severities(problems, ERROR), [])
 
+    def test_registered_numbered_canonical_urn_is_checked_before_stripping(self):
+        urn = "urn:x-opensiddur:text:mishnah:example/7/4"
+        registry = self.registry({"urn": urn, "status": "canonical"})
+        problems = list(check_against_refdb(
+            registry, self.database(book=[urn + "@book"]),
+        ))
+        self.assertEqual(severities(problems, ERROR), [])
+
+    def test_unregistered_numbered_sibling_still_fails(self):
+        registry = self.registry({
+            "urn": "urn:x-opensiddur:text:mishnah:example/7/4",
+            "status": "canonical",
+        })
+        problems = list(check_against_refdb(
+            registry,
+            self.database(book=["urn:x-opensiddur:text:mishnah:example/7/5@book"]),
+        ))
+        self.assertEqual(len(severities(problems, ERROR)), 1)
+
     def test_an_ungoverned_namespace_is_ignored(self):
         problems = list(check_against_refdb(
             self.registry(canonical("avot")),

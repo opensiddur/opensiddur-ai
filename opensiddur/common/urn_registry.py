@@ -118,8 +118,9 @@ class Urn:
     def without_numeric_tail(self) -> "Urn":
         """Drop trailing numeric components.
 
-        A trailing number is an edition's own division rather than a canonical name, so
-        the registry neither holds one nor requires one. See "Sub-division numbering".
+        This is a fallback for edition-specific subdivisions. Check the exact URN
+        first: canonical texts such as Mishnah chapter/mishnah references can also
+        end in numbers. See "Sub-division numbering".
         """
         path = list(self.path)
         while len(path) > 1 and path[-1].isdigit():
@@ -458,6 +459,8 @@ def check_against_refdb(registry: Registry, database=None) -> Iterator[Problem]:
                 pending.add(text)
                 continue
             if not urn.governed:
+                continue
+            if text in registry.records:
                 continue
             if str(urn.without_numeric_tail()) not in registry.records:
                 unregistered.add(text)
