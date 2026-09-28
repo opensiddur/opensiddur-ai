@@ -37,6 +37,8 @@ from opensiddur.exporter.calendar.compute import (
     compute_torah_reading,
 )
 
+from opensiddur.exporter.calendar.avot import FS_AVOT, compute_avot
+
 ComputeFn = Callable[[SettingSnapshot], dict[str, object] | None]
 
 
@@ -72,6 +74,11 @@ def _time_inputs() -> frozenset[FeatureRef]:
 
 
 DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
+    DerivationSpec(
+        fs_type=FS_AVOT,
+        required_inputs=frozenset({(FS_HEBREW_DATE, key) for key in ("year", "month", "day")} | {(FS_ISRAEL, "is-israel")}),
+        compute=compute_avot,
+    ),
     # First, so that the derived time zone is on the stack before anything reads a location.
     DerivationSpec(
         fs_type=FS_LOCATION,

@@ -31,6 +31,7 @@ OVERRIDE_FEATURES = (
 STATIC_DEFAULTS: dict[str, dict[str, Any]] = {
     FS_OVERRIDE: dict.fromkeys(OVERRIDE_FEATURES, False),
     FS_READING_CYCLE: READING_CYCLE_DEFAULTS,
+    "opensiddur:pirkei-avot": {"complete": False},
 }
 
 

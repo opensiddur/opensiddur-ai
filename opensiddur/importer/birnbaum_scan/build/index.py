@@ -5,6 +5,7 @@ One function for both projects. The English index used to be derived from the He
 by byte-exact string replacement, which meant reflowing the Hebrew literal silently
 changed the English file; the two now differ only in the arguments passed here.
 """
+from .avot import caller as avot_caller
 from .common import PROJECT_EN, PROJECT_HE, SIDDUR
 
 S = SIDDUR
@@ -45,6 +46,7 @@ BODY = f"""      <tei:div corresp="{S}siddur">
           <j:transclude type="external" target="{S}shabbat/musaf"/>
           <j:transclude type="external" target="{S}shabbat/day_meal"/>
           <j:transclude type="external" target="{S}shabbat/minchah"/>
+          {avot_caller()}
         </tei:div>
       </tei:div>"""
 
