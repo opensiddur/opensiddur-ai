@@ -371,3 +371,22 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho/kohanecha", "status": "canonical", "label_en": "Sabbath Mincha — torah — uvnucho — kohanecha", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vezot_hatorah", "status": "canonical", "label_en": "Sabbath Mincha — torah — vezot hatorah", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vezot_hatorah/adonai_chafetz", "status": "canonical", "label_en": "Sabbath Mincha — torah — vezot hatorah — adonai chafetz", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vezot_hatorah"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot", "status": "canonical", "label_en": "pirkei avot"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/1", "status": "canonical", "label_en": "pirkei avot 1"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/1/closing", "status": "canonical", "label_en": "pirkei avot 1 closing"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/1/opening", "status": "canonical", "label_en": "pirkei avot 1 opening"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/2", "status": "canonical", "label_en": "pirkei avot 2"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/2/closing", "status": "canonical", "label_en": "pirkei avot 2 closing"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/2/opening", "status": "canonical", "label_en": "pirkei avot 2 opening"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/3", "status": "canonical", "label_en": "pirkei avot 3"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/3/closing", "status": "canonical", "label_en": "pirkei avot 3 closing"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/3/opening", "status": "canonical", "label_en": "pirkei avot 3 opening"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/4", "status": "canonical", "label_en": "pirkei avot 4"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/4/closing", "status": "canonical", "label_en": "pirkei avot 4 closing"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/4/opening", "status": "canonical", "label_en": "pirkei avot 4 opening"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/5", "status": "canonical", "label_en": "pirkei avot 5"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/5/closing", "status": "canonical", "label_en": "pirkei avot 5 closing"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/5/opening", "status": "canonical", "label_en": "pirkei avot 5 opening"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/6", "status": "canonical", "label_en": "pirkei avot 6"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/6/closing", "status": "canonical", "label_en": "pirkei avot 6 closing"}
+{"urn": "urn:x-opensiddur:text:siddur:pirkei_avot/6/opening", "status": "canonical", "label_en": "pirkei avot 6 opening"}

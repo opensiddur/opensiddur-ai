@@ -1084,3 +1084,34 @@ The final undecided parallel proof is 33 pages, with 21 nested bookmarks. The
 complete encoded parallel is 425 pages; its Musaf hierarchy and final Adon Olam
 endpoint were checked after the three-pass PDF render. The focused proof was
 visually inspected at the opening, leap-year insertion, and Anim Zemirot.
+
+
+## Pirkei Avot, printed 477–534
+
+All 58 pages were read directly, including both languages and notes. A blind second
+reader checked the scan independently, followed by detailed comparison against
+mechanically generated Wikisource page slices. The initial reading required many
+corrections, especially missing stress marks, and must not be described as error-free.
+The page-keyed corrected readings and applied-correction log are preserved in
+sourcetexts. Enlarged crops settled the variant spellings and points individually;
+qamats/qamats-qatan remains the sole mechanical pointing equivalence.
+
+The XML was compared back to the corrected readings by printed page: all 29 Hebrew
+and 29 English pages match, including page-spanning paragraphs and repeated formulas.
+The English apparatus contains 78 commentary notes and 36 source notes, grouping 193
+printed paragraphs. The complete parallel compile includes all 114 notes and no
+selection instructions. The focused 44-page PDF has all six chapter bookmarks below
+Avot. Direction measurement found 0 of 1863 Hebrew runs reversed; the deliberately
+reversed control flagged 1841. Commentary fingerprint checks found all 115 paragraphs
+long enough for six distinctive words; repeated introductory wording was checked
+against the compiled note counts rather than mistaken for duplicate annotations.
+
+All 33 new or changed XML documents pass RelaxNG and Schematron. The canonical
+registry reports no errors or warnings. Calendar and compiler checks cover
+Israel/diaspora differences, combined chapters, skipped weeks, unknown inputs,
+explicit chapter overrides, and complete-text instruction suppression. In the
+siddur caller, a skipped week suppresses the entire unit, including its heading.
+
+The complete parallel siddur through Avot renders successfully in three LuaLaTeX
+passes to 497 pages. Its Avot bookmark contains all six chapter bookmarks, and
+all 114 Avot apparatus notes are present in the full compilation.

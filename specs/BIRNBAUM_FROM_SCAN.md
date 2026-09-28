@@ -1195,3 +1195,44 @@ proof and `index.xml` for the complete parallel. The focused proof is ten pages
 including credits. Importer and registry regression checks: 296 tests and 1,103
 subtests passed; registry: zero errors and warnings. The previously compiled prayer
 text remains an unchanged prefix in both languages.
+
+
+## Pirkei Avot (printed 477–534; IA n501–n558)
+
+The entire unit is `urn:x-opensiddur:text:siddur:pirkei_avot`, with six independently
+addressable chapter wrappers at `/1` through `/6`. Each wrapper includes its printed
+Kol Yisrael and Rabbi Hananya formulas around the chapter text. The chapter texts
+use `urn:x-opensiddur:text:mishnah:avot/{chapter}/{mishnah}` milestones. Birnbaum’s
+printed paragraph numbers and page-spanning paragraphs remain independent of the
+canonical boundaries. The appended sixth chapter uses the conventional Avot 6
+address; the printed explanation of its origin remains in the apparatus.
+
+Three uses share these files:
+
+* In the siddur, `opensiddur:pirkei-avot/season` gates the whole transclusion,
+  with Birnbaum’s seasonal rubric in the caller. The caller also requires at least
+  one selected chapter, avoiding an empty Avot heading on a skipped week.
+* Inside Avot, six independent `chapter-1` through `chapter-6` features gate
+  the chapter transclusions. Known Hebrew date and Israel/diaspora location derive
+  the weekly selections; missing inputs leave them MAYBE, with editorial instructions.
+* For the complete independent text, set all six chapter features and `complete`
+  to TRUE. `complete` suppresses selection instructions; it does not select or
+  exclude chapters. Set `season` TRUE as well if compiling through the siddur caller.
+  Explicit chapter values override calendar derivation, including combined chapters.
+
+The complete preset is `specs/birnbaum_scan/settings_avot_complete.yaml`.
+The exporter retains ordinary conditional rubrics when their conditions are TRUE,
+so complete-text suppression is encoded independently. Its default is FALSE; all
+chapter selectors and the seasonal selector remain unknown without calendar inputs.
+
+The weekly schedule follows Hebcal’s summer cycle:
+https://github.com/hebcal/learning/tree/main/pirkeiavot . It begins after Pesach
+(allowing 22 Nisan in Israel), skips Shavuot and Shabbat on 8 or 9 Av, repeats three
+single-chapter rounds, and combines the final chapters before Rosh Hashanah.
+In the shortest seasons the final round has only 3–4 and 5–6. This is an editorial
+calendar convention, not additional wording attributed to Birnbaum.
+
+Readings and corrections live in `scan_reading/readings/avot-477-534.json`,
+`avot.md`, and `avot-corrections.json` in sourcetexts. Both XML projects are generated
+by `build.build_he` and `build.build_en`; `notes_avot.py` preserves commentary and
+printed source citations, with directional markup on Hebrew catchwords and quotations.
