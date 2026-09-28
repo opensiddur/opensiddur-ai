@@ -708,3 +708,4 @@
 {"urn": "urn:x-opensiddur:text:prayer:amidah/yismechu_vemalkhutkha", "status": "canonical", "label_en": "Amidah — yismechu vemalkhutkha", "parent": "urn:x-opensiddur:text:prayer:amidah"}
 {"urn": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori", "status": "canonical", "label_en": "Pittum Haketoret — shorter Hatzori passage"}
 {"urn": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori/rashbag", "status": "canonical", "label_en": "Pittum Haketoret — shorter Rabban Shimon ben Gamliel passage", "parent": "urn:x-opensiddur:text:prayer:pittum_haketoret_hatzori"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/atah_echad", "status": "canonical", "label_en": "amidah — atah echad", "parent": "urn:x-opensiddur:text:prayer:amidah"}
