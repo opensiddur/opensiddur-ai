@@ -69,6 +69,9 @@ PRAYERS += musaf_prayers("he", PRAYERS)
 from .shabbat_day_meal import shared as day_meal_shared, prayers as day_meal_prayers
 PRAYERS = day_meal_shared("he", PRAYERS)
 PRAYERS += day_meal_prayers("he", PRAYERS)
+from .shabbat_minchah import shared as shabbat_minchah_shared, prayers as shabbat_minchah_prayers
+PRAYERS = shabbat_minchah_shared("he", PRAYERS)
+PRAYERS += shabbat_minchah_prayers("he", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -603,8 +606,9 @@ def units(project, pages, by_name, amidah_body):
     complete = extend_service(result + minchah_units(project, by_name) + arvit_units(project, by_name) + shabbat_units(project) + kabbalat_units(project) + bameh_units(project) + shabbat_arvit_units(project, by_name) + leil_shabbat_units(project) + shabbat_pesukei_units(project, by_name)) + shabbat_shema_units(project, by_name)
     from .shabbat_torah import units as torah_units, extend_service as extend_torah
     from .shabbat_musaf import units as musaf_units
+    from .shabbat_minchah import units as shabbat_minchah_units
     from .shabbat_day_meal import units as day_meal_units
-    return extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project)
+    return extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

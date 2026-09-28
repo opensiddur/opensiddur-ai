@@ -335,3 +335,39 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon/1", "status": "canonical", "label_en": "Yah Ribbon — Sabbath daytime printing — stanza 1", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon/4", "status": "canonical", "label_en": "Yah Ribbon — Sabbath daytime printing — stanza 4", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal/yah_ribbon"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/day_meal/zemirot", "status": "canonical", "label_en": "Sabbath daytime hymns", "parent": "urn:x-opensiddur:text:siddur:shabbat/day_meal"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah", "status": "canonical", "label_en": "Sabbath Mincha", "parent": "urn:x-opensiddur:text:siddur:shabbat"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/al_tira", "status": "canonical", "label_en": "Sabbath Mincha — al tira", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/aleinu", "status": "canonical", "label_en": "Sabbath Mincha — aleinu", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah", "status": "canonical", "label_en": "Sabbath Mincha — amidah", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah/hanukkah", "status": "canonical", "label_en": "Sabbath Mincha — amidah — hanukkah", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah/kedushah", "status": "canonical", "label_en": "Sabbath Mincha — amidah — kedushah", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah/modim", "status": "canonical", "label_en": "Sabbath Mincha — amidah — modim", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah/modim_derabbanan", "status": "canonical", "label_en": "Sabbath Mincha — amidah — modim derabbanan", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/kaddish", "status": "canonical", "label_en": "Sabbath Mincha — kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/mourners_kaddish", "status": "canonical", "label_en": "Sabbath Mincha — mourners kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/opening", "status": "canonical", "label_en": "Sabbath Mincha — opening", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/opening_kaddish", "status": "canonical", "label_en": "Sabbath Mincha — opening kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms", "status": "canonical", "label_en": "Sabbath Mincha — psalms", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/104/31", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 104 — 31"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/121/8", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 121 — 8"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/132/10", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 132 — 10"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/132/13", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 132 — 13"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/132/8", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 132 — 8"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/132/9", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 132 — 9"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 134", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134/1", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 134 — 1", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134/2", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 134 — 2", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134/3", "status": "canonical", "label_en": "Sabbath Mincha — psalms — 134 — 3", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/psalms/134"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah", "status": "canonical", "label_en": "Sabbath Mincha — torah", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vetiggaleh", "status": "canonical", "label_en": "Sabbath Mincha — torah — vetiggaleh", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah_kaddish", "status": "canonical", "label_en": "Sabbath Mincha — torah kaddish", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/tzidkatkha", "status": "canonical", "label_en": "Sabbath Mincha — tzidkatkha", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/tzidkatkha/psalms_119_142", "status": "canonical", "label_en": "Sabbath Mincha — tzidkatkha — psalms 119 142", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/tzidkatkha"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/uva_letzion", "status": "canonical", "label_en": "Sabbath Mincha — uva letzion", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/vaani_tefilati", "status": "canonical", "label_en": "Sabbath Mincha — vaani tefilati", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/uva_letzion/barukh", "status": "canonical", "label_en": "Sabbath Mincha — uva letzion — barukh", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/uva_letzion"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho", "status": "canonical", "label_en": "Sabbath Mincha — torah — uvnucho", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho/ki_lekach", "status": "canonical", "label_en": "Sabbath Mincha — torah — uvnucho — ki lekach", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho/kohanecha", "status": "canonical", "label_en": "Sabbath Mincha — torah — uvnucho — kohanecha", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/uvnucho"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vezot_hatorah", "status": "canonical", "label_en": "Sabbath Mincha — torah — vezot hatorah", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vezot_hatorah/adonai_chafetz", "status": "canonical", "label_en": "Sabbath Mincha — torah — vezot hatorah — adonai chafetz", "parent": "urn:x-opensiddur:text:siddur:shabbat/minchah/torah/vezot_hatorah"}

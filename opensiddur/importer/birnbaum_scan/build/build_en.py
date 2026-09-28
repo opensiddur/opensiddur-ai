@@ -72,6 +72,9 @@ PRAYERS += musaf_prayers("en", PRAYERS)
 from .shabbat_day_meal import shared as day_meal_shared, prayers as day_meal_prayers
 PRAYERS = day_meal_shared("en", PRAYERS)
 PRAYERS += day_meal_prayers("en", PRAYERS)
+from .shabbat_minchah import shared as shabbat_minchah_shared, prayers as shabbat_minchah_prayers
+PRAYERS = shabbat_minchah_shared("en", PRAYERS)
+PRAYERS += shabbat_minchah_prayers("en", PRAYERS)
 
 
 U, S = PRAYER, SIDDUR
@@ -124,7 +127,10 @@ from .notes_shabbat_musaf import NOTES as MUSAF_NOTES
 
 from .notes_shabbat_day_meal import NOTES as DAY_MEAL_NOTES
 
+from .notes_shabbat_minchah import NOTES as SHABBAT_MINCHAH_NOTES
+
 APPARATUS = {
+    "notes_shabbat_minchah": dict(entries=SHABBAT_MINCHAH_NOTES, slug="birnbaum_1949/shabbat_minchah", title="Notes on Sabbath Mincha and winter Psalms", first=437, last=476),
     "notes_shabbat_day_meal": dict(entries=DAY_MEAL_NOTES, slug="birnbaum_1949/shabbat_day_meal", title="Notes on Sabbath morning Kiddush and hymns", first=424, last=436),
     "notes_shabbat_musaf": dict(entries=MUSAF_NOTES, slug="birnbaum_1949/shabbat_musaf", title="Notes on Sabbath Musaf", first=391, last=422),
     "notes_shabbat_torah": dict(entries=SHABBAT_TORAH_NOTES, slug="birnbaum_1949/shabbat_torah", title="Notes on Sabbath and festival Torah reading", first=361, last=390),
