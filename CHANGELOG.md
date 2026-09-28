@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alternative names for a service.
 
 ### Fixed
+- Honor exact registered URNs before stripping numeric subdivisions during reference-database checks. Canonical Mishnah references such as `tamid/7/4` no longer fail as unregistered.
 - `ReferenceDatabase.get_references_to` dropped references in different files or projects that
   happened to sit at the same element path, such as the first note of two notes files targeting
   the same URN; only one of them reached the compiled output. It now treats references as the
