@@ -965,6 +965,34 @@ typography:
         self.assertIn(r"\begin{pairs}", out)
         self.assertIn(r"\Columns", out)
 
+    def test_layout_interleaved_propagates_to_parallel_block(self):
+        xml = """<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hi</tei:p></p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>""".encode("utf-8")
+        f = self._create("p", "input.xml", xml)
+        typography = TypographyConfig.model_validate({
+            "parallel": {"layout": "interleaved", "interleaved": {"line_numbers": "both"}},
+            "line_numbers": {"increment": 2},
+        })
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            out = transform_xml_to_tex(f, typography=typography)
+        self.assertNotIn(r"\usepackage{reledpar}", out)
+        self.assertNotIn(r"\begin{pairs}", out)
+        self.assertNotIn(r"\linenumincrementR", out)
+        self.assertIn(r"\begin{OSInterleavedTranslation}", out)
+        # The settings' override follows the stylesheet's default, so it is the one in force.
+        self.assertLess(
+            out.index(r"\newcommand{\OSInterleavedNumbering}"),
+            out.index(r"\renewcommand{\OSInterleavedNumbering}{}"),
+        )
+
     def test_table_of_contents_setting_is_threaded_into_xslt_params(self):
         xml = b"""<?xml version="1.0"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">

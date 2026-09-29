@@ -96,10 +96,12 @@ parallel:
 When the compiler builds a document, it also looks up matching content in
 each of the listed `parallel` projects (by `corresp` URN) and emits
 `p:parallel`/`p:parallelItem` blocks. The PDF stage feeds those blocks into
-`reledpar` so the verses on each side stay aligned across page breaks.
+`reledpar` so the verses on each side stay aligned across page breaks, or, in
+the `interleaved` layout, sets each block's translation directly after it.
 
 `column_order: primary_first` puts the primary stream on the left page (or
-left column for a `pairs` layout); `primary_last` swaps them.
+left column for a `pairs` layout, or first in an `interleaved` one);
+`primary_last` swaps them.
 
 ### Typography (PDF/TeX stage only)
 
@@ -133,7 +135,8 @@ typography:
     placement: footnote         # footnote | endnote | none
     anchor: interlinear         # interlinear | superscript | inline
   parallel:
-    layout: pairs               # pairs -> two columns/page; pages -> facing pages
+    layout: pairs               # pairs -> two columns/page; pages -> facing pages;
+                                # interleaved -> each block followed by its translation
   table_of_contents:
     enabled: false
     depth: 4

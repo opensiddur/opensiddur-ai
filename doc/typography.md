@@ -152,7 +152,8 @@ parallel two-column compile, a paragraph break is a blank line instead — reled
 two columns a line at a time, so a skip in one column would displace the facing one, and one
 line is the smallest separation that stays in the column it belongs to. To get the configured
 spacing part-way through a prayer, split it into two units by giving the two halves their own
-`@corresp` URNs; that also aligns the columns there.
+`@corresp` URNs; that also aligns the columns there. The `interleaved` layout sets one
+column, so its paragraphs take the configured spacing throughout.
 
 ## `styles`
 
@@ -216,7 +217,7 @@ Marginal line numbers, as a critical edition uses to cite a passage.
 | `line_numbers.unit` | `page` \| `section` | `page` | What numbering restarts at. |
 | `line_numbers.increment` | integer ≥ 1 | `5` | Print a number every nth line. |
 | `line_numbers.first` | integer ≥ 1 | `5` | The first line number printed, so the numbers run 5, 10, 15 rather than 1, 5, 10. |
-| `line_numbers.margin` | `inner` \| `outer` \| `left` \| `right` | `outer` | `inner`/`outer` are relative to the binding; `left`/`right` are fixed. In a `pairs` parallel layout each column takes the nearer outer margin regardless, since the alternative is numbers in the gutter between the columns. |
+| `line_numbers.margin` | `inner` \| `outer` \| `left` \| `right` | `outer` | `inner`/`outer` are relative to the binding; `left`/`right` are fixed. In a `pairs` parallel layout each column takes the nearer outer margin regardless, since the alternative is numbers in the gutter between the columns. In an `interleaved` layout both texts are numbered in the one margin chosen here, whichever direction each runs in. |
 | `line_numbers.separation` | length | `1em` | Space between the number and the text block. |
 | `line_numbers.numerals` | `arabic` \| `hebrew` | `arabic` | |
 
@@ -225,7 +226,7 @@ Marginal line numbers, as a critical edition uses to cite a passage.
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `notes.placement` | `footnote` \| `endnote` \| `none` | `footnote` | Where the text of a note is printed. `none` drops notes entirely, anchor and all, and is an error if a note style is also set — the two cannot both hold and the one that silently wins deletes the notes. |
-| `notes.anchor` | `interlinear` \| `superscript` \| `inline` | `interlinear` | How the mark that points at a note is set. `interlinear` raises it above the line and gives it no width, so the text it annotates is not respaced — which is what keeps two sides of a parallel text aligned. |
+| `notes.anchor` | `interlinear` \| `superscript` \| `inline` | `interlinear` | How the mark that points at a note is set. `interlinear` raises it above the line and gives it no width, so the text it annotates is not respaced — which is what keeps two columns of a parallel text aligned. |
 | `notes.mark` | `numeric` \| `alpha` \| `roman` \| `symbol` | `numeric` | The series marks are drawn from. The symbol series has six members and repeats the symbol past the sixth, as a printed apparatus does. |
 
 There is deliberately no setting for showing the *lemma* — the words a note is attached to,
@@ -268,7 +269,8 @@ it.
 | `lists.item_indent` | length | `2em` | Indent applied to both margins of an item's paragraphs, so the item reads as a block of its own. `0pt` sets items flush with the surrounding text and leaves the label alone to distinguish them. |
 
 The indent is measured against the column, not the page, so an item inside a parallel block is
-indented within its own column.
+indented within its own column. In the `interleaved` layout it adds to the translation's own
+indent.
 
 ## `parallel`
 
@@ -276,14 +278,44 @@ The geometry of a parallel-text layout.
 
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `parallel.layout` | `pairs` \| `pages` | `pairs` | `pairs` puts two columns on the same page; `pages` sets the texts on facing pages, which gives each a full measure and suits a long work. |
+| `parallel.layout` | `pairs` \| `pages` \| `interleaved` | `pairs` | `pairs` puts two columns on the same page; `pages` sets the texts on facing pages, which gives each a full measure and suits a long work; `interleaved` sets one column, each block followed by its translation, for a measure too narrow to split. |
 | `parallel.column_width` | percentage | `43%` | Width of each column as a percentage of the text block, in `pairs` layout. The two columns and the gap share 100%, so well under 50% each — the remainder leaves the outer margins room for line numbers. |
 | `parallel.column_position` | `left` \| `center` \| `right` | `center` | Where the pair of columns sits in the text block, in `pairs` layout. |
+| `parallel.interleaved` | table | | How the translation is set apart, in `interleaved` layout. See [below](#interleaved). |
+| `parallel.interleaved.translation_size` | size | `small` | Font size of the translation. |
+| `parallel.interleaved.translation_indent` | length | `1em` | Indent applied to both margins of the translation's paragraphs. `0pt` sets it to the full measure. |
+| `parallel.interleaved.spacing` | length | `0.25em` | Vertical space between a block and its translation. The space between one pair and the next is `paragraphs.spacing`, so keeping this smaller is what makes each original and its translation read as a pair. |
+| `parallel.interleaved.line_numbers` | `primary` \| `both` | `primary` | `primary` numbers only the primary text's lines, so a line number cites the text being translated; `both` counts every line in one series. |
 
 **Which text goes on which side is not set here.** It is `parallel.column_order` in the
 compiler section of the settings file — `primary_first` puts the primary stream on the left,
 `primary_last` swaps them — because the compiler is what decides the order the streams are
-emitted in.
+emitted in. In the `interleaved` layout the same setting decides which text comes first.
+
+### `interleaved`
+
+```yaml
+typography:
+  parallel:
+    layout: interleaved
+    interleaved:
+      translation_size: small
+      translation_indent: 1em
+      spacing: 0.25em
+      line_numbers: primary
+```
+
+Each block the compiler aligns — the unit a column layout sets side by side — is followed by
+its translation: original, translation, next original. The translation is set apart by its
+size and indent, and by `spacing`, which is smaller than the space between one pair and the
+next. A Hebrew original and an English translation change direction from one paragraph to the
+next; line numbers stay in the one margin `line_numbers.margin` names for both.
+
+Headings, rubrics, bookmarks and running heads behave as they do in columns, with "first
+column" meaning the text that comes first. A heading that opens a block is still set once
+above it under `headings.from: combined`, `instructions.from: combined` drops a rubric from the
+translation where the original already says it, and `{head1-alt}` and the other `-alt` running
+heads name the text that comes second. `column_width` and `column_position` do not apply.
 
 ## `table_of_contents`
 
@@ -339,7 +371,7 @@ places. A page can, which is why this setting has a value that one does not.
 
 A suppressed heading still keeps its paragraph and its running-head mark: reledpar pairs
 the columns by counting them, and a page style should still be able to name either
-language.
+language. In the `interleaved` layout there is nothing to pair, so only the mark is kept.
 
 ## `instructions`
 
@@ -428,7 +460,7 @@ closed list, and an unrecognized one is a settings error:
 | `{chapter-number-hebrew}` | the same, in Hebrew numerals |
 | `{head1}` … `{head4}` | the last heading at that level |
 | `{section-title}` | the last heading at any level |
-| `{book-title-alt}`, `{head1-alt}` … `{head4-alt}`, `{section-title-alt}` | the same, from the *second* parallel column |
+| `{book-title-alt}`, `{head1-alt}` … `{head4-alt}`, `{section-title-alt}` | the same, from the *second* parallel column — in the `interleaved` layout, the text that comes second |
 
 Everything but `{page}`, `{page-hebrew}` and `{document-title}` names whatever was in force at
 the *end* of the page, so a heading starting partway down a page names that page. The `-alt`

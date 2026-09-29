@@ -441,6 +441,81 @@ class TestParallelColumns(unittest.TestCase):
         )
         self.assertNotIn(r"\Lcolwidth", tex)
 
+    def test_interleaved_has_no_columns_to_size(self):
+        tex = _tex(
+            {"parallel": {"layout": "interleaved", "column_width": "40%"}},
+            has_parallel=True,
+        )
+        self.assertNotIn(r"\Lcolwidth", tex)
+
+
+class TestInterleaved(unittest.TestCase):
+    """Each setting overrides a macro the stylesheet defines with the model's default."""
+
+    INTERLEAVED = {"layout": "interleaved"}
+
+    def _interleaved(self, settings: dict, has_parallel: bool = True, **rest) -> str:
+        return _tex(
+            {"parallel": {**self.INTERLEAVED, "interleaved": settings}, **rest},
+            has_parallel,
+        )
+
+    def test_nothing_written_leaves_the_stylesheet_defaults(self):
+        self.assertEqual(_tex({"parallel": self.INTERLEAVED}, has_parallel=True), "")
+
+    def test_nothing_without_a_parallel_text(self):
+        self.assertEqual(self._interleaved({"spacing": "2pt"}, has_parallel=False), "")
+
+    def test_nothing_in_another_layout(self):
+        tex = _tex(
+            {"parallel": {"layout": "pairs", "interleaved": {"spacing": "2pt"}}},
+            has_parallel=True,
+        )
+        self.assertNotIn("OSInterleaved", tex)
+
+    def test_each_setting_overrides_its_macro(self):
+        tex = self._interleaved(
+            {"translation_size": "x-small", "translation_indent": "2em", "spacing": "3pt"}
+        )
+        self.assertIn(r"\renewcommand{\OSInterleavedSize}{\footnotesize}", tex)
+        self.assertIn(r"\renewcommand{\OSInterleavedIndent}{2em}", tex)
+        self.assertIn(r"\renewcommand{\OSInterleavedSpacing}{3pt}", tex)
+
+    def test_an_absolute_size_sets_its_own_leading(self):
+        tex = self._interleaved({"translation_size": "9pt"})
+        self.assertIn(
+            r"\renewcommand{\OSInterleavedSize}{\fontsize{9pt}{10.8pt}\selectfont}", tex
+        )
+
+    def test_numbering_both_texts_empties_the_switch(self):
+        self.assertIn(
+            r"\renewcommand{\OSInterleavedNumbering}{}",
+            self._interleaved({"line_numbers": "both"}),
+        )
+        self.assertNotIn(
+            "OSInterleavedNumbering", self._interleaved({"line_numbers": "primary"})
+        )
+
+    def test_no_reledpar_series_in_an_interleaved_document(self):
+        """reledpar is not loaded, so its R-series macros do not exist."""
+        line_numbers = {
+            "unit": "section", "increment": 2, "first": 1, "margin": "left",
+            "numerals": "hebrew",
+        }
+        tex = self._interleaved({}, line_numbers=line_numbers)
+        for macro in (r"\lineationR", r"\linenumincrementR", r"\firstlinenumR",
+                      r"\linenummarginR", r"\linenumrepR"):
+            self.assertNotIn(macro, tex)
+        self.assertIn(r"\linenumincrement{2}", tex)
+        self.assertIn(r"\linenummargin{left}", tex)
+        columns = _tex(
+            {"parallel": {"layout": "pairs"}, "line_numbers": line_numbers},
+            has_parallel=True,
+        )
+        for macro in (r"\lineationR", r"\linenumincrementR", r"\firstlinenumR",
+                      r"\linenummarginR", r"\linenumrepR"):
+            self.assertIn(macro, columns)
+
 
 if __name__ == "__main__":
     unittest.main()

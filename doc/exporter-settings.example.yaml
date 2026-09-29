@@ -5,7 +5,7 @@
 # Notes:
 # - Project names must correspond to directories under `project/`.
 # - `parallel.column_order` values: `primary_first` | `primary_last`
-# - `typography.layout` values: `pages` | `pairs`
+# - `typography.parallel.layout` values: `pages` | `pairs` | `interleaved`
 # - `typography.paper` values: `a4paper` | `letterpaper` | `legalpaper` | `a5paper` | `b5paper` | `executivepaper`
 
 priority:
@@ -171,11 +171,18 @@ typography:
 
   parallel:
     layout: pairs            # pairs: two columns on a page. pages: facing pages,
-                             # which gives each text a full measure.
+                             # which gives each text a full measure. interleaved:
+                             # one column, each block followed by its translation.
     column_width: "43%"      # of the text block; the gap takes the remainder,
                              # which is also what leaves room for line numbers
     column_position: center  # left | center | right
-    # Which text goes on which side is `parallel.column_order` above, not here.
+    # Which text goes on which side — or, interleaved, which comes first — is
+    # `parallel.column_order` above, not here.
+    interleaved:             # only in `interleaved` layout
+      translation_size: small     # a named size, or an absolute length
+      translation_indent: 1em     # on both margins
+      spacing: 0.25em             # between a block and its translation
+      line_numbers: primary       # primary | both
 
   table_of_contents:
     enabled: false

@@ -38,6 +38,7 @@ from opensiddur.exporter.typography import (
     FontVariant,
     FontWeight,
     HEBREW_FAMILY,
+    InterleavedLineNumbers,
     LATIN_FAMILY,
     NamedSize,
     NoteAnchor,
@@ -580,7 +581,7 @@ def _notes_section(config: TypographyConfig) -> list[str]:
     return lines
 
 
-def _line_numbers_section(config: TypographyConfig, has_parallel: bool) -> list[str]:
+def _line_numbers_section(config: TypographyConfig, uses_reledpar: bool) -> list[str]:
     line_numbers = config.line_numbers
     written = line_numbers.model_fields_set
     lines: list[str] = []
@@ -593,7 +594,7 @@ def _line_numbers_section(config: TypographyConfig, has_parallel: bool) -> list[
         return [r"\numberlinefalse"]
     if "unit" in written:
         lines.append(rf"\lineation{{{line_numbers.unit.value}}}")
-        if has_parallel:
+        if uses_reledpar:
             # \lineation sets the main series only; reledpar keeps a separate
             # \bypage@R that defaults to numbering by section. This block is emitted
             # after the XSLT's own defaults and wins over them, so without the twin a
@@ -602,25 +603,25 @@ def _line_numbers_section(config: TypographyConfig, has_parallel: bool) -> list[
             lines.append(rf"\lineationR{{{line_numbers.unit.value}}}")
     if "increment" in written:
         lines.append(rf"\linenumincrement{{{line_numbers.increment}}}")
-        if has_parallel:
+        if uses_reledpar:
             lines.append(rf"\linenumincrementR{{{line_numbers.increment}}}")
     if "first" in written:
         lines.append(rf"\firstlinenum{{{line_numbers.first}}}")
-        if has_parallel:
+        if uses_reledpar:
             lines.append(rf"\firstlinenumR{{{line_numbers.first}}}")
     if "margin" in written:
         margin = line_numbers.margin.value
         lines.append(rf"\linenummargin{{{margin}}}")
-        if has_parallel:
+        if uses_reledpar:
             lines.append(rf"\linenummarginR{{{margin}}}")
     if "separation" in written:
         lines.append(rf"\setlength{{\linenumsep}}{{{line_numbers.separation}}}")
     if "numerals" in written or "line_number" in config.styles.model_fields_set:
-        lines.extend(_line_number_format_tex(config, has_parallel))
+        lines.extend(_line_number_format_tex(config, uses_reledpar))
     return lines
 
 
-def _line_number_format_tex(config: TypographyConfig, has_parallel: bool) -> list[str]:
+def _line_number_format_tex(config: TypographyConfig, uses_reledpar: bool) -> list[str]:
     """How a line number is set.
 
     The macro is ``\\linenumrep``, not ``\\linenumberstyle``: the latter is a
@@ -639,7 +640,7 @@ def _line_number_format_tex(config: TypographyConfig, has_parallel: bool) -> lis
     # \@arabic is internal; the \hbox keeps the direction and language switches
     # from leaking into reledmac's aux-file writes.
     lines = [r"\makeatletter", r"\renewcommand*{\linenumrep}[1]{\hbox{" + body + "}}"]
-    if has_parallel:
+    if uses_reledpar:
         lines.append(r"\renewcommand*{\linenumrepR}[1]{\hbox{" + body + "}}")
     lines.append(r"\makeatother")
     return lines
@@ -745,6 +746,34 @@ _COLUMN_POSITIONS = {
 }
 
 
+def _interleaved_section(config: TypographyConfig, has_parallel: bool) -> list[str]:
+    """How the translation is set apart when it follows the original in one column.
+
+    Each setting overrides a macro the stylesheet defines, with the model's default,
+    for the ``OSInterleavedTranslation`` environment it wraps the translation in.
+    """
+    parallel = config.parallel
+    if not has_parallel or parallel.layout is not ParallelLayout.INTERLEAVED:
+        return []
+    interleaved = parallel.interleaved
+    written = interleaved.model_fields_set
+    lines: list[str] = []
+    if "translation_size" in written:
+        size = _size_command(interleaved.translation_size, config.paragraphs.line_spacing)
+        lines.append(rf"\renewcommand{{\OSInterleavedSize}}{{{size}}}")
+    if "translation_indent" in written:
+        lines.append(
+            rf"\renewcommand{{\OSInterleavedIndent}}{{{interleaved.translation_indent}}}"
+        )
+    if "spacing" in written:
+        lines.append(rf"\renewcommand{{\OSInterleavedSpacing}}{{{interleaved.spacing}}}")
+    if interleaved.line_numbers is InterleavedLineNumbers.BOTH:
+        # The stylesheet's default turns numbering off for the translation; with
+        # nothing to do, the translation's lines count like any other.
+        lines.append(r"\renewcommand{\OSInterleavedNumbering}{}")
+    return lines
+
+
 # ---------------------------------------------------------------------------
 # The whole block
 # ---------------------------------------------------------------------------
@@ -760,19 +789,25 @@ def build_typography_preamble(
 
     ``has_parallel`` says whether the document has two aligned streams. Several
     reledpar declarations do not exist unless the package is loaded, and the
-    package is loaded only for such a document, so emitting them unconditionally
-    would break every other one.
+    package is loaded only for such a document, and only when it is set in
+    columns or on facing pages, so emitting them unconditionally would break
+    every other one. The interleaved layout sets both texts in one reledmac
+    stream and does not load it.
     """
+    uses_reledpar = (
+        has_parallel and config.parallel.layout is not ParallelLayout.INTERLEAVED
+    )
     sections = [
         ("Fonts", _fonts_section(config)),
         ("Page geometry", _geometry_section(config)),
         ("Paragraphs", _paragraph_section(config)),
         ("Text styles", _styles_section(config)),
         ("Notes", _notes_section(config)),
-        ("Line numbers", _line_numbers_section(config, has_parallel)),
+        ("Line numbers", _line_numbers_section(config, uses_reledpar)),
         ("Markers", _markers_section(config)),
         ("Lists", _lists_section(config)),
         ("Parallel columns", _parallel_section(config, has_parallel)),
+        ("Interleaved parallel", _interleaved_section(config, has_parallel)),
     ]
     sized = any(
         entry.normal_size is not None
