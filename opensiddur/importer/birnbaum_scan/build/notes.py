@@ -47,6 +47,24 @@ assumption that a note is a paragraph of inline prose is contradicted by that on
 #: `specs/birnbaum_scan/extract_notes.py`. They were written out by hand here while there
 #: was one of them; there are eighty-four.
 from .notes_data import AMIDAH_NOTES, BIRCHOT_NOTES, YELADIM_NOTES   # noqa: F401
+from .common import AGG, SERVICE, feature
+
+# This essay concerns the nineteen-blessing weekday Amidah. Its opening is
+# shared by the Sabbath, festival and Rosh Hodesh Musaf Amidahs too.
+WEEKDAY_AMIDAH_NOTE = '<j:none>' + feature(AGG, 'shabbat') + feature(AGG, 'yom-tov') + feature(SERVICE, 'musaf') + '</j:none>'
+def amidah_note(entry):
+    if entry.get('lemma') == 'שמונה עשרה':
+        return dict(entry, condition=WEEKDAY_AMIDAH_NOTE)
+    if entry.get('lemma') == 'מודים דרבנן':
+        # The ordinal applies only to the nineteen-blessing Amidah.
+        ordinal = ('<j:conditional xml:id="modim_eighteenth">' + WEEKDAY_AMIDAH_NOTE
+                   + '</j:conditional>eighteenth <j:endConditional target="#modim_eighteenth"/>')
+        return dict(entry, paras=[dict(para, text=para['text'].replace('eighteenth ', ordinal))
+                                  for para in entry['paras']])
+    return entry
+
+
+AMIDAH_NOTES = [amidah_note(entry) for entry in AMIDAH_NOTES]
 
 
 def note(entry: dict, *, indent: int = 4) -> str:
@@ -57,6 +75,8 @@ def note(entry: dict, *, indent: int = 4) -> str:
         attrs.append(f'n="{entry["n"]}"')
     attrs.append(f'target="{entry["target"]}"')
     out = [f'{pad}<tei:note {" ".join(attrs)}>']
+    if entry.get("condition"):
+        out.append(f'{pad}  <j:condition>{entry["condition"]}</j:condition>')
     paras = entry["paras"]
     for index, para in enumerate(paras):
         rend = f' rend="{para["rend"]}"' if para.get("rend") else ""

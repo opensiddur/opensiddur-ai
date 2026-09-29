@@ -83,6 +83,9 @@ PRAYERS += motzaei_prayers("en", PRAYERS)
 from .hallel import shared as hallel_shared, prayers as hallel_prayers
 PRAYERS = hallel_shared("en", PRAYERS)
 PRAYERS += hallel_prayers("en")
+from .rosh_hodesh_musaf import prayers as rc_musaf_prayers, shared as rc_musaf_shared
+PRAYERS = rc_musaf_shared("en", PRAYERS)
+PRAYERS += rc_musaf_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -143,7 +146,10 @@ from .notes_motzaei_shabbat import NOTES as MOTZAEI_NOTES
 
 from .notes_hallel import NOTES as HALLEL_NOTES
 
+from .notes_rosh_hodesh_musaf import NOTES as RC_MUSAF_NOTES
+
 APPARATUS = {
+    "notes_rosh_hodesh_musaf": dict(entries=RC_MUSAF_NOTES, slug="birnbaum_1949/rosh_chodesh_musaf", title="Notes on Musaf for Rosh Hodesh", first=575, last=584),
     "notes_hallel": dict(entries=HALLEL_NOTES, slug="birnbaum_1949/hallel", title="Notes on Hallel", first=565, last=574),
     "notes_motzaei_shabbat": dict(entries=MOTZAEI_NOTES, slug="birnbaum_1949/motzaei_shabbat", title="Notes on the conclusion of Sabbath and the moon blessing", first=535, last=566),
     "notes_avot": dict(entries=AVOT_NOTES, slug="birnbaum_1949/avot", title="Notes on Pirkei Avot", first=477, last=534),
