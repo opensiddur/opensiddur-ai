@@ -512,3 +512,23 @@
 {"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod/quoted_113_4", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod"}
 {"urn": "urn:x-opensiddur:text:siddur:hallel", "status": "canonical"}
 {"urn": "urn:x-opensiddur:text:siddur:hallel/kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:hallel"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/al_hanissim", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/atah_kadosh", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/bimei", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/elohai", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/kedushah", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/kedushat_hayom", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/kohanim", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/ledor", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/melekh", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/modim", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/modim_derabbanan", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/offerings", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/rain", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/sim_shalom", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/uminchatam", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/veal_kulam", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/yimlokh", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh", "status": "canonical"}

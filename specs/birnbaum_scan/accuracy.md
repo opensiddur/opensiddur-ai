@@ -1213,3 +1213,56 @@ been regenerated for this installment.
 
 The complete suite passes: 2,747 tests, 12 skipped and 3,222 subtests. The only
 warning is a pre-existing Python string-escape warning in an exporter test.
+
+## Rosh Hodesh Musaf: printed 575–584 (Internet Archive n599–n608)
+
+Read all ten scan pages directly, with independent Hebrew and English second
+readings and a mechanical Hebrew transcription comparison after the primary
+reading. The Hebrew reviewer supplied 39 findings; the primary reader inspected
+the disputed crops before applying corrections. Five differing meteg readings
+were checked individually; this is not a claim that every agreed meteg received
+an independent crop review. Page readings, rubrics, notes and adjudications are
+saved in `sourcetexts/sources/birnbaum_siddur/scan_reading/`.
+
+The 32 aligned text passages reuse 15 existing correspondences that match in both
+languages. Other printings retain their differences: English “Shield.” and
+“Praise the Lord.”, “three tenths”, the response's “thou has kept us”, and the
+Hanukkah paragraph's “temple” and “appointed”. Hebrew corrections include the
+rain vowel, punctuation, deficient/plene spellings and individual dagesh/meteg
+readings. Divine-name normalization and logical holam beside shin follow project
+policy. Modim and its congregational response continue independently across the
+page turn. New correspondence boundaries use milestones; whole prayers and
+sections retain divisions. Variant quotations identify their underlying prayer
+or biblical source.
+
+The address `urn:x-opensiddur:text:siddur:rosh_chodesh/musaf` contains a separately
+addressable `/amidah`, weekday Kedushah and the Rosh Hodesh middle blessing. The
+weekday Rosh Hodesh gate is in the caller, leaving the Amidah reusable; Sabbath
+Rosh Hodesh retains its existing Musaf. The leap-year addition applies throughout
+the leap year. Rain, Hanukkah, Reader-only passages and private meditation use
+existing features, with no printed-parenthesis duplication. The ending retains
+the directions to Psalm 104 and Aleinu; neither is expanded here. No Kaddish is
+printed in this installment.
+
+Regeneration previously lost two hand-authored conditions in `notes_amidah.xml`.
+The importer now preserves them: the nineteen-blessing essay is restricted away
+from Sabbath, Yom Tov and Musaf, and the ordinal “eighteenth” in the Modim response
+commentary uses the same restriction. The Rosh Hodesh Musaf proof consequently
+omits the nineteen-blessing essay while shared general commentary remains.
+
+Validation: all 70 changed XML files pass RelaxNG/Schematron; the registry has no
+errors or warnings. The full suite passed 2,750 tests (12 skipped; 3,259 subtests)
+before the final note-condition change; afterward all 252 Birnbaum importer tests
+and 1,372 subtests pass, including both note regressions. Seven dated compilations
+exercise both days of a two-day Rosh Hodesh, summer/winter, leap-year Elul,
+Hanukkah, Reader/private/no-minyan, an ordinary day, and Sabbath Rosh Hodesh.
+Dated leap-year derivation uses Gregorian date and location as required by the
+calendar implementation. All 32 passages in each language match the adjudicated
+readings in the MAYBE parallel compile, allowing markup-boundary whitespace.
+
+The focused parallel PDF has nine pages with nested service/Amidah/Kedushah and
+middle-blessing bookmarks. Its new commentary and four new source citations
+appear once, and all nine printed biblical citations are present through the new
+and shared apparatus. Latin headings paint left to right. All 311 Hebrew glyph
+runs pass the direction check; the reversed control flags all 311. The full-book
+PDF has not been regenerated for this installment.

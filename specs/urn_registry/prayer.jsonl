@@ -721,3 +721,5 @@
 {"urn": "urn:x-opensiddur:text:prayer:hallel/ana/hoshia", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel/ana"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel/blessing", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
 {"urn": "urn:x-opensiddur:text:prayer:hallel/ana", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/chadesh_aleinu", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/roshei_chodashim", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:amidah"}
