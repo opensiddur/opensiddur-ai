@@ -1172,3 +1172,44 @@ reproduces the backwards phrase before the fix and passes the glyph-direction
 check afterward, including the deliberately reversed control. The full 549-page
 PDF above predates this follow-up; the corrected focused proof is
 `output/birnbaum_mincha_rubric_fixed.pdf`.
+
+## Hallel: Internet Archive n 589–n 598 (printed 565–574)
+
+Read the complete section from the scan, with blind independent Hebrew and English
+readers. Hebrew was subsequently compared with the mechanically extracted
+Wikisource slices; English was checked against OCR and the enlarged scan. The
+adjudications and corrected readings are saved page by page. Enlarged crops
+confirmed deficient דַּלֹּתִי, stresses in תַּגְמוּלֽוֹהִי and עֹֽשָׂה, and
+יִסְּרַֽנִּי יָהּ. Unprinted stresses were removed from the two לָנוּ occurrences
+in 115:1 and the two הַצְלִיחָה occurrences. Printed English misspellings
+“Similiarly” and “similiar” are retained. Psalm 117 has no final “Hallelujah” in
+this English printing. The logical holam beside shin in שֹׁמֵר is retained.
+
+Psalms 113–118 have biblical chapter and verse URNs. Earlier quotations in Yehi
+Khevod and Ashrei now carry local correspondence milestones with biblical source
+references, preventing duplicate canonical verse addresses. Hallel's performance
+wrapper preserves the repeated half-verses of 118:25 while the canonical biblical
+verse contains each half once. Printed repetition instructions for 118:21–24 and
+26–29 remain instructions. The opening and closing blessings are reusable prayers.
+Whole-Hallel availability and the all-occasion shivah-house omission belong to the
+siddur caller; the following Kaddish is a sibling section. Rosh Hodesh during
+Hanukkah uses full Hallel and Full Kaddish.
+
+All 41 changed XML files pass RelaxNG and Schematron. Registry checks have zero
+errors or warnings. All 12 Hebrew/English biblical chapters read back exactly
+against the adjudicated data, and both printed Ana repetitions occur twice.
+Nine compiled calendar/observance scenarios cover full, half, absent, overlapping
+Rosh Hodesh/Hanukkah, Israel/diaspora Pesach and shivah-house omissions on Rosh
+Hodesh, Hanukkah and a festival. Calendar boundary tests additionally cover both
+Kislev lengths, two-day Rosh Hodesh and unknown inputs. They caught pyluach's
+absolute date subtraction; Hallel now uses a signed Julian-day difference.
+
+The focused parallel proof is output/birnbaum_hallel_parallel.pdf. All seven
+commentary notes occur exactly once (nine-word fingerprints). All six Psalm
+headings and HALLEL paint left to right; Hebrew direction is checked using glyph
+coordinates and a deliberately reversed control. The bookmarks nest Psalms 113–118
+under Hallel and keep the following Kaddish outside it. The full-book PDF has not
+been regenerated for this installment.
+
+The complete suite passes: 2,747 tests, 12 skipped and 3,222 subtests. The only
+warning is a pre-existing Python string-escape warning in an exporter test.

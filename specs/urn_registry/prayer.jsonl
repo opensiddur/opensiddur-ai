@@ -716,3 +716,8 @@
 {"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim/text", "status": "canonical", "label_en": "ribbon haolamim — text"}
 {"urn": "urn:x-opensiddur:text:prayer:ufetah_lanu", "status": "canonical", "label_en": "ufetah lanu"}
 {"urn": "urn:x-opensiddur:text:prayer:ufetah_lanu/text", "status": "canonical", "label_en": "ufetah lanu — text"}
+{"urn": "urn:x-opensiddur:text:prayer:ashrei/quoted_115_18", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:ashrei"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/ana/hatzlicha", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel/ana"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/ana/hoshia", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel/ana"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/blessing", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
+{"urn": "urn:x-opensiddur:text:prayer:hallel/ana", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:hallel"}
