@@ -80,6 +80,9 @@ PRAYERS += avot_prayers("en")
 from .motzaei_shabbat import prayers as motzaei_prayers, shared as motzaei_shared
 PRAYERS = motzaei_shared("en", PRAYERS)
 PRAYERS += motzaei_prayers("en", PRAYERS)
+from .hallel import shared as hallel_shared, prayers as hallel_prayers
+PRAYERS = hallel_shared("en", PRAYERS)
+PRAYERS += hallel_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -138,7 +141,10 @@ from .notes_avot import NOTES as AVOT_NOTES
 
 from .notes_motzaei_shabbat import NOTES as MOTZAEI_NOTES
 
+from .notes_hallel import NOTES as HALLEL_NOTES
+
 APPARATUS = {
+    "notes_hallel": dict(entries=HALLEL_NOTES, slug="birnbaum_1949/hallel", title="Notes on Hallel", first=565, last=574),
     "notes_motzaei_shabbat": dict(entries=MOTZAEI_NOTES, slug="birnbaum_1949/motzaei_shabbat", title="Notes on the conclusion of Sabbath and the moon blessing", first=535, last=566),
     "notes_avot": dict(entries=AVOT_NOTES, slug="birnbaum_1949/avot", title="Notes on Pirkei Avot", first=477, last=534),
     "notes_shabbat_minchah": dict(entries=SHABBAT_MINCHAH_NOTES, slug="birnbaum_1949/shabbat_minchah", title="Notes on Sabbath Mincha and winter Psalms", first=437, last=476),

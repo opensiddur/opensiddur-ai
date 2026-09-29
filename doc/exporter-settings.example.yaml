@@ -231,3 +231,11 @@ typography:
 # cause omission. Missing date or locale leaves this condition undecided.
 # opensiddur:observance/synagogue-havdalah selects the synagogue's shorter
 # Havdalah opening; false includes the introductory verses for home recitation.
+
+# Hallel (Birnbaum): opensiddur:hallel/recite and /full are derived from the
+# Hebrew date and is-israel. Unknown dates/locales leave the choice MAYBE.
+# Set recite: true and full: true explicitly to render complete Hallel.
+# The siddur caller, not prayer:hallel itself, omits it when
+# opensiddur:override/house-of-mourning is true, on every Hallel occasion.
+# Psalm 115:1–11 and 116:1–11 alone are gated by /full. Following Kaddish
+# belongs to siddur:hallel/kaddish; Rosh Hodesh takes priority over Hanukkah.

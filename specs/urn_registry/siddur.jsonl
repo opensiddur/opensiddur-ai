@@ -507,3 +507,8 @@
 {"urn": "urn:x-opensiddur:text:siddur:berakhot/birkat_halevanah/psalm67/8", "status": "canonical", "label_en": "berakhot — birkat halevanah — psalm67 — 8"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/kaddish/yitbarakh", "status": "canonical", "label_en": "Saturday-night Kaddish — yitbarakh"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/kaddish/titkabal", "status": "canonical", "label_en": "Saturday-night Kaddish — titkabal"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod/quoted_113_2", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod/quoted_113_3", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod"}
+{"urn": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod/quoted_113_4", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:chol/shacharit/pesukei_dezimra/yehi_khevod"}
+{"urn": "urn:x-opensiddur:text:siddur:hallel", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:siddur:hallel/kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:hallel"}
