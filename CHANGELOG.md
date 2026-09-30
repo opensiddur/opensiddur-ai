@@ -145,6 +145,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unnumbered lines put reledmac's per-page line-number restart early, so numbering began again
   partway down a page. reledmac counts an unnumbered line but wrote no page record for it; it
   now writes one for every line.
+- A line break that ended its paragraph set an empty line, with a line number of its own, before
+  the paragraph's end. Verse is encoded line by line and a source closes the last line of a
+  paragraph with a `tei:lb` like every other, so a psalm aligned verse by verse carried a blank
+  numbered row after every verse, in every layout. A break with nothing that prints after it
+  before the paragraph ends is now dropped; a break before a rubric likewise, since the rubric
+  breaks the line itself.
+- The rule marking a conditional paragraph was sized to `\hsize` and ignored the paragraph's own
+  indents, so in an indented paragraph (a list item, an interleaved translation) its box overran
+  the right margin by the indent.
 
 ### Changed
 - The JPS 1917 downloader now reads the Action API through the shared client, like the Birnbaum

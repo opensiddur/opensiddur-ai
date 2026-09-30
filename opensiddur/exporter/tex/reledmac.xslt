@@ -425,8 +425,13 @@
              \hsize, not \linewidth, for the reason given above \OSInstructionBlock:
              reledpar sets \hsize to the column width inside a parallel column but leaves
              \linewidth at the page, so a \linewidth box is twice the width it has to fit
-             in and the centred rule lands outside its own column. -->
-        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \hsize{\hss\rule{0.25\hsize}{0.4pt}\hss}}&#10;</xsl:text>
+             in and the centred rule lands outside its own column.
+
+             And less \leftskip and \rightskip, which narrow the lines of an indented
+             paragraph — the interleaved layout's translation, a list item — but not
+             \hsize: a box as wide as \hsize there overruns the right margin by the indent. -->
+        <xsl:text>\newcommand{\OSMeasure}{\dimexpr\hsize-\leftskip-\rightskip\relax}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure{\hss\rule{0.25\hsize}{0.4pt}\hss}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondStartBlock}{\OSCondRule}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondEndBlock}{\OSCondRule}&#10;</xsl:text>
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
@@ -1975,10 +1980,52 @@
              one with nothing after it. Inside a single \pstart that break now sets a
              blank line, and a blank line before \pend is a row of empty column. Drop the
              ones that separate nothing. -->
+        <xsl:variable name="unbroken" as="node()*" select="f:drop-trailing-lbs($paired)"/>
         <xsl:sequence
-                      select="if ($trim) then f:trim-trailing-breaks($paired)
-                              else $paired"/>
+                      select="if ($trim) then f:trim-trailing-breaks($unbroken)
+                              else $unbroken"/>
 
+    </xsl:function>
+
+    <!-- Drop a line break that ends its paragraph.
+
+         Verse is encoded line by line, and a source commonly closes the last line of a
+         paragraph with a tei:lb like every other. A forced break with nothing after it
+         does not end a line: it starts an empty one, which then takes a line number and
+         sets a blank row before the paragraph's end — once per verse, where a text is
+         aligned verse by verse. The break is dropped when nothing that prints follows it
+         before the paragraph ends: layout whitespace, a silent milestone, the terminating
+         verse milestone that carries no number, or another such break. Anything else
+         after it, a note mark included, keeps it, as a line of its own.
+
+         A rubric counts as an end of paragraph here because its macro breaks the line
+         itself before setting the rubric, so a break in front of it also sets an empty
+         line. -->
+    <xsl:function name="f:drop-trailing-lbs" as="node()*">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:sequence select="for $i in 1 to count($leaves)
+                              return if (exists($leaves[$i]/self::tei:lb)
+                                         and f:only-silence-follows($leaves, $i + 1))
+                                     then ()
+                                     else $leaves[$i]"/>
+    </xsl:function>
+
+    <xsl:function name="f:only-silence-follows" as="xs:boolean">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:param name="from" as="xs:integer"/>
+        <xsl:variable name="next" as="node()?" select="$leaves[$from]"/>
+        <xsl:sequence
+            select="if (empty($next)) then true()
+                    else if ($next/self::f:para-break or $next/self::f:block-break
+                             or $next/self::f:head or $next/self::f:list-label
+                             or $next/self::tei:milestone[@rend = '****']
+                             or $next/self::tei:note[@type = 'instruction'])
+                    then true()
+                    else if (f:is-structural-space($next) or f:renders-nothing($next)
+                             or $next/self::tei:lb
+                             or $next/self::tei:milestone[@unit = 'verse'][not(normalize-space(@n))])
+                    then f:only-silence-follows($leaves, $from + 1)
+                    else false()"/>
     </xsl:function>
 
 

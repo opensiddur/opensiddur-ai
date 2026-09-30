@@ -3601,17 +3601,92 @@ class TestConditionalRuleWidth(unittest.TestCase):
     centred rule lands outside the column it belongs to.
     """
 
-    def test_the_default_rule_uses_hsize(self):
+    def test_the_default_rule_uses_hsize_less_the_paragraph_indents(self):
+        """An indented paragraph — a list item, an interleaved translation — narrows its
+        lines with \\leftskip and \\rightskip, not \\hsize."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn(
-            r"\newcommand{\OSCondRule}{\leavevmode\hbox to \hsize"
+            r"\newcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure"
             r"{\hss\rule{0.25\hsize}{0.4pt}\hss}}",
             out,
         )
+        self.assertIn(
+            r"\newcommand{\OSMeasure}{\dimexpr\hsize-\leftskip-\rightskip\relax}", out
+        )
+
+
+class TestTrailingLineBreak(unittest.TestCase):
+    r"""A ``tei:lb`` that ends its paragraph is dropped.
+
+    Verse is encoded line by line, and a source closes the last line of a paragraph with
+    a break like every other. ``\\`` with nothing after it starts an empty line, which
+    takes a line number and sets a blank row before the paragraph ends.
+    """
+
+    BREAK = r"\leavevmode\\{}"
+
+    @staticmethod
+    def _body(xml: str, **params) -> str:
+        return _transform(xml, **params).split(r"\begin{document}", 1)[1]
+
+    @staticmethod
+    def _single(p: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>{p}</tei:body></tei:text>
+        </tei:TEI>"""
+
+    def test_a_break_between_lines_is_kept_and_the_last_is_dropped(self):
+        body = self._body(self._single("<tei:p>one<tei:lb/>two<tei:lb/>\n</tei:p>"))
+        self.assertEqual(1, body.count(self.BREAK))
+        self.assertRegex(body, r"one\\leavevmode\\\\\{\}\s*two\s*\\pend")
+
+    def test_the_numberless_verse_terminator_does_not_keep_a_break(self):
+        body = self._body(self._single(
+            '<tei:p><tei:milestone unit="verse" n="1"/>one<tei:lb/>'
+            '<tei:milestone unit="verse"/></tei:p><tei:p>two</tei:p>'))
+        self.assertNotIn(self.BREAK, body)
+
+    def test_a_break_before_a_numbered_verse_is_kept(self):
+        body = self._body(self._single(
+            '<tei:p><tei:milestone unit="verse" n="1"/>one<tei:lb/>'
+            '<tei:milestone unit="verse" n="2"/>two</tei:p>'))
+        self.assertEqual(1, body.count(self.BREAK))
+
+    def test_a_break_before_a_rubric_is_dropped(self):
+        """The rubric's own macro breaks the line; two breaks set an empty one."""
+        body = self._body(self._single(
+            '<tei:p>one<tei:lb/><tei:note type="instruction">Say:</tei:note>two</tei:p>'))
+        self.assertNotIn(self.BREAK, body)
+
+    def test_columns_keep_their_pairing(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he"><tei:p>א<tei:lb/>ב<tei:lb/></tei:p></p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en"><tei:p>A<tei:lb/>B<tei:lb/></tei:p></p:parallelItem>
+            </p:parallel>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he"><tei:p>ג<tei:lb/></tei:p></p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en"><tei:p>C</tei:p></p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+        for layout in ("pages", "pairs", "interleaved"):
+            with self.subTest(layout=layout):
+                body = self._body(xml, layout=layout)
+                self.assertEqual(2, body.count(self.BREAK))
+                self.assertNotRegex(body, r"\\leavevmode\\\\\{\}\s*\\pend")
+                if layout != "interleaved":
+                    left = body.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+                    right = body.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+                    self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
 
 
 class TestLabelledLists(unittest.TestCase):

@@ -684,8 +684,9 @@ def _markers_section(config: TypographyConfig) -> list[str]:
             # break the line. \hsize rather than \linewidth: reledpar narrows
             # \hsize to the column but leaves \linewidth at the page width, so a
             # \linewidth box centres its rule outside the column it belongs to.
+            # \OSMeasure is \hsize less the paragraph's own indents.
             lines.append(
-                r"\renewcommand{\OSCondRule}{\leavevmode\hbox to \hsize{\hss\rule{"
+                r"\renewcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure{\hss\rule{"
                 + width
                 + "}{"
                 + conditional.rule_thickness
