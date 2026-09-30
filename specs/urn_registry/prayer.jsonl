@@ -738,3 +738,5 @@
 {"urn": "urn:x-opensiddur:text:prayer:yizkor/martyrs", "status": "canonical", "label_en": "Yizkor: martyrs", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
 {"urn": "urn:x-opensiddur:text:prayer:yizkor/mother", "status": "canonical", "label_en": "Yizkor: mother", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
 {"urn": "urn:x-opensiddur:text:prayer:yizkor/wife", "status": "canonical", "label_en": "Yizkor: wife", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillat_tal", "status": "canonical", "label_en": "Festival Musaf: tefillat tal"}
+{"urn": "urn:x-opensiddur:text:prayer:el_male_rachamim", "status": "canonical", "label_en": "El Male Rachamim"}
