@@ -1266,3 +1266,64 @@ appear once, and all nine printed biblical citations are present through the new
 and shared apparatus. Latin headings paint left to right. All 311 Hebrew glyph
 runs pass the direction check; the reversed control flags all 311. The full-book
 PDF has not been regenerated for this installment.
+
+## Festival prayers, IA n609–n624 (printed585–600)
+
+Read all sixteen page images directly, Hebrew and English, then compared the Hebrew
+with mechanically produced Wikisource slices. Independent readers supplied English
+alignment and a second Hebrew reading. The source repository preserves the corrected
+page readings, mechanical slices, provisional comparison records, and crop decisions.
+The initial second reading omitted many metegs; those omissions were not accepted as
+absence. English OCR files at the mapped scan keys contain other leaves, so those files
+were not used to supply words or to claim an English OCR agreement score.
+
+The primary reading required corrections in spelling, pointing and punctuation,
+including יְהֵא שְׁרֵא, צָרְכָּנָא, defective תִּשְׁכֹּן, וַתַּנְחִילֵֽנוּ,
+סָבְרֵי and לֵשֵׁב. Crops also corrected several commas and the Sabbath parenthesis
+boundary in Kiddush. Two tentative secondary suggestions (נָגִיד and plene שבועות)
+were rejected after tighter crops. The English period in “have pity on us. and save us”
+and tight “fathers,that” are retained. The logical holam in מֹשֶׁה is encoded.
+The secondary transcription's added translation of the eruv declaration, morid hatal,
+and expanded priestly ritual are absent from these printed pages and are not imported.
+
+The section includes Eruv Tavshilin, festival candle lighting, the festival Amidah,
+and festival Kiddush, with all six commentary notes. Sabbath insertions use functional
+conditions without the diplomatic parentheses. Candle-lighting Shehecheyanu follows
+the user's first-two-nights diaspora / first-night Israel decision, excluding the final
+Pesach days. “In the Sukkah” has an explicit manual presence feature with no default.
+Shacharit and Mincha retain their different Kedushah texts; Sim Shalom is for Shacharit,
+Shalom Rav for Mincha and Maariv. Vatodienu is restricted to Maariv after Shabbat.
+The earlier services now call the festival Amidah and return to their existing Kaddish;
+Kaddish remains outside the Amidah. Shabbat Chol Hamoed retains the Sabbath Amidah.
+
+Exact bilingual matches reuse existing addresses. Eight shared leaf divisions were
+extracted into independent files because the compiler otherwise inherited surrounding
+weekday rubrics. Their earlier callers retain their conditions. The festival Amidah
+explicitly supplies its Yom Tov context so weekday-only commentary stays out of an
+undated proof. The Sabbath Arvit variant lookup now finds its source by correspondence
+rather than assuming the source remains embedded in the Hodaah container.
+
+Validation and proof:
+
+- All 66 aligned rows read back from compiled XML in both languages (Savri has no
+  printed English translation); conditional parentheses and page markers are excluded
+  from this comparison, with Hebrew points and punctuation retained.
+- Thirteen dated compiles cover the four festivals, reader/private/no-minyan settings,
+  morning/afternoon/evening, Saturday-night additions, candle-lighting location boundaries,
+  and the final days of Pesach. All pass.
+- All 157 changed/new XML files pass RelaxNG and Schematron. Registry check reports
+  0 errors and 0 warnings.
+- Full regression suite before shared-passage extraction: 2757 passed, 12 skipped;
+  importer regressions after extraction and the final guard test: 258 passed,
+  1488 subtests passed.
+- `output/birnbaum_festival_parallel.pdf`: 15 pages, hierarchical bookmarks, all six
+  new commentary notes exactly once, no inherited weekday instructions or nineteen-
+  blessing essay. English headings are left to right by glyph coordinates. Hebrew
+  direction check: 0/490 reversed runs; reversed-run control flags 487/490.
+- Six paired instruction starts were measured in the PDF. The proof and compiled XML
+  remain untracked output artifacts.
+
+Follow-up: removed the duplicated Eruv Tavshilin rubric from the occasion gate.
+The reusable Eruv unit retains the printed instruction beneath its heading. Both
+caller files validate; compiled XML and PDF now contain one instruction per column,
+confirmed by the PDF word positions.
