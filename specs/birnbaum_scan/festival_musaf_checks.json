@@ -1,0 +1,32 @@
+{
+  "scope": "Internet Archive n633–n660; printed609–636",
+  "alignment_rows": 119,
+  "printed_notes": 34,
+  "importer_tests": 269,
+  "date_scenarios": [
+    "pesach_reader PASS",
+    "pesach_silent PASS",
+    "no_minyan PASS",
+    "sukkot_israel PASS",
+    "sukkot_diaspora PASS",
+    "sukkot_repeat PASS",
+    "shabbat_chol PASS"
+  ],
+  "pdf_measurements": [
+    "34 printed notes each appear once; no inherited commentary",
+    "25 pages [(0, 'מוסף לשלש רגלים · Festival Musaf'), (1, 'מוּסָף לְשָׁלֹשׁ רְגָלִים · MUSAF FOR FESTIVALS'), (2, 'תְּפִלַּת טַל · PRAYER FOR DEW'), (2, 'קדושה לימים טובים · KEDUSHAH FOR MAJOR FESTIVALS'), (2, 'קדושה לחול המועד · KEDUSHAH FOR ḤOL HA-MO‘ED'), (2, 'קדושת היום · Sanctification of the festival'), (3, 'קרבנות המועדים · Festival offerings'), (2, 'ותערב · The priestly blessing: conclusion of Retzeh'), (2, 'הודאה · Thanksgiving'), (2, 'בִּרְכַּת כֹּהֲנִים · THE PRIESTLY BLESSING')]",
+    "226 line numbers outside adjacent text",
+    "2 pages [(0, 'קִדּוּשָׁא רַבָּה לְשָׁלֹשׁ רְגָלִים · MORNING KIDDUSH FOR FESTIVALS')]",
+    "6 line numbers outside adjacent text",
+    "Aligned rubric starts: [(1, 'Chanted', 0.0), (23, 'Priestly', 0.0)]"
+  ],
+  "registry": "2060 record(s): 1988 canonical, 50 alias, 22 context. 0 error(s), 0 warning(s), 0 note(s).",
+  "direction": [
+    "0 of 812 Hebrew runs are set left to right",
+    "control: 800 of 812 flagged when every run is reversed"
+  ],
+  "kiddush_direction": [
+    "0 of 27 Hebrew runs are set left to right",
+    "control: 27 of 27 flagged when every run is reversed"
+  ]
+}

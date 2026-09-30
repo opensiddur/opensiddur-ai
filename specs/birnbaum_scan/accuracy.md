@@ -1401,3 +1401,37 @@ note marks. Bookmarks nest the opening verses and Psalm 91 beneath the memorial
 service.
 
 Proof: `output/birnbaum_yizkor_parallel.pdf` (compiled XML and TeX alongside it).
+
+## Festival Musaf, priestly blessing, morning Kiddush and Tal (n633–n660)
+
+Printed609–636 was read directly, with independent Hebrew and English readers,
+then compared against mechanically resolved page slices. The source audit is in
+`sourcetexts/sources/birnbaum_siddur/scan_reading/festival_musaf/`. It preserves the
+initial readings, raw mechanical differences, final aligned readings, and the
+corrections rather than reporting a misleading zero-error initial transcription.
+Enlargement corrected several initial Tal consonants and vowels, the pausal rain
+vowel, Shavuot spelling, and individual dagesh/meteg readings. The first-half
+second reader's omitted metegs were not accepted as a bulk correction.
+
+119 bilingual alignment rows preserve the edition's text, including missing
+English Savri, the condensed English dream prayer, and Tal's verse lines.
+Compound biblical passages have per-verse milestones and biblical source URNs;
+local occurrence URNs retain edition wording. Exact bilingual reuse is limited
+to independently checked passages. Gevurot and Atah Vechartanu stay local because
+transclusion also imported commentary absent from these pages. The printed
+Numbers29:41–61 citation is preserved as an apparent print error.
+
+The editor confirmed longer Kedushah for Shabbat Chol Hamoed and a separate MAYBE
+custom for repeating Uminchatam. Tal replaces the Reader's first two blessing
+openings on Pesach day1, then resumes Mekhalkel. The Kohanim ceremony branches at
+the end of Retzeh, returns through Modim, and rejoins Sim Shalom. Its availability
+is separate from minyan/repetition. Occasion conditions remain in callers; the
+standalone Tal, priestly ceremony and morning Kiddush remain addressable.
+
+Verification:269 importer tests; both XML projects validated, including final
+verse-boundary changes; registry zero errors and warnings. Actual-date compiles
+exercise Pesach silent/repetition, no minyan, Israel/diaspora Sukkot, optional
+Uminchatam, and Shabbat Chol Hamoed. The parallel proofs match all119 Hebrew and
+English rows and contain all34 printed notes exactly once. PDF glyph-position
+checks found no reversed Hebrew runs and rejected deliberately reversed controls.
+Measured line numbers sit outside adjacent text; sampled opening rubrics align.
