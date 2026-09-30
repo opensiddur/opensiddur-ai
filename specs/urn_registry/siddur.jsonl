@@ -532,3 +532,57 @@
 {"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/veal_kulam", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
 {"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah/yimlokh", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:rosh_chodesh/musaf/amidah"}
 {"urn": "urn:x-opensiddur:text:siddur:rosh_chodesh", "status": "canonical"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim", "status": "canonical", "label_en": "regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/amidah", "status": "canonical", "label_en": "regalim / amidah", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/amidah/kedushah", "status": "canonical", "label_en": "regalim / amidah / kedushah", "parent": "urn:x-opensiddur:text:siddur:regalim/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/amidah/kedushah/minchah", "status": "canonical", "label_en": "regalim / amidah / kedushah / minchah", "parent": "urn:x-opensiddur:text:siddur:regalim/amidah/kedushah"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/amidah/kedushah/shacharit", "status": "canonical", "label_en": "regalim / amidah / kedushah / shacharit", "parent": "urn:x-opensiddur:text:siddur:regalim/amidah/kedushah"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/amidah/kedushat_hayom", "status": "canonical", "label_en": "regalim / amidah / kedushat hayom", "parent": "urn:x-opensiddur:text:siddur:regalim/amidah"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/candles", "status": "canonical", "label_en": "regalim / candles", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/eruv_tavshilin", "status": "canonical", "label_en": "regalim / eruv tavshilin", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush", "status": "canonical", "label_en": "regalim / kiddush", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis", "status": "canonical", "label_en": "regalim / kiddush / genesis", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/1", "status": "canonical", "label_en": "regalim / kiddush / genesis / 1", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/1/31", "status": "canonical", "label_en": "regalim / kiddush / genesis / 1 / 31", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/1"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2", "status": "canonical", "label_en": "regalim / kiddush / genesis / 2", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2/1", "status": "canonical", "label_en": "regalim / kiddush / genesis / 2 / 1", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2/2", "status": "canonical", "label_en": "regalim / kiddush / genesis / 2 / 2", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2/3", "status": "canonical", "label_en": "regalim / kiddush / genesis / 2 / 3", "parent": "urn:x-opensiddur:text:siddur:regalim/kiddush/genesis/2"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text", "status": "canonical", "label_en": "regalim / text", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/amidah_pesach", "status": "canonical", "label_en": "regalim / text / amidah pesach", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/amidah_shavuot", "status": "canonical", "label_en": "regalim / text / amidah shavuot", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/amidah_shemini", "status": "canonical", "label_en": "regalim / text / amidah shemini", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/amidah_sukkot", "status": "canonical", "label_en": "regalim / text / amidah sukkot", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/atah_kadosh", "status": "canonical", "label_en": "regalim / text / atah kadosh", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/az", "status": "canonical", "label_en": "regalim / text / az", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/elohai", "status": "canonical", "label_en": "regalim / text / elohai", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/fire", "status": "canonical", "label_en": "regalim / text / fire", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/ki_shem", "status": "canonical", "label_en": "regalim / text / ki shem", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kiddush_close", "status": "canonical", "label_en": "regalim / text / kiddush close", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kiddush_open", "status": "canonical", "label_en": "regalim / text / kiddush open", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kiddush_pesach", "status": "canonical", "label_en": "regalim / text / kiddush pesach", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kiddush_shavuot", "status": "canonical", "label_en": "regalim / text / kiddush shavuot", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kiddush_shemini", "status": "canonical", "label_en": "regalim / text / kiddush shemini", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kiddush_sukkot", "status": "canonical", "label_en": "regalim / text / kiddush sukkot", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/kohanim", "status": "canonical", "label_en": "regalim / text / kohanim", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/ledor", "status": "canonical", "label_en": "regalim / text / ledor", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/mikra", "status": "canonical", "label_en": "regalim / text / mikra", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/mimkomekha", "status": "canonical", "label_en": "regalim / text / mimkomekha", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/modim", "status": "canonical", "label_en": "regalim / text / modim", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/modim_derabbanan", "status": "canonical", "label_en": "regalim / text / modim derabbanan", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/rain", "status": "canonical", "label_en": "regalim / text / rain", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/retzeh", "status": "canonical", "label_en": "regalim / text / retzeh", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/savri", "status": "canonical", "label_en": "regalim / text / savri", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/shalom_rav", "status": "canonical", "label_en": "regalim / text / shalom rav", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/sim_shalom", "status": "canonical", "label_en": "regalim / text / sim shalom", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/vatiten", "status": "canonical", "label_en": "regalim / text / vatiten", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/vayehi", "status": "canonical", "label_en": "regalim / text / vayehi", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/vaykhulu", "status": "canonical", "label_en": "regalim / text / vaykhulu", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yaaleh", "status": "canonical", "label_en": "regalim / text / yaaleh", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yaaleh_pesach", "status": "canonical", "label_en": "regalim / text / yaaleh pesach", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yaaleh_shavuot", "status": "canonical", "label_en": "regalim / text / yaaleh shavuot", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yaaleh_shemini", "status": "canonical", "label_en": "regalim / text / yaaleh shemini", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yaaleh_sukkot", "status": "canonical", "label_en": "regalim / text / yaaleh sukkot", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yehi", "status": "canonical", "label_en": "regalim / text / yehi", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/yimlokh_minchah", "status": "canonical", "label_en": "regalim / text / yimlokh minchah", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/text/zokhrenu", "status": "canonical", "label_en": "regalim / text / zokhrenu", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}

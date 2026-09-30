@@ -83,6 +83,9 @@ PRAYERS += hallel_prayers("he")
 from .rosh_hodesh_musaf import prayers as rc_musaf_prayers, shared as rc_musaf_shared
 PRAYERS = rc_musaf_shared("he", PRAYERS)
 PRAYERS += rc_musaf_prayers("he")
+from .festival import prayers as festival_prayers, shared as festival_shared
+PRAYERS = festival_shared("he", PRAYERS)
+PRAYERS += festival_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -623,7 +626,8 @@ def units(project, pages, by_name, amidah_body):
     from .motzaei_shabbat import units as motzaei_units
     from .shabbat_minchah import units as shabbat_minchah_units
     from .shabbat_day_meal import units as day_meal_units
-    return extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)
+    from .festival import units as festival_units, extend_services
+    return extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

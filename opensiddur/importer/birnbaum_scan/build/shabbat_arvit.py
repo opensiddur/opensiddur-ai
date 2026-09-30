@@ -123,8 +123,9 @@ def amidah(lang,by_name):
     text+=conditional('ukhtov','Between Rosh Hashanah and Yom Kippur add:',TEN_DAYS,transclude(PRAYER+'amidah/hodaah/ukhtov'))
     # The printed English here says “O God” where the shared weekday text says
     # “O Lord”. Local realization in both languages keeps parallel alignment.
-    original=by_name['amidah_hodaah']['body']
     target=PRAYER+'amidah/hodaah/hatov_shimkha'
+    original=next(p['body'] for p in by_name.values()
+                  if '<tei:div corresp="'+target+'">' in p['body'])
     value=re.search(r'<tei:div corresp="'+re.escape(target)+r'">\s*<tei:p>(.*?)</tei:p>',original,re.S)[1]
     if lang=='en':value=value.replace('O Lord, Beneficent','O God, Beneficent')
     text+='<tei:p>'+marked(ROOT+'/amidah/hatov_shimkha',f'<tei:seg source="{target}">{value}</tei:seg>')+'</tei:p>'

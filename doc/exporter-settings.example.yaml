@@ -239,3 +239,9 @@ typography:
 # opensiddur:override/house-of-mourning is true, on every Hallel occasion.
 # Psalm 115:1–11 and 116:1–11 alone are gated by /full. Following Kaddish
 # belongs to siddur:hallel/kaddish; Rosh Hodesh takes priority over Hanukkah.
+
+# Festival Kiddush: opensiddur:practice/in-sukkah is a manual Boolean with
+# no default. Leave it unset to retain Birnbaum's “In the Sukkah:” instruction
+# and conditional blessing; set it true/false for a particular meal.
+# Candle-lighting Shehecheyanu uses the first two festival nights in the diaspora
+# and the first in Israel, excluding the final days of Pesach.
