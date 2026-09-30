@@ -86,6 +86,8 @@ PRAYERS += rc_musaf_prayers("he")
 from .festival import prayers as festival_prayers, shared as festival_shared
 PRAYERS = festival_shared("he", PRAYERS)
 PRAYERS += festival_prayers("he")
+from .yizkor import prayers as yizkor_prayers
+PRAYERS += yizkor_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -627,7 +629,8 @@ def units(project, pages, by_name, amidah_body):
     from .shabbat_minchah import units as shabbat_minchah_units
     from .shabbat_day_meal import units as day_meal_units
     from .festival import units as festival_units, extend_services
-    return extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project)
+    from .yizkor import units as yizkor_units, extend_services as extend_yizkor
+    return extend_yizkor(extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project) + yizkor_units(project))
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

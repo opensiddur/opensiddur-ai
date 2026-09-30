@@ -70,6 +70,16 @@ class TestRoshHodesh(unittest.TestCase):
             data[(FS_TIME, "minute")] = 0
         return _snapshot(data)
 
+    def test_shemini_atzeret_and_simchat_torah_day_numbers(self):
+        for israel in (True, False):
+            for day in (21, 22, 23, 24):
+                heb = pyluach_dates.HebrewDate(5786, 7, day)
+                greg = heb.to_greg()
+                expected = 1 if day == 22 else 2 if day == 23 and not israel else 0
+                with self.subTest(israel=israel,day=day):
+                    found = compute_holiday(self._snap(greg.year, greg.month, greg.day, israel=israel))
+                    self.assertEqual(found["shmini-atzeret"], expected)
+
     def test_hanukkah_all_eight_days_and_rosh_hodesh_overlap(self):
         # 5784 has a short Kislev; 5786 has a full Kislev.
         for year in (5784, 5786):
