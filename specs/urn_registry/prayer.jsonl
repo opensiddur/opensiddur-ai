@@ -730,3 +730,11 @@
 {"urn": "urn:x-opensiddur:text:prayer:hadlakat_ner_yom_tov", "status": "canonical", "label_en": "hadlakat ner yom tov"}
 {"urn": "urn:x-opensiddur:text:prayer:hamavdil_bein_kodesh_lekodesh", "status": "canonical", "label_en": "hamavdil bein kodesh lekodesh"}
 {"urn": "urn:x-opensiddur:text:prayer:leshev_basukkah", "status": "canonical", "label_en": "leshev basukkah"}
+{"urn": "urn:x-opensiddur:text:prayer:el_male_rachamim/man", "status": "canonical", "label_en": "Yizkor: man", "parent": "urn:x-opensiddur:text:prayer:el_male_rachamim"}
+{"urn": "urn:x-opensiddur:text:prayer:el_male_rachamim/woman", "status": "canonical", "label_en": "Yizkor: woman", "parent": "urn:x-opensiddur:text:prayer:el_male_rachamim"}
+{"urn": "urn:x-opensiddur:text:prayer:yizkor", "status": "canonical", "label_en": "Yizkor: yizkor"}
+{"urn": "urn:x-opensiddur:text:prayer:yizkor/father", "status": "canonical", "label_en": "Yizkor: father", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
+{"urn": "urn:x-opensiddur:text:prayer:yizkor/husband", "status": "canonical", "label_en": "Yizkor: husband", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
+{"urn": "urn:x-opensiddur:text:prayer:yizkor/martyrs", "status": "canonical", "label_en": "Yizkor: martyrs", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
+{"urn": "urn:x-opensiddur:text:prayer:yizkor/mother", "status": "canonical", "label_en": "Yizkor: mother", "parent": "urn:x-opensiddur:text:prayer:yizkor"}
+{"urn": "urn:x-opensiddur:text:prayer:yizkor/wife", "status": "canonical", "label_en": "Yizkor: wife", "parent": "urn:x-opensiddur:text:prayer:yizkor"}

@@ -1327,3 +1327,77 @@ Follow-up: removed the duplicated Eruv Tavshilin rubric from the occasion gate.
 The reusable Eruv unit retains the printed instruction beneath its heading. Both
 caller files validate; compiled XML and PDF now contain one instruction per column,
 confirmed by the PDF word positions.
+
+### Yizkor — IA n625–n632, printed pages 601–608
+
+Read all eight images before consulting the Hebrew transcription, with independent
+Hebrew and English second readings. Added the opening eight biblical verses,
+Psalm 91, the father/mother/husband/wife and martyrs prayers, both forms of El Male
+Rachamim, and Av Harachamim. All three printed commentary blocks (including the
+607–608 continuation), four source citations, name-placeholder instructions, and
+speaker cues are retained. English El Male Rachamim deliberately lacks the Hebrew
+charity-pledge clause: that is the printed translation. The Reader cue within Av
+Harachamim occurs only in the Hebrew column.
+
+Eight primary-reading corrections were verified against enlarged crops: the
+maqqef in ben-enosh; the space in ure’eh yashar; the meteg in veharuach; the comma
+after tidrokh; the meteg in noderet; the absence of a yod dagesh in hayekarah; the
+comma after rabbah; and the patach in Av Harachamim. Crop coordinates, provisional
+readings, independent readings and corrected page texts are saved in sourcetexts.
+The primary meteg in asbi‘ehu and the pointing of yastireha survived review. The
+logical holam in Moshe is retained under the project’s combined-dot policy.
+
+Mechanical Wikisource page slices were compared after reading. The differences
+include plene yizkor, supplied generic names replacing printed dots, gan-eden
+maqqefs, an added kol in the martyrs prayer, and divine-name conventions. Only
+qamats-qatan-only differences were settled mechanically. Page 607 contains later
+Shoah/IDF additions absent from the scan and requests a missing foundation span,
+`קריאת התורה / יזכור לקדושי השואה יד ושם`. Its raw partial result is retained as a
+**diagnostic** in `comparisons/yizkor-607.json`, not written as a complete
+`transcription/607.txt`. That snapshot limitation does not affect the directly
+read printed text; no completeness claim is made for the modern additions.
+
+The occasion gate is in `yizkor.xml`, outside the reusable
+`urn:x-opensiddur:text:prayer:yizkor`. The user confirmed Israel adaptation:
+Pesach day 7 and Shavuot day 1 in Israel; days 8 and 2 respectively in the
+diaspora; Yom Kippur and Shemini Atzeret in both. The shared Sabbath/festival
+Torah service calls it before returning to Ashrei. The full siddur also retains
+its printed position after the festival prayers. The printed diaspora rubric
+appears once per column. Independent Boolean settings under `opensiddur:yizkor`
+are `father`, `mother`, `husband`, `wife`, `el-male-man`, and `el-male-woman`;
+unset values remain MAYBE and multiple selections can be true together.
+`yizkor_service.xml` provides the reusable service without the occasion gate.
+
+Psalm 91’s English differs from the earlier occurrence. Local occurrence
+milestones retain biblical source URNs rather than replacing either wording.
+Av Harachamim also has different Hebrew pointing, punctuation, and an omitted
+le‘eineinu in its opening. Its biblical quotations have their own milestones
+and source URNs. Two short text-identical leaves remain local because referencing
+the earlier enclosing document inherited its Reader rubric and Crusades note.
+The Yizkor proof contains only the notes printed with this occurrence.
+
+Dated integration checks uncovered a calendar defect: `simchat_torah` was always
+mapped to day 2 of `shmini-atzeret`, including Israel’s combined festival on
+22 Tishrei. The mapping now derives the day from the Hebrew date. A regression
+test covers 21–24 Tishrei in both locations. All 13 actual-date compilations pass,
+including Israel/diaspora final Pesach and Shavuot days, Yom Kippur, Shemini
+Atzeret, diaspora Simchat Torah, and an ordinary day. The father and mother can
+both be enabled while the other individual prayers are disabled.
+
+Validation and proof: 77 changed/new XML files pass RelaxNG and Schematron; both
+projects pass URN/contributor-reference validation. The importer and calendar
+suite passes 334 tests and 1,862 subtests. Compiled readback matches all 32 primary
+passages in both languages (NFC and whitespace normalization only, with printed
+name dots and the Reader marker handled explicitly). The seven-page focused
+parallel PDF has six text pages and one metadata page. Its three commentaries
+and four source citations each appear once; the inherited Crusades note is absent.
+Hebrew direction: 0 of 213 runs reversed; the reversed-run control flags 211.
+English heading glyph order passes. Eight paired rubric starts align within 5pt;
+56 sampled margin numbers lie outside the columns and reset to 5 on each text
+page. No note markers share a position. Moving the introductory commentary from
+the service wrapper to the opening text eliminated a 13.55pt rubric offset;
+separating the source citations from commentary anchors eliminated overlapping
+note marks. Bookmarks nest the opening verses and Psalm 91 beneath the memorial
+service.
+
+Proof: `output/birnbaum_yizkor_parallel.pdf` (compiled XML and TeX alongside it).

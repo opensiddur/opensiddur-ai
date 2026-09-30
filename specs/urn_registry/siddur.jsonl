@@ -586,3 +586,42 @@
 {"urn": "urn:x-opensiddur:text:siddur:regalim/text/yehi", "status": "canonical", "label_en": "regalim / text / yehi", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
 {"urn": "urn:x-opensiddur:text:siddur:regalim/text/yimlokh_minchah", "status": "canonical", "label_en": "regalim / text / yimlokh minchah", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
 {"urn": "urn:x-opensiddur:text:siddur:regalim/text/zokhrenu", "status": "canonical", "label_en": "regalim / text / zokhrenu", "parent": "urn:x-opensiddur:text:siddur:regalim/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor", "status": "canonical", "label_en": "Yizkor: yizkor"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/opening", "status": "canonical", "label_en": "Yizkor: opening", "parent": "urn:x-opensiddur:text:siddur:yizkor"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/psalm91", "status": "canonical", "label_en": "Yizkor: psalm91", "parent": "urn:x-opensiddur:text:siddur:yizkor"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_1", "status": "canonical", "label_en": "Yizkor: 91 1", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_10", "status": "canonical", "label_en": "Yizkor: 91 10", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_11", "status": "canonical", "label_en": "Yizkor: 91 11", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_12", "status": "canonical", "label_en": "Yizkor: 91 12", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_13", "status": "canonical", "label_en": "Yizkor: 91 13", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_14", "status": "canonical", "label_en": "Yizkor: 91 14", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_15", "status": "canonical", "label_en": "Yizkor: 91 15", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_16", "status": "canonical", "label_en": "Yizkor: 91 16", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_2", "status": "canonical", "label_en": "Yizkor: 91 2", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_3", "status": "canonical", "label_en": "Yizkor: 91 3", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_4", "status": "canonical", "label_en": "Yizkor: 91 4", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_5", "status": "canonical", "label_en": "Yizkor: 91 5", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_6", "status": "canonical", "label_en": "Yizkor: 91 6", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_7", "status": "canonical", "label_en": "Yizkor: 91 7", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_8", "status": "canonical", "label_en": "Yizkor: 91 8", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/91_9", "status": "canonical", "label_en": "Yizkor: 91 9", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim", "status": "canonical", "label_en": "Yizkor: av harachamim", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/doresh", "status": "canonical", "label_en": "Yizkor: doresh", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/harninu", "status": "canonical", "label_en": "Yizkor: harninu", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/lamah", "status": "canonical", "label_en": "Yizkor: lamah", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/minachal", "status": "canonical", "label_en": "Yizkor: minachal", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/opening", "status": "canonical", "label_en": "Yizkor: opening", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/prophets", "status": "canonical", "label_en": "Yizkor: prophets", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/venikketi", "status": "canonical", "label_en": "Yizkor: venikketi", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/veomer", "status": "canonical", "label_en": "Yizkor: veomer", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/veomer_again", "status": "canonical", "label_en": "Yizkor: veomer again", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/writings", "status": "canonical", "label_en": "Yizkor: writings", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim/yadin", "status": "canonical", "label_en": "Yizkor: yadin", "parent": "urn:x-opensiddur:text:siddur:yizkor/text/av_harachamim"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_144_3", "status": "canonical", "label_en": "Yizkor: opening 144 3", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_144_4", "status": "canonical", "label_en": "Yizkor: opening 144 4", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_37_37", "status": "canonical", "label_en": "Yizkor: opening 37 37", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_49_16", "status": "canonical", "label_en": "Yizkor: opening 49 16", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_73_26", "status": "canonical", "label_en": "Yizkor: opening 73 26", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_90_12", "status": "canonical", "label_en": "Yizkor: opening 90 12", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_90_6", "status": "canonical", "label_en": "Yizkor: opening 90 6", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}
+{"urn": "urn:x-opensiddur:text:siddur:yizkor/text/opening_ecclesiastes_12_7", "status": "canonical", "label_en": "Yizkor: opening ecclesiastes 12 7", "parent": "urn:x-opensiddur:text:siddur:yizkor/text"}

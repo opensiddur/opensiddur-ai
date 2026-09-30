@@ -89,6 +89,8 @@ PRAYERS += rc_musaf_prayers("en")
 from .festival import prayers as festival_prayers, shared as festival_shared
 PRAYERS = festival_shared("en", PRAYERS)
 PRAYERS += festival_prayers("en")
+from .yizkor import prayers as yizkor_prayers
+PRAYERS += yizkor_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -152,7 +154,10 @@ from .notes_hallel import NOTES as HALLEL_NOTES
 from .notes_rosh_hodesh_musaf import NOTES as RC_MUSAF_NOTES
 from .notes_festival import NOTES as FESTIVAL_NOTES
 
+from .notes_yizkor import NOTES as YIZKOR_NOTES
+
 APPARATUS = {
+    "notes_yizkor": dict(entries=YIZKOR_NOTES, slug="birnbaum_1949/yizkor", title="Notes on the memorial service", first=601, last=608),
     "notes_festival": dict(entries=FESTIVAL_NOTES, slug="birnbaum_1949/regalim", title="Notes on the festival prayers", first=585, last=600),
     "notes_rosh_hodesh_musaf": dict(entries=RC_MUSAF_NOTES, slug="birnbaum_1949/rosh_chodesh_musaf", title="Notes on Musaf for Rosh Hodesh", first=575, last=584),
     "notes_hallel": dict(entries=HALLEL_NOTES, slug="birnbaum_1949/hallel", title="Notes on Hallel", first=565, last=574),
