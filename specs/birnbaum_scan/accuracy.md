@@ -1474,3 +1474,39 @@ counting section and Psalm67; Akdamut has its own bookmark.
 
 Review proof: `output/birnbaum_omer_akdamut_parallel.pdf` (individual compiled XML,
 TeX, and PDFs are retained alongside it).
+
+## Rosh Hashanah Minchah/Maariv and associated rites (n679–n698)
+
+Printed655–674 was read from all20 scans before the comparison transcription.
+Independent Hebrew and English readers supplied initial readings; the audit at
+`scan_reading/rosh_hashanah/` retains those, superseded candidates, individual
+pointing proposals, corrected page readings, and157 final comparison verdicts.
+Both initial Hebrew readers missed printed stress marks. Their absence claims
+were rejected after enlargement. Corrections include סָבְרֵי, defective נצר and
+תרנגל, and plural תִּכָּתְבוּ; the scan-only meteg in וּצְמִֽיחַת was absent from
+both candidates and the secondary transcription. Birnbaum's אַב, נַגִּיד, and
+עוֹשֵׂה הַשָּׁלוֹם remain. The secondary's Morid hatal and alternate peace ending
+are not added. Logical combined-dot holam remains encoded.
+
+The installment contains the seven-blessing Amidah, greeting, Kiddush and apple
+prayer, Tashlikh, Kapparot, and the Yom Kippur candle blessings printed at the end.
+The Amidah and Kedushat Hayom are separately addressable and bookmarked. Biblical
+passages retain canonical sources and bounded verse milestones; Psalm33 preserves
+the Hebrew page turn inside verse11. All31 notes, including two cross-page
+continuations, are retained. Money and both fowl forms are selectable; unknown
+customs remain MAYBE. The money clause's English translation is marked editorial.
+
+Verification:281 importer tests and1920 subtests pass. All157 changed/new XML
+files validate; the registry has zero errors or warnings. Seventeen actual-date
+compilations cover deferred Tashlikh, Shabbat and weekday Amidah, silent prayer,
+Reader repetition, no minyan, Saturday-night additions, both RH Kiddush days,
+and the three Kapparot choices and its seasonal boundary. Compiled text matches
+all114 Hebrew/English units, and the31 notes occur at their intended counts.
+
+The18-page parallel proof contains the service hierarchy and separate rite
+bookmarks. All612 Hebrew runs pass the glyph-coordinate direction check; the
+reversed control flags606 (the remaining runs are directionally ambiguous).
+English heading glyph order passes. All144 measured margin numbers lie outside
+adjacent text; numbering restarts at5 on34 populated column-pages. Three paired
+opening rubrics align exactly. The final proof is
+`output/birnbaum_rosh_hashanah_parallel.pdf`.

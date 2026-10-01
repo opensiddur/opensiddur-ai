@@ -817,3 +817,33 @@
 {"urn": "urn:x-opensiddur:text:prayer:sefirat_haomer/ribbono", "status": "canonical", "label_en": "sefirat haomer — ribbono", "parent": "urn:x-opensiddur:text:prayer:sefirat_haomer"}
 {"urn": "urn:x-opensiddur:text:prayer:sefirat_haomer/ribbono/leviticus_23_15", "status": "canonical", "label_en": "sefirat haomer — ribbono — leviticus 23 15", "parent": "urn:x-opensiddur:text:prayer:sefirat_haomer/ribbono"}
 {"urn": "urn:x-opensiddur:text:prayer:sefirat_haomer/ribbono/leviticus_23_16", "status": "canonical", "label_en": "sefirat haomer — ribbono — leviticus 23 16", "parent": "urn:x-opensiddur:text:prayer:sefirat_haomer/ribbono"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/kadosh_atah_venora", "status": "canonical", "label_en": "amidah — kadosh atah venora", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/uvekhen_ten_kavod", "status": "canonical", "label_en": "amidah — uvekhen ten kavod", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/uvekhen_ten_pachdekha", "status": "canonical", "label_en": "amidah — uvekhen ten pachdekha", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:amidah/uvekhen_tzaddikim", "status": "canonical", "label_en": "amidah — uvekhen tzaddikim", "parent": "urn:x-opensiddur:text:prayer:amidah"}
+{"urn": "urn:x-opensiddur:text:prayer:hadlakat_ner_yom_kippur", "status": "canonical", "label_en": "hadlakat ner yom kippur"}
+{"urn": "urn:x-opensiddur:text:prayer:hadlakat_ner_yom_kippur/blessing", "status": "canonical", "label_en": "hadlakat ner yom kippur — blessing", "parent": "urn:x-opensiddur:text:prayer:hadlakat_ner_yom_kippur"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot", "status": "canonical", "label_en": "kapparot"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/fowl", "status": "canonical", "label_en": "kapparot — fowl", "parent": "urn:x-opensiddur:text:prayer:kapparot"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/money", "status": "canonical", "label_en": "kapparot — money", "parent": "urn:x-opensiddur:text:prayer:kapparot"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses", "status": "canonical", "label_en": "kapparot — verses", "parent": "urn:x-opensiddur:text:prayer:kapparot"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/intro", "status": "canonical", "label_en": "kapparot — verses — intro", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/job", "status": "canonical", "label_en": "kapparot — verses — job", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/job/33", "status": "canonical", "label_en": "kapparot — verses — job — 33", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/job"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/job/33/23", "status": "canonical", "label_en": "kapparot — verses — job — 33 — 23", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/job/33"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/job/33/24", "status": "canonical", "label_en": "kapparot — verses — job — 33 — 24", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/job/33"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms", "status": "canonical", "label_en": "kapparot — verses — psalms", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107", "status": "canonical", "label_en": "kapparot — verses — psalms — 107", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/10", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 10", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/14", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 14", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/17", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 17", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/18", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 18", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/19", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 19", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/20", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 20", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107/21", "status": "canonical", "label_en": "kapparot — verses — psalms — 107 — 21", "parent": "urn:x-opensiddur:text:prayer:kapparot/verses/psalms/107"}
+{"urn": "urn:x-opensiddur:text:prayer:kiddush_rosh_hashanah", "status": "canonical", "label_en": "kiddush rosh hashanah"}
+{"urn": "urn:x-opensiddur:text:prayer:leshanah_tovah_tikatev", "status": "canonical", "label_en": "leshanah tovah tikatev"}
+{"urn": "urn:x-opensiddur:text:prayer:shetechadesh_aleinu_shanah_tovah", "status": "canonical", "label_en": "shetechadesh aleinu shanah tovah"}
+{"urn": "urn:x-opensiddur:text:prayer:tashlikh", "status": "canonical", "label_en": "tashlikh"}
+{"urn": "urn:x-opensiddur:text:prayer:tashlikh/psalm130", "status": "canonical", "label_en": "tashlikh — psalm130", "parent": "urn:x-opensiddur:text:prayer:tashlikh"}
+{"urn": "urn:x-opensiddur:text:prayer:tashlikh/psalm33", "status": "canonical", "label_en": "tashlikh — psalm33", "parent": "urn:x-opensiddur:text:prayer:tashlikh"}

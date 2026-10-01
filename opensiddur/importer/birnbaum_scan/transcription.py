@@ -202,6 +202,8 @@ SKIP_SUFFIXES = (" מקור", " מקורות")
 #: rather than guessed: the first is a rename, the second a typo corrected in the
 #: foundation page and left standing in the page that transcludes it.
 RENAMED_SPANS = {
+    ("קידוש והבדלה וסעודות שבת ויום טוב", "ברכת המבדיל בין קודש לקודש"):
+        "ברכת המבדיל בין קודש לקודש הכל",
     ("קריאת התורה", "ואתם הדבקים"): "ואתם הדבקים מילים",
     ("ברכות השחר וקרבנות", "הוראה לתפילה פני שמתעטפים בטלית"): (
         "הוראה לתפילה לפני שמתעטפים בטלית"
@@ -349,8 +351,8 @@ def _cli(argv: list[str] | None = None) -> int:
             report(f"comment: {comment}")
         for was, now in sliced.substitutions:
             report(f"reads {now} where the edition sets {was}")
-        for foundation, name in sliced.missing:
-            report(f"MISSING SPAN {name!r} in {foundation!r}")
+        for foundation_name, name in sliced.missing:
+            report(f"MISSING SPAN {name!r} in {foundation_name!r}")
         if sliced.missing and not (args.stdout or args.allow_missing):
             status = 1
             report("not written -- the slice has a hole in it")
