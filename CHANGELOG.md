@@ -151,6 +151,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   numbered row after every verse, in every layout. A break with nothing that prints after it
   before the paragraph ends is now dropped; a break before a rubric likewise, since the rubric
   breaks the line itself.
+- A note on a whole division — which the compiler sets beside the division's heading rather than
+  in any of its paragraphs — was set after the heading as a mark alone on a line of its own,
+  and where the heading was hoisted above the columns, under a heading that had already been
+  set. It is now set after the title of the heading it is about: in the heading itself, in the
+  heading set across the page (given a numbered section of its own for the purpose), or, where
+  a column suppresses its copy of the heading, on that column's placeholder row. A division of
+  only a heading and rubrics, as the haggadah has, keeps its note this way too.
+- The Birnbaum Minḥah commentary on **מנחה** targeted the Ashrei division instead of the service
+  whose title it explains; it now targets `chol/minchah` (opensiddur-projects).
 - The rule marking a conditional paragraph was sized to `\hsize` and ignored the paragraph's own
   indents, so in an indented paragraph (a list item, an interleaved translation) its box overran
   the right margin by the indent.

@@ -857,6 +857,24 @@
          running-head marks for both columns and the outline entry, because the heading in
          the columns has been suppressed and would carry neither. \phantomsection anchors
          here, which is where the reader will actually land. -->
+    <!-- The two headings a spanning heading is made from: the primary text's first and
+         the other text's first, as heading sentinels. Both the spanning heading and the
+         streams under it need to agree on which divisions these are, since the notes on
+         them are set by the one and so must be left out by the other. -->
+    <xsl:function name="f:spanning-heads" as="element()*">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="primary-leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='primary'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="secondary-leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='parallel'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:sequence select="$primary-leaves[self::f:head][1],
+                              $secondary-leaves[self::f:head][1]"/>
+    </xsl:function>
+
     <xsl:template name="spanning-heading">
         <xsl:param name="block" as="element(p:parallel)"/>
         <xsl:variable name="primary-leaves" as="node()*">
@@ -869,6 +887,14 @@
         </xsl:variable>
         <xsl:variable name="head" select="$primary-leaves[self::f:head][1]"/>
         <xsl:variable name="alt-head" select="$secondary-leaves[self::f:head][1]"/>
+        <!-- The notes on each heading's division. The streams below leave them out (see
+             f:spanning-heads); each is set here, after the title of its own division. -->
+        <xsl:variable name="head-notes" as="element()*"
+                      select="$primary-leaves[f:is-head-note(.)]
+                                             [generate-id(parent::tei:div) = $head/@div]"/>
+        <xsl:variable name="alt-head-notes" as="element()*"
+                      select="$secondary-leaves[f:is-head-note(.)]
+                                               [generate-id(parent::tei:div) = $alt-head/@div]"/>
         <xsl:if test="exists($head)">
             <!-- Which of the two titles this heading shows. 'combined' shows the other one
                  too where it says something different, set beneath as a translation of the
@@ -884,6 +910,11 @@
             <xsl:variable name="is-hebrew"
                           select="$lang = 'he' or starts-with($lang, 'he-')"/>
             <xsl:variable name="mark" select="f:emit-bidi-mark(string($shown/@title))"/>
+            <!-- A title that is not set lends its notes to the one that is. -->
+            <xsl:variable name="second-notes" as="element()*"
+                          select="if (exists($second)) then $alt-head-notes else ()"/>
+            <xsl:variable name="shown-notes" as="element()*"
+                          select="($head-notes, $alt-head-notes) except $second-notes"/>
             <xsl:for-each select="('', 'Alt')">
                 <xsl:text>\InsertMark{OShead</xsl:text>
                 <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
@@ -893,15 +924,8 @@
                 <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
             </xsl:for-each>
             <xsl:text>&#10;</xsl:text>
-            <!-- \parfillskip is 0pt plus 1fil on an ordinary paragraph, and the heading
-                 macros centre with an \hfill at each end. Three infinite glues put the
-                 title a third of the way across instead of half. reledmac zeroes
-                 \parfillskip inside a \pstart, which is why a heading set in a column
-                 looks right and this one, set between columns, did not. -->
-            <xsl:text>{\parfillskip=0pt\relax </xsl:text>
-            <xsl:if test="$is-hebrew">
-                <xsl:text>\begin{hebrew}</xsl:text>
-            </xsl:if>
+            <xsl:variable name="titles" as="xs:string">
+            <xsl:value-of>
             <xsl:text>\OShead</xsl:text>
             <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
             <xsl:text>{</xsl:text>
@@ -909,6 +933,8 @@
                 <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
             </xsl:if>
             <xsl:apply-templates select="$shown/node()[not(self::f:alt-head)]" mode="emit"/>
+            <!-- Inside the title's direction; see name="heading". -->
+            <xsl:apply-templates select="$shown-notes" mode="emit"/>
             <xsl:if test="not($is-hebrew)">
                 <xsl:text>}}</xsl:text>
             </xsl:if>
@@ -936,6 +962,7 @@
                 </xsl:choose>
                 <xsl:apply-templates select="$second/node()[not(self::f:alt-head)]"
                                      mode="emit"/>
+                <xsl:apply-templates select="$second-notes" mode="emit"/>
                 <xsl:choose>
                     <xsl:when test="$second-is-hebrew">
                         <xsl:text>}</xsl:text>
@@ -946,10 +973,46 @@
                 </xsl:choose>
                 <xsl:text>}</xsl:text>
             </xsl:if>
-            <xsl:if test="$is-hebrew">
-                <xsl:text>\end{hebrew}</xsl:text>
-            </xsl:if>
-            <xsl:text>\par}&#10;</xsl:text>
+            </xsl:value-of>
+            </xsl:variable>
+            <xsl:choose>
+                <xsl:when test="exists($head-notes) or exists($alt-head-notes)">
+                    <!-- A note mark is an \edtext, which reledmac sets only inside numbered
+                         text, and this heading stands between the columns, outside any. So
+                         a heading that carries notes is given a numbered section of its
+                         own, with numbering switched off around its one paragraph so that
+                         neither of its lines takes a number. Headings without notes are
+                         left as they were. -->
+                    <xsl:text>\beginnumbering&#10;{\numberlinefalse&#10;</xsl:text>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\begin{hebrew}&#10;</xsl:text>
+                    </xsl:if>
+                    <xsl:call-template name="pstart"/>
+                    <xsl:value-of select="$titles"/>
+                    <xsl:text>\pend&#10;</xsl:text>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\end{hebrew}&#10;</xsl:text>
+                    </xsl:if>
+                    <xsl:text>}&#10;\endnumbering&#10;</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <!-- \parfillskip is 0pt plus 1fil on an ordinary paragraph, and the
+                         heading macros centre with an \hfill at each end. Three infinite
+                         glues put the title a third of the way across instead of half.
+                         reledmac zeroes \parfillskip inside a \pstart, which is why a
+                         heading set in a column looks right and this one, set between
+                         columns, did not. -->
+                    <xsl:text>{\parfillskip=0pt\relax </xsl:text>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\begin{hebrew}</xsl:text>
+                    </xsl:if>
+                    <xsl:value-of select="$titles"/>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\end{hebrew}</xsl:text>
+                    </xsl:if>
+                    <xsl:text>\par}&#10;</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
             <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
             <xsl:value-of select="f:heading-toc-level(xs:integer($head/@level))"/>
             <xsl:text>}{</xsl:text>
@@ -1027,6 +1090,8 @@
         </xsl:if>
 
         <xsl:if test="exists($usable)">
+        <xsl:variable name="hoisted-divs" as="xs:string*"
+                      select="if ($spanning != '') then f:spanning-heads($usable[1])/@div else ()"/>
         <xsl:variable name="env" select="if ($layout='pairs') then 'pairs' else 'pages'"/>
         <xsl:variable name="typeset" select="if ($layout='pairs') then '\Columns' else '\Pages'"/>
 
@@ -1079,6 +1144,7 @@
                      joining their headings possible at all. -->
                 <xsl:with-param name="alt-nodes" select="$right-nodes"/>
                 <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
@@ -1096,6 +1162,7 @@
                      same thing. The primary side is given the same in reverse. -->
                 <xsl:with-param name="alt-nodes" select="$left-nodes"/>
                 <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
             <xsl:text>\end{Rightside}&#10;</xsl:text>
 
@@ -1164,6 +1231,8 @@
         </xsl:if>
 
         <xsl:if test="exists($usable)">
+            <xsl:variable name="hoisted-divs" as="xs:string*"
+                          select="if ($spanning != '') then f:spanning-heads($usable[1])/@div else ()"/>
             <xsl:variable name="first-nodes" as="node()*">
                 <xsl:for-each select="$usable">
                     <xsl:sequence select="f:interleaved-item(., 1)/node()"/>
@@ -1206,6 +1275,7 @@
                             <xsl:with-param name="item" select="f:interleaved-item($block, 1)"/>
                             <xsl:with-param name="stream" select="'primary'"/>
                             <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                            <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
                         </xsl:call-template>
                     </xsl:variable>
                     <xsl:variable name="second-tex" as="xs:string">
@@ -1215,6 +1285,7 @@
                             <xsl:with-param name="item" select="f:interleaved-item($block, 2)"/>
                             <xsl:with-param name="stream" select="'alt'"/>
                             <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                            <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
                         </xsl:call-template>
                     </xsl:variable>
                     <xsl:sequence select="$first-tex"/>
@@ -1266,6 +1337,7 @@
         <xsl:param name="item" as="element()?"/>
         <xsl:param name="stream" as="xs:string"/>
         <xsl:param name="hoisted-heading" as="xs:string"/>
+        <xsl:param name="hoisted-divs" as="xs:string*"/>
         <xsl:variable name="inner" as="xs:string">
             <xsl:value-of>
                 <xsl:call-template name="emit-leaves">
@@ -1273,6 +1345,7 @@
                     <xsl:with-param name="stream" select="$stream"/>
                     <xsl:with-param name="has-alt-column" select="true()"/>
                     <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                    <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
                     <xsl:with-param name="interleaved" select="true()"/>
                 </xsl:call-template>
             </xsl:value-of>
@@ -1395,6 +1468,9 @@
         <xsl:param name="stream" as="xs:string" select="'primary'"/>
         <xsl:param name="alt-nodes" as="node()*" select="()"/>
         <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- The divisions whose headings are set across the page above this stream, by
+             @div. Their notes are set there too. See spanning-heading. -->
+        <xsl:param name="hoisted-divs" as="xs:string*" select="()"/>
 
         <!-- The whole body, not just its xsl:iterate: a partial capture would leave a seam
              (\beginnumbering&#10; against a leading whitespace leaf) across which a blank
@@ -1408,6 +1484,7 @@
                 <xsl:with-param name="stream" select="$stream"/>
                 <xsl:with-param name="alt-nodes" select="$alt-nodes"/>
                 <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
         </xsl:variable>
         <xsl:value-of select="f:collapse-blank-lines(string($tex))"/>
@@ -1434,6 +1511,9 @@
         <!-- A title already set across the page, above these columns. The first heading
              carrying it is suppressed here so it is not set a second time inside one. -->
         <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- The divisions whose headings are set across the page above this stream, by
+             @div. Their notes are set there too. See spanning-heading. -->
+        <xsl:param name="hoisted-divs" as="xs:string*" select="()"/>
 
         <xsl:variable name="leaves" as="node()*"
                       select="f:stream-leaves($nodes, $alt-nodes, $stream, $single-pstart)"/>
@@ -1458,6 +1538,7 @@
                 <xsl:with-param name="stream" select="$stream"/>
                 <xsl:with-param name="has-alt-column" select="exists($alt-nodes)"/>
                 <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
 
             <xsl:text>\endnumbering&#10;</xsl:text>
@@ -1479,8 +1560,29 @@
         <!-- Whether there is a facing stream. See name="heading". -->
         <xsl:param name="has-alt-column" as="xs:boolean" select="false()"/>
         <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- The divisions whose headings are set across the page above this stream, by
+             @div. Their notes are set there too. See spanning-heading. -->
+        <xsl:param name="hoisted-divs" as="xs:string*" select="()"/>
         <!-- Whether this is one text of an interleaved block. See parallel-interleaved. -->
         <xsl:param name="interleaved" as="xs:boolean" select="false()"/>
+
+        <!-- Notes on a whole headed division, by the division they are on. They are held
+             back from the flow and set with the division's heading instead, after its
+             title: in the flow they stood between the heading and the text, a mark on a
+             line of its own. Only for a heading that is in this stream; anything else
+             keeps its place. -->
+        <xsl:variable name="head-divs" as="xs:string*"
+                      select="distinct-values($leaves[self::f:head]/@div)"/>
+        <xsl:variable name="notes-by-div" as="map(xs:string, element()*)">
+            <xsl:map>
+                <xsl:for-each-group select="$leaves[f:is-head-note(.)]"
+                                    group-by="generate-id(parent::tei:div)">
+                    <xsl:if test="current-grouping-key() = $head-divs">
+                        <xsl:map-entry key="current-grouping-key()" select="current-group()"/>
+                    </xsl:if>
+                </xsl:for-each-group>
+            </xsl:map>
+        </xsl:variable>
         <xsl:iterate select="$leaves">
             <xsl:param name="in-pstart" as="xs:boolean" select="$single-pstart"/>
             <xsl:on-completion>
@@ -1725,6 +1827,8 @@
                                                 select="$has-alt-column"/>
                                 <xsl:with-param name="hoisted-heading"
                                                 select="$hoisted-heading"/>
+                                <xsl:with-param name="notes"
+                                                select="f:own-head-notes(., $notes-by-div, $hoisted-divs)"/>
                             </xsl:call-template>
                             <xsl:text>\par&#10;</xsl:text>
                             <xsl:next-iteration>
@@ -1732,7 +1836,8 @@
                             </xsl:next-iteration>
                         </xsl:when>
                         <xsl:when test="$interleaved and not(f:alt-head)
-                                        and not(f:sets-heading(., $stream, $hoisted-heading))">
+                                        and not(f:sets-heading(., $stream, $hoisted-heading))
+                                        and empty(f:own-head-notes(., $notes-by-div, $hoisted-divs))">
                             <!-- A heading this text does not set, because the other text
                                  of the block already does. Columns keep a placeholder
                                  paragraph so reledpar's \pstart counts stay paired; one
@@ -1767,6 +1872,8 @@
                                                 select="$has-alt-column"/>
                                 <xsl:with-param name="hoisted-heading"
                                                 select="$hoisted-heading"/>
+                                <xsl:with-param name="notes"
+                                                select="f:own-head-notes(., $notes-by-div, $hoisted-divs)"/>
                             </xsl:call-template>
                             <xsl:text>&#10;\pend&#10;</xsl:text>
                             <xsl:next-iteration>
@@ -1894,6 +2001,13 @@
                             </xsl:next-iteration>
                         </xsl:otherwise>
                     </xsl:choose>
+                </xsl:when>
+                <xsl:when test="f:is-head-note(.)
+                                and generate-id(parent::tei:div) = $head-divs">
+                    <!-- Set with its division's heading; see $notes-by-div. -->
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                    </xsl:next-iteration>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:if test="not($in-pstart)">
@@ -2041,6 +2155,8 @@
              anything on the page. For a heading f:sets-heading says is not set, where the
              caller has no paragraph to hold a placeholder. -->
         <xsl:param name="marks-only" as="xs:boolean" select="false()"/>
+        <!-- Notes on the division this heads, set after its title. See emit-leaves. -->
+        <xsl:param name="notes" as="element()*" select="()"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
         <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
 
@@ -2085,6 +2201,10 @@
             <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::f:alt-head)]" mode="emit"/>
+        <!-- Inside the macro's argument, so the mark is centred with the title, and
+             inside the title's direction, so it follows the title's last word: outside an
+             LTR title in an RTL paragraph, "after" is its left-hand end. -->
+        <xsl:apply-templates select="$notes" mode="emit"/>
         <xsl:if test="not($is-hebrew)">
             <xsl:text>}}</xsl:text>
         </xsl:if>
@@ -2092,6 +2212,9 @@
             </xsl:when>
             <xsl:otherwise>
                 <xsl:text>\mbox{\strut}</xsl:text>
+                <!-- The other column sets the title; the mark stays in this column, on
+                     the row the placeholder already holds, rather than a row of its own. -->
+                <xsl:apply-templates select="$notes" mode="emit"/>
             </xsl:otherwise>
         </xsl:choose>
 
@@ -2154,6 +2277,29 @@
          that neither column sets it. The hoisted title is the primary column's. In the alt
          column the sentinel's own @title is the other language, and @alt-title is the
          primary's — so both columns recognise the heading that was lifted out above them. -->
+    <!-- A note on a whole division that has a heading: the compiler sets such a note as
+         one of the division's own children, beside the tei:head, rather than in any of
+         its paragraphs. It is about what the heading names, so it is set with the heading:
+         after its title. A division may hold nothing but a heading and rubrics (the
+         haggadah has such sections), so the heading, not the first text after it, is the
+         one thing such a note can always be set with. -->
+    <xsl:function name="f:is-head-note" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:sequence select="exists($node/self::tei:note[not(@type = 'instruction')]
+                                          [not(ancestor::tei:standOff)]
+                                          /parent::tei:div[tei:head])"/>
+    </xsl:function>
+
+    <!-- The notes a heading sets itself: its division's, unless that heading is set
+         across the page above the stream, which sets them there. -->
+    <xsl:function name="f:own-head-notes" as="element()*">
+        <xsl:param name="head" as="element()"/>
+        <xsl:param name="notes-by-div" as="map(xs:string, element()*)"/>
+        <xsl:param name="hoisted-divs" as="xs:string*"/>
+        <xsl:sequence select="if (string($head/@div) = ('', $hoisted-divs)) then ()
+                              else $notes-by-div(string($head/@div))"/>
+    </xsl:function>
+
     <xsl:function name="f:is-hoisted" as="xs:boolean">
         <xsl:param name="head" as="element()"/>
         <xsl:param name="hoisted-heading" as="xs:string"/>
@@ -2461,6 +2607,11 @@
                  carry a URN at all — which is why the pairing falls back to position. -->
             <xsl:attribute name="corresp" select="string($head/parent::tei:div/@corresp)"/>
             <xsl:attribute name="part" select="string($head/parent::tei:div/@p:part)"/>
+            <!-- The division itself, so the notes it carries can be found again and set
+                 with its heading. See f:is-head-note. -->
+            <xsl:if test="exists($head/parent::tei:div)">
+                <xsl:attribute name="div" select="generate-id($head/parent::tei:div)"/>
+            </xsl:if>
             <xsl:if test="exists($alt-head)">
                 <xsl:attribute name="alt-title"
                                select="normalize-space(string-join(
@@ -2472,8 +2623,9 @@
                  <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
                  wrapped in \texthebrew (otherwise it renders reversed inside the
                  surrounding LTR heading) and its line break preserved.
-                 Notes are dropped: an apparatus entry cannot be anchored in a
-                 heading, which sits outside the numbered line stream. -->
+                 Notes inside the head are dropped: these are copies, and a note's serial is
+                 counted from where the note stands in the document. A note on the whole
+                 division is set with the heading from its own place; see f:is-head-note. -->
             <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
             <!-- The counterpart's content, kept in a child element so that the primary
                  head's nodes stay direct children and mode="emit" renders them exactly as

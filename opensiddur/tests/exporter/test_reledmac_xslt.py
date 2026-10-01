@@ -3689,6 +3689,121 @@ class TestTrailingLineBreak(unittest.TestCase):
                     self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
 
 
+class TestHeadingNotes(unittest.TestCase):
+    r"""A note on a whole headed division is set after the heading's title.
+
+    The compiler sets a note that targets a division as one of the division's own
+    children, beside its head. Left in the flow it was a mark alone on a line between the
+    heading and the text; set with the heading it follows the title it is about.
+    """
+
+    NOTE = ('<tei:note type="commentary" target="urn:x-opensiddur:text:t:sec">'
+            '<tei:p>About the section.</tei:p></tei:note>')
+    EDTEXT = r"\edtext{\OSInterlinearNotemark"
+
+    @staticmethod
+    def _body(xml: str, **params) -> str:
+        return _transform(xml, **params).split(r"\begin{document}", 1)[1]
+
+    def _single(self, inner: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:text><tei:body>
+            <tei:div corresp="urn:x-opensiddur:text:t:sec">{self.NOTE}
+              <tei:head>Section</tei:head>{inner}
+            </tei:div>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    def _parallel(self, primary_body: str = "", parallel_body: str = "",
+                  titles=("כותרת", "Title"), lead: str = "") -> str:
+        he, en = titles
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="he">{lead and '<tei:p>א</tei:p>'}
+                <tei:div corresp="urn:x-opensiddur:text:t:sec">
+                  <tei:head>{he}</tei:head><tei:p>שלום</tei:p>{primary_body}
+                </tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">{lead and '<tei:p>A</tei:p>'}
+                <tei:div corresp="urn:x-opensiddur:text:t:sec">{self.NOTE}
+                  <tei:head>{en}</tei:head><tei:p>Hello</tei:p>{parallel_body}
+                </tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    @staticmethod
+    def _arg(body: str, macro: str) -> str:
+        """The balanced-brace argument of the first ``macro{``."""
+        rest = body.split(macro + "{", 1)[1]
+        depth, chars = 1, []
+        for ch in rest:
+            depth += {"{": 1, "}": -1}.get(ch, 0)
+            if depth == 0:
+                break
+            chars.append(ch)
+        return "".join(chars)
+
+    def test_a_heading_in_the_flow_carries_its_divisions_note(self):
+        body = self._body(self._single("<tei:p>Text</tei:p>"))
+        self.assertEqual(1, body.count(self.EDTEXT))
+        title = self._arg(body, r"\OSheadA")
+        self.assertIn(self.EDTEXT, title)
+        self.assertLess(title.index("Section"), title.index(self.EDTEXT))
+
+    def test_a_division_of_heading_and_rubric_alone_still_carries_it(self):
+        """The haggadah has sections with no text to anchor on."""
+        body = self._body(self._single(
+            '<tei:p><tei:note type="instruction">Wash the hands.</tei:note></tei:p>'))
+        self.assertIn(self.EDTEXT, self._arg(body, r"\OSheadA"))
+
+    def test_a_note_in_the_first_paragraph_stays_in_it(self):
+        xml = self._single(
+            '<tei:p>Text<tei:note type="commentary">On the text.</tei:note></tei:p>')
+        body = self._body(xml.replace(self.NOTE, ""))
+        self.assertNotIn(self.EDTEXT, self._arg(body, r"\OSheadA"))
+        self.assertEqual(1, body.count(self.EDTEXT))
+
+    def test_the_heading_set_across_the_page_carries_it(self):
+        for layout in ("pages", "pairs", "interleaved"):
+            with self.subTest(layout=layout):
+                body = self._body(self._parallel(), layout=layout,
+                                  **{"headings-from": "combined"})
+                self.assertEqual(1, body.count(self.EDTEXT))
+                spanning = body.split(r"\beginnumbering", 2)
+                # The heading's own numbered section comes first, before any column.
+                self.assertIn(self.EDTEXT, spanning[1])
+                self.assertIn(r"\numberlinefalse", spanning[1])
+                translation = self._arg(body, r"\OSheadTranslation")
+                self.assertLess(translation.index("Title"), translation.index(self.EDTEXT))
+
+    def test_a_heading_set_across_the_page_without_notes_is_unchanged(self):
+        body = self._body(self._parallel().replace(self.NOTE, ""), layout="pairs")
+        self.assertIn(r"{\parfillskip=0pt\relax \begin{hebrew}\OSheadA", body)
+
+    def test_a_suppressed_heading_keeps_the_note_on_its_placeholder_row(self):
+        """Further into a block the heading is not hoisted; where the titles agree the
+        second column suppresses its copy, and the mark goes on that placeholder row."""
+        xml = self._parallel(titles=("Kaddish", "Kaddish"), lead="yes")
+        body = self._body(xml, layout="pairs", **{"headings-from": "combined"})
+        self.assertEqual(1, body.count(self.EDTEXT))
+        right = body.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        left = body.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        self.assertRegex(right, r"\\mbox\{\\strut\}\\leavevmode\{\\OSRTLfalse\\edtext")
+        self.assertEqual(left.count(r"\pstart"), right.count(r"\pstart"))
+
+    def test_interleaved_sets_a_suppressed_headings_note_on_a_placeholder(self):
+        xml = self._parallel(titles=("Kaddish", "Kaddish"), lead="yes")
+        body = self._body(xml, layout="interleaved", **{"headings-from": "combined"})
+        self.assertEqual(1, body.count(self.EDTEXT))
+        self.assertRegex(body, r"\\mbox\{\\strut\}\\leavevmode\{\\OSRTLfalse\\edtext")
+
+
 class TestLabelledLists(unittest.TestCase):
     r"""``tei:list``, ``tei:label`` and ``tei:item`` are set as a list.
 
