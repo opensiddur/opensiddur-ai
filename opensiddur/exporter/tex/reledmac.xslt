@@ -61,9 +61,11 @@
     <xsl:param name="typography-preamble" as="xs:string?"/>
     <!-- pages | pairs | interleaved. The first two set a parallel text with reledpar, on
          facing pages or in columns; interleaved sets it in one reledmac stream, each
-         block followed by its translation. -->
-    <xsl:param name="layout" as="xs:string">pages</xsl:param>
+         block followed by its translation. The default is the settings model's
+         (ParallelTypographyConfig.layout in typography.py). -->
+    <xsl:param name="layout" as="xs:string">pairs</xsl:param>
     <xsl:variable name="interleaved" as="xs:boolean" select="$layout = 'interleaved'"/>
+    <xsl:variable name="facing-pages" as="xs:boolean" select="$layout = 'pages'"/>
     <!-- footnote | endnote | none — where the text of an editorial note goes.
          `none` drops notes entirely, anchor and all. -->
     <xsl:param name="notes-placement" as="xs:string">footnote</xsl:param>
@@ -174,6 +176,13 @@
         <xsl:text>\usepackage{reledmac}&#10;</xsl:text>
         <xsl:if test="$uses-reledpar">
             <xsl:text>\usepackage{reledpar}&#10;</xsl:text>
+        </xsl:if>
+        <!-- \Pages starts every spread on a verso, inserting a blank recto where the text
+             before it ended on one. reledpar sets that filler in \prevpgstyle when it is
+             defined, and otherwise in the current style, running head and all: a wholly
+             blank page that names a section. -->
+        <xsl:if test="$has-parallel and $facing-pages">
+            <xsl:text>\def\prevpgstyle{empty}&#10;</xsl:text>
         </xsl:if>
         <!-- Use BibTeX as backend for portability; biber can be unavailable or
              misconfigured on some systems. -->
@@ -504,6 +513,21 @@
                 <xsl:text>\let\OSreledparColumnsOrig\Columns&#10;</xsl:text>
                 <xsl:text>\renewcommand{\Columns}{\begingroup\pardir TLT\relax\textdir TLT\relax\OSreledparColumnsOrig\endgroup}&#10;</xsl:text>
             </xsl:if>
+            <xsl:if test="$facing-pages">
+                <!-- The same fault on facing pages, where an LTR group around \Pages is not
+                     enough: \Pages selects each page's language before setting its lines,
+                     and a Hebrew page's rows are then built right to left. The left margin
+                     is a row's right-hand end, and a Hebrew verso's line numbers — outer,
+                     so left — were printed over the first word of their lines.
+
+                     \ledstrutL and \ledstrutR are reledpar's hooks at the head of every row
+                     \Pages builds, and only \Pages uses them. Turning the row's direction
+                     there puts its margins back where they are on the page. Each line's own
+                     text is unaffected: reledpar sets it in a box of its own, in the
+                     direction recorded at its \pstart. -->
+                <xsl:text>\renewcommand*{\ledstrutL}{\textdir TLT\relax}&#10;</xsl:text>
+                <xsl:text>\renewcommand*{\ledstrutR}{\textdir TLT\relax}&#10;</xsl:text>
+            </xsl:if>
         </xsl:if>
         <xsl:text>\makeatletter&#10;</xsl:text>
         <!-- reledmac repeats the \edtext lemma in the apparatus; our lemma is the raised
@@ -592,13 +616,15 @@
 
              Halved because \Columns runs the hook once for the left \pstart and again
              for the right one (reledpar's \Columns@print@before@pstart), so a paired
-             compile would otherwise get twice the skip a single-column one gets.
+             compile would otherwise get twice the skip a single-column one gets. \Pages
+             runs it once per page, so facing pages take it whole.
 
              A macro rather than a length so it is read when a \pstart is set, not here:
              typography.paragraphs.spacing rewrites \parskip further down the preamble,
              and this has to follow it. -->
         <xsl:text>\newcommand{\OSPstartSkip}{</xsl:text>
-        <xsl:value-of select="if ($uses-reledpar) then '0.5\parskip' else '\parskip'"/>
+        <xsl:value-of select="if ($uses-reledpar and not($facing-pages))
+                              then '0.5\parskip' else '\parskip'"/>
         <xsl:text>}&#10;</xsl:text>
         <xsl:choose>
             <xsl:when test="$has-parallel and $interleaved">
@@ -835,7 +861,13 @@
          the column whose language it is in.
 
          Hoisting is possible only where the block *opens* with the heading: there is no
-         interrupting a \Pages once begun. A heading further in stays where it is. -->
+         interrupting a \Pages once begun. A heading further in stays where it is.
+
+         Facing pages hoist nothing. There is no measure spanning both texts to set a
+         heading across, and a heading set before \Pages is stranded: \Pages starts the
+         spread on the next verso, leaving the heading alone on the page before it and,
+         as often as not, a blank page between. Each page sets its own instead; see
+         f:sets-heading. -->
     <xsl:function name="f:spanning-title" as="xs:string">
         <xsl:param name="block" as="element(p:parallel)"/>
         <xsl:param name="mode" as="xs:string"/>
@@ -848,7 +880,8 @@
         <xsl:variable name="first"
                       select="$primary-leaves[not(self::text() and not(normalize-space(.)))][1]"/>
         <xsl:sequence
-            select="if ($mode != 'both' and exists($first[self::f:head]))
+            select="if ($mode != 'both' and not($facing-pages)
+                        and exists($first[self::f:head]))
                     then string($first/@title)
                     else ''"/>
     </xsl:function>
@@ -2312,7 +2345,12 @@
          title a section identically, printing both says the same thing twice, once per
          column; where they differ, each column needs its own. Beyond the hoisted heading,
          reached only by a heading that was not hoisted: one further into a block than its
-         opening, or any heading at all under 'both'. -->
+         opening, or any heading at all under 'both'.
+
+         On facing pages the reader cannot take a title from across the opening the way
+         they can from the next column, and each page is a full measure of its own, so
+         'combined' sets the heading on both pages even where they agree. 'primary' and
+         'alt' still name one side and mean it. -->
     <xsl:function name="f:sets-heading" as="xs:boolean">
         <xsl:param name="head" as="element()"/>
         <xsl:param name="stream" as="xs:string"/>
@@ -2324,7 +2362,7 @@
                               else if ($headings-from = 'both') then true()
                               else if ($headings-from = 'primary') then $stream = 'primary'
                               else if ($headings-from = 'alt') then $stream = 'alt'
-                              else $stream = 'primary' or not($agrees)"/>
+                              else $facing-pages or $stream = 'primary' or not($agrees)"/>
     </xsl:function>
 
     <!-- Render one f:list-label sentinel (the context node). Caller is responsible for the

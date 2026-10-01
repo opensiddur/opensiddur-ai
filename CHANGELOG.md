@@ -163,6 +163,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The rule marking a conditional paragraph was sized to `\hsize` and ignored the paragraph's own
   indents, so in an indented paragraph (a list item, an interleaved translation) its box overran
   the right margin by the indent.
+- The facing-pages layout, `typography.parallel.layout: pages`, now keeps a spread together
+  (#113). A heading a parallel block opened with was hoisted out to span the page, as it is in
+  columns, but `\Pages` cannot be interrupted and starts its spread on the next verso, so the
+  heading was left alone on a page of its own, often with a blank page after it. Facing pages
+  now hoist nothing: each page sets its own heading, and under `headings.from: combined` both
+  pages do so even where the titles agree. The blank recto `\Pages` inserts to start a spread
+  on a verso no longer carries a running head, and the space between aligned units is no longer
+  halved, which was right only for `\Columns`. A verso's running head names its own text with
+  `{section-title}`, a recto's with `{section-title-alt}`. A Hebrew page's line numbers were
+  printed over the first word of their lines, because `\Pages` builds a Hebrew page's rows right
+  to left and the outer margin was then each row's far end; they now sit in the outer margin.
+- `typography.parallel.column_width` and `column_position` were accepted under the `pages` and
+  `interleaved` layouts and did nothing; naming either outside `pairs` is now a settings error.
+  The stylesheet's own default layout was `pages` while the settings model's is `pairs`; it is
+  now `pairs` too.
 
 ### Changed
 - The JPS 1917 downloader now reads the Action API through the shared client, like the Birnbaum

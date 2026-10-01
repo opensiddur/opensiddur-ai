@@ -933,23 +933,37 @@ class ParallelTypographyConfig(ForbidExtra):
     column_width: Percent = Field(
         default="43%",
         description=(
-            "Width of each column as a percentage of the text block, in `pairs` "
-            "layout. The two columns and the gap between them share 100%, so "
-            "well under 50% each — the remainder leaves the outer margins room "
-            "for line numbers."
+            "Width of each column as a percentage of the text block. Only in "
+            "`pairs` layout; an error under any other. The two columns and the "
+            "gap between them share 100%, so well under 50% each — the remainder "
+            "leaves the outer margins room for line numbers."
         ),
     )
     column_position: ColumnPosition = Field(
         default=ColumnPosition.CENTER,
         description=(
             "left | center | right — where the pair of columns sits in the text "
-            "block, in `pairs` layout."
+            "block. Only in `pairs` layout; an error under any other."
         ),
     )
     interleaved: InterleavedConfig = Field(
         default_factory=InterleavedConfig,
         description="How the translation is set apart, in `interleaved` layout.",
     )
+
+    @model_validator(mode="after")
+    def validate_column_settings(self) -> "ParallelTypographyConfig":
+        # Column geometry exists only where there are two columns on one page. Under
+        # any other layout it would be accepted and do nothing, so a settings file
+        # asking for it would look as though it had worked.
+        if self.layout is not ParallelLayout.PAIRS:
+            for name in ("column_width", "column_position"):
+                if name in self.model_fields_set:
+                    raise ValueError(
+                        f"`{name}` applies only to `layout: pairs`, "
+                        f"not `layout: {self.layout.value}`"
+                    )
+        return self
 
 
 class BookmarkSource(StrEnum):

@@ -546,6 +546,30 @@ class TestInstructionsConfig(unittest.TestCase):
         self.assertIn("span", str(caught.exception))
 
 
+class TestParallelColumnSettings(unittest.TestCase):
+    """Column geometry is read only in the `pairs` layout, so naming it under another is an
+    error rather than a setting that silently does nothing."""
+
+    def test_column_keys_are_accepted_in_pairs(self):
+        config = _validate({"parallel": {"layout": "pairs", "column_width": "40%",
+                                         "column_position": "left"}})
+        self.assertEqual(config.parallel.column_width, "40%")
+
+    def test_column_keys_are_rejected_elsewhere(self):
+        for layout in ("pages", "interleaved"):
+            for key, value in (("column_width", "40%"), ("column_position", "left")):
+                with self.subTest(layout=layout, key=key):
+                    with self.assertRaises(ValidationError) as caught:
+                        _validate({"parallel": {"layout": layout, key: value}})
+                    self.assertIn(key, str(caught.exception))
+                    self.assertIn(f"layout: {layout}", str(caught.exception))
+
+    def test_the_column_keys_default_quietly_in_other_layouts(self):
+        """Their defaults are not something the settings file asked for."""
+        config = _validate({"parallel": {"layout": "pages"}})
+        self.assertIs(config.parallel.layout, ParallelLayout.PAGES)
+
+
 class TestInterleavedLayout(unittest.TestCase):
     """The third parallel layout, and the settings that only it reads."""
 

@@ -403,13 +403,35 @@ class TestParallelMapping(unittest.TestCase):
       </tei:body></tei:text>
     </tei:TEI>"""
 
-    def test_emits_pages_environment_by_default(self):
-        out = _transform(self.XML)
+    def test_emits_pages_environment_for_facing_pages(self):
+        out = _transform(self.XML, layout="pages")
         self.assertIn(r"\begin{pages}", out)
         self.assertIn(r"\end{pages}", out)
         self.assertIn(r"\Pages", out)
         self.assertIn(r"\begin{Leftside}", out)
         self.assertIn(r"\begin{Rightside}", out)
+
+    def test_defaults_to_columns_like_the_settings_model(self):
+        """The stylesheet's own default is ParallelTypographyConfig's, so a caller that
+        passes no layout gets what a settings file that names none gets."""
+        out = _transform(self.XML)
+        self.assertIn(r"\begin{pairs}", out)
+        self.assertNotIn(r"\begin{pages}", out)
+
+    def test_the_blank_page_before_a_spread_carries_no_running_head(self):
+        r"""\Pages inserts a blank recto to start its spread on a verso, in \prevpgstyle
+        when that is defined and in the running-head style otherwise."""
+        self.assertIn(r"\def\prevpgstyle{empty}", _transform(self.XML, layout="pages"))
+        self.assertNotIn(r"\prevpgstyle", _transform(self.XML, layout="pairs"))
+
+    def test_facing_pages_build_their_rows_left_to_right(self):
+        r"""\Pages builds a Hebrew page's rows right to left, which puts the left margin's
+        line numbers over the first word of every line. \ledstrutL/R open every row it
+        builds, and only \Pages uses them."""
+        pages = _transform(self.XML, layout="pages")
+        self.assertIn(r"\renewcommand*{\ledstrutL}{\textdir TLT\relax}", pages)
+        self.assertIn(r"\renewcommand*{\ledstrutR}{\textdir TLT\relax}", pages)
+        self.assertNotIn(r"\ledstrut", _transform(self.XML, layout="pairs"))
 
     def test_empty_parallel_block_is_skipped(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -422,7 +444,7 @@ class TestParallelMapping(unittest.TestCase):
             </p:parallel>
           </tei:body></tei:text>
         </tei:TEI>"""
-        out = _transform(xml)
+        out = _transform(xml, layout="pages")
         self.assertNotIn(r"\begin{pages}", out)
 
     def test_parallel_inside_transclude_is_still_grouped(self):
@@ -474,7 +496,7 @@ class TestParallelMapping(unittest.TestCase):
             </p:transclude>
           </tei:body></tei:text>
         </tei:TEI>"""
-        out = _transform(xml)
+        out = _transform(xml, layout="pages")
         self.assertEqual(out.count(r"\begin{pages}"), 1,
                          "all three blocks belong to a single \\Pages run")
         self.assertIn("Two", out, "the nested transclusion's content must be typeset")
@@ -675,7 +697,8 @@ class TestParallelMapping(unittest.TestCase):
         out = xslt_transform_string(
             XSLT_FILE,
             etree.tostring(root, encoding="unicode"),
-            xslt_params={"additional-preamble": "", "additional-postamble": ""},
+            xslt_params={"additional-preamble": "", "additional-postamble": "",
+                         "layout": "pages"},
         )
 
         self.assertIn(r"\begin{pages}", out)
@@ -2979,6 +3002,68 @@ class TestParallelHeadings(unittest.TestCase):
                          **{"headings-from": "both"})
         self.assertEqual(2, out.count(r"\OSheadA{"))
 
+    def test_facing_pages_set_nothing_across_the_spread(self):
+        r"""There is no measure spanning two pages, and a heading set before \Pages is
+        stranded on a page of its own while \Pages clears to the next verso."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            for mode in ("combined", "primary", "alt", "both"):
+                with self.subTest(titles=titles, mode=mode):
+                    out = _transform(self._parallel(*titles), layout="pages",
+                                     **{"headings-from": mode})
+                    before = out.split(r"\begin{document}")[1].split(r"\begin{pages}")[0]
+                    self.assertNotIn(r"\OSheadA{", before)
+                    self.assertNotIn(r"\OSheadTranslation{", out)
+
+    def test_combined_sets_the_heading_on_both_facing_pages(self):
+        """Even where the titles agree: the reader cannot take a heading from the facing
+        page the way they can from the next column."""
+        for titles in ((self.SAME, self.SAME), (self.SAME, self.OTHER)):
+            with self.subTest(titles=titles):
+                out = _transform(self._parallel(*titles), layout="pages")
+                left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+                right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+                self.assertIn(titles[0], left.split(r"\OSheadA{")[1])
+                self.assertIn(titles[1], right.split(r"\OSheadA{")[1])
+
+    def test_on_facing_pages_primary_and_alt_still_name_one_page(self):
+        for mode, sets_left in (("primary", True), ("alt", False)):
+            with self.subTest(mode=mode):
+                out = _transform(self._parallel(self.SAME, self.OTHER), layout="pages",
+                                 **{"headings-from": mode})
+                left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+                right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+                self.assertEqual(sets_left, r"\OSheadA{" in left)
+                self.assertEqual(not sets_left, r"\OSheadA{" in right)
+                self.assertEqual(self._pstarts(out)[0], self._pstarts(out)[1])
+
+    def test_facing_pages_mark_each_page_for_its_own_running_head(self):
+        r"""Nothing is hoisted, so only the left page records the plain marks and only
+        the right page the Alt ones: {section-title} on a verso names that verso's
+        heading, {section-title-alt} on a recto names the recto's."""
+        out = _transform(self._parallel(self.SAME, self.OTHER), layout="pages")
+        left = out.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        right = out.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertIn(r"\InsertMark{OSheadAny}", left)
+        self.assertNotIn(r"\InsertMark{OSheadAnyAlt}", left)
+        self.assertIn(r"\InsertMark{OSheadAnyAlt}", right)
+        self.assertNotIn(r"\InsertMark{OSheadAny}{", right)
+
+    def test_facing_pages_write_one_outline_entry(self):
+        for mode in ("combined", "primary", "alt", "both"):
+            with self.subTest(mode=mode):
+                out = _transform(self._parallel(self.SAME, self.OTHER), layout="pages",
+                                 **{"headings-from": mode})
+                self.assertEqual(1, out.count(r"\addcontentsline"))
+
+    def test_facing_pages_keep_a_new_section_in_the_same_run(self):
+        r"""Splitting the run at a heading only served hoisting it. Under \Pages each
+        split costs a fresh spread, so the run stays whole."""
+        block = self._parallel(self.SAME, self.OTHER)
+        body = block.split("<tei:body>")[1].split("</tei:body>")[0]
+        xml = block.replace(body, body + body)
+        out = _transform(xml, layout="pages")
+        self.assertEqual(1, out.count(r"\begin{pages}"))
+
     def test_combined_sets_a_differing_title_beneath_as_a_translation(self):
         """Spanning the page leaves nowhere to put a second title side by side, so it goes
         under the first — the shape a division titled twice in one column already takes."""
@@ -3770,7 +3855,7 @@ class TestHeadingNotes(unittest.TestCase):
         self.assertEqual(1, body.count(self.EDTEXT))
 
     def test_the_heading_set_across_the_page_carries_it(self):
-        for layout in ("pages", "pairs", "interleaved"):
+        for layout in ("pairs", "interleaved"):
             with self.subTest(layout=layout):
                 body = self._body(self._parallel(), layout=layout,
                                   **{"headings-from": "combined"})
@@ -3781,6 +3866,15 @@ class TestHeadingNotes(unittest.TestCase):
                 self.assertIn(r"\numberlinefalse", spanning[1])
                 translation = self._arg(body, r"\OSheadTranslation")
                 self.assertLess(translation.index("Title"), translation.index(self.EDTEXT))
+
+    def test_on_facing_pages_the_page_whose_division_it_is_carries_it(self):
+        """Facing pages hoist nothing, so the note stays with the heading of the division
+        it is on — here the English one, on the right-hand page."""
+        body = self._body(self._parallel(), layout="pages",
+                          **{"headings-from": "combined"})
+        self.assertEqual(1, body.count(self.EDTEXT))
+        right = body.split(r"\begin{Rightside}")[1].split(r"\end{Rightside}")[0]
+        self.assertIn(self.EDTEXT, self._arg(right, r"\OSheadA"))
 
     def test_a_heading_set_across_the_page_without_notes_is_unchanged(self):
         body = self._body(self._parallel().replace(self.NOTE, ""), layout="pairs")
@@ -3926,7 +4020,7 @@ class TestLabelledLists(unittest.TestCase):
             </p:parallel>
           </tei:body></tei:text>
         </tei:TEI>"""
-        out = _transform(xml)
+        out = _transform(xml, layout="pages")
         block = out[out.index(r"\begin{pages}"):out.index(r"\Pages")]
         left = block[block.index(r"\begin{Leftside}"):block.index(r"\end{Leftside}")]
         right = block[block.index(r"\begin{Rightside}"):block.index(r"\end{Rightside}")]

@@ -174,7 +174,8 @@ typography:
                              # which gives each text a full measure. interleaved:
                              # one column, each block followed by its translation.
     column_width: "43%"      # of the text block; the gap takes the remainder,
-                             # which is also what leaves room for line numbers
+                             # which is also what leaves room for line numbers.
+                             # pairs only, as is column_position: an error otherwise
     column_position: center  # left | center | right
     # Which text goes on which side — or, interleaved, which comes first — is
     # `parallel.column_order` above, not here.

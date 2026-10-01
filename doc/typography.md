@@ -148,9 +148,10 @@ margins were configurable. Margins are named for the **binding**, not for the pa
 | `paragraphs.alignment` | `justify` \| `left` \| `right` \| `center` | `justify` | |
 
 `paragraphs.spacing` sets the space between one aligned unit and the next. Inside a unit, in a
-parallel two-column compile, a paragraph break is a blank line instead — reledpar advances the
-two columns a line at a time, so a skip in one column would displace the facing one, and one
-line is the smallest separation that stays in the column it belongs to. To get the configured
+`pairs` or `pages` compile, a paragraph break is a blank line instead — reledpar advances the
+two sides a line at a time, so a skip in one column would displace the facing one, and one
+line is the smallest separation that stays in the column it belongs to. On facing pages it
+also keeps the count of lines, which is what reledpar pairs the two pages by, true. To get the configured
 spacing part-way through a prayer, split it into two units by giving the two halves their own
 `@corresp` URNs; that also aligns the columns there. The `interleaved` layout sets one
 column, so its paragraphs take the configured spacing throughout.
@@ -279,8 +280,8 @@ The geometry of a parallel-text layout.
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `parallel.layout` | `pairs` \| `pages` \| `interleaved` | `pairs` | `pairs` puts two columns on the same page; `pages` sets the texts on facing pages, which gives each a full measure and suits a long work; `interleaved` sets one column, each block followed by its translation, for a measure too narrow to split. |
-| `parallel.column_width` | percentage | `43%` | Width of each column as a percentage of the text block, in `pairs` layout. The two columns and the gap share 100%, so well under 50% each — the remainder leaves the outer margins room for line numbers. |
-| `parallel.column_position` | `left` \| `center` \| `right` | `center` | Where the pair of columns sits in the text block, in `pairs` layout. |
+| `parallel.column_width` | percentage | `43%` | Width of each column as a percentage of the text block. Only in `pairs` layout; naming it under another is an error. The two columns and the gap share 100%, so well under 50% each — the remainder leaves the outer margins room for line numbers. |
+| `parallel.column_position` | `left` \| `center` \| `right` | `center` | Where the pair of columns sits in the text block. Only in `pairs` layout; naming it under another is an error. |
 | `parallel.interleaved` | table | | How the translation is set apart, in `interleaved` layout. See [below](#interleaved). |
 | `parallel.interleaved.translation_size` | size | `small` | Font size of the translation. |
 | `parallel.interleaved.translation_indent` | length | `1em` | Indent applied to both margins of the translation's paragraphs. `0pt` sets it to the full measure. |
@@ -291,6 +292,25 @@ The geometry of a parallel-text layout.
 compiler section of the settings file — `primary_first` puts the primary stream on the left,
 `primary_last` swaps them — because the compiler is what decides the order the streams are
 emitted in. In the `interleaved` layout the same setting decides which text comes first.
+
+### Facing pages
+
+`layout: pages` sets the left text on a verso and the right text on the recto facing it,
+each with the full measure. Every aligned unit starts at the same height on both pages: where
+one side runs longer, the other is left blank alongside it until both are done, a page at a
+time if need be. Each run of parallel text starts on a fresh spread, so a recto left over
+before it is left blank — with no running head.
+
+Left and right are the physical pages. A book bound on the right, as a Hebrew book is, meets
+the right-hand page first, so to put the Hebrew there set `parallel.column_order:
+primary_last` with the Hebrew as the primary text. The PDF still pages from left to right.
+
+Line numbers go in each page's outer margin — the left of a verso, the right of a recto —
+whichever language the page is in.
+
+Headings are set on the pages themselves, never across the spread; see
+[`headings`](#headings). A running head names a page's own text with `{section-title}` on
+the verso and `{section-title-alt}` on the recto; see [running heads](#page_header-and-page_footer).
 
 ### `interleaved`
 
@@ -365,6 +385,12 @@ really are two and each belongs to the column whose language it is in.
 Spanning is possible only where a parallel block **opens** with the heading — there is no
 interrupting a `\Pages` once begun — so a heading further into a block stays where it is,
 deduplicated but not spanning.
+
+**Facing pages span nothing.** Two pages have no measure in common, and a heading set before
+the spread would be left on a page of its own. Each page sets its own heading instead:
+`combined` sets it on both pages even where the titles agree, since the reader cannot take
+it from across the opening the way they can from the next column; `primary` and `alt` set it
+on the one page they name, and `both` on both.
 
 `bookmarks` has no `both`: an outline entry is one line and cannot show two titles in two
 places. A page can, which is why this setting has a value that one does not.
@@ -465,7 +491,10 @@ closed list, and an unrecognized one is a settings error:
 Everything but `{page}`, `{page-hebrew}` and `{document-title}` names whatever was in force at
 the *end* of the page, so a heading starting partway down a page names that page. The `-alt`
 codes are what let a running head name the second language of a parallel volume; in a
-non-parallel document they expand to nothing.
+non-parallel document they expand to nothing. On facing pages only the verso records the plain
+codes and only the recto the `-alt` ones, so a verso heads its own text with
+`{section-title}` and a recto with `{section-title-alt}`; the other code on either page names
+whatever the facing side last set, which may be a page or more behind.
 
 Title pages never carry a running head or foot, nor do the blank pages inserted to keep a
 title page on a recto.
