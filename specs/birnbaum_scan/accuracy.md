@@ -1435,3 +1435,42 @@ Uminchatam, and Shabbat Chol Hamoed. The parallel proofs match all119 Hebrew and
 English rows and contain all34 printed notes exactly once. PDF glyph-position
 checks found no reversed Hebrew runs and rejected deliberately reversed controls.
 Measured line numbers sit outside adjacent text; sampled opening rubrics align.
+
+
+## Sefirat HaOmer and Akdamut (n661–n678)
+
+Printed637–654 was read directly with independent Hebrew and English readers,
+then compared with mechanically resolved page slices. The source audit under
+`scan_reading/omer_akdamut/` preserves the initial readings, 332 individual
+second-reader proposals, final readings, and adjudicated comparison differences.
+Initial Akdamut readings required substantial consonant and vowel corrections;
+several confident initial crop reports were overturned. Parent enlargement also
+found a shared omission: the holam in לְתַלּוֹתֵי. Metegs were reviewed individually,
+not inferred as a class. Defective שמנה in all five count occurrences, full
+בנגינות/מישור, and the edition's other verified spellings are retained.
+
+The encoding contains all49 daily formulas and the prayers before and after them,
+plus all90 Akdamut lines in45 aligned pairs. Biblical passages retain source URNs
+with bounded verse milestones; reused liturgical lines also carry source identity.
+Whole-section occasion conditions are in callers; daily count conditions select
+within the reusable Omer text. Unknown dates retain MAYBE. Akdamut is gated to
+Shavuot day1 in both locations. The two sections are included in the siddur index.
+
+Actual-date compilation exposed an existing calendar adapter bug: `hdate.omer.day`
+is the remainder within the week, not the Omer count. The adapter now uses
+`total_days`; regression coverage exercises all49 days and the adjacent dates in
+Israel and diaspora. Sixteen actual-date parallel compilations cover the season
+boundaries, days7/8, and both Shavuot dates.
+
+Verification:273 scan-importer tests and72 calendar tests pass. All29 changed/new
+XML files validate; the URN registry reports zero errors and warnings. Compiled
+text matches all101 bilingual units exactly, and all16 printed notes appear at
+their intended occurrences. Hebrew glyph checks report0/233 reversed Omer runs
+and0/131 reversed Akdamut runs; deliberately reversed controls flag all364.
+English heading glyph order passes. Four sampled paired rubric starts align
+exactly;124 sampled margin numbers sit outside adjacent text and numbering
+restarts at5 on all34 populated column-pages. The Omer bookmark contains the
+counting section and Psalm67; Akdamut has its own bookmark.
+
+Review proof: `output/birnbaum_omer_akdamut_parallel.pdf` (individual compiled XML,
+TeX, and PDFs are retained alongside it).

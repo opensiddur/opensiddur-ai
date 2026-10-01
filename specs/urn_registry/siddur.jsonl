@@ -784,3 +784,5 @@
 {"urn": "urn:x-opensiddur:text:siddur:regalim/musaf/text/sukkot_opening/verse/1", "status": "canonical", "label_en": "Festival Musaf: regalim/musaf/text/sukkot opening/verse/1", "parent": "urn:x-opensiddur:text:siddur:regalim/musaf/text/sukkot_opening/verse"}
 {"urn": "urn:x-opensiddur:text:siddur:regalim/musaf/text/sukkot_opening/verse/2", "status": "canonical", "label_en": "Festival Musaf: regalim/musaf/text/sukkot opening/verse/2", "parent": "urn:x-opensiddur:text:siddur:regalim/musaf/text/sukkot_opening/verse"}
 {"urn": "urn:x-opensiddur:text:siddur:regalim/morning_meal", "status": "canonical", "label_en": "Festival Musaf: regalim/morning meal", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:regalim/akdamut", "status": "canonical", "label_en": "regalim — akdamut", "parent": "urn:x-opensiddur:text:siddur:regalim"}
+{"urn": "urn:x-opensiddur:text:siddur:sefirat_haomer", "status": "canonical", "label_en": "sefirat haomer"}

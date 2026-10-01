@@ -1,0 +1,36 @@
+{
+  "scan_leaves": "n661\u2013n678",
+  "printed_pages": "637\u2013654",
+  "scan_importer_tests": 273,
+  "calendar_tests": 72,
+  "schema_files": 29,
+  "registry_errors": 0,
+  "registry_warnings": 0,
+  "bilingual_units": 101,
+  "omer_formulas": 49,
+  "akdamut_lines": 90,
+  "printed_notes": 16,
+  "actual_date_compiles": 16,
+  "calendar_regression_dates_per_location": 51,
+  "hebrew_direction": {
+    "omer": {
+      "total": 233,
+      "reversed": 0,
+      "control_flags": 233
+    },
+    "akdamut": {
+      "total": 131,
+      "reversed": 0,
+      "control_flags": 131
+    }
+  },
+  "geometry": {
+    "margin_numbers": 124,
+    "column_page_numbering_resets": 34,
+    "paired_rubric_starts": 4,
+    "maximum_sampled_rubric_delta_pt": 0,
+    "english_heading_glyph_order": "pass"
+  },
+  "proof": "output/birnbaum_omer_akdamut_parallel.pdf",
+  "settings": "settings_omer_akdamut.yaml"
+}

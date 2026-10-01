@@ -374,6 +374,26 @@ class TestComputeFunctions(unittest.TestCase):
         # Chukat and Balak are never combined in Israel.
         self.assertEqual(israel["triennial-pattern-chukat-balak"], "SSS")
 
+    def test_omer_counts_total_days_across_week_boundaries(self):
+        from pyluach.dates import HebrewDate
+        first = HebrewDate(5786, 1, 16)
+        for israel in (False, True):
+            for offset in range(-1, 50):
+                heb = first.add(days=offset)
+                greg = heb.to_greg()
+                snapshot = _snapshot({
+                    (FS_GREGORIAN, "year"): greg.year,
+                    (FS_GREGORIAN, "month"): greg.month,
+                    (FS_GREGORIAN, "day"): greg.day,
+                    (FS_ISRAEL, "is-israel"): israel,
+                    (FS_HEBREW_DATE, "year"): heb.year,
+                    (FS_HEBREW_DATE, "month"): heb.month,
+                    (FS_HEBREW_DATE, "day"): heb.day,
+                })
+                with self.subTest(offset=offset, israel=israel):
+                    self.assertEqual(compute_holiday(snapshot)["omer"],
+                                     offset + 1 if 0 <= offset < 49 else 0)
+
     def test_holiday_multiday_pesach_and_sukkot(self):
         pesach_ii = _snapshot({
             (FS_GREGORIAN, "year"): 2024,
@@ -473,7 +493,7 @@ class TestComputeFunctions(unittest.TestCase):
 
         hi_omer = MagicMock()
         hi_omer.holidays = []
-        hi_omer.omer = MagicMock(day=5)
+        hi_omer.omer = MagicMock(total_days=5, day=5)
         self.assertEqual(_map_hdate_holidays(hi_omer, heb)["omer"], 5)
 
         rh = pyluach_dates.HebrewDate(5785, 1, 1)
