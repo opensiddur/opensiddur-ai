@@ -202,3 +202,49 @@
 {"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/7", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 7"}
 {"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/8", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 8"}
 {"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/9", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 9"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut", "status": "canonical", "label_en": "akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/1", "status": "canonical", "label_en": "akdamut — 1", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/10", "status": "canonical", "label_en": "akdamut — 10", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/11", "status": "canonical", "label_en": "akdamut — 11", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/12", "status": "canonical", "label_en": "akdamut — 12", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/13", "status": "canonical", "label_en": "akdamut — 13", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/14", "status": "canonical", "label_en": "akdamut — 14", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/15", "status": "canonical", "label_en": "akdamut — 15", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/16", "status": "canonical", "label_en": "akdamut — 16", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/17", "status": "canonical", "label_en": "akdamut — 17", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/18", "status": "canonical", "label_en": "akdamut — 18", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/19", "status": "canonical", "label_en": "akdamut — 19", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/2", "status": "canonical", "label_en": "akdamut — 2", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/20", "status": "canonical", "label_en": "akdamut — 20", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/21", "status": "canonical", "label_en": "akdamut — 21", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/22", "status": "canonical", "label_en": "akdamut — 22", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/23", "status": "canonical", "label_en": "akdamut — 23", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/24", "status": "canonical", "label_en": "akdamut — 24", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/25", "status": "canonical", "label_en": "akdamut — 25", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/26", "status": "canonical", "label_en": "akdamut — 26", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/27", "status": "canonical", "label_en": "akdamut — 27", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/28", "status": "canonical", "label_en": "akdamut — 28", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/29", "status": "canonical", "label_en": "akdamut — 29", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/3", "status": "canonical", "label_en": "akdamut — 3", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/30", "status": "canonical", "label_en": "akdamut — 30", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/31", "status": "canonical", "label_en": "akdamut — 31", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/32", "status": "canonical", "label_en": "akdamut — 32", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/33", "status": "canonical", "label_en": "akdamut — 33", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/34", "status": "canonical", "label_en": "akdamut — 34", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/35", "status": "canonical", "label_en": "akdamut — 35", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/36", "status": "canonical", "label_en": "akdamut — 36", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/37", "status": "canonical", "label_en": "akdamut — 37", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/38", "status": "canonical", "label_en": "akdamut — 38", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/39", "status": "canonical", "label_en": "akdamut — 39", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/4", "status": "canonical", "label_en": "akdamut — 4", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/40", "status": "canonical", "label_en": "akdamut — 40", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/41", "status": "canonical", "label_en": "akdamut — 41", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/42", "status": "canonical", "label_en": "akdamut — 42", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/43", "status": "canonical", "label_en": "akdamut — 43", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/44", "status": "canonical", "label_en": "akdamut — 44", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/45", "status": "canonical", "label_en": "akdamut — 45", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/5", "status": "canonical", "label_en": "akdamut — 5", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/6", "status": "canonical", "label_en": "akdamut — 6", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/7", "status": "canonical", "label_en": "akdamut — 7", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/8", "status": "canonical", "label_en": "akdamut — 8", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:akdamut/9", "status": "canonical", "label_en": "akdamut — 9", "parent": "urn:x-opensiddur:text:poem:akdamut"}

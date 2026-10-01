@@ -91,6 +91,8 @@ PRAYERS += yizkor_prayers("he")
 from .festival_musaf import prayers as festival_musaf_prayers, shared as festival_musaf_shared
 PRAYERS = festival_musaf_shared("he", PRAYERS)
 PRAYERS += festival_musaf_prayers("he")
+from .omer_akdamut import prayers as omer_akdamut_prayers
+PRAYERS += omer_akdamut_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -633,8 +635,9 @@ def units(project, pages, by_name, amidah_body):
     from .shabbat_day_meal import units as day_meal_units
     from .festival import units as festival_units, extend_services
     from .yizkor import units as yizkor_units, extend_services as extend_yizkor
+    from .omer_akdamut import units as omer_akdamut_units
     from .festival_musaf import units as festival_musaf_units
-    return extend_yizkor(extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project) + yizkor_units(project)) + festival_musaf_units(project)
+    return extend_yizkor(extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project) + yizkor_units(project)) + festival_musaf_units(project) + omer_akdamut_units(project)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

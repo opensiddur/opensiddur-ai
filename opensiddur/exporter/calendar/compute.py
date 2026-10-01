@@ -562,7 +562,8 @@ def _map_hdate_holidays(
             values["pesah-sheini"] = 1
 
     if hi.omer:
-        values["omer"] = hi.omer.day
+        # hdate.day is the remainder within a week (zero on days 7, 14, ...).
+        values["omer"] = hi.omer.total_days
 
     values["rosh-hodesh"] = _rosh_hodesh_day(heb)
 
