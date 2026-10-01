@@ -59,7 +59,11 @@
          the three below the class options. -->
     <xsl:param name="documentclass-options" as="xs:string">11pt,letterpaper</xsl:param>
     <xsl:param name="typography-preamble" as="xs:string?"/>
+    <!-- pages | pairs | interleaved. The first two set a parallel text with reledpar, on
+         facing pages or in columns; interleaved sets it in one reledmac stream, each
+         block followed by its translation. -->
     <xsl:param name="layout" as="xs:string">pages</xsl:param>
+    <xsl:variable name="interleaved" as="xs:boolean" select="$layout = 'interleaved'"/>
     <!-- footnote | endnote | none — where the text of an editorial note goes.
          `none` drops notes entirely, anchor and all. -->
     <xsl:param name="notes-placement" as="xs:string">footnote</xsl:param>
@@ -117,6 +121,10 @@
     <xsl:template match="/">
         <xsl:variable name="root-lang" select="string(tei:TEI/@xml:lang)"/>
         <xsl:variable name="has-parallel" select="exists(//p:parallel)"/>
+        <!-- Whether the parallel text is set by reledpar. Everything declared under this
+             exists only once reledpar is loaded, so an interleaved compile, which does
+             not load it, must not see any of it. -->
+        <xsl:variable name="uses-reledpar" select="$has-parallel and not($interleaved)"/>
 
         <xsl:text>\documentclass[</xsl:text>
         <xsl:value-of select="$documentclass-options"/>
@@ -164,7 +172,7 @@
                A = textual apparatus (reserved, currently unused)
                B = editorial notes / commentary -->
         <xsl:text>\usepackage{reledmac}&#10;</xsl:text>
-        <xsl:if test="$has-parallel">
+        <xsl:if test="$uses-reledpar">
             <xsl:text>\usepackage{reledpar}&#10;</xsl:text>
         </xsl:if>
         <!-- Use BibTeX as backend for portability; biber can be unavailable or
@@ -417,8 +425,13 @@
              \hsize, not \linewidth, for the reason given above \OSInstructionBlock:
              reledpar sets \hsize to the column width inside a parallel column but leaves
              \linewidth at the page, so a \linewidth box is twice the width it has to fit
-             in and the centred rule lands outside its own column. -->
-        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \hsize{\hss\rule{0.25\hsize}{0.4pt}\hss}}&#10;</xsl:text>
+             in and the centred rule lands outside its own column.
+
+             And less \leftskip and \rightskip, which narrow the lines of an indented
+             paragraph — the interleaved layout's translation, a list item — but not
+             \hsize: a box as wide as \hsize there overruns the right margin by the indent. -->
+        <xsl:text>\newcommand{\OSMeasure}{\dimexpr\hsize-\leftskip-\rightskip\relax}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure{\hss\rule{0.25\hsize}{0.4pt}\hss}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondStartBlock}{\OSCondRule}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSCondEndBlock}{\OSCondRule}&#10;</xsl:text>
         <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
@@ -459,10 +472,12 @@
              aborts with \led@err@LineationInNumbered if called once numbering is open. -->
         <xsl:text>\lineation{page}&#10;</xsl:text>
         <xsl:if test="$has-parallel">
+            <!-- Put line numbers on the outer margins by default. -->
+            <xsl:text>\linenummargin{outer}&#10;</xsl:text>
+        </xsl:if>
+        <xsl:if test="$uses-reledpar">
             <!-- reledpar-only: \lineationR does not exist when reledpar is not loaded. -->
             <xsl:text>\lineationR{page}&#10;</xsl:text>
-            <!-- Put line numbers on the outer margins by default (pages/facing-page mode). -->
-            <xsl:text>\linenummargin{outer}&#10;</xsl:text>
             <xsl:text>\linenummarginR{outer}&#10;</xsl:text>
             <xsl:if test="$layout = 'pairs'">
                 <!-- In \Columns mode reledpar maps \begin{Leftside} to the physical LEFT column
@@ -518,7 +533,28 @@
              move. reledmac does this for its own section titles and never for lines. -->
         <xsl:text>\renewcommand*{\leftlinenum}{\hbox dir TLT to \z@{\hss\ledlinenum\kern\linenumsep}}&#10;</xsl:text>
         <xsl:text>\renewcommand*{\rightlinenum}{\hbox dir TLT to \z@{\kern\linenumsep\ledlinenum\hss}}&#10;</xsl:text>
-        <xsl:if test="$has-parallel">
+        <!-- The same fault one level up, in reledmac's own \print@line, which sets every
+             line outside reledpar: the box it hangs the laps on is \linewidth wide and
+             also takes the prevailing direction. In a Hebrew stream "left" is then the
+             start of an RTL box, which is the right-hand edge, and the left lap planted
+             there lands over the first word of every line. Give that box a fixed direction
+             too. The line inside it is unaffected: reledmac sets it in a box of its own,
+             in the direction recorded at its \pstart. So left and right, inner and outer,
+             mean the same margin for a Hebrew line as for an English one, which is what
+             lets the interleaved layout number both texts in one margin.
+
+             reledpar sets its columns and pages with \print@lineL and \print@lineR,
+             which this does not touch. -->
+        <xsl:text>\patchcmd{\print@line}{\hb@xt@ \linewidth}{\hbox dir TLT to\linewidth}{}{\PackageError{opensiddur}{could not patch reledmac's print@line}{}}&#10;</xsl:text>
+        <!-- An unnumbered line (\numberlinefalse) still advances the absolute line count
+             and runs the actions queued for it, but reledmac writes its \@nl record to the
+             line list only when the line is numbered. The records are what \lineation{page}
+             reads page changes from, so every unnumbered line puts the page changes a line
+             early, and numbering restarts partway down a page. Write the record for every
+             line: an unnumbered line is still counted in no series and printed with no
+             number, and the line list stays in step with the lines. -->
+        <xsl:text>\patchcmd{\new@line}{\ifnumberline}{\iftrue}{}{\PackageError{opensiddur}{could not patch reledmac's new@line}{}}&#10;</xsl:text>
+        <xsl:if test="$uses-reledpar">
             <xsl:text>\renewcommand*{\leftlinenumR}{\hbox dir TLT to \z@{\hss\l@dlinenumR\kern\linenumsep}}&#10;</xsl:text>
             <xsl:text>\renewcommand*{\rightlinenumR}{\hbox dir TLT to \z@{\kern\linenumsep\l@dlinenumR\hss}}&#10;</xsl:text>
             <!-- \linenumrepR, \sublinenumrepR, and \setRlineflag are reledpar-only;
@@ -562,9 +598,16 @@
              typography.paragraphs.spacing rewrites \parskip further down the preamble,
              and this has to follow it. -->
         <xsl:text>\newcommand{\OSPstartSkip}{</xsl:text>
-        <xsl:value-of select="if ($has-parallel) then '0.5\parskip' else '\parskip'"/>
+        <xsl:value-of select="if ($uses-reledpar) then '0.5\parskip' else '\parskip'"/>
         <xsl:text>}&#10;</xsl:text>
-        <xsl:text>\AtEveryPstart*{\vspace{\OSPstartSkip}}&#10;</xsl:text>
+        <xsl:choose>
+            <xsl:when test="$has-parallel and $interleaved">
+                <xsl:call-template name="interleaved-preamble"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:text>\AtEveryPstart*{\vspace{\OSPstartSkip}}&#10;</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
 
         <!-- Font switches applied to the whole body, from typography.styles.body.
              Empty unless configured; emitted at the top of the document, where it
@@ -743,10 +786,14 @@
                             group-adjacent="if (self::p:parallel) then 'parallel' else 'inline'">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'parallel'">
-                    <!-- One \Pages/\Columns per batch: see $parallel-batch-size. -->
+                    <!-- One \Pages/\Columns per batch: see $parallel-batch-size. The
+                         batches exist for reledpar's sake alone, so an interleaved run is
+                         not cut: a cut would only restart numbering by section and add
+                         auxiliary files. -->
                     <xsl:variable name="blocks" as="element(p:parallel)*" select="current-group()"/>
                     <xsl:for-each-group select="$blocks"
-                                        group-adjacent="(position() - 1) idiv $parallel-batch-size">
+                                        group-adjacent="if ($interleaved) then 0
+                                                        else (position() - 1) idiv $parallel-batch-size">
                         <xsl:call-template name="parallel-run">
                             <xsl:with-param name="parallels" select="current-group()"/>
                         </xsl:call-template>
@@ -810,6 +857,24 @@
          running-head marks for both columns and the outline entry, because the heading in
          the columns has been suppressed and would carry neither. \phantomsection anchors
          here, which is where the reader will actually land. -->
+    <!-- The two headings a spanning heading is made from: the primary text's first and
+         the other text's first, as heading sentinels. Both the spanning heading and the
+         streams under it need to agree on which divisions these are, since the notes on
+         them are set by the one and so must be left out by the other. -->
+    <xsl:function name="f:spanning-heads" as="element()*">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="primary-leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='primary'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="secondary-leaves" as="node()*">
+            <xsl:apply-templates select="$block/p:parallelItem[@role='parallel'][1]/node()"
+                                 mode="leaves"/>
+        </xsl:variable>
+        <xsl:sequence select="$primary-leaves[self::f:head][1],
+                              $secondary-leaves[self::f:head][1]"/>
+    </xsl:function>
+
     <xsl:template name="spanning-heading">
         <xsl:param name="block" as="element(p:parallel)"/>
         <xsl:variable name="primary-leaves" as="node()*">
@@ -822,6 +887,14 @@
         </xsl:variable>
         <xsl:variable name="head" select="$primary-leaves[self::f:head][1]"/>
         <xsl:variable name="alt-head" select="$secondary-leaves[self::f:head][1]"/>
+        <!-- The notes on each heading's division. The streams below leave them out (see
+             f:spanning-heads); each is set here, after the title of its own division. -->
+        <xsl:variable name="head-notes" as="element()*"
+                      select="$primary-leaves[f:is-head-note(.)]
+                                             [generate-id(parent::tei:div) = $head/@div]"/>
+        <xsl:variable name="alt-head-notes" as="element()*"
+                      select="$secondary-leaves[f:is-head-note(.)]
+                                               [generate-id(parent::tei:div) = $alt-head/@div]"/>
         <xsl:if test="exists($head)">
             <!-- Which of the two titles this heading shows. 'combined' shows the other one
                  too where it says something different, set beneath as a translation of the
@@ -837,6 +910,11 @@
             <xsl:variable name="is-hebrew"
                           select="$lang = 'he' or starts-with($lang, 'he-')"/>
             <xsl:variable name="mark" select="f:emit-bidi-mark(string($shown/@title))"/>
+            <!-- A title that is not set lends its notes to the one that is. -->
+            <xsl:variable name="second-notes" as="element()*"
+                          select="if (exists($second)) then $alt-head-notes else ()"/>
+            <xsl:variable name="shown-notes" as="element()*"
+                          select="($head-notes, $alt-head-notes) except $second-notes"/>
             <xsl:for-each select="('', 'Alt')">
                 <xsl:text>\InsertMark{OShead</xsl:text>
                 <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
@@ -846,15 +924,8 @@
                 <xsl:text>}{</xsl:text><xsl:value-of select="$mark"/><xsl:text>}</xsl:text>
             </xsl:for-each>
             <xsl:text>&#10;</xsl:text>
-            <!-- \parfillskip is 0pt plus 1fil on an ordinary paragraph, and the heading
-                 macros centre with an \hfill at each end. Three infinite glues put the
-                 title a third of the way across instead of half. reledmac zeroes
-                 \parfillskip inside a \pstart, which is why a heading set in a column
-                 looks right and this one, set between columns, did not. -->
-            <xsl:text>{\parfillskip=0pt\relax </xsl:text>
-            <xsl:if test="$is-hebrew">
-                <xsl:text>\begin{hebrew}</xsl:text>
-            </xsl:if>
+            <xsl:variable name="titles" as="xs:string">
+            <xsl:value-of>
             <xsl:text>\OShead</xsl:text>
             <xsl:value-of select="f:heading-suffix(xs:integer($head/@level))"/>
             <xsl:text>{</xsl:text>
@@ -862,6 +933,8 @@
                 <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
             </xsl:if>
             <xsl:apply-templates select="$shown/node()[not(self::f:alt-head)]" mode="emit"/>
+            <!-- Inside the title's direction; see name="heading". -->
+            <xsl:apply-templates select="$shown-notes" mode="emit"/>
             <xsl:if test="not($is-hebrew)">
                 <xsl:text>}}</xsl:text>
             </xsl:if>
@@ -889,6 +962,7 @@
                 </xsl:choose>
                 <xsl:apply-templates select="$second/node()[not(self::f:alt-head)]"
                                      mode="emit"/>
+                <xsl:apply-templates select="$second-notes" mode="emit"/>
                 <xsl:choose>
                     <xsl:when test="$second-is-hebrew">
                         <xsl:text>}</xsl:text>
@@ -899,10 +973,46 @@
                 </xsl:choose>
                 <xsl:text>}</xsl:text>
             </xsl:if>
-            <xsl:if test="$is-hebrew">
-                <xsl:text>\end{hebrew}</xsl:text>
-            </xsl:if>
-            <xsl:text>\par}&#10;</xsl:text>
+            </xsl:value-of>
+            </xsl:variable>
+            <xsl:choose>
+                <xsl:when test="exists($head-notes) or exists($alt-head-notes)">
+                    <!-- A note mark is an \edtext, which reledmac sets only inside numbered
+                         text, and this heading stands between the columns, outside any. So
+                         a heading that carries notes is given a numbered section of its
+                         own, with numbering switched off around its one paragraph so that
+                         neither of its lines takes a number. Headings without notes are
+                         left as they were. -->
+                    <xsl:text>\beginnumbering&#10;{\numberlinefalse&#10;</xsl:text>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\begin{hebrew}&#10;</xsl:text>
+                    </xsl:if>
+                    <xsl:call-template name="pstart"/>
+                    <xsl:value-of select="$titles"/>
+                    <xsl:text>\pend&#10;</xsl:text>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\end{hebrew}&#10;</xsl:text>
+                    </xsl:if>
+                    <xsl:text>}&#10;\endnumbering&#10;</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <!-- \parfillskip is 0pt plus 1fil on an ordinary paragraph, and the
+                         heading macros centre with an \hfill at each end. Three infinite
+                         glues put the title a third of the way across instead of half.
+                         reledmac zeroes \parfillskip inside a \pstart, which is why a
+                         heading set in a column looks right and this one, set between
+                         columns, did not. -->
+                    <xsl:text>{\parfillskip=0pt\relax </xsl:text>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\begin{hebrew}</xsl:text>
+                    </xsl:if>
+                    <xsl:value-of select="$titles"/>
+                    <xsl:if test="$is-hebrew">
+                        <xsl:text>\end{hebrew}</xsl:text>
+                    </xsl:if>
+                    <xsl:text>\par}&#10;</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
             <xsl:text>\phantomsection\addcontentsline{toc}{</xsl:text>
             <xsl:value-of select="f:heading-toc-level(xs:integer($head/@level))"/>
             <xsl:text>}{</xsl:text>
@@ -948,11 +1058,22 @@
              so the heading can be set across the page between them. -->
         <xsl:for-each-group select="$usable"
                             group-starting-with="*[f:spanning-title(., $headings-from) != '']">
-            <xsl:call-template name="parallel-columns">
-                <xsl:with-param name="usable" select="current-group()"/>
-                <xsl:with-param name="spanning"
-                                select="f:spanning-title(current-group()[1], $headings-from)"/>
-            </xsl:call-template>
+            <xsl:choose>
+                <xsl:when test="$interleaved">
+                    <xsl:call-template name="parallel-interleaved">
+                        <xsl:with-param name="usable" select="current-group()"/>
+                        <xsl:with-param name="spanning"
+                                        select="f:spanning-title(current-group()[1], $headings-from)"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:call-template name="parallel-columns">
+                        <xsl:with-param name="usable" select="current-group()"/>
+                        <xsl:with-param name="spanning"
+                                        select="f:spanning-title(current-group()[1], $headings-from)"/>
+                    </xsl:call-template>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:for-each-group>
     </xsl:template>
 
@@ -969,6 +1090,8 @@
         </xsl:if>
 
         <xsl:if test="exists($usable)">
+        <xsl:variable name="hoisted-divs" as="xs:string*"
+                      select="if ($spanning != '') then f:spanning-heads($usable[1])/@div else ()"/>
         <xsl:variable name="env" select="if ($layout='pairs') then 'pairs' else 'pages'"/>
         <xsl:variable name="typeset" select="if ($layout='pairs') then '\Columns' else '\Pages'"/>
 
@@ -1021,6 +1144,7 @@
                      joining their headings possible at all. -->
                 <xsl:with-param name="alt-nodes" select="$right-nodes"/>
                 <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
             <xsl:text>\end{Leftside}&#10;</xsl:text>
 
@@ -1038,12 +1162,213 @@
                      same thing. The primary side is given the same in reverse. -->
                 <xsl:with-param name="alt-nodes" select="$left-nodes"/>
                 <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
             <xsl:text>\end{Rightside}&#10;</xsl:text>
 
             <xsl:text>\end{</xsl:text><xsl:value-of select="$env"/><xsl:text>}&#10;</xsl:text>
             <xsl:value-of select="$typeset"/><xsl:text>&#10;</xsl:text>
         </xsl:if>
+    </xsl:template>
+
+    <!-- ====================================================================
+         Interleaved: one numbered stream, each block followed by its translation.
+         ==================================================================== -->
+
+    <!-- The preamble the interleaved layout adds. The defaults here are the settings
+         model's (InterleavedConfig in typography.py); tex/typography_tex.py overrides
+         each one a settings file names.
+
+         The translation goes in an environment, i.e. a group, and that is where its
+         settings take effect. It has to be outside the \pstart: \pstart gathers the
+         paragraph in a group of its own and \pend closes it before the lines are set, so
+         a \numberlinefalse inside would be gone by the time a line is counted. Inside the
+         group \skipnumbering must be disarmed as well, or the heading or citation it
+         precedes would pull back the count of the numbered text around it.
+
+         \leftskip and \rightskip are advanced rather than set, keeping the stretch
+         \raggedright puts in \rightskip.
+
+         The seam is the one place the spacing between two paragraphs is not \parskip:
+         the \pstart after it is the second half of a pair, and takes the closer
+         \OSInterleavedSpacing instead. A flag rather than a skip emitted in place, so
+         the hook still runs exactly once per \pstart. -->
+    <xsl:template name="interleaved-preamble">
+        <xsl:text>\newcommand{\OSInterleavedSize}{\small}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSInterleavedIndent}{1em}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSInterleavedSpacing}{0.25em}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSInterleavedNumbering}{\numberlinefalse\let\skipnumbering\relax}&#10;</xsl:text>
+        <xsl:text>\newenvironment{OSInterleavedTranslation}{\OSInterleavedNumbering\OSInterleavedSize\advance\leftskip\OSInterleavedIndent\relax\advance\rightskip\OSInterleavedIndent\relax}{}&#10;</xsl:text>
+        <xsl:text>\newif\ifOSInterleavedSeam&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSInterleavedSeam}{\global\OSInterleavedSeamtrue}&#10;</xsl:text>
+        <xsl:text>\AtEveryPstart*{\ifOSInterleavedSeam\global\OSInterleavedSeamfalse\vspace{\OSInterleavedSpacing}\else\vspace{\OSPstartSkip}\fi}&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- A run of parallel blocks set one after another in a single numbered section:
+         each block's first text, then its second, in the order @column-order gives.
+
+         The unit is the block, the same unit the column layouts pair side by side, so a
+         translation follows exactly the passage a column layout would set beside it.
+
+         The two texts are prepared as whole streams, each with the other as its facing
+         stream, exactly as the columns are. That keeps headings-from, instructions-from,
+         bookmarks-from and the -alt running heads meaning what they mean in columns: the
+         first text records into the primary mark classes and the second into the Alt
+         ones. Only then is each stream cut back into its blocks, to be emitted in turn.
+
+         One numbered section for the whole run, rather than one per block: reledmac
+         writes auxiliary files for every section, and a book has thousands of blocks.
+         Direction therefore changes between paragraphs inside the section, with each
+         Hebrew segment in its own hebrew environment. -->
+    <xsl:template name="parallel-interleaved">
+        <xsl:param name="usable" as="element(p:parallel)*"/>
+        <xsl:param name="spanning" as="xs:string" select="''"/>
+
+        <xsl:if test="$spanning != ''">
+            <xsl:call-template name="spanning-heading">
+                <xsl:with-param name="block" select="$usable[1]"/>
+            </xsl:call-template>
+        </xsl:if>
+
+        <xsl:if test="exists($usable)">
+            <xsl:variable name="hoisted-divs" as="xs:string*"
+                          select="if ($spanning != '') then f:spanning-heads($usable[1])/@div else ()"/>
+            <xsl:variable name="first-nodes" as="node()*">
+                <xsl:for-each select="$usable">
+                    <xsl:sequence select="f:interleaved-item(., 1)/node()"/>
+                    <xsl:if test="position() != last()">
+                        <f:block-break/>
+                    </xsl:if>
+                </xsl:for-each>
+            </xsl:variable>
+            <xsl:variable name="second-nodes" as="node()*">
+                <xsl:for-each select="$usable">
+                    <xsl:sequence select="f:interleaved-item(., 2)/node()"/>
+                    <xsl:if test="position() != last()">
+                        <f:block-break/>
+                    </xsl:if>
+                </xsl:for-each>
+            </xsl:variable>
+            <xsl:variable name="first-leaves" as="node()*"
+                          select="f:stream-leaves($first-nodes, $second-nodes, 'primary', false())"/>
+            <xsl:variable name="second-leaves" as="node()*"
+                          select="f:stream-leaves($second-nodes, $first-nodes, 'alt', false())"/>
+            <xsl:variable name="first-breaks" as="xs:integer*"
+                          select="index-of($first-leaves ! exists(self::f:block-break), true())"/>
+            <xsl:variable name="second-breaks" as="xs:integer*"
+                          select="index-of($second-leaves ! exists(self::f:block-break), true())"/>
+            <xsl:if test="count($first-breaks) + 1 != count($usable)
+                          or count($second-breaks) + 1 != count($usable)">
+                <xsl:message terminate="yes">
+                    <xsl:text>interleaved layout: block boundaries were lost preparing the streams</xsl:text>
+                </xsl:message>
+            </xsl:if>
+
+            <xsl:variable name="body" as="xs:string*">
+                <xsl:for-each select="1 to count($usable)">
+                    <xsl:variable name="i" as="xs:integer" select="."/>
+                    <xsl:variable name="block" as="element(p:parallel)" select="$usable[$i]"/>
+                    <xsl:variable name="first-tex" as="xs:string">
+                        <xsl:call-template name="interleaved-segment">
+                            <xsl:with-param name="leaves"
+                                            select="f:segment($first-leaves, $first-breaks, $i)"/>
+                            <xsl:with-param name="item" select="f:interleaved-item($block, 1)"/>
+                            <xsl:with-param name="stream" select="'primary'"/>
+                            <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                            <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
+                        </xsl:call-template>
+                    </xsl:variable>
+                    <xsl:variable name="second-tex" as="xs:string">
+                        <xsl:call-template name="interleaved-segment">
+                            <xsl:with-param name="leaves"
+                                            select="f:segment($second-leaves, $second-breaks, $i)"/>
+                            <xsl:with-param name="item" select="f:interleaved-item($block, 2)"/>
+                            <xsl:with-param name="stream" select="'alt'"/>
+                            <xsl:with-param name="hoisted-heading" select="$spanning"/>
+                            <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
+                        </xsl:call-template>
+                    </xsl:variable>
+                    <xsl:sequence select="$first-tex"/>
+                    <!-- Only between two texts that each set a paragraph: a seam with no
+                         paragraph after it would carry its spacing into the next block. -->
+                    <xsl:if test="contains($first-tex, '\pstart') and contains($second-tex, '\pstart')">
+                        <xsl:sequence select="'\OSInterleavedSeam&#10;'"/>
+                    </xsl:if>
+                    <xsl:sequence select="$second-tex"/>
+                </xsl:for-each>
+            </xsl:variable>
+            <xsl:variable name="tex" as="xs:string" select="string-join($body, '')"/>
+            <!-- reledmac refuses a numbered section with no \pstart in it, and a group that
+                 is only a hoisted heading's marks has none. -->
+            <xsl:value-of select="f:collapse-blank-lines(
+                                      if (contains($tex, '\pstart'))
+                                      then concat('\beginnumbering&#10;', $tex, '\endnumbering&#10;')
+                                      else $tex)"/>
+        </xsl:if>
+    </xsl:template>
+
+    <!-- The parallelItem a block sets first (1) or second (2), by its @column-order. -->
+    <xsl:function name="f:interleaved-item" as="element()?">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:param name="which" as="xs:integer"/>
+        <xsl:variable name="primary" select="$block/p:parallelItem[@role='primary'][1]"/>
+        <xsl:variable name="secondary" select="$block/p:parallelItem[@role='parallel'][1]"/>
+        <xsl:sequence select="if (($which = 1) = ($block/@column-order = 'primary_last'))
+                              then $secondary else $primary"/>
+    </xsl:function>
+
+    <!-- The $i-th of the segments $leaves is cut into at the positions $breaks. -->
+    <xsl:function name="f:segment" as="node()*">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:param name="breaks" as="xs:integer*"/>
+        <xsl:param name="i" as="xs:integer"/>
+        <xsl:variable name="from" select="if ($i = 1) then 1 else $breaks[$i - 1] + 1"/>
+        <xsl:variable name="to"
+                      select="if ($i le count($breaks)) then $breaks[$i] - 1 else count($leaves)"/>
+        <xsl:sequence select="subsequence($leaves, $from, $to - $from + 1)"/>
+    </xsl:function>
+
+    <!-- One block's text in one language, as the paragraphs of a single stream. A
+         translation is wrapped in OSInterleavedTranslation, which sets it apart and
+         decides whether its lines are numbered; a Hebrew text in the hebrew environment,
+         inside that, since the direction belongs to the paragraphs themselves. -->
+    <xsl:template name="interleaved-segment" as="xs:string">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:param name="item" as="element()?"/>
+        <xsl:param name="stream" as="xs:string"/>
+        <xsl:param name="hoisted-heading" as="xs:string"/>
+        <xsl:param name="hoisted-divs" as="xs:string*"/>
+        <xsl:variable name="inner" as="xs:string">
+            <xsl:value-of>
+                <xsl:call-template name="emit-leaves">
+                    <xsl:with-param name="leaves" select="$leaves"/>
+                    <xsl:with-param name="stream" select="$stream"/>
+                    <xsl:with-param name="has-alt-column" select="true()"/>
+                    <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                    <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
+                    <xsl:with-param name="interleaved" select="true()"/>
+                </xsl:call-template>
+            </xsl:value-of>
+        </xsl:variable>
+        <xsl:variable name="translation" as="xs:boolean" select="$item/@role = 'parallel'"/>
+        <xsl:variable name="hebrew" as="xs:boolean"
+                      select="f:is-hebrew-lang(string($item/@xml:lang))"/>
+        <xsl:variable name="sets-text" as="xs:boolean" select="contains($inner, '\pstart')"/>
+        <xsl:value-of>
+            <xsl:if test="$sets-text and $translation">
+                <xsl:text>\begin{OSInterleavedTranslation}&#10;</xsl:text>
+            </xsl:if>
+            <xsl:if test="$sets-text and $hebrew">
+                <xsl:text>\begin{hebrew}&#10;</xsl:text>
+            </xsl:if>
+            <xsl:value-of select="$inner"/>
+            <xsl:if test="$sets-text and $hebrew">
+                <xsl:text>\end{hebrew}&#10;</xsl:text>
+            </xsl:if>
+            <xsl:if test="$sets-text and $translation">
+                <xsl:text>\end{OSInterleavedTranslation}&#10;</xsl:text>
+            </xsl:if>
+        </xsl:value-of>
     </xsl:template>
 
     <!-- No vertical glue may survive inside a parallel \pstart.
@@ -1143,6 +1468,9 @@
         <xsl:param name="stream" as="xs:string" select="'primary'"/>
         <xsl:param name="alt-nodes" as="node()*" select="()"/>
         <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- The divisions whose headings are set across the page above this stream, by
+             @div. Their notes are set there too. See spanning-heading. -->
+        <xsl:param name="hoisted-divs" as="xs:string*" select="()"/>
 
         <!-- The whole body, not just its xsl:iterate: a partial capture would leave a seam
              (\beginnumbering&#10; against a leading whitespace leaf) across which a blank
@@ -1156,6 +1484,7 @@
                 <xsl:with-param name="stream" select="$stream"/>
                 <xsl:with-param name="alt-nodes" select="$alt-nodes"/>
                 <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
             </xsl:call-template>
         </xsl:variable>
         <xsl:value-of select="f:collapse-blank-lines(string($tex))"/>
@@ -1182,7 +1511,547 @@
         <!-- A title already set across the page, above these columns. The first heading
              carrying it is suppressed here so it is not set a second time inside one. -->
         <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- The divisions whose headings are set across the page above this stream, by
+             @div. Their notes are set there too. See spanning-heading. -->
+        <xsl:param name="hoisted-divs" as="xs:string*" select="()"/>
 
+        <xsl:variable name="leaves" as="node()*"
+                      select="f:stream-leaves($nodes, $alt-nodes, $stream, $single-pstart)"/>
+
+        <xsl:if test="exists($leaves)">
+            <xsl:if test="f:is-hebrew-lang(string($lang))">
+                <xsl:text>\begin{hebrew}&#10;</xsl:text>
+            </xsl:if>
+
+            <xsl:text>\beginnumbering&#10;</xsl:text>
+            <xsl:if test="$single-pstart">
+                <!-- reledpar requires at least one \pstart...\pend in each side.
+                     When single-pstart is requested, open it up-front so even
+                     chapter-only or whitespace-leading blocks satisfy this. -->
+                <xsl:call-template name="pstart"/>
+            </xsl:if>
+
+            <xsl:call-template name="emit-leaves">
+                <xsl:with-param name="leaves" select="$leaves"/>
+                <xsl:with-param name="align-verses" select="$align-verses"/>
+                <xsl:with-param name="single-pstart" select="$single-pstart"/>
+                <xsl:with-param name="stream" select="$stream"/>
+                <xsl:with-param name="has-alt-column" select="exists($alt-nodes)"/>
+                <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
+            </xsl:call-template>
+
+            <xsl:text>\endnumbering&#10;</xsl:text>
+
+            <xsl:if test="f:is-hebrew-lang(string($lang))">
+                <xsl:text>\end{hebrew}&#10;</xsl:text>
+            </xsl:if>
+        </xsl:if>
+    </xsl:template>
+
+    <!-- Set a prepared leaf sequence (see f:stream-leaves) as \pstart...\pend paragraphs.
+         The caller supplies the surrounding \beginnumbering, and the opening \pstart
+         when $single-pstart asks for one to be open already. -->
+    <xsl:template name="emit-leaves">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:param name="align-verses" as="xs:boolean" select="false()"/>
+        <xsl:param name="single-pstart" as="xs:boolean" select="false()"/>
+        <xsl:param name="stream" as="xs:string" select="'primary'"/>
+        <!-- Whether there is a facing stream. See name="heading". -->
+        <xsl:param name="has-alt-column" as="xs:boolean" select="false()"/>
+        <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- The divisions whose headings are set across the page above this stream, by
+             @div. Their notes are set there too. See spanning-heading. -->
+        <xsl:param name="hoisted-divs" as="xs:string*" select="()"/>
+        <!-- Whether this is one text of an interleaved block. See parallel-interleaved. -->
+        <xsl:param name="interleaved" as="xs:boolean" select="false()"/>
+
+        <!-- Notes on a whole headed division, by the division they are on. They are held
+             back from the flow and set with the division's heading instead, after its
+             title: in the flow they stood between the heading and the text, a mark on a
+             line of its own. Only for a heading that is in this stream; anything else
+             keeps its place. -->
+        <xsl:variable name="head-divs" as="xs:string*"
+                      select="distinct-values($leaves[self::f:head]/@div)"/>
+        <xsl:variable name="notes-by-div" as="map(xs:string, element()*)">
+            <xsl:map>
+                <xsl:for-each-group select="$leaves[f:is-head-note(.)]"
+                                    group-by="generate-id(parent::tei:div)">
+                    <xsl:if test="current-grouping-key() = $head-divs">
+                        <xsl:map-entry key="current-grouping-key()" select="current-group()"/>
+                    </xsl:if>
+                </xsl:for-each-group>
+            </xsl:map>
+        </xsl:variable>
+        <xsl:iterate select="$leaves">
+            <xsl:param name="in-pstart" as="xs:boolean" select="$single-pstart"/>
+            <xsl:on-completion>
+                <xsl:if test="$in-pstart">
+                    <xsl:text>\pend&#10;</xsl:text>
+                </xsl:if>
+            </xsl:on-completion>
+            <xsl:choose>
+                <xsl:when test="self::text() and not(normalize-space(.)) and not($in-pstart)">
+                    <!-- Whitespace-only text outside a pstart is structural whitespace
+                         between sections/paragraphs; TeX handles its own spacing. -->
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="false()"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[@unit='chapter']">
+                    <!-- A chapter milestone is not a heading. Inside a Bible book the
+                         chapter has no other representation, so mark it inline; elsewhere
+                         (e.g. a psalm quoted in a liturgical text) the surrounding
+                         tei:head already names the section and a chapter number would be
+                         noise, so render nothing. -->
+                    <!-- The running-head mark is recorded either way: a header
+                         asking for the chapter number wants it even where the
+                         number itself is deliberately not printed. It must not
+                         open a \pstart of its own — that would desync the two
+                         sides' \pstart counts under reledpar — but a mark
+                         between \pend and \pstart is harmless. -->
+                    <!-- One class for both streams, unsuffixed: parallel columns
+                         carry the same chapter numbers, so there is nothing for a
+                         per-stream class to distinguish.
+
+                         The digits go through f:emit-bidi-mark for the same
+                         reason \chno wraps them below: a slot that declares
+                         Hebrew forces RTL, and bare digits are laid out in
+                         that direction, so chapter 50 reads "05". -->
+                    <xsl:text>\InsertMark{OSchapter}{</xsl:text>
+                    <xsl:value-of select="f:emit-bidi-mark(string(@n))"/>
+                    <xsl:text>}</xsl:text>
+                    <xsl:choose>
+                        <xsl:when test="ancestor::tei:div[@type='book']">
+                            <xsl:if test="not($in-pstart)">
+                                <xsl:call-template name="pstart"/>
+                            </xsl:if>
+                            <xsl:text>\chno{</xsl:text>
+                            <xsl:choose>
+                                <xsl:when test="matches(string(@n), '^[0-9]+$')">
+                                    <!-- Force LTR digits in Hebrew RTL contexts -->
+                                    <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
+                                    <xsl:value-of select="f:escape-tex(string(@n))"/>
+                                    <xsl:text>}}</xsl:text>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="f:escape-tex(string(@n))"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:text>}</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[@unit='citation']">
+                    <!-- A scriptural citation the humash generator inserts to state a
+                         haftarah/festival reading's source, or to mark where it resumes
+                         after a backward jump or a skip (build._citation). It is not a
+                         tei:head — it earns no bookmark entry, being a caption on a
+                         reading already headed by its own tei:head — but it is treated
+                         the way a heading is for reledpar column-pairing: only the
+                         Hebrew source carries this milestone (an English/JPS column has
+                         no matching one), so closing and reopening the pstart here would
+                         desync the two sides' \pstart counts. Stay inside whatever is
+                         already open in single-pstart (parallel) mode, the way f:head
+                         does above. -->
+                    <xsl:choose>
+                        <xsl:when test="$single-pstart">
+                            <xsl:choose>
+                                <xsl:when test="$in-pstart">
+                                    <xsl:text>\par&#10;</xsl:text>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:call-template name="pstart"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:text>\OScitation{</xsl:text>
+                            <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
+                            <xsl:text>}</xsl:text>
+                            <xsl:text>\par&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
+                            <xsl:text>\OScitation{</xsl:text>
+                            <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
+                            <xsl:text>}</xsl:text>
+                            <xsl:text>&#10;\pend&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="false()"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[@unit='verse']">
+                    <xsl:choose>
+                        <xsl:when test="$align-verses">
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <xsl:call-template name="pstart"/><xsl:text>\vno{</xsl:text>
+                            <xsl:value-of select="f:escape-tex(string(@n))"/>
+                            <xsl:text>}</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <!-- Non-parallel flow: keep verse numbers inline so
+                                 prose/paragraph formatting is preserved. -->
+                            <xsl:if test="not($in-pstart)">
+                                <xsl:call-template name="pstart"/>
+                            </xsl:if>
+                            <xsl:text>\vno{</xsl:text>
+                            <xsl:value-of select="f:escape-tex(string(@n))"/>
+                            <xsl:text>}</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[
+                        starts-with(@unit, 'aliyah') or starts-with(@unit, 'maftir')]">
+                    <!-- Aliyah, maftir, weekday and triennial markers, inline at the
+                         verse the division begins on. See \OSaliyah in the preamble for
+                         why these are inline and not breaks. -->
+                    <xsl:if test="not($in-pstart)">
+                        <xsl:call-template name="pstart"/>
+                    </xsl:if>
+                    <xsl:text>\OSaliyah{</xsl:text>
+                    <xsl:value-of select="f:escape-tex(string(@n))"/>
+                    <xsl:text>}</xsl:text>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="true()"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[starts-with(@unit, 'parsha.')]">
+                    <!-- A qualified parsha unit (parsha.annual) comes from the humash,
+                         where every parshah is a tei:div with a tei:head carrying its
+                         name. Rendering the milestone too would print the name twice, so
+                         it is left to the heading. The unqualified @unit='parsha' below
+                         is the wlc/jps1917 case, where there is no such heading. -->
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[@unit='parsha']">
+                    <!-- Parsha boundary: a division that contains the chapters and
+                         verses following it, so it legitimately sits *between*
+                         paragraphs. Open a pstart when none is open, the way the
+                         chapter and verse branches do — a boundary outside a pstart
+                         would otherwise be silently dropped. Leaving in-pstart true
+                         is what makes the name run in: the following paragraph's
+                         chapter/verse milestones join this pstart rather than opening
+                         their own, so the name shares a line with the parsha's first
+                         verse. -->
+                    <xsl:if test="not($in-pstart)">
+                        <xsl:call-template name="pstart"/>
+                    </xsl:if>
+                    <xsl:text>\OSParsha{</xsl:text>
+                    <xsl:choose>
+                        <!-- Parsha names are Hebrew in an otherwise LTR stream (the
+                             JPS 1917 translation), so give them the same direction
+                             wrapper tei:foreign[@xml:lang='he'] gets. Wrapping here
+                             rather than inside the macro keeps it in place for a
+                             caller's \renewcommand. -->
+                        <xsl:when test="matches(string(@n), '\p{IsHebrew}')">
+                            <xsl:text>\texthebrew{</xsl:text>
+                            <xsl:value-of select="f:escape-tex(string(@n))"/>
+                            <xsl:text>}</xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="f:escape-tex(string(@n))"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    <xsl:text>}</xsl:text>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="true()"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone[@rend='****']">
+                    <xsl:if test="$in-pstart">
+                        <xsl:text>\pend&#10;</xsl:text>
+                    </xsl:if>
+                    <xsl:text>\OSSectionSeparator&#10;</xsl:text>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="false()"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::tei:milestone">
+                    <!-- A milestone this stylesheet does not set: unit="edition-verse",
+                         which records an edition's own verse numbering beside the
+                         canonical one, and anything else a source marks but a printed
+                         page does not show. Falling through to the generic branch would
+                         open a \pstart that then receives no text, and reledmac cannot
+                         set an empty paragraph — it dies with "You can't use \lastbox in
+                         vertical mode". Skip it, leaving any open pstart as it is. -->
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:when test="self::f:head">
+                    <xsl:choose>
+                        <xsl:when test="$single-pstart">
+                            <!-- reledpar pairs the two sides by \pstart count. Closing and
+                                 reopening here would desync the columns whenever only one
+                                 side carries a head, so stay inside the open pstart. -->
+                            <xsl:choose>
+                                <xsl:when test="$in-pstart">
+                                    <!-- End the paragraph the heading interrupts. When the
+                                         pstart was only just opened there is nothing to end,
+                                         and a leading \par would leave an empty first
+                                         paragraph that throws off the column layout. -->
+                                    <xsl:text>\par&#10;</xsl:text>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:call-template name="pstart"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:call-template name="heading">
+                                <xsl:with-param name="stream" select="$stream"/>
+                                <xsl:with-param name="has-alt-column"
+                                                select="$has-alt-column"/>
+                                <xsl:with-param name="hoisted-heading"
+                                                select="$hoisted-heading"/>
+                                <xsl:with-param name="notes"
+                                                select="f:own-head-notes(., $notes-by-div, $hoisted-divs)"/>
+                            </xsl:call-template>
+                            <xsl:text>\par&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:when test="$interleaved and not(f:alt-head)
+                                        and not(f:sets-heading(., $stream, $hoisted-heading))
+                                        and empty(f:own-head-notes(., $notes-by-div, $hoisted-divs))">
+                            <!-- A heading this text does not set, because the other text
+                                 of the block already does. Columns keep a placeholder
+                                 paragraph so reledpar's \pstart counts stay paired; one
+                                 stream has no pairing to keep, and a placeholder would only
+                                 open a blank line between the original and its
+                                 translation. Only the marks and the outline entry remain,
+                                 set between paragraphs as the chapter marks are. -->
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <xsl:call-template name="heading">
+                                <xsl:with-param name="stream" select="$stream"/>
+                                <xsl:with-param name="has-alt-column" select="$has-alt-column"/>
+                                <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                                <xsl:with-param name="marks-only" select="true()"/>
+                            </xsl:call-template>
+                            <xsl:text>&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="false()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <!-- The heading gets its own paragraph in the numbered stream,
+                                 excluded from line numbering. -->
+                            <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
+                            <xsl:call-template name="heading">
+                                <xsl:with-param name="stream" select="$stream"/>
+                                <xsl:with-param name="has-alt-column"
+                                                select="$has-alt-column"/>
+                                <xsl:with-param name="hoisted-heading"
+                                                select="$hoisted-heading"/>
+                                <xsl:with-param name="notes"
+                                                select="f:own-head-notes(., $notes-by-div, $hoisted-divs)"/>
+                            </xsl:call-template>
+                            <xsl:text>&#10;\pend&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="false()"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="self::f:list-label">
+                    <!-- The label naming a list item. Placed the way f:head is — it is
+                         the same problem, a short phrase that must have a line of its
+                         own — but it is not a heading and must not be mistaken for
+                         one: no \InsertMark, so it never reaches a running head, and
+                         no \addcontentsline, so it claims no place in the PDF outline.
+                         A list label names an alternative inside a section; it does not
+                         open a section. -->
+                    <xsl:choose>
+                        <xsl:when test="$single-pstart">
+                            <!-- reledpar pairs the two sides by \pstart count, and a
+                                 list is exactly the kind of thing only one side
+                                 carries, so closing and reopening here would desync
+                                 the columns. Stay inside whatever is open, as f:head
+                                 does above. -->
+                            <xsl:choose>
+                                <xsl:when test="$in-pstart">
+                                    <xsl:text>\par&#10;</xsl:text>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:call-template name="pstart"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:call-template name="list-label"/>
+                            <xsl:text>\par&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <!-- Its own paragraph, out of the line numbering: the
+                                 label is apparatus for the item, and numbering it
+                                 would cite it as a line of the text. -->
+                            <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
+                            <xsl:call-template name="list-label"/>
+                            <xsl:text>&#10;\pend&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="false()"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="self::f:para-break">
+                    <!-- Paragraph boundary: end current pstart, but don't open a new
+                         one until we see actual content. -->
+                    <xsl:choose>
+                        <xsl:when test="$align-verses">
+                            <!-- Verse-aligned mode: paragraph breaks must not affect \pstart counts,
+                                 otherwise the two sides can desync. -->
+                            <xsl:text>\par&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:when test="$single-pstart and $in-pstart">
+                            <!-- Keep the single block open; just start a new paragraph.
+
+                                 The separation is a blank line rather than a skip
+                                 because a skip would not stay in this column — see
+                                 the column-glue-reset template. One line is also the
+                                 smallest column-local vertical unit reledpar has:
+                                 \Columns advances both sides a row at a time, so
+                                 anything shorter is either discarded at the slice
+                                 boundary or leaks onto the shared page list. The two
+                                 columns drift by these lines within a block and come
+                                 back together at the next \pstart, which is the only
+                                 alignment the encoder actually declared.
+
+                                 \skipnumbering keeps the blank line out of the margin
+                                 numbering, and \mbox{} keeps it non-empty: reledmac
+                                 cannot set an empty paragraph and dies on the whole
+                                 build when asked to.
+
+                                 The \strut is what makes it a line rather than a leak.
+                                 \Columns cuts each column into slices of \baselineskip;
+                                 a box of no height leaves the interline glue before it
+                                 inside its own slice instead of at the cut, and that
+                                 glue is then \unvbox-ed onto the shared page list — the
+                                 very displacement this is meant to avoid. A strut gives
+                                 the line the height and depth of ordinary text, so the
+                                 slice ends where the machinery expects. -->
+                            <xsl:text>\par\skipnumbering\mbox{\strut}\par&#10;</xsl:text>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="false()"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="self::f:block-break">
+                    <!-- Parallel-block boundary: close and reopen so reledpar can pair
+                         one \pstart...\pend per parallel block across sides. -->
+                    <xsl:choose>
+                        <xsl:when test="$align-verses">
+                            <!-- Verse-aligned mode: ignore block boundaries; verses define alignment units. -->
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                            </xsl:next-iteration>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:if test="$in-pstart">
+                                <xsl:text>\pend&#10;</xsl:text>
+                            </xsl:if>
+                            <xsl:call-template name="pstart"/>
+                            <xsl:next-iteration>
+                                <xsl:with-param name="in-pstart" select="true()"/>
+                            </xsl:next-iteration>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:when test="f:is-head-note(.)
+                                and generate-id(parent::tei:div) = $head-divs">
+                    <!-- Set with its division's heading; see $notes-by-div. -->
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="$in-pstart"/>
+                    </xsl:next-iteration>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:if test="not($in-pstart)">
+                        <xsl:call-template name="pstart"/>
+                        <!-- Indent the paragraphs of a list item, so an item reads as
+                             a block set off from the prose around it rather than as
+                             more of the same prose. Pass 1 emits leaves as the source
+                             nodes themselves (xsl:sequence, not a copy), so a leaf
+                             still knows whether it came from inside a tei:item.
+                             Only this branch needs it: an item holds text and inline
+                             markup, never the chapter or verse milestones that open a
+                             \pstart in the branches above.
+
+                             Single-column streams only, which is where labelled lists
+                             are used: front matter is never parallel. Under
+                             $single-pstart the whole side is one \pstart that is
+                             already open, so there is no paragraph head to set the
+                             skip at, and setting it mid-block would leak past the end
+                             of the item — \leftskip would stay in force for the rest
+                             of the \pstart, indenting the prose after the list too.
+                             A parallel item is set flush; its label still separates
+                             it. -->
+                        <xsl:if test="ancestor::tei:item">
+                            <xsl:text>\OSListItemPar </xsl:text>
+                        </xsl:if>
+                    </xsl:if>
+                    <xsl:apply-templates select="." mode="emit"/>
+                    <xsl:next-iteration>
+                        <xsl:with-param name="in-pstart" select="true()"/>
+                    </xsl:next-iteration>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:iterate>
+    </xsl:template>
+
+    <!-- The leaves one stream sets, ready for emit-leaves: flattened, with its markers
+         resolved and, when a facing stream is given, its headings and rubrics paired with
+         that stream's. $trim drops paragraph breaks that separate nothing, which only a
+         single-\pstart stream needs. -->
+    <xsl:function name="f:stream-leaves" as="node()*">
+        <xsl:param name="nodes" as="node()*"/>
+        <xsl:param name="alt-nodes" as="node()*"/>
+        <xsl:param name="stream" as="xs:string"/>
+        <xsl:param name="trim" as="xs:boolean"/>
         <xsl:variable name="flattened" as="node()*">
             <xsl:apply-templates select="$nodes" mode="leaves"/>
         </xsl:variable>
@@ -1225,454 +2094,54 @@
              one with nothing after it. Inside a single \pstart that break now sets a
              blank line, and a blank line before \pend is a row of empty column. Drop the
              ones that separate nothing. -->
-        <xsl:variable name="leaves" as="node()*"
-                      select="if ($single-pstart) then f:trim-trailing-breaks($paired)
-                              else $paired"/>
+        <xsl:variable name="unbroken" as="node()*" select="f:drop-trailing-lbs($paired)"/>
+        <xsl:sequence
+                      select="if ($trim) then f:trim-trailing-breaks($unbroken)
+                              else $unbroken"/>
 
-        <xsl:if test="exists($leaves)">
-            <xsl:if test="f:is-hebrew-lang(string($lang))">
-                <xsl:text>\begin{hebrew}&#10;</xsl:text>
-            </xsl:if>
+    </xsl:function>
 
-            <xsl:text>\beginnumbering&#10;</xsl:text>
-            <xsl:if test="$single-pstart">
-                <!-- reledpar requires at least one \pstart...\pend in each side.
-                     When single-pstart is requested, open it up-front so even
-                     chapter-only or whitespace-leading blocks satisfy this. -->
-                <xsl:call-template name="pstart"/>
-            </xsl:if>
+    <!-- Drop a line break that ends its paragraph.
 
-            <xsl:iterate select="$leaves">
-                <xsl:param name="in-pstart" as="xs:boolean" select="$single-pstart"/>
-                <xsl:on-completion>
-                    <xsl:if test="$in-pstart">
-                        <xsl:text>\pend&#10;</xsl:text>
-                    </xsl:if>
-                </xsl:on-completion>
-                <xsl:choose>
-                    <xsl:when test="self::text() and not(normalize-space(.)) and not($in-pstart)">
-                        <!-- Whitespace-only text outside a pstart is structural whitespace
-                             between sections/paragraphs; TeX handles its own spacing. -->
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="false()"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[@unit='chapter']">
-                        <!-- A chapter milestone is not a heading. Inside a Bible book the
-                             chapter has no other representation, so mark it inline; elsewhere
-                             (e.g. a psalm quoted in a liturgical text) the surrounding
-                             tei:head already names the section and a chapter number would be
-                             noise, so render nothing. -->
-                        <!-- The running-head mark is recorded either way: a header
-                             asking for the chapter number wants it even where the
-                             number itself is deliberately not printed. It must not
-                             open a \pstart of its own — that would desync the two
-                             sides' \pstart counts under reledpar — but a mark
-                             between \pend and \pstart is harmless. -->
-                        <!-- One class for both streams, unsuffixed: parallel columns
-                             carry the same chapter numbers, so there is nothing for a
-                             per-stream class to distinguish.
+         Verse is encoded line by line, and a source commonly closes the last line of a
+         paragraph with a tei:lb like every other. A forced break with nothing after it
+         does not end a line: it starts an empty one, which then takes a line number and
+         sets a blank row before the paragraph's end — once per verse, where a text is
+         aligned verse by verse. The break is dropped when nothing that prints follows it
+         before the paragraph ends: layout whitespace, a silent milestone, the terminating
+         verse milestone that carries no number, or another such break. Anything else
+         after it, a note mark included, keeps it, as a line of its own.
 
-                             The digits go through f:emit-bidi-mark for the same
-                             reason \chno wraps them below: a slot that declares
-                             Hebrew forces RTL, and bare digits are laid out in
-                             that direction, so chapter 50 reads "05". -->
-                        <xsl:text>\InsertMark{OSchapter}{</xsl:text>
-                        <xsl:value-of select="f:emit-bidi-mark(string(@n))"/>
-                        <xsl:text>}</xsl:text>
-                        <xsl:choose>
-                            <xsl:when test="ancestor::tei:div[@type='book']">
-                                <xsl:if test="not($in-pstart)">
-                                    <xsl:call-template name="pstart"/>
-                                </xsl:if>
-                                <xsl:text>\chno{</xsl:text>
-                                <xsl:choose>
-                                    <xsl:when test="matches(string(@n), '^[0-9]+$')">
-                                        <!-- Force LTR digits in Hebrew RTL contexts -->
-                                        <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
-                                        <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                        <xsl:text>}}</xsl:text>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                                <xsl:text>}</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="$in-pstart"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[@unit='citation']">
-                        <!-- A scriptural citation the humash generator inserts to state a
-                             haftarah/festival reading's source, or to mark where it resumes
-                             after a backward jump or a skip (build._citation). It is not a
-                             tei:head — it earns no bookmark entry, being a caption on a
-                             reading already headed by its own tei:head — but it is treated
-                             the way a heading is for reledpar column-pairing: only the
-                             Hebrew source carries this milestone (an English/JPS column has
-                             no matching one), so closing and reopening the pstart here would
-                             desync the two sides' \pstart counts. Stay inside whatever is
-                             already open in single-pstart (parallel) mode, the way f:head
-                             does above. -->
-                        <xsl:choose>
-                            <xsl:when test="$single-pstart">
-                                <xsl:choose>
-                                    <xsl:when test="$in-pstart">
-                                        <xsl:text>\par&#10;</xsl:text>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:call-template name="pstart"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                                <xsl:text>\OScitation{</xsl:text>
-                                <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
-                                <xsl:text>}</xsl:text>
-                                <xsl:text>\par&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
-                                <xsl:text>\OScitation{</xsl:text>
-                                <xsl:value-of select="f:emit-bidi-text(string(@n))"/>
-                                <xsl:text>}</xsl:text>
-                                <xsl:text>&#10;\pend&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="false()"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[@unit='verse']">
-                        <xsl:choose>
-                            <xsl:when test="$align-verses">
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <xsl:call-template name="pstart"/><xsl:text>\vno{</xsl:text>
-                                <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                <xsl:text>}</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <!-- Non-parallel flow: keep verse numbers inline so
-                                     prose/paragraph formatting is preserved. -->
-                                <xsl:if test="not($in-pstart)">
-                                    <xsl:call-template name="pstart"/>
-                                </xsl:if>
-                                <xsl:text>\vno{</xsl:text>
-                                <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                <xsl:text>}</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[
-                            starts-with(@unit, 'aliyah') or starts-with(@unit, 'maftir')]">
-                        <!-- Aliyah, maftir, weekday and triennial markers, inline at the
-                             verse the division begins on. See \OSaliyah in the preamble for
-                             why these are inline and not breaks. -->
-                        <xsl:if test="not($in-pstart)">
-                            <xsl:call-template name="pstart"/>
-                        </xsl:if>
-                        <xsl:text>\OSaliyah{</xsl:text>
-                        <xsl:value-of select="f:escape-tex(string(@n))"/>
-                        <xsl:text>}</xsl:text>
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="true()"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[starts-with(@unit, 'parsha.')]">
-                        <!-- A qualified parsha unit (parsha.annual) comes from the humash,
-                             where every parshah is a tei:div with a tei:head carrying its
-                             name. Rendering the milestone too would print the name twice, so
-                             it is left to the heading. The unqualified @unit='parsha' below
-                             is the wlc/jps1917 case, where there is no such heading. -->
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="$in-pstart"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[@unit='parsha']">
-                        <!-- Parsha boundary: a division that contains the chapters and
-                             verses following it, so it legitimately sits *between*
-                             paragraphs. Open a pstart when none is open, the way the
-                             chapter and verse branches do — a boundary outside a pstart
-                             would otherwise be silently dropped. Leaving in-pstart true
-                             is what makes the name run in: the following paragraph's
-                             chapter/verse milestones join this pstart rather than opening
-                             their own, so the name shares a line with the parsha's first
-                             verse. -->
-                        <xsl:if test="not($in-pstart)">
-                            <xsl:call-template name="pstart"/>
-                        </xsl:if>
-                        <xsl:text>\OSParsha{</xsl:text>
-                        <xsl:choose>
-                            <!-- Parsha names are Hebrew in an otherwise LTR stream (the
-                                 JPS 1917 translation), so give them the same direction
-                                 wrapper tei:foreign[@xml:lang='he'] gets. Wrapping here
-                                 rather than inside the macro keeps it in place for a
-                                 caller's \renewcommand. -->
-                            <xsl:when test="matches(string(@n), '\p{IsHebrew}')">
-                                <xsl:text>\texthebrew{</xsl:text>
-                                <xsl:value-of select="f:escape-tex(string(@n))"/>
-                                <xsl:text>}</xsl:text>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:value-of select="f:escape-tex(string(@n))"/>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                        <xsl:text>}</xsl:text>
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="true()"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone[@rend='****']">
-                        <xsl:if test="$in-pstart">
-                            <xsl:text>\pend&#10;</xsl:text>
-                        </xsl:if>
-                        <xsl:text>\OSSectionSeparator&#10;</xsl:text>
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="false()"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::tei:milestone">
-                        <!-- A milestone this stylesheet does not set: unit="edition-verse",
-                             which records an edition's own verse numbering beside the
-                             canonical one, and anything else a source marks but a printed
-                             page does not show. Falling through to the generic branch would
-                             open a \pstart that then receives no text, and reledmac cannot
-                             set an empty paragraph — it dies with "You can't use \lastbox in
-                             vertical mode". Skip it, leaving any open pstart as it is. -->
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="$in-pstart"/>
-                        </xsl:next-iteration>
-                    </xsl:when>
-                    <xsl:when test="self::f:head">
-                        <xsl:choose>
-                            <xsl:when test="$single-pstart">
-                                <!-- reledpar pairs the two sides by \pstart count. Closing and
-                                     reopening here would desync the columns whenever only one
-                                     side carries a head, so stay inside the open pstart. -->
-                                <xsl:choose>
-                                    <xsl:when test="$in-pstart">
-                                        <!-- End the paragraph the heading interrupts. When the
-                                             pstart was only just opened there is nothing to end,
-                                             and a leading \par would leave an empty first
-                                             paragraph that throws off the column layout. -->
-                                        <xsl:text>\par&#10;</xsl:text>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:call-template name="pstart"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                                <xsl:call-template name="heading">
-                                    <xsl:with-param name="stream" select="$stream"/>
-                                    <xsl:with-param name="has-alt-column"
-                                                    select="exists($alt-nodes)"/>
-                                    <xsl:with-param name="hoisted-heading"
-                                                    select="$hoisted-heading"/>
-                                </xsl:call-template>
-                                <xsl:text>\par&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <!-- The heading gets its own paragraph in the numbered stream,
-                                     excluded from line numbering. -->
-                                <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
-                                <xsl:call-template name="heading">
-                                    <xsl:with-param name="stream" select="$stream"/>
-                                    <xsl:with-param name="has-alt-column"
-                                                    select="exists($alt-nodes)"/>
-                                    <xsl:with-param name="hoisted-heading"
-                                                    select="$hoisted-heading"/>
-                                </xsl:call-template>
-                                <xsl:text>&#10;\pend&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="false()"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="self::f:list-label">
-                        <!-- The label naming a list item. Placed the way f:head is — it is
-                             the same problem, a short phrase that must have a line of its
-                             own — but it is not a heading and must not be mistaken for
-                             one: no \InsertMark, so it never reaches a running head, and
-                             no \addcontentsline, so it claims no place in the PDF outline.
-                             A list label names an alternative inside a section; it does not
-                             open a section. -->
-                        <xsl:choose>
-                            <xsl:when test="$single-pstart">
-                                <!-- reledpar pairs the two sides by \pstart count, and a
-                                     list is exactly the kind of thing only one side
-                                     carries, so closing and reopening here would desync
-                                     the columns. Stay inside whatever is open, as f:head
-                                     does above. -->
-                                <xsl:choose>
-                                    <xsl:when test="$in-pstart">
-                                        <xsl:text>\par&#10;</xsl:text>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <xsl:call-template name="pstart"/>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                                <xsl:call-template name="list-label"/>
-                                <xsl:text>\par&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <!-- Its own paragraph, out of the line numbering: the
-                                     label is apparatus for the item, and numbering it
-                                     would cite it as a line of the text. -->
-                                <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
-                                <xsl:call-template name="list-label"/>
-                                <xsl:text>&#10;\pend&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="false()"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="self::f:para-break">
-                        <!-- Paragraph boundary: end current pstart, but don't open a new
-                             one until we see actual content. -->
-                        <xsl:choose>
-                            <xsl:when test="$align-verses">
-                                <!-- Verse-aligned mode: paragraph breaks must not affect \pstart counts,
-                                     otherwise the two sides can desync. -->
-                                <xsl:text>\par&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="$in-pstart"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:when test="$single-pstart and $in-pstart">
-                                <!-- Keep the single block open; just start a new paragraph.
+         A rubric counts as an end of paragraph here because its macro breaks the line
+         itself before setting the rubric, so a break in front of it also sets an empty
+         line. -->
+    <xsl:function name="f:drop-trailing-lbs" as="node()*">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:sequence select="for $i in 1 to count($leaves)
+                              return if (exists($leaves[$i]/self::tei:lb)
+                                         and f:only-silence-follows($leaves, $i + 1))
+                                     then ()
+                                     else $leaves[$i]"/>
+    </xsl:function>
 
-                                     The separation is a blank line rather than a skip
-                                     because a skip would not stay in this column — see
-                                     the column-glue-reset template. One line is also the
-                                     smallest column-local vertical unit reledpar has:
-                                     \Columns advances both sides a row at a time, so
-                                     anything shorter is either discarded at the slice
-                                     boundary or leaks onto the shared page list. The two
-                                     columns drift by these lines within a block and come
-                                     back together at the next \pstart, which is the only
-                                     alignment the encoder actually declared.
+    <xsl:function name="f:only-silence-follows" as="xs:boolean">
+        <xsl:param name="leaves" as="node()*"/>
+        <xsl:param name="from" as="xs:integer"/>
+        <xsl:variable name="next" as="node()?" select="$leaves[$from]"/>
+        <xsl:sequence
+            select="if (empty($next)) then true()
+                    else if ($next/self::f:para-break or $next/self::f:block-break
+                             or $next/self::f:head or $next/self::f:list-label
+                             or $next/self::tei:milestone[@rend = '****']
+                             or $next/self::tei:note[@type = 'instruction'])
+                    then true()
+                    else if (f:is-structural-space($next) or f:renders-nothing($next)
+                             or $next/self::tei:lb
+                             or $next/self::tei:milestone[@unit = 'verse'][not(normalize-space(@n))])
+                    then f:only-silence-follows($leaves, $from + 1)
+                    else false()"/>
+    </xsl:function>
 
-                                     \skipnumbering keeps the blank line out of the margin
-                                     numbering, and \mbox{} keeps it non-empty: reledmac
-                                     cannot set an empty paragraph and dies on the whole
-                                     build when asked to.
-
-                                     The \strut is what makes it a line rather than a leak.
-                                     \Columns cuts each column into slices of \baselineskip;
-                                     a box of no height leaves the interline glue before it
-                                     inside its own slice instead of at the cut, and that
-                                     glue is then \unvbox-ed onto the shared page list — the
-                                     very displacement this is meant to avoid. A strut gives
-                                     the line the height and depth of ordinary text, so the
-                                     slice ends where the machinery expects. -->
-                                <xsl:text>\par\skipnumbering\mbox{\strut}\par&#10;</xsl:text>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="false()"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="self::f:block-break">
-                        <!-- Parallel-block boundary: close and reopen so reledpar can pair
-                             one \pstart...\pend per parallel block across sides. -->
-                        <xsl:choose>
-                            <xsl:when test="$align-verses">
-                                <!-- Verse-aligned mode: ignore block boundaries; verses define alignment units. -->
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="$in-pstart"/>
-                                </xsl:next-iteration>
-                            </xsl:when>
-                            <xsl:otherwise>
-                                <xsl:if test="$in-pstart">
-                                    <xsl:text>\pend&#10;</xsl:text>
-                                </xsl:if>
-                                <xsl:call-template name="pstart"/>
-                                <xsl:next-iteration>
-                                    <xsl:with-param name="in-pstart" select="true()"/>
-                                </xsl:next-iteration>
-                            </xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:if test="not($in-pstart)">
-                            <xsl:call-template name="pstart"/>
-                            <!-- Indent the paragraphs of a list item, so an item reads as
-                                 a block set off from the prose around it rather than as
-                                 more of the same prose. Pass 1 emits leaves as the source
-                                 nodes themselves (xsl:sequence, not a copy), so a leaf
-                                 still knows whether it came from inside a tei:item.
-                                 Only this branch needs it: an item holds text and inline
-                                 markup, never the chapter or verse milestones that open a
-                                 \pstart in the branches above.
-
-                                 Single-column streams only, which is where labelled lists
-                                 are used: front matter is never parallel. Under
-                                 $single-pstart the whole side is one \pstart that is
-                                 already open, so there is no paragraph head to set the
-                                 skip at, and setting it mid-block would leak past the end
-                                 of the item — \leftskip would stay in force for the rest
-                                 of the \pstart, indenting the prose after the list too.
-                                 A parallel item is set flush; its label still separates
-                                 it. -->
-                            <xsl:if test="ancestor::tei:item">
-                                <xsl:text>\OSListItemPar </xsl:text>
-                            </xsl:if>
-                        </xsl:if>
-                        <xsl:apply-templates select="." mode="emit"/>
-                        <xsl:next-iteration>
-                            <xsl:with-param name="in-pstart" select="true()"/>
-                        </xsl:next-iteration>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:iterate>
-
-            <xsl:text>\endnumbering&#10;</xsl:text>
-
-            <xsl:if test="f:is-hebrew-lang(string($lang))">
-                <xsl:text>\end{hebrew}&#10;</xsl:text>
-            </xsl:if>
-        </xsl:if>
-    </xsl:template>
 
     <!-- Render one f:head sentinel (the context node) as a heading macro plus its PDF
          outline entry. Caller is responsible for the surrounding \pstart/\pend. -->
@@ -1682,6 +2151,12 @@
              column and has to mean the division's own second head instead. -->
         <xsl:param name="has-alt-column" as="xs:boolean" select="false()"/>
         <xsl:param name="hoisted-heading" as="xs:string" select="''"/>
+        <!-- Record the heading for the running heads and the outline without setting
+             anything on the page. For a heading f:sets-heading says is not set, where the
+             caller has no paragraph to hold a placeholder. -->
+        <xsl:param name="marks-only" as="xs:boolean" select="false()"/>
+        <!-- Notes on the division this heads, set after its title. See emit-leaves. -->
+        <xsl:param name="notes" as="element()*" select="()"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
         <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
 
@@ -1703,32 +2178,17 @@
             <xsl:text>}{</xsl:text><xsl:value-of select="$mark-title"/><xsl:text>}</xsl:text>
         </xsl:if>
 
-        <!-- Whether this column sets the heading on the page. Where the two columns
-             title a section identically, printing both says the same thing twice, once per
-             column; where they differ, each column needs its own. Suppressing one is not
-             the same as dropping it: reledpar pairs the columns by counting
-             \pstart...\pend, so the paragraph has to stay and be non-empty. \mbox{} is
-             both — reledmac cannot typeset an empty \pstart at all, and fails the whole
-             build when asked to. -->
-        <xsl:variable name="agrees" as="xs:boolean"
-                      select="string(@alt-title) != '' and string(@alt-title) = string(@title)"/>
-        <!-- Already set across the page above these columns, so neither column sets it. -->
-        <!-- The hoisted title is the primary column's. In the alt column the sentinel's
-             own @title is the other language, and @alt-title is the primary's — so both
-             columns recognise the heading that was lifted out above them. -->
+        <!-- Whether this column sets the heading on the page: see f:sets-heading.
+             Suppressing one is not the same as dropping it: reledpar pairs the columns by
+             counting \pstart...\pend, so the paragraph has to stay and be non-empty.
+             \mbox{} is both — reledmac cannot typeset an empty \pstart at all, and fails
+             the whole build when asked to. -->
         <xsl:variable name="hoisted" as="xs:boolean"
-                      select="$hoisted-heading != ''
-                              and ($hoisted-heading = string(@title)
-                                   or $hoisted-heading = string(@alt-title))"/>
-        <!-- Reached only by a heading that was not hoisted: one further into a block
-             than its opening, or any heading at all under 'both'. -->
+                      select="f:is-hoisted(., $hoisted-heading)"/>
         <xsl:variable name="sets-heading" as="xs:boolean"
-                      select="if ($hoisted) then false()
-                              else if ($headings-from = 'both') then true()
-                              else if ($headings-from = 'primary') then $stream = 'primary'
-                              else if ($headings-from = 'alt') then $stream = 'alt'
-                              else $stream = 'primary' or not($agrees)"/>
+                      select="f:sets-heading(., $stream, $hoisted-heading)"/>
         <xsl:choose>
+            <xsl:when test="$marks-only"/>
             <xsl:when test="$sets-heading">
         <xsl:text>\OShead</xsl:text>
         <xsl:value-of select="f:heading-suffix(xs:integer(@level))"/>
@@ -1741,6 +2201,10 @@
             <xsl:text>{\textdir TLT\foreignlanguage{english}{</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::f:alt-head)]" mode="emit"/>
+        <!-- Inside the macro's argument, so the mark is centred with the title, and
+             inside the title's direction, so it follows the title's last word: outside an
+             LTR title in an RTL paragraph, "after" is its left-hand end. -->
+        <xsl:apply-templates select="$notes" mode="emit"/>
         <xsl:if test="not($is-hebrew)">
             <xsl:text>}}</xsl:text>
         </xsl:if>
@@ -1748,13 +2212,16 @@
             </xsl:when>
             <xsl:otherwise>
                 <xsl:text>\mbox{\strut}</xsl:text>
+                <!-- The other column sets the title; the mark stays in this column, on
+                     the row the placeholder already holds, rather than a row of its own. -->
+                <xsl:apply-templates select="$notes" mode="emit"/>
             </xsl:otherwise>
         </xsl:choose>
 
         <!-- A second head on the same division is the translated title. It is set under
              the first rather than beside it, so that it reads as naming the same section
              again and not as a section of its own. -->
-        <xsl:if test="f:alt-head">
+        <xsl:if test="f:alt-head and not($marks-only)">
             <!-- No direction wrapper here: mode="emit" already wraps each run against the
                  stream it lands in, and adding one on top nests a second \textdir around
                  the first for no gain. -->
@@ -1805,6 +2272,60 @@
             <xsl:text>}</xsl:text>
         </xsl:if>
     </xsl:template>
+
+    <!-- Whether a heading is the one already set across the page above the columns, so
+         that neither column sets it. The hoisted title is the primary column's. In the alt
+         column the sentinel's own @title is the other language, and @alt-title is the
+         primary's — so both columns recognise the heading that was lifted out above them. -->
+    <!-- A note on a whole division that has a heading: the compiler sets such a note as
+         one of the division's own children, beside the tei:head, rather than in any of
+         its paragraphs. It is about what the heading names, so it is set with the heading:
+         after its title. A division may hold nothing but a heading and rubrics (the
+         haggadah has such sections), so the heading, not the first text after it, is the
+         one thing such a note can always be set with. -->
+    <xsl:function name="f:is-head-note" as="xs:boolean">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:sequence select="exists($node/self::tei:note[not(@type = 'instruction')]
+                                          [not(ancestor::tei:standOff)]
+                                          /parent::tei:div[tei:head])"/>
+    </xsl:function>
+
+    <!-- The notes a heading sets itself: its division's, unless that heading is set
+         across the page above the stream, which sets them there. -->
+    <xsl:function name="f:own-head-notes" as="element()*">
+        <xsl:param name="head" as="element()"/>
+        <xsl:param name="notes-by-div" as="map(xs:string, element()*)"/>
+        <xsl:param name="hoisted-divs" as="xs:string*"/>
+        <xsl:sequence select="if (string($head/@div) = ('', $hoisted-divs)) then ()
+                              else $notes-by-div(string($head/@div))"/>
+    </xsl:function>
+
+    <xsl:function name="f:is-hoisted" as="xs:boolean">
+        <xsl:param name="head" as="element()"/>
+        <xsl:param name="hoisted-heading" as="xs:string"/>
+        <xsl:sequence select="$hoisted-heading != ''
+                              and ($hoisted-heading = string($head/@title)
+                                   or $hoisted-heading = string($head/@alt-title))"/>
+    </xsl:function>
+
+    <!-- Whether the stream $stream sets heading $head on the page. Where the two columns
+         title a section identically, printing both says the same thing twice, once per
+         column; where they differ, each column needs its own. Beyond the hoisted heading,
+         reached only by a heading that was not hoisted: one further into a block than its
+         opening, or any heading at all under 'both'. -->
+    <xsl:function name="f:sets-heading" as="xs:boolean">
+        <xsl:param name="head" as="element()"/>
+        <xsl:param name="stream" as="xs:string"/>
+        <xsl:param name="hoisted-heading" as="xs:string"/>
+        <xsl:variable name="agrees" as="xs:boolean"
+                      select="string($head/@alt-title) != ''
+                              and string($head/@alt-title) = string($head/@title)"/>
+        <xsl:sequence select="if (f:is-hoisted($head, $hoisted-heading)) then false()
+                              else if ($headings-from = 'both') then true()
+                              else if ($headings-from = 'primary') then $stream = 'primary'
+                              else if ($headings-from = 'alt') then $stream = 'alt'
+                              else $stream = 'primary' or not($agrees)"/>
+    </xsl:function>
 
     <!-- Render one f:list-label sentinel (the context node). Caller is responsible for the
          surrounding \pstart/\pend, as with name="heading". -->
@@ -2086,6 +2607,11 @@
                  carry a URN at all — which is why the pairing falls back to position. -->
             <xsl:attribute name="corresp" select="string($head/parent::tei:div/@corresp)"/>
             <xsl:attribute name="part" select="string($head/parent::tei:div/@p:part)"/>
+            <!-- The division itself, so the notes it carries can be found again and set
+                 with its heading. See f:is-head-note. -->
+            <xsl:if test="exists($head/parent::tei:div)">
+                <xsl:attribute name="div" select="generate-id($head/parent::tei:div)"/>
+            </xsl:if>
             <xsl:if test="exists($alt-head)">
                 <xsl:attribute name="alt-title"
                                select="normalize-space(string-join(
@@ -2097,8 +2623,9 @@
                  <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
                  wrapped in \texthebrew (otherwise it renders reversed inside the
                  surrounding LTR heading) and its line break preserved.
-                 Notes are dropped: an apparatus entry cannot be anchored in a
-                 heading, which sits outside the numbered line stream. -->
+                 Notes inside the head are dropped: these are copies, and a note's serial is
+                 counted from where the note stands in the document. A note on the whole
+                 division is set with the heading from its own place; see f:is-head-note. -->
             <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
             <!-- The counterpart's content, kept in a child element so that the primary
                  head's nodes stay direct children and mode="emit" renders them exactly as

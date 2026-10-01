@@ -21,6 +21,7 @@ from opensiddur.exporter.typography import (
     ConditionalBlock,
     FontFamily,
     FontWeight,
+    InterleavedLineNumbers,
     LineationUnit,
     NamedSize,
     NoteAnchor,
@@ -543,3 +544,45 @@ class TestInstructionsConfig(unittest.TestCase):
         with self.assertRaises(ValidationError) as caught:
             _validate({"instructions": {"span": True}})
         self.assertIn("span", str(caught.exception))
+
+
+class TestInterleavedLayout(unittest.TestCase):
+    """The third parallel layout, and the settings that only it reads."""
+
+    def test_interleaved_is_a_layout(self):
+        config = _validate({"parallel": {"layout": "interleaved"}})
+        self.assertIs(config.parallel.layout, ParallelLayout.INTERLEAVED)
+
+    def test_defaults(self):
+        interleaved = _validate({}).parallel.interleaved
+        self.assertEqual(interleaved.translation_size, NamedSize.SMALL)
+        self.assertEqual(interleaved.translation_indent, "1em")
+        self.assertEqual(interleaved.spacing, "0.25em")
+        self.assertIs(interleaved.line_numbers, InterleavedLineNumbers.PRIMARY)
+
+    def test_translation_size_is_named_or_absolute(self):
+        for size in ("x-small", "9pt"):
+            config = _validate({"parallel": {"interleaved": {"translation_size": size}}})
+            self.assertEqual(config.parallel.interleaved.translation_size, size)
+        for size in ("0.8em", "tiny"):
+            with self.assertRaises(ValidationError, msg=size):
+                _validate({"parallel": {"interleaved": {"translation_size": size}}})
+
+    def test_lengths_need_a_unit(self):
+        for key in ("translation_indent", "spacing"):
+            with self.assertRaises(ValidationError, msg=key):
+                _validate({"parallel": {"interleaved": {key: "1"}}})
+
+    def test_line_numbers_is_closed(self):
+        self.assertIs(
+            _validate({"parallel": {"interleaved": {"line_numbers": "both"}}})
+            .parallel.interleaved.line_numbers,
+            InterleavedLineNumbers.BOTH,
+        )
+        with self.assertRaises(ValidationError):
+            _validate({"parallel": {"interleaved": {"line_numbers": "translation"}}})
+
+    def test_an_unknown_key_is_refused(self):
+        with self.assertRaises(ValidationError) as caught:
+            _validate({"parallel": {"interleaved": {"rule": True}}})
+        self.assertIn("rule", str(caught.exception))

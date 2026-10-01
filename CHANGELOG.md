@@ -81,6 +81,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transcludes, including for the scan pages, since that is what ties printed pagination to
   liturgical text. Redirects are kept — 151 of the subtree pages are redirects carrying
   alternative names for a service.
+- A third parallel layout, `typography.parallel.layout: interleaved`, for a measure too narrow to
+  split into columns: each aligned block is followed by its translation in one column rather
+  than set beside it (#112). `parallel.column_order` decides which text comes first, and the new
+  `typography.parallel.interleaved` settings decide how the translation is set apart
+  (`translation_size`, `translation_indent`, the `spacing` between a block and its translation)
+  and whether its lines are numbered (`line_numbers: primary | both`). Headings, rubrics,
+  bookmarks and the `-alt` running heads behave as in columns, with the text that comes first
+  as the first column. The whole run is one reledmac numbered section, with the direction
+  changing from one paragraph to the next; reledpar is not loaded.
 
 ### Fixed
 - Honor exact registered URNs before stripping numeric subdivisions during reference-database checks. Canonical Mishnah references such as `tamid/7/4` no longer fail as unregistered.
@@ -128,6 +137,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Batched Action API queries are sent as POST. Fifty Hebrew subpage titles percent-encode past the
   URL length limit and the server answered `414 URI Too Long`, so batching was silently capped by
   URL length on any wiki whose titles are not short and Latin.
+- Line numbers in a Hebrew text outside reledpar columns were printed over the first word of
+  each line instead of in the margin. reledmac hangs the number off a line-width box built in
+  the prevailing direction, so in right-to-left text its "left" edge was the right-hand one. The
+  box now has a fixed left-to-right direction, and `line_numbers.margin` names the same margin
+  for Hebrew lines as for English ones.
+- Unnumbered lines put reledmac's per-page line-number restart early, so numbering began again
+  partway down a page. reledmac counts an unnumbered line but wrote no page record for it; it
+  now writes one for every line.
+- A line break that ended its paragraph set an empty line, with a line number of its own, before
+  the paragraph's end. Verse is encoded line by line and a source closes the last line of a
+  paragraph with a `tei:lb` like every other, so a psalm aligned verse by verse carried a blank
+  numbered row after every verse, in every layout. A break with nothing that prints after it
+  before the paragraph ends is now dropped; a break before a rubric likewise, since the rubric
+  breaks the line itself.
+- A note on a whole division — which the compiler sets beside the division's heading rather than
+  in any of its paragraphs — was set after the heading as a mark alone on a line of its own,
+  and where the heading was hoisted above the columns, under a heading that had already been
+  set. It is now set after the title of the heading it is about: in the heading itself, in the
+  heading set across the page (given a numbered section of its own for the purpose), or, where
+  a column suppresses its copy of the heading, on that column's placeholder row. A division of
+  only a heading and rubrics, as the haggadah has, keeps its note this way too.
+- The Birnbaum Minḥah commentary on **מנחה** targeted the Ashrei division instead of the service
+  whose title it explains; it now targets `chol/minchah` (opensiddur-projects).
+- The rule marking a conditional paragraph was sized to `\hsize` and ignored the paragraph's own
+  indents, so in an indented paragraph (a list item, an interleaved translation) its box overran
+  the right margin by the indent.
 
 ### Changed
 - The JPS 1917 downloader now reads the Action API through the shared client, like the Birnbaum

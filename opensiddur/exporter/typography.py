@@ -201,10 +201,20 @@ class ParallelLayout(StrEnum):
 
     pages: facing pages — best for full critical editions.
     pairs: two columns on the same page — best for short documents.
+    interleaved: one column, each translation block following the block it
+    translates — for a measure too narrow to split.
     """
 
     PAGES = "pages"
     PAIRS = "pairs"
+    INTERLEAVED = "interleaved"
+
+
+class InterleavedLineNumbers(StrEnum):
+    """ Which text's lines are numbered in the interleaved parallel layout. """
+
+    PRIMARY = "primary"
+    BOTH = "both"
 
 
 class LineationUnit(StrEnum):
@@ -772,7 +782,9 @@ class LineNumberConfig(ForbidExtra):
         description=(
             "inner | outer | left | right. In a two-column parallel layout each "
             "column takes the nearer outer margin regardless of this setting, "
-            "since the alternative is numbers in the gutter between the columns."
+            "since the alternative is numbers in the gutter between the columns. "
+            "In the interleaved layout both texts share the one margin chosen here, "
+            "whichever direction each runs in."
         ),
     )
     separation: Length = Field(
@@ -797,7 +809,7 @@ class NoteConfig(ForbidExtra):
             "interlinear | superscript | inline. `interlinear` raises the mark "
             "above the line and gives it no width, so the text it annotates is "
             "not respaced — which matters when both sides of a parallel text "
-            "have to stay aligned."
+            "have to stay aligned in columns."
         ),
     )
     mark: NoteMark = Field(
@@ -860,19 +872,62 @@ class MarkerConfig(ForbidExtra):
     )
 
 
+class InterleavedConfig(ForbidExtra):
+    """ How the translation is set apart in the interleaved parallel layout.
+
+    Without a column boundary between them, the original and its translation are
+    told apart by these alone — and by script and direction, where they differ.
+    Applies only when `parallel.layout` is `interleaved`.
+    """
+
+    translation_size: FontSize = Field(
+        default=NamedSize.SMALL,
+        description=(
+            "Font size of the translation: a named size relative to the base, or an "
+            "absolute length."
+        ),
+    )
+    translation_indent: Length = Field(
+        default="1em",
+        description=(
+            "Indent applied to both margins of the translation's paragraphs. `0pt` "
+            "to set the translation to the full measure."
+        ),
+    )
+    spacing: Length = Field(
+        default="0.25em",
+        description=(
+            "Vertical space between a block and its translation. The space between "
+            "one pair and the next is `paragraphs.spacing`, so keeping this smaller "
+            "is what makes each original and its translation read as a pair."
+        ),
+    )
+    line_numbers: InterleavedLineNumbers = Field(
+        default=InterleavedLineNumbers.PRIMARY,
+        description=(
+            "primary | both. `primary` numbers only the primary text's lines, so a "
+            "line number cites the text being translated; `both` counts every line "
+            "in one series."
+        ),
+    )
+
+
 class ParallelTypographyConfig(ForbidExtra):
     """ The geometry of a parallel-text layout.
 
-    Which text goes on which side is not set here: it is `parallel.column_order`
-    in the compiler section of the settings file, because the compiler is what
-    decides the order the streams are emitted in.
+    Which text goes on which side — or, in the interleaved layout, which comes
+    first — is not set here: it is `parallel.column_order` in the compiler section
+    of the settings file, because the compiler is what decides the order the
+    streams are emitted in.
     """
 
     layout: ParallelLayout = Field(
         default=ParallelLayout.PAIRS,
         description=(
             "pairs: two columns on the same page. pages: facing pages, which "
-            "gives each text a full measure and suits a long work."
+            "gives each text a full measure and suits a long work. interleaved: "
+            "one column, each block followed by its translation, for a measure "
+            "too narrow to split."
         ),
     )
     column_width: Percent = Field(
@@ -890,6 +945,10 @@ class ParallelTypographyConfig(ForbidExtra):
             "left | center | right — where the pair of columns sits in the text "
             "block, in `pairs` layout."
         ),
+    )
+    interleaved: InterleavedConfig = Field(
+        default_factory=InterleavedConfig,
+        description="How the translation is set apart, in `interleaved` layout.",
     )
 
 
