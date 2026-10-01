@@ -248,3 +248,7 @@
 {"urn": "urn:x-opensiddur:text:poem:akdamut/7", "status": "canonical", "label_en": "akdamut — 7", "parent": "urn:x-opensiddur:text:poem:akdamut"}
 {"urn": "urn:x-opensiddur:text:poem:akdamut/8", "status": "canonical", "label_en": "akdamut — 8", "parent": "urn:x-opensiddur:text:poem:akdamut"}
 {"urn": "urn:x-opensiddur:text:poem:akdamut/9", "status": "canonical", "label_en": "akdamut — 9", "parent": "urn:x-opensiddur:text:poem:akdamut"}
+{"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu", "status": "canonical", "label_en": "sisu vesimchu"}
+{"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu/1", "status": "canonical", "label_en": "sisu vesimchu — 1", "parent": "urn:x-opensiddur:text:poem:sisu_vesimchu"}
+{"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu/2", "status": "canonical", "label_en": "sisu vesimchu — 2", "parent": "urn:x-opensiddur:text:poem:sisu_vesimchu"}
+{"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu/3", "status": "canonical", "label_en": "sisu vesimchu — 3", "parent": "urn:x-opensiddur:text:poem:sisu_vesimchu"}

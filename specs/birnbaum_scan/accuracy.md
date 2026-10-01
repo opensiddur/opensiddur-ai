@@ -1510,3 +1510,33 @@ English heading glyph order passes. All144 measured margin numbers lie outside
 adjacent text; numbering restarts at5 on34 populated column-pages. Three paired
 opening rubrics align exactly. The final proof is
 `output/birnbaum_rosh_hashanah_parallel.pdf`.
+
+## Sukkot rites, printed 675–708 (IA n699–732)
+
+The scan was read before the mechanical secondary slices: Ushpizin, Netilat Lulav,
+Hoshanot (including every intervening even page), Geshem and Hakafot. The source
+checkout preserves the initial readings, corrected derivatives and individual verdicts
+under `scan_reading/sukkot_rites/`. Initial readings were error-prone in the rare
+Hoshanot poetry: comparison corrected consonants, vowels, punctuation and many missed
+metegs. The initial files have not been overwritten to disguise those corrections.
+The parent’s 690–696 adjudication was reopened at closer magnification after a focused
+crop exposed a fine meteg missed in the earlier bands; each occurrence was reconsidered.
+
+The 675–689 ledger records 711 non-whitespace differences: 633 corrected readings,
+59 print departures and 19 where neither initial candidate was right. The 690–696
+ledger records 414 corrections and 84 retained print/structural decisions. The 697–707
+ledger records 198 word decisions (166 corrected readings, 17 print departures, 15 mixed)
+and 48 structural whitespace decisions. Qamats/qatan alone follows the documented
+mechanical convention; metegs were individually checked against images. A shared
+omission, the meteg in 684 טוֹרַֽחַת, was found outside the diff. Logical holam/shin
+combinations remain present.
+
+The final 149 text units retain physical page boundaries independently of reference
+milestones. Hoshanot has no printed facing English translation: its English anchors
+carry Birnbaum’s explanatory notes without supplying invented translations. All 47
+printed notes are retained, with continuations joined once. Personal first use of the
+lulav gates Shehecheyanu and defaults to MAYBE. Daily Hoshanot follows all four printed
+weekday schedules; 5 and6 are omitted on Hoshana Rabbah. Whole occasion gates remain in
+callers. Geshem replaces the opening during the Reader’s Musaf repetition on 22 Tishrei,
+then continues into the existing Mekhalkel Chayim. Simchat Torah follows 22 Tishrei in
+Israel and 23 Tishrei in the diaspora.
