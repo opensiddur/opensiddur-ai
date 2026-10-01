@@ -211,6 +211,32 @@ class TestPageSlice(unittest.TestCase):
         return transcription.page_slice(page, self.load)
 
 
+class TestMissingSpanCli(unittest.TestCase):
+    def test_missing_page_does_not_corrupt_foundation_path_for_next_page(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+        from contextlib import redirect_stderr
+        from io import StringIO
+        with TemporaryDirectory() as d:
+            root=Path(d);book=root/'sources/birnbaum_siddur'
+            foundation=book/'source/text/אשכנז/דפי יסוד';foundation.mkdir(parents=True)
+            (foundation/'דף.txt').write_text('<קטע התחלה=א/>אַלֶף<קטע סוף=א/>')
+            (book/'text').mkdir();out=book/'scan_reading/transcription';out.mkdir(parents=True)
+            for page,span in [(26,'חסר'),(27,'א')]:
+                (book/'text'/f'{page:03d}.txt').write_text('{{#קטע:ספר/אשכנז/דפי יסוד/דף|'+span+'}}')
+            with redirect_stderr(StringIO()):status=transcription._cli(['1','2','--sourcetexts',str(root)])
+            self.assertEqual(status,1)
+            self.assertFalse((out/'1.txt').exists())
+            self.assertEqual((out/'2.txt').read_text(),'אַלֶף\n')
+
+    def test_renamed_havdalah_span_keeps_both_nested_parts(self):
+        foundation='קידוש והבדלה וסעודות שבת ויום טוב';old='ברכת המבדיל בין קודש לקודש'
+        text=f'<קטע התחלה={old} הכל/><קטע התחלה=א/>אחד<קטע סוף=א/><קטע התחלה=ב/>שנים<קטע סוף=ב/><קטע סוף={old} הכל/>'
+        page='{{#קטע:ספר/אשכנז/דפי יסוד/'+foundation+'|'+old+'}}'
+        sliced=transcription.page_slice(page,lambda name:text)
+        self.assertEqual(sliced.missing,[])
+        self.assertIn('אחד',sliced.text);self.assertIn('שנים',sliced.text)
+
 
 if __name__ == "__main__":
     unittest.main()

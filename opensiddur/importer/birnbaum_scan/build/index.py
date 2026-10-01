@@ -58,6 +58,7 @@ BODY = f"""      <tei:div corresp="{S}siddur">
         <j:transclude type="external" target="{S}regalim/morning_meal"/>
         <j:transclude type="external" target="{S}sefirat_haomer"/>
         <j:transclude type="external" target="{S}regalim/akdamut"/>
+        <j:transclude type="external" target="{S}rosh_hashanah/minchah_maariv_and_rites"/>
       </tei:div>"""
 
 

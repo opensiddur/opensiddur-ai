@@ -245,3 +245,9 @@ typography:
 # and conditional blessing; set it true/false for a particular meal.
 # Candle-lighting Shehecheyanu uses the first two festival nights in the diaspora
 # and the first in Israel, excluding the final days of Pesach.
+
+# Kapparot (Birnbaum): opensiddur:practice/kapparot-object is a manual symbol:
+# money, rooster, or hen. Leave it unset to show all alternatives as MAYBE.
+# Example declaration: opensiddur:practice: {kapparot-object: money}
+# The reusable prayer has no seasonal gate; its siddur caller selects 9 Tishrei.
+# Tashlikh's caller selects 1 Tishrei except on Shabbat, when it selects 2 Tishrei.
