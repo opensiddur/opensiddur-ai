@@ -847,3 +847,24 @@
 {"urn": "urn:x-opensiddur:text:prayer:tashlikh", "status": "canonical", "label_en": "tashlikh"}
 {"urn": "urn:x-opensiddur:text:prayer:tashlikh/psalm130", "status": "canonical", "label_en": "tashlikh — psalm130", "parent": "urn:x-opensiddur:text:prayer:tashlikh"}
 {"urn": "urn:x-opensiddur:text:prayer:tashlikh/psalm33", "status": "canonical", "label_en": "tashlikh — psalm33", "parent": "urn:x-opensiddur:text:prayer:tashlikh"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah", "status": "canonical", "label_en": "hakafot simchat torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/1", "status": "canonical", "label_en": "hakafot simchat torah — 1", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/2", "status": "canonical", "label_en": "hakafot simchat torah — 2", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/3", "status": "canonical", "label_en": "hakafot simchat torah — 3", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/4", "status": "canonical", "label_en": "hakafot simchat torah — 4", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/5", "status": "canonical", "label_en": "hakafot simchat torah — 5", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/6", "status": "canonical", "label_en": "hakafot simchat torah — 6", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah/7", "status": "canonical", "label_en": "hakafot simchat torah — 7", "parent": "urn:x-opensiddur:text:prayer:hakafot_simchat_torah"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot", "status": "canonical", "label_en": "hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/1", "status": "canonical", "label_en": "hoshanot — 1", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/2", "status": "canonical", "label_en": "hoshanot — 2", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/3", "status": "canonical", "label_en": "hoshanot — 3", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/4", "status": "canonical", "label_en": "hoshanot — 4", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/5", "status": "canonical", "label_en": "hoshanot — 5", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/6", "status": "canonical", "label_en": "hoshanot — 6", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/7", "status": "canonical", "label_en": "hoshanot — 7", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/8", "status": "canonical", "label_en": "hoshanot — 8", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:hoshanot/rabbah", "status": "canonical", "label_en": "hoshanot — rabbah", "parent": "urn:x-opensiddur:text:prayer:hoshanot"}
+{"urn": "urn:x-opensiddur:text:prayer:netilat_lulav", "status": "canonical", "label_en": "netilat lulav"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillat_geshem", "status": "canonical", "label_en": "tefillat geshem"}
+{"urn": "urn:x-opensiddur:text:prayer:ushpizin", "status": "canonical", "label_en": "ushpizin"}

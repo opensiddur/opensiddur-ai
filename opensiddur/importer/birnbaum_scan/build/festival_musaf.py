@@ -122,6 +122,7 @@ def prayers(lang):
 
 
 def units(project):
+    from .sukkot_rites import GESHEM, GESHEM_OCCASION
     side=int(project!=PROJECT_HE);lang=('he','en')[side];out=[]
     def p(k):return transclude(URNS[k])
     def seq(*keys):return ''.join(p(k) for k in keys)
@@ -164,8 +165,9 @@ def units(project):
     add('tal',TAL,'תְּפִלַּת טַל','PRAYER FOR DEW',633,635,talbody,True)
     body=instruction('The Amidah is recited in silent devotion while standing, facing east.')+seq('ki_shem','sefatai')
     body+=c('tal','On the first day of Pesaḥ, during the Reader’s repetition:',TAL_OCCASION,transclude(TAL))
+    body+=c('geshem','On Shemini Atsereth, during the Reader’s repetition:',GESHEM_OCCASION,transclude(GESHEM))
     normal=seq('avot','melekh','gevurot')+c('rain','On Shemini Atsereth and Simḥath Torah add:',holiday('shmini-atzeret',2),p('rain'))
-    body+=c('ordinary_opening','Except during the prayer for dew:',TAL_OCCASION,normal,True)+seq('mekhalkel','veneeman')
+    body+=c('ordinary_opening','Except during the prayers for dew and rain:','<j:any>'+TAL_OCCASION+GESHEM_OCCASION+'</j:any>',normal,True)+seq('mekhalkel','veneeman')
     body+=c('kedushah_major','During the Reader’s repetition on major festivals and Sabbaths:','<j:all>'+READER+MAJOR+'</j:all>',transclude(AMIDAH+'/kedushah/major'))
     body+=c('kedushah_chol','During the Reader’s repetition on weekday Ḥol ha-Mo‘ed:','<j:all>'+READER+CHOL+'<j:none>'+SHABBAT+'</j:none></j:all>',transclude(AMIDAH+'/kedushah/chol_hamoed'))
     body+=c('ledor','Reader:',READER,p('ledor'))+c('atah_kadosh','In silent devotion:',READER,p('atah_kadosh'),True)
