@@ -106,12 +106,13 @@ class TestInterleavedPreamble(unittest.TestCase):
         self.assertEqual(_transform(xml), _transform(xml, layout="pages"))
 
     def test_column_layouts_still_load_reledpar(self):
-        for layout in ("pages", "pairs"):
+        # \Columns runs the pstart hook once per column, \Pages once per page.
+        for layout, skip in (("pages", r"\parskip"), ("pairs", r"0.5\parskip")):
             with self.subTest(layout=layout):
                 preamble, _ = _split(_transform(_paragraphs(), layout=layout))
                 self.assertIn(r"\usepackage{reledpar}", preamble)
                 self.assertIn(r"\lineationR{page}", preamble)
-                self.assertIn(r"\newcommand{\OSPstartSkip}{0.5\parskip}", preamble)
+                self.assertIn(rf"\newcommand{{\OSPstartSkip}}{{{skip}}}", preamble)
                 self.assertNotIn("OSInterleaved", preamble)
 
 

@@ -101,7 +101,8 @@ the `interleaved` layout, sets each block's translation directly after it.
 
 `column_order: primary_first` puts the primary stream on the left page (or
 left column for a `pairs` layout, or first in an `interleaved` one);
-`primary_last` swaps them.
+`primary_last` swaps them. The left page is the verso: for facing pages in a
+book bound on the right, put the Hebrew on the right with `primary_last`.
 
 ### Typography (PDF/TeX stage only)
 

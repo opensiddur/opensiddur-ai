@@ -436,18 +436,14 @@ class TestParallelColumns(unittest.TestCase):
         self.assertIn(r"\setlength{\Rcolwidth}{0.4\textwidth}", tex)
         self.assertIn(r"\columnsposition{L}", tex)
 
-    def test_facing_pages_have_no_columns_to_size(self):
-        tex = _tex(
-            {"parallel": {"layout": "pages", "column_width": "40%"}}, has_parallel=True
-        )
-        self.assertNotIn(r"\Lcolwidth", tex)
-
-    def test_interleaved_has_no_columns_to_size(self):
-        tex = _tex(
-            {"parallel": {"layout": "interleaved", "column_width": "40%"}},
-            has_parallel=True,
-        )
-        self.assertNotIn(r"\Lcolwidth", tex)
+    def test_other_layouts_have_no_columns_to_size(self):
+        # A settings file cannot name the column keys under these layouts (see
+        # TestParallelColumnSettings in test_typography.py); their defaults stay unset.
+        for layout in ("pages", "interleaved"):
+            with self.subTest(layout=layout):
+                tex = _tex({"parallel": {"layout": layout}}, has_parallel=True)
+                self.assertNotIn(r"\Lcolwidth", tex)
+                self.assertNotIn(r"\columnsposition", tex)
 
 
 class TestInterleaved(unittest.TestCase):
