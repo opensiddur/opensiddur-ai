@@ -293,6 +293,14 @@ compiler section of the settings file — `primary_first` puts the primary strea
 `primary_last` swaps them — because the compiler is what decides the order the streams are
 emitted in. In the `interleaved` layout the same setting decides which text comes first.
 
+**A passage with no counterpart is set across the whole page.** Where an aligned unit has text
+in one language only, there is nothing for the other column to face, so the columns stop, the
+passage is set at the full measure in its own language, and the columns resume at the next unit
+both languages set. A side holding only apparatus (an empty correspondence anchor, a
+reference marker, or a note on the other text) does not count as a translation: its notes are
+set with the text they annotate. In `pages` layout, each return to the columns starts a new
+spread.
+
 ### Facing pages
 
 `layout: pages` sets the left text on a verso and the right text on the recto facing it,

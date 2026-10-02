@@ -98,6 +98,9 @@ each of the listed `parallel` projects (by `corresp` URN) and emits
 `p:parallel`/`p:parallelItem` blocks. The PDF stage feeds those blocks into
 `reledpar` so the verses on each side stay aligned across page breaks, or, in
 the `interleaved` layout, sets each block's translation directly after it.
+A block with text on one side only (for example, Hebrew whose English
+document carries only anchors for its notes) is set at the full page width
+between column blocks, with any notes from the empty side attached to it.
 
 `column_order: primary_first` puts the primary stream on the left page (or
 left column for a `pairs` layout, or first in an `interleaved` one);

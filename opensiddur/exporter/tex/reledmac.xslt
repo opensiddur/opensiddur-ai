@@ -1087,6 +1087,32 @@
             </xsl:for-each>
         </xsl:variable>
 
+        <!-- A block with text in one language only has nothing to face, so it is set
+             across the whole page rather than beside an empty column, and the columns
+             resume at the next block both languages set. Interleaving never reserves a
+             column, so it keeps every block in one run; see f:interleaved-nodes for
+             what it does with a block like this. -->
+        <xsl:for-each-group select="$usable"
+                            group-adjacent="if ($interleaved) then 'columns' else f:parallel-row-kind(.)">
+            <xsl:choose>
+                <xsl:when test="current-grouping-key() = 'columns'">
+                    <xsl:call-template name="parallel-column-run">
+                        <xsl:with-param name="usable" select="current-group()"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:call-template name="parallel-single-run">
+                        <xsl:with-param name="usable" select="current-group()"/>
+                        <xsl:with-param name="lang"
+                                        select="substring-after(current-grouping-key(), 'single:')"/>
+                    </xsl:call-template>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:for-each-group>
+    </xsl:template>
+
+    <xsl:template name="parallel-column-run">
+        <xsl:param name="usable" as="element(p:parallel)*"/>
         <!-- A block opening with a heading both columns share starts a new column block,
              so the heading can be set across the page between them. -->
         <xsl:for-each-group select="$usable"
@@ -1108,6 +1134,96 @@
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:for-each-group>
+    </xsl:template>
+
+    <!-- 'columns' for a block both of whose items set text, else 'single:' and the
+         language of the one item that does. An item holding only apparatus — an empty
+         correspondence anchor, a note, a reference marker — sets no text, so it is not
+         a translation to face. A block neither item sets text in still carries something
+         that puts ink, or parallel-run would have dropped it; it is set in its primary
+         language. -->
+    <xsl:function name="f:parallel-row-kind" as="xs:string">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="primary" select="$block/p:parallelItem[@role='primary'][1]"/>
+        <xsl:variable name="secondary" select="$block/p:parallelItem[@role='parallel'][1]"/>
+        <xsl:variable name="primary-text" as="xs:boolean" select="f:sets-text($primary)"/>
+        <xsl:variable name="secondary-text" as="xs:boolean" select="f:sets-text($secondary)"/>
+        <xsl:sequence select="
+            if ($primary-text and $secondary-text) then 'columns'
+            else concat('single:', string(
+                (if ($secondary-text) then $secondary else $primary)/@xml:lang))"/>
+    </xsl:function>
+
+    <!-- The item of a block that is set in a 'single:' run: the one that sets text, or
+         the primary when neither does. -->
+    <xsl:function name="f:single-item" as="element()?">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="primary" select="$block/p:parallelItem[@role='primary'][1]"/>
+        <xsl:variable name="secondary" select="$block/p:parallelItem[@role='parallel'][1]"/>
+        <xsl:sequence select="if (not(f:sets-text($primary)) and f:sets-text($secondary))
+                              then $secondary else $primary"/>
+    </xsl:function>
+
+    <!-- The leaves of a block with text in one language: that item's, with the other
+         item's editorial notes put among them. Birnbaum's Hoshanot have no English
+         translation, but his English notes on them are compiled onto empty anchors in
+         the English document; they belong to the Hebrew, not to a column or paragraph
+         of their own. A rubric is not among them: it is words of its own, and a block
+         whose other item sets one has text on both sides, so never comes here.
+
+         Flattened here rather than by the stream, so the notes can go inside the text's
+         paragraph and not after its closing break. Flattening is idempotent: the leaves
+         are the source nodes themselves, so the stream's own pass finds them unchanged,
+         with their ancestors (and so their serials) intact. -->
+    <xsl:function name="f:single-row-leaves" as="node()*">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:variable name="item" select="f:single-item($block)"/>
+        <xsl:variable name="leaves" as="node()*">
+            <xsl:apply-templates select="$item/node()" mode="leaves"/>
+        </xsl:variable>
+        <xsl:variable name="notes" as="element()*"
+                      select="($block/p:parallelItem except $item)
+                              /(.//tei:note[not(@type = 'instruction')]
+                                | .//tei:anchor[.//tei:note[not(@type = 'instruction')]])
+                              [not(ancestor::tei:note or ancestor::tei:anchor[.//tei:note])]"/>
+        <xsl:variable name="ink" as="xs:integer*"
+                      select="index-of($leaves ! (f:puts-ink(.) and not(self::f:head)), true())"/>
+        <!-- After the text when the other item follows it in the document, before it
+             when the other item comes first, so the marks keep the order their serials
+             were counted in. -->
+        <xsl:variable name="at" as="xs:integer"
+                      select="if (empty($notes) or empty($ink)) then count($leaves)
+                              else if ($notes[1] &lt;&lt; $item) then $ink[1] - 1
+                              else $ink[last()]"/>
+        <xsl:sequence select="subsequence($leaves, 1, $at), $notes,
+                              subsequence($leaves, $at + 1)"/>
+    </xsl:function>
+
+    <!-- Blocks with text in one language, set across the whole page between column
+         blocks. -->
+    <xsl:template name="parallel-single-run">
+        <xsl:param name="usable" as="element(p:parallel)+"/>
+        <xsl:param name="lang" as="xs:string"/>
+        <xsl:variable name="nodes" as="node()*">
+            <xsl:for-each select="$usable">
+                <xsl:sequence select="f:single-row-leaves(.)"/>
+                <xsl:if test="position() != last()">
+                    <f:block-break/>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:variable>
+        <xsl:variable name="first" select="$usable[1]"/>
+        <!-- The column the text would have stood in names the running-head marks it
+             records into, so a running head keeps one language per side. -->
+        <xsl:variable name="in-left-column" as="xs:boolean"
+                      select="(f:single-item($first)/@role = 'primary')
+                              = not($first/@column-order = 'primary_last')"/>
+        <xsl:call-template name="numbered-stream">
+            <xsl:with-param name="nodes" select="$nodes"/>
+            <xsl:with-param name="lang" select="$lang"/>
+            <xsl:with-param name="align-verses" select="false()"/>
+            <xsl:with-param name="stream" select="if ($in-left-column) then 'primary' else 'alt'"/>
+        </xsl:call-template>
     </xsl:template>
 
     <!-- One \Pages (or \Columns) block, optionally preceded by a heading set across the
@@ -1268,7 +1384,7 @@
                           select="if ($spanning != '') then f:spanning-heads($usable[1])/@div else ()"/>
             <xsl:variable name="first-nodes" as="node()*">
                 <xsl:for-each select="$usable">
-                    <xsl:sequence select="f:interleaved-item(., 1)/node()"/>
+                    <xsl:sequence select="f:interleaved-nodes(., 1)"/>
                     <xsl:if test="position() != last()">
                         <f:block-break/>
                     </xsl:if>
@@ -1276,7 +1392,7 @@
             </xsl:variable>
             <xsl:variable name="second-nodes" as="node()*">
                 <xsl:for-each select="$usable">
-                    <xsl:sequence select="f:interleaved-item(., 2)/node()"/>
+                    <xsl:sequence select="f:interleaved-nodes(., 2)"/>
                     <xsl:if test="position() != last()">
                         <f:block-break/>
                     </xsl:if>
@@ -1348,6 +1464,20 @@
         <xsl:variable name="secondary" select="$block/p:parallelItem[@role='parallel'][1]"/>
         <xsl:sequence select="if (($which = 1) = ($block/@column-order = 'primary_last'))
                               then $secondary else $primary"/>
+    </xsl:function>
+
+    <!-- What a block sets first (1) or second (2). A block with text in one language
+         gives that text, with the other item's notes in it, and nothing for the other:
+         an item of notes alone would otherwise be set as a translation paragraph holding
+         nothing but their marks. -->
+    <xsl:function name="f:interleaved-nodes" as="node()*">
+        <xsl:param name="block" as="element(p:parallel)"/>
+        <xsl:param name="which" as="xs:integer"/>
+        <xsl:variable name="item" select="f:interleaved-item($block, $which)"/>
+        <xsl:sequence select="if (f:parallel-row-kind($block) = 'columns') then $item/node()
+                              else if ($item is f:single-item($block))
+                              then f:single-row-leaves($block)
+                              else ()"/>
     </xsl:function>
 
     <!-- The $i-th of the segments $leaves is cut into at the positions $breaks. -->
@@ -3367,6 +3497,26 @@
                                   or exists($node/self::f:block-break)
                                   or f:is-structural-space($node)
                                   or f:renders-nothing($node))"/>
+    </xsl:function>
+
+    <!-- True when an item sets words of its own: text, a heading, a list label, or a
+         rubric. Apparatus does not count — an editorial note, the anchor carrying one, a
+         reference marker (milestone), a line break or a condition marker — since an item
+         holding only these is not a text the other column could face. -->
+    <xsl:function name="f:sets-text" as="xs:boolean">
+        <xsl:param name="item" as="element()?"/>
+        <xsl:variable name="leaves" as="node()*">
+            <xsl:apply-templates select="$item/node()" mode="leaves"/>
+        </xsl:variable>
+        <!-- A rubric is looked for within the leaves, not only among them: one inside a
+             j:conditional reaches the leaf stream inside its marker. -->
+        <xsl:sequence select="exists($leaves[
+            (self::text() and normalize-space(.))
+            or ((self::tei:hi | self::tei:emph | self::tei:foreign | self::tei:choice
+                 | self::tei:ref)
+                and normalize-space(string(.)))
+            or descendant-or-self::tei:note[@type = 'instruction'][normalize-space(.)]
+            or self::f:head or self::f:list-label])"/>
     </xsl:function>
 
     <!-- Drop the paragraph breaks that trail the end of a block, where they would set a
