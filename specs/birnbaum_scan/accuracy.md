@@ -1540,3 +1540,42 @@ weekday schedules; 5 and6 are omitted on Hoshana Rabbah. Whole occasion gates re
 callers. Geshem replaces the opening during the Reader’s Musaf repetition on 22 Tishrei,
 then continues into the existing Mekhalkel Chayim. Simchat Torah follows 22 Tishrei in
 Israel and 23 Tishrei in the diaspora.
+
+## Hanukkah and Purim, printed 709–730 (IA n733–n754)
+
+The 22 leaves were read before the secondary transcription comparison. The
+source checkout preserves the initial readings, corrected 113 paired text units,
+rubrics, all seven commentary notes, and per-difference adjudication under
+`scan_reading/hanukkah_purim/`. There are 224 Hebrew difference records: 121
+retained initial readings and 103 corrections, including 11 third readings.
+Consonantal differences account for 9 retained and 32 corrected records;
+pointing/punctuation for 112 retained and 71 corrected records. Counts are by
+record, not by combining marks. Qamats/qatan alone follows U+05B8 policy.
+The English comparison yielded seven punctuation differences; one corrected
+the initial reading, and six were transcription departures from the scan.
+
+Maoz Tzur’s sixth stanza lacks an English translation. The scan’s wording omits
+several familiar additions, including לנו in the final line, which both initial
+reading and secondary transcription had supplied. Hashmonaim has 76 independently
+addressable verses but different Hebrew and English paragraph breaks. Verse 1’s
+boundary was corrected by following the clause rather than the line carrying the
+margin number. Printed bracketed corrections remain literal text.
+
+Compiled Hebrew and English match all 113 corrected units after removing only
+whitespace and page markers. All seven notes survive the parallel compile.
+First- and second-day Hanukkah scenarios (5–6 December 2026) select and omit
+Shehecheyanu respectively. Morning and evening Purim scenarios (23 March 2027)
+omit/include Asher Heni while both retain Shoshanat Yaakov. The calendar tests
+use actual Gregorian dates and a location, in addition to synthetic condition
+checks. The importer and registry regression suite passes 346 tests and 2,203
+subtests. Focused proofs are `output/birnbaum_hanukkah_purim/hanukkah.pdf` and
+`purim.pdf`; bookmarks contain the lights, Maoz Tzur and Hashmonaim under Hanukkah,
+and Asher Heni and Shoshanat Yaakov under Purim.
+
+Final verification: all 2,242 XML files in the two Birnbaum projects pass RelaxNG
+and Schematron. Transclusion/annotation references resolve; the canonical registry
+reports zero errors and warnings. Repository-wide versification passes with its
+three already-recorded unresolved JPS chapters. Visual review confirms Hebrew
+catchword direction, the untranslated stanza, and the Purim morning starting
+point without an empty conditional bracket. LaTeX overfull-box notices are confined
+to the existing legal/source metadata page, not these prayer texts.

@@ -868,3 +868,86 @@
 {"urn": "urn:x-opensiddur:text:prayer:netilat_lulav", "status": "canonical", "label_en": "netilat lulav"}
 {"urn": "urn:x-opensiddur:text:prayer:tefillat_geshem", "status": "canonical", "label_en": "tefillat geshem"}
 {"urn": "urn:x-opensiddur:text:prayer:ushpizin", "status": "canonical", "label_en": "ushpizin"}
+{"urn": "urn:x-opensiddur:text:prayer:al_mikra_megillah", "status": "canonical", "label_en": "al mikra megillah"}
+{"urn": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah", "status": "canonical", "label_en": "hadlakat ner chanukah"}
+{"urn": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "status": "canonical", "label_en": "hadlakat ner chanukah — blessing", "parent": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah"}
+{"urn": "urn:x-opensiddur:text:prayer:hanerot_halalu", "status": "canonical", "label_en": "hanerot halalu"}
+{"urn": "urn:x-opensiddur:text:prayer:harav_et_riveinu", "status": "canonical", "label_en": "harav et riveinu"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim", "status": "canonical", "label_en": "megillat hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/1", "status": "canonical", "label_en": "megillat hashmonaim — 1", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/10", "status": "canonical", "label_en": "megillat hashmonaim — 10", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/11", "status": "canonical", "label_en": "megillat hashmonaim — 11", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/12", "status": "canonical", "label_en": "megillat hashmonaim — 12", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/13", "status": "canonical", "label_en": "megillat hashmonaim — 13", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/14", "status": "canonical", "label_en": "megillat hashmonaim — 14", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/15", "status": "canonical", "label_en": "megillat hashmonaim — 15", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/16", "status": "canonical", "label_en": "megillat hashmonaim — 16", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/17", "status": "canonical", "label_en": "megillat hashmonaim — 17", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/18", "status": "canonical", "label_en": "megillat hashmonaim — 18", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/19", "status": "canonical", "label_en": "megillat hashmonaim — 19", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/2", "status": "canonical", "label_en": "megillat hashmonaim — 2", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/20", "status": "canonical", "label_en": "megillat hashmonaim — 20", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/21", "status": "canonical", "label_en": "megillat hashmonaim — 21", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/22", "status": "canonical", "label_en": "megillat hashmonaim — 22", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/23", "status": "canonical", "label_en": "megillat hashmonaim — 23", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/24", "status": "canonical", "label_en": "megillat hashmonaim — 24", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/25", "status": "canonical", "label_en": "megillat hashmonaim — 25", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/26", "status": "canonical", "label_en": "megillat hashmonaim — 26", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/27", "status": "canonical", "label_en": "megillat hashmonaim — 27", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/28", "status": "canonical", "label_en": "megillat hashmonaim — 28", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/29", "status": "canonical", "label_en": "megillat hashmonaim — 29", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/3", "status": "canonical", "label_en": "megillat hashmonaim — 3", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/30", "status": "canonical", "label_en": "megillat hashmonaim — 30", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/31", "status": "canonical", "label_en": "megillat hashmonaim — 31", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/32", "status": "canonical", "label_en": "megillat hashmonaim — 32", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/33", "status": "canonical", "label_en": "megillat hashmonaim — 33", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/34", "status": "canonical", "label_en": "megillat hashmonaim — 34", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/35", "status": "canonical", "label_en": "megillat hashmonaim — 35", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/36", "status": "canonical", "label_en": "megillat hashmonaim — 36", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/37", "status": "canonical", "label_en": "megillat hashmonaim — 37", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/38", "status": "canonical", "label_en": "megillat hashmonaim — 38", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/39", "status": "canonical", "label_en": "megillat hashmonaim — 39", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/4", "status": "canonical", "label_en": "megillat hashmonaim — 4", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/40", "status": "canonical", "label_en": "megillat hashmonaim — 40", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/41", "status": "canonical", "label_en": "megillat hashmonaim — 41", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/42", "status": "canonical", "label_en": "megillat hashmonaim — 42", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/43", "status": "canonical", "label_en": "megillat hashmonaim — 43", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/44", "status": "canonical", "label_en": "megillat hashmonaim — 44", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/45", "status": "canonical", "label_en": "megillat hashmonaim — 45", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/46", "status": "canonical", "label_en": "megillat hashmonaim — 46", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/47", "status": "canonical", "label_en": "megillat hashmonaim — 47", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/48", "status": "canonical", "label_en": "megillat hashmonaim — 48", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/49", "status": "canonical", "label_en": "megillat hashmonaim — 49", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/5", "status": "canonical", "label_en": "megillat hashmonaim — 5", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/50", "status": "canonical", "label_en": "megillat hashmonaim — 50", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/51", "status": "canonical", "label_en": "megillat hashmonaim — 51", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/52", "status": "canonical", "label_en": "megillat hashmonaim — 52", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/53", "status": "canonical", "label_en": "megillat hashmonaim — 53", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/54", "status": "canonical", "label_en": "megillat hashmonaim — 54", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/55", "status": "canonical", "label_en": "megillat hashmonaim — 55", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/56", "status": "canonical", "label_en": "megillat hashmonaim — 56", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/57", "status": "canonical", "label_en": "megillat hashmonaim — 57", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/58", "status": "canonical", "label_en": "megillat hashmonaim — 58", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/59", "status": "canonical", "label_en": "megillat hashmonaim — 59", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/6", "status": "canonical", "label_en": "megillat hashmonaim — 6", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/60", "status": "canonical", "label_en": "megillat hashmonaim — 60", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/61", "status": "canonical", "label_en": "megillat hashmonaim — 61", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/62", "status": "canonical", "label_en": "megillat hashmonaim — 62", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/63", "status": "canonical", "label_en": "megillat hashmonaim — 63", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/64", "status": "canonical", "label_en": "megillat hashmonaim — 64", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/65", "status": "canonical", "label_en": "megillat hashmonaim — 65", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/66", "status": "canonical", "label_en": "megillat hashmonaim — 66", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/67", "status": "canonical", "label_en": "megillat hashmonaim — 67", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/68", "status": "canonical", "label_en": "megillat hashmonaim — 68", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/69", "status": "canonical", "label_en": "megillat hashmonaim — 69", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/7", "status": "canonical", "label_en": "megillat hashmonaim — 7", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/70", "status": "canonical", "label_en": "megillat hashmonaim — 70", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/71", "status": "canonical", "label_en": "megillat hashmonaim — 71", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/72", "status": "canonical", "label_en": "megillat hashmonaim — 72", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/73", "status": "canonical", "label_en": "megillat hashmonaim — 73", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/74", "status": "canonical", "label_en": "megillat hashmonaim — 74", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/75", "status": "canonical", "label_en": "megillat hashmonaim — 75", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/76", "status": "canonical", "label_en": "megillat hashmonaim — 76", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/8", "status": "canonical", "label_en": "megillat hashmonaim — 8", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/9", "status": "canonical", "label_en": "megillat hashmonaim — 9", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
+{"urn": "urn:x-opensiddur:text:prayer:sheasah_nissim", "status": "canonical", "label_en": "sheasah nissim"}

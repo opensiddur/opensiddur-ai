@@ -1091,3 +1091,5 @@
 {"urn": "urn:x-opensiddur:text:siddur:sukkot/text/ushpizin_day7", "status": "canonical", "label_en": "sukkot — text — ushpizin day7", "parent": "urn:x-opensiddur:text:siddur:sukkot/text"}
 {"urn": "urn:x-opensiddur:text:siddur:sukkot/text/ushpizin_enter", "status": "canonical", "label_en": "sukkot — text — ushpizin enter", "parent": "urn:x-opensiddur:text:siddur:sukkot/text"}
 {"urn": "urn:x-opensiddur:text:siddur:sukkot/text/ushpizin_invite", "status": "canonical", "label_en": "sukkot — text — ushpizin invite", "parent": "urn:x-opensiddur:text:siddur:sukkot/text"}
+{"urn": "urn:x-opensiddur:text:siddur:chanukah", "status": "canonical", "label_en": "chanukah"}
+{"urn": "urn:x-opensiddur:text:siddur:purim", "status": "canonical", "label_en": "purim"}

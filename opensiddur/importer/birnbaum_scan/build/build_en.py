@@ -100,6 +100,9 @@ from .rosh_hashanah import prayers as rosh_hashanah_prayers
 PRAYERS += rosh_hashanah_prayers("en")
 from .sukkot_rites import prayers as sukkot_rites_prayers
 PRAYERS += sukkot_rites_prayers("en")
+from .hanukkah_purim import prayers as hanukkah_purim_prayers, shared as hanukkah_purim_shared
+PRAYERS = hanukkah_purim_shared("en", PRAYERS)
+PRAYERS += hanukkah_purim_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -169,7 +172,10 @@ from .notes_rosh_hashanah import NOTES as ROSH_HASHANAH_NOTES
 from .notes_omer_akdamut import NOTES as OMER_AKDAMUT_NOTES
 from .notes_festival_musaf import NOTES as FESTIVAL_MUSAF_NOTES
 
+from .notes_hanukkah_purim import NOTES as HANUKKAH_PURIM_NOTES
+
 APPARATUS = {
+    "notes_hanukkah_purim": dict(entries=HANUKKAH_PURIM_NOTES, slug="birnbaum_1949/hanukkah_purim", title="Notes on Hanukkah, Megillat Hashmonaim and Purim", first=709, last=730),
     "notes_sukkot_rites": dict(entries=SUKKOT_RITES_NOTES, slug="birnbaum_1949/sukkot_rites", title="Notes on Sukkot rites", first=675, last=708),
     "notes_rosh_hashanah": dict(entries=ROSH_HASHANAH_NOTES, slug="birnbaum_1949/rosh_hashanah", title="Notes on Rosh Hashanah and Kapparot", first=655, last=674),
     "notes_omer_akdamut": dict(entries=OMER_AKDAMUT_NOTES, slug="birnbaum_1949/omer_akdamut", title="Notes on the Omer and Akdamut", first=637, last=654),

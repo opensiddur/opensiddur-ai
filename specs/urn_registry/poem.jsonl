@@ -252,3 +252,35 @@
 {"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu/1", "status": "canonical", "label_en": "sisu vesimchu — 1", "parent": "urn:x-opensiddur:text:poem:sisu_vesimchu"}
 {"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu/2", "status": "canonical", "label_en": "sisu vesimchu — 2", "parent": "urn:x-opensiddur:text:poem:sisu_vesimchu"}
 {"urn": "urn:x-opensiddur:text:poem:sisu_vesimchu/3", "status": "canonical", "label_en": "sisu vesimchu — 3", "parent": "urn:x-opensiddur:text:poem:sisu_vesimchu"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni", "status": "canonical", "label_en": "asher heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/1", "status": "canonical", "label_en": "asher heni — 1", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/10", "status": "canonical", "label_en": "asher heni — 10", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/11", "status": "canonical", "label_en": "asher heni — 11", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/12", "status": "canonical", "label_en": "asher heni — 12", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/13", "status": "canonical", "label_en": "asher heni — 13", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/14", "status": "canonical", "label_en": "asher heni — 14", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/15", "status": "canonical", "label_en": "asher heni — 15", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/16", "status": "canonical", "label_en": "asher heni — 16", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/17", "status": "canonical", "label_en": "asher heni — 17", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/18", "status": "canonical", "label_en": "asher heni — 18", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/19", "status": "canonical", "label_en": "asher heni — 19", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/2", "status": "canonical", "label_en": "asher heni — 2", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/20", "status": "canonical", "label_en": "asher heni — 20", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/3", "status": "canonical", "label_en": "asher heni — 3", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/4", "status": "canonical", "label_en": "asher heni — 4", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/5", "status": "canonical", "label_en": "asher heni — 5", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/6", "status": "canonical", "label_en": "asher heni — 6", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/7", "status": "canonical", "label_en": "asher heni — 7", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/8", "status": "canonical", "label_en": "asher heni — 8", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:asher_heni/9", "status": "canonical", "label_en": "asher heni — 9", "parent": "urn:x-opensiddur:text:poem:asher_heni"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur", "status": "canonical", "label_en": "maoz tzur"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur/1", "status": "canonical", "label_en": "maoz tzur — 1", "parent": "urn:x-opensiddur:text:poem:maoz_tzur"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur/2", "status": "canonical", "label_en": "maoz tzur — 2", "parent": "urn:x-opensiddur:text:poem:maoz_tzur"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur/3", "status": "canonical", "label_en": "maoz tzur — 3", "parent": "urn:x-opensiddur:text:poem:maoz_tzur"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur/4", "status": "canonical", "label_en": "maoz tzur — 4", "parent": "urn:x-opensiddur:text:poem:maoz_tzur"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur/5", "status": "canonical", "label_en": "maoz tzur — 5", "parent": "urn:x-opensiddur:text:poem:maoz_tzur"}
+{"urn": "urn:x-opensiddur:text:poem:maoz_tzur/6", "status": "canonical", "label_en": "maoz tzur — 6", "parent": "urn:x-opensiddur:text:poem:maoz_tzur"}
+{"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov", "status": "canonical", "label_en": "shoshanat yaakov"}
+{"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov/arur_haman", "status": "canonical", "label_en": "shoshanat yaakov — arur haman", "parent": "urn:x-opensiddur:text:poem:shoshanat_yaakov"}
+{"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov/harvonah", "status": "canonical", "label_en": "shoshanat yaakov — harvonah", "parent": "urn:x-opensiddur:text:poem:shoshanat_yaakov"}
+{"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov/shoshanat", "status": "canonical", "label_en": "shoshanat yaakov — shoshanat", "parent": "urn:x-opensiddur:text:poem:shoshanat_yaakov"}
