@@ -1262,3 +1262,30 @@ to Hashmonaim joined once and Hebrew catchwords explicitly marked for direction.
 Regenerate both projects with `build.build_he` and `build.build_en`, as above.
 Compile `hanukkah.xml` and `purim.xml` with `settings_undecided.yaml` for the focused
 parallel proofs; `index.xml` includes them at the end of the encoded book.
+
+
+## Concluding prayers (printed 753–790; IA n777–n814)
+
+`concluding_prayers.py` encodes marriage, meals, miscellaneous blessings, bedtime
+Shema, children's bedtime prayer, and the State of Israel prayer. Both project
+indexes include the hierarchical `siddur:concluding_prayers` wrapper. Compile
+`concluding_prayers.xml` with `settings_undecided.yaml` for the focused proof.
+The source audit, original readings, reviewed readings, notes, rubrics, correction
+ledger and machine comparisons are in `scan_reading/concluding_prayers/`.
+
+The ceremony's seven blessings put wine first; `prayer:sheva_berakhot/after_meal`
+puts it last, as the user specified. Ordinary, wedding and Brit Milah Grace share
+`prayer:birkat_hamazon` components. Brit Milah inserts its Harachaman after Bamarom.
+Calendar additions derive from the existing holiday and day-of-week settings.
+Migdol uses a day on which Musaf is recited, independent of the current service.
+
+`opensiddur:meal-context` accepts booleans `zimmun`, `guest`, `wife-and-children`,
+`father-is-host`, and `mother-is-host`; `meein-shalosh-food` is one of `wine`,
+`fruit`, `cake`, `cake_wine`. Unspecified values remain MAYBE. The existing
+`opensiddur:quorum/minyan` controls Eloheinu in zimmun. Me'ein Shalosh's four
+Hebrew food alternatives use empty English anchors without empty English
+conditionals: Birnbaum translates them generically, not individually.
+
+The last three English page numbers are direct scan evidence in the correspondence
+importer; regenerate pages.json rather than editing it. The final English page
+belongs to the body together with its facing Hebrew page.

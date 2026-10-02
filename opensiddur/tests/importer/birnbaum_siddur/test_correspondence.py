@@ -24,6 +24,7 @@ from opensiddur.importer.birnbaum_siddur.correspondence import (
     SOURCE_IA_OCR_UNSEGMENTED,
     SOURCE_NONE,
     _ranges,
+    _classify_matter,
     build_correspondence,
     classify_side,
     load_correspondence,
@@ -215,7 +216,14 @@ class SideAndMatterTestCase(CorrespondenceTestCase):
         )
         self.assertEqual(self.by_scan[4]["matter"], MATTER_BODY)
         self.assertEqual(self.by_scan[14]["matter"], MATTER_BODY)
-        self.assertEqual(self.by_scan[15]["matter"], MATTER_BACK)
+        self.assertEqual(self.by_scan[15]["matter"], MATTER_BODY)
+
+    def test_unpaired_leaves_after_final_translation_are_back_matter(self):
+        records = [dict(r) for r in self.correspondence["pages"]]
+        records.append(dict(scan_page=16, side=SIDE_OTHER))
+        _classify_matter(records)
+        self.assertEqual(records[-2]["matter"], MATTER_BODY)
+        self.assertEqual(records[-1]["matter"], MATTER_BACK)
 
     def test_english_front_matter_is_counted(self):
         # This is the material the Hebrew transcription omits entirely.

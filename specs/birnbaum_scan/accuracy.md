@@ -1624,3 +1624,26 @@ Validation: 2,385 Birnbaum XML files pass RelaxNG and Schematron. Importer/regis
 regressions pass 354 tests and 2,432 subtests, including exact preservation of every
 reviewed text unit in both languages. Versification passes with the three previously
 recorded unresolved JPS chapters. The registry has no errors or warnings.
+
+
+## Concluding prayers, printed 753–790 (IA n777–n814)
+
+The source audit contains 146 reviewed bilingual text units and 42 note paragraphs
+across all 38 leaves. Initial readings are preserved separately from the corrected
+readings and explicit enlarged-scan correction ledger. Final machine comparisons
+retain unresolved classifications and are not reported as an error rate; see the
+audit README for substantive differences and conventions.
+
+Compiled coverage finds every text unit in both languages and all 42 notes after
+normalizing to letters. This checks omissions, not exact pointing or punctuation.
+Seven dated meal compiles resolve all conditions, covering ordinary weekday,
+Shabbat Rosh Hodesh, Israel and diaspora on 22 Nisan, Rosh Hashanah, Hanukkah and
+Chol Hamoed Sukkot. Tests also cover wedding wine order, exclusive food selection,
+MAYBE defaults, biblical boundaries and the final three direct scan page numbers.
+
+Validation: 262 changed XML files pass RelaxNG and Schematron. The importer and
+registry regression run passes 433 tests and 2,573 subtests. A subsequent page-map
+regression run passes 48 tests, including the final facing English leaf and back
+matter following it. The focused parallel proof is
+`output/birnbaum_concluding_prayers/parallel.pdf` (40 pages), with hierarchical
+bookmarks. Both complete projects have been regenerated.

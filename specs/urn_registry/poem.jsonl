@@ -297,3 +297,15 @@
 {"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/4", "status": "canonical", "label_en": "harachaman brit milah / 4", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
 {"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/5", "status": "canonical", "label_en": "harachaman brit milah / 5", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
 {"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/6", "status": "canonical", "label_en": "harachaman brit milah / 6", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
+{"urn": "urn:x-opensiddur:text:poem:devai_haser", "status": "canonical", "label_en": "devai haser"}
+{"urn": "urn:x-opensiddur:text:poem:mi_adir", "status": "canonical", "label_en": "mi adir"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/adon_olam", "status": "canonical", "label_en": "adon olam/adon olam"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/beli_reshit", "status": "canonical", "label_en": "adon olam/beli reshit"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/beyado", "status": "canonical", "label_en": "adon olam/beyado"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/leet_naasah", "status": "canonical", "label_en": "adon olam/leet naasah"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/veacharei", "status": "canonical", "label_en": "adon olam/veacharei"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_echad", "status": "canonical", "label_en": "adon olam/vehu echad"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_eli", "status": "canonical", "label_en": "adon olam/vehu eli"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_hayah", "status": "canonical", "label_en": "adon olam/vehu hayah"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_nisi", "status": "canonical", "label_en": "adon olam/vehu nisi"}
+{"urn": "urn:x-opensiddur:text:poem:adon_olam/veim_ruchi", "status": "canonical", "label_en": "adon olam/veim ruchi"}

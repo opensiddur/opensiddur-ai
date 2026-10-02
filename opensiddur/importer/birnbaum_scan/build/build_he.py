@@ -103,6 +103,9 @@ PRAYERS += hanukkah_purim_prayers("he")
 from .lifecycle import prayers as lifecycle_prayers, shared as lifecycle_shared
 PRAYERS = lifecycle_shared("he", PRAYERS)
 PRAYERS += lifecycle_prayers("he")
+from .concluding_prayers import prayers as concluding_prayers, shared as concluding_shared
+PRAYERS = concluding_shared("he", PRAYERS)
+PRAYERS += concluding_prayers("he")
 
 
 U, S = PRAYER, SIDDUR
@@ -647,11 +650,12 @@ def units(project, pages, by_name, amidah_body):
     from .yizkor import units as yizkor_units, extend_services as extend_yizkor
     from .hanukkah_purim import units as hanukkah_purim_units
     from .lifecycle import units as lifecycle_units
+    from .concluding_prayers import units as concluding_units
     from .sukkot_rites import units as sukkot_rites_units
     from .rosh_hashanah import units as rosh_hashanah_units
     from .omer_akdamut import units as omer_akdamut_units
     from .festival_musaf import units as festival_musaf_units
-    return extend_yizkor(extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project) + yizkor_units(project)) + festival_musaf_units(project) + omer_akdamut_units(project) + rosh_hashanah_units(project) + sukkot_rites_units(project) + hanukkah_purim_units(project) + lifecycle_units(project)
+    return extend_yizkor(extend_services(extend_torah(extend_amidah(complete, lang) + shabbat_amidah_units(project, by_name), lang) + torah_units(project, by_name) + musaf_units(project, by_name) + day_meal_units(project) + shabbat_minchah_units(project, by_name) + avot_units(project) + motzaei_units(project, by_name) + hallel_units(project) + rc_musaf_units(project)) + festival_units(project) + yizkor_units(project)) + festival_musaf_units(project) + omer_akdamut_units(project) + rosh_hashanah_units(project) + sukkot_rites_units(project) + hanukkah_purim_units(project) + lifecycle_units(project) + concluding_units(project)
 
 
 #: The one place the two projects' unit files genuinely differ. The Amidah's three

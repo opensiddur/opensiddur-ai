@@ -968,3 +968,70 @@
 {"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/7", "status": "canonical", "label_en": "tzidduk hadin / 7", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
 {"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/8", "status": "canonical", "label_en": "tzidduk hadin / 8", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
 {"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/9", "status": "canonical", "label_en": "tzidduk hadin / 9", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_erusin", "status": "canonical", "label_en": "birkat erusin"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/core", "status": "canonical", "label_en": "birkat hamazon/core"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/four_blessings", "status": "canonical", "label_en": "birkat hamazon/four blessings"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/after_insert", "status": "canonical", "label_en": "birkat hamazon/harachaman/after insert"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/all", "status": "canonical", "label_en": "birkat hamazon/harachaman/all"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/before_insert", "status": "canonical", "label_en": "birkat hamazon/harachaman/before insert"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/hosts", "status": "canonical", "label_en": "birkat hamazon/harachaman/hosts"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/rc", "status": "canonical", "label_en": "birkat hamazon/harachaman/rc"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/rh", "status": "canonical", "label_en": "birkat hamazon/harachaman/rh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/self", "status": "canonical", "label_en": "birkat hamazon/harachaman/self"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/harachaman/sukkot", "status": "canonical", "label_en": "birkat hamazon/harachaman/sukkot"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/nodeh", "status": "canonical", "label_en": "birkat hamazon/nodeh"}
+{"urn": "urn:x-opensiddur:text:prayer:birkat_hamazon/yaaleh_veyavo", "status": "canonical", "label_en": "birkat hamazon/yaaleh veyavo"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_minei_mezonot", "status": "canonical", "label_en": "borei minei mezonot"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_nefashot", "status": "canonical", "label_en": "borei nefashot"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_pri_haadamah", "status": "canonical", "label_en": "borei pri haadamah"}
+{"urn": "urn:x-opensiddur:text:prayer:borei_pri_haetz", "status": "canonical", "label_en": "borei pri haetz"}
+{"urn": "urn:x-opensiddur:text:prayer:dayan_haemet", "status": "canonical", "label_en": "dayan haemet"}
+{"urn": "urn:x-opensiddur:text:prayer:hamapil", "status": "canonical", "label_en": "hamapil"}
+{"urn": "urn:x-opensiddur:text:prayer:harei_at_mekudeshet", "status": "canonical", "label_en": "harei at mekudeshet"}
+{"urn": "urn:x-opensiddur:text:prayer:hatov_vehametiv", "status": "canonical", "label_en": "hatov vehametiv"}
+{"urn": "urn:x-opensiddur:text:prayer:likboa_mezuzah", "status": "canonical", "label_en": "likboa mezuzah"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh", "status": "canonical", "label_en": "meein shalosh"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/begin_cake", "status": "canonical", "label_en": "meein shalosh/begin cake"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/begin_cake_wine", "status": "canonical", "label_en": "meein shalosh/begin cake wine"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/begin_fruit", "status": "canonical", "label_en": "meein shalosh/begin fruit"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/begin_wine", "status": "canonical", "label_en": "meein shalosh/begin wine"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/body", "status": "canonical", "label_en": "meein shalosh/body"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/end", "status": "canonical", "label_en": "meein shalosh/end"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/end_cake", "status": "canonical", "label_en": "meein shalosh/end cake"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/end_cake_wine", "status": "canonical", "label_en": "meein shalosh/end cake wine"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/end_fruit", "status": "canonical", "label_en": "meein shalosh/end fruit"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/end_wine", "status": "canonical", "label_en": "meein shalosh/end wine"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/festival", "status": "canonical", "label_en": "meein shalosh/festival"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/festival_end", "status": "canonical", "label_en": "meein shalosh/festival end"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/open", "status": "canonical", "label_en": "meein shalosh/open"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/pesach", "status": "canonical", "label_en": "meein shalosh/pesach"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/rc", "status": "canonical", "label_en": "meein shalosh/rc"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/rh", "status": "canonical", "label_en": "meein shalosh/rh"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/shabbat", "status": "canonical", "label_en": "meein shalosh/shabbat"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/shavuot", "status": "canonical", "label_en": "meein shalosh/shavuot"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/shemini", "status": "canonical", "label_en": "meein shalosh/shemini"}
+{"urn": "urn:x-opensiddur:text:prayer:meein_shalosh/sukkot", "status": "canonical", "label_en": "meein shalosh/sukkot"}
+{"urn": "urn:x-opensiddur:text:prayer:meshaneh_haberiyot", "status": "canonical", "label_en": "meshaneh haberiyot"}
+{"urn": "urn:x-opensiddur:text:prayer:oseh_maaseh_vereshit", "status": "canonical", "label_en": "oseh maaseh vereshit"}
+{"urn": "urn:x-opensiddur:text:prayer:sheasah_et_hayam_hagadol", "status": "canonical", "label_en": "sheasah et hayam hagadol"}
+{"urn": "urn:x-opensiddur:text:prayer:shechalak_mechokhmato", "status": "canonical", "label_en": "shechalak mechokhmato"}
+{"urn": "urn:x-opensiddur:text:prayer:shehakol_nihyeh_bidvaro", "status": "canonical", "label_en": "shehakol nihyeh bidvaro"}
+{"urn": "urn:x-opensiddur:text:prayer:shekakhah_lo_beolamo", "status": "canonical", "label_en": "shekakhah lo beolamo"}
+{"urn": "urn:x-opensiddur:text:prayer:shekocho_ugevurato", "status": "canonical", "label_en": "shekocho ugevurato"}
+{"urn": "urn:x-opensiddur:text:prayer:shelo_chisar_beolamo", "status": "canonical", "label_en": "shelo chisar beolamo"}
+{"urn": "urn:x-opensiddur:text:prayer:shenatan_mechokhmato", "status": "canonical", "label_en": "shenatan mechokhmato"}
+{"urn": "urn:x-opensiddur:text:prayer:shenatan_mikevodo", "status": "canonical", "label_en": "shenatan mikevodo"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot", "status": "canonical", "label_en": "sheva berakhot"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/after_meal", "status": "canonical", "label_en": "sheva berakhot/after meal"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/asher_bara", "status": "canonical", "label_en": "sheva berakhot/asher bara"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/asher_yatzar_haadam", "status": "canonical", "label_en": "sheva berakhot/asher yatzar haadam"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/sameach_tesamach", "status": "canonical", "label_en": "sheva berakhot/sameach tesamach"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/shehakol_bara", "status": "canonical", "label_en": "sheva berakhot/shehakol bara"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/sos_tasis", "status": "canonical", "label_en": "sheva berakhot/sos tasis"}
+{"urn": "urn:x-opensiddur:text:prayer:sheva_berakhot/yotzer_haadam", "status": "canonical", "label_en": "sheva berakhot/yotzer haadam"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/1", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/1"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/2", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/2"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/3", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/3"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/4", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/4"}
+{"urn": "urn:x-opensiddur:text:prayer:zokher_haberit", "status": "canonical", "label_en": "zokher haberit"}
