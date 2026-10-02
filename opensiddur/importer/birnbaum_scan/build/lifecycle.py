@@ -203,7 +203,14 @@ def units(project):
         ''.join(p('milah_harachaman_'+str(i)) for i in range(1,7)),False)
     add('brit_milah_grace',GRACE,'בִּרְכַּת הַמָּזוֹן לִבְרִית מִילָה','GRACE AFTER THE BRITH MILAH',745,749,
         rubric('leader')+p('milah_grace_invitation')+rubric('company')+p('milah_grace_response')
-        +transclude(RESHUT)+rubric('grace')+rubric('insert')+transclude(HARACHAMAN))
+        +transclude(RESHUT)+rubric('grace')
+        +transclude(PRAYER+'birkat_hamazon/zimmun/nevarekh')
+        +transclude(PRAYER+'birkat_hamazon/zimmun/barukh_she_akhalnu')
+        +transclude(PRAYER+'birkat_hamazon/zimmun/barukh_hu')
+        +transclude(PRAYER+'birkat_hamazon/four_blessings')
+        +transclude(PRAYER+'birkat_hamazon/harachaman/before_insert')
+        +rubric('insert')+transclude(HARACHAMAN)
+        +transclude(PRAYER+'birkat_hamazon/harachaman/after_insert'))
     body=''
     for label,keys in [('milah_welcome',['milah_welcome']),('milah_father',['milah_ready']),
         ('milah_seat',['milah_elijah','milah_verses']),('all',['milah_all']),

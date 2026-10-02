@@ -157,6 +157,9 @@ def _arabic(value: str | None) -> int | None:
     return int(value) if value and _ARABIC_RE.fullmatch(value) else None
 
 
+DIRECT_SCAN_NUMBERS = {811: "786", 813: "788", 815: "790"}
+
+
 def resolve_printed_pages(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Settle each page's printed number, correcting transcription slips.
 
@@ -185,6 +188,14 @@ def resolve_printed_pages(records: list[dict[str, Any]]) -> list[dict[str, Any]]
         record["printed_page_conflict"] = bool(
             wikisource and archive and wikisource != archive
         )
+
+    # Direct reading of IA n810/n812/n814 confirms the printed numbers missing
+    # from both metadata layers. Evidence: scan_reading/concluding_prayers in
+    # sourcetexts, final three facing English pages of the 1949 volume.
+    for record in records:
+        if record["scan_page"] in DIRECT_SCAN_NUMBERS and record["printed_page"] is None:
+            record["printed_page"] = DIRECT_SCAN_NUMBERS[record["scan_page"]]
+            record["printed_page_source"] = "direct_scan_reading"
 
     # Only Arabic numbers take part: the front matter is numbered in Roman, and the
     # two sequences do not compare.
@@ -288,7 +299,8 @@ def _classify_matter(records: list[dict[str, Any]]) -> None:
     """Mark each page front matter, body or back matter.
 
     The body starts at the first Hebrew page printed as page 1 and ends at the last
-    Hebrew page; both are found rather than hardcoded. Everything before is front
+    Hebrew page and its paired English translation; both are found rather than
+    hardcoded. Everything before is front
     matter — which is where the English-only material the Hebrew transcription omits
     entirely, the preface among it, lives.
     """
@@ -296,7 +308,10 @@ def _classify_matter(records: list[dict[str, Any]]) -> None:
     first_body = next(
         (r["scan_page"] for r in hebrew if r["printed_page_wikisource"] == "1"), None
     )
-    last_body = hebrew[-1]["scan_page"] if hebrew else None
+    last_body = (
+        max(hebrew[-1]["scan_page"], hebrew[-1].get("facing_scan_page") or 0)
+        if hebrew else None
+    )
 
     for record in records:
         scan_page = record["scan_page"]
@@ -393,8 +408,8 @@ def build_correspondence(sourcetexts_root: Path | None = None) -> dict[str, Any]
         )
 
     conflicts = resolve_printed_pages(records)
-    _classify_matter(records)
     unpaired = pair_facing_pages(records)
+    _classify_matter(records)
 
     for record in records:
         record["text_source"] = _text_source(record)

@@ -106,6 +106,9 @@ PRAYERS += hanukkah_purim_prayers("en")
 from .lifecycle import prayers as lifecycle_prayers, shared as lifecycle_shared
 PRAYERS = lifecycle_shared("en", PRAYERS)
 PRAYERS += lifecycle_prayers("en")
+from .concluding_prayers import prayers as concluding_prayers, shared as concluding_shared
+PRAYERS = concluding_shared("en", PRAYERS)
+PRAYERS += concluding_prayers("en")
 
 
 U, S = PRAYER, SIDDUR
@@ -178,8 +181,10 @@ from .notes_festival_musaf import NOTES as FESTIVAL_MUSAF_NOTES
 from .notes_hanukkah_purim import NOTES as HANUKKAH_PURIM_NOTES
 
 from .notes_lifecycle import NOTES as LIFECYCLE_NOTES
+from .notes_concluding_prayers import NOTES as CONCLUDING_NOTES
 
 APPARATUS = {
+    "notes_concluding_prayers": dict(entries=CONCLUDING_NOTES, slug="birnbaum_1949/concluding_prayers", title="Notes on marriage, meals, blessings, bedtime and Israel", first=753, last=790),
     "notes_lifecycle": dict(entries=LIFECYCLE_NOTES, slug="birnbaum_1949/lifecycle", title="Notes on journey, illness, burial, circumcision and redemption", first=731, last=752),
     "notes_hanukkah_purim": dict(entries=HANUKKAH_PURIM_NOTES, slug="birnbaum_1949/hanukkah_purim", title="Notes on Hanukkah, Megillat Hashmonaim and Purim", first=709, last=730),
     "notes_sukkot_rites": dict(entries=SUKKOT_RITES_NOTES, slug="birnbaum_1949/sukkot_rites", title="Notes on Sukkot rites", first=675, last=708),

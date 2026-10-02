@@ -1160,3 +1160,80 @@
 {"urn": "urn:x-opensiddur:text:siddur:tefillat_haderekh", "status": "canonical", "label_en": "tefillat haderekh"}
 {"urn": "urn:x-opensiddur:text:siddur:tefillat_haderekh/psalm91", "status": "canonical", "label_en": "tefillat haderekh / psalm91", "parent": "urn:x-opensiddur:text:siddur:tefillat_haderekh"}
 {"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_present/shekel_hakodesh", "status": "canonical", "label_en": "lifecycle / text / pidyon present / shekel hakodesh", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_present"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot", "status": "canonical", "label_en": "berakhot"}
+{"urn": "urn:x-opensiddur:text:siddur:berakhot/various", "status": "canonical", "label_en": "berakhot/various"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers", "status": "canonical", "label_en": "concluding prayers"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text", "status": "canonical", "label_en": "concluding prayers/text"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_angels", "status": "canonical", "label_en": "concluding prayers/text/bed angels"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_barukh", "status": "canonical", "label_en": "concluding prayers/text/bed barukh"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_guardian", "status": "canonical", "label_en": "concluding prayers/text/bed guardian"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_hashkivenu", "status": "canonical", "label_en": "concluding prayers/text/bed hashkivenu"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_kohanim", "status": "canonical", "label_en": "concluding prayers/text/bed kohanim"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_kohanim/24", "status": "canonical", "label_en": "concluding prayers/text/bed kohanim/24"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_kohanim/25", "status": "canonical", "label_en": "concluding prayers/text/bed kohanim/25"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_kohanim/26", "status": "canonical", "label_en": "concluding prayers/text/bed kohanim/26"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128/1", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128/1"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128/2", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128/2"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128/3", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128/3"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128/4", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128/4"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128/5", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128/5"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm128/6", "status": "canonical", "label_en": "concluding prayers/text/bed psalm128/6"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_psalm91_repeat", "status": "canonical", "label_en": "concluding prayers/text/bed psalm91 repeat"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_salvation", "status": "canonical", "label_en": "concluding prayers/text/bed salvation"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_solomon", "status": "canonical", "label_en": "concluding prayers/text/bed solomon"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_solomon/7", "status": "canonical", "label_en": "concluding prayers/text/bed solomon/7"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_solomon/8", "status": "canonical", "label_en": "concluding prayers/text/bed solomon/8"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_veahavta", "status": "canonical", "label_en": "concluding prayers/text/bed veahavta"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_vihi_noam", "status": "canonical", "label_en": "concluding prayers/text/bed vihi noam"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/bed_yiru", "status": "canonical", "label_en": "concluding prayers/text/bed yiru"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/child_barukh", "status": "canonical", "label_en": "concluding prayers/text/child barukh"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/child_commit", "status": "canonical", "label_en": "concluding prayers/text/child commit"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/child_guardian", "status": "canonical", "label_en": "concluding prayers/text/child guardian"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/child_hamapil", "status": "canonical", "label_en": "concluding prayers/text/child hamapil"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/child_salvation", "status": "canonical", "label_en": "concluding prayers/text/child salvation"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/child_yehi", "status": "canonical", "label_en": "concluding prayers/text/child yehi"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_hanukkah", "status": "canonical", "label_en": "concluding prayers/text/grace hanukkah"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_oseh", "status": "canonical", "label_en": "concluding prayers/text/grace oseh"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_purim", "status": "canonical", "label_en": "concluding prayers/text/grace purim"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses", "status": "canonical", "label_en": "concluding prayers/text/grace verses"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/jeremiah_17_7", "status": "canonical", "label_en": "concluding prayers/text/grace verses/jeremiah 17 7"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/psalms_118_1", "status": "canonical", "label_en": "concluding prayers/text/grace verses/psalms 118 1"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/psalms_145_16", "status": "canonical", "label_en": "concluding prayers/text/grace verses/psalms 145 16"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/psalms_29_11", "status": "canonical", "label_en": "concluding prayers/text/grace verses/psalms 29 11"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/psalms_34_10", "status": "canonical", "label_en": "concluding prayers/text/grace verses/psalms 34 10"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/psalms_34_11", "status": "canonical", "label_en": "concluding prayers/text/grace verses/psalms 34 11"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_verses/psalms_37_25", "status": "canonical", "label_en": "concluding prayers/text/grace verses/psalms 37 25"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_end", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh end"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_open", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh open"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_pesach", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh pesach"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_rc", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh rc"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_rh", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh rh"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_shavuot", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh shavuot"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_shemini", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh shemini"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/grace_yaaleh_sukkot", "status": "canonical", "label_en": "concluding prayers/text/grace yaaleh sukkot"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/magdil", "status": "canonical", "label_en": "concluding prayers/text/magdil"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126", "status": "canonical", "label_en": "concluding prayers/text/psalm126"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126/1", "status": "canonical", "label_en": "concluding prayers/text/psalm126/1"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126/2", "status": "canonical", "label_en": "concluding prayers/text/psalm126/2"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126/3", "status": "canonical", "label_en": "concluding prayers/text/psalm126/3"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126/4", "status": "canonical", "label_en": "concluding prayers/text/psalm126/4"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126/5", "status": "canonical", "label_en": "concluding prayers/text/psalm126/5"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/psalm126/6", "status": "canonical", "label_en": "concluding prayers/text/psalm126/6"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/wedding_response", "status": "canonical", "label_en": "concluding prayers/text/wedding response"}
+{"urn": "urn:x-opensiddur:text:siddur:concluding_prayers/text/wedding_zimmun", "status": "canonical", "label_en": "concluding prayers/text/wedding zimmun"}
+{"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah", "status": "canonical", "label_en": "kriat shema al hamitah"}
+{"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/adon_olam", "status": "canonical", "label_en": "kriat shema al hamitah/adon olam"}
+{"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/psalm3", "status": "canonical", "label_en": "kriat shema al hamitah/psalm3"}
+{"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/psalm3/9", "status": "canonical", "label_en": "kriat shema al hamitah/psalm3/9"}
+{"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/yeladim", "status": "canonical", "label_en": "kriat shema al hamitah/yeladim"}
+{"urn": "urn:x-opensiddur:text:siddur:marriage", "status": "canonical", "label_en": "marriage"}
+{"urn": "urn:x-opensiddur:text:siddur:marriage/grace", "status": "canonical", "label_en": "marriage/grace"}
+{"urn": "urn:x-opensiddur:text:siddur:meals", "status": "canonical", "label_en": "meals"}
+{"urn": "urn:x-opensiddur:text:siddur:meals/before", "status": "canonical", "label_en": "meals/before"}
+{"urn": "urn:x-opensiddur:text:siddur:meals/before_grace", "status": "canonical", "label_en": "meals/before grace"}
+{"urn": "urn:x-opensiddur:text:siddur:meals/borei_nefashot", "status": "canonical", "label_en": "meals/borei nefashot"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/genesis", "status": "canonical", "label_en": "shabbat/conclusion/veyitten lekha/genesis"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/genesis/48", "status": "canonical", "label_en": "shabbat/conclusion/veyitten lekha/genesis/48"}
+{"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/genesis/48/16", "status": "canonical", "label_en": "shabbat/conclusion/veyitten lekha/genesis/48/16"}
+{"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/psalm91", "status": "canonical", "label_en": "kriat shema al hamitah/psalm91"}

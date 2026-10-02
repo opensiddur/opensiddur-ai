@@ -63,6 +63,7 @@ BODY = f"""      <tei:div corresp="{S}siddur">
         <j:transclude type="external" target="{S}chanukah"/>
         <j:transclude type="external" target="{S}purim"/>
         <j:transclude type="external" target="{S}lifecycle"/>
+        <j:transclude type="external" target="{S}concluding_prayers"/>
       </tei:div>"""
 
 
