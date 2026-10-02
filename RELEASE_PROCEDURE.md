@@ -26,11 +26,15 @@ git submodule update --init
 uv sync --all-groups
 bash scripts/build-schema.sh
 uv run coverage run -m unittest discover -s opensiddur/tests -v
+uv run coverage report -m
+uv build                                # writes to dist/, which is gitignored
 ```
 
 Confirm:
 - The working tree is clean and `main` is up to date with `origin/main`.
 - The full test suite passes.
+- `uv build` succeeds. Nothing publishes the distributions it produces; this only checks that the
+  package still builds from the tree being tagged.
 - `sourcetexts/` and `opensiddur-projects/` are on the commits you intend to ship — if you need
   a specific commit rather than the tip of each repo's default branch, update the submodule by
   hand first (`cd sourcetexts && git checkout <commit>`) and commit that.
