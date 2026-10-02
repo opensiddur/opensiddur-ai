@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-02
+
 ### Added
 - The English side of the Birnbaum siddur, from two new sources over the same scan
   (`opensiddur/importer/util/internet_archive.py`,
@@ -225,6 +227,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependencies, are now declared directly.
 - `specs/RELEASING.md`, a v0.1.0-era release guide superseded by `RELEASE_PROCEDURE.md` and the
   release script. It described tagging and publishing by hand, which the script now does.
+
+### Pinned sources
+
+- `opensiddur-projects`: 73555a3feb879a0c374a400701b4f9416a22012f
+- `sourcetexts`: 5927629e34a555649f6c35e3e5b814be9e7205b2
 
 ## [0.3.0] - 2026-08-21
 
