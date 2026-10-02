@@ -31,6 +31,7 @@ from opensiddur.common.xslt import xslt_transform_string  # noqa: E402
 from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 from opensiddur.exporter.typography import TypographyConfig  # noqa: E402
 from opensiddur.exporter.tex.running_heads import build_page_style_tex  # noqa: E402
+from opensiddur.exporter.tex.page_references import resolve_page_references  # noqa: E402
 from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
     build_typography_preamble,
     documentclass_options,
@@ -459,6 +460,8 @@ def transform_xml_to_tex(
         # document's, so their direction is right without being restated.
         parsed = etree.parse(input_file)
         root = parsed.getroot()
+        resolve_page_references(root)
+        input_xml = etree.tostring(root, encoding="unicode")
         root_language = root.get("{http://www.w3.org/XML/1998/namespace}lang")
         page_style_tex = build_page_style_tex(
             typography.page_header, typography.page_footer, root_language

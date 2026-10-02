@@ -3168,6 +3168,14 @@
     <xsl:template match="text()[not(normalize-space(.))][ancestor::tei:titlePage]"
                   mode="emit" priority="10"/>
 
+    <xsl:template match="tei:anchor[@type='page-label']" mode="emit" priority="10">
+        <xsl:text>\label{</xsl:text><xsl:value-of select="@n"/><xsl:text>}</xsl:text>
+    </xsl:template>
+
+    <xsl:template match="tei:ref[@type='page']" mode="emit" priority="10">
+        <xsl:text>\pageref{</xsl:text><xsl:value-of select="@target"/><xsl:text>}</xsl:text>
+    </xsl:template>
+
     <xsl:template match="tei:ref[@target]" mode="emit">
         <xsl:text>\href{</xsl:text>
         <xsl:value-of select="f:escape-url(@target)"/>
