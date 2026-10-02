@@ -1236,3 +1236,29 @@ Readings and corrections live in `scan_reading/readings/avot-477-534.json`,
 `avot.md`, and `avot-corrections.json` in sourcetexts. Both XML projects are generated
 by `build.build_he` and `build.build_en`; `notes_avot.py` preserves commentary and
 printed source citations, with directional markup on Hebrew catchwords and quotations.
+
+## Hanukkah, Megillat Hashmonaim and Purim (printed 709–730; IA n733–n754)
+
+`hanukkah_purim.py` adds the Hanukkah lights, all six Hebrew Maoz Tzur stanzas,
+the 76-verse Megillat Hashmonaim, and Purim’s Megillah blessings and concluding
+poems. The source audit is `scan_reading/hanukkah_purim/` in sourcetexts, including
+unchanged initial readings and the enlarged-scan adjudication ledger.
+
+The addressable book sections are `siddur:chanukah` and `siddur:purim`.
+`prayer:megillat_hashmonaim` is independently reusable: its verse milestones
+preserve Hebrew-only printed numerals while the two languages retain their own
+paragraph breaks. It is not assigned biblical URNs. The quotation in verse 39
+uses bounded biblical source spans. Maoz Tzur’s untranslated sixth stanza keeps
+an empty English alignment anchor. Shared Shehecheyanu and Sheasah Nissim are
+transcluded, with the additional printings recorded.
+
+Shehecheyanu is selected on the first Hanukkah night. The Purim caller omits
+Asher Heni in the morning but always includes Shoshanat Yaakov and its concluding
+lines. The printed “On Purim morning:” instruction marks the starting point; it
+neither gates the following poem nor creates an empty conditional bracket.
+All seven notes are in `notes_hanukkah_purim.xml`, with the two-page introduction
+to Hashmonaim joined once and Hebrew catchwords explicitly marked for direction.
+
+Regenerate both projects with `build.build_he` and `build.build_en`, as above.
+Compile `hanukkah.xml` and `purim.xml` with `settings_undecided.yaml` for the focused
+parallel proofs; `index.xml` includes them at the end of the encoded book.
