@@ -284,3 +284,16 @@
 {"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov/arur_haman", "status": "canonical", "label_en": "shoshanat yaakov — arur haman", "parent": "urn:x-opensiddur:text:poem:shoshanat_yaakov"}
 {"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov/harvonah", "status": "canonical", "label_en": "shoshanat yaakov — harvonah", "parent": "urn:x-opensiddur:text:poem:shoshanat_yaakov"}
 {"urn": "urn:x-opensiddur:text:poem:shoshanat_yaakov/shoshanat", "status": "canonical", "label_en": "shoshanat yaakov — shoshanat", "parent": "urn:x-opensiddur:text:poem:shoshanat_yaakov"}
+{"urn": "urn:x-opensiddur:text:poem:birshut_el_ayom", "status": "canonical", "label_en": "birshut el ayom"}
+{"urn": "urn:x-opensiddur:text:poem:birshut_el_ayom/1", "status": "canonical", "label_en": "birshut el ayom / 1", "parent": "urn:x-opensiddur:text:poem:birshut_el_ayom"}
+{"urn": "urn:x-opensiddur:text:poem:birshut_el_ayom/2", "status": "canonical", "label_en": "birshut el ayom / 2", "parent": "urn:x-opensiddur:text:poem:birshut_el_ayom"}
+{"urn": "urn:x-opensiddur:text:poem:birshut_el_ayom/3", "status": "canonical", "label_en": "birshut el ayom / 3", "parent": "urn:x-opensiddur:text:poem:birshut_el_ayom"}
+{"urn": "urn:x-opensiddur:text:poem:birshut_el_ayom/4", "status": "canonical", "label_en": "birshut el ayom / 4", "parent": "urn:x-opensiddur:text:poem:birshut_el_ayom"}
+{"urn": "urn:x-opensiddur:text:poem:birshut_el_ayom/refrain", "status": "canonical", "label_en": "birshut el ayom / refrain", "parent": "urn:x-opensiddur:text:poem:birshut_el_ayom"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah", "status": "canonical", "label_en": "harachaman brit milah"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/1", "status": "canonical", "label_en": "harachaman brit milah / 1", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/2", "status": "canonical", "label_en": "harachaman brit milah / 2", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/3", "status": "canonical", "label_en": "harachaman brit milah / 3", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/4", "status": "canonical", "label_en": "harachaman brit milah / 4", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/5", "status": "canonical", "label_en": "harachaman brit milah / 5", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
+{"urn": "urn:x-opensiddur:text:poem:harachaman_brit_milah/6", "status": "canonical", "label_en": "harachaman brit milah / 6", "parent": "urn:x-opensiddur:text:poem:harachaman_brit_milah"}
