@@ -4144,3 +4144,146 @@ class TestParagraphOpeningBracket(unittest.TestCase):
         out = _transform(xml)
         self.assertTrue(re.search(r"\\pstart\S*\s*\\skipnumbering", out),
                         "\\skipnumbering no longer follows its \\pstart")
+
+
+class TestRowsWithoutACounterpart(unittest.TestCase):
+    """A block with text in one language has nothing to face, so it is set across the
+    whole page, and the columns resume at the next block both languages set (#194)."""
+
+    NOTE = "Birnbaum's note."
+    # The shape Birnbaum's Hoshanot compile to: the English document marks the unit with
+    # an empty correspondence anchor, and his note on the Hebrew is compiled onto it.
+    APPARATUS_ONLY = (
+        '<tei:p><tei:milestone unit="prayer-part" corresp="urn:x-opensiddur:text:t/1"/>'
+        f'<tei:anchor xml:id="a1"><tei:note>{NOTE}</tei:note></tei:anchor></tei:p>'
+    )
+
+    @staticmethod
+    def _document(rows, order: str = "primary_first") -> str:
+        blocks = "".join(
+            f"""<p:parallel column-order="{order}">
+              <p:parallelItem role="primary" xml:lang="he">{he}</p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">{en}</p:parallelItem>
+            </p:parallel>"""
+            for he, en in rows
+        )
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="he">
+          <tei:text><tei:body>{blocks}</tei:body></tei:text>
+        </tei:TEI>"""
+
+    def _body(self, rows, **params) -> str:
+        params.setdefault("layout", "pairs")
+        return _transform(self._document(rows, params.pop("order", "primary_first")),
+                          **params).split(r"\begin{document}", 1)[1]
+
+    def _sandwich(self, middle):
+        return [("<tei:p>שלום</tei:p>", "<tei:p>Hello</tei:p>"), middle,
+                ("<tei:p>ברוך</tei:p>", "<tei:p>Blessed</tei:p>")]
+
+    def test_hebrew_alone_is_set_across_the_page(self):
+        body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", "")))
+        self.assertEqual(2, body.count(r"\begin{pairs}"))
+        self.assertEqual(2, body.count(r"\Columns"))
+        full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
+        self.assertIn("הושענא", full_width)
+        self.assertIn(r"\begin{hebrew}", full_width)
+        self.assertIn(r"\beginnumbering", full_width)
+        self.assertNotIn(r"\begin{Leftside}", full_width)
+        self.assertNotRegex(body, r"\\pstart\\relax\s*\\pend")
+
+    def test_an_apparatus_only_side_is_not_a_translation(self):
+        body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", self.APPARATUS_ONLY)))
+        self.assertEqual(2, body.count(r"\Columns"))
+        full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
+        self.assertEqual(1, body.count(self.NOTE))
+        self.assertIn(self.NOTE, full_width)
+        # The mark follows the text it annotates, in the same paragraph.
+        self.assertRegex(full_width, r"\\pstart\\relax הושענא\s*\\leavevmode\{\\OSRTLfalse\\edtext")
+        self.assertEqual(1, full_width.count(r"\pstart"))
+        self.assertNotRegex(body, r"\\pstart\\relax\s*\\pend")
+
+    def test_the_note_keeps_its_language(self):
+        body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", self.APPARATUS_ONLY)))
+        self.assertIn(r"\foreignlanguage{english}{" + self.NOTE + "}", body)
+
+    def test_a_translation_alone_is_set_across_the_page_in_its_language(self):
+        body = self._body(self._sandwich(("", "<tei:p>Untranslated English</tei:p>")))
+        full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
+        self.assertIn("Untranslated English", full_width)
+        self.assertNotIn(r"\begin{hebrew}", full_width)
+
+    def test_a_translation_alone_records_into_its_columns_running_heads(self):
+        body = self._body(self._sandwich(
+            ("", '<tei:div><tei:head>Section</tei:head><tei:p>English</tei:p></tei:div>')))
+        full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
+        self.assertIn(r"\InsertMark{OSheadAAlt}", full_width)
+        self.assertNotIn(r"\InsertMark{OSheadA}", full_width)
+
+    def test_adjacent_rows_in_one_language_share_one_section(self):
+        body = self._body([("<tei:p>שלום</tei:p>", "<tei:p>Hello</tei:p>"),
+                           ("<tei:p>אחד</tei:p>", ""),
+                           ("<tei:p>שתיים</tei:p>", self.APPARATUS_ONLY)])
+        full_width = body.split(r"\Columns", 1)[1]
+        self.assertEqual(1, full_width.count(r"\beginnumbering"))
+        self.assertEqual(2, full_width.count(r"\pstart"))
+
+    def test_facing_pages_also_set_it_across_the_page(self):
+        body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", self.APPARATUS_ONLY)),
+                          layout="pages")
+        self.assertEqual(2, body.count(r"\Pages"))
+        full_width = body.split(r"\Pages", 1)[1].split(r"\begin{pages}", 1)[0]
+        self.assertIn("הושענא", full_width)
+        self.assertIn(self.NOTE, full_width)
+
+    def test_primary_last_still_sets_the_lone_text(self):
+        body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", self.APPARATUS_ONLY)),
+                          order="primary_last")
+        full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
+        self.assertIn("הושענא", full_width)
+        self.assertEqual(1, body.count(self.NOTE))
+
+    def test_headings_conditions_and_markers_survive_in_order(self):
+        condition = ('<tei:fs type="opensiddur:holiday-aggregate"><tei:f name="shabbat">'
+                     '<tei:binary value="true"/></tei:f></tei:fs>')
+        he = (f'<tei:div><tei:head>הושענות</tei:head><tei:p>'
+              f'<tei:milestone unit="verse" n="7"/>לפני <j:conditional xml:id="c">{condition}'
+              f'</j:conditional>בשבת<j:endConditional target="#c"/> אחרי</tei:p></tei:div>')
+        body = self._body(self._sandwich((he, self.APPARATUS_ONLY)))
+        full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
+        positions = [full_width.find(s) for s in
+                     ("הושענות", "לפני", r"\OSCondStartInline", "בשבת",
+                      r"\OSCondEndInline", "אחרי", self.NOTE)]
+        self.assertNotIn(-1, positions)
+        self.assertEqual(sorted(positions), positions)
+        self.assertIn("7", full_width)
+
+    def test_a_shared_row_stays_in_columns(self):
+        """Notes beside a translation do not make it one-sided."""
+        body = self._body([("<tei:p>שלום</tei:p>",
+                            f'<tei:p>Hello<tei:note>{self.NOTE}</tei:note></tei:p>')])
+        self.assertEqual(1, body.count(r"\Columns"))
+        self.assertIn(self.NOTE, body.split(r"\begin{Rightside}", 1)[1])
+
+    def test_interleaved_sets_the_notes_with_the_text_and_no_seam(self):
+        body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", self.APPARATUS_ONLY)),
+                          layout="interleaved")
+        self.assertEqual(1, body.count(self.NOTE))
+        self.assertEqual(2, body.count(r"\OSInterleavedSeam"))
+        self.assertRegex(body, r"הושענא\s*\\leavevmode\{\\OSRTLfalse\\edtext")
+
+    def test_a_rubric_inside_a_conditional_is_text(self):
+        """A row whose only words are a conditional's rubric, on both sides, is a row both
+        languages set: it stays in columns, and neither rubric is copied to the other."""
+        condition = ('<tei:fs type="opensiddur:holiday-aggregate"><tei:f name="shabbat">'
+                     '<tei:binary value="true"/></tei:f></tei:fs>')
+
+        def rubric(lang):
+            return (f'<tei:p><j:conditional xml:id="c{lang}"><tei:note type="instruction">'
+                    f'On Hoshana Rabbah add:</tei:note>{condition}</j:conditional></tei:p>')
+
+        body = self._body(self._sandwich((rubric("he"), rubric("en"))))
+        self.assertEqual(1, body.count(r"\Columns"))
+        self.assertEqual(2, body.count("On Hoshana Rabbah add:"))
