@@ -27,5 +27,8 @@ settings/
 out/
 output/
 
+# Build output (uv build)
+dist/
+
 # Generated db
 database/

@@ -211,6 +211,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   writes the new version into `pyproject.toml` but never re-locks, so `uv.lock` kept the previous
   version and the next `uv sync --all-groups` left a modified lockfile in the working tree — which
   then collides with the "must be clean" check the procedure opens with.
+- `RELEASE_PROCEDURE.md` is now the only release documentation. Its pre-flight gains the two
+  checks that until now lived only in `specs/RELEASING.md` — `uv run coverage report -m` and
+  `uv build` — and `dist/`, where `uv build` writes, is gitignored so the build check does not
+  leave the working tree dirty.
 
 ### Removed
 - The unused LangGraph text-encoding agent (`opensiddur/importer/agent/`), along with the
@@ -219,6 +223,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `unstructured`, `markdown`, `pyppeteer`).
   `pyyaml` and `pypdf`, which the code imports but had only been installed through those
   dependencies, are now declared directly.
+- `specs/RELEASING.md`, a v0.1.0-era release guide superseded by `RELEASE_PROCEDURE.md` and the
+  release script. It described tagging and publishing by hand, which the script now does.
 
 ## [0.3.0] - 2026-08-21
 
