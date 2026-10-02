@@ -371,6 +371,31 @@ class TestSingleStreamMapping(unittest.TestCase):
         self.assertIn(r"\vno{3}", out)
 
 
+class TestHebrewVerseNumbers(unittest.TestCase):
+    def test_hebrew_labels_keep_logical_order_and_decimal_labels_stay_ltr(self):
+        passage = '<tei:p>' + ''.join(
+            f'<tei:milestone unit="verse" n="{n}"/>Text '
+            for n in ('יא', 'טו', 'עו', '12', '76')) + '</tei:p>'
+        for parallel in (False, True):
+            with self.subTest(parallel=parallel):
+                body = passage
+                if parallel:
+                    body = ('<p:parallel><p:parallelItem role="primary" xml:lang="he">'
+                            + passage + '</p:parallelItem>'
+                            '<p:parallelItem role="parallel" xml:lang="en">'
+                            + passage + '</p:parallelItem></p:parallel>')
+                xml = ('<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" '
+                       'xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">'
+                       '<tei:text><tei:body>' + body + '</tei:body></tei:text></tei:TEI>')
+                out = _transform(xml, layout="pairs")
+                for n in ('יא', 'טו', 'עו'):
+                    self.assertIn(r"\vno{\texthebrew{" + n + '}}', out)
+                    self.assertNotIn(r"\vno{" + n + '}', out)
+                for n in ('12', '76'):
+                    self.assertIn(r"\vno{" + n + '}', out)
+                self.assertIn(r"\textdir TLT\foreignlanguage{english}{#1}", out)
+
+
 class TestParallelMapping(unittest.TestCase):
     """Parallel blocks must produce two synchronized streams, both wrapped
     in \\beginnumbering...\\endnumbering, surrounded by

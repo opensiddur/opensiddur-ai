@@ -1865,7 +1865,7 @@
                                 <xsl:text>\pend&#10;</xsl:text>
                             </xsl:if>
                             <xsl:call-template name="pstart"/><xsl:text>\vno{</xsl:text>
-                            <xsl:value-of select="f:escape-tex(string(@n))"/>
+                            <xsl:value-of select="f:verse-number-label(string(@n))"/>
                             <xsl:text>}</xsl:text>
                             <xsl:next-iteration>
                                 <xsl:with-param name="in-pstart" select="true()"/>
@@ -1878,7 +1878,7 @@
                                 <xsl:call-template name="pstart"/>
                             </xsl:if>
                             <xsl:text>\vno{</xsl:text>
-                            <xsl:value-of select="f:escape-tex(string(@n))"/>
+                            <xsl:value-of select="f:verse-number-label(string(@n))"/>
                             <xsl:text>}</xsl:text>
                             <xsl:next-iteration>
                                 <xsl:with-param name="in-pstart" select="true()"/>
@@ -3804,6 +3804,15 @@
             </xsl:analyze-string>
         </xsl:variable>
         <xsl:sequence select="string-join($parts, '')"/>
+    </xsl:function>
+
+    <!-- Decimal verse numbers keep the macro's LTR default. Hebrew labels need
+         their own direction and font, including when typography overrides vno.
+         Wrap at the call site, just as for named parsha milestones. -->
+    <xsl:function name="f:verse-number-label" as="xs:string">
+        <xsl:param name="s" as="xs:string"/>
+        <xsl:sequence select="if (matches($s, '\p{IsHebrew}'))
+                              then f:emit-bidi-mark($s) else f:escape-tex($s)"/>
     </xsl:function>
 
     <!-- A running-head mark, which the settings file can place in a slot of
