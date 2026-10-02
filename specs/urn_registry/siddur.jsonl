@@ -1093,3 +1093,70 @@
 {"urn": "urn:x-opensiddur:text:siddur:sukkot/text/ushpizin_invite", "status": "canonical", "label_en": "sukkot — text — ushpizin invite", "parent": "urn:x-opensiddur:text:siddur:sukkot/text"}
 {"urn": "urn:x-opensiddur:text:siddur:chanukah", "status": "canonical", "label_en": "chanukah"}
 {"urn": "urn:x-opensiddur:text:siddur:purim", "status": "canonical", "label_en": "purim"}
+{"urn": "urn:x-opensiddur:text:siddur:brit_milah", "status": "canonical", "label_en": "brit milah"}
+{"urn": "urn:x-opensiddur:text:siddur:brit_milah/grace", "status": "canonical", "label_en": "brit milah / grace", "parent": "urn:x-opensiddur:text:siddur:brit_milah"}
+{"urn": "urn:x-opensiddur:text:siddur:burial", "status": "canonical", "label_en": "burial"}
+{"urn": "urn:x-opensiddur:text:siddur:burial/chapel", "status": "canonical", "label_en": "burial / chapel", "parent": "urn:x-opensiddur:text:siddur:burial"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle", "status": "canonical", "label_en": "lifecycle"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text", "status": "canonical", "label_en": "lifecycle / text", "parent": "urn:x-opensiddur:text:siddur:lifecycle"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/burial_kaddish_oseh", "status": "canonical", "label_en": "lifecycle / text / burial kaddish oseh", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/burial_kaddish_peace", "status": "canonical", "label_en": "lifecycle / text / burial kaddish peace", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/burial_kaddish_praise", "status": "canonical", "label_en": "lifecycle / text / burial kaddish praise", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/burial_kaddish_response", "status": "canonical", "label_en": "lifecycle / text / burial kaddish response", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_genesis", "status": "canonical", "label_en": "lifecycle / text / haderekh genesis", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim", "status": "canonical", "label_en": "lifecycle / text / haderekh kohanim", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim/24", "status": "canonical", "label_en": "lifecycle / text / haderekh kohanim / 24", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim/25", "status": "canonical", "label_en": "lifecycle / text / haderekh kohanim / 25", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim/26", "status": "canonical", "label_en": "lifecycle / text / haderekh kohanim / 26", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_kohanim"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/1", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 1", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/10", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 10", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/11", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 11", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/12", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 12", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/13", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 13", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/14", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 14", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/15", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 15", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/16", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 16", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/2", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 2", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/3", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 3", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/4", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 4", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/5", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 5", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/6", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 6", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/7", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 7", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/8", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 8", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91/9", "status": "canonical", "label_en": "lifecycle / text / haderekh psalm91 / 9", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/haderekh_psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_all", "status": "canonical", "label_en": "lifecycle / text / milah all", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_elijah", "status": "canonical", "label_en": "lifecycle / text / milah elijah", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_grace_invitation", "status": "canonical", "label_en": "lifecycle / text / milah grace invitation", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_grace_response", "status": "canonical", "label_en": "lifecycle / text / milah grace response", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_name", "status": "canonical", "label_en": "lifecycle / text / milah name", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_ready", "status": "canonical", "label_en": "lifecycle / text / milah ready", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_response", "status": "canonical", "label_en": "lifecycle / text / milah response", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_verses", "status": "canonical", "label_en": "lifecycle / text / milah verses", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/milah_welcome", "status": "canonical", "label_en": "lifecycle / text / milah welcome", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_answer", "status": "canonical", "label_en": "lifecycle / text / pidyon answer", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_child_blessing", "status": "canonical", "label_en": "lifecycle / text / pidyon child blessing", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_closing", "status": "canonical", "label_en": "lifecycle / text / pidyon closing", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_exchange", "status": "canonical", "label_en": "lifecycle / text / pidyon exchange", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_present", "status": "canonical", "label_en": "lifecycle / text / pidyon present", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_question", "status": "canonical", "label_en": "lifecycle / text / pidyon question", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6", "status": "canonical", "label_en": "lifecycle / text / sick psalm6", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/10", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 10", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/11", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 11", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/2", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 2", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/3", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 3", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/4", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 4", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/5", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 5", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/6", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 6", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/7", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 7", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/8", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 8", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6/9", "status": "canonical", "label_en": "lifecycle / text / sick psalm6 / 9", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/sick_psalm6"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/tzidduk_job", "status": "canonical", "label_en": "lifecycle / text / tzidduk job", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/tzidduk_psalm78", "status": "canonical", "label_en": "lifecycle / text / tzidduk psalm78", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/tzidduk_psalm92", "status": "canonical", "label_en": "lifecycle / text / tzidduk psalm92", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text"}
+{"urn": "urn:x-opensiddur:text:siddur:pidyon_haben", "status": "canonical", "label_en": "pidyon haben"}
+{"urn": "urn:x-opensiddur:text:siddur:tefillah_lecholeh", "status": "canonical", "label_en": "tefillah lecholeh"}
+{"urn": "urn:x-opensiddur:text:siddur:tefillah_lecholeh/psalm23", "status": "canonical", "label_en": "tefillah lecholeh / psalm23", "parent": "urn:x-opensiddur:text:siddur:tefillah_lecholeh"}
+{"urn": "urn:x-opensiddur:text:siddur:tefillat_haderekh", "status": "canonical", "label_en": "tefillat haderekh"}
+{"urn": "urn:x-opensiddur:text:siddur:tefillat_haderekh/psalm91", "status": "canonical", "label_en": "tefillat haderekh / psalm91", "parent": "urn:x-opensiddur:text:siddur:tefillat_haderekh"}
+{"urn": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_present/shekel_hakodesh", "status": "canonical", "label_en": "lifecycle / text / pidyon present / shekel hakodesh", "parent": "urn:x-opensiddur:text:siddur:lifecycle/text/pidyon_present"}

@@ -951,3 +951,20 @@
 {"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/8", "status": "canonical", "label_en": "megillat hashmonaim — 8", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
 {"urn": "urn:x-opensiddur:text:prayer:megillat_hashmonaim/9", "status": "canonical", "label_en": "megillat hashmonaim — 9", "parent": "urn:x-opensiddur:text:prayer:megillat_hashmonaim"}
 {"urn": "urn:x-opensiddur:text:prayer:sheasah_nissim", "status": "canonical", "label_en": "sheasah nissim"}
+{"urn": "urn:x-opensiddur:text:prayer:al_hamilah", "status": "canonical", "label_en": "al hamilah"}
+{"urn": "urn:x-opensiddur:text:prayer:al_pidyon_haben", "status": "canonical", "label_en": "al pidyon haben"}
+{"urn": "urn:x-opensiddur:text:prayer:asher_kiddesh_yedid", "status": "canonical", "label_en": "asher kiddesh yedid"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/deitchadata", "status": "canonical", "label_en": "kaddish / deitchadata", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/deitchadata/opening", "status": "canonical", "label_en": "kaddish / deitchadata / opening", "parent": "urn:x-opensiddur:text:prayer:kaddish/deitchadata"}
+{"urn": "urn:x-opensiddur:text:prayer:lehachniso_bivrito", "status": "canonical", "label_en": "lehachniso bivrito"}
+{"urn": "urn:x-opensiddur:text:prayer:tefillat_haderekh", "status": "canonical", "label_en": "tefillat haderekh"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin", "status": "canonical", "label_en": "tzidduk hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/10", "status": "canonical", "label_en": "tzidduk hadin / 10", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/2", "status": "canonical", "label_en": "tzidduk hadin / 2", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/3", "status": "canonical", "label_en": "tzidduk hadin / 3", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/4", "status": "canonical", "label_en": "tzidduk hadin / 4", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/5", "status": "canonical", "label_en": "tzidduk hadin / 5", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/6", "status": "canonical", "label_en": "tzidduk hadin / 6", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/7", "status": "canonical", "label_en": "tzidduk hadin / 7", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/8", "status": "canonical", "label_en": "tzidduk hadin / 8", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}
+{"urn": "urn:x-opensiddur:text:prayer:tzidduk_hadin/9", "status": "canonical", "label_en": "tzidduk hadin / 9", "parent": "urn:x-opensiddur:text:prayer:tzidduk_hadin"}

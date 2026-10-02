@@ -1579,3 +1579,48 @@ three already-recorded unresolved JPS chapters. Visual review confirms Hebrew
 catchword direction, the untranslated stanza, and the Purim morning starting
 point without an empty conditional bracket. LaTeX overfull-box notices are confined
 to the existing legal/source metadata page, not these prayer texts.
+
+## Journey, illness, burial, Brit Milah and Pidyon Haben, printed 731–752 (IA n755–n776)
+
+All 22 leaves were read directly before consulting the secondary Hebrew
+transcription. `scan_reading/lifecycle/` preserves five initial reading files,
+68 reviewed bilingual text units, explicit corrections, initial/final comparisons,
+printed rubrics and 31 commentary/source-note paragraphs. The comparison files
+retain machine classifications; the accompanying scan adjudication explains the
+substantive differences, including third readings. No numerical claim of zero
+transcription differences is made from those classifications.
+
+The scan has the short Tefillat Haderekh, one closing verse of Psalm 91, Psalm 6
+starting at verse 2, and complete Psalm 23. It omits Wikisource’s added הנביא in
+the circumcision preparation and its modern Hebrew translations of the Pidyon
+Haben dialogue. The burial Kaddish prints one לעלא. Combined holam/shin dots retain
+both logical marks, including משה and שמרך. Enlarged scans corrected the initial
+reading of וידך, singular משפטך, חתני מולות דמים, and the Aramaic pointing.
+
+The eight chapel verses, Refa’enu, the wine blessing and Shehecheyanu exactly
+match the reused witnesses in both languages after whitespace normalization.
+The additional printings are recorded in their source descriptions. Complete new
+biblical verses and Psalm 23 receive canonical biblical URNs; existing differing
+witnesses retain local correspondence boundaries with biblical source references.
+Verse and stanza milestones leave the printed paragraph structure independent.
+The Psalm 91 page turn remains inside verse 11 on each side.
+
+The user corrected the burial rule: expanded burial Kaddish accompanies Tzidduk
+Hadin; otherwise regular Mourner’s Kaddish is recited. This editorial rule is
+recorded separately from Birnbaum’s printed rubrics. Both alternatives require a
+minyan. The caller uses the Tachanun calendar without the contextual mourning-house
+or circumcision overrides. Compiled scenarios confirm expanded-only on an ordinary
+day, regular-only in Nisan, and neither Kaddish without a minyan. Unknown settings
+retain the explanatory instructions and both alternatives.
+
+All 31 printed note paragraphs survive the parallel compile, in 30 apparatus
+entries: the adjacent Elijah commentary paragraphs on page 749 share a marker.
+The forward references to ordinary Grace After Meals remain references, since
+those pages are outside this installment. The parallel proof is
+`output/birnbaum_lifecycle/parallel.pdf`, with hierarchical bookmarks for the five
+sections and their component prayers/poems.
+
+Validation: 2,385 Birnbaum XML files pass RelaxNG and Schematron. Importer/registry
+regressions pass 354 tests and 2,432 subtests, including exact preservation of every
+reviewed text unit in both languages. Versification passes with the three previously
+recorded unresolved JPS chapters. The registry has no errors or warnings.
