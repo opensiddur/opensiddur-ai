@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from typing import Dict, Optional
 from pathlib import Path
 
-# Import the get_page function from the agent tools
+# Import the get_page function from the page utilities
 from opensiddur.importer.util.pages import default_sourcetexts_root, get_page
 
 

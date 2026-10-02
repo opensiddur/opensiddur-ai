@@ -212,6 +212,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version and the next `uv sync --all-groups` left a modified lockfile in the working tree — which
   then collides with the "must be clean" check the procedure opens with.
 
+### Removed
+- The unused LangGraph text-encoding agent (`opensiddur/importer/agent/`), along with the
+  dependencies only it used (`langgraph`, `langgraph-supervisor`, `langchain`, `langchain-openai`,
+  `langchain-community`, `diff-match-patch`) and those nothing used (`openai`, `chromadb`,
+  `unstructured`, `markdown`, `pyppeteer`).
+  `pyyaml` and `pypdf`, which the code imports but had only been installed through those
+  dependencies, are now declared directly.
+
 ## [0.3.0] - 2026-08-21
 
 ### Added

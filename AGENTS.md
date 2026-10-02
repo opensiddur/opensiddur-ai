@@ -147,10 +147,9 @@ sources/          →  importer/  →  project/       →  exporter/  →  PDF
 
 The compiler uses a **processing context state machine** — see `specs/COMPILER_SPECIFICATION.md` for the full spec. Each context on the stack has a `command` field (`COPY_AND_RECURSE`, `COPY_ELEMENT_AND_RECURSE`, `RECURSE`, `SKIP`, `COPY_TEXT_AND_RECURSE`) controlling element handling.
 
-**`opensiddur/importer/`** — Converts source texts to JLPTEI, with LLM-powered encoding agents.
+**`opensiddur/importer/`** — Converts source texts to JLPTEI.
 
-- `agent/`: LangGraph state machine for multi-page text encoding. Uses DeepInfra as the LLM backend (config in `importer/agent/common.py`). API keys stored in `opensiddur/private/`.
-- `jps1917/`: JPS 1917 Bible translation from Wikisource (MediaWiki → JLPTEI via LLM)
+- `jps1917/`: JPS 1917 Bible translation from Wikisource (MediaWiki → JLPTEI)
 - `birnbaum_siddur/`: Birnbaum ha-Siddur ha-Shalem, 1949, from three sources over one scan — Hebrew Wikisource (`wikisource.py`), English Wikisource (`en_wikisource.py`) and the Internet Archive's OCR (`internet_archive.py`), reconciled into `pages.json` by `correspondence.py` and sequenced by `download.py`
 - `wlc/`: Westminster Leningrad Codex (structured data → JLPTEI via XSLT)
 - `miqra_al_pi_hamasorah/`: Miqra al pi ha-Masorah (TSV/Wikidata → JLPTEI via XSLT)
@@ -212,7 +211,7 @@ and Hebrew/English alignment after regeneration.
 
 - Tests live in `opensiddur/tests/`, mirroring the package structure.
 - Write tests in `unittest` style.
-- Mock external calls (LLM APIs, file I/O where appropriate).
+- Mock external calls (network APIs, file I/O where appropriate).
 - The CI runs `unittest discover`, but `uv run pytest` also works locally.
 - A pile of validation failures in a new worktree usually means the schema has not been
   compiled yet — see the setup step at the top of Commands.
