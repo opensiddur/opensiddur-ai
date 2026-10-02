@@ -1692,3 +1692,28 @@ by biblical chapter and verse beside a translation divided by paragraph — they
 that contains them, and are set as a single row: one text beside the other, whole. That is usually not what was
 wanted, and the compiler warns when it happens; the remedy is to give both sides a common `@corresp`.
 
+
+### Page references in a generated edition
+
+Use an empty `tei:ref` with `type="page"` and an edition-qualified text URN:
+
+```xml
+<tei:note type="instruction" xml:lang="en">
+  <tei:seg type="optional-page-reference">Hallel (page
+    <tei:ref type="page" target="urn:x-opensiddur:text:prayer:hallel/blessing@birnbaum_ashkenaz_he_1949"/>)
+    is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.</tei:seg>
+</tei:note>
+```
+
+The PDF exporter locates the first surviving occurrence of the target correspondence
+in the specified source project, inserts a label there, and renders the reference
+with LaTeX `\pageref`. The final number is the page in the generated document,
+including separate Hebrew and English pages in parallel editions. Normal LaTeX
+reruns resolve forward references. Original `tei:pb/@n` remains source foliation.
+
+Wrap independently removable instruction text in
+`tei:seg type="optional-page-reference"`. If any of that span's page destinations
+is absent after compilation (including conditional filtering), the exporter omits
+the span. Keep independent directions outside it, or in separate spans. A missing
+page destination outside an optional span is an export error. Bibliographic
+citations to other books retain their original numbers.

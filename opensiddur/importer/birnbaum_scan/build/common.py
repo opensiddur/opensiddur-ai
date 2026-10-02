@@ -156,7 +156,8 @@ def document(*, body: str, lang: str, **kw) -> str:
 def write(project: str, name: str, text: str) -> Path:
     path = OUT / project / f"{name}.xml"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    from .page_references import dynamic_instructions
+    path.write_text(dynamic_instructions(text, project), encoding="utf-8")
     return path
 
 
