@@ -211,7 +211,8 @@ class TestParallelColumnGeometry(unittest.TestCase):
         advances = self._leading(
             left=f"AAA aaa aaa aaa aaa{_paragraph_break()} BBB bbb bbb",
             right=_FILLER,
-            macros="",
+            # The break's blank line is tagged for the column's widow and orphan rules.
+            macros=r"\newattribute\OSKeepAttr" + "\n" + _macro("OSKeepSep"),
         )
         self.assertEvenlyLeaded(advances)
 

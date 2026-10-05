@@ -3175,10 +3175,10 @@ class TestParallelHeadings(unittest.TestCase):
         columns, sat left of centre."""
         out = _transform(self._parallel(self.SAME, self.SAME))
         spanning = out.split(r"\begin{Leftside}")[0]
-        self.assertIn(r"{\parfillskip=0pt\relax", spanning)
+        self.assertIn(r"{\parfillskip=0pt\interlinepenalty=10000\relax", spanning)
         # The group closes with \par, so the setting cannot leak into what follows.
         self.assertIn(r"\par}", spanning)
-        self.assertLess(spanning.index(r"{\parfillskip=0pt\relax"),
+        self.assertLess(spanning.index(r"{\parfillskip=0pt\interlinepenalty=10000\relax"),
                         spanning.index(r"\OSheadA{"))
 
 class TestParallelInstructions(unittest.TestCase):
@@ -3355,15 +3355,15 @@ class TestParallelParagraphSpacing(unittest.TestCase):
         carries \\parskip glue, and that glue reaches the facing column."""
         out = _transform(self.TWO_PARAGRAPHS, layout="pairs")
         for side in self._sides(out):
-            self.assertIn(r"\par\skipnumbering\mbox{\strut}\par", side)
+            self.assertIn(r"\par\skipnumbering\OSKeepSep\par", side)
 
     def test_a_trailing_break_sets_no_blank_line(self):
         r"""A paragraph break is a terminator, so the last paragraph of a block carries one
         with nothing after it. Kept, it would set an empty row against \pend."""
         out = _transform(self.TWO_PARAGRAPHS, layout="pairs")
         for side in self._sides(out):
-            self.assertEqual(1, side.count(r"\par\skipnumbering\mbox{\strut}\par"))
-            self.assertNotRegex(side, r"\\mbox\{\\strut\}\\par\s*\\pend")
+            self.assertEqual(1, side.count(r"\par\skipnumbering\OSKeepSep\par"))
+            self.assertNotRegex(side, r"\\OSKeepSep\\par\s*\\pend")
 
     def test_parskip_is_zeroed_inside_both_columns(self):
         out = _transform(self.TWO_PARAGRAPHS, layout="pairs")
@@ -3381,8 +3381,8 @@ class TestParallelParagraphSpacing(unittest.TestCase):
             layout="pairs",
         )
         left, right = self._sides(out)
-        self.assertEqual(2, left.count(r"\par\skipnumbering\mbox{\strut}\par"))
-        self.assertEqual(0, right.count(r"\par\skipnumbering\mbox{\strut}\par"))
+        self.assertEqual(2, left.count(r"\par\skipnumbering\OSKeepSep\par"))
+        self.assertEqual(0, right.count(r"\par\skipnumbering\OSKeepSep\par"))
 
     def test_differing_paragraph_counts_still_pair_pstart_for_pstart(self):
         r"""The block stays the alignment unit. Paragraphs inside it are not pstarts, so
@@ -3465,7 +3465,7 @@ class TestPstartSkip(unittest.TestCase):
         material as column content and give it a full-width row of its own — a blank line
         per \pstart rather than a skip."""
         out = _transform(self.SINGLE)
-        self.assertIn(r"\AtEveryPstart*{\vspace{\OSPstartSkip}}", out)
+        self.assertIn(r"\AtEveryPstart*{\OSApplyKeep\vspace{\OSPstartSkip}}", out)
         self.assertNotIn(r"\AtEveryPstart{", out)
 
     def test_the_skip_is_halved_for_paired_columns(self):
@@ -3903,7 +3903,7 @@ class TestHeadingNotes(unittest.TestCase):
 
     def test_a_heading_set_across_the_page_without_notes_is_unchanged(self):
         body = self._body(self._parallel().replace(self.NOTE, ""), layout="pairs")
-        self.assertIn(r"{\parfillskip=0pt\relax \begin{hebrew}\OSheadA", body)
+        self.assertIn(r"{\parfillskip=0pt\interlinepenalty=10000\relax \begin{hebrew}\OSheadA", body)
 
     def test_a_suppressed_heading_keeps_the_note_on_its_placeholder_row(self):
         """Further into a block the heading is not hoisted; where the titles agree the
@@ -4312,3 +4312,96 @@ class TestRowsWithoutACounterpart(unittest.TestCase):
         body = self._body(self._sandwich((rubric("he"), rubric("en"))))
         self.assertEqual(1, body.count(r"\Columns"))
         self.assertEqual(2, body.count("On Hoshana Rabbah add:"))
+
+
+class TestKeepTogether(unittest.TestCase):
+    r"""What keeps lines and headings together across a page break (#198).
+
+    These check that the pieces are emitted; ``test_keep_together_geometry`` typesets
+    them and measures the pages.
+    """
+
+    SINGLE = """<?xml version="1.0" encoding="UTF-8"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+      <tei:text><tei:body>
+        <tei:div><tei:head>Title</tei:head><tei:head>Translation</tei:head>
+          <tei:p>Text</tei:p></tei:div>
+      </tei:body></tei:text>
+    </tei:TEI>"""
+
+    @staticmethod
+    def _parallel(left_title: str, right_title: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="en">
+          <tei:text><tei:body>
+            <p:parallel column-order="primary_first">
+              <p:parallelItem role="primary" xml:lang="en">
+                <tei:div><tei:head>{left_title}</tei:head>
+                  <tei:p>One</tei:p><tei:p>Two</tei:p></tei:div>
+              </p:parallelItem>
+              <p:parallelItem role="parallel" xml:lang="en">
+                <tei:div><tei:head>{right_title}</tei:head>
+                  <tei:p>Uno</tei:p></tei:div>
+              </p:parallelItem>
+            </p:parallel>
+          </tei:body></tei:text>
+        </tei:TEI>"""
+
+    @staticmethod
+    def _body(out: str) -> str:
+        return out.split(r"\begin{document}")[1]
+
+    def test_widows_and_orphans_are_forbidden(self):
+        out = _transform(self.SINGLE)
+        self.assertIn(r"\clubpenalty=10000 \widowpenalty=10000", out)
+
+    def test_a_heading_is_kept_whole_and_with_what_follows(self):
+        body = self._body(_transform(self.SINGLE))
+        opening = body.index(r"\begingroup\interlinepenalty=10000\relax")
+        self.assertLess(opening, body.index(r"\OSheadA{"))
+        self.assertIn(r"\pend\endgroup\OSKeepNext", body)
+        self.assertLess(body.index(r"\OSheadA{"), body.index(r"\pend\endgroup\OSKeepNext"))
+        self.assertLess(body.index(r"\pend\endgroup\OSKeepNext"), body.index("Text"))
+
+    def test_a_translated_title_cannot_be_broken_from_its_heading(self):
+        out = _transform(self.SINGLE)
+        self.assertIn(r"\newcommand{\OSheadTranslation}[1]{\par\nobreak", out)
+
+    def test_the_next_pstart_takes_the_keep(self):
+        out = _transform(self.SINGLE)
+        self.assertIn(r"\AtEveryPstart*{\OSApplyKeep\vspace{\OSPstartSkip}}", out)
+
+    def test_a_heading_across_the_page_is_kept_with_the_columns(self):
+        body = self._body(_transform(self._parallel("Same", "Same"), layout="pairs"))
+        spanning = body.split(r"\begin{pairs}")[0]
+        self.assertIn(r"\OSheadA{", spanning)
+        self.assertTrue(spanning.rstrip().endswith(r"\OSKeepNext"), spanning[-200:])
+
+    def test_a_heading_in_a_column_is_tagged_as_one(self):
+        body = self._body(_transform(self._parallel("Left", "Right"), layout="pairs",
+                                     **{"headings-from": "both"}))
+        for side in (r"\begin{Leftside}", r"\begin{Rightside}"):
+            with self.subTest(side=side):
+                column = body.split(side)[1].split(r"\end{")[0]
+                self.assertLess(column.index(r"\OSKeepHeadBegin"), column.index(r"\OSheadA{"))
+                self.assertLess(column.index(r"\OSheadA{"), column.index(r"\OSKeepHeadEnd\par"))
+
+    def test_a_paragraph_break_in_a_column_is_tagged_as_one(self):
+        body = self._body(_transform(self._parallel("Left", "Right"), layout="pairs"))
+        left = body.split(r"\begin{Leftside}")[1].split(r"\end{Leftside}")[0]
+        self.assertIn(r"\par\skipnumbering\OSKeepSep\par", left)
+
+    def test_the_column_rules_are_installed_for_each_column_layout(self):
+        for layout, patched in (("pairs", r"\apptocmd{\checkpb@columns}"),
+                                ("pages", r"\apptocmd{\checkpageL}")):
+            with self.subTest(layout=layout):
+                out = _transform(self._parallel("Left", "Right"), layout=layout)
+                self.assertIn("OSkeep = {", out)
+                self.assertIn(patched, out)
+
+    def test_no_column_rules_without_reledpar(self):
+        for source, params in ((self.SINGLE, {}),
+                               (self._parallel("Left", "Right"), {"layout": "interleaved"})):
+            with self.subTest(params=params):
+                self.assertNotIn("OSkeep = {", _transform(source, **params))
