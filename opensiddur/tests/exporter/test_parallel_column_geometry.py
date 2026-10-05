@@ -96,6 +96,11 @@ def _paragraph_break() -> str:
     return found.group(1).strip()
 
 
+# The exporter tags a rubric's lines and a paragraph break's blank line for its page-break
+# rules (#198), so the macros that set them name this attribute.
+_ATTRIBUTE = r"\newattribute\OSKeepAttr"
+
+
 def _macro(name: str) -> str:
     r"""The exporter's own definition of \<name>, verbatim."""
     for line in _preamble().splitlines():
@@ -211,7 +216,8 @@ class TestParallelColumnGeometry(unittest.TestCase):
         advances = self._leading(
             left=f"AAA aaa aaa aaa aaa{_paragraph_break()} BBB bbb bbb",
             right=_FILLER,
-            macros="",
+            # The break's blank line is tagged for the column's widow and orphan rules.
+            macros=_ATTRIBUTE + "\n" + _macro("OSKeepSep"),
         )
         self.assertEvenlyLeaded(advances)
 
@@ -219,7 +225,7 @@ class TestParallelColumnGeometry(unittest.TestCase):
         r"""Two rubrics in a row put two ``\newline`` together. The empty line between
         them has no height, so instead of becoming a row it left the glue before it on
         the shared list -- a 6pt gap through the middle of a word in the facing column."""
-        block = _macro("OSInstructionBlock")
+        block = _ATTRIBUTE + "\n" + _macro("OSInstructionBlock")
         advances = self._leading(
             left=r"\OSInstructionBlock{AAA aaa aaa aaa}\OSInstructionBlock{BBB bbb bbb}",
             right=_FILLER,
@@ -239,7 +245,7 @@ class TestParallelColumnGeometry(unittest.TestCase):
             work = Path(tmp)
             (work / "t.tex").write_text(
                 _DOCUMENT % {
-                    "macros": _macro("OSInstructionBlock") + "\n" + macros,
+                    "macros": _ATTRIBUTE + "\n" + _macro("OSInstructionBlock") + "\n" + macros,
                     "left": r"\par\mbox{}\par\OSInstructionBlock{" + rubric + "}",
                     "right": r"\par\mbox{}\par" + rubric,
                 }

@@ -343,7 +343,42 @@
         <!-- A division titled twice in two languages. The translated title is set under
              the first, lighter and a size down, so that it reads as naming the same
              section again rather than opening one of its own. -->
-        <xsl:text>\newcommand{\OSheadTranslation}[1]{\par\mbox{}\hfill{\normalfont\normalsize\itshape #1}\hfill\mbox{}}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSheadTranslation}[1]{\par\nobreak\mbox{}\hfill{\normalfont\normalsize\itshape #1}\hfill\mbox{}}&#10;</xsl:text>
+
+        <!-- Keeping a heading with what follows it (#198). A heading is a \pstart of its
+             own, and nothing ties one \pstart to the next: the \vspace the next one opens
+             with is a legal page break, so a heading could end a page. \OSKeepNext asks
+             the next \pstart to open with \nobreak instead, which the \AtEveryPstart*
+             hook below does with \OSApplyKeep.
+
+             The penalty goes in the next \pstart's hook rather than straight after the
+             heading's \pend because \pend leaves \write records for reledmac's line list
+             on the page after the lines. A \nobreak ahead of them would keep nothing: the
+             \vspace glue after them follows a whatsit, not a penalty, and can still
+             break. In the hook it sits directly in front of that glue.
+
+             \Columns runs the hook before the first row of a block too, so a heading set
+             across the page above the columns stays with them the same way. -->
+        <xsl:text>\newif\ifOSKeepNext&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSKeepNext}{\global\OSKeepNexttrue}&#10;</xsl:text>
+        <!-- \OSKeepRow is the same for the first row of a \Columns block, which reledpar
+             sets after records of its own; see column-keep-preamble. -->
+        <xsl:text>\newcommand{\OSKeepRow}{}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSApplyKeep}{\ifOSKeepNext\global\OSKeepNextfalse\nobreak\OSKeepRow\fi}&#10;</xsl:text>
+        <!-- Inside a parallel column the heading and the paragraphs around it are all one
+             \pstart, so the column's lines say for themselves what they are: a LuaTeX
+             attribute on what a line contains, 1 on a heading's lines (title, translation
+             or the placeholder for a title the other column sets), 2 on the blank line
+             that separates two paragraphs. See column-keep-preamble, which reads them.
+             An attribute rather than a \marks: a mark set in a line lands after the
+             line's box, and reledpar takes each line back off its column with \lastbox,
+             which then finds the mark instead and sets the line a row out of step.
+             \OSKeepSep draws its strut as a rule of its own: \strut copies \strutbox,
+             and a copy keeps the attributes it was made with, which are none. -->
+        <xsl:text>\newattribute\OSKeepAttr&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSKeepHeadBegin}{\OSKeepAttr=1\relax}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSKeepHeadEnd}{\unsetattribute\OSKeepAttr}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSKeepSep}{\mbox{\OSKeepAttr=2\relax\vrule width 0pt height\ht\strutbox depth\dp\strutbox}}&#10;</xsl:text>
 
         <!-- Title page (tei:titlePage).
              Unlike \OSheadA/B/C, these are never emitted inside a reledmac \pstart — a
@@ -394,7 +429,10 @@
              column alone — the facing column gives the same rubric run-in, because the
              rubric does not cross ITS direction — so the two copies of one rubric land on
              different rows and take four between them where two would do. -->
-        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\ifhmode\unskip\strut\newline\fi{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
+        <!-- The rubric's own lines are tagged (\OSKeepAttr 3) so that the page-break rules
+             keep it with the text it introduces (#198); see keep-preamble. Only the rubric:
+             the line ended before it and the \newline after it are not. -->
+        <xsl:text>\newcommand{\OSInstructionBlock}[1]{\ifhmode\unskip\strut\newline\fi{\OSKeepAttr=3\relax\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <!-- The same, for an instruction standing inside a paragraph rather than between
              two. A box the width of the line does not fit on a line that is already
              partly set: it overhangs the margin and the instruction runs off the page,
@@ -418,7 +456,7 @@
              column alone — the facing column gives the same rubric run-in, because the
              rubric does not cross ITS direction — so the two copies of one rubric land on
              different rows and take four between them where two would do. -->
-        <xsl:text>\newcommand{\OSInstructionLine}[1]{\ifhmode\unskip\strut\newline\fi{\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
+        <xsl:text>\newcommand{\OSInstructionLine}[1]{\ifhmode\unskip\strut\newline\fi{\OSKeepAttr=3\relax\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
         <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <!-- Conditional passages. Only markers whose condition could not be decided survive
              compilation: a decided condition is resolved away, its text either kept outright
@@ -604,6 +642,13 @@
              blemish; a line lying under its own line number is a defect. -->
         <xsl:text>\setlength{\emergencystretch}{3em}&#10;</xsl:text>
 
+        <!-- No widows and no orphans (#198): the first line of a paragraph never ends a
+             page, and its last line never begins one. reledmac zeroes these inside a
+             \pstart, but puts them back between a paragraph's lines itself when it sets
+             them, reading whatever is in force at that point, so set globally they reach
+             every numbered paragraph. LaTeX's 150 is a preference, not a rule. -->
+        <xsl:text>\clubpenalty=10000 \widowpenalty=10000 &#10;</xsl:text>
+
         <!-- The space between one \pstart and the next. reledmac \pstart groups do not
              take \parskip between them, so without this there is no space between
              parallel blocks at all and what looks like separation is only the shorter
@@ -631,9 +676,13 @@
                 <xsl:call-template name="interleaved-preamble"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:text>\AtEveryPstart*{\vspace{\OSPstartSkip}}&#10;</xsl:text>
+                <xsl:text>\AtEveryPstart*{\OSApplyKeep\vspace{\OSPstartSkip}}&#10;</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
+        <xsl:call-template name="keep-preamble"/>
+        <xsl:if test="$uses-reledpar">
+            <xsl:call-template name="column-keep-preamble"/>
+        </xsl:if>
 
         <!-- Font switches applied to the whole body, from typography.styles.body.
              Empty unless configured; emitted at the top of the document, where it
@@ -1016,7 +1065,7 @@
                          own, with numbering switched off around its one paragraph so that
                          neither of its lines takes a number. Headings without notes are
                          left as they were. -->
-                    <xsl:text>\beginnumbering&#10;{\numberlinefalse&#10;</xsl:text>
+                    <xsl:text>\beginnumbering&#10;{\numberlinefalse\interlinepenalty=10000\relax&#10;</xsl:text>
                     <xsl:if test="$is-hebrew">
                         <xsl:text>\begin{hebrew}&#10;</xsl:text>
                     </xsl:if>
@@ -1035,10 +1084,15 @@
                          reledmac zeroes \parfillskip inside a \pstart, which is why a
                          heading set in a column looks right and this one, set between
                          columns, did not. -->
-                    <xsl:text>{\parfillskip=0pt\relax </xsl:text>
+                    <xsl:text>{\parfillskip=0pt\interlinepenalty=10000\relax </xsl:text>
                     <xsl:if test="$is-hebrew">
                         <xsl:text>\begin{hebrew}</xsl:text>
                     </xsl:if>
+                    <!-- A rubric that ended the columns above may be waiting to be kept
+                         with this title. Its \nobreak goes after \begin{hebrew}, which
+                         writes a language record to the page, and a skip after a \write
+                         can break whatever penalty came before it. -->
+                    <xsl:text>\OSApplyKeep </xsl:text>
                     <xsl:value-of select="$titles"/>
                     <xsl:if test="$is-hebrew">
                         <xsl:text>\end{hebrew}</xsl:text>
@@ -1055,7 +1109,9 @@
                 else if ($bookmarks-from = 'alt' and exists($alt-head))
                 then string($alt-head/@title)
                 else string($head/@title))"/>
-            <xsl:text>}&#10;</xsl:text>
+            <!-- Not stranded above the columns it titles: \Columns opens the block with
+                 the \AtEveryPstart* hook, which keeps it with this. -->
+            <xsl:text>}\OSKeepNext&#10;</xsl:text>
         </xsl:if>
     </xsl:template>
 
@@ -1320,6 +1376,279 @@
         </xsl:if>
     </xsl:template>
 
+    <!-- Lines that must not be parted by a page break (#198), and the rules that read them.
+
+         reledmac and reledpar both set numbered text a line at a time, \vsplit-ting each
+         line off the box its \pstart was collected in. Before a line is set, OSkeep reads
+         the lines still waiting in that box: what each is (see \OSKeepAttr: a heading
+         line H, a paragraph separator S, a rubric line R, or text N), and whether the box
+         ends after it (E). A line with no text at all is a separator too: the \newline
+         that ends a rubric leaves one when the rubric ends its \pstart. A line cannot be broken after when it is:
+           * a heading line, so a heading is never split or left at the foot of a page;
+           * one of a rubric's last five lines, so a rubric of up to five lines stays
+             whole and with the text below it, and a longer one keeps at least its end
+             with it; or the first line of a rubric (orphan);
+           * a separator after a rubric, so the rubric is not left above a blank line;
+           * the first line of a paragraph, unless the paragraph is one line (orphan);
+           * the line before the last of a paragraph (widow).
+         A heading, a separator, a rubric or the start of a \pstart begins a paragraph;
+         any of them or the end of the box ends one.
+
+         Here, single-stream text: reledmac's own club and widow penalties already cover
+         its paragraphs, so what this adds is the rubric. reledmac puts a line's penalty
+         after it in \add@penalties; a bound line adds 10000 to it, and the last line of
+         a \pstart, which gets none, hands the keep on to the next one (\OSKeepNext).
+         reledpar's columns use the same rules; see column-keep-preamble.
+
+         Lua because TeX cannot look inside a box without taking it apart; it is written
+         without % or ~, which TeX would read first. -->
+    <xsl:template name="keep-preamble">
+        <xsl:text>\makeatletter&#10;</xsl:text>
+        <xsl:text>\newcount\OS@linebound&#10;</xsl:text>
+        <xsl:text>\directlua{&#10;</xsl:text>
+        <xsl:text>  OSkeep = {attr = luatexbase.attributes.OSKeepAttr, prev = {L = "start", R = "start", M = "start"}, held = {}, begun = {}, done = {}, cap = 10, tail = 5};&#10;</xsl:text>
+        <xsl:text>  local HLIST = node.id("hlist")&#10;</xsl:text>
+        <xsl:text>  local VLIST = node.id("vlist")&#10;</xsl:text>
+        <xsl:text>  local KIND = {[1] = "H", [2] = "S", [3] = "R"};&#10;</xsl:text>
+        <xsl:text>  local GLYPH = node.id("glyph")&#10;</xsl:text>
+        <xsl:text>  local function inked(head)&#10;</xsl:text>
+        <xsl:text>    for n in node.traverse(head) do&#10;</xsl:text>
+        <xsl:text>      if n.id == GLYPH then return true end&#10;</xsl:text>
+        <xsl:text>      if (n.id == HLIST or n.id == VLIST) and n.head and inked(n.head) then return true end&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    return false&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  local function tag(head)&#10;</xsl:text>
+        <xsl:text>    local found = 0&#10;</xsl:text>
+        <xsl:text>    for n in node.traverse(head) do&#10;</xsl:text>
+        <xsl:text>      local v = node.has_attribute(n, OSkeep.attr)&#10;</xsl:text>
+        <xsl:text>      if v and v > found then found = v end&#10;</xsl:text>
+        <xsl:text>      if (n.id == HLIST or n.id == VLIST) and n.head then&#10;</xsl:text>
+        <xsl:text>        local w = tag(n.head)&#10;</xsl:text>
+        <xsl:text>        if w > found then found = w end&#10;</xsl:text>
+        <xsl:text>      end&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    return found&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  function OSkeep.lines(boxnum, count)&#10;</xsl:text>
+        <xsl:text>    local kinds, heights, n = {}, {}, 0&#10;</xsl:text>
+        <xsl:text>    local box = boxnum >= 0 and tex.box[boxnum]&#10;</xsl:text>
+        <xsl:text>    if box and box.head then&#10;</xsl:text>
+        <xsl:text>      for item in node.traverse_id(HLIST, box.head) do&#10;</xsl:text>
+        <xsl:text>        if n >= count then return kinds, heights end&#10;</xsl:text>
+        <xsl:text>        n = n + 1&#10;</xsl:text>
+        <xsl:text>        local t = item.head and tag(item.head) or 0&#10;</xsl:text>
+        <xsl:text>        kinds[n] = KIND[t] or ((item.head and inked(item.head)) and "N" or "S")&#10;</xsl:text>
+        <xsl:text>        heights[n] = item.height + item.depth&#10;</xsl:text>
+        <xsl:text>      end&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    kinds[n + 1] = "E"&#10;</xsl:text>
+        <xsl:text>    return kinds, heights&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  local function edge(x)&#10;</xsl:text>
+        <xsl:text>    return x == "start" or x == "S" or x == "H" or x == "R"&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  function OSkeep.bound(k, j, prev)&#10;</xsl:text>
+        <xsl:text>    local a, b, c = k[j], k[j + 1], k[j + 2]&#10;</xsl:text>
+        <xsl:text>    local before = (j == 1) and prev or k[j - 1]&#10;</xsl:text>
+        <xsl:text>    if a == "H" then return true end&#10;</xsl:text>
+        <xsl:text>    if a == "S" then return before == "R" end&#10;</xsl:text>
+        <xsl:text>    if a == "R" then&#10;</xsl:text>
+        <xsl:text>      if b == "R" and not (before == "R") then return true end&#10;</xsl:text>
+        <xsl:text>      local r = 1&#10;</xsl:text>
+        <xsl:text>      while k[j + r] == "R" do r = r + 1 end&#10;</xsl:text>
+        <xsl:text>      return not (k[j + r] == nil) and r &lt;= OSkeep.tail&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    if not (a == "N" and b == "N") then return false end&#10;</xsl:text>
+        <xsl:text>    if edge(before) then return true end&#10;</xsl:text>
+        <xsl:text>    return c == "E" or c == "S" or c == "H" or c == "R"&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  function OSkeep.single(boxnum)&#10;</xsl:text>
+        <xsl:text>    local k = OSkeep.lines(boxnum, OSkeep.tail + 3)&#10;</xsl:text>
+        <xsl:text>    local held = OSkeep.bound(k, 1, OSkeep.prev.M)&#10;</xsl:text>
+        <xsl:text>    OSkeep.prev.M = (k[2] == "E") and "start" or k[1]&#10;</xsl:text>
+        <xsl:text>    tex.setcount("global", "OS@linebound", held and ((k[2] == "E") and 2 or 1) or 0)&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:text>\appto\do@linehook{\directlua{OSkeep.single(\number\raw@text)}}&#10;</xsl:text>
+        <xsl:text>\patchcmd{\add@penalties}{\@l@dtempcnta=\ballast@count}{\@l@dtempcnta=\ballast@count\ifnum\OS@linebound>\z@\advance\@l@dtempcnta 10000 \fi}{}{\PackageError{opensiddur}{could not patch reledmac's add@penalties}{}}&#10;</xsl:text>
+        <xsl:text>\apptocmd{\add@penalties}{\ifnum\OS@linebound>\@ne\OSKeepNext\fi}{}{\PackageError{opensiddur}{could not patch reledmac's add@penalties}{}}&#10;</xsl:text>
+        <xsl:text>\makeatother&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- The same rules inside reledpar's columns (#198); see keep-preamble for the rules.
+
+         Neither column layout honours a penalty between lines: \Columns runs with every
+         penalty zeroed and stacks rows that can break between any two, and \Pages ignores
+         penalties altogether and decides each page itself, ending it when \pagetotal
+         reaches its goal. And every paragraph, heading and rubric of a column is one
+         \pstart, so reledmac's own club and widow penalties, which work per \pstart,
+         never see them either.
+
+         \Columns: if either column's line in a row must not be broken after, the row is
+         followed by \nobreak. A heading or rubric that ends its block also asks the next
+         block to keep with it, as a heading set between \pstarts does.
+         \Pages: before each line, the run of lines that must stay together from it is
+         measured, and if the last of them would not fit, reledpar is told the page is
+         full, so the whole run starts the next one. A run that reaches the end of its
+         block continues into the next block only when the facing page ends the block no
+         lower: otherwise reledpar pads this page with blank lines until the facing page
+         catches up, and the rubric is parted from its text by them anyway. The verso is
+         set before its recto, so for the verso that is a projection from the lines the
+         recto has left; the recto knows where the verso ended (OSkeep.done), or that it
+         has not, in which case the verso runs on past this spread and the recto pads.
+
+         Either way at most ten lines are bound together, so a column made of nothing
+         else still breaks somewhere. -->
+    <xsl:template name="column-keep-preamble">
+        <xsl:text>\makeatletter&#10;</xsl:text>
+        <xsl:text>\newcount\OS@rowkeep&#10;</xsl:text>
+        <xsl:text>\newcount\OS@keeprun&#10;</xsl:text>
+        <xsl:text>\newdimen\OS@chainht&#10;</xsl:text>
+        <xsl:text>\newcount\OS@chainlines&#10;</xsl:text>
+        <xsl:text>\newcount\OS@pagelines&#10;</xsl:text>
+        <xsl:text>\directlua{&#10;</xsl:text>
+        <xsl:text>  local function spread() return math.floor(tex.count["c@page"] / 2) end&#10;</xsl:text>
+        <xsl:text>  local function height(k, h, upto)&#10;</xsl:text>
+        <xsl:text>    local line, gap, total = tex.getglue("baselineskip"), tex.getglue("lineskip"), 0&#10;</xsl:text>
+        <xsl:text>    for i = 1, upto do total = total + math.max(line, h[i] + gap) end&#10;</xsl:text>
+        <xsl:text>    return total&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  function OSkeep.line(side, boxnum)&#10;</xsl:text>
+        <xsl:text>    local k, h = OSkeep.lines(boxnum, OSkeep.tail + 3)&#10;</xsl:text>
+        <xsl:text>    OSkeep.held[side] = OSkeep.bound(k, 1, OSkeep.prev[side])&#10;</xsl:text>
+        <xsl:text>    if OSkeep.held[side] then tex.setcount("global", "OS@rowkeep", 1) end&#10;</xsl:text>
+        <xsl:text>    if OSkeep.prev[side] == "start" then&#10;</xsl:text>
+        <xsl:text>      OSkeep.begun[side] = {spread = spread(), pt = tex.pagetotal};&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    if k[2] == "E" then&#10;</xsl:text>
+        <xsl:text>      OSkeep.done[side] = {spread = spread(), pt = tex.pagetotal + height(k, h, 1)};&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    OSkeep.prev[side] = (k[2] == "E") and "start" or k[1]&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  local function clear(side, facing, finish)&#10;</xsl:text>
+        <xsl:text>    local other = (side == "L") and "R" or "L"&#10;</xsl:text>
+        <xsl:text>    local slack = 2 * 65536&#10;</xsl:text>
+        <xsl:text>    local fk, fh = OSkeep.lines(facing, 60)&#10;</xsl:text>
+        <xsl:text>    local n = 0&#10;</xsl:text>
+        <xsl:text>    while fk[n + 1] and not (fk[n + 1] == "E") do n = n + 1 end&#10;</xsl:text>
+        <xsl:text>    if not fk[n + 1] then return false end&#10;</xsl:text>
+        <xsl:text>    if n == 0 then&#10;</xsl:text>
+        <xsl:text>      local d = OSkeep.done[other]&#10;</xsl:text>
+        <xsl:text>      if not d or d.spread &lt; spread() then return true end&#10;</xsl:text>
+        <xsl:text>      return d.pt &lt;= finish + slack&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    if side == "R" then return false end&#10;</xsl:text>
+        <xsl:text>    local b = OSkeep.begun[side]&#10;</xsl:text>
+        <xsl:text>    local start = (b and b.spread == spread()) and b.pt or 0&#10;</xsl:text>
+        <xsl:text>    return start + height(fk, fh, n) &lt;= finish + slack&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>  function OSkeep.chain(side, boxnum, nextnum, facing)&#10;</xsl:text>
+        <xsl:text>    tex.setcount("global", "OS@chainlines", 1)&#10;</xsl:text>
+        <xsl:text>    if OSkeep.held[side] then return end&#10;</xsl:text>
+        <xsl:text>    local line = tex.getglue("baselineskip")&#10;</xsl:text>
+        <xsl:text>    local gap = tex.getglue("lineskip")&#10;</xsl:text>
+        <xsl:text>    local skip = tex.getglue("parskip")&#10;</xsl:text>
+        <xsl:text>    local prev = OSkeep.prev[side]&#10;</xsl:text>
+        <xsl:text>    local total = (prev == "start") and skip or 0&#10;</xsl:text>
+        <xsl:text>    local k, h = OSkeep.lines(boxnum, OSkeep.cap + OSkeep.tail + 2)&#10;</xsl:text>
+        <xsl:text>    local j, count = 1, 1&#10;</xsl:text>
+        <xsl:text>    while count &lt; OSkeep.cap and k[j] and not (k[j] == "E") and OSkeep.bound(k, j, prev) do&#10;</xsl:text>
+        <xsl:text>      if k[j + 1] == "E" then&#10;</xsl:text>
+        <xsl:text>        local finish = tex.pagetotal + total + math.max(line, h[j] + gap)&#10;</xsl:text>
+        <xsl:text>        if nextnum &lt; 0 or not clear(side, facing, finish) then break end&#10;</xsl:text>
+        <xsl:text>        local k2, h2 = OSkeep.lines(nextnum, OSkeep.cap + OSkeep.tail + 2)&#10;</xsl:text>
+        <xsl:text>        if k2[1] == "E" then break end&#10;</xsl:text>
+        <xsl:text>        total = total + math.max(line, h[j] + gap) + skip&#10;</xsl:text>
+        <xsl:text>        k, h, j, prev, nextnum = k2, h2, 1, "start", -1&#10;</xsl:text>
+        <xsl:text>      else&#10;</xsl:text>
+        <xsl:text>        total = total + math.max(line, h[j] + gap)&#10;</xsl:text>
+        <xsl:text>        j = j + 1&#10;</xsl:text>
+        <xsl:text>      end&#10;</xsl:text>
+        <xsl:text>      count = count + 1&#10;</xsl:text>
+        <xsl:text>    end&#10;</xsl:text>
+        <xsl:text>    tex.setcount("global", "OS@chainlines", count)&#10;</xsl:text>
+        <xsl:text>    tex.setdimen("global", "OS@chainht", total)&#10;</xsl:text>
+        <xsl:text>  end&#10;</xsl:text>
+        <xsl:text>}&#10;</xsl:text>
+        <xsl:text>\appto\do@lineLhook{\directlua{OSkeep.line("L", \number\namebox{l@dLcolrawbox\the\l@dpscL})}}&#10;</xsl:text>
+        <xsl:text>\appto\do@lineRhook{\directlua{OSkeep.line("R", \number\namebox{l@dRcolrawbox\the\l@dpscR})}}&#10;</xsl:text>
+        <xsl:choose>
+            <xsl:when test="$facing-pages">
+                <!-- The register number of a side's raw box for the \pstart numbered #2,
+                     or -1 if there is none yet. OSkeep.chain is given this side's box, the
+                     next one, and the facing side's box for the same \pstart.
+
+                     The next box is read only by a run that reaches the end of this one,
+                     never while this side is being padded: its own box is empty then and
+                     there is no run. Measuring the next \pstart from padding ended padded
+                     pages early and put that \pstart lower on one side than the other.
+                     Otherwise the next \pstart is measured once it is current, before its
+                     first line, with the skip that opens it (see \OSPstartSkip). -->
+                <xsl:text>\newcommand*{\OS@rawbox}[2]{\ifcsname l@d#1colrawbox\the\numexpr#2\relax\endcsname\number\csname l@d#1colrawbox\the\numexpr#2\relax\endcsname\else -1\fi}&#10;</xsl:text>
+                <!-- \OS@chainlines is the number of lines in the run and \OS@chainht the
+                     height of all but its last. reledpar sets a line whenever \pagetotal is
+                     still short of its goal, so the run fits if its last line would still be
+                     allowed. It also stops a page at the number of lines the facing page
+                     held on the last pass (\l@dminpagelines), so the run must fit under
+                     that count too.
+
+                     The page is ended the way reledpar ends one at that count, not as a
+                     full page: a full page's count is what the facing page is held to on
+                     the next pass, and recording these early ends there would cut the
+                     facing page short at a line of its own that may be bound, which moves
+                     the next pass's breaks, and so on, every pass undoing the last.
+
+                     Never after a line that is itself bound to the next: by then it is too
+                     late to move the run, and ending the page there would make the very
+                     break the run exists to prevent. The run is measured before its first
+                     line for that reason, including the first line of a \pstart. -->
+                <xsl:for-each select="'L', 'R'">
+                    <xsl:text>\apptocmd{\checkpage</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>}{\ifl@dsamepage\ifnum\numpagelines</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>>\z@\directlua{OSkeep.chain("</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>", \OS@rawbox{</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>}{\l@dpsc</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>}, \OS@rawbox{</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>}{\l@dpsc</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>+1}, \OS@rawbox{</xsl:text><xsl:value-of select="if (. = 'L') then 'R' else 'L'"/>
+                    <xsl:text>}{\l@dpsc</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>})}\ifnum\OS@chainlines>\@ne\dimen@=\pagetotal\advance\dimen@\OS@chainht\OS@pagelines=\numpagelines</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>\advance\OS@pagelines\OS@chainlines\ifdim\dimen@&lt;\ledthegoal\ifnomaxlines\else\ifnum\OS@pagelines>\l@dminpagelines\l@dsamepagefalse\l@dpagefullfalse\fi\fi\else\l@dsamepagefalse\l@dpagefullfalse\fi\fi\fi\fi}{}{\PackageError{opensiddur}{could not patch reledpar's checkpage</xsl:text>
+                    <xsl:value-of select="."/>
+                    <xsl:text>}{}}&#10;</xsl:text>
+                </xsl:for-each>
+            </xsl:when>
+            <xsl:otherwise>
+                <!-- \checkpb@columns runs after every row: it settles whether the row
+                     just set may be broken after, and the last row of a block hands that
+                     on to the next block (\OSKeepNext). The \nobreak itself goes in front
+                     of the next row's box, where that row's interline glue follows it
+                     directly; a penalty only stops glue breaking when nothing stands
+                     between them.
+
+                     Taking a line off its column also puts what came with it on the page:
+                     a language record (a \write) and the empty \splittopskip glue \vsplit
+                     starts each piece with. That glue follows a \write and is therefore a
+                     legal break whatever penalties surround it. It is empty, so it goes. -->
+                <xsl:for-each select="'L', 'R'">
+                    <xsl:text>\patchcmd{\do@line</xsl:text><xsl:value-of select="."/>
+                    <xsl:text>}{\global\setbox\one@line</xsl:text><xsl:value-of select="if (. = 'R') then 'R' else ''"/>
+                    <xsl:text>=\lastbox}{\global\setbox\one@line</xsl:text><xsl:value-of select="if (. = 'R') then 'R' else ''"/>
+                    <xsl:text>=\lastbox\unskip}{}{\PackageError{opensiddur}{could not patch reledpar's do@line</xsl:text>
+                    <xsl:value-of select="."/>
+                    <xsl:text>}{}}&#10;</xsl:text>
+                </xsl:for-each>
+                <xsl:text>\newcount\OS@rowbound&#10;</xsl:text>
+                <xsl:text>\renewcommand{\OSKeepRow}{\global\OS@rowbound\@ne}&#10;</xsl:text>
+                <xsl:text>\apptocmd{\checkpb@columns}{\global\OS@rowbound\z@\ifnum\OS@rowkeep>\z@\global\OS@rowkeep\z@\global\advance\OS@keeprun\@ne\ifnum\OS@keeprun&lt;10 \ifaraw@text\global\OS@rowbound\@ne\else\OSKeepNext\fi\else\global\OS@keeprun\z@\fi\else\global\OS@keeprun\z@\fi}{}{\PackageError{opensiddur}{could not patch reledpar's checkpb@columns}{}}&#10;</xsl:text>
+                <xsl:text>\patchcmd{\OSreledparColumnsOrig}{\hb@xt@ \hsize}{\ifnum\OS@rowbound>\z@\nobreak\fi\hb@xt@ \hsize}{}{\PackageError{opensiddur}{could not patch reledpar's Columns}{}}&#10;</xsl:text>
+                <xsl:text>\pretocmd{\OSreledparColumnsOrig}{\global\OS@rowbound\z@\global\OS@keeprun\z@}{}{\PackageError{opensiddur}{could not patch reledpar's Columns}{}}&#10;</xsl:text>
+            </xsl:otherwise>
+        </xsl:choose>
+        <xsl:text>\makeatother&#10;</xsl:text>
+    </xsl:template>
+
     <!-- ====================================================================
          Interleaved: one numbered stream, each block followed by its translation.
          ==================================================================== -->
@@ -1350,7 +1679,7 @@
         <xsl:text>\newenvironment{OSInterleavedTranslation}{\OSInterleavedNumbering\OSInterleavedSize\advance\leftskip\OSInterleavedIndent\relax\advance\rightskip\OSInterleavedIndent\relax}{}&#10;</xsl:text>
         <xsl:text>\newif\ifOSInterleavedSeam&#10;</xsl:text>
         <xsl:text>\newcommand{\OSInterleavedSeam}{\global\OSInterleavedSeamtrue}&#10;</xsl:text>
-        <xsl:text>\AtEveryPstart*{\ifOSInterleavedSeam\global\OSInterleavedSeamfalse\vspace{\OSInterleavedSpacing}\else\vspace{\OSPstartSkip}\fi}&#10;</xsl:text>
+        <xsl:text>\AtEveryPstart*{\OSApplyKeep\ifOSInterleavedSeam\global\OSInterleavedSeamfalse\vspace{\OSInterleavedSpacing}\else\vspace{\OSPstartSkip}\fi}&#10;</xsl:text>
     </xsl:template>
 
     <!-- A run of parallel blocks set one after another in a single numbered section:
@@ -1984,6 +2313,10 @@
                                     <xsl:call-template name="pstart"/>
                                 </xsl:otherwise>
                             </xsl:choose>
+                            <!-- Tagged as a heading, every line of it, so that the
+                                 column keeps it whole and with what follows; see
+                                 column-keep-preamble. -->
+                            <xsl:text>\OSKeepHeadBegin </xsl:text>
                             <xsl:call-template name="heading">
                                 <xsl:with-param name="stream" select="$stream"/>
                                 <xsl:with-param name="has-alt-column"
@@ -1993,7 +2326,7 @@
                                 <xsl:with-param name="notes"
                                                 select="f:own-head-notes(., $notes-by-div, $hoisted-divs)"/>
                             </xsl:call-template>
-                            <xsl:text>\par&#10;</xsl:text>
+                            <xsl:text>\OSKeepHeadEnd\par&#10;</xsl:text>
                             <xsl:next-iteration>
                                 <xsl:with-param name="in-pstart" select="true()"/>
                             </xsl:next-iteration>
@@ -2027,7 +2360,10 @@
                                 <xsl:text>\pend&#10;</xsl:text>
                             </xsl:if>
                             <!-- The heading gets its own paragraph in the numbered stream,
-                                 excluded from line numbering. -->
+                                 excluded from line numbering. It is kept whole, however
+                                 many lines its title and translation run to, and kept
+                                 with the paragraph after it; see \OSKeepNext. -->
+                            <xsl:text>\begingroup\interlinepenalty=10000\relax&#10;</xsl:text>
                             <xsl:call-template name="pstart"/><xsl:text>\skipnumbering&#10;</xsl:text>
                             <xsl:call-template name="heading">
                                 <xsl:with-param name="stream" select="$stream"/>
@@ -2038,7 +2374,7 @@
                                 <xsl:with-param name="notes"
                                                 select="f:own-head-notes(., $notes-by-div, $hoisted-divs)"/>
                             </xsl:call-template>
-                            <xsl:text>&#10;\pend&#10;</xsl:text>
+                            <xsl:text>&#10;\pend\endgroup\OSKeepNext&#10;</xsl:text>
                             <xsl:next-iteration>
                                 <xsl:with-param name="in-pstart" select="false()"/>
                             </xsl:next-iteration>
@@ -2128,8 +2464,12 @@
                                  glue is then \unvbox-ed onto the shared page list — the
                                  very displacement this is meant to avoid. A strut gives
                                  the line the height and depth of ordinary text, so the
-                                 slice ends where the machinery expects. -->
-                            <xsl:text>\par\skipnumbering\mbox{\strut}\par&#10;</xsl:text>
+                                 slice ends where the machinery expects.
+
+                                 \OSKeepSep is that \mbox{\strut}, tagged as a separator
+                                 so the column's widow and orphan rules can see where its
+                                 paragraphs end; see column-keep-preamble. -->
+                            <xsl:text>\par\skipnumbering\OSKeepSep\par&#10;</xsl:text>
                             <xsl:next-iteration>
                                 <xsl:with-param name="in-pstart" select="true()"/>
                             </xsl:next-iteration>

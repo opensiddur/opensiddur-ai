@@ -455,7 +455,7 @@ def _styles_section(config: TypographyConfig) -> list[str]:
     # it takes one style rather than four.
     emit(
         "heading_translation",
-        lambda s: r"\renewcommand{\OSheadTranslation}[1]{\par"
+        lambda s: r"\renewcommand{\OSheadTranslation}[1]{\par\nobreak"
         + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
         + "}",
     )

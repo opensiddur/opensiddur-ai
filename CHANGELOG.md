@@ -18,6 +18,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   where it belongs, parses, matches the schema, names a project and file that exist, and has an
   installed font for every font chain it will be set with.
 
+### Fixed
+- Page breaks no longer strand a line or a heading in the PDF (#198). The last line of a
+  paragraph no longer opens a page and its first line no longer closes one. A heading,
+  together with its translated title, stays whole and on the same page as at least the first
+  lines of what it heads. Each layout needed its own fix. In single-stream text, LaTeX's club
+  and widow penalties of 150 were preferences, not rules, and nothing tied a heading's
+  `\pstart` to the next. Under `pairs`, reledpar sets a column with every penalty zeroed, and a
+  column's paragraphs and headings are all one `\pstart`, so the column's lines are now tagged
+  and read back before each row is set. Under `pages`, reledpar ends each page itself by
+  counting, so the same reading tells it to end a page early when the lines that must stay
+  together would not fit.
+- A rubric set on lines of its own is no longer left at the foot of a page with the text it
+  introduces on the next. A rubric of up to five lines stays whole with that text, and a longer
+  one keeps at least its last five lines with it. This also holds when the rubric ends its
+  block, as "Reader:" and "Chanted on the eighth day of Sukkoth during Musaf" do in the
+  Birnbaum compiles, and the text, or the heading over it, starts the next block. One case is
+  not covered under `pages`: a rubric that ends its block while the facing page runs on further.
+  reledpar then pads the rubric's page with blank lines until the facing page catches up, so
+  the rubric is parted from its text by that padding anyway.
+
 ## [0.4.0] - 2026-10-02
 
 ### Added
