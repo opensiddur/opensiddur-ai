@@ -1,7 +1,7 @@
 """Version parsing and bumping.
 
-Below 1.0.0 every release bumps the minor version and backwards compatibility is not
-promised. From 1.0.0 on the project follows semantic versioning strictly, so the bump
+Below 1.0.0 a release bumps the minor version by default, or the patch version for a
+release that only fixes bugs, and backwards compatibility is not promised. From 1.0.0 on the project follows semantic versioning strictly, so the bump
 level must be chosen deliberately rather than defaulted.
 """
 

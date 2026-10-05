@@ -7,8 +7,10 @@ release fully identifies the code and the data it was built and tested against. 
 
 ## Versioning policy
 
-- **0.x series** (current): every release bumps the **minor** version
+- **0.x series** (current): a release normally bumps the **minor** version
   (`0.1.0 -> 0.2.0 -> 0.3.0 ...`). Backwards compatibility is not promised between releases.
+  A release that only fixes bugs in the previous one, and adds nothing else, bumps the
+  **patch** version instead (`0.5.0 -> 0.5.1`); cut it with `--patch`.
 - **1.0.0 and above**: strict [Semantic Versioning](https://semver.org/). Choose the bump level
   deliberately — major for incompatible changes, minor for backwards-compatible features, patch
   for backwards-compatible fixes.
@@ -60,7 +62,7 @@ uv run python -m opensiddur.release
 
 Flags:
 - `--minor` / `--major` / `--patch` — choose the bump level. Below 1.0.0 this defaults to
-  `--minor`; at 1.0.0 and above one of these (or `--version`) is required.
+  `--minor` (pass `--patch` for a bugfix release); at 1.0.0 and above one of these (or `--version`) is required.
 - `--version X.Y.Z` — release an exact version instead of bumping.
 - `--no-publish` — tag and push, but skip creating the GitHub Release.
 - `--dry-run` — as above.
