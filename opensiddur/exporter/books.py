@@ -18,6 +18,7 @@ the compiler reads it from its default location.
 """
 
 import argparse
+import json
 import subprocess
 import sys
 import tempfile
@@ -196,8 +197,12 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="Where to write the PDFs and per-book logs (default: ./books).")
     parser.add_argument("--suffix", default=None,
                         help="Appended to each PDF name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
-    parser.add_argument("--check", action="store_true",
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--check", action="store_true",
                         help="Only validate the settings, the books they name and their fonts; build nothing.")
+    action.add_argument("--list", action="store_true",
+                        help="Print the names of the settings files (e.g. humash/annual) as a JSON list; "
+                             "build nothing. The release workflow builds one book per name.")
     args = parser.parse_args(argv)
 
     project_directory = args.project_directory.resolve()
@@ -208,6 +213,9 @@ def main(argv: Optional[list[str]] = None) -> int:
             settings_files = _select(settings_files, settings_directory, args.names)
         except LookupError as e:
             parser.error(f"no book or settings file named {e.args[0]} in {settings_directory}")
+    if args.list:
+        print(json.dumps([book_name(f, settings_directory) for f in settings_files]))
+        return 0
     if not settings_files:
         print(f"No settings files in {settings_directory}")
         return 0

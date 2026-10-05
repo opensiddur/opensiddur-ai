@@ -3,8 +3,10 @@ name: Release books
 # Builds a printed book (PDF) for every settings file in opensiddur-projects/settings/<book>/, at the
 # opensiddur-projects commit the release pins, and attaches them to the release (opensiddur-ai#153).
 #
-# A book that fails to build is left out and the others are still attached; the run then fails,
-# so a release with missing books shows red. Rerun for a tag with workflow_dispatch.
+# One job lists the settings files; each is then built by its own run of release-book.yml, so a
+# book has its own log, status and timeout, and a failing or slow book holds up no other. A book
+# that fails is not attached and its job fails, so a release with missing books shows red.
+# Rebuild everything for a tag with workflow_dispatch here, or one book with release-book.yml.
 
 on:
   release:
@@ -24,13 +26,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  books:
+  discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
-      GH_TOKEN: ${{ github.token }}
+    outputs:
+      tag: ${{ env.TAG }}
+      books: ${{ steps.list.outputs.books }}
 
     steps:
       - name: Checkout the release
@@ -38,21 +41,11 @@ jobs:
         with:
           ref: refs/tags/${{ env.TAG }}
 
-      # .gitmodules uses SSH URLs, which the runner can't use. Only opensiddur-projects is
-      # needed: the books are built from it, not from sourcetexts.
+      # .gitmodules uses SSH URLs, which the runner can't use.
       - name: Checkout pinned opensiddur-projects
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           git submodule update --init --depth 1 opensiddur-projects
-
-      - name: Install TeX
-        run: sudo bash opensiddur/exporter/tex/install-tex.sh
-
-      - name: Install fonts
-        run: |
-          sudo apt-get install --no-install-recommends --no-install-suggests -y \
-            culmus fonts-linuxlibertine fonts-sil-ezra fonts-freefont-otf
-          fc-cache -f
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -67,37 +60,22 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Build reference database
-        run: uv run python -m opensiddur.exporter.refdb
-
-      - name: Build books
-        id: build
-        continue-on-error: true
+      - name: List settings files
+        id: list
         run: |
-          uv run python -m opensiddur.exporter.books \
-            --output-directory "$RUNNER_TEMP/books" --suffix "$TAG"
+          books=$(uv run python -m opensiddur.exporter.books --list)
+          echo "Books: $books"
+          echo "books=$books" >> "$GITHUB_OUTPUT"
 
-      - name: Attach books to the release
-        if: always()
-        run: |
-          shopt -s nullglob
-          pdfs=("$RUNNER_TEMP"/books/*.pdf)
-          if [ ${#pdfs[@]} -eq 0 ]; then
-            echo "No books were built."
-            exit 0
-          fi
-          gh release upload "$TAG" "${pdfs[@]}" --clobber
-
-      - name: Keep build logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: book-logs-${{ env.TAG }}
-          path: ${{ runner.temp }}/books/*.log
-          if-no-files-found: ignore
-
-      - name: Fail if any book failed
-        if: steps.build.outcome != 'success'
-        run: |
-          echo "At least one book failed to build; see the Build books step and the book-logs artifact."
-          exit 1
+  build:
+    needs: discover
+    if: needs.discover.outputs.books != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        book: ${{ fromJSON(needs.discover.outputs.books) }}
+    name: ${{ matrix.book }}
+    uses: ./.github/workflows/release-book.yml
+    with:
+      tag: ${{ needs.discover.outputs.tag }}
+      book: ${{ matrix.book }}

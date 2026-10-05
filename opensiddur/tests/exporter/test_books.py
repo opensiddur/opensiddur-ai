@@ -1,6 +1,7 @@
 """Tests for building a printed book per settings file (opensiddur.exporter.books)."""
 
 import io
+import json
 import subprocess
 import sys
 import tempfile
@@ -230,6 +231,23 @@ class TestBooks(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertNotIn("a/one", out)
         self.assertIn("1 of 1 books ok", out)
+
+    def test_main_list(self):
+        self._book("b/one")
+        self._book("a/one")
+        self._book("loose")
+        code, out = self._main("--list")
+        self.assertEqual(code, 0)
+        # Misplaced files are listed too, so their build fails visibly rather than being skipped.
+        self.assertEqual(json.loads(out), ["a/one", "b/one", "loose"])
+
+    def test_main_list_empty(self):
+        code, out = self._main("--list")
+        self.assertEqual((code, json.loads(out)), (0, []))
+
+    def test_main_list_and_check_are_exclusive(self):
+        with patch("sys.stderr"), self.assertRaises(SystemExit):
+            self._main("--list", "--check")
 
     def test_main_unknown_name_is_an_error(self):
         with patch("sys.stderr"), self.assertRaises(SystemExit) as cm:

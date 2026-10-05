@@ -1,0 +1,100 @@
+name: Release book
+
+# Builds one printed book, opensiddur-projects/settings/<book>/<variant>.yaml, at the
+# opensiddur-projects commit a release tag pins, and attaches it to that release as
+# <book>-<variant>-<tag>.pdf (opensiddur-ai#153).
+#
+# release-books.yml runs this once per settings file. Run it by hand to rebuild a single book
+# for a tag; the new PDF replaces the old one.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      book:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build the book for and attach it to (e.g. v0.5.0)
+        required: true
+        type: string
+      book:
+        description: The settings file to build, as <book>/<variant> (e.g. humash/annual)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    # The full humash takes about 90 minutes to typeset on a desktop.
+    timeout-minutes: 330
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      TAG: ${{ inputs.tag }}
+      BOOK: ${{ inputs.book }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout the release
+        uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      # .gitmodules uses SSH URLs, which the runner can't use. Only opensiddur-projects is
+      # needed: the books are built from it, not from sourcetexts.
+      - name: Checkout pinned opensiddur-projects
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --depth 1 opensiddur-projects
+
+      - name: Install TeX
+        run: sudo bash opensiddur/exporter/tex/install-tex.sh
+
+      - name: Install fonts
+        run: |
+          sudo apt-get install --no-install-recommends --no-install-suggests -y \
+            culmus fonts-linuxlibertine fonts-sil-ezra fonts-freefont-otf
+          fc-cache -f
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build reference database
+        run: uv run python -m opensiddur.exporter.refdb
+
+      - name: Build the book
+        run: |
+          uv run python -m opensiddur.exporter.books "$BOOK" \
+            --output-directory "$RUNNER_TEMP/books" --suffix "$TAG"
+
+      - name: Attach the book to the release
+        run: gh release upload "$TAG" "$RUNNER_TEMP"/books/*.pdf --clobber
+
+      - name: Name the log artifact
+        if: always()
+        run: echo "ARTIFACT=book-log-${BOOK//\//-}-$TAG" >> "$GITHUB_ENV"
+
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT }}
+          path: ${{ runner.temp }}/books/*.log
+          if-no-files-found: ignore
