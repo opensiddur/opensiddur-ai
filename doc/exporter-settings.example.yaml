@@ -8,6 +8,19 @@
 # - `typography.parallel.layout` values: `pages` | `pairs` | `interleaved`
 # - `typography.paper` values: `a4paper` | `letterpaper` | `legalpaper` | `a5paper` | `b5paper` | `executivepaper`
 
+# What these settings make, and how they differ from the same book's other settings files.
+# Free text, optional.
+description: >
+  The Westminster Leningrad Codex with the JPS 1917 translation facing it.
+
+# The book these settings format: the root file to compile. Optional; with it, the compiler
+# needs only `-s`. Every settings file in opensiddur-projects/settings/<book>/ must have one,
+# since each is built into a printed book at release.
+book:
+  project: wlc
+  file_name: index.xml
+  title: Westminster Leningrad Codex   # optional
+
 priority:
   # Project priority for resolving `urn:x-opensiddur:` references to *texts* (transclusions)
   # The first entry will typically be the project you are compiling.

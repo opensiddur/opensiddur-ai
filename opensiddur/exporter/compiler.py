@@ -1174,8 +1174,10 @@ def merge_credits(root, linear_data) -> None:
 
 def main(argv: list[str] | None = None):  # pragma: no cover
     parser = argparse.ArgumentParser(description="Compile a TEI file with external references to a single file.")
-    parser.add_argument("--project", "-p", type=str, help="The project name.", required=True)
-    parser.add_argument("--file_name", "-f", type=str, help="The file name (relative to the project).", required=True)
+    parser.add_argument("--project", "-p", type=str,
+                        help="The project name. Defaults to the settings file's book.project.")
+    parser.add_argument("--file_name", "-f", type=str,
+                        help="The file name (relative to the project). Defaults to the settings file's book.file_name.")
     parser.add_argument("--output_file", "-o", type=str, help="The output XML file.")
     parser.add_argument("--settings", "-s", type=Path, help="YAML file with compiler settings. See README.md for more details.")
     parser.add_argument(
@@ -1186,9 +1188,15 @@ def main(argv: list[str] | None = None):  # pragma: no cover
     )
     args = parser.parse_args(argv)
 
-    from opensiddur.exporter.settings import load_default_settings, load_settings
+    from opensiddur.exporter.settings import load_default_settings, load_settings, read_settings
 
     project_directory = args.project_directory.resolve()
+    if args.project is None or args.file_name is None:
+        book = read_settings(args.settings, project_directory=project_directory).book if args.settings else None
+        if book is None:
+            parser.error("--project and --file_name are required unless the settings file names a book")
+        args.project = args.project or book.project
+        args.file_name = args.file_name or book.file_name
     reset_linear_data()
     linear_data = get_linear_data()
 

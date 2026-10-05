@@ -7,6 +7,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 # checked out at the repository root. Each keeps its content in a subdirectory.
 SOURCETEXTS_ROOT = REPO_ROOT / "sourcetexts" / "sources"
 PROJECT_DIRECTORY = REPO_ROOT / "opensiddur-projects" / "project"
+# Settings files for the printed books, one per book; see opensiddur.exporter.books.
+SETTINGS_DIRECTORY = REPO_ROOT / "opensiddur-projects" / "settings"
 INDEX_DB_DIRECTORY = REPO_ROOT / "database"
 
 # Untracked scratch space for large or derived files that should never enter a
