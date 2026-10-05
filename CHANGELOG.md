@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-05
+
 ### Added
 - Printed books at release (#153). Exporter settings files gain an optional `book:` key naming
   the root file they format, so the compiler needs only `-s`, and an optional `description:`.
@@ -38,6 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not covered under `pages`: a rubric that ends its block while the facing page runs on further.
   reledpar then pads the rubric's page with blank lines until the facing page catches up, so
   the rubric is parted from its text by that padding anyway.
+
+### Pinned sources
+
+- `opensiddur-projects`: cf50102c451a1823e88656c52f74131b5e180e9d
+- `sourcetexts`: 5927629e34a555649f6c35e3e5b814be9e7205b2
 
 ## [0.4.0] - 2026-10-02
 
