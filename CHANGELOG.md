@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Release books build again on CI. `install-tex.sh` did not install `texlive-lang-arabic`, which
+  provides `luabidi.sty`; polyglossia's Hebrew module loads it under LuaLaTeX, so every book
+  with Hebrew stopped at the preamble and the v0.5.0 release went out without its PDFs.
+
 ## [0.5.0] - 2026-10-05
 
 ### Added
