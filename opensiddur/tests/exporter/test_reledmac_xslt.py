@@ -3671,7 +3671,7 @@ class TestEmptyLinesInAColumn(unittest.TestCase):
         for macro in (r"\OSInstructionBlock", r"\OSInstructionLine"):
             self.assertIn(
                 r"\newcommand{" + macro + r"}[1]{\ifhmode\unskip\strut\newline\fi"
-                r"{\bfseries #1}\newline\ignorespaces}",
+                r"{\OSKeepAttr=3\relax\bfseries #1}\newline\ignorespaces}",
                 out,
             )
         self.assertNotIn(r"\leavevmode\unskip\strut", out)
@@ -3903,7 +3903,9 @@ class TestHeadingNotes(unittest.TestCase):
 
     def test_a_heading_set_across_the_page_without_notes_is_unchanged(self):
         body = self._body(self._parallel().replace(self.NOTE, ""), layout="pairs")
-        self.assertIn(r"{\parfillskip=0pt\interlinepenalty=10000\relax \begin{hebrew}\OSheadA", body)
+        self.assertIn(
+            r"{\parfillskip=0pt\interlinepenalty=10000\relax \begin{hebrew}\OSApplyKeep \OSheadA",
+            body)
 
     def test_a_suppressed_heading_keeps_the_note_on_its_placeholder_row(self):
         """Further into a block the heading is not hoisted; where the titles agree the
@@ -4404,4 +4406,34 @@ class TestKeepTogether(unittest.TestCase):
         for source, params in ((self.SINGLE, {}),
                                (self._parallel("Left", "Right"), {"layout": "interleaved"})):
             with self.subTest(params=params):
-                self.assertNotIn("OSkeep = {", _transform(source, **params))
+                out = _transform(source, **params)
+                self.assertNotIn("function OSkeep.line(", out)
+                self.assertNotIn(r"\do@lineLhook", out)
+
+    def test_single_stream_rules_are_installed_everywhere(self):
+        for source, params in ((self.SINGLE, {}),
+                               (self._parallel("Left", "Right"), {"layout": "interleaved"}),
+                               (self._parallel("Left", "Right"), {"layout": "pairs"})):
+            with self.subTest(params=params):
+                out = _transform(source, **params)
+                self.assertIn("function OSkeep.single", out)
+                self.assertIn(r"\appto\do@linehook{", out)
+                self.assertIn(r"\patchcmd{\add@penalties}", out)
+
+    def test_a_rubric_on_lines_of_its_own_is_tagged(self):
+        out = _transform(self.SINGLE)
+        for macro in ("OSInstructionBlock", "OSInstructionLine"):
+            with self.subTest(macro=macro):
+                definition = next(line for line in out.splitlines()
+                                  if line.startswith(rf"\newcommand{{\{macro}}}"))
+                self.assertIn(r"{\OSKeepAttr=3\relax\bfseries #1}", definition)
+        run_in = next(line for line in out.splitlines()
+                      if line.startswith(r"\newcommand{\instructionnote}"))
+        self.assertNotIn("OSKeepAttr", run_in)
+
+    def test_a_keep_reaches_a_heading_set_across_the_page(self):
+        body = self._body(_transform(self._parallel("Same", "Same"), layout="pairs"))
+        spanning = body.split(r"\begin{pairs}")[0]
+        # Inside the title's language, which writes a record that would come between.
+        self.assertLess(spanning.index(r"{\parfillskip=0pt"), spanning.index(r"\OSApplyKeep"))
+        self.assertLess(spanning.index(r"\OSApplyKeep"), spanning.index(r"\OSheadA{"))
