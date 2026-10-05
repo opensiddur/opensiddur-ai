@@ -2545,6 +2545,53 @@ class TestCitationMilestone(unittest.TestCase):
         self.assertEqual(without.count(r"\pend"), with_citation.count(r"\pend"))
 
 
+class TestEmptyNumberedStreams(unittest.TestCase):
+    """Structural remnants between transclusions must not start numbering.
+
+    The full Birnbaum index leaves standalone runs with XML leaves but no
+    printed paragraphs. reledmac rejects numbering around such a run.
+    """
+
+    def test_structural_only_streams_do_not_start_numbering(self):
+        for content in (
+            '<tei:div>\n  </tei:div>',
+            '<tei:p/>',
+            '<tei:p><tei:milestone unit="prayer"/></tei:p>',
+            '<tei:p><tei:milestone unit="edition-verse" n="14"/></tei:p>',
+        ):
+            for lang in ('he', 'en'):
+                with self.subTest(content=content, lang=lang):
+                    out = _transform(f'''<tei:TEI
+                        xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="{lang}">
+                        <tei:text><tei:body>{content}</tei:body></tei:text>
+                        </tei:TEI>''').split(r'\begin{document}')[1]
+                    self.assertNotIn(r'\beginnumbering', out)
+                    self.assertNotIn(r'\endnumbering', out)
+
+    def test_separator_only_stream_keeps_the_separator_without_numbering(self):
+        out = _transform('''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+            <tei:text><tei:body><tei:milestone unit="section" rend="****"/>
+            </tei:body></tei:text></tei:TEI>''').split(r'\begin{document}')[1]
+        self.assertIn(r'\OSSectionSeparator', out)
+        self.assertNotIn(r'\beginnumbering', out)
+
+    def test_structural_div_between_transclusions_keeps_both_parallel_texts(self):
+        block = '''<p:transclude><p:parallel column-order="primary_first">
+            <p:parallelItem role="primary" xml:lang="he"><tei:p>שלום</tei:p></p:parallelItem>
+            <p:parallelItem role="parallel" xml:lang="en"><tei:p>Hello</tei:p></p:parallelItem>
+            </p:parallel></p:transclude>'''
+        out = _transform(f'''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+            xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+            <tei:text><tei:body>{block}<tei:div p:part="last">\n  </tei:div>{block}
+            </tei:body></tei:text></tei:TEI>''').split(r'\begin{document}')[1]
+        sections = re.findall(r'\\beginnumbering(.*?)\\endnumbering', out, re.S)
+        self.assertEqual(len(sections), 4)
+        for section in sections:
+            self.assertIn(r'\pstart', section)
+        self.assertEqual(out.count('שלום'), 2)
+        self.assertEqual(out.count('Hello'), 2)
+
+
 class TestUnrenderedMilestones(unittest.TestCase):
     """A milestone the stylesheet does not set must not open a paragraph of its own.
 
@@ -4235,6 +4282,41 @@ class TestRowsWithoutACounterpart(unittest.TestCase):
     def test_the_note_keeps_its_language(self):
         body = self._body(self._sandwich(("<tei:p>הושענא</tei:p>", self.APPARATUS_ONLY)))
         self.assertIn(r"\foreignlanguage{english}{" + self.NOTE + "}", body)
+
+    def test_structural_rows_keep_page_labels_from_both_editions(self):
+        """Birnbaum's long Taḥanun boundaries have no words on either side.
+
+        Both editions' references need their labels, even though only one
+        stream is rendered for a boundary-only block.
+        """
+        def boundary(label):
+            return ('<tei:div><tei:milestone unit="section"/>'
+                    f'<tei:anchor type="page-label" n="{label}"/>\n</tei:div>')
+
+        for layout in ('pairs', 'pages', 'interleaved'):
+            for order in ('primary_first', 'primary_last'):
+                with self.subTest(layout=layout, order=order):
+                    body = self._body(self._sandwich((boundary('he-page'), boundary('en-page'))),
+                                      layout=layout, order=order)
+                    self.assertEqual(1, body.count(r'\label{he-page}'))
+                    self.assertEqual(1, body.count(r'\label{en-page}'))
+                    self.assertRegex(body, r'\\label\{he-page\}\s*\\label\{en-page\}')
+
+    def test_page_label_on_an_untranslated_side_survives_with_its_commentary(self):
+        anchor = '<tei:anchor type="page-label" n="other-page"/>'
+        for translated in (False, True):
+            for layout in ('pairs', 'pages', 'interleaved'):
+                with self.subTest(translated=translated, layout=layout):
+                    text = '<tei:p>Untranslated text</tei:p>'
+                    commentary = self.APPARATUS_ONLY.replace(
+                        '<tei:note>', '<tei:note xml:lang="en">')
+                    other = '<tei:div>' + anchor + commentary + '</tei:div>'
+                    row = (other, text) if translated else (text, other)
+                    body = self._body([row], layout=layout)
+                    self.assertEqual(1, body.count(r'\label{other-page}'))
+                    self.assertEqual(1, body.count(self.NOTE))
+                    self.assertEqual(1, body.count(r'\pstart'))
+                    self.assertNotIn(r'\Columns', body)
 
     def test_a_translation_alone_is_set_across_the_page_in_its_language(self):
         body = self._body(self._sandwich(("", "<tei:p>Untranslated English</tei:p>")))
