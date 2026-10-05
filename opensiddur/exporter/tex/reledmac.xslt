@@ -1221,11 +1221,16 @@
     </xsl:function>
 
     <!-- The leaves of a block with text in one language: that item's, with the other
-         item's editorial notes put among them. Birnbaum's Hoshanot have no English
-         translation, but his English notes on them are compiled onto empty anchors in
+         item's editorial notes and page labels put among them. Birnbaum's Hoshanot
+         have no English translation, but his English notes on them are compiled onto empty anchors in
          the English document; they belong to the Hebrew, not to a column or paragraph
          of their own. A rubric is not among them: it is words of its own, and a block
          whose other item sets one has text on both sides, so never comes here.
+
+         Page labels belong to their source edition even when neither side sets words:
+         Birnbaum's long Tachanun boundaries are milestone-only blocks. Keep both
+         editions' labels in the surviving stream so neither edition's page references
+         point to labels that disappear when the block is collapsed.
 
          Flattened here rather than by the stream, so the notes can go inside the text's
          paragraph and not after its closing break. Flattening is idempotent: the leaves
@@ -1237,10 +1242,11 @@
         <xsl:variable name="leaves" as="node()*">
             <xsl:apply-templates select="$item/node()" mode="leaves"/>
         </xsl:variable>
-        <xsl:variable name="notes" as="element()*"
+        <xsl:variable name="other-content" as="element()*"
                       select="($block/p:parallelItem except $item)
                               /(.//tei:note[not(@type = 'instruction')]
-                                | .//tei:anchor[.//tei:note[not(@type = 'instruction')]])
+                                | .//tei:anchor[@type = 'page-label'
+                                               or .//tei:note[not(@type = 'instruction')]])
                               [not(ancestor::tei:note or ancestor::tei:anchor[.//tei:note])]"/>
         <xsl:variable name="ink" as="xs:integer*"
                       select="index-of($leaves ! (f:puts-ink(.) and not(self::f:head)), true())"/>
@@ -1248,10 +1254,10 @@
              when the other item comes first, so the marks keep the order their serials
              were counted in. -->
         <xsl:variable name="at" as="xs:integer"
-                      select="if (empty($notes) or empty($ink)) then count($leaves)
-                              else if ($notes[1] &lt;&lt; $item) then $ink[1] - 1
+                      select="if (empty($other-content) or empty($ink)) then count($leaves)
+                              else if ($other-content[1] &lt;&lt; $item) then $ink[1] - 1
                               else $ink[last()]"/>
-        <xsl:sequence select="subsequence($leaves, 1, $at), $notes,
+        <xsl:sequence select="subsequence($leaves, 1, $at), $other-content,
                               subsequence($leaves, $at + 1)"/>
     </xsl:function>
 
@@ -2011,29 +2017,42 @@
                       select="f:stream-leaves($nodes, $alt-nodes, $stream, $single-pstart)"/>
 
         <xsl:if test="exists($leaves)">
+            <xsl:variable name="inner">
+                <xsl:if test="$single-pstart">
+                    <!-- reledpar requires at least one \pstart...\pend in each side.
+                         When single-pstart is requested, open it up-front so even
+                         chapter-only or whitespace-leading blocks satisfy this. -->
+                    <xsl:call-template name="pstart"/>
+                </xsl:if>
+
+                <xsl:call-template name="emit-leaves">
+                    <xsl:with-param name="leaves" select="$leaves"/>
+                    <xsl:with-param name="align-verses" select="$align-verses"/>
+                    <xsl:with-param name="single-pstart" select="$single-pstart"/>
+                    <xsl:with-param name="stream" select="$stream"/>
+                    <xsl:with-param name="has-alt-column" select="exists($alt-nodes)"/>
+                    <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
+                    <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
+                </xsl:call-template>
+            </xsl:variable>
+
+            <!-- XML leaves can be only structural whitespace, paragraph breaks or
+                 silent milestones, as between transclusions in Birnbaum's full index.
+                 reledmac rejects numbering with no paragraph. Test the rendered stream,
+                 retaining any out-of-paragraph output (separators, heading marks).
+                 single-pstart still guarantees a paragraph for each parallel side. -->
+            <xsl:variable name="has-paragraph" as="xs:boolean"
+                          select="contains($inner, '\pstart')"/>
             <xsl:if test="f:is-hebrew-lang(string($lang))">
                 <xsl:text>\begin{hebrew}&#10;</xsl:text>
             </xsl:if>
-
-            <xsl:text>\beginnumbering&#10;</xsl:text>
-            <xsl:if test="$single-pstart">
-                <!-- reledpar requires at least one \pstart...\pend in each side.
-                     When single-pstart is requested, open it up-front so even
-                     chapter-only or whitespace-leading blocks satisfy this. -->
-                <xsl:call-template name="pstart"/>
+            <xsl:if test="$has-paragraph">
+                <xsl:text>\beginnumbering&#10;</xsl:text>
             </xsl:if>
-
-            <xsl:call-template name="emit-leaves">
-                <xsl:with-param name="leaves" select="$leaves"/>
-                <xsl:with-param name="align-verses" select="$align-verses"/>
-                <xsl:with-param name="single-pstart" select="$single-pstart"/>
-                <xsl:with-param name="stream" select="$stream"/>
-                <xsl:with-param name="has-alt-column" select="exists($alt-nodes)"/>
-                <xsl:with-param name="hoisted-heading" select="$hoisted-heading"/>
-                <xsl:with-param name="hoisted-divs" select="$hoisted-divs"/>
-            </xsl:call-template>
-
-            <xsl:text>\endnumbering&#10;</xsl:text>
+            <xsl:value-of select="$inner"/>
+            <xsl:if test="$has-paragraph">
+                <xsl:text>\endnumbering&#10;</xsl:text>
+            </xsl:if>
 
             <xsl:if test="f:is-hebrew-lang(string($lang))">
                 <xsl:text>\end{hebrew}&#10;</xsl:text>
