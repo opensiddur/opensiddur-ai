@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Printed books at release (#153). Exporter settings files gain an optional `book:` key naming
+  the root file they format, so the compiler needs only `-s`, and an optional `description:`.
+  `opensiddur-projects/settings/<book>/<variant>.yaml` holds the books, several variants per
+  book allowed (an annual and a triennial humash): `python -m opensiddur.exporter.books` builds
+  them all, and the new `release-books.yml` workflow builds them when a release is published
+  and attaches them as `<book>-<variant>-<tag>.pdf`. A book that fails is skipped and the run
+  goes red. opensiddur-projects pull requests now run `books --check`: each settings file is
+  where it belongs, parses, matches the schema, names a project and file that exist, and has an
+  installed font for every font chain it will be set with.
+
 ### Fixed
 - Page breaks no longer strand a line or a heading in the PDF (#198). The last line of a
   paragraph no longer opens a page and its first line no longer closes one. A heading,

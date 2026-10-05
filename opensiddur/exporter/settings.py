@@ -87,6 +87,36 @@ class PrintOnceSettings(BaseModel):
         return {note_type for note_type, once in self.model_dump().items() if once}
 
 
+class BookTarget(BaseModel):
+    """ The book a settings file formats: the root file it is compiled from.
+
+    A settings file that names its book can be compiled without -p/-f, and is what the
+    release builds into a printed book (see opensiddur.exporter.books).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    project: str
+    file_name: str
+    title: Optional[str] = None
+
+    @field_validator("project")
+    @classmethod
+    def validate_project(cls, v: str, info: ValidationInfo) -> str:
+        _validate_project_list([v], _project_directory_from_context(info))
+        return v
+
+    @field_validator("file_name")
+    @classmethod
+    def validate_file_name(cls, v: str, info: ValidationInfo) -> str:
+        project = info.data.get("project")
+        if project is None:  # the project already failed; don't report twice
+            return v
+        if not (_project_directory_from_context(info) / project / v).is_file():
+            raise ValueError(f"File {v} does not exist in project {project}")
+        return v
+
+
 class SettingsYaml(BaseModel):
     """ A settings file, whole.
 
@@ -97,6 +127,10 @@ class SettingsYaml(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    # What this settings file makes and how it differs from the book's other settings files
+    # (e.g. annual vs. triennial readings for the same humash). Free text, for people.
+    description: Optional[str] = None
+    book: Optional[BookTarget] = None
     priority: Prioritizations
     annotations: list[str] = Field(default_factory=list)
     print_once: PrintOnceSettings = Field(default_factory=PrintOnceSettings)
@@ -109,6 +143,20 @@ class SettingsYaml(BaseModel):
     def validate_annotations(cls, v: list[str], info: ValidationInfo) -> list[str]:
         return _validate_project_list(v, _project_directory_from_context(info))
 
+def read_settings(
+    settings_file: Path,
+    project_directory: Optional[Path] = None,
+) -> SettingsYaml:
+    """ Read and validate a settings file, without loading it into linear data. """
+    project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
+    with open(settings_file, 'r') as f:
+        data = yaml.safe_load(f)
+    return SettingsYaml.model_validate(
+        data,
+        context={"project_directory": project_directory},
+    )
+
+
 def load_settings(
     settings_file: Path,
     linear_data: Optional[LinearData] = None,
@@ -116,13 +164,7 @@ def load_settings(
 ) -> LinearData:
     """ Load settings into linear data from a YAML file. """
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
-    with open(settings_file, 'r') as f:
-        data =  yaml.safe_load(f)
-
-    settings = SettingsYaml.model_validate(
-        data,
-        context={"project_directory": project_directory},
-    )
+    settings = read_settings(settings_file, project_directory=project_directory)
     linear_data = linear_data or get_linear_data()
     _apply_project_directory(linear_data, project_directory)
     linear_data.project_priority = settings.priority.transclusion

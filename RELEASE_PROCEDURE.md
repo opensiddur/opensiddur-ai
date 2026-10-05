@@ -80,6 +80,10 @@ What it does, in order:
 9. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
    with `--no-publish`).
 
+Publishing the release starts `.github/workflows/release-books.yml`, which builds a PDF for
+every settings file in `opensiddur-projects/settings/<book>/` at the pinned commit and attaches
+them to the release as `<book>-<variant>-vX.Y.Z.pdf`. It takes a while (TeX Live is installed from scratch).
+
 ## After releasing
 
 - **Re-lock and push `uv.lock`.** The release script writes the new version into `pyproject.toml`
@@ -101,6 +105,12 @@ What it does, in order:
 
 - Check the [releases page](https://github.com/opensiddur/opensiddur-ai/releases) and the pushed
   tag.
+- Check that the *Release books* workflow finished and the books are attached. A red run means
+  at least one book failed to build: the others are still attached, and the release stands.
+  The `book-logs-vX.Y.Z` artifact has each book's compiler and LaTeX output. After a fix, rerun
+  it for the tag (`gh workflow run release-books.yml -f tag=vX.Y.Z`); it replaces the assets.
+  The rerun builds the code and projects the tag pins, so a fix that lands in a later commit
+  ships with the next release instead.
 - Confirm `git submodule status` on the tag shows the commits you expected.
 - If a downstream worktree needs the release, `git fetch --tags` and check out the tag, then
   `git submodule update --init`.

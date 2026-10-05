@@ -28,10 +28,66 @@ For round-trip command examples, see `scripts/tei-to-pdf.sh` — the same
 `-s <settings-file>` flag drives both the compiler and the PDF stage, so any
 typography settings in the YAML are forwarded to the LuaLaTeX preamble.
 
+## Printed books
+
+Printed books are settings files in
+[`opensiddur-projects/settings/`](https://github.com/opensiddur/opensiddur-projects/tree/main/settings),
+one subdirectory per book holding that book's variants:
+
+```
+settings/
+  humash/
+    annual.yaml       # description: one parsha a week, the annual cycle
+    triennial.yaml    # description: a third of each parsha, the triennial cycle
+```
+
+Each file names the root file it formats with a `book:` key and says how it differs from its
+siblings with `description:` (below). When an opensiddur-ai release is published,
+`.github/workflows/release-books.yml` builds every one of them, from the opensiddur-projects
+commit the release pins, and attaches the PDFs to the release as `<book>-<variant>-<tag>.pdf`
+(e.g. `humash-annual-v0.5.0.pdf`).
+
+To build them locally (after syncing the reference database):
+
+```bash
+uv run python -m opensiddur.exporter.books                  # all books, into ./books/
+uv run python -m opensiddur.exporter.books humash           # every variant of one book
+uv run python -m opensiddur.exporter.books humash/annual    # one variant
+uv run python -m opensiddur.exporter.books --check          # validate only, build nothing
+```
+
+A book that fails is reported and skipped and the rest are still built; the exit status is
+nonzero if any failed. Each book's compiler and LaTeX output goes to
+`<output>/<book>-<variant>.log`.
+
+Pull requests to opensiddur-projects run `--check`, so a broken settings file fails there
+rather than at release. It checks that each file:
+- is in a book's subdirectory (`settings/<book>/<variant>.yaml`; a file anywhere else is an
+  error, not silently left out of the release);
+- parses, and matches the settings schema below, including a `book:` key;
+- names a project and file that exist;
+- can be typeset on that machine: every font chain, the defaults included, has an installed
+  font. Without fontconfig this is an error rather than skipped.
+
 ## Settings file
 
 To control compilation, use a YAML-based settings file.
 The settings are defined below:
+
+### Description and book
+```yaml
+description: >
+  One parsha a week, the annual cycle. The triennial variant beside it
+  reads a third of each parsha.
+book:
+  project: humash
+  file_name: index.xml
+  title: Humash   # optional
+```
+`description` is free text for people: what these settings make and why they differ from the
+book's other variants. `book` is the root file the settings format. With a `book:`, the compiler needs only `-s`; `-p`/`-f`
+still override it. Both the project and the file must exist. Optional, except in
+`opensiddur-projects/settings/`, where every file is a book.
 
 ### Transclusion priority
 ```yaml
