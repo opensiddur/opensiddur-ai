@@ -1,3 +1,4 @@
+#!/bin/bash
 # LuaLaTeX-based PDF pipeline (reledmac/reledpar critical-edition typesetting).
 #
 # Required packages:
@@ -9,6 +10,8 @@
 #   - texlive-lang-european:    Latin-script babel support
 #   - latexmk:                  drives multi-pass lualatex/biber loop
 #   - biber:                    biblatex's bibliography backend
+set -euo pipefail
+
 apt-get update -y
 apt-get install -y \
   texlive-luatex \

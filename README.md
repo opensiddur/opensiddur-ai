@@ -73,6 +73,11 @@ JLPTEI sources are compiled into `opensiddur-projects/project`, the
 [opensiddur/opensiddur-projects](https://github.com/opensiddur/opensiddur-projects) submodule.
 `--project-directory` overrides it with an external clone.
 
+Its `settings/` directory holds the exporter settings for the printed books, one subdirectory
+per book with a settings file per variant (`settings/humash/annual.yaml`). Every release
+builds them into PDFs attached to the GitHub release; see
+[`opensiddur/exporter/README.md`](opensiddur/exporter/README.md#printed-books).
+
 ## Reference database
 
 The exporter resolves `urn:x-opensiddur:` URIs to project files via a SQLite

@@ -210,6 +210,28 @@ jobs:
           uv run python -m opensiddur.exporter.validate_versification \
             --project-directory "$GITHUB_WORKSPACE/projects/project"
 
+      # Settings files (opensiddur-projects/settings/<book>/<variant>.yaml) are built into printed
+      # books at release (release-books.yml); a broken one should fail here, not at release.
+      # --check verifies each is in place, parses, matches the schema, names a project and file
+      # that exist, and that every font chain it is typeset with has an installed font. The
+      # fonts installed here are the ones the release build installs, so the check means the
+      # same thing in both places.
+      - name: Install fonts for the settings check
+        if: always()
+        run: |
+          sudo apt-get install --no-install-recommends --no-install-suggests -y \
+            culmus fonts-linuxlibertine fonts-sil-ezra fonts-freefont-otf
+          fc-cache -f
+
+      - name: Validate settings files
+        id: settings
+        if: always()
+        continue-on-error: true
+        working-directory: opensiddur-ai
+        run: |
+          uv run python -m opensiddur.exporter.books --check \
+            --project-directory "$GITHUB_WORKSPACE/projects/project"
+
       - name: Gate
         if: always()
         run: |
@@ -218,7 +240,8 @@ jobs:
             "schema:${{ steps.schema.outcome }}" \
             "urn_references:${{ steps.urn_references.outcome }}" \
             "urn_registry:${{ steps.urn_registry.outcome }}" \
-            "versification:${{ steps.versification.outcome }}"; do
+            "versification:${{ steps.versification.outcome }}" \
+            "settings:${{ steps.settings.outcome }}"; do
             name="${outcome%%:*}"
             result="${outcome#*:}"
             if [ "${result}" != "success" ]; then
