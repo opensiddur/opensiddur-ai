@@ -80,9 +80,11 @@ What it does, in order:
 9. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
    with `--no-publish`).
 
-Publishing the release starts `.github/workflows/release-books.yml`, which builds a PDF for
-every settings file in `opensiddur-projects/settings/<book>/` at the pinned commit and attaches
-them to the release as `<book>-<variant>-vX.Y.Z.pdf`. It takes a while (TeX Live is installed from scratch).
+Publishing the release starts `.github/workflows/release-books.yml`. It lists the settings files
+in `opensiddur-projects/settings/<book>/` at the pinned commit and starts one
+`release-book.yml` job per file, which builds that book and attaches it to the release as
+`<book>-<variant>-vX.Y.Z.pdf`. The books build in parallel, each with its own log and status; a
+large one (the full humash) takes well over an hour.
 
 ## After releasing
 
@@ -105,10 +107,12 @@ them to the release as `<book>-<variant>-vX.Y.Z.pdf`. It takes a while (TeX Live
 
 - Check the [releases page](https://github.com/opensiddur/opensiddur-ai/releases) and the pushed
   tag.
-- Check that the *Release books* workflow finished and the books are attached. A red run means
-  at least one book failed to build: the others are still attached, and the release stands.
-  The `book-logs-vX.Y.Z` artifact has each book's compiler and LaTeX output. After a fix, rerun
-  it for the tag (`gh workflow run release-books.yml -f tag=vX.Y.Z`); it replaces the assets.
+- Check that the *Release books* workflow finished and the books are attached. A red job means
+  that book failed to build: the others are still attached, and the release stands. Its
+  `book-log-<book>-<variant>-vX.Y.Z` artifact has the compiler and LaTeX output. Rebuild one book
+  for the tag with `gh workflow run release-book.yml -f tag=vX.Y.Z -f book=<book>/<variant>`,
+  or all of them with `gh workflow run release-books.yml -f tag=vX.Y.Z`; either replaces the
+  assets.
   The rerun builds the code and projects the tag pins, so a fix that lands in a later commit
   ships with the next release instead.
 - Confirm `git submodule status` on the tag shows the commits you expected.

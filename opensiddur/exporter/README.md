@@ -43,9 +43,9 @@ settings/
 
 Each file names the root file it formats with a `book:` key and says how it differs from its
 siblings with `description:` (below). When an opensiddur-ai release is published,
-`.github/workflows/release-books.yml` builds every one of them, from the opensiddur-projects
-commit the release pins, and attaches the PDFs to the release as `<book>-<variant>-<tag>.pdf`
-(e.g. `humash-annual-v0.5.0.pdf`).
+`.github/workflows/release-books.yml` lists them (`books --list`) at the opensiddur-projects
+commit the release pins, and starts a `release-book.yml` job for each, which builds that book
+and attaches it to the release as `<book>-<variant>-<tag>.pdf` (e.g. `humash-annual-v0.5.0.pdf`).
 
 To build them locally (after syncing the reference database):
 
@@ -54,6 +54,7 @@ uv run python -m opensiddur.exporter.books                  # all books, into ./
 uv run python -m opensiddur.exporter.books humash           # every variant of one book
 uv run python -m opensiddur.exporter.books humash/annual    # one variant
 uv run python -m opensiddur.exporter.books --check          # validate only, build nothing
+uv run python -m opensiddur.exporter.books --list           # names, as JSON: ["humash/annual", ...]
 ```
 
 A book that fails is reported and skipped and the rest are still built; the exit status is
