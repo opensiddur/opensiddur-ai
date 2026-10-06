@@ -1237,3 +1237,5 @@
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/genesis/48", "status": "canonical", "label_en": "shabbat/conclusion/veyitten lekha/genesis/48"}
 {"urn": "urn:x-opensiddur:text:siddur:shabbat/conclusion/veyitten_lekha/genesis/48/16", "status": "canonical", "label_en": "shabbat/conclusion/veyitten lekha/genesis/48/16"}
 {"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/psalm91", "status": "canonical", "label_en": "kriat shema al hamitah/psalm91"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/pilot", "status": "canonical", "label_en": "selichot/first day/pilot"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/pilot/expanded", "status": "canonical", "label_en": "selichot/first day/pilot/expanded"}

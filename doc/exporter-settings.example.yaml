@@ -95,6 +95,10 @@ declarations:
     ashkenaz: true
     teimani_baladi: true
 
+# Editorial forms, selected during compilation (also for inline transclusion).
+readings:
+  abbreviations: abbreviated  # abbreviated | expanded
+
 # Output-format settings, read by the output stages: all of them by the TeX/PDF stage, and the
 # ones a reflowing page can use by the electronic book (see doc/typography.md).
 typography:

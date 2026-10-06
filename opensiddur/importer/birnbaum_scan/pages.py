@@ -230,39 +230,13 @@ def bands(
 
     Returns the band paths in reading order, top of the page first.
     """
-    from PIL import Image  # imported here so the module loads without Pillow
-
-    if count < 1:
-        raise ValueError("A page must be cut into at least one band.")
-    if not 0 <= overlap < 0.5:
-        raise ValueError("Overlap is a fraction of a band's height, below one half.")
-
-    # A caller supplying its own image is naming the bands itself; otherwise the leaf
-    # is canonicalised so that `XI` and `s13` cut bands over one cached image.
-    designation = (
-        str(printed_page) if source is not None else lookup(printed_page).designation
-    )
+    from opensiddur.importer.scan.pages import cut_bands
+    designation = str(printed_page) if source is not None else lookup(printed_page).designation
     origin = Path(source) if source is not None else image_path(designation)
     if not origin.is_file():
         raise ScanError(f"{origin} has not been fetched yet.")
-
-    BAND_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    written: list[Path] = []
-    with Image.open(origin) as image:
-        width, height = image.size
-        band_height = height / count
-        margin = band_height * overlap
-        for index in range(count):
-            top = max(0, int(round(index * band_height - margin)))
-            bottom = min(height, int(round((index + 1) * band_height + margin)))
-            crop = image.crop((0, top, width, bottom))
-            enlarged = crop.resize(
-                (crop.width * scale, crop.height * scale), Image.LANCZOS
-            )
-            destination = band_path(designation, index)
-            enlarged.save(destination)
-            written.append(destination)
-    return written
+    destinations = [band_path(designation, index) for index in range(count)]
+    return cut_bands(origin, destinations, count=count, overlap=overlap, scale=scale)
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:

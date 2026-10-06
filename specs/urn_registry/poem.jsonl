@@ -309,3 +309,14 @@
 {"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_hayah", "status": "canonical", "label_en": "adon olam/vehu hayah"}
 {"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_nisi", "status": "canonical", "label_en": "adon olam/vehu nisi"}
 {"urn": "urn:x-opensiddur:text:poem:adon_olam/veim_ruchi", "status": "canonical", "label_en": "adon olam/veim ruchi"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah", "status": "canonical", "label_en": "bemotzaei menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/rubric", "status": "canonical", "label_en": "bemotzaei menuhah/rubric", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/conclusion", "status": "canonical", "label_en": "bemotzaei menuhah/conclusion", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/1", "status": "canonical", "label_en": "bemotzaei menuhah/1", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/2", "status": "canonical", "label_en": "bemotzaei menuhah/2", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/3", "status": "canonical", "label_en": "bemotzaei menuhah/3", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/4", "status": "canonical", "label_en": "bemotzaei menuhah/4", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/5", "status": "canonical", "label_en": "bemotzaei menuhah/5", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/6", "status": "canonical", "label_en": "bemotzaei menuhah/6", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/7", "status": "canonical", "label_en": "bemotzaei menuhah/7", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/8", "status": "canonical", "label_en": "bemotzaei menuhah/8", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}

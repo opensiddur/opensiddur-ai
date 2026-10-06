@@ -262,7 +262,7 @@ class InlineCompilerProcessor(CompilerProcessor):
         context_lang = self._get_in_scope_language(element)
         previous_child = None
         unread = _unread_choices(element, (self.start_element, self.end_element))
-        for child in element:
+        for child in self._reading_children(element):
             if child in unread:
                 continue
             processed = self._process_element(child, root)
