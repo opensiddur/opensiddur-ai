@@ -24,3 +24,8 @@ typography:
     hebrew:
     - name: SBL Hebrew
       normal_size: 12
+
+declarations:
+  asher:expansions:
+    refrains_present: false
+    prayers_present: false

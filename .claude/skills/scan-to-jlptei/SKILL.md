@@ -43,6 +43,8 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
 7. Author JLPTEI with source-page links and registered URNs. Preserve the printed
    forms of abbreviations in `tei:choice/tei:abbr`; put verified editorial
    expansions in `tei:expan`. Document expansion and transclusion decisions.
+   When an expanded view supplies the requested text, omit the instructions that
+   requested that expansion. Retain instructions whose requested text is absent.
 8. Validate and resolve references. Reverse-check the **printed** XML branch
    against the readings in source-page order. Audit editorial additions separately.
 9. Compile each intended view and measure its actual PDF. Read

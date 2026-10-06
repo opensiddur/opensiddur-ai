@@ -50,6 +50,10 @@ def check(tree, expanded):
     text = plain(' '.join(line.get('text', '') for line in tree.findall('.//line')))
     if text.count('Appease thy anger and pardon our sins.') != 1:
         raise ValueError('Footnote must occur exactly once')
+    if ('Wherever the word' in text) == expanded:
+        raise ValueError('Refrain instructions must appear only in documentary view')
+    if ('Say “Omnipotent King,”' in text) == expanded:
+        raise ValueError('Prayer expansion instructions must appear only in documentary view')
     if ('Omnipotent King, who' in text) != expanded:
         raise ValueError('El Melekh expansion boundary failed')
     if ('And the Eternal passed by before him' in text) != expanded:

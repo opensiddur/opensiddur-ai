@@ -62,13 +62,25 @@ def choice(parent, abbr, expan):
     return node
 
 
+def expansion_instruction(parent, identity, feature):
+    """Keep the printed rubric unless this view supplies the requested text."""
+    conditional = element(parent, 'j:conditional')
+    conditional.set(XML+'id', identity)
+    fs = element(conditional, 'fs', type='asher:expansions')
+    value = element(fs, 'f'); value.set('name', feature)
+    element(value, 'binary', value='false')
+    note = element(parent, 'note', type='instruction')
+    element(parent, 'j:endConditional', target='#'+identity)
+    return note
+
+
 def poem(lang,project,data):
     root,text=document(lang,project,'במוצאי מנוחה' if lang=='he' else 'On the outgoing of the Sabbath',POEM)
     div=element(element(text,'body'),'div',corresp=POEM)
     pb(div,'s32' if lang=='he' else 's33','15')
     element(div,'head','פזמון' if lang=='he' else data['heading'])
     marker(div,POEM+'/rubric')
-    rubric=element(div,'note',type='instruction')
+    rubric=expansion_instruction(div, 'refrain_instruction', 'refrains_present')
     rubric.set(XML+'lang','en')
     if lang=='he':
         rubric.text='Wherever the word '
@@ -107,7 +119,7 @@ def poem(lang,project,data):
             if n==8:
                 p.text+=' ';choice(p,data['final_cue'],data['stanzas'][0])
     marker(div,POEM+'/conclusion')
-    note=element(div,'note',type='instruction');note.set(XML+'lang','en')
+    note=expansion_instruction(div, 'prayer_instruction', 'prayers_present');note.set(XML+'lang','en')
     if lang=='he':
         note.text='Say '
         f=element(note,'foreign','אֵל מֶלֶךְ');f.set(XML+'lang','he');f.tail=' and '

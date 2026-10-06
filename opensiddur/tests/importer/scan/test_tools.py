@@ -47,3 +47,31 @@ class ToolsTest(unittest.TestCase):
         self.assertEqual({},reverse.check(actual,actual))
         broken=dict(actual);broken[('s24','he')]='א ב';self.assertTrue(reverse.check(broken,actual))
         with self.assertRaises(ValueError):reverse.check({},actual)
+
+    def test_expansion_instructions_follow_supplied_text_independently(self):
+        from opensiddur.importer.asher_selichot.build import expansion_instruction, TEI, J
+        from opensiddur.exporter.compiler import CompilerProcessor
+        from opensiddur.exporter.linear import LinearData
+        from opensiddur.exporter.settings import load_settings
+        project = self.root/'pilot'
+        project.mkdir()
+        root = etree.Element(f'{{{TEI}}}text', nsmap={'tei':TEI, 'j':J})
+        body = etree.SubElement(root, f'{{{TEI}}}body')
+        expansion_instruction(body, 'refrain', 'refrains_present').text = 'Repeat the refrain'
+        expansion_instruction(body, 'prayers', 'prayers_present').text = 'Say the referenced prayers'
+        etree.SubElement(body, f'{{{TEI}}}note', type='instruction').text = 'Unrelated rubric'
+        etree.SubElement(body, f'{{{TEI}}}p').text = 'Supplied text'
+        (project/'text.xml').write_bytes(etree.tostring(root))
+        for refrains, prayers in [(False,False), (True,True), (True,False), (False,True)]:
+            with self.subTest(refrains=refrains, prayers=prayers):
+                settings = self.root/'settings.yaml'
+                settings.write_text('priority: {}\ndeclarations:\n  asher:expansions:\n'
+                    f'    refrains_present: {str(refrains).lower()}\n'
+                    f'    prayers_present: {str(prayers).lower()}\n')
+                data = load_settings(settings, LinearData(), project_directory=self.root)
+                output = CompilerProcessor('pilot','text.xml',linear_data=data).process()
+                text = ''.join(output.itertext())
+                self.assertEqual(not refrains, 'Repeat the refrain' in text)
+                self.assertEqual(not prayers, 'Say the referenced prayers' in text)
+                self.assertIn('Unrelated rubric', text)
+                self.assertIn('Supplied text', text)
