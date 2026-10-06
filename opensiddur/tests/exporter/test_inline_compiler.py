@@ -815,7 +815,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Should include all text between the milestones
         self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
         self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
-        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        self.assertIn("abbr", result_str, "Default reading retains the printed abbreviation")
+        self.assertNotIn("abbreviation", result_str, "Default reading excludes the expansion")
 
         # Should not include the choice element
         # self.assertIn("<tei:choice", result_str, "Should include the choice element")
@@ -909,7 +910,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Should include all text between the milestones
         self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
         self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
-        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        self.assertIn("abbr", result_str, "Default reading retains the printed abbreviation")
+        self.assertNotIn("abbreviation", result_str, "Default reading excludes the expansion")
 
         # Should not include the choice element
         # self.assertIn("<tei:choice", result_str, "Should include the choice element")
@@ -1001,7 +1003,8 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         # Should include all text between the milestones
         self.assertIn("Verse 3 text part 1", result_str, "Should include verse 3 part 1")
         self.assertIn("Verse 3 text part 2", result_str, "Should include verse 3 part 2")
-        self.assertIn("abbreviation", result_str, "Should include content of the choice")
+        self.assertIn("abbr", result_str, "Default reading retains the printed abbreviation")
+        self.assertNotIn("abbreviation", result_str, "Default reading excludes the expansion")
 
         # Should not include the choice element
         # self.assertIn("<tei:choice", result_str, "Should include the choice element")

@@ -3595,6 +3595,11 @@
 
     <xsl:template match="tei:choice" mode="emit">
         <xsl:choose>
+            <xsl:when test="tei:abbr or tei:expan">
+                <!-- Compiled choices contain one selected form. Uncompiled input defaults
+                     to the printed abbreviation, rather than concatenating both. -->
+                <xsl:apply-templates select="(tei:abbr, tei:expan)[1]/node()" mode="emit"/>
+            </xsl:when>
             <xsl:when test="j:option">
                 <!-- Alternate wordings: exactly one is read, but nothing here has chosen
                      between them, so all are shown, the first plain and the rest bracketed

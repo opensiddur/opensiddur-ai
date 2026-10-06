@@ -1,0 +1,26 @@
+description: Asher 1912 first-day piyyut pilot, documentary view. Incomplete book,
+  excluded from releases.
+book:
+  project: asher_selichot_he_1912
+  file_name: index.xml
+  title: Asher Selichoth — documentary pilot
+priority:
+  transclusion:
+  - asher_selichot_he_1912
+  - asher_selichot_en_1912
+  instructions:
+  - asher_selichot_he_1912
+  - asher_selichot_en_1912
+parallel:
+  projects:
+  - asher_selichot_en_1912
+readings:
+  abbreviations: abbreviated
+annotations: []
+typography:
+  instructions:
+    from: both
+  fonts:
+    hebrew:
+    - name: SBL Hebrew
+      normal_size: 12

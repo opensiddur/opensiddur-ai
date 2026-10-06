@@ -174,7 +174,7 @@ class InlineCompilerProcessor(CompilerProcessor):
         # the command is some kind of recursion now, COPY_TEXT_AND_RECURSE or RECURSE
         context_lang = self._get_in_scope_language(element)
         previous_child = None
-        for child in element:
+        for child in self._reading_children(element):
             processed = self._process_element(child, root)
             # Check if this child has a language different from the root
             child_lang = self._get_in_scope_language(child)

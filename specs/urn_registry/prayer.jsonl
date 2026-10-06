@@ -1035,3 +1035,5 @@
 {"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/3", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/3"}
 {"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/4", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/4"}
 {"urn": "urn:x-opensiddur:text:prayer:zokher_haberit", "status": "canonical", "label_en": "zokher haberit"}
+{"urn": "urn:x-opensiddur:text:prayer:el_melekh_yoshev", "status": "canonical", "label_en": "el melekh yoshev"}
+{"urn": "urn:x-opensiddur:text:prayer:vayaavor", "status": "canonical", "label_en": "vayaavor"}

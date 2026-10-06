@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 import yaml
 
 from opensiddur.exporter.linear import (
+    AbbreviationReading,
     DeclarationFeatureValue,
     LinearData,
     ParallelColumnOrder,
@@ -117,6 +118,13 @@ class BookTarget(BaseModel):
         return v
 
 
+class ReadingSettings(BaseModel):
+    """Which editorial form to read, selected before transclusion flattens markup."""
+
+    model_config = ConfigDict(extra="forbid")
+    abbreviations: AbbreviationReading = AbbreviationReading.ABBREVIATED
+
+
 class SettingsYaml(BaseModel):
     """ A settings file, whole.
 
@@ -135,6 +143,7 @@ class SettingsYaml(BaseModel):
     annotations: list[str] = Field(default_factory=list)
     print_once: PrintOnceSettings = Field(default_factory=PrintOnceSettings)
     parallel: Optional[ParallelConfig] = None
+    readings: ReadingSettings = Field(default_factory=ReadingSettings)
     typography: TypographyConfig = Field(default_factory=TypographyConfig)
     declarations: dict[str, dict[str, DeclarationFeatureValue]] = Field(default_factory=dict)
 
@@ -169,6 +178,7 @@ def load_settings(
     _apply_project_directory(linear_data, project_directory)
     linear_data.project_priority = settings.priority.transclusion
     linear_data.instruction_priority = settings.priority.instructions
+    linear_data.abbreviation_reading = settings.readings.abbreviations
     linear_data.annotation_projects = settings.annotations
     linear_data.annotation_print_once_types = settings.print_once.note_types()
     if settings.parallel:

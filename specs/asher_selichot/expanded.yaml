@@ -1,0 +1,26 @@
+description: Asher 1912 first-day piyyut pilot, expanded view. Incomplete book, excluded
+  from releases.
+book:
+  project: asher_selichot_he_1912
+  file_name: expanded.xml
+  title: Asher Selichoth — expanded pilot
+priority:
+  transclusion:
+  - asher_selichot_he_1912
+  - asher_selichot_en_1912
+  instructions:
+  - asher_selichot_he_1912
+  - asher_selichot_en_1912
+parallel:
+  projects:
+  - asher_selichot_en_1912
+readings:
+  abbreviations: expanded
+annotations: []
+typography:
+  instructions:
+    from: both
+  fonts:
+    hebrew:
+    - name: SBL Hebrew
+      normal_size: 12
