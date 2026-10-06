@@ -37,10 +37,10 @@ adjudicated readings. Shared URNs align eight stanza pairs. The PDFs have five
 Both render the English footnote once. Only the expanded view includes the two
 referenced prayers, ending before “The hope of Israel.”
 
-Seven stanza starts have identical baselines; the first differs by 13.55pt after
-unequal rubric lengths. The pilot limit is 16pt on the same PDF page. Latin anchor
+All eight expanded stanza starts have identical baselines. In the documentary
+view, seven match and the first differs by 13.55pt after unequal rubric lengths. The pilot limit is 16pt on the same PDF page. Latin anchor
 runs have increasing glyph x coordinates. No Hebrew run is reversed: documentary
-0/54, expanded 0/104; reversed controls flag 54/54 and 104/104 respectively.
+0/54, expanded 0/99; reversed controls flag 54/54 and 99/99 respectively.
 Duplicate-footnote, 50pt stanza-shift, and wrong-expansion controls all fail.
 Screenshots of the content pages were inspected for pointing, dots, bilingual
 rubrics, alignment, and prayer boundaries. The generic root parallel warning is
@@ -60,3 +60,11 @@ the registry has 2,931 records with zero errors or warnings.
 Companion commits: sources `4af4d77`; projects `f25ef1d`. The code submodules retain
 their release pins; these pilot projects are deliberately supplied through the
 explicit project-directory argument rather than changing those pins.
+
+
+After suppressing fulfilled expansion instructions, the relevant conditional,
+abbreviation and shared scan tests pass (36 tests, 26 subtests). Both PDFs were
+rebuilt and their checks pass, including failing controls. The expanded view omits
+the opening repetition rubric and concluding “Say …”; the documentary view retains
+both. Independent `asher:expansions` declarations control refrain and prayer
+instructions, allowing either to remain when its requested text is absent.

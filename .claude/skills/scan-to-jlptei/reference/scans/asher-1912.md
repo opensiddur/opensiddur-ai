@@ -37,8 +37,9 @@ Do not auto-settle qamats-qatan or assume Birnbaum’s punctuation/glyph convent
   Store cues in `abbr` and the complete verified refrain in `expan`; the final
   “On the outgoing, &c.” refers to the opening stanza, not just the short refrain.
 - The concluding “Say …” points back to אל מלך יושב and ויעבור. Documentary
-  output retains the instruction. Expanded output follows it with transclusions of
-  this edition’s encoded prayers. Never substitute another edition’s wording.
+  output retains the instruction. Expanded output replaces it with transclusions of
+  this edition’s encoded prayers, and omits the opening refrain-repetition rubric
+  when the refrains are expanded. Never substitute another edition’s wording.
 - Retain the English footnote on page 15 and verify it appears once.
 - Document every expansion and target range in the source README. Do not attribute
   expanded words to printing on a leaf where only a cue appears.
@@ -52,8 +53,8 @@ thresholds from their actual typography rather than copying Birnbaum’s numeric
 
 The pilot uses SBL Hebrew at 12pt because the available CLM faces lack U+00B7.
 Its measured gutter is x=288pt on odd PDF pages and x=324pt on even pages.
-Seven stanza starts share a baseline; the first differs by 13.55pt after unequal
-rubric lengths. The pilot check allows at most 16pt and requires the same page.
+All expanded stanza starts share a baseline. In documentary output, the first
+differs by 13.55pt after unequal rubric lengths; the other seven share a baseline. The pilot check allows at most 16pt and requires the same page.
 These are pilot calibration values, not defaults for other settings or scans.
 Run `python -m opensiddur.importer.asher_selichot.check_pdf PDF --control`
 (with `--expanded` for the expanded view). The shared direction check separately

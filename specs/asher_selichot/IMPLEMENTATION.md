@@ -13,7 +13,8 @@ those readings. Source README records editorial expansions and transclusion scop
 `readings.abbreviations` selects abbreviated (default) or expanded during compilation,
 including inline transclusion. Schema adds expan; PDF emits the selected branch.
 Documentary/expanded service roots reuse source modules; expanded adds the referenced
-prayers after the printed concluding instruction. Settings here are deliberately not
+prayers in place of the concluding instruction. Expanded output also omits the
+fulfilled refrain-repetition rubric; documentary output retains both instructions. Settings here are deliberately not
 in release-book settings. Images and render artifacts stay in output/asher_selichot.
 
 Acceptance: synthetic shared-tool and compiler tests; schema and URN validation;
