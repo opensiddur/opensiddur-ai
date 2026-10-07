@@ -75,16 +75,23 @@ Keep these verified target limits separate from encoded coverage. A partial
 entrypoint must identify its actual contiguous coverage and must not bridge pending
 pages with isolated pilot modules. Record progress in `first-day-scope.json`.
 
-The partial opening has a Latin `Ps. cxlv.` citation on the Hebrew page. Verify
+The opening has a Latin `Ps. cxlv.` citation on the Hebrew page. Verify
 both its increasing glyph x coordinates and its placement in the Hebrew column;
 Hebrew-only direction checks cannot detect its reversal or column displacement.
 Use `python -m opensiddur.importer.asher_selichot.check_first_day_pdf PDF --control`
-for the current opening settings. Its 16pt baseline limit is measured for this
+for the opening settings; add `--complete` when rendering through n52. Its 16pt baseline limit is measured for this
 output, not a general scan requirement.
 
-For normalized authoring of the Hebrew opening, encode Hebrew two-dot verse stops as U+05C3
+For normalized authoring of this edition’s Hebrew text, encode Hebrew two-dot verse stops as U+05C3
 HEBREW PUNCTUATION SOF PASUQ (׃), not U+003A COLON (:). Attach these stops and
 other closing punctuation to the preceding word. Do not carry the scan’s visual
 gap into XML as an ordinary breakable space: TeX can strand the punctuation on a
 new line. Preserve physical spacing in the first-pass evidence and document its
 normalization. The opening PDF check must reject isolated punctuation lines.
+
+For a contiguous first-day edition, place the reused pilot prayers and poem at their
+original n23–26 and n31–32 positions after encoding intervening text. Pair complete
+prayers across languages: facing pages do not necessarily end at equivalent words,
+and some litanies order phrases differently. Retain printed footnotes at their
+anchors and record apparent citation errors as edition evidence. Verify the final
+Reader’s Kaddish rubric, and exclude the second-day text below it on n51/n52.

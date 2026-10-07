@@ -20,3 +20,18 @@ in release-book settings. Images and render artifacts stay in output/asher_selic
 Acceptance: synthetic shared-tool and compiler tests; schema and URN validation;
 page/language reverse check; paired PDF builds with direction, text, footnote and
 reference-boundary checks; checks fail on broken controls; full regression suite.
+
+## First-day continuation
+
+The documentary `first_day.xml` entrypoints now cover title n1/n2 and all first-day
+text through Hebrew n51 / English n52. Three additional modules per language
+encode the preface, intervening selichot and closing prayers. They reuse the
+original El Melekh, Vayaavor and Bemotzaei Menuhah modules at their source positions.
+
+Canonical readings retain immutable scan-first fragments, source page identity,
+complete bilingual prayer groups, printed rubrics and anchored footnotes. XML
+verification compares each unit with its reading and checks source page order and
+the final Kaddish boundary. Synthetic fixtures check crossed page breaks, repeated
+footnote anchors, missing anchors, litanies and mixed-language closing instructions.
+`first-day.yaml` renders the full documentary day; automatic releases remain
+excluded. Independent Hebrew pointing review and the remaining book are pending.

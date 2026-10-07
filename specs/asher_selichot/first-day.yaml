@@ -1,9 +1,9 @@
-description: Asher 1912 contiguous first-day opening, work in progress. Incomplete book,
+description: Asher 1912 complete first day through n52, work in progress. Incomplete book,
   excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: first_day.xml
-  title: Asher Selichoth — first-day opening (work in progress)
+  title: Asher Selichoth — first day (work in progress)
 priority:
   transclusion:
   - asher_selichot_he_1912
@@ -18,6 +18,10 @@ readings:
   abbreviations: abbreviated
 annotations: []
 typography:
+  page_header:
+    all:
+      left: סליחות ליום ראשון
+      right: "{page}"
   instructions:
     from: both
   fonts:
