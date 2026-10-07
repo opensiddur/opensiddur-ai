@@ -35,3 +35,13 @@ the final Kaddish boundary. Synthetic fixtures check crossed page breaks, repeat
 footnote anchors, missing anchors, litanies and mixed-language closing instructions.
 `first-day.yaml` renders the full documentary day; automatic releases remain
 excluded. Independent Hebrew pointing review and the remaining book are pending.
+
+## Piyyut invocation correction
+
+Treat the shared אלהינו ואלהי אבותינו invocation as opening text in each
+piyyut, together with its English translation. Preserve the Hebrew invocation as
+an introductory line within `tei:lg` and the English within its prose paragraph;
+remove the former heading heuristic. Record the distinctive following Hebrew
+incipit in source metadata and URN labels, without adding a printed heading or
+claiming a separately established formal title. Source words and alignment URNs
+remain unchanged. The scan-specific skill and reverse verifier enforce this rule.

@@ -111,6 +111,11 @@ def verify_continuation(source, project_directory):
             if len(urns)!=len(set(urns)):raise ValueError('Repeated correspondence within a module')
             for unit,reading in zip(units,readings):
                 if unit.get('corresp')!=FIRST_DAY+'/'+reading['id']:raise ValueError('Units out of source order')
+                if reading.get('incipit_he'):
+                    invocation = reading['fragments'][0][lang]['text'].split('\n', 1)[0]
+                    node = unit.find(f'{{{TEI}}}lg/{{{TEI}}}l' if lang == 'he' else f'{{{TEI}}}p')
+                    if unit.findall(f'{{{TEI}}}head') or node is None or not ''.join(node.itertext()).startswith(invocation):
+                        raise ValueError(f'{reading["id"]}: piyyut invocation must remain in its opening text')
                 expected_notes=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
                 notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
                 normalize=lambda text:' '.join(unicodedata.normalize('NFKD',text).split())
