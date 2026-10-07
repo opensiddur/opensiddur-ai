@@ -2212,14 +2212,16 @@ class TestTableOfContents(unittest.TestCase):
             self.NESTED_HEADS_XML,
             **{"table-of-contents": True, "table-of-contents-depth": 2},
         )
-        self.assertIn(r"{\setcounter{tocdepth}{2}\tableofcontents}", out)
+        self.assertIn(r"{\setcounter{tocdepth}{2}", out)
+        self.assertIn("\\tableofcontents}\n\\mainmatter", out)
         # The preamble's global tocdepth (drives bookmarksdepth) is unaffected.
         self.assertIn(r"\setcounter{tocdepth}{4}", out)
         self.assertIn("bookmarksdepth=4", out)
 
     def test_table_of_contents_depth_defaults_to_four(self):
         out = _transform(self.NESTED_HEADS_XML, **{"table-of-contents": True})
-        self.assertIn(r"{\setcounter{tocdepth}{4}\tableofcontents}", out)
+        self.assertIn(r"{\setcounter{tocdepth}{4}", out)
+        self.assertIn("\\tableofcontents}\n\\mainmatter", out)
 
 
 class TestParshaMilestones(unittest.TestCase):
