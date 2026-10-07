@@ -232,7 +232,18 @@ def section(lang, project, name, groups):
         if targets:
             element(unit, 'j:endConditional', target='#'+group['id']+'_printed')
             expansion_scope(unit, group['id']+'_expanded', True)
+            if group['id'] == 'reader_kaddish':
+                declaration = element(unit, 'j:declare')
+                declaration.set(XML+'id', 'first_day_selichot_kaddish')
+                fs = element(declaration, 'fs', type='asher:selichot')
+                f = element(fs, 'f'); f.set('name', 'first_day')
+                element(f, 'binary', value='true')
+                fs = element(declaration, 'fs', type='opensiddur:holiday-aggregate')
+                f = element(fs, 'f'); f.set('name', 'aseret-ymei-tshuva')
+                element(f, 'binary', value='false')
             for target in targets:
                 element(unit, 'j:transclude', target=target)
+            if group['id'] == 'reader_kaddish':
+                element(unit, 'j:endDeclare', target='#first_day_selichot_kaddish')
             element(unit, 'j:endConditional', target='#'+group['id']+'_expanded')
     return root

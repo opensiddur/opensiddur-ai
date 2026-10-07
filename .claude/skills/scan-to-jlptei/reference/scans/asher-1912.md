@@ -125,3 +125,11 @@ citation. MuPDF can split reversed Latin text into single-character lines, so
 group apparatus glyphs by page, font and baseline before measuring their order.
 The first-day settings measure apparatus at 9.826pt; their check inspects Latin
 runs at sizes up to 10pt. This cutoff is a calibration for these settings.
+
+The first-day Selichot is never during the Ten Days of Repentance. Immediately
+before its final Full Kaddish transclusion, declare a scoped first-day Selichot
+context and set `opensiddur:holiday-aggregate/aseret-ymei-tshuva` explicitly false.
+Close the declaration after the prayer, restoring the caller’s settings. Do not
+leave this date-dependent addition undefined or allow an unrelated default date
+to activate it. Verify that neither the extra לעילא nor its Ten Days rubric is
+present in this final Kaddish, even when the caller supplies a conflicting setting.

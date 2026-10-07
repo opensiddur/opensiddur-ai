@@ -80,6 +80,10 @@ def check(tree, complete=False, expanded=False):
         if 'expiation of our sins for the sake of thy name.' not in body_text:
             raise ValueError('Missing first-day conclusion')
         if expanded:
+            if 'During the Ten Days of Repentance' in text:
+                raise ValueError('First-day Selichot includes the Ten Days addition')
+            if ''.join(row[2] for row in he_rows).count('לעלא') != 2:
+                raise ValueError('First-day Kaddishes must each contain לעלא exactly once')
             for phrase, count in [('Omnipotent King, who', 4), ('Like a father hath compassion', 3),
                                   ('for we do not presume', 3), ('We have trespassed,', 3),
                                   ('May the prayers and supplications', 1), ('He who creates peace', 1)]:
@@ -99,7 +103,7 @@ def check(tree, complete=False, expanded=False):
 def controls(tree, complete=False, expanded=False):
     kinds=['direction','note-direction','alignment','boundary','punctuation','wrong-stop']
     if complete:kinds+=['conclusion','footnote']
-    if expanded:kinds+=['repetition','fulfilled-instruction']
+    if expanded:kinds+=['repetition','fulfilled-instruction','ten-days','ten-days-word']
     for kind in kinds:
         broken=copy.deepcopy(tree)
         if kind=='direction':
@@ -125,6 +129,12 @@ def controls(tree, complete=False, expanded=False):
             for line in list(broken.findall('.//line')):
                 phrase = 'May the prayers and supplications' if expanded else 'The Reader says Kaddish.'
                 if phrase in plain(line.get('text','')):line.getparent().remove(line)
+        elif kind=='ten-days-word':
+            line=etree.SubElement(broken.find('page'),'line',text='לעלא')
+            for i, char in enumerate('לעלא'):
+                etree.SubElement(line,'char',c=char,x=str(250-i*5),y='400')
+        elif kind=='ten-days':
+            etree.SubElement(broken.find('page'),'line',text='During the Ten Days of Repentance, add:')
         elif kind=='repetition':
             line=next(l for l in broken.findall('.//line') if 'We have trespassed,' in plain(l.get('text','')))
             line.getparent().remove(line)
@@ -156,7 +166,7 @@ def main(argv=None):
     print('Prayer baseline differences:',check(tree,complete=args.complete,expanded=args.expanded))
     if args.control:
         controls(tree,complete=args.complete,expanded=args.expanded)
-        additional = ('; Kaddish, repetition, fulfilled-instruction and duplicate-footnote controls rejected'
+        additional = ('; Kaddish, first-day context, repetition, fulfilled-instruction and duplicate-footnote controls rejected'
                       if args.expanded else '; final rubric and duplicate-footnote controls rejected' if args.complete else '')
         print('Direction, alignment, section boundary and verse-stop controls rejected'+additional)
     return 0
