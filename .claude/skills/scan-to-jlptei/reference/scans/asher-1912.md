@@ -109,7 +109,8 @@ spelling and pointing. Only actual section headings belong in `tei:head`.
 Replace fulfilled “Say …” cues with transclusions of their verified target ranges,
 including repeated scriptural petitions and Ashamnu. Keep documentary and expanded
 entrypoints sharing their source modules through conditional instruction/transclusion
-branches. `first_day_expanded.xml` supplies the poem’s concluding prayers explicitly.
+branches. The poem module conditionally supplies its concluding prayers next to
+the printed cue; both book views use the same `first_day.xml` assembly.
 The final Kaddish Titkabel is not printed in this Asher range. For this
 expanded edition, transclude the unqualified Full Kaddish URN
 `urn:x-opensiddur:text:prayer:kaddish/shalem`; select Birnbaum’s Hebrew and English
@@ -138,10 +139,12 @@ present in this final Kaddish, even when the caller supplies a conflicting setti
 ## Reusable book structure
 
 `index.xml` and `expanded.xml` are the documentary and expanded book entrypoints,
-with both title pages and the currently encoded first day. The corresponding
-`first_day.xml` and `first_day_expanded.xml` files assemble the service by URN.
-The preface, intervening and closing section files contain transclusions and
-printed cues, rather than embedding independent piyyutim or prayers.
+with both title pages and the currently encoded first day. Both reference the
+single `first_day.xml` assembly, which directly transcludes named texts and retains
+printed rubrics in source order. Do not create opening/preface/before-piyyut/closing
+subdivision files: these were authoring batches, not printed service divisions.
+An expanded first-day assembly is redundant because cue replacements are
+conditional within the shared text modules and service rubrics.
 
 Use `ashrei.xml` with `prayer:ashrei` and `kaddish_chatzi.xml` with
 `prayer:kaddish/chatzi`. The distinct piyyutim have their own files and `poem:`

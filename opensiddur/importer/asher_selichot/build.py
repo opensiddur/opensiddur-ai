@@ -126,6 +126,14 @@ def poem(lang,project,data):
         f=element(note,'foreign','וַיַּעֲבֹר');f.set(XML+'lang','he')
     else:
         note.text=data['conclusion']
+    supplied = element(div, 'j:conditional')
+    supplied.set(XML+'id', 'prayer_instruction_expanded')
+    fs = element(supplied, 'fs', type='asher:expansions')
+    f = element(fs, 'f'); f.set('name', 'prayers_present')
+    element(f, 'binary', value='true')
+    for name in ['el_melekh_yoshev', 'vayaavor']:
+        element(div, 'j:transclude', target=PRAYER+name)
+    element(div, 'j:endConditional', target='#prayer_instruction_expanded')
     return root
 
 
@@ -177,7 +185,7 @@ def build(source_root,project_directory):
             if not valid:
                 raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
             documents.append((out/name,xml))
-    from .first_day import documents as first_day_documents
+    from .first_day import documents as first_day_documents, OBSOLETE_ASSEMBLIES
     for project, name, root in first_day_documents(Path(source_root)/'asher_selichot/scan_reading'):
         xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
         valid,errors=validate(xml)
@@ -187,6 +195,11 @@ def build(source_root,project_directory):
     for path,xml in documents:
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text(xml,encoding='utf-8')
+    # Remove only known generated scaffolding, after all replacements validate.
+    for lang in ['he', 'en']:
+        out = Path(project_directory)/f'asher_selichot_{lang}_1912'
+        for name in OBSOLETE_ASSEMBLIES:
+            (out/(name+'.xml')).unlink(missing_ok=True)
     return [path for path,_ in documents]
 
 

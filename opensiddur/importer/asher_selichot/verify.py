@@ -18,12 +18,17 @@ def verify(source_root, project_directory):
     files=0
     for lang in ['he','en']:
         project=Path(project_directory)/f'asher_selichot_{lang}_1912'
+        from .first_day import OBSOLETE_ASSEMBLIES
+        if any((project/(name+'.xml')).exists() for name in OBSOLETE_ASSEMBLIES):
+            raise ValueError('Obsolete artificial grouping files must not remain')
         for path in sorted(project.glob('*.xml')):
             valid,errors=validate(path)
             if not valid:raise ValueError(f'{path}: {errors}')
             files+=1
         for name in ['bemotzaei_menuhah','el_melekh_yoshev','vayaavor']:
             root=etree.parse(str(project/(name+'.xml'))).getroot()
+            if name == 'bemotzaei_menuhah':
+                check_poem_expansion(root)
             for key,text in streams(root,include_notes=True).items():
                 actual[key]=(actual.get(key,'')+' '+text).strip()
         root=etree.parse(str(project/'bemotzaei_menuhah.xml'))
@@ -45,7 +50,7 @@ def verify(source_root, project_directory):
         if any(''.join(c.find(f'{{{TEI}}}expan').itertext())!=refrain for c in choices[:-1]):
             raise ValueError('Short cue must expand to this edition’s printed refrain')
         from .first_day import FIRST_DAY
-        for name,targets in [('index.xml',[FIRST_DAY]),('expanded.xml',[FIRST_DAY+'/expanded'])]:
+        for name,targets in [('index.xml',[FIRST_DAY]),('expanded.xml',[FIRST_DAY])]:
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
                 raise ValueError(f'{name}: unexpected reference expansion boundary')
@@ -57,12 +62,77 @@ def verify(source_root, project_directory):
     return actual
 
 
+def check_poem_expansion(root):
+    """Audit the supplied prayers, then select the printed branch for comparison."""
+    div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+    scopes=[('prayer_instruction','false'),('prayer_instruction_expanded','true')]
+    for identity,value in scopes:
+        scope=div.find(f'{{{J}}}conditional[@xml:id="{identity}"]',
+                       namespaces={'xml':'http://www.w3.org/XML/1998/namespace'})
+        if scope is None:raise ValueError('Poem conclusion needs printed and supplied branches')
+        binary=scope.find(f'{{{TEI}}}fs[@type="asher:expansions"]/{{{TEI}}}f[@name="prayers_present"]/{{{TEI}}}binary')
+        if binary is None or binary.get('value')!=value:
+            raise ValueError('Poem conclusion branch polarity changed')
+        if div.find(f'{{{J}}}endConditional[@target="#{identity}"]') is None:
+            raise ValueError('Unclosed poem conclusion branch')
+    if [n.get('target') for n in div.findall(f'{{{J}}}transclude')] != [PRAYER+'el_melekh_yoshev',PRAYER+'vayaavor']:
+        raise ValueError('Poem must supply exactly its referenced conclusion prayers')
+    start=div.find(f'{{{J}}}conditional[@xml:id="prayer_instruction_expanded"]',
+                   namespaces={'xml':'http://www.w3.org/XML/1998/namespace'})
+    end=div.find(f'{{{J}}}endConditional[@target="#prayer_instruction_expanded"]')
+    children=list(div)
+    for child in children[children.index(start):children.index(end)+1]:div.remove(child)
+
+
+def continuation_units(project, groups):
+    """Follow the flat printed-day sequence, refusing invented section wrappers."""
+    from .first_day import FIRST_DAY
+    from .identities import TEXTS, text_urn
+    root=etree.parse(str(project/'first_day.xml')).getroot()
+    div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+    if div.get('corresp')!=FIRST_DAY or (div.text or '').strip():
+        raise ValueError('First-day assembly must represent the printed service')
+    children=list(div)
+    half=div.find(f'{{{J}}}transclude[@target="{PRAYER}kaddish/chatzi"]')
+    if half is None:raise ValueError('First day must begin with Ashrei and Half Kaddish')
+    cursor=children.index(half)+1
+    result=[]
+    for name,readings in groups.items():
+        inserted = ([PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'] if name=='before_piyyut'
+                    else [POEM] if name=='closing' else [])
+        for target in inserted:
+            if cursor>=len(children) or children[cursor].tag!=f'{{{J}}}transclude' or children[cursor].get('target')!=target:
+                raise ValueError('Printed prayers and poem must follow source order')
+            cursor+=1
+        for reading in readings:
+            if cursor>=len(children):raise ValueError('Missing first-day unit')
+            unit=children[cursor];cursor+=1
+            identity=text_urn(reading['id']) if reading['id'] in TEXTS else FIRST_DAY+'/'+reading['id']
+            if reading['kind']!='rubric':
+                if unit.tag!=f'{{{J}}}transclude' or unit.get('target')!=identity:
+                    raise ValueError('Independent texts must be directly transcluded in printed order')
+                module=etree.parse(str(project/(TEXTS[reading['id']][0]+'.xml')))
+                publication=module.find(f'.//{{{TEI}}}publicationStmt/{{{TEI}}}idno[@type="urn"]')
+                if publication.text!=identity+'@'+project.name:
+                    raise ValueError('Publication identity must match the canonical transclusion')
+                unit=module.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+            elif unit.tag!=f'{{{TEI}}}div':
+                raise ValueError('Printed rubric must remain in its actual service position')
+            if unit.get('corresp')!=identity:raise ValueError('Units out of source order')
+            result.append((reading,unit))
+    if cursor!=len(children):raise ValueError('Extra text or artificial grouping after the first-day units')
+    return result
+
+
 def opening_documentary(project):
     """Follow opening assembly references while retaining its printed rubrics/order."""
     import copy
-    root=etree.parse(str(project/'first_day_opening.xml')).getroot()
+    root=etree.parse(str(project/'first_day.xml')).getroot()
     div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
     targets=[PRAYER+'ashrei', PRAYER+'kaddish/selichot_preface', PRAYER+'kaddish/chatzi']
+    half=div.find(f'{{{J}}}transclude[@target="{PRAYER}kaddish/chatzi"]')
+    if half is None:raise ValueError('Missing opening Half Kaddish')
+    for child in list(div)[div.index(half)+1:]:div.remove(child)
     references=div.findall(f'{{{J}}}transclude')
     if [n.get('target') for n in references] != targets:
         raise ValueError('Opening must use canonical Ashrei and Kaddish modules in source order')
@@ -79,8 +149,7 @@ def opening_documentary(project):
 
 
 def verify_opening(source, project_directory):
-    """Check page/language streams, partial verse and separate WIP entrypoints."""
-    from .first_day import ENTRY_TARGETS
+    """Check the shared service opening, partial verse and printed title pages."""
     payload=json.loads((source/'opening-documentary-streams.json').read_text())
     expected={(page,lang):words for page,langs in payload.items() for lang,words in langs.items()}
     actual={}
@@ -95,15 +164,6 @@ def verify_opening(source, project_directory):
         verses=root.findall(f'.//{{{TEI}}}milestone[@corresp="urn:x-opensiddur:text:bible:psalms/145/9"]')
         if len(verses)!=1 or verses[0].getnext().tag!=f'{{{TEI}}}pb':
             raise ValueError('Psalm 145:9 must continue across its printed page break')
-        entry=etree.parse(str(project/'first_day.xml')).getroot()
-        if [el.get('target') for el in entry.findall(f'.//{{{J}}}transclude')]!=ENTRY_TARGETS:
-            raise ValueError('First-day entry must preserve the complete documentary module order')
-        expanded=etree.parse(str(project/'first_day_expanded.xml')).getroot()
-        expanded_targets = ENTRY_TARGETS[:]
-        poem_position = expanded_targets.index(POEM)+1
-        expanded_targets[poem_position:poem_position] = [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor']
-        if [el.get('target') for el in expanded.findall(f'.//{{{J}}}transclude')] != expanded_targets:
-            raise ValueError('Expanded first-day entry must supply the piyyut conclusion prayers')
         front=etree.parse(str(project/'index.xml')).find(f'.//{{{TEI}}}front')
         title_streams={key:words for key,words in streams(front,include_notes=True).items() if words.strip()}
         wanted={}
@@ -123,114 +183,90 @@ def verify_continuation(source, project_directory):
     """Compare authored units to source readings and printed footnote evidence."""
     import re
     import unicodedata
-    from .first_day import FIRST_DAY, MODULE_ORDER, EXPANSION_TARGETS
-    from .identities import TEXTS, text_urn
+    from .first_day import EXPANSION_TARGETS
     groups=json.loads((source/'first-day-continuation.json').read_text())['sections']
     count=0
     for lang in ['he','en']:
-        for name, readings in groups.items():
-            path=project_directory/f'asher_selichot_{lang}_1912'/f'first_day_{name}.xml'
-            root=etree.parse(str(path)).getroot()
-            div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
-            units=list(div)
-            if any(n.tag not in (f'{{{TEI}}}div',f'{{{J}}}transclude') for n in units) or (div.text or '').strip():
-                raise ValueError('Unexpected text outside documentary continuation units')
-            if len(units)!=len(readings):raise ValueError('Missing or duplicated first-day unit')
-            urns=[n.get('corresp') for n in root.iter() if n.get('corresp')]
-            if len(urns)!=len(set(urns)):raise ValueError('Repeated correspondence within a module')
-            for unit,reading in zip(units,readings):
-                identity = text_urn(reading['id']) if reading['id'] in TEXTS else FIRST_DAY+'/'+reading['id']
-                if reading['kind'] != 'rubric':
-                    if unit.tag != f'{{{J}}}transclude' or unit.get('target') != identity:
-                        raise ValueError('Independent text must be transcluded by its canonical identity in source order')
-                    module = etree.parse(str(path.parent/(TEXTS[reading['id']][0]+'.xml')))
-                    publication = module.find(f'.//{{{TEI}}}publicationStmt/{{{TEI}}}idno[@type="urn"]')
-                    if publication.text != identity+'@'+path.parent.name:
-                        raise ValueError('Module publication identity must match its canonical transclusion')
-                    unit = module.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
-                if unit.get('corresp')!=identity:raise ValueError('Units out of source order')
-                targets = EXPANSION_TARGETS.get(reading['id'])
-                actual_targets = [n.get('target') for n in unit.findall(f'{{{J}}}transclude')]
-                if actual_targets != (targets or []):
-                    raise ValueError(f'{reading["id"]}: unexpected editorial expansion targets')
-                if targets:
-                    # Audit the true branch, then remove it before documentary comparison.
-                    scopes = unit.findall(f'{{{J}}}conditional')
-                    if len(scopes) != 2:
-                        raise ValueError('Expansion requires distinct printed and supplied branches')
-                    for scope, value in zip(scopes, ['false', 'true']):
-                        binary = scope.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary')
+        project=project_directory/f'asher_selichot_{lang}_1912'
+        for reading,unit in continuation_units(project,groups):
+            targets = EXPANSION_TARGETS.get(reading['id'])
+            actual_targets = [n.get('target') for n in unit.findall(f'{{{J}}}transclude')]
+            if actual_targets != (targets or []):
+                raise ValueError(f'{reading["id"]}: unexpected editorial expansion targets')
+            if targets:
+                # Audit the true branch, then remove it before documentary comparison.
+                scopes = unit.findall(f'{{{J}}}conditional')
+                if len(scopes) != 2:
+                    raise ValueError('Expansion requires distinct printed and supplied branches')
+                for scope, value in zip(scopes, ['false', 'true']):
+                    binary = scope.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary')
+                    if binary is None or binary.get('value') != value:
+                        raise ValueError('Expansion branch polarity changed')
+                if reading['id'] == 'reader_kaddish':
+                    declaration = scopes[1].getnext()
+                    if declaration is None or declaration.tag != f'{{{J}}}declare':
+                        raise ValueError('Full Kaddish needs scoped first-day Selichot context')
+                    wanted = {'asher:selichot': ('first_day', 'true'),
+                              'opensiddur:holiday-aggregate': ('aseret-ymei-tshuva', 'false')}
+                    for fs_type, (feature, value) in wanted.items():
+                        binary = declaration.find(f'{{{TEI}}}fs[@type="{fs_type}"]/{{{TEI}}}f[@name="{feature}"]/{{{TEI}}}binary')
                         if binary is None or binary.get('value') != value:
-                            raise ValueError('Expansion branch polarity changed')
-                    if reading['id'] == 'reader_kaddish':
-                        declaration = scopes[1].getnext()
-                        if declaration is None or declaration.tag != f'{{{J}}}declare':
-                            raise ValueError('Full Kaddish needs scoped first-day Selichot context')
-                        wanted = {'asher:selichot': ('first_day', 'true'),
-                                  'opensiddur:holiday-aggregate': ('aseret-ymei-tshuva', 'false')}
-                        for fs_type, (feature, value) in wanted.items():
-                            binary = declaration.find(f'{{{TEI}}}fs[@type="{fs_type}"]/{{{TEI}}}f[@name="{feature}"]/{{{TEI}}}binary')
-                            if binary is None or binary.get('value') != value:
-                                raise ValueError('First-day Selichot must exclude Ten Days additions')
-                        end_declare = unit.find(f'{{{J}}}endDeclare[@target="#first_day_selichot_kaddish"]')
-                        if end_declare is None:raise ValueError('Unclosed first-day Kaddish declaration')
-                    start = scopes[1]
-                    end = unit.find(f'{{{J}}}endConditional[@target="#{start.get("{http://www.w3.org/XML/1998/namespace}id")}"]')
-                    if end is None:raise ValueError('Unclosed expansion branch')
-                    children = list(unit)
-                    for child in children[children.index(start):children.index(end)+1]:unit.remove(child)
-                if reading.get('incipit_he'):
-                    invocation = reading['fragments'][0][lang]['text'].split('\n', 1)[0]
-                    node = unit.find(f'{{{TEI}}}lg/{{{TEI}}}l' if lang == 'he' else f'{{{TEI}}}p')
-                    if unit.findall(f'{{{TEI}}}head') or node is None or not ''.join(node.itertext()).startswith(invocation):
-                        raise ValueError(f'{reading["id"]}: piyyut invocation must remain in its opening text')
-                expected_notes=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
-                notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
-                normalize=lambda text:' '.join(unicodedata.normalize('NFKD',text).split())
-                if [normalize(' '.join(n.itertext())) for n in notes]!=list(map(normalize,expected_notes)):
-                    raise ValueError(f'{reading["id"]}: missing or changed printed footnote')
-                # Exclude apparatus after checking it separately, preserving surrounding body text.
-                for note in notes:
-                    parent=note.getparent();previous=note.getprevious()
-                    if previous is None:parent.text=(parent.text or '')+(note.tail or '')
-                    else:previous.tail=(previous.tail or '')+(note.tail or '')
-                    parent.remove(note)
-                expected={}
-                for f in reading['fragments']:
-                    data=f[lang];page=data['scan'];words=data['text']
-                    if reading['kind']=='rubric' and lang=='he':
-                        # Independent language separation: Hebrew letters/marks and attached punctuation
-                        # belong to cues; English words belong to the instruction.
-                        hebrew=' '.join(re.findall(r'[\u0590-\u05ff]+',words))
-                        english=re.sub(r'[\u0590-\u05ff]+','',words).replace(' · ',' ')
-                        expected[(page,'he')]=normalize(hebrew)
-                        expected[(page,'en')]=normalize(english)
-                    else:expected[(page,lang)]=normalize(words)
-                unit.set('{http://www.w3.org/XML/1998/namespace}lang',lang)
-                actual=streams(unit,include_notes=True)
+                            raise ValueError('First-day Selichot must exclude Ten Days additions')
+                    end_declare = unit.find(f'{{{J}}}endDeclare[@target="#first_day_selichot_kaddish"]')
+                    if end_declare is None:raise ValueError('Unclosed first-day Kaddish declaration')
+                start = scopes[1]
+                end = unit.find(f'{{{J}}}endConditional[@target="#{start.get("{http://www.w3.org/XML/1998/namespace}id")}"]')
+                if end is None:raise ValueError('Unclosed expansion branch')
+                children = list(unit)
+                for child in children[children.index(start):children.index(end)+1]:unit.remove(child)
+            if reading.get('incipit_he'):
+                invocation = reading['fragments'][0][lang]['text'].split('\n', 1)[0]
+                node = unit.find(f'{{{TEI}}}lg/{{{TEI}}}l' if lang == 'he' else f'{{{TEI}}}p')
+                if unit.findall(f'{{{TEI}}}head') or node is None or not ''.join(node.itertext()).startswith(invocation):
+                    raise ValueError(f'{reading["id"]}: piyyut invocation must remain in its opening text')
+            expected_notes=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
+            notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
+            normalize=lambda text:' '.join(unicodedata.normalize('NFKD',text).split())
+            if [normalize(' '.join(n.itertext())) for n in notes]!=list(map(normalize,expected_notes)):
+                raise ValueError(f'{reading["id"]}: missing or changed printed footnote')
+            # Exclude apparatus after checking it separately, preserving surrounding body text.
+            for note in notes:
+                parent=note.getparent();previous=note.getprevious()
+                if previous is None:parent.text=(parent.text or '')+(note.tail or '')
+                else:previous.tail=(previous.tail or '')+(note.tail or '')
+                parent.remove(note)
+            expected={}
+            for f in reading['fragments']:
+                data=f[lang];page=data['scan'];words=data['text']
                 if reading['kind']=='rubric' and lang=='he':
-                    # Preserve printed phrase dots in the Hebrew cue stream.
-                    actual={k:v.replace(' · ',' ') for k,v in actual.items()}
-                differences=check(actual,expected)
-                if differences:raise ValueError(f'{reading["id"]}: {differences}')
-                count+=1
+                    # Independent language separation: Hebrew letters/marks and attached punctuation
+                    # belong to cues; English words belong to the instruction.
+                    hebrew=' '.join(re.findall(r'[\u0590-\u05ff]+',words))
+                    english=re.sub(r'[\u0590-\u05ff]+','',words).replace(' · ',' ')
+                    expected[(page,'he')]=normalize(hebrew)
+                    expected[(page,'en')]=normalize(english)
+                else:expected[(page,lang)]=normalize(words)
+            unit.set('{http://www.w3.org/XML/1998/namespace}lang',lang)
+            actual=streams(unit,include_notes=True)
+            if reading['kind']=='rubric' and lang=='he':
+                # Preserve printed phrase dots in the Hebrew cue stream.
+                actual={k:v.replace(' · ',' ') for k,v in actual.items()}
+            differences=check(actual,expected)
+            if differences:raise ValueError(f'{reading["id"]}: {differences}')
+            count+=1
+        roots=[opening_documentary(project)]
+        units=continuation_units(project,groups)
+        # Interleave the separately printed prayers and poem at their scan positions.
+        for reading,unit in units:
+            if reading['id']==groups['before_piyyut'][0]['id']:
+                for name in ['el_melekh_yoshev','vayaavor']:
+                    roots.append(etree.parse(str(project/(name+'.xml'))).getroot())
+            if reading['id']==groups['closing'][0]['id']:
+                roots.append(etree.parse(str(project/'bemotzaei_menuhah.xml')).getroot())
+            roots.append(unit)
         pages=[]
-        for name in MODULE_ORDER:
-            if name == 'first_day_opening':
-                roots = [opening_documentary(project_directory/f'asher_selichot_{lang}_1912')]
-            elif name.startswith('first_day_'):
-                group_name = name.removeprefix('first_day_')
-                roots = []
-                for reading in groups[group_name]:
-                    if reading['kind'] == 'rubric':
-                        assembly = etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(name+'.xml')))
-                        roots.append(assembly.find(f'.//{{{TEI}}}div[@corresp="{FIRST_DAY}/{reading["id"]}"]'))
-                    else:
-                        roots.append(etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(TEXTS[reading['id']][0]+'.xml'))).getroot())
-            else:
-                roots = [etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(name+'.xml'))).getroot()]
-            for root in roots:
-                pages.extend(int(re.search(r'/n(\d+)',n.get('facs')).group(1)) for n in root.findall(f'.//{{{TEI}}}pb'))
+        for root in roots:
+            pages.extend(int(re.search(r'/n(\d+)',n.get('facs')).group(1)) for n in root.findall(f'.//{{{TEI}}}pb'))
         required=set(range(5 if lang=='he' else 6, 52 if lang=='he' else 53, 2))
         if pages!=sorted(pages) or set(pages)!=required:
             raise ValueError('First-day facsimiles must follow source order through the final leaf')

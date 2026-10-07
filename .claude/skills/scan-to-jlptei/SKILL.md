@@ -70,6 +70,14 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
   entrypoint; incomplete coverage belongs in edition metadata and documentation,
   rather than in text identities. Verify references, source order, alignment and
   both rendered views after splitting modules.
+- Keep grouping files only for real, useful book or service divisions supported
+  by the source. Do not create files for temporary reading batches or editorial
+  positions such as “before the piyyut”, especially when they contain piyyutim.
+  A service should directly transclude its independent texts and retain its
+  printed rubrics. Put the conditional replacement for a printed cue alongside
+  that cue, so expanded settings can use the same service assembly. Remove
+  redundant view-specific assemblies and their obsolete URNs; update the importer
+  so regeneration does not recreate deleted scaffolding.
 - Alignment needs exact shared URNs, at the granularity the translation supports.
   Reusing a correspondence within one document can silently break alignment.
 - Readings, verse structure, headings, rubrics, and notes are different evidence

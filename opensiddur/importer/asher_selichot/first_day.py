@@ -7,7 +7,8 @@ from .build import TEI, XML, PRAYER, POEM, document, element, pb
 from .identities import TEXTS, text_urn
 
 FIRST_DAY = 'urn:x-opensiddur:text:siddur:selichot/first_day'
-OPENING = FIRST_DAY + '/opening'
+OBSOLETE_ASSEMBLIES = ('first_day_opening', 'first_day_preface',
+                       'first_day_before_piyyut', 'first_day_closing', 'first_day_expanded')
 
 
 def titles(front, readings):
@@ -49,8 +50,8 @@ def verse(parent, urn, words):
 
 
 def opening(lang, project, data):
-    root, text = document(lang, project, 'First-day opening: Ashrei and Half Kaddish', OPENING)
-    div = element(element(text, 'body'), 'div', corresp=OPENING)
+    root, text = document(lang, project, 'First-day Selichot', FIRST_DAY)
+    div = element(element(text, 'body'), 'div', corresp=FIRST_DAY)
     pb(div, data['start_scan'], '[unnumbered]')
     element(div, 'head', data['heading'])
     for parts in data['rubrics']:
@@ -88,7 +89,7 @@ def opening(lang, project, data):
 
 
 def entry(lang, project, title_data, expanded=False, *, book=False):
-    urn = ('urn:x-opensiddur:text:siddur:selichot' if book else FIRST_DAY) + ('/expanded' if expanded else '')
+    urn = ('urn:x-opensiddur:text:siddur:selichot' + ('/expanded' if expanded else '')) if book else FIRST_DAY
     title = 'Asher Selichoth' if book else 'First-day Selichot'
     if expanded:
         title += ' — expanded edition'
@@ -101,13 +102,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False):
         titles(element(text, 'front'), title_data)
     div = element(element(text, 'body'), 'div', corresp=urn)
     if book:
-        element(div, 'j:transclude', target=FIRST_DAY+('/expanded' if expanded else ''))
+        element(div, 'j:transclude', target=FIRST_DAY)
         return root
-    for target in ENTRY_TARGETS:
-        element(div, 'j:transclude', target=target)
-        if expanded and target == POEM:
-            for prayer in ('el_melekh_yoshev', 'vayaavor'):
-                element(div, 'j:transclude', target=PRAYER+prayer)
     return root
 
 
@@ -119,8 +115,8 @@ def documents(source):
         project = f'asher_selichot_{lang}_1912'
         yield project, 'index.xml', entry(lang, project, title_data, book=True)
         yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True)
-        yield project, 'first_day.xml', entry(lang, project, title_data)
-        yield project, 'first_day_expanded.xml', entry(lang, project, title_data, expanded=True)
+        service = entry(lang, project, title_data)
+        service_div = service.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         root = opening(lang, project, reading[lang])
         div = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         units = [div.find(f'{{{TEI}}}div[@corresp="{PRAYER}ashrei"]'),
@@ -140,8 +136,13 @@ def documents(source):
             module, module_text = document(lang, project, filename.replace('_', ' '), urn)
             element(module_text, 'body').append(unit)
             yield project, filename+'.xml', module
-        yield project, 'first_day_opening.xml', root
+        service_div.extend(list(div))
         for name, groups in continuation.items():
+            if name == 'before_piyyut':
+                for prayer in ['el_melekh_yoshev', 'vayaavor']:
+                    element(service_div, 'j:transclude', target=PRAYER+prayer)
+            elif name == 'closing':
+                element(service_div, 'j:transclude', target=POEM)
             root = section(lang, project, name, groups)
             div = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
             for unit, group in zip(list(div), groups):
@@ -158,13 +159,8 @@ def documents(source):
                     module.find(f'.//{{{TEI}}}title').set(XML+'lang', 'he')
                 element(module_text, 'body').append(unit)
                 yield project, filename+'.xml', module
-            yield project, f'first_day_{name}.xml', root
-
-
-ENTRY_TARGETS = [OPENING, FIRST_DAY+'/preface', PRAYER+'el_melekh_yoshev',
-                 PRAYER+'vayaavor', FIRST_DAY+'/before_piyyut', POEM, FIRST_DAY+'/closing']
-MODULE_ORDER = ['first_day_opening', 'first_day_preface', 'el_melekh_yoshev',
-                'vayaavor', 'first_day_before_piyyut', 'bemotzaei_menuhah', 'first_day_closing']
+            service_div.extend(list(div))
+        yield project, 'first_day.xml', service
 
 
 EXPANSION_TARGETS = {
