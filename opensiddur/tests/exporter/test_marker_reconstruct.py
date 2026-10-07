@@ -5,6 +5,7 @@ import unittest.mock
 
 from lxml import etree
 
+from opensiddur.exporter.constants import JLPTEI_NAMESPACE
 from opensiddur.exporter.external_compiler import PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.marker_reconstruct import (
     doc_needs_marker_reconstruction,
@@ -15,6 +16,8 @@ from opensiddur.exporter.marker_reconstruct import (
 from opensiddur.exporter import marker_reconstruct as mr
 
 P_NS = PROCESSING_NAMESPACE
+J_NS = JLPTEI_NAMESPACE
+XML_NS = "http://www.w3.org/XML/1998/namespace"
 
 
 class TestMarkerReconstruct(unittest.TestCase):
@@ -100,6 +103,63 @@ class TestMarkerReconstruct(unittest.TestCase):
         self.assertEqual(len(ps), 1)
         self.assertIsNone(ps[0].get(f"{{{P_NS}}}part"))
         self.assertIn("Only", "".join(ps[0].itertext()))
+
+    def test_conditional_markers_outlive_a_pruned_segment(self):
+        """A segment holding only a scope's closer (or a rubric-less opener) has no words,
+        and is pruned -- but the markers must stay, where the segment was, or the scope
+        loses an end."""
+        ns = {"tei": TEI_NS, "p": P_NS, "j": J_NS}
+        xml = f"""<tei:TEI xmlns:tei="{TEI_NS}" xmlns:p="{P_NS}" xmlns:j="{J_NS}">
+          <tei:text><tei:body>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:start="a"/>Before
+              <tei:div p:suspend="a"/>
+            </p:parallelItem></p:parallel>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:resume="a"/><j:endConditional target="#c1"/>
+              <tei:div p:suspend="a"/>
+            </p:parallelItem></p:parallel>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:resume="a"/><j:conditional xml:id="c2"/>
+              <tei:div p:suspend="a"/>
+            </p:parallelItem></p:parallel>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:resume="a"/>After
+              <tei:div p:end="a"/>
+            </p:parallelItem></p:parallel>
+          </tei:body></tei:text></tei:TEI>"""
+        root = etree.fromstring(xml.encode())
+        reconstruct_markered_document(root)
+        items = root.xpath("//p:parallelItem", namespaces=ns)
+        self.assertEqual(
+            [(child.tag, child.get("target") or child.get(f"{{{XML_NS}}}id"))
+             for child in items[1]],
+            [(f"{{{J_NS}}}endConditional", "#c1")])
+        self.assertEqual(
+            [child.get(f"{{{XML_NS}}}id") for child in items[2]], ["c2"])
+        self.assertEqual(
+            [d.get(f"{{{P_NS}}}part") for d in root.xpath("//tei:div", namespaces=ns)],
+            ["first", "last"])
+
+    def test_nested_conditional_marker_outlives_a_pruned_segment(self):
+        """A marker nested in an empty paragraph of the pruned segment is kept too."""
+        ns = {"tei": TEI_NS, "p": P_NS, "j": J_NS}
+        xml = f"""<tei:TEI xmlns:tei="{TEI_NS}" xmlns:p="{P_NS}" xmlns:j="{J_NS}">
+          <tei:text><tei:body>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:start="a"/>Before
+              <tei:div p:suspend="a"/>
+            </p:parallelItem></p:parallel>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:resume="a"/><tei:p><j:endConditional target="#c1"/></tei:p>
+              <tei:div p:end="a"/>
+            </p:parallelItem></p:parallel>
+          </tei:body></tei:text></tei:TEI>"""
+        root = etree.fromstring(xml.encode())
+        reconstruct_markered_document(root)
+        closers = root.xpath("//j:endConditional", namespaces=ns)
+        self.assertEqual([c.get("target") for c in closers], ["#c1"])
+        self.assertEqual(closers[0].getparent().tag, f"{{{P_NS}}}parallelItem")
 
     def test_substantive_content_milestone_tail(self):
         xml = f"""<tei:TEI xmlns:tei="{TEI_NS}">

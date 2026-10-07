@@ -8,6 +8,7 @@ from unittest.mock import patch
 from lxml import etree
 
 from opensiddur.exporter.compiler import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE
+from opensiddur.exporter.conditional_markers import check_pairing
 from opensiddur.exporter.external_compiler import TEI_NS, ExternalCompilerProcessor
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
 from opensiddur.exporter.urn import ResolvedUrn, ResolvedUrnRange, UrnResolver
@@ -781,6 +782,54 @@ class TestSplitStructureAcrossParallelsE2E(TestArrangementProjectRootE2E):
         for attr in ("start", "end", "suspend", "resume", "logical-id"):
             leftovers = root.findall(f".//*[@{{{P_NS}}}{attr}]")
             self.assertEqual(leftovers, [], f"p:{attr} survived reconstruction")
+
+
+class TestUndecidedScopesAroundTransclusionsE2E(TestSplitStructureAcrossParallelsE2E):
+    """Undecided conditionals around transclusions inside one div keep both of their ends.
+
+    The shape of Birnbaum's "Men say: / Women say:" blessings: each scope opens, transcludes
+    one reading, and closes, all inside the div that the transclusions split into segments.
+    The closer lands alone in the segment that resumes after its transclusion; that segment
+    has no words, and pruning it used to take the closer with it, leaving the scope open
+    to the end of the book.
+    """
+
+    _CONDITION = (
+        b'<tei:note type="instruction" xml:lang="en">%s say:</tei:note>'
+        b'<tei:fs type="t:person"><tei:f name="gender"><tei:symbol value="%s"/></tei:f></tei:fs>')
+
+    _WRAPPER_XML = TestArrangementProjectRootE2E._WRAPPER_XML.replace(
+        b'<j:transclude type="external" target="urn:x-test:section/1"/>',
+        b'<j:conditional xml:id="men">' + _CONDITION % (b"Men", b"male") + b'</j:conditional>\n'
+        b'        <j:transclude type="external" target="urn:x-test:section/1"/>\n'
+        b'        <j:endConditional target="#men"/>\n'
+        b'        <j:conditional xml:id="women">' + _CONDITION % (b"Women", b"female")
+        + b'</j:conditional>\n'
+        b'        <j:transclude type="external" target="urn:x-test:section/2"/>\n'
+        b'        <j:endConditional target="#women"/>',
+    )
+
+    def test_undecided_scopes_are_paired(self):
+        root = self._compiled_root()
+        self.assertEqual(len(root.findall(f".//{{{J_NS}}}conditional")), 2)
+        self.assertEqual(check_pairing(root), [])
+
+    def test_each_scope_still_governs_its_reading(self):
+        """In document order: open men, verse 1, close men, open women, verse 2, close women."""
+        root = self._compiled_root()
+        events = []
+        for el in root.iter(f"{{{J_NS}}}conditional", f"{{{J_NS}}}endConditional",
+                            f"{{{TEI_NS}}}milestone"):
+            if el.tag == f"{{{TEI_NS}}}milestone":
+                if next(el.iterancestors(f"{{{P_NS}}}parallelItem")).get("role") == "primary":
+                    events.append(f"verse {el.get('n')}")
+            elif el.tag == f"{{{J_NS}}}conditional":
+                events.append("open " + el.get(f"{{{XML_NS}}}id").split("_")[0])
+            else:
+                events.append("close " + el.get("target")[1:].split("_")[0])
+        self.assertEqual(
+            events,
+            ["open men", "verse 1", "close men", "open women", "verse 2", "close women"])
 
 
 if __name__ == "__main__":
