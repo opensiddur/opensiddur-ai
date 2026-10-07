@@ -49,6 +49,7 @@ def verify(source_root, project_directory):
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
                 raise ValueError(f'{name}: unexpected reference expansion boundary')
     verify_opening(source, Path(project_directory))
+    verify_continuation(source, Path(project_directory))
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
     print(f'{files} schema-valid files; {len(actual)} documentary page/language streams match; expansion targets and forms checked')
@@ -57,7 +58,7 @@ def verify(source_root, project_directory):
 
 def verify_opening(source, project_directory):
     """Check page/language streams, partial verse and separate WIP entrypoints."""
-    from .first_day import OPENING
+    from .first_day import ENTRY_TARGETS
     payload=json.loads((source/'opening-documentary-streams.json').read_text())
     expected={(page,lang):words for page,langs in payload.items() for lang,words in langs.items()}
     actual={}
@@ -73,8 +74,8 @@ def verify_opening(source, project_directory):
         if len(verses)!=1 or verses[0].getnext().tag!=f'{{{TEI}}}pb':
             raise ValueError('Psalm 145:9 must continue across its printed page break')
         entry=etree.parse(str(project/'first_day.xml')).getroot()
-        if [el.get('target') for el in entry.findall(f'.//{{{J}}}transclude')]!=[OPENING]:
-            raise ValueError('Partial first-day entry must contain only the contiguous opening')
+        if [el.get('target') for el in entry.findall(f'.//{{{J}}}transclude')]!=ENTRY_TARGETS:
+            raise ValueError('First-day entry must preserve the complete documentary module order')
         front=entry.find(f'.//{{{TEI}}}front')
         title_streams={key:words for key,words in streams(front,include_notes=True).items() if words.strip()}
         wanted={}
@@ -87,7 +88,69 @@ def verify_opening(source, project_directory):
         if check(title_streams,wanted):raise ValueError('Title pages differ from scan readings')
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
-    print(f'{len(actual)} opening page/language streams match; both title pages and partial entry boundaries checked')
+    print(f'{len(actual)} opening page/language streams match; both title pages and first-day entry boundaries checked')
+
+
+def verify_continuation(source, project_directory):
+    """Compare authored units to source readings and printed footnote evidence."""
+    import re
+    import unicodedata
+    from .first_day import FIRST_DAY, MODULE_ORDER
+    groups=json.loads((source/'first-day-continuation.json').read_text())['sections']
+    count=0
+    for lang in ['he','en']:
+        for name, readings in groups.items():
+            path=project_directory/f'asher_selichot_{lang}_1912'/f'first_day_{name}.xml'
+            root=etree.parse(str(path)).getroot()
+            div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+            units=div.findall(f'{{{TEI}}}div')
+            if list(div)!=units or (div.text or '').strip():
+                raise ValueError('Unexpected text outside documentary continuation units')
+            if len(units)!=len(readings):raise ValueError('Missing or duplicated first-day unit')
+            urns=[n.get('corresp') for n in root.iter() if n.get('corresp')]
+            if len(urns)!=len(set(urns)):raise ValueError('Repeated correspondence within a module')
+            for unit,reading in zip(units,readings):
+                if unit.get('corresp')!=FIRST_DAY+'/'+reading['id']:raise ValueError('Units out of source order')
+                expected_notes=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
+                notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
+                normalize=lambda text:' '.join(unicodedata.normalize('NFKD',text).split())
+                if [normalize(' '.join(n.itertext())) for n in notes]!=list(map(normalize,expected_notes)):
+                    raise ValueError(f'{reading["id"]}: missing or changed printed footnote')
+                # Exclude apparatus after checking it separately, preserving surrounding body text.
+                for note in notes:
+                    parent=note.getparent();previous=note.getprevious()
+                    if previous is None:parent.text=(parent.text or '')+(note.tail or '')
+                    else:previous.tail=(previous.tail or '')+(note.tail or '')
+                    parent.remove(note)
+                expected={}
+                for f in reading['fragments']:
+                    data=f[lang];page=data['scan'];words=data['text']
+                    if reading['kind']=='rubric' and lang=='he':
+                        # Independent language separation: Hebrew letters/marks and attached punctuation
+                        # belong to cues; English words belong to the instruction.
+                        hebrew=' '.join(re.findall(r'[\u0590-\u05ff]+',words))
+                        english=re.sub(r'[\u0590-\u05ff]+','',words).replace(' · ',' ')
+                        expected[(page,'he')]=normalize(hebrew)
+                        expected[(page,'en')]=normalize(english)
+                    else:expected[(page,lang)]=normalize(words)
+                unit.set('{http://www.w3.org/XML/1998/namespace}lang',lang)
+                actual=streams(unit,include_notes=True)
+                if reading['kind']=='rubric' and lang=='he':
+                    # Preserve printed phrase dots in the Hebrew cue stream.
+                    actual={k:v.replace(' · ',' ') for k,v in actual.items()}
+                differences=check(actual,expected)
+                if differences:raise ValueError(f'{reading["id"]}: {differences}')
+                count+=1
+        pages=[]
+        for name in MODULE_ORDER:
+            root=etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(name+'.xml')))
+            pages.extend(int(re.search(r'/n(\d+)',n.get('facs')).group(1)) for n in root.findall(f'.//{{{TEI}}}pb'))
+        required=set(range(5 if lang=='he' else 6, 52 if lang=='he' else 53, 2))
+        if pages!=sorted(pages) or set(pages)!=required:
+            raise ValueError('First-day facsimiles must follow source order through the final leaf')
+        final=groups['closing'][-1]
+        if final['id']!='reader_kaddish':raise ValueError('First day must end with Reader’s Kaddish instruction')
+    print(f'{count} continuation units match documentary readings; footnotes and final n51/n52 boundary checked')
 
 
 def main(argv=None):

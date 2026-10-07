@@ -1,6 +1,7 @@
-"""Check the partial first-day PDF, including the Latin citation direction."""
+"""Check the first-day PDF, including the Latin citation direction."""
 import argparse
 import copy
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -16,7 +17,7 @@ ANCHORS = [('אשרייושביביתך', 'Happy are they who dwell'),
            ('יהאשמהרבא', 'May his great name be blessed')]
 
 
-def check(tree):
+def check(tree, complete=False):
     he_rows, en_rows, citation = [], [], []
     for page_no, page in enumerate(tree.findall('page'), 1):
         gutter = 288 if page_no % 2 else 324
@@ -37,7 +38,8 @@ def check(tree):
             if 'Ps. cxlv.' in plain(''.join(c.get('c') for c in left)):
                 citation.append(left)
     deltas=[]
-    for h_anchor, e_anchor in ANCHORS:
+    anchors=ANCHORS + ([('שמעקולנו','Hear our voice'),('ואנחנו לאנדע'.replace(' ',''),'We know not what to do')] if complete else [])
+    for h_anchor, e_anchor in anchors:
         h=next((r for r in he_rows if h_anchor in r[2]),None)
         e=next((r for r in en_rows if e_anchor in r[2]),None)
         if not h or not e:raise ValueError(f'Missing prayer anchor {h_anchor} / {e_anchor}')
@@ -51,13 +53,24 @@ def check(tree):
     text=plain(' '.join(line.get('text','') for line in tree.findall('.//line')))
     if text.count('Ph. Dr.')!=1 or 'Budinger' not in text or '1912-5672.' not in text:
         raise ValueError('Missing or duplicated English title credits/imprint')
-    if 'SECOND DAY' in text or 'Omnipotent King, who' in text:
+    if 'SECOND DAY' in text:
+        raise ValueError('First-day output includes the second-day heading')
+    if complete:
+        body_text=re.sub(r'\b\d+\b','',plain(' '.join(r[2] for r in en_rows)))
+        body_text=' '.join(body_text.split())
+        if 'The Reader says Kaddish.' not in body_text or 'expiation of our sins for the sake of thy name.' not in body_text:
+            raise ValueError('Missing first-day conclusion or final Reader’s Kaddish rubric')
+        for phrase in ['Explained by some', 'Idolatry, fornication and murder.', 'From here down']:
+            if text.count(phrase)!=1:raise ValueError(f'Missing or duplicated footnote: {phrase}')
+    elif 'Omnipotent King, who' in text:
         raise ValueError('Partial opening contains material beyond its encoded range')
     return deltas
 
 
-def controls(tree):
-    for kind in ['direction','alignment','boundary','punctuation','wrong-stop']:
+def controls(tree, complete=False):
+    kinds=['direction','alignment','boundary','punctuation','wrong-stop']
+    if complete:kinds+=['conclusion','footnote']
+    for kind in kinds:
         broken=copy.deepcopy(tree)
         if kind=='direction':
             line=next(l for l in broken.findall('.//line') if 'Ps. cxlv.' in l.get('text','') and float(l.find('.//char').get('x'))<288)
@@ -74,10 +87,16 @@ def controls(tree):
         elif kind=='punctuation':
             line=etree.SubElement(broken.findall('page')[4],'line',text='׃')
             etree.SubElement(line,'char',c='׃',x='250',y='400')
+        elif kind=='conclusion':
+            for line in list(broken.findall('.//line')):
+                if 'The Reader says Kaddish.' in plain(line.get('text','')):line.getparent().remove(line)
+        elif kind=='footnote':
+            line=next(l for l in broken.findall('.//line') if 'Explained by some' in l.get('text',''))
+            line.getparent().append(copy.deepcopy(line))
         else:
             stop=next(c for c in broken.findall('.//char') if c.get('c')=='׃')
             stop.set('c',':')
-        try:check(broken)
+        try:check(broken,complete=complete)
         except ValueError:pass
         else:raise AssertionError(f'{kind} control escaped detection')
 
@@ -85,14 +104,16 @@ def controls(tree):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('pdf',type=Path);p.add_argument('--control',action='store_true')
+    p.add_argument('--complete',action='store_true')
     args=p.parse_args(argv)
     with tempfile.TemporaryDirectory() as tmp:
         xml=Path(tmp)/'text.xml'
         subprocess.run(['mutool','draw','-q','-F','stext','-o',str(xml),str(args.pdf)],check=True)
         tree=etree.parse(str(xml)).getroot()
-    print('Prayer baseline differences:',check(tree))
+    print('Prayer baseline differences:',check(tree,complete=args.complete))
     if args.control:
-        controls(tree);print('Reversed citation, shifted prayer, wrong boundary, stranded punctuation, and wrong verse-stop controls rejected')
+        controls(tree,complete=args.complete)
+        print('Direction, alignment, section boundary and verse-stop controls rejected'+('; final rubric and duplicate-footnote controls rejected' if args.complete else ''))
     return 0
 
 

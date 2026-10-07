@@ -124,3 +124,47 @@ refrains. The first-pass evidence retains its initial provisional colon encoding
 All 14 XML files and documentary streams validate; all three PDFs were rebuilt
 and pass alignment, footnote/range, and direction checks. The opening check rejects
 both a stranded sof pasuq and an ASCII colon substituted for a Hebrew verse stop.
+
+## Complete first-day continuation (current)
+
+The complete documentary day has 20 schema-valid project XML files. Both title
+pages, six opening page/language streams, seven pilot streams and 96 continuation
+units match their source readings. All source leaves are present in monotonic
+order through n51/n52, and 22 continuation footnotes match their recorded text.
+Missing-final-rubric, duplicate-footnote, next-day-heading and wrong-page controls
+all fail verification. The new synthetic fixtures cover page crossings, repeated
+anchors, absent anchors, litanies and mixed-language rubrics.
+
+`first-day.pdf` has 35 pages. Six prayer-start pairs have baseline differences of
+0pt, with a measured 16pt maximum allowed. The Latin Psalm citation occurs once in
+the Hebrew column and reads left to right. Hebrew glyph verification finds 0/1,250
+runs reversed; reversing them flags 1,224/1,250. PDF controls reject shifted prayer
+starts, reversed citation, next-day heading, isolated or wrong verse stops, missing
+final Kaddish and duplicate explanatory footnote. The original documentary and
+expanded pilot checks still pass, including all eight stanza pairs and their
+footnote and reference boundaries. Running headers identify the first day even
+after the piyyut, rather than inheriting its heading. Long Hebrew/English prose
+blocks can occupy different numbers of lines; alignment is at complete prayers.
+
+Independent Hebrew pointing proofreading remains pending. English OCR comparison
+records still contain unresolved findings; automatic comparison does not adjudicate
+against the edition. Full-volume encoding and publication remain outside this work.
+
+Reproduce the complete first-day PDF using `first-day.yaml` in the same compile
+and render commands above; set both `TEXMFVAR` and `TEXMFCACHE` to a writable
+cache. Then run:
+
+```bash
+python -m opensiddur.importer.asher_selichot.check_first_day_pdf "$output_root/asher_selichot/first-day.pdf" --complete --control
+python -m opensiddur.importer.scan.pdf_direction "$output_root/asher_selichot/first-day.pdf" "$output_root/asher_selichot/first-day.tex" --control
+```
+
+The serial full regression run passed: 3,028 tests and 4,660 subtests passed; 12 skipped (recommended pytest runner, 585.75 seconds).
+
+Use `python -m pytest -q` with both TeX cache variables set as above. A broad
+`unittest discover` run encountered font-loading failures in geometry fixtures;
+the affected facing-page fixture passed in isolation and the complete recommended
+pytest run passed. The new synthetic unittest fixtures also pass discovery alone.
+
+Current companion commits: source `ce2f2d1`; projects `bfbb2d5`. The URN registry
+contains 2,985 records with no errors, warnings or notes.
