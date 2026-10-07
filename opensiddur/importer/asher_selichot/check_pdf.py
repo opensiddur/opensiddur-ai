@@ -1,4 +1,4 @@
-"""Check Asher pilot PDF content, bilingual stanza geometry, and broken controls."""
+"""Check Asher poem PDF content, bilingual stanza geometry, and broken controls."""
 import argparse
 import copy
 import subprocess
@@ -11,7 +11,7 @@ from opensiddur.importer.scan.pdf_direction import base
 HEBREW = ['במוצאי', 'אתימין', 'דרוש', 'זוחלים', 'יוצר', 'מרוםאם', 'פנה', 'רצה']
 ENGLISH = ['On the outgoing', 'O raise', 'O seek', 'They tremble',
            'Thou, who hast formed', 'If the misdeeds', 'Turn, we beseech', 'Be pleased']
-# Measured from this pilot's 12pt font and 14.5pt leading. The first stanza
+# Measured from this edition's 12pt font and 14.5pt leading. The first stanza
 # begins one line higher in Hebrew after the unequal-length bilingual rubrics.
 MAX_BASELINE_DIFFERENCE = 16
 
@@ -21,7 +21,7 @@ def plain(text):
     return unicodedata.normalize('NFKC', text)
 
 
-def check(tree, expanded):
+def check(tree, expanded, complete=False):
     english = []
     hebrew = []
     for page_no, page in enumerate(tree.findall('page'), 1):
@@ -35,9 +35,10 @@ def check(tree, expanded):
             if he:
                 hebrew.append((page_no, float(he[0].get('y')), ''.join(base(c.get('c')) for c in sorted(he, key=lambda c: float(c.get('x')), reverse=True))))
     rows = []
+    he_start = en_start = (0, 0)
     for he_anchor, en_anchor in zip(HEBREW, ENGLISH):
-        h = next((r for r in hebrew if he_anchor in r[2]), None)
-        e = next((r for r in english if en_anchor in r[2]), None)
+        h = next((r for r in hebrew if he_anchor in r[2] and r[:2] >= he_start), None)
+        e = next((r for r in english if en_anchor in r[2] and r[:2] >= en_start), None)
         if h is None or e is None:
             raise ValueError(f'Missing stanza anchor: {he_anchor} / {en_anchor}')
         latin_x = [float(c.get('x')) for c in e[3] if c.get('c').isascii() and c.get('c').isalpha()]
@@ -47,6 +48,7 @@ def check(tree, expanded):
         if h[0] != e[0] or delta > MAX_BASELINE_DIFFERENCE:
             raise ValueError(f'Stanza alignment failed: {he_anchor}: {h[:2]} / {e[:2]}')
         rows.append(round(delta, 2))
+        he_start, en_start = h[:2], e[:2]
     text = plain(' '.join(line.get('text', '') for line in tree.findall('.//line')))
     if text.count('Appease thy anger and pardon our sins.') != 1:
         raise ValueError('Footnote must occur exactly once')
@@ -54,23 +56,27 @@ def check(tree, expanded):
         raise ValueError('Refrain instructions must appear only in documentary view')
     if ('Say “Omnipotent King,”' in text) == expanded:
         raise ValueError('Prayer expansion instructions must appear only in documentary view')
-    if ('Omnipotent King, who' in text) != expanded:
-        raise ValueError('El Melekh expansion boundary failed')
-    if ('And the Eternal passed by before him' in text) != expanded:
-        raise ValueError('Vayaavor expansion boundary failed')
-    if 'The hope of Israel' in text:
-        raise ValueError('Adjacent prayer outside reference boundary')
+    if complete:
+        if text.count('Omnipotent King, who') != (4 if expanded else 1):
+            raise ValueError('Missing or duplicated El Melekh occurrence in the first day')
+    else:
+        if ('Omnipotent King, who' in text) != expanded:
+            raise ValueError('El Melekh expansion boundary failed')
+        if ('And the Eternal passed by before him' in text) != expanded:
+            raise ValueError('Vayaavor expansion boundary failed')
+        if 'The hope of Israel' in text:
+            raise ValueError('Adjacent prayer outside reference boundary')
     if ('(Hearken,' in text) == expanded:
         raise ValueError('Wrong abbreviation branch')
     return rows
 
 
-def controls(tree, expanded):
+def controls(tree, expanded, complete=False):
     broken = copy.deepcopy(tree)
     note = next(l for l in broken.findall('.//line') if 'Appease thy anger' in l.get('text', ''))
     note.getparent().append(copy.deepcopy(note))
     try:
-        check(broken, expanded)
+        check(broken, expanded, complete)
     except ValueError:
         pass
     else:
@@ -82,13 +88,13 @@ def controls(tree, expanded):
                 if float(char.get('x')) > 288:
                     char.set('y', str(float(char.get('y')) + 50))
     try:
-        check(broken, expanded)
+        check(broken, expanded, complete)
     except ValueError:
         pass
     else:
         raise AssertionError('Shifted stanza control escaped detection')
     try:
-        check(tree, not expanded)
+        check(tree, not expanded, complete)
     except ValueError:
         pass
     else:
@@ -99,15 +105,16 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('pdf', type=Path)
     p.add_argument('--expanded', action='store_true')
+    p.add_argument('--complete', action='store_true', help='Check the poem within the complete first day.')
     p.add_argument('--control', action='store_true')
     args = p.parse_args(argv)
     with tempfile.TemporaryDirectory() as temp:
         path = Path(temp)/'text.xml'
         subprocess.run(['mutool', 'draw', '-F', 'stext', '-o', str(path), str(args.pdf)], check=True, capture_output=True)
         tree = etree.parse(str(path)).getroot()
-        rows = check(tree, args.expanded)
+        rows = check(tree, args.expanded, args.complete)
         if args.control:
-            controls(tree, args.expanded)
+            controls(tree, args.expanded, args.complete)
         print(f'8 stanza pairs aligned (baseline deltas {rows}); footnote once; abbreviation and prayer boundaries correct; controls={args.control}')
     return 0
 

@@ -6,6 +6,63 @@ from opensiddur.importer.scan.reverse import streams
 
 
 class FirstDayTest(unittest.TestCase):
+    def test_reusable_modules_use_common_names_and_distinctive_incipits(self):
+        """Service position/evidence IDs must not become a reusable text identity."""
+        import json
+        import tempfile
+        from pathlib import Path
+        from opensiddur.importer.asher_selichot.first_day import documents
+        from opensiddur.importer.asher_selichot.identities import TEXTS, text_urn
+        title = {'scan':'s3', 'titles':['Selichoth'], 'edition':'Translation',
+                 'place':'London', 'publisher':'Vallentine', 'address':'Duke Street', 'date':'1912'}
+        opening = {'start_scan':'s6', 'next_scan':'s8', 'next_label':'3',
+                   'heading':'First day', 'rubrics':[], 'kaddish_rubrics':[],
+                   'prelude':['Opening verse.', 'Second verse.'], 'psalm':['Psalm verse.']*21,
+                   'verse_9_continuation':'Continuation.', 'postlude':'Conclusion.',
+                   'kaddish_preface':['Preface.', 'Remember.']}
+        poem_ids = ['ein_mi_yiqra', 'im_avoneinu', 'tavo_lefanekha_selihah']
+        groups = [{'id':identity, 'kind':'poem', 'incipit_he':'Distinctive incipit',
+                   'fragments':[self.fragment('s22', 'Original piyyut words.')]}
+                  for identity in poem_ids]
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp)
+            (source/'title-pages.json').write_text(json.dumps({'he':title,'en':title}))
+            readings = {lang:dict(opening, kaddish=['First part.',
+                'Blessed. '+('יִתְבָּרַךְ' if lang=='he' else 'and may his hallowed')+' name.'])
+                for lang in ('he','en')}
+            (source/'first-day-opening.json').write_text(json.dumps(readings))
+            (source/'first-day-continuation.json').write_text(json.dumps({'sections':{'preface':groups}}))
+            modules = {(project,filename):root for project,filename,root in documents(source)}
+        j = '{http://jewishliturgy.org/ns/jlptei/2}'
+        for lang in ('he','en'):
+            project = 'asher_selichot_'+lang+'_1912'
+            with self.subTest(lang=lang):
+                index = modules[project,'index.xml']
+                self.assertIsNotNone(index.find(f'.//{{{TEI}}}front/{{{TEI}}}titlePage'))
+                self.assertEqual('urn:x-opensiddur:text:siddur:selichot@'+project,
+                    index.find(f'.//{{{TEI}}}idno[@type="urn"]').text)
+                first_day=modules[project,'first_day.xml']
+                self.assertEqual('urn:x-opensiddur:text:siddur:selichot/first_day',
+                    first_day.find(f'.//{{{TEI}}}body/{{{TEI}}}div').get('corresp'))
+                for filename,urn in [('ashrei.xml','prayer:ashrei'),('kaddish_chatzi.xml','prayer:kaddish/chatzi')]:
+                    module=modules[project,filename]
+                    self.assertEqual('urn:x-opensiddur:text:'+urn+'@'+project,
+                        module.find(f'.//{{{TEI}}}idno[@type="urn"]').text)
+                assembly=modules[project,'first_day_preface.xml']
+                references=assembly.findall(f'.//{j}transclude')
+                self.assertEqual([text_urn(identity) for identity in poem_ids],
+                                 [node.get('target') for node in references])
+                self.assertNotIn('Original piyyut words.',etree.tostring(assembly,encoding='unicode'))
+                for identity in poem_ids:
+                    filename=TEXTS[identity][0]+'.xml'
+                    module=modules[project,filename]
+                    self.assertIn('Original piyyut words.',etree.tostring(module,encoding='unicode'))
+                    self.assertEqual(text_urn(identity)+'@'+project,
+                        module.find(f'.//{{{TEI}}}idno[@type="urn"]').text)
+                    self.assertNotIn('first_day',text_urn(identity))
+                    self.assertNotIn('asher',text_urn(identity))
+                self.assertNotIn('pilot',etree.tostring(index,encoding='unicode').lower())
+
     def fragment(self, scan, text, notes=(), kind='prose'):
         return {'he': {'scan':scan,'printed_page':'16','text':text},
                 'en': {'scan':scan,'printed_page':'16','text':text},

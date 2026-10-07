@@ -4,6 +4,7 @@ import re
 import unicodedata
 from pathlib import Path
 from .build import TEI, XML, PRAYER, POEM, document, element, pb
+from .identities import TEXTS, text_urn
 
 FIRST_DAY = 'urn:x-opensiddur:text:siddur:selichot/first_day'
 OPENING = FIRST_DAY + '/opening'
@@ -86,15 +87,22 @@ def opening(lang, project, data):
     return root
 
 
-def entry(lang, project, title_data, expanded=False):
-    root, text = document(lang, project, 'Asher Selichoth — first day (work in progress)', FIRST_DAY+('/expanded' if expanded else ''), index=True)
-    edition = root.find(f'.//{{{TEI}}}edition')
-    edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading; the remainder of the book is outside this edition.'
+def entry(lang, project, title_data, expanded=False, *, book=False):
+    urn = ('urn:x-opensiddur:text:siddur:selichot' if book else FIRST_DAY) + ('/expanded' if expanded else '')
+    title = 'Asher Selichoth' if book else 'First-day Selichot'
     if expanded:
-        root.find(f'.//{{{TEI}}}title').text = 'Asher Selichoth — expanded first day (work in progress)'
+        title += ' — expanded edition'
+    root, text = document(lang, project, title, urn, index=book)
+    edition = root.find(f'.//{{{TEI}}}edition')
+    edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading; remaining book sections await encoding.'
+    if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
-    titles(element(text, 'front'), title_data)
-    div = element(element(text, 'body'), 'div')
+    if book:
+        titles(element(text, 'front'), title_data)
+    div = element(element(text, 'body'), 'div', corresp=urn)
+    if book:
+        element(div, 'j:transclude', target=FIRST_DAY+('/expanded' if expanded else ''))
+        return root
     for target in ENTRY_TARGETS:
         element(div, 'j:transclude', target=target)
         if expanded and target == POEM:
@@ -109,11 +117,48 @@ def documents(source):
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
+        yield project, 'index.xml', entry(lang, project, title_data, book=True)
+        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True)
         yield project, 'first_day.xml', entry(lang, project, title_data)
         yield project, 'first_day_expanded.xml', entry(lang, project, title_data, expanded=True)
-        yield project, 'first_day_opening.xml', opening(lang, project, reading[lang])
+        root = opening(lang, project, reading[lang])
+        div = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+        units = [div.find(f'{{{TEI}}}div[@corresp="{PRAYER}ashrei"]'),
+                 next(n for n in div.findall(f'{{{TEI}}}div') if not n.get('corresp')),
+                 div.find(f'{{{TEI}}}div[@corresp="{PRAYER}kaddish/chatzi"]')]
+        for unit, filename, urn, scan, label in zip(units,
+                ['ashrei', 'kaddish_selichot_preface', 'kaddish_chatzi'],
+                [PRAYER+'ashrei', PRAYER+'kaddish/selichot_preface', PRAYER+'kaddish/chatzi'],
+                [reading[lang]['start_scan'], reading[lang]['next_scan'], reading[lang]['next_scan']],
+                ['[unnumbered]', reading[lang]['next_label'], reading[lang]['next_label']]):
+            unit.set('corresp', urn)
+            position = div.index(unit)
+            div.remove(unit)
+            transclusion = element(div, 'j:transclude', target=urn)
+            div.remove(transclusion); div.insert(position, transclusion)
+            page = pb(unit, scan, label); unit.remove(page); unit.insert(0, page)
+            module, module_text = document(lang, project, filename.replace('_', ' '), urn)
+            element(module_text, 'body').append(unit)
+            yield project, filename+'.xml', module
+        yield project, 'first_day_opening.xml', root
         for name, groups in continuation.items():
-            yield project, f'first_day_{name}.xml', section(lang, project, name, groups)
+            root = section(lang, project, name, groups)
+            div = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+            for unit, group in zip(list(div), groups):
+                if group['kind'] == 'rubric':
+                    continue
+                filename, _ = TEXTS[group['id']]
+                urn = text_urn(group['id'])
+                position = div.index(unit)
+                div.remove(unit)
+                transclusion = element(div, 'j:transclude', target=urn)
+                div.remove(transclusion); div.insert(position, transclusion)
+                module, module_text = document(lang, project, group.get('incipit_he', filename.replace('_', ' ')), urn)
+                if group.get('incipit_he'):
+                    module.find(f'.//{{{TEI}}}title').set(XML+'lang', 'he')
+                element(module_text, 'body').append(unit)
+                yield project, filename+'.xml', module
+            yield project, f'first_day_{name}.xml', root
 
 
 ENTRY_TARGETS = [OPENING, FIRST_DAY+'/preface', PRAYER+'el_melekh_yoshev',
@@ -123,12 +168,12 @@ MODULE_ORDER = ['first_day_opening', 'first_day_preface', 'el_melekh_yoshev',
 
 
 EXPANSION_TARGETS = {
-    'after_first_selihah_rubric': [FIRST_DAY+'/morning_scriptural_petitions/repeat', FIRST_DAY+'/daniel_petition/repeat'],
-    'after_second_selihah_verses': [FIRST_DAY+'/morning_scriptural_petitions/repeat', FIRST_DAY+'/daniel_petition/repeat'],
+    'after_first_selihah_rubric': [text_urn('morning_scriptural_petitions')+'/repeat', text_urn('daniel_petition')+'/repeat'],
+    'after_second_selihah_verses': [text_urn('morning_scriptural_petitions')+'/repeat', text_urn('daniel_petition')+'/repeat'],
     'after_second_selihah_prayers': [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'],
     'after_third_selihah_prayers': [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'],
-    'ashamnu_repeat': [FIRST_DAY+'/ashamnu'],
-    'ashamnu_repeat_2': [FIRST_DAY+'/ashamnu'],
+    'ashamnu_repeat': [PRAYER+'ashamnu'],
+    'ashamnu_repeat_2': [PRAYER+'ashamnu'],
     'reader_kaddish': [PRAYER+'kaddish/shalem'],
 }
 
@@ -181,7 +226,7 @@ def section(lang, project, name, groups):
     root, text = document(lang, project, 'First day: '+name.replace('_',' '), urn)
     div = element(element(text,'body'),'div',corresp=urn)
     for group in groups:
-        context = FIRST_DAY+'/'+group['id']
+        context = text_urn(group['id']) if group['id'] in TEXTS else FIRST_DAY+'/'+group['id']
         unit = element(div,'div',corresp=context)
         first = group['fragments'][0][lang]
         pb(unit,first['scan'],first['printed_page'])

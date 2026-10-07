@@ -58,6 +58,18 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
   `schema/JLPTEI-3.md` for alignment, milestone scope, contributors, and transclusion.
 - Give divisions a semantic identity or a real grouping purpose. Use distinct
   instruction URNs for distinct rubric texts. Page breaks may occur inside prose.
+- Build the final book from reusable text modules from the outset. Put each
+  independent piyyut or prayer in its own file, named for its established common
+  name or distinctive incipit. Use source-independent canonical URNs (for example,
+  `urn:x-opensiddur:text:prayer:ashrei`); the edition belongs in the publication
+  URN's `@project` suffix and source metadata. Do not put a scan name, experimental
+  phase such as “pilot”, or a service position into a reusable text's identity.
+  Reuse existing registry identities for common prayers and their parts; do not
+  identify a single petition as an entire longer prayer. Keep service-order files
+  as assemblies of URN transclusions and printed rubrics. `index.xml` is the book
+  entrypoint; incomplete coverage belongs in edition metadata and documentation,
+  rather than in text identities. Verify references, source order, alignment and
+  both rendered views after splitting modules.
 - Alignment needs exact shared URNs, at the granularity the translation supports.
   Reusing a correspondence within one document can silently break alignment.
 - Readings, verse structure, headings, rubrics, and notes are different evidence

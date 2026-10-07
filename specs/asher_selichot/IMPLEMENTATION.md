@@ -1,4 +1,4 @@
-# Asher selichot pilot and reusable scan workflow
+# Asher selichot encoding and reusable scan workflow
 
 Issue: https://github.com/opensiddur/opensiddur-ai/issues/207
 
@@ -6,9 +6,9 @@ The skill entrypoint dynamically loads the selected edition subsection. Shared t
 accept explicit book profiles; Asher uses scan-based identity because both languages
 repeat printed labels. Archive page labels remain candidates until image verified.
 
-Pilot: title n2; במוצאי מנוחה n31–32; dependency ranges אל מלך יושב and ויעבור
-n23–26. All readings are from these images; OCR and independent readings only check
-those readings. Source README records editorial expansions and transclusion scope.
+Coverage: title n1/n2 and the complete first day through Hebrew n51 / English
+n52. Readings are derived from these images; OCR and independent readings check
+those readings. The source README records editorial additions and target ranges.
 
 `readings.abbreviations` selects abbreviated (default) or expanded during compilation,
 including inline transclusion. Schema adds expan; PDF emits the selected branch.
@@ -23,9 +23,9 @@ reference-boundary checks; checks fail on broken controls; full regression suite
 
 ## First-day continuation
 
-The documentary `first_day.xml` entrypoints now cover title n1/n2 and all first-day
-text through Hebrew n51 / English n52. Three additional modules per language
-encode the preface, intervening selichot and closing prayers. They reuse the
+The documentary `index.xml` entrypoints cover title n1/n2 and all first-day
+text through Hebrew n51 / English n52. `first_day.xml` and the preface, intervening
+and closing sections assemble independently named text modules by canonical URN. They reuse the
 original El Melekh, Vayaavor and Bemotzaei Menuhah modules at their source positions.
 
 Canonical readings retain immutable scan-first fragments, source page identity,
@@ -43,8 +43,7 @@ piyyut, together with its English translation. Preserve the Hebrew invocation as
 an introductory line within `tei:lg` and the English within its prose paragraph;
 remove the former heading heuristic. Record the distinctive following Hebrew
 incipit in source metadata and URN labels, without adding a printed heading or
-claiming a separately established formal title. Source words and alignment URNs
-remain unchanged. The scan-specific skill and reverse verifier enforce this rule.
+claiming a separately established formal title. Source words remain unchanged; reusable text identities use common names or distinctive incipits. The scan-specific skill and reverse verifier enforce this rule.
 
 ## Expanded complete first day and secondary-source settings
 
@@ -54,7 +53,7 @@ with unqualified target URNs when repetitions are present. Register bounded
 repeat-range milestones within the two source prose prayers. Supply the poem’s
 concluding prayers after its transclusion. Add reusable Birnbaum Full Kaddish
 `prayer:kaddish/shalem`, assembled from six edition-bound existing passages.
-`default.yaml` selects this expanded entrypoint, Asher-first primary priorities,
+`default.yaml` selects the expanded book entrypoint `expanded.xml`, Asher-first primary priorities,
 and Asher/Birnbaum English parallel priorities, outside release settings.
 
 Parallel subcompilation must retain the remaining configured parallel projects as
@@ -71,9 +70,8 @@ A regression fixture uses an absent target inside a false scope and checks that
 the documentary text after the scope survives.
 
 The generic conditional/fallback corrections and regression tests were merged in
-opensiddur-ai PR #217. The apparatus paragraph-direction fix and tests are separate
-in PR #218 (`fix/note-paragraph-direction`); the Asher code PR is stacked on that
-branch so its review diff excludes this generic fix.
+opensiddur-ai PR #217. The apparatus paragraph-direction fix and tests were merged
+separately in PR #218. The Asher code PR targets main.
 
 The first-day PDF check also groups small Latin apparatus glyphs by font and
 baseline across MuPDF’s fragmented lines. Reject decreasing x coordinates, and
@@ -89,3 +87,26 @@ afterward. A synthetic compilation fixture starts with the Ten Days aggregate
 true, confirms the final addition is excluded, and verifies the caller’s setting
 is restored. Reverse verification audits the declaration; PDF verification rejects
 the Ten Days rubric and includes a deliberately injected failing control.
+
+
+## Final-book module organization
+
+Treat this work as the foundation of the final book. `index.xml` holds documentary
+book metadata and both title pages; `expanded.xml` provides the expanded book view.
+Each references its first-day service assembly. Independent prayers and piyyutim
+live in named files, with source-independent URNs and publication `@project`
+suffixes recording the edition. Service-order sections retain their printed rubrics
+and transclude those files. Ashrei and Half Kaddish are independent modules.
+
+`identities.py` maps evidence IDs to semantic filenames and canonical registry
+identities. Existing common prayer/part names take precedence; other texts use
+incipits without claiming unverified formal titles. Repeated Ashamnu and scriptural
+ranges point to reusable prayer identities. Active structured readings use
+`refrain-and-prayers.json`; immutable original evidence is retained.
+
+Reverse verification follows assembly references in source order, then checks
+individual modules against the original reading units. It audits publication
+identities, source boundaries and editorial context separately. Regenerate both
+views, resolve URNs, and render both PDFs after the reorganization. The full book
+and independent Hebrew pointing review remain pending; do not encode temporary
+coverage status in canonical text identities.

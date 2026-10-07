@@ -2,7 +2,7 @@ description: Asher 1912 expanded first day through n52, with Birnbaum Full Kaddi
   fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
-  file_name: first_day_expanded.xml
+  file_name: expanded.xml
   title: Asher Selichoth — expanded first day
 priority:
   transclusion:

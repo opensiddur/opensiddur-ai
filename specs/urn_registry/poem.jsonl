@@ -320,3 +320,14 @@
 {"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/6", "status": "canonical", "label_en": "bemotzaei menuhah/6", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
 {"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/7", "status": "canonical", "label_en": "bemotzaei menuhah/7", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
 {"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/8", "status": "canonical", "label_en": "bemotzaei menuhah/8", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:eikh_niftah_peh", "status": "canonical", "label_en": "eikh niftah peh"}
+{"urn": "urn:x-opensiddur:text:poem:ein_mi_yiqra_betsedeq", "status": "canonical", "label_en": "ein mi yiqra betsedeq"}
+{"urn": "urn:x-opensiddur:text:poem:im_avoneinu_rabu_lehagdil", "status": "canonical", "label_en": "im avoneinu rabu lehagdil"}
+{"urn": "urn:x-opensiddur:text:poem:tavo_lefanekha_shavat_hinnun", "status": "canonical", "label_en": "tavo lefanekha shavat hinnun"}
+{"urn": "urn:x-opensiddur:text:poem:ashamnu_mikol_am", "status": "canonical", "label_en": "ashamnu mikol am"}
+{"urn": "urn:x-opensiddur:text:poem:leenenu_ashuqu_amalenu", "status": "canonical", "label_en": "leenenu ashuqu amalenu"}
+{"urn": "urn:x-opensiddur:text:poem:el_rahum_shimkha", "status": "canonical", "label_en": "el rahum shimkha"}
+{"urn": "urn:x-opensiddur:text:poem:makhnise_rahamim", "status": "canonical", "label_en": "makhnise rahamim"}
+{"urn": "urn:x-opensiddur:text:poem:maran_divishmaya", "status": "canonical", "label_en": "maran divishmaya"}
+{"urn": "urn:x-opensiddur:text:poem:maran_divishmaya/captive", "status": "canonical", "label_en": "maran divishmaya/captive", "parent": "urn:x-opensiddur:text:poem:maran_divishmaya"}
+{"urn": "urn:x-opensiddur:text:poem:maran_divishmaya/slave", "status": "canonical", "label_en": "maran divishmaya/slave", "parent": "urn:x-opensiddur:text:poem:maran_divishmaya"}

@@ -1,4 +1,4 @@
-"""Verify the pilot against independent documentary streams and its expansion policy."""
+"""Verify the edition against independent documentary streams and its expansion policy."""
 import argparse
 import json
 from pathlib import Path
@@ -14,7 +14,7 @@ def verify(source_root, project_directory):
     payload=json.loads((source/'documentary-streams.json').read_text())
     expected={(page,lang):text for page,langs in payload.items() for lang,text in langs.items()}
     actual={}
-    data=json.loads((source/'pilot.json').read_text())
+    data=json.loads((source/'refrain-and-prayers.json').read_text())
     files=0
     for lang in ['he','en']:
         project=Path(project_directory)/f'asher_selichot_{lang}_1912'
@@ -44,7 +44,8 @@ def verify(source_root, project_directory):
             raise ValueError('Concluding cue must expand to the entire opening stanza')
         if any(''.join(c.find(f'{{{TEI}}}expan').itertext())!=refrain for c in choices[:-1]):
             raise ValueError('Short cue must expand to this edition’s printed refrain')
-        for name,targets in [('index.xml',[POEM]),('expanded.xml',[POEM,PRAYER+'el_melekh_yoshev',PRAYER+'vayaavor'])]:
+        from .first_day import FIRST_DAY
+        for name,targets in [('index.xml',[FIRST_DAY]),('expanded.xml',[FIRST_DAY+'/expanded'])]:
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
                 raise ValueError(f'{name}: unexpected reference expansion boundary')
@@ -56,6 +57,27 @@ def verify(source_root, project_directory):
     return actual
 
 
+def opening_documentary(project):
+    """Follow opening assembly references while retaining its printed rubrics/order."""
+    import copy
+    root=etree.parse(str(project/'first_day_opening.xml')).getroot()
+    div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+    targets=[PRAYER+'ashrei', PRAYER+'kaddish/selichot_preface', PRAYER+'kaddish/chatzi']
+    references=div.findall(f'{{{J}}}transclude')
+    if [n.get('target') for n in references] != targets:
+        raise ValueError('Opening must use canonical Ashrei and Kaddish modules in source order')
+    for reference,filename in zip(references,['ashrei','kaddish_selichot_preface','kaddish_chatzi']):
+        module=etree.parse(str(project/(filename+'.xml')))
+        publication=module.find(f'.//{{{TEI}}}publicationStmt/{{{TEI}}}idno[@type="urn"]')
+        if publication.text != reference.get('target')+'@'+project.name:
+            raise ValueError('Opening text filename and publication identity disagree')
+        unit=copy.deepcopy(module.find(f'.//{{{TEI}}}body/{{{TEI}}}div'))
+        if unit.get('corresp') != reference.get('target'):
+            raise ValueError('Opening correspondence must match its canonical identity')
+        div.replace(reference,unit)
+    return root
+
+
 def verify_opening(source, project_directory):
     """Check page/language streams, partial verse and separate WIP entrypoints."""
     from .first_day import ENTRY_TARGETS
@@ -65,7 +87,7 @@ def verify_opening(source, project_directory):
     titles=json.loads((source/'title-pages.json').read_text())
     for lang in ['he','en']:
         project=project_directory/f'asher_selichot_{lang}_1912'
-        root=etree.parse(str(project/'first_day_opening.xml')).getroot()
+        root=opening_documentary(project)
         actual.update(streams(root,include_notes=True))
         urns=[el.get('corresp') for el in root.iter() if el.get('corresp')]
         if len(urns)!=len(set(urns)):
@@ -82,7 +104,7 @@ def verify_opening(source, project_directory):
         expanded_targets[poem_position:poem_position] = [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor']
         if [el.get('target') for el in expanded.findall(f'.//{{{J}}}transclude')] != expanded_targets:
             raise ValueError('Expanded first-day entry must supply the piyyut conclusion prayers')
-        front=entry.find(f'.//{{{TEI}}}front')
+        front=etree.parse(str(project/'index.xml')).find(f'.//{{{TEI}}}front')
         title_streams={key:words for key,words in streams(front,include_notes=True).items() if words.strip()}
         wanted={}
         for title_lang in ['he','en']:
@@ -102,6 +124,7 @@ def verify_continuation(source, project_directory):
     import re
     import unicodedata
     from .first_day import FIRST_DAY, MODULE_ORDER, EXPANSION_TARGETS
+    from .identities import TEXTS, text_urn
     groups=json.loads((source/'first-day-continuation.json').read_text())['sections']
     count=0
     for lang in ['he','en']:
@@ -109,14 +132,23 @@ def verify_continuation(source, project_directory):
             path=project_directory/f'asher_selichot_{lang}_1912'/f'first_day_{name}.xml'
             root=etree.parse(str(path)).getroot()
             div=root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
-            units=div.findall(f'{{{TEI}}}div')
-            if list(div)!=units or (div.text or '').strip():
+            units=list(div)
+            if any(n.tag not in (f'{{{TEI}}}div',f'{{{J}}}transclude') for n in units) or (div.text or '').strip():
                 raise ValueError('Unexpected text outside documentary continuation units')
             if len(units)!=len(readings):raise ValueError('Missing or duplicated first-day unit')
             urns=[n.get('corresp') for n in root.iter() if n.get('corresp')]
             if len(urns)!=len(set(urns)):raise ValueError('Repeated correspondence within a module')
             for unit,reading in zip(units,readings):
-                if unit.get('corresp')!=FIRST_DAY+'/'+reading['id']:raise ValueError('Units out of source order')
+                identity = text_urn(reading['id']) if reading['id'] in TEXTS else FIRST_DAY+'/'+reading['id']
+                if reading['kind'] != 'rubric':
+                    if unit.tag != f'{{{J}}}transclude' or unit.get('target') != identity:
+                        raise ValueError('Independent text must be transcluded by its canonical identity in source order')
+                    module = etree.parse(str(path.parent/(TEXTS[reading['id']][0]+'.xml')))
+                    publication = module.find(f'.//{{{TEI}}}publicationStmt/{{{TEI}}}idno[@type="urn"]')
+                    if publication.text != identity+'@'+path.parent.name:
+                        raise ValueError('Module publication identity must match its canonical transclusion')
+                    unit = module.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+                if unit.get('corresp')!=identity:raise ValueError('Units out of source order')
                 targets = EXPANSION_TARGETS.get(reading['id'])
                 actual_targets = [n.get('target') for n in unit.findall(f'{{{J}}}transclude')]
                 if actual_targets != (targets or []):
@@ -184,8 +216,21 @@ def verify_continuation(source, project_directory):
                 count+=1
         pages=[]
         for name in MODULE_ORDER:
-            root=etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(name+'.xml')))
-            pages.extend(int(re.search(r'/n(\d+)',n.get('facs')).group(1)) for n in root.findall(f'.//{{{TEI}}}pb'))
+            if name == 'first_day_opening':
+                roots = [opening_documentary(project_directory/f'asher_selichot_{lang}_1912')]
+            elif name.startswith('first_day_'):
+                group_name = name.removeprefix('first_day_')
+                roots = []
+                for reading in groups[group_name]:
+                    if reading['kind'] == 'rubric':
+                        assembly = etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(name+'.xml')))
+                        roots.append(assembly.find(f'.//{{{TEI}}}div[@corresp="{FIRST_DAY}/{reading["id"]}"]'))
+                    else:
+                        roots.append(etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(TEXTS[reading['id']][0]+'.xml'))).getroot())
+            else:
+                roots = [etree.parse(str(project_directory/f'asher_selichot_{lang}_1912'/(name+'.xml'))).getroot()]
+            for root in roots:
+                pages.extend(int(re.search(r'/n(\d+)',n.get('facs')).group(1)) for n in root.findall(f'.//{{{TEI}}}pb'))
         required=set(range(5 if lang=='he' else 6, 52 if lang=='he' else 53, 2))
         if pages!=sorted(pages) or set(pages)!=required:
             raise ValueError('First-day facsimiles must follow source order through the final leaf')

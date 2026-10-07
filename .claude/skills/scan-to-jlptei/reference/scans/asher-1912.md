@@ -23,7 +23,7 @@ Archive OCR was configured for English: compare it with English readings only.
 For Hebrew, read independently from images and record the second reading’s scope.
 Do not auto-settle qamats-qatan or assume Birnbaum’s punctuation/glyph conventions.
 
-## Pilot and interpretation
+## Refrain and prayer interpretation
 
 - Leaf 2: English title and imprint, explicitly dated 1912–5672.
 - Leaves 31–32: Hebrew טו / English 15, במוצאי מנוחה and its translation.
@@ -46,17 +46,17 @@ Do not auto-settle qamats-qatan or assume Birnbaum’s punctuation/glyph convent
 
 ## Output and measurement
 
-Use `readings.abbreviations: abbreviated` for the documentary pilot and `expanded`
-for prayer-use output. Pilot settings stay under specs/asher_selichot, outside
+Use `readings.abbreviations: abbreviated` for the documentary edition and `expanded`
+for prayer-use output. Edition settings stay under specs/asher_selichot, outside
 release book settings. Verify both compiled and rendered outputs; derive row/column
 thresholds from their actual typography rather than copying Birnbaum’s numeric values.
 
-The pilot uses SBL Hebrew at 12pt because the available CLM faces lack U+00B7.
+The edition uses SBL Hebrew at 12pt because the available CLM faces lack U+00B7.
 Its measured gutter is x=288pt on odd PDF pages and x=324pt on even pages.
 All expanded stanza starts share a baseline. In documentary output, the first
-differs by 13.55pt after unequal rubric lengths; the other seven share a baseline. The pilot check allows at most 16pt and requires the same page.
-These are pilot calibration values, not defaults for other settings or scans.
-Run `python -m opensiddur.importer.asher_selichot.check_pdf PDF --control`
+differs by 13.55pt after unequal rubric lengths; the other seven share a baseline. The poem check allows at most 16pt and requires the same page.
+These are edition calibration values, not defaults for other settings or scans.
+Run `python -m opensiddur.importer.asher_selichot.check_pdf PDF --complete --control`
 (with `--expanded` for the expanded view). The shared direction check separately
 reverses Hebrew glyph runs as its failing control.
 
@@ -73,13 +73,13 @@ Kaddish instruction and before the large second-day section heading. The running
 heading on n51 already says second day; it does not establish the section boundary.
 Keep these verified target limits separate from encoded coverage. A partial
 entrypoint must identify its actual contiguous coverage and must not bridge pending
-pages with isolated pilot modules. Record progress in `first-day-scope.json`.
+pages with isolated excerpt modules. Record progress in `first-day-scope.json`.
 
 The opening has a Latin `Ps. cxlv.` citation on the Hebrew page. Verify
 both its increasing glyph x coordinates and its placement in the Hebrew column;
 Hebrew-only direction checks cannot detect its reversal or column displacement.
 Use `python -m opensiddur.importer.asher_selichot.check_first_day_pdf PDF --control`
-for the opening settings; add `--complete` when rendering through n52. Its 16pt baseline limit is measured for this
+for the first-day settings; use `--complete` when rendering through n52. Its 16pt baseline limit is measured for this
 output, not a general scan requirement.
 
 For normalized authoring of this edition’s Hebrew text, encode Hebrew two-dot verse stops as U+05C3
@@ -89,7 +89,7 @@ gap into XML as an ordinary breakable space: TeX can strand the punctuation on a
 new line. Preserve physical spacing in the first-pass evidence and document its
 normalization. The opening PDF check must reject isolated punctuation lines.
 
-For a contiguous first-day edition, place the reused pilot prayers and poem at their
+For a contiguous first-day edition, place the reusable prayers and poem at their
 original n23–26 and n31–32 positions after encoding intervening text. Pair complete
 prayers across languages: facing pages do not necessarily end at equivalent words,
 and some litanies order phrases differently. Retain printed footnotes at their
@@ -133,3 +133,22 @@ Close the declaration after the prayer, restoring the caller’s settings. Do no
 leave this date-dependent addition undefined or allow an unrelated default date
 to activate it. Verify that neither the extra לעילא nor its Ten Days rubric is
 present in this final Kaddish, even when the caller supplies a conflicting setting.
+
+
+## Reusable book structure
+
+`index.xml` and `expanded.xml` are the documentary and expanded book entrypoints,
+with both title pages and the currently encoded first day. The corresponding
+`first_day.xml` and `first_day_expanded.xml` files assemble the service by URN.
+The preface, intervening and closing section files contain transclusions and
+printed cues, rather than embedding independent piyyutim or prayers.
+
+Use `ashrei.xml` with `prayer:ashrei` and `kaddish_chatzi.xml` with
+`prayer:kaddish/chatzi`. The distinct piyyutim have their own files and `poem:`
+URNs named for their distinctive incipits: `ein_mi_yiqra_betsedeq`,
+`im_avoneinu_rabu_lehagdil`, `tavo_lefanekha_shavat_hinnun`, and
+`bemotzaei_menuhah`. The common invocation remains in each poem's opening.
+Reusable prayers and repeated verse ranges likewise use prayer identities,
+independent of Asher or the day on which this source prints them. The source
+README's module table records the reading-ID to filename/URN correspondence.
+Do not add experimental-phase labels to titles, filenames or canonical identities.
