@@ -226,6 +226,28 @@ class TestConditionalIntegration(unittest.TestCase):
         )
         self.assertIn("israel", self._compile(fn))
 
+    def test_marker_mode_does_not_resolve_a_transclusion_in_a_false_scope(self):
+        from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
+        fn = self._write('false_transclusion.xml', '''
+            <tei:div>
+              <j:declare xml:id="d"><tei:fs type="test:expansions">
+                <tei:f name="present"><tei:binary value="false"/></tei:f>
+              </tei:fs></j:declare>
+              <j:conditional xml:id="c"><tei:fs type="test:expansions">
+                <tei:f name="present"><tei:binary value="true"/></tei:f>
+              </tei:fs></j:conditional>
+              <j:transclude target="urn:x-test:absent-secondary-source"/>
+              <j:endConditional target="#c"/>
+              <tei:p>Documentary text survives.</tei:p>
+              <j:endDeclare target="#d"/>
+            </tei:div>
+        ''')
+        proc = ExternalCompilerProcessor('test_project', fn)
+        proc.marker_stack = []
+        out = ''.join(etree.tostring(node, encoding='unicode') for node in proc.process())
+        self.assertIn('Documentary text survives.', out)
+        self.assertNotIn('absent-secondary-source', out)
+
     def test_false_excludes_content_strips_markers(self):
         fn = self._write(
             "false.xml",
