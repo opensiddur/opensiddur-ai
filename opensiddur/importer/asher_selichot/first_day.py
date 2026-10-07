@@ -160,10 +160,6 @@ def section(lang, project, name, groups):
         first = group['fragments'][0][lang]
         pb(unit,first['scan'],first['printed_page'])
         kind = group['kind']
-        heading = None
-        if kind == 'poem' and '\n' in first['text'] and first['text'].startswith(('אלהינו ואלהי אבותינו', 'Our God')):
-            heading = first['text'].split('\n',1)[0]
-            element(unit,'head',heading)
         if kind == 'rubric':
             node = element(unit,'note',type='instruction');node.set(XML+'lang','en')
         elif kind == 'poem' and lang == 'he':
@@ -175,11 +171,13 @@ def section(lang, project, name, groups):
             if i:
                 pb(node,data['scan'],data['printed_page'])
             words = data['text']
-            if i == 0 and heading:
-                words = words.split('\n',1)[1]
             if kind == 'rubric' and lang == 'he':
                 mixed_words(node,words)
             elif kind == 'poem' and lang == 'he':
+                # The printed invocation is an introductory verse, not a heading.
+                if i == 0 and words.startswith('אלהינו ואלהי אבותינו\n'):
+                    invocation, words = words.split('\n', 1)
+                    element(node, 'l', invocation)
                 # Printed verse stops delimit verses; middle dots remain phrase stops.
                 for line in re.findall(r'[^׃]+׃|[^׃]+$',words):
                     element(node,'l',line.strip())

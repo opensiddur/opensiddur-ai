@@ -95,3 +95,11 @@ prayers across languages: facing pages do not necessarily end at equivalent word
 and some litanies order phrases differently. Retain printed footnotes at their
 anchors and record apparent citation errors as edition evidence. Verify the final
 Reader’s Kaddish rubric, and exclude the second-day text below it on n51/n52.
+
+The recurring אלהינו ואלהי אבותינו invocation belongs to the piyyut’s opening
+text, including its English translation. Its visual separation does not make it
+a heading: encode it within the Hebrew verse group and English prose paragraph.
+Identify the piyyut by the distinctive incipit that follows (for example,
+אין מי יקרא בצדק), recording this as an incipit rather than inventing a printed
+heading or asserting an independently verified formal title. Preserve the edition’s
+spelling and pointing. Only actual section headings belong in `tei:head`.

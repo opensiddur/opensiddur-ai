@@ -49,3 +49,23 @@ class FirstDayTest(unittest.TestCase):
         self.assertEqual(8,len(root.findall(f'.//{{{TEI}}}lb')))
         self.assertEqual(1,len(root.findall(f'.//{{{TEI}}}note')))
         self.assertEqual(' '.join(words.split()),streams(root)[('s47','en')])
+
+    def test_piyyut_invocation_is_body_text_in_both_languages(self):
+        fragment = self.fragment('s22', '')
+        fragment['he']['text'] = 'אלהינו ואלהי אבותינו\nאין מי יקרא בצדק׃'
+        fragment['en']['text'] = 'Our God and the God of our fathers.\nNo one calleth upon thee.'
+        for lang in ('he', 'en'):
+            with self.subTest(lang=lang):
+                root = self.render([fragment], lang=lang, kind='poem')
+                body = root.find(f'.//{{{TEI}}}body')
+                self.assertEqual([], body.findall(f'.//{{{TEI}}}head'))
+                self.assertEqual(' '.join(fragment[lang]['text'].split()),
+                                 streams(root)[('s22', lang)])
+                if lang == 'he':
+                    lines = body.findall(f'.//{{{TEI}}}lg/{{{TEI}}}l')
+                    self.assertEqual(['אלהינו ואלהי אבותינו', 'אין מי יקרא בצדק׃'],
+                                     [line.text for line in lines])
+                else:
+                    paragraph = body.find(f'.//{{{TEI}}}p')
+                    self.assertIn('Our God', paragraph.text)
+                    self.assertIn('No one calleth', paragraph.text)

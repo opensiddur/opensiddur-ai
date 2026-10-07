@@ -166,6 +166,23 @@ Use `python -m pytest -q` with both TeX cache variables set as above. A broad
 the affected facing-page fixture passed in isolation and the complete recommended
 pytest run passed. The new synthetic unittest fixtures also pass discovery alone.
 
-Current companion commits: source `ce2f2d1`; projects `bfbb2d5`. The URN registry
+Current companion commits: source `22867d5`; projects `a241a92`. The URN registry
 contains 2,985 records with no errors or warnings; four informational notes concern
 existing alias migrations in other projects.
+
+## Invocation structure follow-up
+
+The three recurring piyyut invocations now remain in opening body text in both
+languages. Distinctive incipits identify the poems in source metadata and URN
+labels; no additional printed heading is introduced. The primary readings remain
+unchanged. Six focused tests and two language subtests pass. Reverse verification
+checks this structure and rejects a deliberately restored invocation heading.
+All 20 XML files validate, documentary streams match, and both projects resolve
+URNs/transclusions. Skill frontmatter and scan reference links validate.
+
+The rebuilt first-day PDF still has 35 pages, six identical prayer-start baselines,
+and 0/1,250 reversed Hebrew runs. Direction, alignment, verse-stop, footnote and
+n52 boundary controls pass; the reversed-direction control flags 1,224 runs.
+Visual inspection of page 14 confirms the invocation is ordinary opening text
+in both columns. The full-suite result above precedes this focused correction;
+the focused checks and rendering were rerun for this follow-up.
