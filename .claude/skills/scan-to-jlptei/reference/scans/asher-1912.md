@@ -62,6 +62,16 @@ reverses Hebrew glyph runs as its failing control.
 
 ## First-day continuation
 
+`sources/asher_selichot/poetry-structure.json` records image-verified Hebrew
+lineation for the first-day litanies and additional poems. Mi Sheanah on s46
+(Archive n45, printed 22) has 20 verse lines with terminal הוא יעננו refrains;
+Anenu on s44 has 35 terminal עננו responses. Rahmana on s46 has four ענינא
+responses followed by different petitions. Keep each response inside its verse
+as `tei:seg type="refrain"`; do not repeat it editorially or turn it into a
+heading. Raised dots can delimit poetic clauses in these specified units, but
+are not a universal rule making every dotted prayer a poem. The English
+translations retain their independently printed prose or litany breaks.
+
 The Hebrew and English title pages are Archive leaves n1 and n2. The first-day
 opening is n5/n6; its first printed numeral is 3 on n7/n8. Do not assign a printed
 number to the opening from the contents table or a later cross-reference.

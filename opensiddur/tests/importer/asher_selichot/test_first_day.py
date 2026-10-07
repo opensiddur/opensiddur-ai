@@ -6,6 +6,62 @@ from opensiddur.importer.scan.reverse import streams
 
 
 class FirstDayTest(unittest.TestCase):
+    def test_rendered_litany_rejects_collapsed_verses_and_lost_refrains(self):
+        from opensiddur.importer.asher_selichot.check_first_day_pdf import check_mi_sheanah
+        rows = [(1, n*15, 'מישענהאבינוהואיעננו') for n in range(20)]
+        check_mi_sheanah(rows)
+        with self.assertRaisesRegex(ValueError, '20 distinct verse starts'):
+            check_mi_sheanah([(1, 100, row[2]) for row in rows])
+        with self.assertRaisesRegex(ValueError, '20 refrains'):
+            check_mi_sheanah([row if n else (1, 0, 'מישענהאבינו') for n,row in enumerate(rows)])
+
+    def test_hebrew_litany_is_verse_with_terminal_refrains(self):
+        from opensiddur.importer.asher_selichot.verify import check_poetry
+        group = {'id':'mi_sheanah', 'kind':'litany', 'fragments':[
+            self.fragment('s46', 'מי שענה לאברהם הוא יעננו׃\nמי שענה ליצחק הוא יעננו׃')]}
+        rule = {'line_stops':'׃', 'line_count':2, 'refrain':'הוא יעננו', 'refrain_count':2}
+        root = section('he', 'fixture', 'closing', [group], {'mi_sheanah':rule})
+        unit = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div/{{{TEI}}}div')
+        check_poetry(unit, rule)
+        self.assertEqual(['הוא יעננו׃']*2,
+            [n.text for n in unit.findall(f'.//{{{TEI}}}seg')])
+        self.assertEqual('מי שענה לאברהם הוא יעננו׃ מי שענה ליצחק הוא יעננו׃', streams(root)[('s46','he')])
+        # Same words in prose must fail the structural audit.
+        unit.find(f'{{{TEI}}}lg').tag = f'{{{TEI}}}p'
+        with self.assertRaisesRegex(ValueError, 'verse structure'):
+            check_poetry(unit, rule)
+
+    def test_poetic_line_crosses_source_page_without_new_verse(self):
+        group = {'id':'ashamnu_mikol', 'kind':'prose', 'fragments':[
+            self.fragment('s38', 'אשמנו מכל עם · גלה ממנו'),
+            self.fragment('s40', 'משוש · דוה לבנו׃', [{'anchor':'דוה לבנו׃', 'text':'הערת דפוס׃'}])]}
+        root = section('he', 'fixture', 'closing', [group],
+                       {'ashamnu_mikol':{'line_stops':'·׃'}})
+        lines = root.findall(f'.//{{{TEI}}}lg/{{{TEI}}}l')
+        self.assertEqual(3, len(lines))
+        self.assertEqual('גלה ממנו משוש ·', ''.join(lines[1].itertext()).strip())
+        self.assertIsNotNone(lines[1].find(f'{{{TEI}}}pb'))
+        self.assertEqual(1, len(lines[2].findall(f'{{{TEI}}}note')))
+        english = section('en', 'fixture', 'closing', [group],
+                          {'ashamnu_mikol':{'line_stops':'·׃'}})
+        self.assertEqual([], english.findall(f'.//{{{TEI}}}lg'))
+        self.assertEqual(1, len(english.findall(f'.//{{{TEI}}}body//{{{TEI}}}p')))
+
+    def test_missing_or_displaced_refrain_fails_structure_audit(self):
+        from opensiddur.importer.asher_selichot.verify import check_poetry
+        group = {'id':'anenu', 'kind':'prose', 'fragments':[self.fragment('s44', 'עננו אבינו עננו׃')]}
+        rule = {'line_stops':'׃', 'line_count':1, 'refrain':'עננו', 'refrain_count':1}
+        root = section('he','fixture','closing',[group], {'anenu':rule})
+        unit = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div/{{{TEI}}}div')
+        refrain = unit.find(f'.//{{{TEI}}}seg')
+        refrain.tail = 'extra'
+        with self.assertRaisesRegex(ValueError, 'end its verse'):
+            check_poetry(unit, rule)
+        refrain.tail = None
+        refrain.attrib.clear()
+        with self.assertRaisesRegex(ValueError, 'refrain count'):
+            check_poetry(unit, rule)
+
     def test_poem_cue_selects_printed_instruction_or_its_prayers(self):
         """Shared services must supply this conclusion once without a view wrapper."""
         import tempfile

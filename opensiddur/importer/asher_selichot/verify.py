@@ -179,16 +179,38 @@ def verify_opening(source, project_directory):
     print(f'{len(actual)} opening page/language streams match; both title pages and first-day entry boundaries checked')
 
 
+def check_poetry(unit, rule):
+    """Audit structure separately: identical prose words must not pass as poetry."""
+    lines = unit.findall(f'{{{TEI}}}lg/{{{TEI}}}l')
+    if unit.findall(f'{{{TEI}}}p') or len(lines) != rule['line_count']:
+        raise ValueError('Poetry verse structure differs from scan adjudication')
+    refrains = unit.findall(f'.//{{{TEI}}}seg[@type="refrain"]')
+    if len(refrains) != rule.get('refrain_count', 0):
+        raise ValueError('Poetry refrain count differs from scan adjudication')
+    for refrain in refrains:
+        words = ''.join(refrain.itertext())
+        if (words.rstrip('·׃ ').strip() != rule['refrain']
+                or refrain.getparent().tag != f'{{{TEI}}}l'
+                or refrain.getnext() is not None or (refrain.tail or '').strip()):
+            raise ValueError('Poetry refrain must end its verse exactly once')
+
+
 def verify_continuation(source, project_directory):
     """Compare authored units to source readings and printed footnote evidence."""
     import re
     import unicodedata
     from .first_day import EXPANSION_TARGETS
     groups=json.loads((source/'first-day-continuation.json').read_text())['sections']
+    poetry=json.loads((source.parent/'poetry-structure.json').read_text())['units']
     count=0
     for lang in ['he','en']:
         project=project_directory/f'asher_selichot_{lang}_1912'
         for reading,unit in continuation_units(project,groups):
+            if lang == 'he' and reading['id'] in poetry:
+                rule = poetry[reading['id']]
+                if rule['verified_scans'] != [f['he']['scan'] for f in reading['fragments']]:
+                    raise ValueError('Poetry adjudication has stale scan provenance')
+                check_poetry(unit, rule)
             targets = EXPANSION_TARGETS.get(reading['id'])
             actual_targets = [n.get('target') for n in unit.findall(f'{{{J}}}transclude')]
             if actual_targets != (targets or []):

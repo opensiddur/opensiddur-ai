@@ -32,6 +32,14 @@ def latin_note_runs(tree):
     return {key: chars for key, chars in runs.items() if len(chars) >= 4}
 
 
+def check_mi_sheanah(rows):
+    starts = [row for row in rows if 'מישענה' in row[2]]
+    if (len(starts) != 20 or len({row[:2] for row in starts}) != 20
+            or any(row[2].count('מישענה') != 1 for row in starts)
+            or ''.join(row[2] for row in rows).count('הואיעננו') != 20):
+        raise ValueError('Mi Sheanah requires 20 distinct verse starts and 20 refrains')
+
+
 def check(tree, complete=False, expanded=False):
     for key, chars in latin_note_runs(tree).items():
         xs = [float(c.get('x')) for c in chars]
@@ -75,6 +83,7 @@ def check(tree, complete=False, expanded=False):
     if 'SECOND DAY' in text:
         raise ValueError('First-day output includes the second-day heading')
     if complete:
+        check_mi_sheanah(he_rows)
         body_text=re.sub(r'\b\d+\b','',plain(' '.join(r[2] for r in en_rows)))
         body_text=' '.join(body_text.split())
         if 'expiation of our sins for the sake of thy name.' not in body_text:
@@ -102,7 +111,7 @@ def check(tree, complete=False, expanded=False):
 
 def controls(tree, complete=False, expanded=False):
     kinds=['direction','note-direction','alignment','boundary','punctuation','wrong-stop']
-    if complete:kinds+=['conclusion','footnote']
+    if complete:kinds+=['conclusion','footnote','poetry-lineation']
     if expanded:kinds+=['repetition','fulfilled-instruction','ten-days','ten-days-word']
     for kind in kinds:
         broken=copy.deepcopy(tree)
@@ -145,6 +154,18 @@ def controls(tree, complete=False, expanded=False):
         elif kind=='footnote':
             line=next(l for l in broken.findall('.//line') if 'Explained by some' in l.get('text',''))
             line.getparent().append(copy.deepcopy(line))
+        elif kind=='poetry-lineation':
+            for page in broken.findall('page'):
+                gutter = 288 if list(broken).index(page) % 2 == 0 else 324
+                for line in page.findall('.//line'):
+                    chars = [c for c in line.findall('.//char') if float(c.get('x')) < gutter]
+                    words = ''.join(base(c.get('c','')) or '' for c in sorted(chars, key=lambda c:float(c.get('x')), reverse=True))
+                    if 'מישענה' in words:
+                        line.getparent().remove(line)
+                        break
+                else:
+                    continue
+                break
         else:
             stop=next(c for c in broken.findall('.//char') if c.get('c')=='׃')
             stop.set('c',':')
