@@ -52,7 +52,8 @@ jobs:
         id: ai_ref
         env:
           INPUT_REF: ${{ inputs.opensiddur_ai_ref }}
-          HEAD_REF: ${{ github.head_ref }}
+          # Same-repository PRs only: a fork's branch name is not a claim to a companion.
+          HEAD_REF: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
         run: |
           set -euo pipefail
           ref="${INPUT_REF}"
