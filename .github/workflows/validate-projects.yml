@@ -17,9 +17,11 @@ on:
           Decoupled from this workflow file's own version, which the caller always pins with
           `uses: opensiddur/opensiddur-ai/.github/workflows/validate-projects.yml@main` --
           this input lets a manual run exercise a different branch of the validator code
-          without changing which copy of the workflow definition runs.
+          without changing which copy of the workflow definition runs. Empty (the default)
+          means auto-detect: a pull_request whose head branch also exists in opensiddur-ai
+          (a companion PR) is validated against that branch, everything else against main.
         type: string
-        default: main
+        default: ''
 
 permissions:
   contents: read
@@ -41,11 +43,39 @@ jobs:
           fetch-depth: 0
           path: projects
 
-      - name: Checkout opensiddur-ai validators (${{ inputs.opensiddur_ai_ref }})
+      # A change that spans both repositories (new registry entries, schema or validator
+      # changes, plus the project XML that needs them) is a pair of PRs on the same branch
+      # name. Validating the projects half against opensiddur-ai main would fail until the code
+      # half merges, so a PR's head branch is looked up in opensiddur-ai and used if it exists.
+      # Once the companion PR merges and its branch is deleted, a re-run falls back to main.
+      - name: Resolve opensiddur-ai ref
+        id: ai_ref
+        env:
+          INPUT_REF: ${{ inputs.opensiddur_ai_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          ref="${INPUT_REF}"
+          if [ -z "${ref}" ]; then
+            ref=main
+            if [ -n "${HEAD_REF}" ] && git ls-remote --exit-code --heads \
+                https://github.com/opensiddur/opensiddur-ai.git "refs/heads/${HEAD_REF}" >/dev/null; then
+              ref="${HEAD_REF}"
+            fi
+          fi
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+          echo "opensiddur-ai ref: ${ref}"
+          if [ "${ref}" != main ]; then
+            msg="Validated against opensiddur-ai ${ref}, not main. Merge the companion opensiddur-ai PR first, then re-run this check before merging."
+            echo "::warning title=Companion opensiddur-ai ref::${msg}"
+            echo "${msg}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Checkout opensiddur-ai validators (${{ steps.ai_ref.outputs.ref }})
         uses: actions/checkout@v5
         with:
           repository: opensiddur/opensiddur-ai
-          ref: ${{ inputs.opensiddur_ai_ref }}
+          ref: ${{ steps.ai_ref.outputs.ref }}
           path: opensiddur-ai
 
       - name: Set up Python
@@ -69,7 +99,7 @@ jobs:
             opensiddur-ai/schema/*.relaxng
             opensiddur-ai/schema/*.schematron
             opensiddur-ai/schema/*.xslt
-          key: schema-${{ inputs.opensiddur_ai_ref }}-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml') }}
+          key: schema-${{ steps.ai_ref.outputs.ref }}-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml') }}
 
       - name: Build schema
         working-directory: opensiddur-ai
