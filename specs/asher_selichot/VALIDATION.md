@@ -117,3 +117,10 @@ The PDF check now rejects isolated colon lines: it fails on the pre-fix PDF and
 on a synthetic stranded-colon control. The corrected Psalm page was inspected
 visually; verse-ending punctuation remains with its word across line wrapping.
 All 14 XML files and the documentary stream comparisons still pass.
+
+The Hebrew two-dot verse-stop correction uses U+05C3 SOF PASUQ (׃), attached to
+its preceding word, throughout the opening and pilot modules, including expanded
+refrains. The first-pass evidence retains its initial provisional colon encoding.
+All 14 XML files and documentary streams validate; all three PDFs were rebuilt
+and pass alignment, footnote/range, and direction checks. The opening check rejects
+both a stranded sof pasuq and an ASCII colon substituted for a Hebrew verse stop.

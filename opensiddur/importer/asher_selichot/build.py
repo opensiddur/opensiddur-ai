@@ -89,7 +89,7 @@ def poem(lang,project,data):
         f=element(rubric,'foreign','וְאֶל־הַתְּפִלָּה');f.set(XML+'lang','he');f.tail='.'
     else:
         rubric.text=data['rubric']
-    he_refrain='לִשְׁמֹעַ אֶל־הָרִנָּה וְאֶל־הַתְּפִלָּה :'
+    he_refrain='לִשְׁמֹעַ אֶל־הָרִנָּה וְאֶל־הַתְּפִלָּה׃'
     en_refrain='to hearken unto our hymns of praise, and unto our supplication.'
     for n,stanza in enumerate(data['stanzas'],1):
         marker(div,POEM+f'/{n}')
