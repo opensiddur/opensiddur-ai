@@ -1,8 +1,6 @@
 """Unit tests for j:conditional parsing and evaluation."""
 
-import re
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock
 
 from lxml import etree
@@ -16,11 +14,11 @@ from opensiddur.exporter.condition_eval import (
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
 from opensiddur.exporter.linear import NumericValue, Undefined
+from opensiddur.tests.exporter.spec_tables import truth_tables
 
 TEI = TEI_NS
 J = JLPTEI_NAMESPACE
 
-SPEC = Path(__file__).resolve().parents[3] / "schema" / "JLPTEI-3.md"
 
 
 def _mock_processor(settings: dict[tuple[str, str], object]) -> MagicMock:
@@ -539,28 +537,8 @@ class TestSpecTruthTables(unittest.TestCase):
     ``schema/JLPTEI-3.md``, so every cell is checked against ``_combine``.
     """
 
-    _SECTION = re.compile(r"^##### Truth tables\n(.*?)(?=^#)", re.MULTILINE | re.DOTALL)
-    _VALUES = {"True": TriState.TRUE, "False": TriState.FALSE, "Undefined": TriState.UNDEFINED}
-
     def _tables(self) -> dict[str, dict[tuple[TriState, TriState], TriState]]:
-        section = self._SECTION.search(SPEC.read_text(encoding="utf-8"))
-        self.assertIsNotNone(section, "no '##### Truth tables' section in the spec")
-        tables: dict[str, dict[tuple[TriState, TriState], TriState]] = {}
-        columns: list[TriState] = []
-        table: dict[tuple[TriState, TriState], TriState] | None = None
-        for line in section.group(1).splitlines():
-            if not line.startswith("|"):
-                table = None
-                continue
-            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            if table is None:
-                table = tables.setdefault(cells[0], {})
-                columns = [self._VALUES[cell] for cell in cells[1:]]
-            elif set(cells) != {"---"}:
-                row = self._VALUES[cells[0]]
-                for column, cell in zip(columns, cells[1:], strict=True):
-                    table[(row, column)] = self._VALUES[cell]
-        return tables
+        return truth_tables()
 
     def test_every_table_is_documented_in_full(self):
         tables = self._tables()
