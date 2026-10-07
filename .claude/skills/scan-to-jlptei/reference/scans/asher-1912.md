@@ -117,3 +117,11 @@ projects as fallbacks in `specs/asher_selichot/default.yaml`. Preserve that prov
 in documentation and do not present the supplied prayer as an Asher scan reading.
 Verify all six Full Kaddish parts, including Titkabel and the closing peace passages,
 and check the English column retains its configured secondary-source fallbacks.
+
+For mixed-language footnotes, preserve the explicit language on each paragraph;
+the English explanation must not inherit the Hebrew note’s direction. Inspect
+Latin glyph positions in the apparatus as well as Hebrew runs and the Psalm
+citation. MuPDF can split reversed Latin text into single-character lines, so
+group apparatus glyphs by page, font and baseline before measuring their order.
+The first-day settings measure apparatus at 9.826pt; their check inspects Latin
+runs at sizes up to 10pt. This cutoff is a calibration for these settings.

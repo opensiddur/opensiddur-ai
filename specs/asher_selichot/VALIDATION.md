@@ -234,3 +234,25 @@ The rebuilt documentary PDF remains 35 pages with six identical checked baseline
 0/1,252 reversed Hebrew runs, and 1,226 flagged by its reversed control. Its printed
 Kaddish rubric and all documentary rendering controls pass after the conditional
 transclusion fix.
+
+## Mixed-language apparatus paragraph direction
+
+The English paragraph inside the Hebrew commentary note was explicitly marked
+`xml:lang="en"`, but the apparatus emitter ignored that paragraph’s language.
+The separate exporter fix is PR #218. Both new synthetic direction tests fail
+against the previous exporter; its 292 PDF-transform tests and 126 subtests pass
+with the fix. The new Asher Latin-apparatus glyph check rejects the original PDF
+on page 9, even though its old Hebrew-direction check passed.
+
+Both first-day PDFs were rebuilt. The documentary edition remains 35 pages and
+the expanded edition 40 pages; all six checked prayer-start baselines coincide.
+Latin apparatus runs pass the new baseline/font grouping check and a deliberately
+reversed note fails. Hebrew direction still reports 0/1,252 reversed runs in the
+documentary edition and 0/1,475 in the expanded edition, with reversed controls
+flagging 1,226 and 1,439 respectively. Existing repetition, reference-boundary,
+footnote and punctuation checks pass. Visual inspection of expanded page 9 confirms
+the English explanation reads left to right and its Hebrew passages are preserved.
+The XML language declarations and source readings required no changes.
+
+After merging the separate fix into the Asher worktree, all 303 combined
+PDF-transform/Asher encoding tests and 128 subtests pass (one pre-existing warning).

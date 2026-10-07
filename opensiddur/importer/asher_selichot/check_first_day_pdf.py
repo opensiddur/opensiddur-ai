@@ -17,7 +17,26 @@ ANCHORS = [('אשרייושביביתך', 'Happy are they who dwell'),
            ('יהאשמהרבא', 'May his great name be blessed')]
 
 
+def latin_note_runs(tree):
+    """Group small Latin glyphs by font and baseline, including fragmented PDF lines."""
+    runs = {}
+    for page_no, page in enumerate(tree.findall('page'), 1):
+        for font in page.findall('.//font'):
+            if float(font.get('size', '100')) > 10:
+                continue  # Asher first-day apparatus measures 9.826pt.
+            for char in font.findall('char'):
+                value = char.get('c', '')
+                if value.isascii() and value.isalpha():
+                    key = (page_no, round(float(char.get('y')), 2), font.get('name'))
+                    runs.setdefault(key, []).append(char)
+    return {key: chars for key, chars in runs.items() if len(chars) >= 4}
+
+
 def check(tree, complete=False, expanded=False):
+    for key, chars in latin_note_runs(tree).items():
+        xs = [float(c.get('x')) for c in chars]
+        if any(right < left-0.05 for left, right in zip(xs, xs[1:])):
+            raise ValueError(f'Reversed Latin note on PDF page {key[0]}')
     he_rows, en_rows, citation = [], [], []
     for page_no, page in enumerate(tree.findall('page'), 1):
         gutter = 288 if page_no % 2 else 324
@@ -78,7 +97,7 @@ def check(tree, complete=False, expanded=False):
 
 
 def controls(tree, complete=False, expanded=False):
-    kinds=['direction','alignment','boundary','punctuation','wrong-stop']
+    kinds=['direction','note-direction','alignment','boundary','punctuation','wrong-stop']
     if complete:kinds+=['conclusion','footnote']
     if expanded:kinds+=['repetition','fulfilled-instruction']
     for kind in kinds:
@@ -88,6 +107,10 @@ def controls(tree, complete=False, expanded=False):
             chars=[c for c in line.findall('.//char') if float(c.get('x'))<288 and c.get('c').isascii() and c.get('c').isalpha()]
             xs=[c.get('x') for c in chars]
             for c,x in zip(chars,reversed(xs)):c.set('x',x)
+        elif kind=='note-direction':
+            chars = max(latin_note_runs(broken).values(), key=len)
+            xs = [c.get('x') for c in chars]
+            for char, x in zip(chars, reversed(xs)):char.set('x', x)
         elif kind=='alignment':
             for line in broken.findall('.//line'):
                 if 'May his great name be exalted' in plain(line.get('text','')):
