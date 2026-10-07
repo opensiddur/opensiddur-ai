@@ -104,18 +104,3 @@ class FirstDayTest(unittest.TestCase):
             self.assertTrue(all(target.endswith('@birnbaum_ashkenaz_'+lang+'_1949') for target in targets))
             self.assertIn('/titkabal@', targets[3])
             self.assertIn('/oseh_shalom@', targets[-1])
-
-    def test_parallel_column_retains_secondary_sources_and_restores_priorities(self):
-        from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
-        from opensiddur.exporter.linear import LinearData
-        processor = object.__new__(ExternalCompilerProcessor)
-        processor.linear_data = LinearData()
-        data = processor.linear_data
-        data.project_priority = ['asher-he', 'birnbaum-he']
-        data.instruction_priority = ['asher-he']
-        data.parallel_projects = ['asher-en', 'birnbaum-en']
-        with processor._parallel_priority('asher-en'):
-            self.assertEqual(['asher-en', 'birnbaum-en'], data.project_priority)
-            self.assertEqual(['asher-en', 'birnbaum-en'], data.instruction_priority)
-        self.assertEqual(['asher-he', 'birnbaum-he'], data.project_priority)
-        self.assertEqual(['asher-he'], data.instruction_priority)

@@ -69,3 +69,7 @@ resolving a target or emitting suspension markers. This is required for the
 shared documentary modules to compile without a configured secondary source.
 A regression fixture uses an absent target inside a false scope and checks that
 the documentary text after the scope survives.
+
+The generic compiler corrections and their regression tests are maintained in
+opensiddur-ai PR #217 (`fix/compiler-transclusion-fallbacks`). The Asher code PR
+is stacked on that branch so its review diff contains only scan/edition work.
