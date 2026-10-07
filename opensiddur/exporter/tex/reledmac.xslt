@@ -3741,6 +3741,14 @@
         <xsl:text>}}}}</xsl:text>
     </xsl:template>
 
+    <!-- A paragraph inside apparatus is emitted directly rather than through the
+         body paragraph pipeline. Honor its explicit language before inheriting the
+         surrounding note's forced direction. Keep ordinary groups, not paragraph
+         environments, inside reledmac's auxiliary-file writes. -->
+    <xsl:template match="tei:p[ancestor::tei:note][@xml:lang]" mode="emit" priority="10">
+        <xsl:call-template name="note-content"/>
+    </xsl:template>
+
     <xsl:template name="note-content">
         <!-- The same language the macro was chosen by, computed the same way, so the two
              cannot disagree about one note. @f:note-lang because pairing the columns copies
