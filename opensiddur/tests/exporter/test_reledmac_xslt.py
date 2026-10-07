@@ -4539,3 +4539,20 @@ class TestEnglishForeignDirection(unittest.TestCase):
         out = _transform(xml)
         self.assertIn(r'\texthebrew{אשרי}', out)
         self.assertIn(r'\textdir TLT\foreignlanguage{english}{\textit{Say', out)
+
+
+class TestNoteParagraphDirection(unittest.TestCase):
+    def render_note(self, language, paragraphs):
+        return _transform(f'''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="{language}">
+          <tei:text><tei:body><tei:p>Anchor<tei:note type="commentary">{paragraphs}</tei:note></tei:p></tei:body></tei:text>
+        </tei:TEI>''')
+
+    def test_english_paragraph_overrides_hebrew_note_direction(self):
+        out = self.render_note('he', '<tei:p xml:lang="en">Read by the Reader.</tei:p><tei:p>אשרי העם</tei:p>')
+        self.assertIn(r'{{\textdir TLT\foreignlanguage{english}{Read by the Reader.}}}', out)
+        self.assertIn('אשרי העם', out)
+
+    def test_hebrew_paragraph_overrides_english_note_direction(self):
+        out = self.render_note('en', '<tei:p>English explanation.</tei:p><tei:p xml:lang="he">אשרי העם</tei:p>')
+        self.assertIn(r'{{\textdir TRT\foreignlanguage{hebrew}{אשרי העם}}}', out)
+        self.assertIn('English explanation.', out)
