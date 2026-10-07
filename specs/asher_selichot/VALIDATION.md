@@ -166,7 +166,7 @@ Use `python -m pytest -q` with both TeX cache variables set as above. A broad
 the affected facing-page fixture passed in isolation and the complete recommended
 pytest run passed. The new synthetic unittest fixtures also pass discovery alone.
 
-Current companion commits: source `22867d5`; projects `a241a92`. The URN registry
+Current companion commits: source `1e561c1`; projects `8a69fea`. The URN registry
 contains 2,985 records with no errors or warnings; four informational notes concern
 existing alias migrations in other projects.
 
@@ -186,3 +186,51 @@ n52 boundary controls pass; the reversed-direction control flags 1,224 runs.
 Visual inspection of page 14 confirms the invocation is ordinary opening text
 in both columns. The full-suite result above precedes this focused correction;
 the focused checks and rendering were rerun for this follow-up.
+
+## Expanded complete first day with Full Kaddish fallback
+
+`default.yaml` selects `first_day_expanded.xml`, expanded abbreviation readings,
+and all supplied-text flags. It prioritizes Asher and then Birnbaum in both
+languages. The expanded PDF has 40 pages. All six checked prayer-start pairs have
+identical baselines. Hebrew direction verification finds 0/1,475 reversed runs;
+the deliberately reversed control flags 1,439. Visual inspection confirms the
+bilingual Titkabel and closing peace passages, and the source list includes both
+Asher and Birnbaum.
+
+PDF checks require four occurrences of El Melekh, three of each repeated verse
+range and Ashamnu, and one complete closing Kaddish. They reject missing repetitions,
+retained fulfilled instructions, omitted Titkabel, reversed direction, shifted
+alignment, stranded/wrong verse stops, duplicated footnotes and next-day content.
+Compiled XML resolves every transclusion; its Full Kaddish contains all six parts
+once per language and draws exclusively from the Birnbaum projects.
+
+All 22 Asher XML files validate; both new Birnbaum Full Kaddish wrappers also
+validate. Documentary comparisons still match 96 continuation units, six opening
+streams and seven pilot streams. Reverse verification separately audits the
+editorial targets and conditional branch polarity before comparing the printed
+branch. Both Asher projects resolve URNs; the registry now has 2,989 records with
+no errors or warnings. Skill references and both view settings validate.
+
+The serial focused regression run passes 161 tests and 56 subtests, covering
+Asher encoding, Birnbaum conclusion assembly, abbreviation readings, marker
+reconstruction, conditional scopes and parallel compilation/apparatus. It includes
+controls for a disabled transclusion to an absent source and English fallback
+priority/restoration. The historical full-suite result above precedes this increment.
+
+Reproduce the expanded PDF with the same compile/render commands, using
+`specs/asher_selichot/default.yaml` and `first-day-expanded.xml` / `.pdf` output
+paths. Check it with:
+
+```bash
+python -m opensiddur.importer.asher_selichot.check_first_day_pdf "$output_root/asher_selichot/first-day-expanded.pdf" --complete --expanded --control
+python -m opensiddur.importer.scan.pdf_direction "$output_root/asher_selichot/first-day-expanded.pdf" "$output_root/asher_selichot/first-day-expanded.tex" --control
+```
+
+The documentary settings disable the supplied-text branches; their compilation
+requires no Birnbaum fallback. The marker compiler skips disabled transclusions
+before resolving them, preserving the documentary edition’s printed instructions.
+
+The rebuilt documentary PDF remains 35 pages with six identical checked baselines,
+0/1,252 reversed Hebrew runs, and 1,226 flagged by its reversed control. Its printed
+Kaddish rubric and all documentary rendering controls pass after the conditional
+transclusion fix.

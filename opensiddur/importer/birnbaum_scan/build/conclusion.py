@@ -121,6 +121,7 @@ def prayers(lang, earlier):
         body.append('</tei:div>')
         result.append(dict(name='conclusion_' + key, title=title, urn=urn,
             first=item['first'] + side, last=item['last'] + side, body='\n'.join(body)))
+    result.append(full_kaddish(lang))
     result.extend(shir_shel_yom_files(lang))
     return result
 
@@ -221,3 +222,17 @@ def psalms_body(project):
                   endcond(key + '_occasion')]
     parts += ['<j:endDeclare target="#unit_service"/>', '</tei:div>']
     return '\n'.join(parts)
+
+
+def full_kaddish(lang):
+    """Reusable complete prayer, bound to this edition rather than caller priorities."""
+    project = 'birnbaum_ashkenaz_'+lang+'_1949'
+    urn = PRAYER+'kaddish/shalem'
+    parts = ('yitgadal', 'yehe_shmeh', 'yitbarakh', 'titkabal',
+             'yatom/yehe_shlama', 'yatom/oseh_shalom')
+    body = f'<tei:div corresp="{urn}">' + instruction('Reader:')
+    body += ''.join(transclude(PRAYER+'kaddish/'+part+'@'+project) for part in parts)
+    body += '</tei:div>'
+    return dict(name='kaddish_shalem', title='קדיש שלם' if lang == 'he' else 'Full Kaddish',
+                urn=urn, first=135 if lang == 'he' else 136,
+                last=135 if lang == 'he' else 136, body=body)

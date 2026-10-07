@@ -309,6 +309,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     # without calling _update_processing_context_after (see its SKIP branch).
                     continue
 
+                if self._should_skip_conditional_content():
+                    # Marker-mode transclusions must honor the same conditional
+                    # filtering as ordinary elements before resolving a target.
+                    self._update_processing_context_after(child)
+                    continue
+
                 if child_context["command"] == _ProcessingCommand.RECURSE:
                     # Before the range's start (#63, same root cause as #53): don't resolve
                     # the transclusion or emit suspend/resume brackets for it at all. RECURSE
@@ -841,8 +847,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
         saved_instr = self.linear_data.instruction_priority
         saved_annotations = self.linear_data.annotation_projects
         try:
-            self.linear_data.project_priority = [parallel_project]
-            self.linear_data.instruction_priority = [parallel_project]
+            column_priority = [parallel_project] + [
+                project for project in self.linear_data.parallel_projects
+                if project != parallel_project]
+            self.linear_data.project_priority = column_priority
+            self.linear_data.instruction_priority = column_priority
             self.linear_data.annotation_projects = [
                 p for p in saved_annotations if p == parallel_project]
             yield

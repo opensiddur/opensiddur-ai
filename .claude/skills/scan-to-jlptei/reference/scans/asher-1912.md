@@ -103,3 +103,17 @@ Identify the piyyut by the distinctive incipit that follows (for example,
 אין מי יקרא בצדק), recording this as an incipit rather than inventing a printed
 heading or asserting an independently verified formal title. Preserve the edition’s
 spelling and pointing. Only actual section headings belong in `tei:head`.
+
+## Expanded first-day service
+
+Replace fulfilled “Say …” cues with transclusions of their verified target ranges,
+including repeated scriptural petitions and Ashamnu. Keep documentary and expanded
+entrypoints sharing their source modules through conditional instruction/transclusion
+branches. `first_day_expanded.xml` supplies the poem’s concluding prayers explicitly.
+The final Kaddish Titkabel is not printed in this Asher range. For this
+expanded edition, transclude the unqualified Full Kaddish URN
+`urn:x-opensiddur:text:prayer:kaddish/shalem`; select Birnbaum’s Hebrew and English
+projects as fallbacks in `specs/asher_selichot/default.yaml`. Preserve that provenance
+in documentation and do not present the supplied prayer as an Asher scan reading.
+Verify all six Full Kaddish parts, including Titkabel and the closing peace passages,
+and check the English column retains its configured secondary-source fallbacks.

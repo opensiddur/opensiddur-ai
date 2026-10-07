@@ -1037,3 +1037,4 @@
 {"urn": "urn:x-opensiddur:text:prayer:zokher_haberit", "status": "canonical", "label_en": "zokher haberit"}
 {"urn": "urn:x-opensiddur:text:prayer:el_melekh_yoshev", "status": "canonical", "label_en": "el melekh yoshev"}
 {"urn": "urn:x-opensiddur:text:prayer:vayaavor", "status": "canonical", "label_en": "vayaavor"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/shalem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish", "label_he": "קדיש שלם", "label_en": "Full Kaddish"}

@@ -69,3 +69,53 @@ class FirstDayTest(unittest.TestCase):
                     paragraph = body.find(f'.//{{{TEI}}}p')
                     self.assertIn('Our God', paragraph.text)
                     self.assertIn('No one calleth', paragraph.text)
+
+    def test_expanded_instruction_uses_unqualified_full_kaddish_urn(self):
+        root = section('en', 'fixture', 'closing', [{
+            'id': 'reader_kaddish', 'kind': 'rubric',
+            'fragments': [self.fragment('s53', 'The Reader says Kaddish.')]}])
+        j = '{http://jewishliturgy.org/ns/jlptei/2}'
+        scopes = root.findall(f'.//{j}conditional')
+        self.assertEqual(['false', 'true'], [scope.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary').get('value') for scope in scopes])
+        self.assertEqual(['urn:x-opensiddur:text:prayer:kaddish/shalem'],
+                         [node.get('target') for node in root.findall(f'.//{j}transclude')])
+        self.assertEqual('The Reader says Kaddish.', root.find(f'.//{{{TEI}}}note').text.strip())
+
+    def test_repeated_verses_start_inside_paragraph_and_end_before_next_unit(self):
+        root = section('en', 'fixture', 'preface', [{
+            'id': 'morning_scriptural_petitions', 'kind': 'prose',
+            'repeat_start': {'en': 'Like a father'},
+            'fragments': [self.fragment('s21', 'Earlier verses. Like a father. Ending.')]},
+            {'id': 'next', 'kind': 'prose', 'fragments': [self.fragment('s21', 'Unrelated.')]}])
+        p = root.find(f'.//{{{TEI}}}body//{{{TEI}}}p')
+        self.assertEqual('Earlier verses. ', p.text)
+        markers = p.findall(f'{{{TEI}}}milestone')
+        self.assertEqual(2, len(markers))
+        self.assertTrue(markers[0].get('corresp').endswith('/repeat'))
+        self.assertEqual('Like a father. Ending. ', markers[0].tail)
+        self.assertIsNone(markers[1].get('corresp'))
+
+    def test_birnbaum_full_kaddish_keeps_all_six_parts_in_its_own_edition(self):
+        from opensiddur.importer.birnbaum_scan.build.conclusion import full_kaddish
+        for lang in ('he', 'en'):
+            body = etree.fromstring(('<root xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+full_kaddish(lang)['body']+'</root>').encode())
+            targets = [node.get('target') for node in body.findall('.//{http://jewishliturgy.org/ns/jlptei/2}transclude')]
+            self.assertEqual(6, len(targets))
+            self.assertTrue(all(target.endswith('@birnbaum_ashkenaz_'+lang+'_1949') for target in targets))
+            self.assertIn('/titkabal@', targets[3])
+            self.assertIn('/oseh_shalom@', targets[-1])
+
+    def test_parallel_column_retains_secondary_sources_and_restores_priorities(self):
+        from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
+        from opensiddur.exporter.linear import LinearData
+        processor = object.__new__(ExternalCompilerProcessor)
+        processor.linear_data = LinearData()
+        data = processor.linear_data
+        data.project_priority = ['asher-he', 'birnbaum-he']
+        data.instruction_priority = ['asher-he']
+        data.parallel_projects = ['asher-en', 'birnbaum-en']
+        with processor._parallel_priority('asher-en'):
+            self.assertEqual(['asher-en', 'birnbaum-en'], data.project_priority)
+            self.assertEqual(['asher-en', 'birnbaum-en'], data.instruction_priority)
+        self.assertEqual(['asher-he', 'birnbaum-he'], data.project_priority)
+        self.assertEqual(['asher-he'], data.instruction_priority)
