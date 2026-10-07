@@ -1,10 +1,16 @@
-""" Build a printed book (PDF) for every settings file in a settings directory.
+""" Build a printed book (PDF), and optionally an electronic one (HTML), for every settings
+file in a settings directory.
 
 The settings directory (opensiddur-projects/settings/) has one subdirectory per book, holding
 that book's settings files: settings/humash/annual.yaml, settings/humash/triennial.yaml. Each
 names the root file it formats in its `book:` key and says how it differs from its siblings in
 `description:`. The release builds every one of them and attaches the PDFs to the release
 (.github/workflows/release-books.yml), named <book>-<settings>[-<tag>].pdf.
+
+`--format html` builds the electronic book instead, or as well (`--format pdf --format html`):
+one self-contained <book>-<settings>[-<tag>].html (opensiddur/exporter/html/html.py). It is
+compiled separately, with `--destination electronic`, which leaves the settings a reader
+supplies for the reader's device to decide.
 
 `--check` validates without building: the YAML parses and matches the settings schema, the
 project and file the book names exist, and every font chain the book will be typeset with has
@@ -40,6 +46,7 @@ class BookResult:
     name: str
     book: Optional[BookTarget] = None
     output_pdf: Optional[Path] = None
+    output_html: Optional[Path] = None
     error: Optional[str] = None
 
     @property
@@ -69,9 +76,12 @@ def book_name(settings_file: Path, settings_directory: Path) -> str:
     return settings_file.relative_to(settings_directory).with_suffix("").as_posix()
 
 
-def output_name(name: str, suffix: Optional[str] = None) -> str:
+FORMATS = ("pdf", "html")
+
+
+def output_name(name: str, suffix: Optional[str] = None, extension: str = "pdf") -> str:
     stem = name.replace("/", "-")
-    return f"{stem}-{suffix}.pdf" if suffix else f"{stem}.pdf"
+    return f"{stem}-{suffix}.{extension}" if suffix else f"{stem}.{extension}"
 
 
 def _check_fonts(settings: SettingsYaml) -> Optional[str]:
@@ -128,31 +138,38 @@ def build(
     project_directory: Path,
     output_directory: Path,
     suffix: Optional[str] = None,
+    formats: tuple[str, ...] = ("pdf",),
 ) -> BookResult:
-    """ Compile and typeset one book.
+    """ Compile and render one book, in each of `formats`.
 
-    The compiler and PDF stages run as subprocesses: each book gets fresh linear data,
+    The compiler and output stages run as subprocesses: each book gets fresh linear data,
     and a stage that exits outright fails only its own book. Their output goes to
-    <output_directory>/<book>-<settings>.log.
+    <output_directory>/<book>-<settings>.log. Each format is compiled separately, an
+    electronic book being compiled differently from a printed one.
     """
     result = check(settings_file, settings_directory, project_directory)
     if not result.ok:
         return result
 
-    output_pdf = output_directory / output_name(result.name, suffix)
-    log_file = output_directory / output_name(result.name).replace(".pdf", ".log")
+    log_file = output_directory / output_name(result.name, extension="log")
+    common = ["-s", str(settings_file), "--project-directory", str(project_directory)]
+    stages = {
+        "pdf": ([], "opensiddur.exporter.pdf.pdf", "typesetting"),
+        "html": (["--destination", "electronic"], "opensiddur.exporter.html.html", "rendering"),
+    }
     with tempfile.TemporaryDirectory() as temp, open(log_file, "w") as log:
-        compiled = Path(temp) / "compiled.xml"
-        common = ["-s", str(settings_file), "--project-directory", str(project_directory)]
-        if not _run([sys.executable, "-m", "opensiddur.exporter.compiler",
-                     "-o", str(compiled), *common], log):
-            result.error = f"compilation failed; see {log_file}"
-            return result
-        if not _run([sys.executable, "-m", "opensiddur.exporter.pdf.pdf",
-                     str(compiled), str(output_pdf), *common], log):
-            result.error = f"typesetting failed; see {log_file}"
-            return result
-    result.output_pdf = output_pdf
+        for extension in formats:
+            compile_options, stage, doing = stages[extension]
+            compiled = Path(temp) / f"compiled-{extension}.xml"
+            output = output_directory / output_name(result.name, suffix, extension)
+            if not _run([sys.executable, "-m", "opensiddur.exporter.compiler",
+                         "-o", str(compiled), *compile_options, *common], log):
+                result.error = f"compilation failed; see {log_file}"
+                return result
+            if not _run([sys.executable, "-m", stage, str(compiled), str(output), *common], log):
+                result.error = f"{doing} failed; see {log_file}"
+                return result
+            setattr(result, f"output_{extension}", output)
     return result
 
 
@@ -160,7 +177,8 @@ def _report(results: list[BookResult]) -> None:
     for result in results:
         if result.ok:
             target = f"{result.book.project}/{result.book.file_name}"
-            built = f" -> {result.output_pdf}" if result.output_pdf else ""
+            outputs = [str(o) for o in (result.output_pdf, result.output_html) if o]
+            built = f" -> {', '.join(outputs)}" if outputs else ""
             print(f"ok      {result.name}: {target}{built}")
         else:
             print(f"FAILED  {result.name}: {result.error}")
@@ -197,6 +215,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="Where to write the PDFs and per-book logs (default: ./books).")
     parser.add_argument("--suffix", default=None,
                         help="Appended to each PDF name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
+    parser.add_argument("--format", dest="formats", action="append", choices=FORMATS,
+                        help="What to build: pdf (the default), html (the electronic book). "
+                             "Repeat for both.")
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--check", action="store_true",
                         help="Only validate the settings, the books they name and their fonts; build nothing.")
@@ -225,7 +246,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         args.output_directory.mkdir(parents=True, exist_ok=True)
         output_directory = args.output_directory.resolve()
-        results = [build(f, settings_directory, project_directory, output_directory, args.suffix)
+        formats = tuple(dict.fromkeys(args.formats or ["pdf"]))
+        results = [build(f, settings_directory, project_directory, output_directory, args.suffix,
+                         formats)
                    for f in settings_files]
     _report(results)
     return 0 if all(r.ok for r in results) else 1

@@ -90,7 +90,8 @@ declarations:
     ashkenaz: true
     teimani_baladi: true
 
-# Output-format settings consumed by the TeX/PDF stage only.
+# Output-format settings, read by the output stages: all of them by the TeX/PDF stage, and the
+# ones a reflowing page can use by the electronic book (see doc/typography.md).
 typography:
   # Every key below is optional, and every default is what this exporter produced
   # before any of it was configurable. doc/typography.md is the full reference:

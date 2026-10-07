@@ -177,6 +177,34 @@
     return evaluate(condition, new Settings(pinned, reader, defaults));
   }
 
+  // ── The book's conditions as CSS ─────────────────────────────────────────
+  //
+  // book.expressions: [{cond, pinned}], book.scopes: the expression of each scope by its
+  // number. A scope that does not hold hides what it governs (class c<n>) and its markers
+  // (m<n>); one that holds keeps its rubric and drops its brackets and rules; an undecided
+  // one shows everything. html.py writes the same rules, for a page read without scripts.
+
+  function scopeCss(book, reader, defaults) {
+    var states = book.expressions.map(function (e) {
+      return resolve(e.cond, e.pinned, reader, defaults);
+    });
+    var hidden = [];
+    var settled = [];
+    book.scopes.forEach(function (expression, cid) {
+      var state = states[expression];
+      if (state === FALSE) {
+        hidden.push(".c" + cid, ".m" + cid);
+      } else if (state === TRUE) {
+        settled.push(".m" + cid + ".cm-close", ".m" + cid + ".cm-norubric",
+                     ".m" + cid + " .cm-br");
+      }
+    });
+    var css = "";
+    if (hidden.length) css += hidden.join(",") + "{display:none}\n";
+    if (settled.length) css += settled.join(",") + "{display:none}\n";
+    return { css: css, states: states };
+  }
+
   root.OSCond = {
     TRUE: TRUE,
     FALSE: FALSE,
@@ -186,6 +214,7 @@
     evaluate: evaluate,
     resolve: resolve,
     Settings: Settings,
-    DERIVATIONS: DERIVATIONS
+    DERIVATIONS: DERIVATIONS,
+    scopeCss: scopeCss
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

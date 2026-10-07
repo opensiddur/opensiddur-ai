@@ -509,6 +509,17 @@ title page on a recto.
 
 ## How this reaches the renderer
 
+The electronic book (`opensiddur/exporter/html/`) reflows, so most of these settings, which
+are about paper, mean nothing to it. It honours:
+
+- `fonts.latin` and `fonts.hebrew`, as font stacks (named, not embedded);
+- `paragraphs.line_spacing`, `paragraphs.spacing` and `paragraphs.alignment`;
+- `markers.verse_numbers`, `markers.chapter_numbers` and `markers.section_separator`;
+- `markers.conditional`, and so how an undecided passage is delimited.
+
+`html/css.py` does the translation. Everything else is ignored.
+
+
 `opensiddur/exporter/typography.py` holds the models above and knows nothing about any
 renderer. `opensiddur/exporter/tex/typography_tex.py` turns a validated settings tree into a
 block of LuaLaTeX, which `tex/reledmac.xslt` emits after all of its own definitions — so the

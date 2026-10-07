@@ -38,7 +38,14 @@ jobs:
     - name: Build schema
       run: bash scripts/build-schema.sh
 
+    # The electronic book's JavaScript is tested under Node, which the runner image provides.
+    # OPENSIDDUR_REQUIRE_JS makes a missing Node fail those tests instead of skipping them.
+    - name: Node version
+      run: node --version
+
     - name: Run tests with coverage
+      env:
+        OPENSIDDUR_REQUIRE_JS: "1"
       run: |
         uv run coverage run -m unittest discover -s opensiddur/tests -v
         uv run coverage report -m

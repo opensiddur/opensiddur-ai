@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- An electronic-book output format (#92): one self-contained HTML file. Its undecided
+  passages are resolved on the reader's device, against settings the reader chooses in the
+  book: the rite, who is present, a house of mourning, and the like. The text changes as
+  they do, and they are remembered in the browser. Read without scripts, the page is the
+  printed book. Passages that turn on the date, the time or the place are not yet decided
+  on the device, and show every option with its rubric, as in print.
+  - `python -m opensiddur.exporter.compiler --destination electronic` leaves the reader's
+    settings undecided, and records on each undecided conditional what the compile did
+    know (`p:pinned`).
+  - `python -m opensiddur.exporter.html.html` renders the compiled file.
+  - `python -m opensiddur.exporter.books --format html` builds the electronic books in the
+    settings directory, alone or alongside the PDFs.
+  - The device's evaluator is a JavaScript port of the compiler's. The two are tested
+    against one corpus of cases, the JavaScript under Node.
+
 ### Fixed
 - Undecided conditional scopes keep both of their markers through compilation (#219). In a
   compiled Birnbaum, 652 of 1459 scopes had lost their `j:endConditional` and 12 their

@@ -8,6 +8,7 @@ The exporter operates in two stages:
 2. **Output format**: Given the compiled file, output to the consumable format. The current output formats are:
     1. TeX typesetting system (LuaLaTeX, via [`reledmac`](https://ctan.org/pkg/reledmac) + [`reledpar`](https://ctan.org/pkg/reledpar) for critical-edition apparatus and parallel-text alignment)
     2. PDF, via the same LuaLaTeX pipeline
+    3. An electronic book: one self-contained HTML file whose undecided passages are resolved on the reader's device
 
 ## Run the compiler
 
@@ -27,6 +28,40 @@ sudo bash opensiddur/exporter/tex/install-tex.sh
 For round-trip command examples, see `scripts/tei-to-pdf.sh` — the same
 `-s <settings-file>` flag drives both the compiler and the PDF stage, so any
 typography settings in the YAML are forwarded to the LuaLaTeX preamble.
+
+## Electronic books
+
+An electronic book is one HTML file with its styles, scripts and data inline, so it opens
+offline from wherever it is saved. A printed book has to settle every condition when it is
+compiled. Whatever it cannot settle is printed with the rubric that says when to read it.
+An electronic book leaves the settings a reader supplies to the reader: the rite, who is
+present, a house of mourning, and so on. Its settings panel decides those passages on the
+reader's device, and the text changes as the settings do.
+
+Compile with `--destination electronic`, then render:
+
+```bash
+uv run python -m opensiddur.exporter.compiler -s SETTINGS --destination electronic -o book.xml
+uv run python -m opensiddur.exporter.html.html book.xml book.html -s SETTINGS
+```
+
+or `python -m opensiddur.exporter.books --format html` for the books in the settings directory.
+
+- `--destination electronic` withholds the reader's feature structures (every one not derived
+  from the date, the time or the place; see `client_settings.py`) from the settings file's
+  declarations and the static defaults, so their conditions stay undecided.
+- Each undecided conditional records in `p:pinned` the values the compile did know for its
+  condition: what the document declared there, and what was derived from it.
+- The settings file's declarations become the book's defaults. Read without scripts, the
+  page shows exactly what the PDF of the same settings file shows.
+- Calendar settings are not yet answered on the device. Passages that depend on them show
+  every option with its rubric, as in print.
+
+The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
+(`condition_eval.py`, `client_settings.py`). The tests run the same corpus
+(`opensiddur/tests/fixtures/condition_agreement/`) through both, the JavaScript under Node.
+Without Node those tests are skipped, unless `OPENSIDDUR_REQUIRE_JS=1`, as CI sets it. Point
+`OPENSIDDUR_NODE` at a Node binary that is not on the `PATH`.
 
 ## Printed books
 
@@ -164,7 +199,7 @@ left column for a `pairs` layout, or first in an `interleaved` one);
 `primary_last` swaps them. The left page is the verso: for facing pages in a
 book bound on the right, put the Hebrew on the right with `primary_last`.
 
-### Typography (PDF/TeX stage only)
+### Typography
 
 The `typography` section says how the exported document should look: paper and margins, fonts,
 the size and weight of each kind of text, line spacing, line numbers, how notes are marked,
