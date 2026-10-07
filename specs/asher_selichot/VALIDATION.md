@@ -108,3 +108,12 @@ python -m opensiddur.importer.asher_selichot.check_first_day_pdf "$output_root/a
 English `tei:foreign[@xml:lang='en']` now receives a scoped LTR wrapper in the
 PDF exporter, with the surrounding paragraph started before switching direction.
 Two synthetic XSLT regressions cover the English citation and nested Hebrew.
+
+The punctuation follow-up attaches all 29 closing Hebrew colons in the opening
+reading and XML to their preceding words. First-pass evidence keeps the initial
+spacing. The rebuilt PDF retains identical checked prayer baselines and passes
+Hebrew direction checks (0/85 reversed, 84/85 flagged by the reversed control).
+The PDF check now rejects isolated colon lines: it fails on the pre-fix PDF and
+on a synthetic stranded-colon control. The corrected Psalm page was inspected
+visually; verse-ending punctuation remains with its word across line wrapping.
+All 14 XML files and the documentary stream comparisons still pass.

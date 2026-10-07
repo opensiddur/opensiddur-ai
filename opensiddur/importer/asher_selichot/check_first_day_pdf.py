@@ -29,6 +29,9 @@ def check(tree):
             if he:
                 he_rows.append((page_no, float(he[0].get('y')), ''.join(base(c.get('c')) for c in sorted(he,key=lambda c:float(c.get('x')),reverse=True))))
             left = [c for c in chars if float(c.get('x')) < gutter]
+            left_text = ''.join(c.get('c') for c in left).strip()
+            if ':' in left_text and all(c.isspace() or c.isdigit() or c == ':' for c in left_text):
+                raise ValueError(f'Stranded Hebrew punctuation on PDF page {page_no}')
             if 'Ps. cxlv.' in plain(''.join(c.get('c') for c in left)):
                 citation.append(left)
     deltas=[]
@@ -52,7 +55,7 @@ def check(tree):
 
 
 def controls(tree):
-    for kind in ['direction','alignment','boundary']:
+    for kind in ['direction','alignment','boundary','punctuation']:
         broken=copy.deepcopy(tree)
         if kind=='direction':
             line=next(l for l in broken.findall('.//line') if 'Ps. cxlv.' in l.get('text','') and float(l.find('.//char').get('x'))<288)
@@ -64,8 +67,11 @@ def controls(tree):
                 if 'May his great name be exalted' in plain(line.get('text','')):
                     for c in line.findall('.//char'):
                         if float(c.get('x'))>288:c.set('y',str(float(c.get('y'))+50))
-        else:
+        elif kind=='boundary':
             etree.SubElement(broken.find('page'),'line',text='SECOND DAY')
+        else:
+            line=etree.SubElement(broken.findall('page')[4],'line',text=':')
+            etree.SubElement(line,'char',c=':',x='250',y='400')
         try:check(broken)
         except ValueError:pass
         else:raise AssertionError(f'{kind} control escaped detection')
@@ -81,7 +87,7 @@ def main(argv=None):
         tree=etree.parse(str(xml)).getroot()
     print('Prayer baseline differences:',check(tree))
     if args.control:
-        controls(tree);print('Reversed citation, shifted prayer, and wrong boundary controls rejected')
+        controls(tree);print('Reversed citation, shifted prayer, wrong boundary, and stranded punctuation controls rejected')
     return 0
 
 
