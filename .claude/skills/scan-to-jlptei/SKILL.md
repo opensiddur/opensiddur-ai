@@ -82,6 +82,14 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
   Reusing a correspondence within one document can silently break alignment.
 - Readings, verse structure, headings, rubrics, and notes are different evidence
   streams: compare like with like and check all streams for omissions.
+- Encode poetry and verse litanies with `tei:lg`/`tei:l`, including when the scan
+  packs multiple poetic lines into a prose-shaped block. Mark repeated inline
+  responses with `tei:seg type="refrain"`. Establish semantic line boundaries
+  from the scan's wording, parallelism, acrostics and punctuation; physical
+  wrapping and page breaks alone do not establish verse boundaries. Keep a
+  verse crossing a page in the same `tei:l` with an internal `tei:pb`. Preserve
+  a prose translation as prose. Audit line and refrain structure separately
+  from word equality, and inspect the rendered lineation.
 - The book’s author/translator belongs in source metadata. Register contributor
   URNs for the people responsible for this transcription, not check-source editors.
 - Refresh the reference database for the project directory being built. Run builds

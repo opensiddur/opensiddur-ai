@@ -28,6 +28,20 @@ Common prayers use common names, including `prayer:ashrei`, `prayer:ashamnu` and
 `prayer:kaddish/chatzi`. Piyyutim use distinctive incipits in their own files.
 The common אלהינו ואלהי אבותינו invocation stays in the piyyut opening.
 
+## Hebrew poetry and refrains
+
+Twelve additional Hebrew units use `tei:lg`/`tei:l` rather than paragraphs.
+A separate source `poetry-structure.json` records scan identities, verified line
+stops and verse/refrain counts. Mi Sheanah has 20 verse lines with 20 terminal
+`tei:seg type="refrain"` responses; Anenu has 35 and Rahmana has four responses.
+The English translation structures and all documentary words remain unchanged.
+Source-page breaks inside a verse do not introduce a new verse. Verification
+audits poetic structure separately from text equality, rejecting paragraph
+substitutions and missing or misplaced refrains. Complete PDF checks require
+20 distinct Mi Sheanah verse starts and 20 responses, and reject a removed-line
+control. The shared skill now explicitly distinguishes verse structure from
+physical wrapping and retains prose translations independently.
+
 ## Regenerate and validate
 
 ```bash
@@ -95,8 +109,8 @@ Measured results:
 | PDF pages | 35 | 40 |
 | Six prayer-start baseline differences | all 0pt | all 0pt |
 | Eight piyyut stanza-start differences | first 13.55pt, seven 0pt | all 0pt |
-| Reversed Hebrew runs | 0 / 1,252 | 0 / 1,472 |
-| Deliberately reversed runs flagged | 1,226 / 1,252 | 1,438 / 1,472 |
+| Reversed Hebrew runs | 0 / 1,216 | 0 / 1,436 |
+| Deliberately reversed runs flagged | 1,190 / 1,216 | 1,402 / 1,436 |
 | Page-15 English footnote | once | once |
 
 The stanza check follows ordered anchors from the poem's opening, excluding a
@@ -120,7 +134,7 @@ text and Asher's documentary readings are unchanged.
 
 Broken controls are rejected: reversed Hebrew/Latin notes or citations, shifted
 prayer/stanza starts, duplicated footnotes, wrong abbreviation branch, stranded or
-incorrect punctuation, missing conclusion, unwanted second-day text, omitted or
+incorrect punctuation, collapsed or missing Mi Sheanah verse starts, missing conclusion, unwanted second-day text, omitted or
 duplicated repetitions, retained fulfilled instructions, and injected Ten Days
 text/rubric. These checks establish observable output, rather than just XML shape.
 
@@ -130,7 +144,7 @@ text/rubric. These checks establish observable output, rather than just XML shap
 python -m pytest opensiddur/tests/importer/asher_selichot opensiddur/tests/common/test_urn_registry.py -q
 ```
 
-The focused module/registry run passes 66 tests and 22 subtests. Synthetic fixtures
+The focused module/registry run passes 70 tests and 22 subtests. Synthetic fixtures
 cover separate reusable piyyut files and shared Hebrew/English identities, canonical
 Ashrei/Kaddish, crossed page breaks, printed notes, invocation placement, repetition
 boundaries, conflicting calendar settings and caller-context restoration. Geometry

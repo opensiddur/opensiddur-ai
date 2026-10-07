@@ -108,6 +108,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False):
 
 
 def documents(source):
+    structure = source.parent/'poetry-structure.json'
+    poetry = json.loads(structure.read_text())['units'] if structure.exists() else {}
     title_data = json.loads((source/'title-pages.json').read_text())
     reading = json.loads((source/'first-day-opening.json').read_text())
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
@@ -143,7 +145,7 @@ def documents(source):
                     element(service_div, 'j:transclude', target=PRAYER+prayer)
             elif name == 'closing':
                 element(service_div, 'j:transclude', target=POEM)
-            root = section(lang, project, name, groups)
+            root = section(lang, project, name, groups, poetry)
             div = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
             for unit, group in zip(list(div), groups):
                 if group['kind'] == 'rubric':
@@ -217,7 +219,41 @@ def words_with_notes(parent, words, notes, lang):
     append_words(parent, rest)
 
 
-def section(lang, project, name, groups):
+def poetic_lines(node, fragments, rule):
+    """Keep semantic verse lines across scan boundaries and mark terminal refrains."""
+    stops = rule['line_stops']
+    line = None
+    for i, fragment in enumerate(fragments):
+        data = fragment['he']
+        if i:
+            pb(line if line is not None else node, data['scan'], data['printed_page'])
+        remaining_notes = list(fragment['notes']['he'])
+        for words in re.findall(r'[^'+re.escape(stops)+r']+['+re.escape(stops)+r']|[^'+re.escape(stops)+r']+$', data['text']):
+            words = words.strip()
+            if not words:
+                continue
+            if line is None:
+                line = element(node, 'l')
+                line.tail = ' '
+            notes = [note for note in remaining_notes if note['anchor'] in words]
+            for note in notes:
+                remaining_notes.remove(note)
+            refrain = rule.get('refrain')
+            match = re.search(re.escape(refrain)+r'\s*['+re.escape(stops)+r']$', words) if refrain else None
+            if match:
+                words_with_notes(line, words[:match.start()], notes, 'he')
+                element(line, 'seg', words[match.start():], type='refrain')
+            else:
+                words_with_notes(line, words, notes, 'he')
+            if words[-1] in stops:
+                line = None
+            elif not data.get('join_next'):
+                append_words(line, ' ')
+        if remaining_notes:
+            raise ValueError('Poetry footnote anchor crosses a verse boundary')
+
+
+def section(lang, project, name, groups, poetry=None):
     urn = FIRST_DAY+'/'+name
     root, text = document(lang, project, 'First day: '+name.replace('_',' '), urn)
     div = element(element(text,'body'),'div',corresp=urn)
@@ -227,16 +263,19 @@ def section(lang, project, name, groups):
         first = group['fragments'][0][lang]
         pb(unit,first['scan'],first['printed_page'])
         kind = group['kind']
+        poetic_rule = (poetry or {}).get(group['id']) if lang == 'he' else None
         targets = EXPANSION_TARGETS.get(group['id'])
         if targets:
             expansion_scope(unit, group['id']+'_printed', False)
         if kind == 'rubric':
             node = element(unit,'note',type='instruction');node.set(XML+'lang','en')
-        elif kind == 'poem' and lang == 'he':
+        elif poetic_rule or (kind == 'poem' and lang == 'he'):
             node = element(unit,'lg')
         else:
             node = element(unit,'p')
-        for i, fragment in enumerate(group['fragments']):
+        if poetic_rule:
+            poetic_lines(node, group['fragments'], poetic_rule)
+        for i, fragment in enumerate([] if poetic_rule else group['fragments']):
             data = fragment[lang]
             if i:
                 pb(node,data['scan'],data['printed_page'])
