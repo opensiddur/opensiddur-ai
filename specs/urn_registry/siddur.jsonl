@@ -1293,3 +1293,6 @@
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/avinu_malkenu", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Asher first day: avinu malkenu"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/vaanahnu_lo_neda", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Asher first day: vaanahnu lo neda"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/reader_kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Asher first day: reader kaddish"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/expanded", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Asher expanded first day"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/morning_scriptural_petitions/repeat", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day/morning_scriptural_petitions", "label_en": "Asher repeated verses: Like a father through when we call"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/daniel_petition/repeat", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day/daniel_petition", "label_en": "Asher repeated verses: For we do not presume through O Lord hear"}

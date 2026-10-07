@@ -1,5 +1,5 @@
-description: Asher 1912 complete first day through n52, work in progress. Incomplete book,
-  excluded from releases.
+description: Asher 1912 complete first day through n52, work in progress. Incomplete
+  book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: first_day.xml
@@ -21,15 +21,15 @@ typography:
   page_header:
     all:
       left: סליחות ליום ראשון
-      right: "{page}"
+      right: '{page}'
   instructions:
     from: both
   fonts:
     hebrew:
     - name: SBL Hebrew
       normal_size: 12
-
 declarations:
   asher:expansions:
     refrains_present: false
     prayers_present: false
+    repetitions_present: false

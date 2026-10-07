@@ -17,7 +17,7 @@ ANCHORS = [('אשרייושביביתך', 'Happy are they who dwell'),
            ('יהאשמהרבא', 'May his great name be blessed')]
 
 
-def check(tree, complete=False):
+def check(tree, complete=False, expanded=False):
     he_rows, en_rows, citation = [], [], []
     for page_no, page in enumerate(tree.findall('page'), 1):
         gutter = 288 if page_no % 2 else 324
@@ -58,8 +58,18 @@ def check(tree, complete=False):
     if complete:
         body_text=re.sub(r'\b\d+\b','',plain(' '.join(r[2] for r in en_rows)))
         body_text=' '.join(body_text.split())
-        if 'The Reader says Kaddish.' not in body_text or 'expiation of our sins for the sake of thy name.' not in body_text:
-            raise ValueError('Missing first-day conclusion or final Reader’s Kaddish rubric')
+        if 'expiation of our sins for the sake of thy name.' not in body_text:
+            raise ValueError('Missing first-day conclusion')
+        if expanded:
+            for phrase, count in [('Omnipotent King, who', 4), ('Like a father hath compassion', 3),
+                                  ('for we do not presume', 3), ('We have trespassed,', 3),
+                                  ('May the prayers and supplications', 1), ('He who creates peace', 1)]:
+                if body_text.count(phrase) != count:
+                    raise ValueError(f'Missing or duplicated expansion: {phrase}')
+            if 'The Reader says Kaddish.' in body_text or 'Say ' in body_text:
+                raise ValueError('Expanded output retains a fulfilled instruction')
+        elif 'The Reader says Kaddish.' not in body_text:
+            raise ValueError('Missing final Reader’s Kaddish rubric')
         for phrase in ['Explained by some', 'Idolatry, fornication and murder.', 'From here down']:
             if text.count(phrase)!=1:raise ValueError(f'Missing or duplicated footnote: {phrase}')
     elif 'Omnipotent King, who' in text:
@@ -67,9 +77,10 @@ def check(tree, complete=False):
     return deltas
 
 
-def controls(tree, complete=False):
+def controls(tree, complete=False, expanded=False):
     kinds=['direction','alignment','boundary','punctuation','wrong-stop']
     if complete:kinds+=['conclusion','footnote']
+    if expanded:kinds+=['repetition','fulfilled-instruction']
     for kind in kinds:
         broken=copy.deepcopy(tree)
         if kind=='direction':
@@ -89,14 +100,22 @@ def controls(tree, complete=False):
             etree.SubElement(line,'char',c='׃',x='250',y='400')
         elif kind=='conclusion':
             for line in list(broken.findall('.//line')):
-                if 'The Reader says Kaddish.' in plain(line.get('text','')):line.getparent().remove(line)
+                phrase = 'May the prayers and supplications' if expanded else 'The Reader says Kaddish.'
+                if phrase in plain(line.get('text','')):line.getparent().remove(line)
+        elif kind=='repetition':
+            line=next(l for l in broken.findall('.//line') if 'We have trespassed,' in plain(l.get('text','')))
+            line.getparent().remove(line)
+        elif kind=='fulfilled-instruction':
+            line=etree.SubElement(broken.find('page'),'line',text='Say the omitted prayer.')
+            for i, char in enumerate('Say the omitted prayer.'):
+                etree.SubElement(line,'char',c=char,x=str(600+i),y='400')
         elif kind=='footnote':
             line=next(l for l in broken.findall('.//line') if 'Explained by some' in l.get('text',''))
             line.getparent().append(copy.deepcopy(line))
         else:
             stop=next(c for c in broken.findall('.//char') if c.get('c')=='׃')
             stop.set('c',':')
-        try:check(broken,complete=complete)
+        try:check(broken,complete=complete,expanded=expanded)
         except ValueError:pass
         else:raise AssertionError(f'{kind} control escaped detection')
 
@@ -105,15 +124,18 @@ def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('pdf',type=Path);p.add_argument('--control',action='store_true')
     p.add_argument('--complete',action='store_true')
+    p.add_argument('--expanded',action='store_true')
     args=p.parse_args(argv)
     with tempfile.TemporaryDirectory() as tmp:
         xml=Path(tmp)/'text.xml'
         subprocess.run(['mutool','draw','-q','-F','stext','-o',str(xml),str(args.pdf)],check=True)
         tree=etree.parse(str(xml)).getroot()
-    print('Prayer baseline differences:',check(tree,complete=args.complete))
+    print('Prayer baseline differences:',check(tree,complete=args.complete,expanded=args.expanded))
     if args.control:
-        controls(tree,complete=args.complete)
-        print('Direction, alignment, section boundary and verse-stop controls rejected'+('; final rubric and duplicate-footnote controls rejected' if args.complete else ''))
+        controls(tree,complete=args.complete,expanded=args.expanded)
+        additional = ('; Kaddish, repetition, fulfilled-instruction and duplicate-footnote controls rejected'
+                      if args.expanded else '; final rubric and duplicate-footnote controls rejected' if args.complete else '')
+        print('Direction, alignment, section boundary and verse-stop controls rejected'+additional)
     return 0
 
 

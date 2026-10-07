@@ -45,3 +45,27 @@ remove the former heading heuristic. Record the distinctive following Hebrew
 incipit in source metadata and URN labels, without adding a printed heading or
 claiming a separately established formal title. Source words and alignment URNs
 remain unchanged. The scan-specific skill and reverse verifier enforce this rule.
+
+## Expanded complete first day and secondary-source settings
+
+Generate bilingual `first_day_expanded.xml` entrypoints using the shared modules.
+Conditional branches retain printed cues for documentary output and replace them
+with unqualified target URNs when repetitions are present. Register bounded
+repeat-range milestones within the two source prose prayers. Supply the poem’s
+concluding prayers after its transclusion. Add reusable Birnbaum Full Kaddish
+`prayer:kaddish/shalem`, assembled from six edition-bound existing passages.
+`default.yaml` selects this expanded entrypoint, Asher-first primary priorities,
+and Asher/Birnbaum English parallel priorities, outside release settings.
+
+Parallel subcompilation must retain the remaining configured parallel projects as
+fallback priorities rather than reducing its priority list to a singleton. Restore
+priorities after the scope ends. Verify documentary branches against primary
+readings after separately auditing expansion targets and branch polarity; compile
+both views and check repeated-passage counts, omitted fulfilled cues, complete
+Kaddish, source provenance, direction, footnotes and first-day boundary.
+
+Marker-mode external transclusions must honor false conditional scopes before
+resolving a target or emitting suspension markers. This is required for the
+shared documentary modules to compile without a configured secondary source.
+A regression fixture uses an absent target inside a false scope and checks that
+the documentary text after the scope survives.

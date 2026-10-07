@@ -86,14 +86,20 @@ def opening(lang, project, data):
     return root
 
 
-def entry(lang, project, title_data):
-    root, text = document(lang, project, 'Asher Selichoth — first day (work in progress)', FIRST_DAY, index=True)
+def entry(lang, project, title_data, expanded=False):
+    root, text = document(lang, project, 'Asher Selichoth — first day (work in progress)', FIRST_DAY+('/expanded' if expanded else ''), index=True)
     edition = root.find(f'.//{{{TEI}}}edition')
     edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading; the remainder of the book is outside this edition.'
+    if expanded:
+        root.find(f'.//{{{TEI}}}title').text = 'Asher Selichoth — expanded first day (work in progress)'
+        edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     titles(element(text, 'front'), title_data)
     div = element(element(text, 'body'), 'div')
     for target in ENTRY_TARGETS:
         element(div, 'j:transclude', target=target)
+        if expanded and target == POEM:
+            for prayer in ('el_melekh_yoshev', 'vayaavor'):
+                element(div, 'j:transclude', target=PRAYER+prayer)
     return root
 
 
@@ -104,6 +110,7 @@ def documents(source):
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
         yield project, 'first_day.xml', entry(lang, project, title_data)
+        yield project, 'first_day_expanded.xml', entry(lang, project, title_data, expanded=True)
         yield project, 'first_day_opening.xml', opening(lang, project, reading[lang])
         for name, groups in continuation.items():
             yield project, f'first_day_{name}.xml', section(lang, project, name, groups)
@@ -113,6 +120,25 @@ ENTRY_TARGETS = [OPENING, FIRST_DAY+'/preface', PRAYER+'el_melekh_yoshev',
                  PRAYER+'vayaavor', FIRST_DAY+'/before_piyyut', POEM, FIRST_DAY+'/closing']
 MODULE_ORDER = ['first_day_opening', 'first_day_preface', 'el_melekh_yoshev',
                 'vayaavor', 'first_day_before_piyyut', 'bemotzaei_menuhah', 'first_day_closing']
+
+
+EXPANSION_TARGETS = {
+    'after_first_selihah_rubric': [FIRST_DAY+'/morning_scriptural_petitions/repeat', FIRST_DAY+'/daniel_petition/repeat'],
+    'after_second_selihah_verses': [FIRST_DAY+'/morning_scriptural_petitions/repeat', FIRST_DAY+'/daniel_petition/repeat'],
+    'after_second_selihah_prayers': [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'],
+    'after_third_selihah_prayers': [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'],
+    'ashamnu_repeat': [FIRST_DAY+'/ashamnu'],
+    'ashamnu_repeat_2': [FIRST_DAY+'/ashamnu'],
+    'reader_kaddish': [PRAYER+'kaddish/shalem'],
+}
+
+
+def expansion_scope(parent, identity, present):
+    conditional = element(parent, 'j:conditional')
+    conditional.set(XML+'id', identity)
+    fs = element(conditional, 'fs', type='asher:expansions')
+    f = element(fs, 'f'); f.set('name', 'repetitions_present')
+    element(f, 'binary', value='true' if present else 'false')
 
 
 def append_words(parent, words):
@@ -160,6 +186,9 @@ def section(lang, project, name, groups):
         first = group['fragments'][0][lang]
         pb(unit,first['scan'],first['printed_page'])
         kind = group['kind']
+        targets = EXPANSION_TARGETS.get(group['id'])
+        if targets:
+            expansion_scope(unit, group['id']+'_printed', False)
         if kind == 'rubric':
             node = element(unit,'note',type='instruction');node.set(XML+'lang','en')
         elif kind == 'poem' and lang == 'he':
@@ -187,7 +216,23 @@ def section(lang, project, name, groups):
                     words_with_notes(node,line,fragment['notes'][lang] if n==8 else [],lang)
                     append_words(node,' ')
             else:
-                words_with_notes(node,words,fragment['notes'][lang],lang)
+                if i == 0 and group.get('repeat_start'):
+                    if fragment['notes'][lang]:
+                        raise ValueError('Repeat boundary needs explicit footnote placement')
+                    before, after = words.split(group['repeat_start'][lang], 1)
+                    append_words(node, before)
+                    milestone = element(node, 'milestone', unit='repeat-range', corresp=context+'/repeat')
+                    milestone.tail = group['repeat_start'][lang]+after
+                else:
+                    words_with_notes(node,words,fragment['notes'][lang],lang)
             if not data.get('join_next'):
                 append_words(node,' ')
+        if group.get('repeat_start'):
+            element(node, 'milestone', unit='repeat-range')
+        if targets:
+            element(unit, 'j:endConditional', target='#'+group['id']+'_printed')
+            expansion_scope(unit, group['id']+'_expanded', True)
+            for target in targets:
+                element(unit, 'j:transclude', target=target)
+            element(unit, 'j:endConditional', target='#'+group['id']+'_expanded')
     return root

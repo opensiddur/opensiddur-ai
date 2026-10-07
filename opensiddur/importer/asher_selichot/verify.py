@@ -76,6 +76,12 @@ def verify_opening(source, project_directory):
         entry=etree.parse(str(project/'first_day.xml')).getroot()
         if [el.get('target') for el in entry.findall(f'.//{{{J}}}transclude')]!=ENTRY_TARGETS:
             raise ValueError('First-day entry must preserve the complete documentary module order')
+        expanded=etree.parse(str(project/'first_day_expanded.xml')).getroot()
+        expanded_targets = ENTRY_TARGETS[:]
+        poem_position = expanded_targets.index(POEM)+1
+        expanded_targets[poem_position:poem_position] = [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor']
+        if [el.get('target') for el in expanded.findall(f'.//{{{J}}}transclude')] != expanded_targets:
+            raise ValueError('Expanded first-day entry must supply the piyyut conclusion prayers')
         front=entry.find(f'.//{{{TEI}}}front')
         title_streams={key:words for key,words in streams(front,include_notes=True).items() if words.strip()}
         wanted={}
@@ -95,7 +101,7 @@ def verify_continuation(source, project_directory):
     """Compare authored units to source readings and printed footnote evidence."""
     import re
     import unicodedata
-    from .first_day import FIRST_DAY, MODULE_ORDER
+    from .first_day import FIRST_DAY, MODULE_ORDER, EXPANSION_TARGETS
     groups=json.loads((source/'first-day-continuation.json').read_text())['sections']
     count=0
     for lang in ['he','en']:
@@ -111,6 +117,24 @@ def verify_continuation(source, project_directory):
             if len(urns)!=len(set(urns)):raise ValueError('Repeated correspondence within a module')
             for unit,reading in zip(units,readings):
                 if unit.get('corresp')!=FIRST_DAY+'/'+reading['id']:raise ValueError('Units out of source order')
+                targets = EXPANSION_TARGETS.get(reading['id'])
+                actual_targets = [n.get('target') for n in unit.findall(f'{{{J}}}transclude')]
+                if actual_targets != (targets or []):
+                    raise ValueError(f'{reading["id"]}: unexpected editorial expansion targets')
+                if targets:
+                    # Audit the true branch, then remove it before documentary comparison.
+                    scopes = unit.findall(f'{{{J}}}conditional')
+                    if len(scopes) != 2:
+                        raise ValueError('Expansion requires distinct printed and supplied branches')
+                    for scope, value in zip(scopes, ['false', 'true']):
+                        binary = scope.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary')
+                        if binary is None or binary.get('value') != value:
+                            raise ValueError('Expansion branch polarity changed')
+                    start = scopes[1]
+                    end = unit.find(f'{{{J}}}endConditional[@target="#{start.get("{http://www.w3.org/XML/1998/namespace}id")}"]')
+                    if end is None:raise ValueError('Unclosed expansion branch')
+                    children = list(unit)
+                    for child in children[children.index(start):children.index(end)+1]:unit.remove(child)
                 if reading.get('incipit_he'):
                     invocation = reading['fragments'][0][lang]['text'].split('\n', 1)[0]
                     node = unit.find(f'{{{TEI}}}lg/{{{TEI}}}l' if lang == 'he' else f'{{{TEI}}}p')
