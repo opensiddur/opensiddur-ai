@@ -150,10 +150,11 @@ Ashrei/Kaddish, crossed page breaks, printed notes, invocation placement, repeti
 boundaries, conflicting calendar settings and caller-context restoration. Geometry
 fixtures reject actual misalignment while excluding an earlier matching anchor.
 
-The earlier full-suite run passed 3,028 tests and 4,660 subtests with 12 skipped;
-that historical run precedes the later encoding/context/module changes. Generic
-compiler and apparatus-direction fixes were merged separately in code PRs #217
-and #218. No new compiler bug fix is included in this module reorganization.
+The current full suite passes 3,046 tests and 4,669 subtests, with 12 skipped.
+It includes the Birnbaum regressions and the generic compiler/apparatus-direction
+fixes merged separately in code PRs #217 and #218. Both PDF builds and the full
+suite ran serially because they share the reference database. After the tests,
+refresh the database for the standalone companion projects before resolving URNs.
 
 First-day coverage is complete. Independent Hebrew pointing review and unresolved
 OCR findings remain, recorded with the source evidence. Full-volume conversion,
