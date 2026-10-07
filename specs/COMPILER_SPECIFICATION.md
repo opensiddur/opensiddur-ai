@@ -127,7 +127,10 @@ For each element, the processor:
 8. **Process Children**: Recursively process all children
 9. **Handle Insertions**: Insert annotations if command is INSERT (placement
    resolved against the target's completed content)
-10. **Rewrite IDs**: Update `xml:id`, `target`, and `targetEnd` attributes with path hash
+10. **Rewrite IDs**: Update `xml:id`, `target`, and `targetEnd` attributes with path hash. Each
+    output element is rewritten once, by the call that produces it: under `RECURSE` the element
+    itself is not copied and its children's output is already rewritten, so nothing is rewritten
+    again
 11. **Update Context After**: Update state flags (especially `after_end`)
 12. **Return**: Return processed element(s)
 
@@ -139,6 +142,8 @@ To ensure uniqueness after transclusion, IDs are rewritten using a hash of the p
 - Hash: SHA256 of full path, truncated to 8 characters
 - Rewritten IDs: `{original_id}_{hash}`
 - Target references: `#ref` becomes `#ref_{hash}`
+- Within one processing context the hash does not depend on the element, so an id and a
+  pointer to it pair at any depth. An id carries exactly one hash per context it was compiled in.
 
 ## Conditional settings and conditional text
 
@@ -158,7 +163,7 @@ Scoped liturgical content lies between a `j:conditional` element and its matchin
 
 | Evaluation | Scoped content | Instruction note in `j:conditional` | Markers in output |
 | --- | --- | --- | --- |
-| **true** | Include | Exclude | Strip |
+| **true** | Include | Include (the rubric outlives its condition) | Strip |
 | **false** | Exclude | Exclude | Strip |
 | **undefined** | Include | Include | Retain |
 
@@ -172,6 +177,22 @@ Scoped liturgical content lies between a `j:conditional` element and its matchin
 - `j:conditional` / `j:endConditional` — scopes are pushed/popped to keep the stack consistent across nesting.
 
 Evaluation uses tristate logic with truth tables from JLPTEI-3 (`condition_eval.py`). Undefined evaluation is compile-time “include all possibilities”: one linear output that includes the text, the reader instruction, and the conditional markers for downstream resolution.
+
+### Conditional scopes at a range's bounds
+
+A range transcluded from the middle of a file can start or end inside a scope. The range carries
+the markers (and, for a true scope, the rubric) of exactly the scopes that overlap it:
+
+- a scope that opens and closes before the start contributes nothing;
+- a scope still open at the start opens at the start: its marker is emitted in front of the
+  start element's output;
+- a scope the range ends inside is closed where the range ends, by a synthesized
+  `j:endConditional` after the end element and its tail, innermost scope first, since its own
+  closer lies past the end and is never visited.
+
+Every retained scope therefore reaches the compiled document as one opener and one closer, in
+that order, in the same column. `conditional_markers.check_pairing` verifies this, and the
+compiler warns about any marker that does not pair.
 
 ### Derived settings (feature defaulting)
 

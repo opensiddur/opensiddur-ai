@@ -8,6 +8,7 @@ and the compile of a range whose bounds cut through a scope.
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from lxml import etree
 
@@ -24,6 +25,7 @@ from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
+from opensiddur.exporter.marker_reconstruct import reconstruct_markered_document
 
 J = JLPTEI_NAMESPACE
 P = PROCESSING_NAMESPACE
@@ -117,6 +119,15 @@ def _document(body: str) -> bytes:
 </tei:TEI>'''.encode()
 
 
+def _stub_transclude(self, element, type_override=None):
+    """Stand in for resolving a transclusion: its text is its own @target."""
+    if element.tag != f"{{{J}}}transclude":
+        return None
+    stub = etree.Element(f"{{{P}}}transclude")
+    stub.text = element.get("target")
+    return stub
+
+
 def _scope(xml_id: str, rubric: str = "") -> str:
     note = f'<tei:note type="instruction">{rubric}</tei:note>' if rubric else ""
     return (f'<j:conditional xml:id="{xml_id}">{note}'
@@ -138,6 +149,9 @@ class TestRangeCutsConditionalScope(unittest.TestCase):
         (Path(self.temp_dir.name) / "proj").mkdir()
         get_linear_data().xml_cache.base_path = Path(self.temp_dir.name)
 
+    #: Whether the processor runs in marker mode, as it does for a book with parallel text.
+    MARKER_MODE = False
+
     def _compile(self, body: str, start: str, end: str, *, include_tail: bool = False):
         xml = _document(body)
         (Path(self.temp_dir.name) / "proj" / "doc.xml").write_bytes(xml)
@@ -149,8 +163,13 @@ class TestRangeCutsConditionalScope(unittest.TestCase):
 
         processor = ExternalCompilerProcessor(
             "proj", "doc.xml", path(start), path(end), include_tail_after_end=include_tail)
+        if self.MARKER_MODE:
+            processor.marker_stack = []
         holder = etree.Element("holder")
-        holder.extend(processor.process())
+        with patch.object(ExternalCompilerProcessor, "_transclude", _stub_transclude):
+            holder.extend(processor.process())
+        if self.MARKER_MODE:
+            reconstruct_markered_document(holder)
         return holder
 
     @staticmethod
@@ -284,6 +303,38 @@ class TestRangeCutsConditionalScope(unittest.TestCase):
         self.assertEqual(check_pairing(holder), [])
         self.assertEqual(self._events(holder), ["open a", "one", "two", "close a"])
 
+    def test_range_starting_inside_a_false_scope_keeps_its_text_out(self):
+        """The undecided scope around it opens at the start; the false one's text stays out.
+
+        The opener put before the start element's (empty) output must not become the place
+        the start's tail -- still inside the false scope -- is attached to.
+        """
+        CompilerProcessor.load_init_settings(
+            get_linear_data(), yaml_to_declaration_entries({"t:x": {"b": False}}))
+        holder = self._compile(
+            '<tei:p>' + _scope("a") + 'excluded ' + _scope("b") + 'false '
+            '<tei:milestone unit="part" corresp="urn:s"/>secret <j:endConditional target="#b"/>'
+            'said <tei:seg xml:id="e"/>end <tei:milestone unit="part"/>after'
+            '<j:endConditional target="#a"/></tei:p>',
+            "urn:s", "e", include_tail=True)
+        self.assertEqual(check_pairing(holder), [])
+        events = self._events(holder)
+        self.assertNotIn("secret", " ".join(events))
+        self.assertEqual(events[0], "open a")
+        self.assertEqual(events[-2:], ["end", "close a"])
+
+    def test_range_ending_on_a_transclusion_ends_there(self):
+        """A milestone range can end on a j:transclude -- the last element before the next
+        milestone. The range ends there, and closes the scope it ends inside."""
+        holder = self._compile(
+            '<tei:p><tei:milestone unit="part" corresp="urn:s"/>one ' + _scope("a")
+            + 'two <j:transclude xml:id="e" target="urn:t"/>three '
+            '<tei:milestone unit="part"/>excluded <j:endConditional target="#a"/>more</tei:p>',
+            "urn:s", "e", include_tail=True)
+        self.assertEqual(check_pairing(holder), [])
+        self.assertEqual(
+            self._events(holder), ["one", "open a", "two", "urn:t", "three", "close a"])
+
     def test_ids_carry_one_hash(self):
         """Every level between the file's root and the range used to append the hash again."""
         holder = self._compile(
@@ -294,6 +345,22 @@ class TestRangeCutsConditionalScope(unittest.TestCase):
         self.assertRegex(opener.get(XML_ID), r"^a_[0-9a-f]{8}$")
         closer = holder.find(f".//{{{J}}}endConditional")
         self.assertEqual(closer.get("target"), "#" + opener.get(XML_ID))
+
+    def test_pointer_and_anchor_at_different_depths_still_pair(self):
+        holder = self._compile(
+            '<tei:p corresp="urn:s"><tei:hi><tei:anchor xml:id="x"/>inside</tei:hi></tei:p>'
+            '<tei:p corresp="urn:e"><tei:ptr target="#x"/>last</tei:p>',
+            "urn:s", "urn:e")
+        anchor = holder.find(f".//{{{TEI_NS}}}anchor")
+        self.assertRegex(anchor.get(XML_ID), r"^x_[0-9a-f]{8}$")
+        self.assertEqual(
+            holder.find(f".//{{{TEI_NS}}}ptr").get("target"), "#" + anchor.get(XML_ID))
+
+
+class TestRangeCutsConditionalScopeInMarkerMode(TestRangeCutsConditionalScope):
+    """The same, with structural elements flattened to markers as for a parallel book."""
+
+    MARKER_MODE = True
 
 
 if __name__ == "__main__":

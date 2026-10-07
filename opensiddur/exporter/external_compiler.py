@@ -409,6 +409,12 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     self._update_processing_context_after(child)
                     continue
 
+                if self._markers_at_start:
+                    # The transclusion was the range's start: _process_element, which puts
+                    # them in front of the start's output, is not called on this path.
+                    result.extend(self._markers_at_start)
+                    self._markers_at_start = []
+
                 # Suspend: LIFO, no pop
                 for sid, selem in reversed(self.marker_stack):
                     suspend = etree.Element(selem.tag, nsmap=self.ns_map)
@@ -439,7 +445,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 child_result = self._process_element(child, root)
                 result.extend(child_result)
                 if child.tail and self._tail_is_in_range():
-                    if child_result:
+                    if child_result and self._should_skip_conditional_content():
+                        # Text inside a false scope, after a range's start markers.
+                        pass
+                    elif child_result:
                         last = child_result[-1]
                         last.tail = (last.tail or '') + child.tail
                     else:
@@ -1253,15 +1262,21 @@ class ExternalCompilerProcessor(CompilerProcessor):
         # entirely (see #53), and would raise on an unresolvable target that will never
         # actually appear in the output.
         if context["command"] != _ProcessingCommand.RECURSE:
-            # Each element's ids are rewritten once, by the call that produces it. These two
-            # return early, so they do it here rather than leave it to the caller.
+            # These return early, so they settle the context themselves: either can be the
+            # range's end element, the last element before the next milestone.
             transcluded = self._transclude(element)
             if transcluded is not None:
-                return [self._rewrite_ids(transcluded)]
+                # Each element's ids are rewritten once, by the call that produces it. The
+                # transclusion's own processor compiled what is inside, but not this wrapper.
+                transcluded = self._rewrite_ids(transcluded)
+                self._update_processing_context_after(element)
+                return [transcluded]
 
             annotations, annotation_command = self._annotate(element, root)
             if annotation_command == _AnnotationCommand.REPLACE:
-                return [self._rewrite_ids(annotations[0])]
+                # Already compiled -- and its ids rewritten -- by its own processor.
+                self._update_processing_context_after(element)
+                return [annotations[0]]
         else:
             annotations, annotation_command = [], _AnnotationCommand.NONE
 
@@ -1303,7 +1318,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 or context["include_tail_after_end"]):
                 # Only copy tail if we're not after the end marker
                 if child.tail and (context["include_tail_after_end"] or not context['after_end']):
-                    if child_result:
+                    if child_result and self._should_skip_conditional_content():
+                        # Text inside a false scope. The child itself is skipped, but a range
+                        # starting here leaves the markers of the scopes open around it.
+                        pass
+                    elif child_result:
                         if child_result[-1].tail is None:
                             child_result[-1].tail = child.tail
                         else:

@@ -11,16 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Undecided conditional scopes keep both of their markers through compilation (#219). In a
   compiled Birnbaum, 652 of 1459 scopes had lost their `j:endConditional` and 12 their
   `j:conditional`. In the PDF, each of those opened a bracket or rule that never closed.
-  There were three causes:
+  There were four causes:
   - A segment with no words, pruned after a div is split around a transclusion, took any
     marker it held with it.
   - A range transcluded from the middle of a file picked up the markers and rubrics of scopes
     before its start.
   - A range that ended inside a scope never closed it.
+  - Each level between a file's root and the range rewrote ids its children had already
+    rewritten, so ids carried their path hash several times over.
 
   A range now carries the markers of exactly the scopes that overlap it. The compiler warns
-  about any marker that still doesn't pair. Retained ids also now carry their path hash once,
-  not once per level between the file's root and the range.
+  about any marker that still doesn't pair. A range that ends on a transclusion now ends
+  there, instead of running on to the end of its file.
 
 ## [0.5.1] - 2026-10-05
 

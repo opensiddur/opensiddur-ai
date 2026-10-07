@@ -141,6 +141,26 @@ class TestMarkerReconstruct(unittest.TestCase):
             [d.get(f"{{{P_NS}}}part") for d in root.xpath("//tei:div", namespaces=ns)],
             ["first", "last"])
 
+    def test_nested_conditional_marker_outlives_a_pruned_segment(self):
+        """A marker nested in an empty paragraph of the pruned segment is kept too."""
+        ns = {"tei": TEI_NS, "p": P_NS, "j": J_NS}
+        xml = f"""<tei:TEI xmlns:tei="{TEI_NS}" xmlns:p="{P_NS}" xmlns:j="{J_NS}">
+          <tei:text><tei:body>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:start="a"/>Before
+              <tei:div p:suspend="a"/>
+            </p:parallelItem></p:parallel>
+            <p:parallel><p:parallelItem role="primary">
+              <tei:div p:resume="a"/><tei:p><j:endConditional target="#c1"/></tei:p>
+              <tei:div p:end="a"/>
+            </p:parallelItem></p:parallel>
+          </tei:body></tei:text></tei:TEI>"""
+        root = etree.fromstring(xml.encode())
+        reconstruct_markered_document(root)
+        closers = root.xpath("//j:endConditional", namespaces=ns)
+        self.assertEqual([c.get("target") for c in closers], ["#c1"])
+        self.assertEqual(closers[0].getparent().tag, f"{{{P_NS}}}parallelItem")
+
     def test_substantive_content_milestone_tail(self):
         xml = f"""<tei:TEI xmlns:tei="{TEI_NS}">
           <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
