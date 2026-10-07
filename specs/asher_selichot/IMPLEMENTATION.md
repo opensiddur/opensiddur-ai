@@ -70,6 +70,13 @@ shared documentary modules to compile without a configured secondary source.
 A regression fixture uses an absent target inside a false scope and checks that
 the documentary text after the scope survives.
 
-The generic compiler corrections and their regression tests are maintained in
-opensiddur-ai PR #217 (`fix/compiler-transclusion-fallbacks`). The Asher code PR
-is stacked on that branch so its review diff contains only scan/edition work.
+The generic conditional/fallback corrections and regression tests were merged in
+opensiddur-ai PR #217. The apparatus paragraph-direction fix and tests are separate
+in PR #218 (`fix/note-paragraph-direction`); the Asher code PR is stacked on that
+branch so its review diff excludes this generic fix.
+
+The first-day PDF check also groups small Latin apparatus glyphs by font and
+baseline across MuPDF’s fragmented lines. Reject decreasing x coordinates, and
+reverse a complete note run as a failing control. The original PDF’s backwards
+English explanation on page 9 fails this check. Source words and XML paragraph
+language declarations are unchanged by the renderer correction.
