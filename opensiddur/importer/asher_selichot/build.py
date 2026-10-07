@@ -200,6 +200,13 @@ def build(source_root,project_directory):
             if not valid:
                 raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
             documents.append((out/name,xml))
+    from .first_day import documents as first_day_documents
+    for project, name, root in first_day_documents(Path(source_root)/'asher_selichot/scan_reading'):
+        xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
+        valid,errors=validate(xml)
+        if not valid:
+            raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
+        documents.append((Path(project_directory)/project/name,xml))
     for path,xml in documents:
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text(xml,encoding='utf-8')

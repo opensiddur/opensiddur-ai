@@ -1239,3 +1239,6 @@
 {"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/psalm91", "status": "canonical", "label_en": "kriat shema al hamitah/psalm91"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/pilot", "status": "canonical", "label_en": "selichot/first day/pilot"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/pilot/expanded", "status": "canonical", "label_en": "selichot/first day/pilot/expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot", "status": "canonical", "label_en": "Selichot"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day", "parent": "urn:x-opensiddur:text:siddur:selichot", "status": "canonical", "label_en": "First-day selichot"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/opening", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "status": "canonical", "label_en": "First-day opening through Half Kaddish"}
