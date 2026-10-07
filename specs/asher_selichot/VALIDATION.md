@@ -167,4 +167,5 @@ the affected facing-page fixture passed in isolation and the complete recommende
 pytest run passed. The new synthetic unittest fixtures also pass discovery alone.
 
 Current companion commits: source `ce2f2d1`; projects `bfbb2d5`. The URN registry
-contains 2,985 records with no errors, warnings or notes.
+contains 2,985 records with no errors or warnings; four informational notes concern
+existing alias migrations in other projects.
