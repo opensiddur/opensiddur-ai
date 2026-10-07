@@ -55,6 +55,7 @@ body {
 p, .lg { margin: 0 0 var(--paragraph-spacing); }
 p { text-align: var(--text-align); hyphens: auto; }
 .np { display: block; margin-top: 0.4em; }
+span:is(.div, .lg, .list, .item, .label, .head, .doc-title) { display: block; }
 .l { padding-inline-start: 1.5em; text-indent: -1.5em; }
 .head { font-weight: normal; line-height: 1.25; margin: 1.6em 0 0.6em; text-align: center; }
 h1.head { font-size: 1.8em; }

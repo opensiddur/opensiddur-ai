@@ -77,14 +77,17 @@
 
   // ── The settings panel ─────────────────────────────────────────────────
 
-  function currentValue(feature) {
+  // The select's value for the reader's setting: "" when untouched, else its JSON (a null
+  // being the reader's own "show every option").
+  function currentChoice(feature) {
     var set = reader[feature.fs];
     return set && Object.prototype.hasOwnProperty.call(set, feature.name)
-      ? set[feature.name] : null;
+      ? JSON.stringify(set[feature.name]) : "";
   }
 
+  // undefined clears the reader's setting, so the book's default applies again.
   function setValue(feature, value) {
-    if (value === null) {
+    if (value === undefined) {
       if (reader[feature.fs]) {
         delete reader[feature.fs][feature.name];
         if (!Object.keys(reader[feature.fs]).length) delete reader[feature.fs];
@@ -99,10 +102,13 @@
   function control(feature, index) {
     var id = "os-setting-" + index;
     var fallback = book.defaults[feature.fs] && book.defaults[feature.fs][feature.name];
-    var unset = fallback === undefined || fallback === null
-      ? "Not set — show every option"
-      : "Not set — the book's default, " + describe(fallback);
-    var select = el("select", { id: id }, [el("option", { value: "", text: unset })]);
+    var select = el("select", { id: id, "aria-describedby": id + "-count" });
+    if (fallback === undefined || fallback === null) {
+      select.appendChild(el("option", { value: "", text: "Not set — show every option" }));
+    } else {
+      select.appendChild(el("option", { value: "", text: "The book's default — " + describe(fallback) }));
+      select.appendChild(el("option", { value: "null", text: "Show every option" }));
+    }
     var values = feature.values.map(settable).filter(function (value, i, all) {
       return all.findIndex(function (other) {
         return JSON.stringify(other) === JSON.stringify(value);
@@ -112,16 +118,16 @@
     values.forEach(function (value) {
       select.appendChild(el("option", { value: JSON.stringify(value), text: describe(value) }));
     });
-    var current = currentValue(feature);
-    select.value = current === null ? "" : JSON.stringify(current);
+    select.value = currentChoice(feature);
+    if (select.selectedIndex < 0) select.value = "";
     select.addEventListener("change", function () {
-      setValue(feature, select.value === "" ? null : JSON.parse(select.value));
+      setValue(feature, select.value === "" ? undefined : JSON.parse(select.value));
     });
     var count = feature.scopes === 1 ? "1 passage" : feature.scopes + " passages";
     return el("div", { class: "os-setting" }, [
       el("label", { for: id, text: words(feature.name) }),
       select,
-      el("span", { class: "os-setting-count", text: count })
+      el("span", { id: id + "-count", class: "os-setting-count", text: count })
     ]);
   }
 
@@ -168,6 +174,7 @@
     var headings = document.querySelectorAll(".os-book h1, .os-book h2, .os-book h3");
     Array.prototype.forEach.call(headings, function (heading, index) {
       if (heading.closest(".col-parallel")) return;  // a translated heading repeats its row's
+      if (!heading.getClientRects().length) return;  // in a passage the settings hide
       if (!heading.id) heading.id = "os-heading-" + index;
       var link = el("a", { href: "#" + heading.id, text: heading.textContent.trim() });
       link.addEventListener("click", function () { dialog.close(); });
@@ -187,23 +194,25 @@
   apply();
 
   document.body.appendChild(settingsDialog());
-  var contents = null;
   var toolbar = document.querySelector(".os-toolbar");
   toolbar.hidden = false;
   document.getElementById("os-open-settings").addEventListener("click", function () {
     document.getElementById("os-settings").showModal();
   });
+  // Built afresh each time: which headings are shown depends on the settings.
   document.getElementById("os-open-contents").addEventListener("click", function () {
-    if (!contents) {
-      contents = contentsDialog();
-      document.body.appendChild(contents);
-    }
+    var old = document.getElementById("os-contents");
+    if (old) old.remove();
+    var contents = contentsDialog();
+    document.body.appendChild(contents);
     contents.showModal();
   });
 
   // Passages shown or hidden above may have moved a linked one: go to it again.
   if (location.hash) {
-    var target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    var id = location.hash.slice(1);
+    try { id = decodeURIComponent(id); } catch (e) { /* use it as it is */ }
+    var target = document.getElementById(id);
     if (target) target.scrollIntoView();
   }
 })();

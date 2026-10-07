@@ -23,6 +23,7 @@ import hashlib
 import html
 import json
 import logging
+import re
 import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -40,13 +41,13 @@ from opensiddur.exporter.derived_settings import STATIC_DEFAULTS
 from opensiddur.exporter.html.css import typography_css, xslt_parameters
 from opensiddur.exporter.html.markers import BookConditions, prepare
 from opensiddur.exporter.metadata import (
-    _role_name,
-    _role_order,
     extract_credits,
     extract_licenses,
     get_file_references,
     group_credits,
     group_licenses,
+    role_name,
+    role_order,
 )
 from opensiddur.exporter.typography import TypographyConfig
 
@@ -167,9 +168,9 @@ def about_html(title: str, compiled_file: Path, project_directory: Path) -> str:
              f"<p>An electronic edition from the Open Siddur Project, built by {escape(generator())}.</p>"]
     if credits:
         parts.append("<h2>Contributors</h2>")
-        for role in sorted(credits, key=_role_order):
+        for role in sorted(credits, key=role_order):
             names = sorted({credit.name_text for group in credits[role].values() for credit in group})
-            parts.append(f"<p><strong>{escape(_role_name(role, credits[role]))}:</strong> "
+            parts.append(f"<p><strong>{escape(role_name(role, credits[role]))}:</strong> "
                          f"{escape(', '.join(names))}</p>")
     if licenses:
         parts.append("<h2>Licences</h2><p>This book includes texts under these licences:</p><ul>")
@@ -201,8 +202,9 @@ def book_json(book: BookConditions, book_identifier: str, defaults: dict) -> str
         ],
         "calendarScopes": calendar_scopes(book),
     }
-    # "</" cannot appear in a script element; "<\/" is the same JSON string.
-    return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change
+    # how the parser reads what follows. "\u003c" is the same character to JSON.
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
 
 
 def build_book(
@@ -244,9 +246,8 @@ def build_book(
             (ASSETS / "reader.js").read_text(encoding="utf-8"), "</script"),
     }
     page = (ASSETS / "book.html").read_text(encoding="utf-8")
-    for token, value in replacements.items():
-        page = page.replace(token, value)
-    return page
+    # One pass, so that a token's value -- the book's own text -- is never searched for tokens.
+    return re.sub(r"@@[A-Z_]+@@", lambda match: replacements[match.group(0)], page)
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover

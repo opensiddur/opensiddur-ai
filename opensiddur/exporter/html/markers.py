@@ -144,7 +144,8 @@ def _number_scopes(root: etree.ElementBase) -> tuple[dict[str, etree.ElementBase
         if opener is not None:
             closer.set(P_CID, opener.get(P_CID))
 
-    book.features = sorted(features.values(), key=lambda f: (f.fs, f.name))
+    # A feature conditions compare only with "undefined" has nothing a reader could choose.
+    book.features = sorted((f for f in features.values() if f.values), key=lambda f: (f.fs, f.name))
     return openers, book
 
 
@@ -216,10 +217,11 @@ def _assign(root: etree.ElementBase, measured) -> None:
         if _is_marker(element):
             return
         covered = inherited | governed
+        children = list(element)
         if element.text and element.text.strip() and before - covered:
             element.insert(0, _span(element.text, before - covered))
             element.text = None
-        for child in list(element):
+        for child in children:
             if not is_element_node(child):
                 continue
             walk(child, covered)
@@ -269,7 +271,3 @@ def prepare(root: etree.ElementBase) -> BookConditions:
         _silence(openers)
         _assign(root, _measure(root))
     return book
-
-
-def is_binary(feature: Feature) -> bool:
-    return all(isinstance(value, bool) for value in feature.values)

@@ -135,7 +135,7 @@
     var found = lookup(this.pinned, fsType, feature);
     if (found.present) return found;
     found = lookup(this.reader, fsType, feature);
-    if (found.present && found.value !== null) return found;
+    if (found.present) return found;  // a null here is the reader's "show every option"
     return lookup(this.defaults, fsType, feature);
   };
 

@@ -108,7 +108,9 @@ class ClientSettings:
     1. *pinned* -- the values the compile knew where the condition stands: what the volume's
        settings file and the document's own `j:declare`s said, and what was derived from them.
        They are part of the text, and the reader cannot override them.
-    2. *reader* -- what the reader has set in the book's settings panel. A null is "not set".
+    2. *reader* -- what the reader has set in the book's settings panel. A feature the reader
+       has not touched is absent; a null is the reader's own "show every option", which
+       holds even where the book has a default.
     3. *defaults* -- what the book starts from: the settings file's declarations and the static
        defaults, for the reader's feature structures. A null is undefined.
     4. derived -- what `CLIENT_DERIVATIONS` compute from the layers above.
@@ -129,10 +131,7 @@ class ClientSettings:
         present, value = _lookup(self.pinned, fs_type, feature_name)
         if present:
             return True, value
-        present, value = _lookup(self.reader, fs_type, feature_name)
-        if present and value is not Undefined:
-            return True, value
-        return False, None
+        return _lookup(self.reader, fs_type, feature_name)
 
     def _derived(self, fs_type: str, feature_name: str) -> tuple[bool, Any]:
         compute = CLIENT_DERIVATIONS.get(fs_type)

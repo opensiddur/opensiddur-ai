@@ -161,6 +161,52 @@ class TestStructure(unittest.TestCase):
                          "kept")
 
 
+class TestBlocksInText(unittest.TestCase):
+    """A block inside running text must not close the paragraph around it."""
+
+    def _no_block_inside_p(self, main):
+        blocks = main.xpath("//h:p//*[self::h:div or self::h:ul or self::h:li or self::h:section"
+                            " or self::h:p or starts-with(local-name(), 'h') and"
+                            " string-length(local-name()) = 2]", namespaces=NS)
+        self.assertEqual(blocks, [])
+
+    def test_a_list_in_a_paragraph(self):
+        main = _render("<tei:p>a<tei:list><tei:item>i</tei:item></tei:list>b</tei:p>")
+        self._no_block_inside_p(main)
+        self.assertEqual(_classes(main.xpath("//h:span[contains(@class, 'list')]", namespaces=NS)[0]),
+                         ["list"])
+
+    def test_verse_in_a_note(self):
+        main = _render("<tei:p>a<tei:note><tei:lg><tei:l>line</tei:l></tei:lg></tei:note>b</tei:p>")
+        self._no_block_inside_p(main)
+
+
+class TestLabelsReachEveryElement(unittest.TestCase):
+
+    def test_a_line_break_in_a_scope(self):
+        main = _render("<tei:p>one " + _cond("a", "wedding") + "two<tei:lb/>three"
+                       "<j:endConditional target=\"#a\"/> four</tei:p>")
+        self.assertEqual(_classes(main.find(f".//{{{H}}}br")), ["c0"])
+
+    def test_an_alternative_in_a_scope(self):
+        main = _render("<tei:p><tei:choice><j:option>one</j:option>"
+                       + _cond("a", "wedding") + "<j:option>two</j:option>"
+                       "<j:endConditional target=\"#a\"/></tei:choice></tei:p>")
+        governed = main.xpath("//h:span[contains(@class, 'c0')]", namespaces=NS)
+        self.assertEqual([("".join(g.itertext()), _classes(g)) for g in governed],
+                         [("two", ["option", "option-alt", "c0"])])
+        self.assertEqual(len(main.xpath("//*[contains(@class, 'm0')]")), 2)
+
+    def test_a_rubric_is_the_first_note(self):
+        """As the compiler keeps a true scope's rubric only when its first note is one."""
+        main = _render('<j:conditional xml:id="a"><tei:note type="commentary">c</tei:note>'
+                       '<tei:note type="instruction">Say:</tei:note><tei:fs type="t:x">'
+                       '<tei:f name="a"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
+                       '<tei:p>x</tei:p><j:endConditional target="#a"/>')
+        opener = main.xpath("//*[contains(@class, 'cm-open')]", namespaces=NS)[0]
+        self.assertIn("cm-norubric", _classes(opener))
+
+
 class TestCss(unittest.TestCase):
 
     def setUp(self):
@@ -173,6 +219,11 @@ class TestCss(unittest.TestCase):
         css = typography_css(TypographyConfig.model_validate(
             {"fonts": {"hebrew": ["Ezra SIL", 'Odd "Name"']}}))
         self.assertIn('--font-hebrew: "Ezra SIL", "Odd \\"Name\\"", serif;', css)
+
+    def test_lengths_css_lacks_are_converted(self):
+        css = typography_css(TypographyConfig.model_validate(
+            {"markers": {"conditional": {"rule_thickness": "2bp"}}}))
+        self.assertIn("--cond-rule-thickness: 2.0075pt;", css)
 
     def test_hidden_numbers(self):
         css = typography_css(TypographyConfig.model_validate(
@@ -278,7 +329,8 @@ class TestBuildBook(unittest.TestCase):
     def test_script_text_cannot_close_the_script(self):
         page = self._build()
         data = self._between(page, '<script type="application/json" id="os-book">', "</script>")
-        self.assertIn("<\\/script>", data)
+        self.assertNotIn("<", data)
+        self.assertIn("\\u003c/script>", data)
         self.assertEqual(self._book(page)["expressions"][3]["cond"]["f"][0]["v"], "</script>")
 
     def test_bracket_settings_reach_the_text(self):

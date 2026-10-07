@@ -111,6 +111,22 @@ class TestLabels(unittest.TestCase):
             ("endConditional", "1", "0"), ("endConditional", "0", None)])
         self.assertIn(("y", "0 1"), _labels(root))
 
+    def test_a_scope_closing_inside_an_element(self):
+        """The element's leading text is wrapped, and its children still walked."""
+        root = _tree(_cond("a") + "<tei:p>x" + _end("a") + "y</tei:p>")
+        prepare(root)
+        self.assertEqual(_labels(root), [("x", "0")])
+
+    def test_a_paragraph_scope_running_across_rows(self):
+        root = _tree(
+            '<p:parallel><p:parallelItem role="primary"><tei:p>a ' + _cond("a") + 'b</tei:p>'
+            '</p:parallelItem><p:parallelItem role="parallel"><tei:p>e</tei:p></p:parallelItem>'
+            '</p:parallel><p:parallel><p:parallelItem role="primary"><tei:p>c' + _end("a")
+            + ' d</tei:p></p:parallelItem><p:parallelItem role="parallel"><tei:p>f</tei:p>'
+            '</p:parallelItem></p:parallel>')
+        prepare(root)
+        self.assertEqual([label for label in _labels(root) if label[0]], [("b", "0"), ("c", "0")])
+
     def test_whitespace_is_not_wrapped(self):
         root = _tree(_cond("a") + "\n   <tei:p>x</tei:p>\n   " + _end("a"))
         prepare(root)
@@ -191,6 +207,12 @@ class TestFeatures(unittest.TestCase):
             [(f.fs, f.name, f.values, f.scopes) for f in book.features],
             [("opensiddur:quorum", "minyan", [True], 2),
              ("opensiddur:rite", "rite", ["ashkenaz", "sefard"], 1)])
+
+    def test_a_feature_compared_only_with_undefined_is_not_offered(self):
+        root = _tree('<j:conditional xml:id="a"><tei:fs type="opensiddur:quorum">'
+                     '<tei:f name="minyan"><tei:default/></tei:f></tei:fs></j:conditional>'
+                     '<tei:p>x</tei:p>' + _end("a"))
+        self.assertEqual(prepare(root).features, [])
 
     def test_calendar_and_pinned_features_are_not_the_readers(self):
         root = _tree(

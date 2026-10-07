@@ -39,8 +39,8 @@ from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
 from opensiddur.exporter.metadata import (  # noqa: E402
     CreditRecord,
     LicenseRecord,
-    _role_name,
-    _role_order,
+    role_name as _role_name,
+    role_order as _role_order,
     extract_credits,
     group_credits,
     group_licenses,

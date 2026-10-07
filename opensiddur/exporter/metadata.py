@@ -186,13 +186,13 @@ contributor_keys_to_roles = {
 
 
 
-def _role_order(role: str) -> tuple[int, str]:
+def role_order(role: str) -> tuple[int, str]:
     """Roles in the order the schema lists them, then anything unrecognised."""
     keys = list(contributor_keys_to_roles)
     return (keys.index(role) if role in keys else len(keys), role)
 
 
-def _role_name(role: str, namespace_dict: dict[str, list[CreditRecord]]) -> str:
+def role_name(role: str, namespace_dict: dict[str, list[CreditRecord]]) -> str:
     """What to call this kind of contribution.
 
     A recognised MARC key has a name of its own. For anything else the document's own

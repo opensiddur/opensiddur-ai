@@ -31,6 +31,13 @@ _DEFAULT_CHAINS = {
 }
 
 
+def css_length(length: str) -> str:
+    """A settings length in CSS: TeX's big point, which CSS lacks, as points."""
+    if length.endswith("bp"):
+        return f"{float(length[:-2]) * 72.27 / 72:g}pt"
+    return length
+
+
 def css_string(text: str) -> str:
     """A CSS string literal."""
     escaped = text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\a ")
@@ -71,9 +78,9 @@ def typography_css(typography: TypographyConfig) -> str:
         f"  --font-hebrew: {_stack(typography, HEBREW_FAMILY)};",
         f"  --line-spacing: {typography.paragraphs.line_spacing * 1.35:.3g};",
         f"  --text-align: {_ALIGN[typography.paragraphs.alignment]};",
-        f"  --paragraph-spacing: {typography.paragraphs.spacing};",
+        f"  --paragraph-spacing: {css_length(typography.paragraphs.spacing)};",
         f"  --cond-rule-width: {conditional.rule_width};",
-        f"  --cond-rule-thickness: {conditional.rule_thickness};",
+        f"  --cond-rule-thickness: {css_length(conditional.rule_thickness)};",
         "}",
         f".section-separator::before {{ content: {css_string(markers.section_separator)}; }}",
     ]

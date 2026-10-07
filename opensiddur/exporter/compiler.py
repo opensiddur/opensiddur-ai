@@ -36,12 +36,13 @@ from opensiddur.exporter.constants import (
 
 #: The instruction a conditional carries, which outlives a condition that holds.
 TEI_NOTE = f"{{{TEI_NS}}}note"
+from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, is_reader_supplied
+from opensiddur.exporter.derivation_graph import DERIVATION_SPECS
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.linear import (
     ConditionalScope,
     ConditionalSettingEntry,
     LinearData,
-    Undefined,
     get_linear_data,
     reset_linear_data,
 )
@@ -649,14 +650,24 @@ class CompilerProcessor:
         only the reader's settings. What the document itself declared where the condition
         stands -- a section that is Ma'ariv, a passage for a minyan -- and what was derived from
         it is part of the text, and goes with the condition, in p:pinned as JSON:
-        {"<fs type>": {"<feature>": <value>}}, values as condition_eval.value_to_json.
+        {"<fs type>": {"<feature>": <value>}}, values as condition_eval.value_to_json, an
+        explicit undefined as null.
+
+        Pinned: the features the condition reads, and the inputs of any derivation the device
+        runs for a structure it reads -- so that a document's minyan reaches the device that
+        derives a zimmun from it. Not pinned: the settings file's own values for the reader's
+        settings, which are the book's defaults, the reader's to change.
         """
+        features = set(condition_features(node))
+        for spec in DERIVATION_SPECS:
+            if spec.fs_type in CLIENT_DERIVATIONS and any(fs == spec.fs_type for fs, _ in features):
+                features |= spec.required_inputs
         pinned: dict[str, dict[str, object]] = {}
-        for fs_type, feature_name in sorted(condition_features(node)):
-            value = self.get_active_setting(fs_type, feature_name)
-            if value is None or value is Undefined:
+        for fs_type, feature_name in sorted(features):
+            entry = self.get_active_setting_entry(fs_type, feature_name)
+            if entry is None or (entry.source == "init" and is_reader_supplied(fs_type)):
                 continue
-            pinned.setdefault(fs_type, {})[feature_name] = value_to_json(value)
+            pinned.setdefault(fs_type, {})[feature_name] = value_to_json(entry.value)
         if pinned:
             holder = etree.SubElement(retained, f"{{{PROCESSING_NAMESPACE}}}pinned")
             holder.text = json.dumps(pinned, ensure_ascii=False, sort_keys=True)

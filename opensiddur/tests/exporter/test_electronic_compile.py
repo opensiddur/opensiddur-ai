@@ -14,8 +14,9 @@ from lxml import etree
 
 from opensiddur.exporter.compiler import CompilerProcessor, main
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
-from opensiddur.exporter.client_settings import is_reader_supplied
-from opensiddur.exporter.linear import get_linear_data, reset_linear_data
+from opensiddur.exporter.client_settings import is_reader_supplied, resolve
+from opensiddur.exporter.condition_eval import parse_condition_element
+from opensiddur.exporter.linear import Undefined, get_linear_data, reset_linear_data
 from opensiddur.exporter.settings import load_settings
 
 J = JLPTEI_NAMESPACE
@@ -143,9 +144,91 @@ class TestSettingsFile(_Compiling):
         self.assertIs(declared[("opensiddur:israel", "is-israel")], True)
 
     def test_electronic_compiles_only_the_calendar(self):
+        """The reader's declarations stay on the stack, undefined: still explicit, so nothing
+        is derived over them, but left for the device to decide."""
         declared = self._load(electronic=True)
-        self.assertNotIn(("opensiddur:rite", "rite"), declared)
+        self.assertIs(declared[("opensiddur:rite", "rite")], Undefined)
         self.assertIs(declared[("opensiddur:israel", "is-israel")], True)
+
+
+ZIMMUN_UNDER_A_DECLARED_MINYAN = '''
+  <j:declare xml:id="d"><tei:fs type="opensiddur:quorum">
+    <tei:f name="minyan">{minyan}</tei:f></tei:fs></j:declare>
+  <j:conditional xml:id="c"><tei:fs type="opensiddur:quorum">
+    <tei:f name="zimmun"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+  <tei:p>with a zimmun</tei:p>
+  <j:endConditional target="#c"/>
+  <j:endDeclare target="#d"/>'''
+
+
+class TestElectronicAgreesWithPrint(_Compiling):
+    """The device, given the settings file's values as its defaults, decides as print does."""
+
+    def _compile_with(self, body: str, declarations: dict, *, electronic: bool):
+        (self.base / "proj" / "doc.xml").write_bytes(_document(body))
+        settings = self.base / "settings.yaml"
+        lines = ["priority:", "  transclusion: [proj]", "declarations:"]
+        for fs, features in declarations.items():
+            lines.append(f"  {fs}:")
+            lines += [f"    {name}: {json.dumps(value)}" for name, value in features.items()]
+        settings.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        reset_linear_data()
+        linear_data = get_linear_data()
+        linear_data.defer_reader_settings = electronic
+        get_linear_data().xml_cache.base_path = self.base
+        load_settings(settings, linear_data=linear_data, project_directory=self.base)
+        return CompilerProcessor("proj", "doc.xml").process()
+
+    def _device(self, root, defaults) -> str | None:
+        """What the device decides for the one conditional: None if the compile decided it."""
+        conditional = root.find(f".//{{{J}}}conditional")
+        if conditional is None:
+            return "compiled in" if "with a zimmun" in "".join(root.itertext()) else "compiled out"
+        pinned_element = conditional.find(f"{{{P}}}pinned")
+        pinned = json.loads(pinned_element.text) if pinned_element is not None else {}
+        return resolve(parse_condition_element(conditional), pinned=pinned, defaults=defaults)
+
+    def _printed(self, body, declarations) -> str:
+        root = self._compile_with(body, declarations, electronic=False)
+        if root.find(f".//{{{J}}}conditional") is not None:
+            return "undefined"
+        return "true" if "with a zimmun" in "".join(root.itertext()) else "false"
+
+    def _check(self, body, declarations):
+        printed = self._printed(body, declarations)
+        electronic = self._compile_with(body, declarations, electronic=True)
+        self.assertEqual(self._device(electronic, declarations), printed)
+
+    def test_an_explicit_setting_is_not_derived_over(self):
+        """The volume says there is no zimmun; the section declares a minyan. Print keeps the
+        volume's word, and so must the device -- not a zimmun derived at compile time."""
+        self._check(ZIMMUN_UNDER_A_DECLARED_MINYAN.format(minyan='<tei:binary value="true"/>'),
+                    {"opensiddur:quorum": {"zimmun": False}})
+
+    def test_the_documents_minyan_reaches_the_device(self):
+        """The volume says there is a minyan; this section says there is not. Print derives no
+        zimmun here; the device must not derive one from the volume's minyan."""
+        self._check(ZIMMUN_UNDER_A_DECLARED_MINYAN.format(minyan='<tei:binary value="false"/>'),
+                    {"opensiddur:quorum": {"minyan": True}})
+
+    def test_a_declared_undefined_is_kept(self):
+        body = '''
+  <j:declare xml:id="d"><tei:fs type="opensiddur:quorum">
+    <tei:f name="zimmun"><tei:default/></tei:f></tei:fs></j:declare>
+  <j:conditional xml:id="c"><tei:fs type="opensiddur:quorum">
+    <tei:f name="zimmun"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+  <tei:p>with a zimmun</tei:p>
+  <j:endConditional target="#c"/>
+  <j:endDeclare target="#d"/>'''
+        self._check(body, {"opensiddur:quorum": {"zimmun": True}})
+        root = self._compile_with(body, {"opensiddur:quorum": {"zimmun": True}}, electronic=True)
+        pinned = json.loads(root.find(f".//{{{P}}}pinned").text)
+        self.assertEqual(pinned, {"opensiddur:quorum": {"zimmun": None}})
+
+    def test_the_volumes_own_values_are_not_pinned(self):
+        root = self._compile_with(OMIT_TAHANUN, {"opensiddur:override": {"omit-tahanun": True}},
+                                  electronic=True)
+        self.assertIsNone(root.find(f".//{{{P}}}pinned"))
 
 
 class TestMain(_Compiling):

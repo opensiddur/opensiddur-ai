@@ -107,20 +107,23 @@
         </section>
     </xsl:template>
 
+    <!-- Blocks inside running text — a list in a paragraph, verse in a note — are spans that
+         CSS sets as blocks: a block element there would close the paragraph around it, and the
+         text after it would escape the paragraph and the scopes that govern it. -->
     <xsl:template match="tei:div">
-        <section>
+        <xsl:element name="{if (f:in-text(.)) then 'span' else 'section'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class"
                                 select="('div', @type ! concat('div-', .), @p:part ! concat('part-', .))"/>
             </xsl:call-template>
             <xsl:apply-templates/>
-        </section>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="tei:head">
         <xsl:variable name="level"
                       select="max((1, min((6, xs:integer((@p:heading-level, 2)[1])))))"/>
-        <xsl:element name="h{$level}">
+        <xsl:element name="{if (f:in-text(.)) then 'span' else concat('h', $level)}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'head'"/>
             </xsl:call-template>
@@ -141,12 +144,12 @@
     </xsl:template>
 
     <xsl:template match="tei:lg">
-        <div>
+        <xsl:element name="{if (f:in-text(.)) then 'span' else 'div'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'lg'"/>
             </xsl:call-template>
             <xsl:apply-templates/>
-        </div>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="tei:l">
@@ -159,25 +162,27 @@
     </xsl:template>
 
     <xsl:template match="tei:lb">
-        <br/>
+        <br>
+            <xsl:call-template name="attributes"/>
+        </br>
     </xsl:template>
 
     <xsl:template match="tei:list">
-        <ul>
+        <xsl:element name="{if (f:in-text(.)) then 'span' else 'ul'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="('list', @type ! concat('list-', .))"/>
             </xsl:call-template>
             <xsl:apply-templates/>
-        </ul>
+        </xsl:element>
     </xsl:template>
 
     <xsl:template match="tei:list/tei:item | tei:list/tei:label">
-        <li>
+        <xsl:element name="{if (f:in-text(..)) then 'span' else 'li'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="local-name()"/>
             </xsl:call-template>
             <xsl:apply-templates/>
-        </li>
+        </xsl:element>
     </xsl:template>
 
     <!-- ── The title page ─────────────────────────────────────────────────── -->
@@ -244,7 +249,11 @@
     </xsl:template>
 
     <xsl:template match="tei:pb">
-        <span class="pb" data-n="{@n}" title="{@ed} {@n}"/>
+        <span data-n="{@n}" title="{@ed} {@n}">
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class" select="'pb'"/>
+            </xsl:call-template>
+        </span>
     </xsl:template>
 
     <xsl:template match="tei:anchor[@corresp] | tei:milestone[@corresp]" priority="-1">
@@ -262,27 +271,46 @@
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'choice'"/>
             </xsl:call-template>
-            <xsl:choose>
-                <xsl:when test="j:option">
-                    <xsl:for-each select="j:option">
-                        <span class="{if (position() = 1) then 'option' else 'option option-alt'}">
-                            <xsl:apply-templates/>
-                        </span>
-                    </xsl:for-each>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:for-each select="j:read">
-                        <span class="read"><xsl:apply-templates/></span>
-                    </xsl:for-each>
-                    <xsl:for-each select="j:written">
-                        <span class="{if (../j:read) then 'written written-alt' else 'written'}">
-                            <xsl:apply-templates/>
-                        </span>
-                    </xsl:for-each>
-                </xsl:otherwise>
-            </xsl:choose>
+            <xsl:apply-templates mode="choice"/>
         </span>
     </xsl:template>
+
+    <xsl:template match="j:option" mode="choice">
+        <span>
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class"
+                                select="if (preceding-sibling::j:option) then ('option', 'option-alt')
+                                        else 'option'"/>
+            </xsl:call-template>
+            <xsl:apply-templates/>
+        </span>
+    </xsl:template>
+
+    <xsl:template match="j:read" mode="choice">
+        <span>
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class" select="'read'"/>
+            </xsl:call-template>
+            <xsl:apply-templates/>
+        </span>
+    </xsl:template>
+
+    <xsl:template match="j:written" mode="choice">
+        <span>
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class"
+                                select="if (../j:read) then ('written', 'written-alt') else 'written'"/>
+            </xsl:call-template>
+            <xsl:apply-templates/>
+        </span>
+    </xsl:template>
+
+    <!-- Anything else in a choice — a scope's markers, a span of its text — as anywhere. -->
+    <xsl:template match="node()" mode="choice">
+        <xsl:apply-templates select="."/>
+    </xsl:template>
+
+    <xsl:template match="text()[not(normalize-space())]" mode="choice"/>
 
     <!-- ── Milestones ─────────────────────────────────────────────────────── -->
 
@@ -326,7 +354,11 @@
     </xsl:template>
 
     <xsl:template match="tei:milestone[@rend = '****']">
-        <span class="section-separator" role="separator"/>
+        <span role="separator">
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class" select="'section-separator'"/>
+            </xsl:call-template>
+        </span>
     </xsl:template>
 
     <!-- ── Notes ──────────────────────────────────────────────────────────── -->
@@ -374,7 +406,7 @@
                                 select="('cm', if ($opens) then 'cm-open' else 'cm-close',
                                          concat('m', @p:cid),
                                          if ($in-text) then 'cm-inline' else 'cm-block',
-                                         if ($opens and not(tei:note[@type = 'instruction']))
+                                         if ($opens and not(tei:note[1][@type = 'instruction']))
                                          then 'cm-norubric' else (),
                                          if (@p:silent = 'true') then 'cm-silent' else ())"/>
             </xsl:call-template>
