@@ -10,11 +10,14 @@ Images, compiled XML, TeX and PDFs stay outside git under output/asher_selichot.
 
 ## Reusable text modules
 
-There are 55 XML files per language: 47 named text modules and eight book/service
+There are 50 XML files per language: 47 named text modules and three book/service
 assemblies. `index.xml` is the documentary book entrypoint; `expanded.xml` is the
 expanded book entrypoint. Each includes both title pages and transcludes the
-corresponding first-day assembly. Section assemblies retain printed rubrics and
-reference independent texts by source-independent canonical URN. Incomplete book
+same `first_day.xml` assembly. This directly references independent texts by
+source-independent canonical URN and retains printed rubrics. Artificial opening,
+preface, before-piyyut and closing subdivision files are removed, along with the
+redundant expanded first-day assembly. The generator prunes these obsolete files
+after replacement XML validates; their URNs are removed from the registry. Incomplete book
 coverage is recorded in edition metadata, rather than in text identities.
 
 `identities.py` maps continuation evidence IDs to filenames and registry identities;
@@ -38,20 +41,20 @@ python -m opensiddur.common.urn_registry --check --project-directory "$project_r
 ```
 
 The builder validates every file before writing. Reverse verification follows the
-service assemblies in source-page order, checks each extracted module's canonical
+flat service assembly in source-page order, checks each extracted module's canonical
 publication identity and correspondence, and compares it to its documentary
 reading. It separately audits expansion targets, branches, bounded repeat ranges,
 printed footnotes and scoped first-day Kaddish context.
 
 Results after extraction:
 
-- All 110 Asher XML files are schema-valid; both Birnbaum Full Kaddish wrappers
+- All 100 Asher XML files are schema-valid; both Birnbaum Full Kaddish wrappers
   remain schema-valid. No experimental-phase labels remain in the Asher XML.
 - Six opening page/language streams, seven refrain/prayer streams, both title pages
   and 96 continuation units match their documentary readings. Facsimiles follow
   source order through n51/n52; second-day text is excluded.
 - Both projects resolve URNs/transclusions after synchronization. The registry has
-  2,985 records, zero errors and zero warnings; four informational alias-migration
+  2,980 records, zero errors and zero warnings; four informational alias-migration
   notes concern other projects.
 - Skill frontmatter, relative reference links and four export settings validate.
 - Compiled word occurrences in both views are unchanged by module extraction.
@@ -105,7 +108,8 @@ English apparatus paragraphs have increasing glyph x coordinates even inside
 Hebrew notes. The Latin Psalm citation appears once in the Hebrew column. Hebrew
 verse stops are attached U+05C3 sof pasuq, with no stranded stops or ASCII colons.
 Documentary output retains printed cues. Expanded output omits fulfilled cues,
-expands verified refrains, repeats bounded scriptural petitions and Ashamnu, and
+including the poem conclusion whose prayers are supplied in its own conditional
+branch. Both views share the first-day assembly. It expands verified refrains, repeats bounded scriptural petitions and Ashamnu, and
 supplies El Melekh/Vayaavor at the recorded positions.
 
 The final Full Kaddish contains all six edition-bound Birnbaum parts once per
@@ -126,7 +130,7 @@ text/rubric. These checks establish observable output, rather than just XML shap
 python -m pytest opensiddur/tests/importer/asher_selichot opensiddur/tests/common/test_urn_registry.py -q
 ```
 
-The focused module/registry run passes 65 tests and 18 subtests. Synthetic fixtures
+The focused module/registry run passes 66 tests and 22 subtests. Synthetic fixtures
 cover separate reusable piyyut files and shared Hebrew/English identities, canonical
 Ashrei/Kaddish, crossed page breaks, printed notes, invocation placement, repetition
 boundaries, conflicting calendar settings and caller-context restoration. Geometry

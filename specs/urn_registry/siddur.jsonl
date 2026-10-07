@@ -1239,10 +1239,6 @@
 {"urn": "urn:x-opensiddur:text:siddur:kriat_shema_al_hamitah/psalm91", "status": "canonical", "label_en": "kriat shema al hamitah/psalm91"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot", "status": "canonical", "label_en": "Selichot"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day", "parent": "urn:x-opensiddur:text:siddur:selichot", "status": "canonical", "label_en": "First-day selichot"}
-{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/opening", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "status": "canonical", "label_en": "First-day opening through Half Kaddish"}
-{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/preface", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: preface"}
-{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/before_piyyut", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: before piyyut"}
-{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/closing", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: closing"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/after_first_selihah_rubric", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: after first selihah rubric"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/after_second_selihah_prayers", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: after second selihah prayers"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/after_second_selihah_verses", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: after second selihah verses"}
@@ -1250,5 +1246,4 @@
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/ashamnu_repeat", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: ashamnu repeat"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/ashamnu_repeat_2", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: ashamnu repeat 2"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/reader_kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: reader kaddish"}
-{"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/expanded", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot expanded first day"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/expanded", "status": "canonical", "label_en": "selichot/expanded", "parent": "urn:x-opensiddur:text:siddur:selichot"}

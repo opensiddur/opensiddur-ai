@@ -6,6 +6,39 @@ from opensiddur.importer.scan.reverse import streams
 
 
 class FirstDayTest(unittest.TestCase):
+    def test_poem_cue_selects_printed_instruction_or_its_prayers(self):
+        """Shared services must supply this conclusion once without a view wrapper."""
+        import tempfile
+        from pathlib import Path
+        from opensiddur.importer.asher_selichot.build import poem, J, PRAYER
+        from opensiddur.exporter.compiler import CompilerProcessor
+        from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
+        from opensiddur.exporter.linear import LinearData
+        for lang in ('he', 'en'):
+            for supplied in (False, True):
+                with self.subTest(lang=lang, supplied=supplied), tempfile.TemporaryDirectory() as temp:
+                    root=poem(lang, 'fixture', {
+                        'heading':'Poem', 'rubric':'Repeat the refrain.',
+                        'stanzas':[['שורה׃']] if lang=='he' else ['Poem words.'],
+                        'cues':{}, 'conclusion':'Say the printed prayers.'})
+                    references=root.findall(f'.//{{{J}}}transclude')
+                    self.assertEqual([PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'],
+                                     [n.get('target') for n in references])
+                    for number,reference in enumerate(references,1):
+                        replacement=etree.Element(f'{{{TEI}}}p')
+                        replacement.text=f'Supplied prayer {number}.'
+                        reference.getparent().replace(reference,replacement)
+                    project=Path(temp)/'fixture';project.mkdir()
+                    (project/'index.xml').write_bytes(etree.tostring(root))
+                    data=LinearData();data.xml_cache.base_path=Path(temp)
+                    CompilerProcessor.load_init_settings(data, yaml_to_declaration_entries({
+                        'asher:expansions': {'prayers_present':supplied}}))
+                    output=CompilerProcessor('fixture','index.xml',linear_data=data).process()
+                    words=' '.join(output.find(f'{{{TEI}}}text').itertext())
+                    self.assertEqual(not supplied, 'Say' in words)
+                    for number in (1,2):
+                        self.assertEqual(int(supplied),words.count(f'Supplied prayer {number}.'))
+
     def test_reusable_modules_use_common_names_and_distinctive_incipits(self):
         """Service position/evidence IDs must not become a reusable text identity."""
         import json
@@ -48,10 +81,15 @@ class FirstDayTest(unittest.TestCase):
                     module=modules[project,filename]
                     self.assertEqual('urn:x-opensiddur:text:'+urn+'@'+project,
                         module.find(f'.//{{{TEI}}}idno[@type="urn"]').text)
-                assembly=modules[project,'first_day_preface.xml']
+                assembly=modules[project,'first_day.xml']
                 references=assembly.findall(f'.//{j}transclude')
                 self.assertEqual([text_urn(identity) for identity in poem_ids],
-                                 [node.get('target') for node in references])
+                                 [node.get('target') for node in references][3:])
+                from opensiddur.importer.asher_selichot.first_day import OBSOLETE_ASSEMBLIES
+                self.assertTrue(all((project,name+'.xml') not in modules for name in OBSOLETE_ASSEMBLIES))
+                for filename in ('index.xml', 'expanded.xml'):
+                    self.assertEqual(['urn:x-opensiddur:text:siddur:selichot/first_day'],
+                        [n.get('target') for n in modules[project,filename].findall(f'.//{j}transclude')])
                 self.assertNotIn('Original piyyut words.',etree.tostring(assembly,encoding='unicode'))
                 for identity in poem_ids:
                     filename=TEXTS[identity][0]+'.xml'

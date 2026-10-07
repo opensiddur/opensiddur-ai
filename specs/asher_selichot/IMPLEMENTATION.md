@@ -24,8 +24,8 @@ reference-boundary checks; checks fail on broken controls; full regression suite
 ## First-day continuation
 
 The documentary `index.xml` entrypoints cover title n1/n2 and all first-day
-text through Hebrew n51 / English n52. `first_day.xml` and the preface, intervening
-and closing sections assemble independently named text modules by canonical URN. They reuse the
+text through Hebrew n51 / English n52. `first_day.xml` directly assembles independently named text modules by canonical
+URN, retaining printed rubrics. It reuses the
 original El Melekh, Vayaavor and Bemotzaei Menuhah modules at their source positions.
 
 Canonical readings retain immutable scan-first fragments, source page identity,
@@ -47,11 +47,12 @@ claiming a separately established formal title. Source words remain unchanged; r
 
 ## Expanded complete first day and secondary-source settings
 
-Generate bilingual `first_day_expanded.xml` entrypoints using the shared modules.
+Generate documentary and expanded book entrypoints referencing the same bilingual
+`first_day.xml` service assembly.
 Conditional branches retain printed cues for documentary output and replace them
 with unqualified target URNs when repetitions are present. Register bounded
 repeat-range milestones within the two source prose prayers. Supply the poem’s
-concluding prayers after its transclusion. Add reusable Birnbaum Full Kaddish
+concluding prayers in a true conditional branch next to its printed conclusion cue. Add reusable Birnbaum Full Kaddish
 `prayer:kaddish/shalem`, assembled from six edition-bound existing passages.
 `default.yaml` selects the expanded book entrypoint `expanded.xml`, Asher-first primary priorities,
 and Asher/Birnbaum English parallel priorities, outside release settings.
@@ -93,10 +94,9 @@ the Ten Days rubric and includes a deliberately injected failing control.
 
 Treat this work as the foundation of the final book. `index.xml` holds documentary
 book metadata and both title pages; `expanded.xml` provides the expanded book view.
-Each references its first-day service assembly. Independent prayers and piyyutim
+Both reference the same first-day service assembly. Independent prayers and piyyutim
 live in named files, with source-independent URNs and publication `@project`
-suffixes recording the edition. Service-order sections retain their printed rubrics
-and transclude those files. Ashrei and Half Kaddish are independent modules.
+suffixes recording the edition. The printed first-day service retains its rubrics and directly transcludes those files. Ashrei and Half Kaddish are independent modules.
 
 `identities.py` maps evidence IDs to semantic filenames and canonical registry
 identities. Existing common prayer/part names take precedence; other texts use
@@ -104,7 +104,12 @@ incipits without claiming unverified formal titles. Repeated Ashamnu and scriptu
 ranges point to reusable prayer identities. Active structured readings use
 `refrain-and-prayers.json`; immutable original evidence is retained.
 
-Reverse verification follows assembly references in source order, then checks
+Remove artificial opening, preface, before-piyyut and closing subdivision files,
+and the redundant expanded first-day assembly. Delete their obsolete URNs and
+prune exactly these known generated files after replacement XML validates.
+Internal reading batches do not define source divisions.
+
+Reverse verification follows direct service references in source order, then checks
 individual modules against the original reading units. It audits publication
 identities, source boundaries and editorial context separately. Regenerate both
 views, resolve URNs, and render both PDFs after the reorganization. The full book
