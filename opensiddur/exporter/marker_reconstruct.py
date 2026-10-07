@@ -11,7 +11,12 @@ from typing import Any
 
 from lxml import etree
 
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE, STRUCTURAL_BLOCKS, TEI_NS
+from opensiddur.exporter.constants import (
+    JLPTEI_NAMESPACE,
+    PROCESSING_NAMESPACE,
+    STRUCTURAL_BLOCKS,
+    TEI_NS,
+)
 
 _P_START = f"{{{PROCESSING_NAMESPACE}}}start"
 _P_END = f"{{{PROCESSING_NAMESPACE}}}end"
@@ -22,6 +27,10 @@ _P_PART = f"{{{PROCESSING_NAMESPACE}}}part"
 _PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
 _PARALLEL = f"{{{PROCESSING_NAMESPACE}}}parallel"
 _TEI_MILESTONE = f"{{{TEI_NS}}}milestone"
+_CONDITIONAL_MARKERS = (
+    f"{{{JLPTEI_NAMESPACE}}}conditional",
+    f"{{{JLPTEI_NAMESPACE}}}endConditional",
+)
 
 
 def _structural_marker_map(el: etree.ElementBase) -> dict[str, str]:
@@ -237,6 +246,26 @@ def _collect_logical_buckets(root: etree.ElementBase) -> dict[str, list[etree.El
     return buckets
 
 
+def _hoist_conditional_markers(segment: etree.ElementBase) -> None:
+    """Move the conditional markers out of a segment that is about to be pruned.
+
+    A segment with no words of its own can still hold one end of a conditional scope: the
+    closer of a scope around a transclusion lands alone in the segment that resumes after
+    it. Pruning the segment must not prune the marker, or the scope loses an end and stays
+    open to the end of the book. The markers take the segment's place in its parent, in
+    order; a pair that is left with nothing between them is dropped later, by
+    `drop_empty_scopes`.
+    """
+    markers = list(segment.iter(*_CONDITIONAL_MARKERS))
+    if not markers:
+        return
+    parent = segment.getparent()
+    position = parent.index(segment)
+    for offset, marker in enumerate(markers):
+        marker.tail = None
+        parent.insert(position + offset, marker)
+
+
 def normalize_segment_parts(root: etree.ElementBase) -> None:
     buckets = _collect_logical_buckets(root)
     stray_markers = {_P_START, _P_SUSPEND, _P_RESUME, _P_END}
@@ -247,6 +276,7 @@ def normalize_segment_parts(root: etree.ElementBase) -> None:
                 continue
             parent = e.getparent()
             if parent is not None:
+                _hoist_conditional_markers(e)
                 parent.remove(e)
 
         surviving = [e for e in elems if e.getparent() is not None]

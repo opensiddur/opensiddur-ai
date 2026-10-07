@@ -12,7 +12,12 @@ from opensiddur.exporter.compiler import (
     _ProcessingContext,
     _AnnotationCommand,
 )
-from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
+from opensiddur.exporter.conditional_settings import (
+    CONDITIONAL_CONTROL_TAGS,
+    J_CONDITIONAL,
+    J_END_CONDITIONAL,
+    XML_ID,
+)
 from opensiddur.exporter.constants import (
     JLPTEI_NAMESPACE,
     PROCESSING_NAMESPACE,
@@ -210,6 +215,13 @@ class ExternalCompilerProcessor(CompilerProcessor):
         # None = marker mode off; [] = marker mode active
         self.marker_stack: list[tuple[str, ElementBase]] | None = None
 
+        # The markers of conditional scopes the range's bounds cut through. See
+        # _place_conditional_marker.
+        self._scopes_before_start: list[tuple[str, ElementBase]] = []
+        self._markers_at_start: list[ElementBase] = []
+        self._scopes_open_in_range: list[str] = []
+        self._closers_due: list[ElementBase] = []
+
     def _is_boundary_container_milestone(self, element: ElementBase) -> bool:
         """True when `element` is a milestone that opens the container the range's start
         opens into — e.g. a chapter milestone immediately before the verse milestone a
@@ -229,6 +241,79 @@ class ExternalCompilerProcessor(CompilerProcessor):
         start_unit = self.start_element.get("unit")
         containers = UNIT_CONTAINED_BY.get(start_unit, frozenset())
         return element.get("unit") in containers and element.getnext() is self.start_element
+
+    # ── Conditional scopes cut by the range ─────────────────────────────────
+
+    def _place_conditional_marker(
+        self, element: ElementBase, marker: Optional[ElementBase], before_start: bool,
+    ) -> list[ElementBase]:
+        """Emit a conditional's marker (or its kept rubric) so the range's scopes stay paired.
+
+        A range transcluded from the middle of a file can start or end inside a conditional
+        scope. The scope's text that falls in the range is still governed by it, so the
+        range carries the scope's markers too -- but only those of scopes that overlap it:
+
+        - a scope that opens before the start and closes before it governs nothing in the
+          range, and neither its marker nor its rubric is emitted;
+        - one still open at the start opens there (`_open_scopes_at_start`);
+        - one the range ends inside closes where the range ends (`_closer_for`), since its
+          own closer lies past the end and is never visited.
+
+        Emitting the marker of every scope met before the start, as the compiler used to,
+        left openers with no closer and rubrics for passages that were not there.
+        """
+        if marker is not None:
+            marker = self._rewrite_ids(marker)
+        if element.tag == J_CONDITIONAL:
+            if marker is None:
+                return []
+            xml_id = element.get(XML_ID)
+            if before_start:
+                self._scopes_before_start.append((xml_id, marker))
+                return []
+            if marker.tag == J_CONDITIONAL:
+                self._scopes_open_in_range.append(xml_id)
+            return [marker]
+        if element.tag == J_END_CONDITIONAL:
+            xml_id = (element.get("target") or "").removeprefix("#")
+            if before_start:
+                self._scopes_before_start = [
+                    scope for scope in self._scopes_before_start if scope[0] != xml_id]
+                return []
+            if xml_id in self._scopes_open_in_range:
+                self._scopes_open_in_range.remove(xml_id)
+        return [] if marker is None else [marker]
+
+    def _open_scopes_at_start(self) -> None:
+        """Open, at the range's start, the scopes still open around it.
+
+        They count as open from this moment -- the start can also be the end, and the end
+        must know to close them -- but their markers wait for the start element's output,
+        which `_process_element` puts them in front of.
+        """
+        for xml_id, marker in self._scopes_before_start:
+            if marker.tag == J_CONDITIONAL:
+                self._scopes_open_in_range.append(xml_id)
+            self._markers_at_start.append(marker)
+        self._scopes_before_start = []
+
+    def _closer_for(self, xml_id: str) -> ElementBase:
+        """A `j:endConditional` for a scope whose own closer lies past the range's end.
+
+        Rewritten in the same processing context as the opener, so the two still pair.
+        """
+        closer = etree.Element(J_END_CONDITIONAL, nsmap=self.ns_map)
+        closer.set("target", f"#{xml_id}")
+        self._rewrite_single_element_ids(closer)
+        return closer
+
+    def _flush_closers_due(self, append_to: ElementBase | list[ElementBase]) -> None:
+        """Append the closers owed by a range that just ended, after the end and its tail."""
+        if not self._closers_due:
+            return
+        for closer in self._closers_due:
+            append_to.append(closer)
+        self._closers_due = []
 
     # ── Marker-mode helpers ─────────────────────────────────────────────────
 
@@ -349,6 +434,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
                 if child.tail and result and self._tail_is_in_range():
                     result[-1].tail = (result[-1].tail or '') + child.tail
+                self._flush_closers_due(result)
             else:
                 child_result = self._process_element(child, root)
                 result.extend(child_result)
@@ -360,6 +446,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         # A child that compiles to nothing (a comment, a stripped j:conditional)
                         # still leaves its tail behind as document text.
                         self._carry_dropped_tail(result, child)
+                self._flush_closers_due(result)
 
         self.marker_stack.pop()
 
@@ -1044,6 +1131,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             if element is self.start_element:
                 context['before_start'] = False
                 context['command'] = _ProcessingCommand.COPY_AND_RECURSE
+                self._open_scopes_at_start()
                 return context
 
         # is after start?
@@ -1085,6 +1173,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         )
         if is_end_element:
             context['after_end'] = True
+            # The scopes the range ends inside close where it ends, innermost first.
+            self._closers_due = [
+                self._closer_for(xml_id) for xml_id in reversed(self._scopes_open_in_range)]
+            self._scopes_open_in_range = []
 
         if element is self.deepest_common_ancestor:
             context['inside_deepest_common_ancestor'] = False
@@ -1107,9 +1199,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if headed and (not before_start or element is self.start_element):
             self.linear_data.heading_depth = depth + 1
         try:
-            return self._process_element_with_heading_depth(element, root)
+            result = self._process_element_with_heading_depth(element, root)
         finally:
             self.linear_data.heading_depth = depth
+        if self._markers_at_start and element is self.start_element:
+            # This element was the range's start: the scopes still open around it open here.
+            result = self._markers_at_start + result
+            self._markers_at_start = []
+        return result
 
     def _process_element_with_heading_depth(self, element: ElementBase, root: Optional[ElementBase] = None) -> list[ElementBase]:
         """
@@ -1121,6 +1218,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return []
 
         context = self._update_processing_context_before(element)
+        # The context is shared with every child: by the end of the loop below its command
+        # is the last child's, not this element's.
+        command = context["command"]
 
         processed = []
 
@@ -1140,23 +1240,28 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
         handled, conditional_copy = self._handle_conditional_element(element)
         if handled:
+            # Placed before the context update: a closer can be the range's end element
+            # itself (a milestone range ends on the last element before the next
+            # milestone), and the update is what settles which scopes the end leaves open.
+            placed = self._place_conditional_marker(
+                element, conditional_copy, context['before_start'])
             self._update_processing_context_after(element)
-            if conditional_copy is not None:
-                return [self._rewrite_ids(conditional_copy)]
-            return []
+            return placed
 
         # Before the range's start, a transclusion or annotation must not be resolved at
         # all: resolving it here would leak content that RECURSE is meant to suppress
         # entirely (see #53), and would raise on an unresolvable target that will never
         # actually appear in the output.
         if context["command"] != _ProcessingCommand.RECURSE:
+            # Each element's ids are rewritten once, by the call that produces it. These two
+            # return early, so they do it here rather than leave it to the caller.
             transcluded = self._transclude(element)
             if transcluded is not None:
-                return [transcluded]
+                return [self._rewrite_ids(transcluded)]
 
             annotations, annotation_command = self._annotate(element, root)
             if annotation_command == _AnnotationCommand.REPLACE:
-                return [annotations[0]]
+                return [self._rewrite_ids(annotations[0])]
         else:
             annotations, annotation_command = [], _AnnotationCommand.NONE
 
@@ -1207,6 +1312,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         # A stripped j:conditional and friends leave no output, but the text
                         # around them is document text. See _carry_dropped_tail.
                         self._carry_dropped_tail(append_to, child)
+            self._flush_closers_due(append_to)
 
         if annotation_command == _AnnotationCommand.INSERT and element.tag == f"{{{TEI_NS}}}milestone":
             # Keep apparatus with its opening milestone until the entire source
@@ -1220,7 +1326,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 # sequence level, not as a child of an element.
                 processed.insert(0, annotation)
 
-        processed = self._rewrite_ids(processed)
+        if command != _ProcessingCommand.RECURSE:
+            # Under RECURSE, processed holds only the children's output, whose ids each
+            # child has already rewritten; rewriting them again appended the same hash once
+            # per level between the file's root and the range.
+            processed = self._rewrite_ids(processed)
 
         if annotation_command == _AnnotationCommand.INSERT and element.tag != f"{{{TEI_NS}}}milestone":
             # The notes went in at the head of the sequence, ahead of the element's
@@ -1293,6 +1403,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
 
             try:
                 processed = self._process_element(root, root)
+                # Owed only when the range ended on the root itself, with no parent loop
+                # to place them in.
+                self._flush_closers_due(processed)
             finally:
                 # A failed counterpart must not leave its context in the fallback.
                 self.linear_data.processing_context.pop()

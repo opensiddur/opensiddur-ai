@@ -53,6 +53,7 @@ from opensiddur.exporter.conditional_settings import (
     XML_ID,
     parse_declare_element,
 )
+from opensiddur.exporter.conditional_markers import check_pairing
 from opensiddur.exporter.condition_eval import (
     TriState,
     evaluate_condition,
@@ -1221,6 +1222,8 @@ def main(argv: list[str] | None = None):  # pragma: no cover
     close_up_whitespace(result)
     join_split_paragraphs(result)
     merge_credits(result, linear_data)
+    for problem in check_pairing(result):
+        logger.warning("conditional markers do not pair: %s", problem)
     etree.ElementTree(result).write(
         args.output_file if args.output_file else sys.stdout,
         pretty_print=True,
