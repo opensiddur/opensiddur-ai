@@ -1,4 +1,4 @@
-"""Encode the image-adjudicated Asher pilot, retaining printed and expanded forms.
+"""Encode the image-adjudicated Asher edition, retaining printed and expanded forms.
 
 Reads the committed scan reading, not OCR. Dependency ranges are authored from
 this edition, never substituted from another project's prayer text.
@@ -32,7 +32,7 @@ def document(lang, project, title, urn, *, index=False):
     element(titles,'title',title,type='main')
     resp=element(titles,'respStmt');element(resp,'resp','AI-assisted scan reading and encoding by',key='trc')
     element(resp,'name','Codex',ref='urn:x-opensiddur:contributor:opensiddur.org/codex')
-    editions=element(file,'editionStmt');element(editions,'edition','Pilot read from the scanned 1912–5672 printing; editorial expansions recorded in the source README.')
+    editions=element(file,'editionStmt');element(editions,'edition','Read from the scanned 1912–5672 printing; editorial expansions recorded in the source README.')
     pub=element(file,'publicationStmt');distributor=element(pub,'distributor')
     element(distributor,'ref','Open Siddur Project',target='https://opensiddur.org')
     element(pub,'idno',urn+'@'+project,type='urn')
@@ -43,7 +43,7 @@ def document(lang, project, title, urn, *, index=False):
         bibl=element(source,'bibl');element(bibl,'title','Selichoth for the Propitiatory and Penitential Days, and for the Minor Fasts')
         element(bibl,'editor','David Asher',role='translator');element(bibl,'publisher','Vallentine & Sons')
         element(bibl,'pubPlace','London');element(bibl,'date','1912–5672',when='1912')
-        element(bibl,'idno',IA,type='url');element(bibl,'note','The scan is the source. First publication was 1866; this pilot encodes the 1912 reprint. Asher-specific expansions and reference ranges are documented in sources/asher_selichot/README.md.')
+        element(bibl,'idno',IA,type='url');element(bibl,'note','The scan is the source. First publication was 1866; this encoding follows the 1912 reprint. Asher-specific expansions and reference ranges are documented in sources/asher_selichot/README.md.')
     else:
         p=element(source,'p');element(p,'ref','Asher Selichoth, 1912 source metadata',target='index.xml')
     return root,element(root,'text')
@@ -163,35 +163,12 @@ def dependency(lang,project,name,pages):
     return root
 
 
-def service(lang,project,expanded=False):
-    urn='urn:x-opensiddur:text:siddur:selichot/first_day/pilot'+('/expanded' if expanded else '')
-    root,text=document(lang,project,'Asher Selichoth — '+('expanded' if expanded else 'documentary')+' pilot',urn,index=True)
-    front=element(text,'front');pb(front,'s3','[unnumbered]')
-    title=element(front,'titlePage');title.set(XML+'lang','en')
-    doc=element(title,'docTitle');element(doc,'titlePart','SELICHOTH',type='main')
-    element(doc,'titlePart','FOR THE PROPITIATORY AND PENITENTIAL DAYS, AND FOR THE MINOR FASTS.',type='sub')
-    element(doc,'titlePart','TO WHICH ARE ADDED THE SELICHOTH FOR THE MINOR DAY OF ATONEMENT',type='desc')
-    element(title,'docEdition','With a New English Translation')
-    by=element(title,'byline','By ');element(by,'docAuthor','DAVID ASHER, Ph. Dr.')
-    imprint=element(title,'docImprint');element(imprint,'pubPlace','LONDON')
-    element(imprint,'publisher','VALLENTINE & SONS (Succrs.)');element(imprint,'pubPlace','31, Duke Street, Aldgate, E.C.')
-    element(imprint,'docDate','1912–5672.')
-    body=element(text,'body');div=element(body,'div')
-    element(div,'head','Asher Selichoth: first-day piyyut pilot').set(XML+'lang','en')
-    element(div,'j:transclude',target=POEM)
-    if expanded:
-        for name in ['el_melekh_yoshev','vayaavor']:
-            element(div,'j:transclude',target=PRAYER+name)
-    return root
-
-
 def build(source_root,project_directory):
-    data=json.loads((Path(source_root)/'asher_selichot/scan_reading/pilot.json').read_text())
+    data=json.loads((Path(source_root)/'asher_selichot/scan_reading/refrain-and-prayers.json').read_text())
     documents=[]
     for lang in ['he','en']:
         project=f'asher_selichot_{lang}_1912';out=Path(project_directory)/project
-        docs={'index.xml':service(lang,project),'expanded.xml':service(lang,project,True),
-              'bemotzaei_menuhah.xml':poem(lang,project,data[lang]['poem'])}
+        docs={'bemotzaei_menuhah.xml':poem(lang,project,data[lang]['poem'])}
         for name,pages in data[lang]['prayers'].items():
             docs[name+'.xml']=dependency(lang,project,name,pages)
         for name,root in docs.items():

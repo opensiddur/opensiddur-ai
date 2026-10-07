@@ -2,8 +2,8 @@ description: Asher 1912 complete first day through n52, work in progress. Incomp
   book, excluded from releases.
 book:
   project: asher_selichot_he_1912
-  file_name: first_day.xml
-  title: Asher Selichoth — first day (work in progress)
+  file_name: index.xml
+  title: Asher Selichoth — first day
 priority:
   transclusion:
   - asher_selichot_he_1912

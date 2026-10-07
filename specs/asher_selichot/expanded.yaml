@@ -1,31 +1,38 @@
-description: Asher 1912 first-day piyyut pilot, expanded view. Incomplete book, excluded
-  from releases.
+description: Asher 1912 expanded first day through n52, with Birnbaum Full Kaddish
+  fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded pilot
+  title: Asher Selichoth — expanded first day
 priority:
   transclusion:
   - asher_selichot_he_1912
   - asher_selichot_en_1912
+  - birnbaum_ashkenaz_he_1949
+  - birnbaum_ashkenaz_en_1949
   instructions:
   - asher_selichot_he_1912
   - asher_selichot_en_1912
 parallel:
   projects:
   - asher_selichot_en_1912
+  - birnbaum_ashkenaz_en_1949
 readings:
   abbreviations: expanded
 annotations: []
 typography:
+  page_header:
+    all:
+      left: סליחות ליום ראשון
+      right: '{page}'
   instructions:
     from: both
   fonts:
     hebrew:
     - name: SBL Hebrew
       normal_size: 12
-
 declarations:
   asher:expansions:
     refrains_present: true
     prayers_present: true
+    repetitions_present: true
