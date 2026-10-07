@@ -421,18 +421,17 @@ class TestInlineCompilerProcessor(unittest.TestCase):
 
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
 
-        # The result should include main text directly
+        # The main text comes before and after the transclusion, in document order
         self.assertIn("Text before transclusion", result.text)
-        self.assertIn("Text after transclusion", result.text)
-
-        # Should include tail text from start element
         self.assertIn("tail after start element", result.text)
+        all_text = "".join(result.itertext())
+        self.assertLess(all_text.index("Text before transclusion"), all_text.index("Transcluded start"))
+        self.assertLess(all_text.index("Transcluded end"), all_text.index("Text after transclusion"))
 
         # Should NOT include text before start or after end
-        self.assertNotIn("Text before start (excluded)", result.text)
-        self.assertNotIn("Also before start", result.text)
-        self.assertNotIn("Text after end (excluded)", result.text)
-        self.assertNotIn("tail after end element", result.text)
+        self.assertNotIn("Text before start (excluded)", all_text)
+        self.assertNotIn("Also before start", all_text)
+        self.assertNotIn("Text after end (excluded)", all_text)
 
         # Verify that resolve_range was called with correct URNs
         mock_resolve_range.assert_any_call("urn:other:start")
@@ -557,9 +556,11 @@ class TestInlineCompilerProcessor(unittest.TestCase):
 
         self.assertEqual(result.tag, "{http://jewishliturgy.org/ns/processing}transcludeInline")
 
-        # The result should include main text directly
+        # The main text comes before and after the transclusion, in document order
         self.assertIn("Text before transclusion", result.text)
-        self.assertIn("Text after transclusion", result.text)
+        all_text = "".join(result.itertext())
+        self.assertLess(all_text.index("Text before transclusion"), all_text.index("Level 1 start"))
+        self.assertLess(all_text.index("Level 1 end"), all_text.index("Text after transclusion"))
 
         # Find the top-level p:transclude element (from main file's transclusion)
         top_transclude = result.findall(".//{http://jewishliturgy.org/ns/processing}transclude")
@@ -572,8 +573,9 @@ class TestInlineCompilerProcessor(unittest.TestCase):
         self.assertEqual(level1_transclude.get('type'), 'inline')
 
         # Level 1 text should be in the first p:transclude element
-        self.assertIn("Level 1 start", level1_transclude.text)
-        self.assertIn("Level 1 end", level1_transclude.text)
+        level1_text = "".join(level1_transclude.itertext())
+        self.assertLess(level1_text.index("Level 1 start"), level1_text.index("Level 2 start"))
+        self.assertLess(level1_text.index("Level 2 end"), level1_text.index("Level 1 end"))
 
         # The nested p:transclude (from level1's transclusion to level2) should also be present
         # Find it as a child of the first transclude
