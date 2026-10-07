@@ -59,3 +59,25 @@ These are pilot calibration values, not defaults for other settings or scans.
 Run `python -m opensiddur.importer.asher_selichot.check_pdf PDF --control`
 (with `--expanded` for the expanded view). The shared direction check separately
 reverses Hebrew glyph runs as its failing control.
+
+## First-day continuation
+
+The Hebrew and English title pages are Archive leaves n1 and n2. The first-day
+opening is n5/n6; its first printed numeral is 3 on n7/n8. Do not assign a printed
+number to the opening from the contents table or a later cross-reference.
+Psalm 145:9 continues across n5→n7 and n6→n8 within a prose paragraph; retain the
+source page break within the verse rather than inventing a verse boundary.
+
+The first day ends partway down n51 (Hebrew) / n52 (English), after the Reader’s
+Kaddish instruction and before the large second-day section heading. The running
+heading on n51 already says second day; it does not establish the section boundary.
+Keep these verified target limits separate from encoded coverage. A partial
+entrypoint must identify its actual contiguous coverage and must not bridge pending
+pages with isolated pilot modules. Record progress in `first-day-scope.json`.
+
+The partial opening has a Latin `Ps. cxlv.` citation on the Hebrew page. Verify
+both its increasing glyph x coordinates and its placement in the Hebrew column;
+Hebrew-only direction checks cannot detect its reversal or column displacement.
+Use `python -m opensiddur.importer.asher_selichot.check_first_day_pdf PDF --control`
+for the current opening settings. Its 16pt baseline limit is measured for this
+output, not a general scan requirement.

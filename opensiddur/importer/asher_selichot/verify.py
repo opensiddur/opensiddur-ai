@@ -48,10 +48,46 @@ def verify(source_root, project_directory):
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
                 raise ValueError(f'{name}: unexpected reference expansion boundary')
+    verify_opening(source, Path(project_directory))
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
     print(f'{files} schema-valid files; {len(actual)} documentary page/language streams match; expansion targets and forms checked')
     return actual
+
+
+def verify_opening(source, project_directory):
+    """Check page/language streams, partial verse and separate WIP entrypoints."""
+    from .first_day import OPENING
+    payload=json.loads((source/'opening-documentary-streams.json').read_text())
+    expected={(page,lang):words for page,langs in payload.items() for lang,words in langs.items()}
+    actual={}
+    titles=json.loads((source/'title-pages.json').read_text())
+    for lang in ['he','en']:
+        project=project_directory/f'asher_selichot_{lang}_1912'
+        root=etree.parse(str(project/'first_day_opening.xml')).getroot()
+        actual.update(streams(root,include_notes=True))
+        urns=[el.get('corresp') for el in root.iter() if el.get('corresp')]
+        if len(urns)!=len(set(urns)):
+            raise ValueError('Repeated correspondence within the opening module')
+        verses=root.findall(f'.//{{{TEI}}}milestone[@corresp="urn:x-opensiddur:text:bible:psalms/145/9"]')
+        if len(verses)!=1 or verses[0].getnext().tag!=f'{{{TEI}}}pb':
+            raise ValueError('Psalm 145:9 must continue across its printed page break')
+        entry=etree.parse(str(project/'first_day.xml')).getroot()
+        if [el.get('target') for el in entry.findall(f'.//{{{J}}}transclude')]!=[OPENING]:
+            raise ValueError('Partial first-day entry must contain only the contiguous opening')
+        front=entry.find(f'.//{{{TEI}}}front')
+        title_streams={key:words for key,words in streams(front,include_notes=True).items() if words.strip()}
+        wanted={}
+        for title_lang in ['he','en']:
+            data=titles[title_lang]
+            words=data['titles']+[data['edition']]
+            if data.get('byline'):words+=[data['byline'],data['credentials']]
+            words += [data[key] for key in ['place','publisher','address','date']]
+            wanted[(data['scan'],title_lang)]=' '.join(words)
+        if check(title_streams,wanted):raise ValueError('Title pages differ from scan readings')
+    differences=check(actual,expected)
+    if differences:raise ValueError(differences)
+    print(f'{len(actual)} opening page/language streams match; both title pages and partial entry boundaries checked')
 
 
 def main(argv=None):

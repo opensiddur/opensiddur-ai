@@ -3369,6 +3369,16 @@
         </xsl:if>
     </xsl:template>
 
+    <!-- English citations embedded in a Hebrew paragraph need a scoped LTR
+         direction even when they contain no digits (e.g. Ps. cxlv.). Start the
+         surrounding paragraph before switching direction so a citation-only
+         span does not change the paragraph direction. -->
+    <xsl:template match="tei:foreign[@xml:lang='en']" mode="emit" priority="10">
+        <xsl:text>\leavevmode{\textdir TLT\foreignlanguage{english}{\textit{</xsl:text>
+        <xsl:apply-templates mode="emit"/>
+        <xsl:text>}}}</xsl:text>
+    </xsl:template>
+
     <xsl:template match="tei:foreign" mode="emit">
         <xsl:text>\textit{</xsl:text>
         <xsl:apply-templates mode="emit"/>

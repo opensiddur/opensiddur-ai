@@ -68,3 +68,43 @@ rebuilt and their checks pass, including failing controls. The expanded view omi
 the opening repetition rubric and concluding “Say …”; the documentary view retains
 both. Independent `asher:expansions` declarations control refrain and prayer
 instructions, allowing either to remain when its requested text is absent.
+
+## First-day opening increment
+
+The builder now produces 14 schema-valid XML files. Four new files provide the
+partial `first_day.xml` entrypoint and its `first_day_opening.xml` module in each
+language. The entrypoint includes both complete title pages, and only the contiguous
+opening through Half Kaddish; it does not claim to reach the recorded n52 boundary.
+Six additional source-page/language streams match the committed opening readings.
+Both title pages also match their readings, including credentials and imprints.
+The first-day final boundary and pending range are in `first-day-scope.json`.
+
+Compile/render `first-day` with the same commands above. The previous pilot entrypoints
+and PDF calibrations are retained. Hebrew opening pointing remains provisional until
+an independent scan reading is compared. The historical full-suite result above
+predates this authoring increment.
+
+Opening-increment checks passed: 302 relevant exporter and scan-tool tests; all
+14 XML files validate; both projects resolve URNs after syncing their changed
+source modules into the reference database. Registry validation reports 2,934
+records with zero errors or warnings. If regenerating previously indexed modules,
+use `ReferenceDatabase.sync_project(project_name, project_root)` before resolution;
+plain `--index` can retain an obsolete element location during authoring.
+
+The first-day opening PDF has eight pages, including both title pages, blank verso
+pages, and metadata. All four checked bilingual prayer starts have identical
+baselines. No Hebrew run is reversed (0/84); the reversed control flags 83/84.
+The Latin Psalm citation occurs once in the Hebrew column and its glyph coordinates
+increase. Reversed-citation, 50pt prayer-shift, and next-day-boundary controls fail.
+Removing the continuation of Psalm 145:9 and substituting the isolated piyyut for
+the contiguous entry module also fail documentary verification. Title and prayer
+pages were inspected visually; the citation is kept inside the first verse’s
+alignment segment rather than emitted as an unpaired block.
+
+```bash
+python -m opensiddur.importer.asher_selichot.check_first_day_pdf "$output_root/asher_selichot/first-day.pdf" --control
+```
+
+English `tei:foreign[@xml:lang='en']` now receives a scoped LTR wrapper in the
+PDF exporter, with the surrounding paragraph started before switching direction.
+Two synthetic XSLT regressions cover the English citation and nested Hebrew.

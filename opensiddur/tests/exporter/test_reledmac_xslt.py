@@ -4519,3 +4519,23 @@ class TestKeepTogether(unittest.TestCase):
         # Inside the title's language, which writes a record that would come between.
         self.assertLess(spanning.index(r"{\parfillskip=0pt"), spanning.index(r"\OSApplyKeep"))
         self.assertLess(spanning.index(r"\OSApplyKeep"), spanning.index(r"\OSheadA{"))
+
+
+class TestEnglishForeignDirection(unittest.TestCase):
+    def test_english_citation_is_scoped_inside_hebrew_prose(self):
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+        <tei:text><tei:body><tei:p>אשרי <tei:foreign xml:lang="en">Ps. cxlv.</tei:foreign>
+        תהלה</tei:p></tei:body></tei:text></tei:TEI>'''
+        out = _transform(xml)
+        self.assertIn(r'\leavevmode{\textdir TLT\foreignlanguage{english}{\textit{Ps. cxlv.}}}', out)
+        self.assertEqual(out.count('Ps. cxlv.'), 1)
+        self.assertIn('תהלה', out)
+
+    def test_nested_hebrew_keeps_its_own_direction(self):
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+        <tei:text><tei:body><tei:p><tei:foreign xml:lang="en">Say
+        <tei:foreign xml:lang="he">אשרי</tei:foreign>.</tei:foreign>
+        </tei:p></tei:body></tei:text></tei:TEI>'''
+        out = _transform(xml)
+        self.assertIn(r'\texthebrew{אשרי}', out)
+        self.assertIn(r'\textdir TLT\foreignlanguage{english}{\textit{Say', out)
