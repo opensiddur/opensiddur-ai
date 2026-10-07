@@ -81,3 +81,9 @@ Hebrew-only direction checks cannot detect its reversal or column displacement.
 Use `python -m opensiddur.importer.asher_selichot.check_first_day_pdf PDF --control`
 for the current opening settings. Its 16pt baseline limit is measured for this
 output, not a general scan requirement.
+
+For normalized authoring of the Hebrew opening, attach verse-ending colons and
+other closing punctuation to the preceding word. Do not carry the scan’s visual
+gap into XML as an ordinary breakable space: TeX can strand the punctuation on a
+new line. Preserve physical spacing in the first-pass evidence and document its
+normalization. The opening PDF check must reject isolated punctuation lines.
