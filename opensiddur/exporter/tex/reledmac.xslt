@@ -773,7 +773,13 @@
                      \hypersetup{bookmarksdepth=4} or the global tocdepth set in the preamble. -->
                 <xsl:text>{\setcounter{tocdepth}{</xsl:text>
                 <xsl:value-of select="$table-of-contents-depth"/>
-                <xsl:text>}\tableofcontents}&#10;</xsl:text>
+                <!-- Polyglossia records language switches in .toc. A Hebrew switch
+                     before an entry otherwise mirrors its leaders and reverses a
+                     multi-digit page number. Each contents line uses the LTR slot;
+                     its title already wraps Hebrew runs independently. -->
+                <xsl:text>}\let\OScontentsline\contentsline&#10;</xsl:text>
+                <xsl:text>\renewcommand{\contentsline}[4]{{\selectlanguage{english}\OScontentsline{#1}{#2}{#3}{#4}}}&#10;</xsl:text>
+                <xsl:text>\tableofcontents}&#10;</xsl:text>
             </xsl:if>
             <xsl:text>\mainmatter&#10;</xsl:text>
         </xsl:if>
