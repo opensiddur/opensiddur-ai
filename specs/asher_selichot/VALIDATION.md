@@ -166,7 +166,7 @@ Use `python -m pytest -q` with both TeX cache variables set as above. A broad
 the affected facing-page fixture passed in isolation and the complete recommended
 pytest run passed. The new synthetic unittest fixtures also pass discovery alone.
 
-Current companion commits: source `1e561c1`; projects `8a69fea`. The URN registry
+Current companion commits: source `1ef7e06`; projects `6b3ad1f`. The URN registry
 contains 2,985 records with no errors or warnings; four informational notes concern
 existing alias migrations in other projects.
 
@@ -256,3 +256,21 @@ The XML language declarations and source readings required no changes.
 
 After merging the separate fix into the Asher worktree, all 303 combined
 PDF-transform/Asher encoding tests and 128 subtests pass (one pre-existing warning).
+
+## First-day Selichot context for the closing Full Kaddish
+
+The expanded closing prayer is enclosed by a declaration of first-day Selichot,
+with `asher:selichot/first_day=true` and the standard Ten Days holiday aggregate
+explicitly false. Both projects validate, and documentary readings remain
+unchanged. Reverse verification checks the declared values and closing scope.
+Both projects resolve URNs/transclusions. A synthetic caller setting Ten Days
+true still excludes the final addition, and that caller context is restored
+outside the prayer. The focused run passes 37 tests and 18 subtests.
+
+The rebuilt expanded PDF remains 40 pages with all six checked prayer-start
+baselines coincident. Its compiled final Kaddish has one לעלא; the PDF contains
+one in the opening Half Kaddish and one in the final Full Kaddish. Neither the
+extra word nor the Ten Days rubric is present. Controls deliberately inject
+these and are rejected. Direction checks find 0/1,472 reversed Hebrew runs;
+the reversed control flags 1,438. Existing apparatus, repetition, punctuation
+and first-day boundary checks pass.

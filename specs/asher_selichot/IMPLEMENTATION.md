@@ -80,3 +80,12 @@ baseline across MuPDF’s fragmented lines. Reject decreasing x coordinates, and
 reverse a complete note run as a failing control. The original PDF’s backwards
 English explanation on page 9 fails this check. Source words and XML paragraph
 language declarations are unchanged by the renderer correction.
+
+The final Full Kaddish is first-day Selichot, never Ten Days of Repentance. Before
+its transclusion, declare `asher:selichot/first_day=true` and the standard holiday
+aggregate `aseret-ymei-tshuva=false`; close the declaration after the prayer.
+This local source context overrides unrelated export defaults and restores them
+afterward. A synthetic compilation fixture starts with the Ten Days aggregate
+true, confirms the final addition is excluded, and verifies the caller’s setting
+is restored. Reverse verification audits the declaration; PDF verification rejects
+the Ten Days rubric and includes a deliberately injected failing control.

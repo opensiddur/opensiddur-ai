@@ -130,6 +130,18 @@ def verify_continuation(source, project_directory):
                         binary = scope.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary')
                         if binary is None or binary.get('value') != value:
                             raise ValueError('Expansion branch polarity changed')
+                    if reading['id'] == 'reader_kaddish':
+                        declaration = scopes[1].getnext()
+                        if declaration is None or declaration.tag != f'{{{J}}}declare':
+                            raise ValueError('Full Kaddish needs scoped first-day Selichot context')
+                        wanted = {'asher:selichot': ('first_day', 'true'),
+                                  'opensiddur:holiday-aggregate': ('aseret-ymei-tshuva', 'false')}
+                        for fs_type, (feature, value) in wanted.items():
+                            binary = declaration.find(f'{{{TEI}}}fs[@type="{fs_type}"]/{{{TEI}}}f[@name="{feature}"]/{{{TEI}}}binary')
+                            if binary is None or binary.get('value') != value:
+                                raise ValueError('First-day Selichot must exclude Ten Days additions')
+                        end_declare = unit.find(f'{{{J}}}endDeclare[@target="#first_day_selichot_kaddish"]')
+                        if end_declare is None:raise ValueError('Unclosed first-day Kaddish declaration')
                     start = scopes[1]
                     end = unit.find(f'{{{J}}}endConditional[@target="#{start.get("{http://www.w3.org/XML/1998/namespace}id")}"]')
                     if end is None:raise ValueError('Unclosed expansion branch')

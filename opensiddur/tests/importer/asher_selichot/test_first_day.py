@@ -80,6 +80,13 @@ class FirstDayTest(unittest.TestCase):
         self.assertEqual(['urn:x-opensiddur:text:prayer:kaddish/shalem'],
                          [node.get('target') for node in root.findall(f'.//{j}transclude')])
         self.assertEqual('The Reader says Kaddish.', root.find(f'.//{{{TEI}}}note').text.strip())
+        declaration = root.find(f'.//{j}declare')
+        self.assertIsNotNone(declaration)
+        self.assertEqual('true', declaration.find(f'{{{TEI}}}fs[@type="asher:selichot"]/{{{TEI}}}f[@name="first_day"]/{{{TEI}}}binary').get('value'))
+        self.assertEqual('false', declaration.find(f'{{{TEI}}}fs[@type="opensiddur:holiday-aggregate"]/{{{TEI}}}f[@name="aseret-ymei-tshuva"]/{{{TEI}}}binary').get('value'))
+        self.assertEqual(f'{j}transclude', declaration.getnext().tag)
+        self.assertEqual('#'+declaration.get(XML+'id'), declaration.getnext().getnext().get('target'))
+
 
     def test_repeated_verses_start_inside_paragraph_and_end_before_next_unit(self):
         root = section('en', 'fixture', 'preface', [{
@@ -104,3 +111,39 @@ class FirstDayTest(unittest.TestCase):
             self.assertTrue(all(target.endswith('@birnbaum_ashkenaz_'+lang+'_1949') for target in targets))
             self.assertIn('/titkabal@', targets[3])
             self.assertIn('/oseh_shalom@', targets[-1])
+
+    def test_first_day_kaddish_overrides_ten_days_and_restores_caller_context(self):
+        import tempfile
+        from pathlib import Path
+        from opensiddur.exporter.compiler import CompilerProcessor
+        from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
+        from opensiddur.exporter.linear import LinearData
+        root = section('en', 'fixture', 'closing', [{
+            'id': 'reader_kaddish', 'kind': 'rubric',
+            'fragments': [self.fragment('s53', 'The Reader says Kaddish.')]}])
+        j = '{http://jewishliturgy.org/ns/jlptei/2}'
+        unit = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div/{{{TEI}}}div')
+        target = unit.find(f'{j}transclude')
+        probe = etree.fromstring(('<root xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:tei="'+TEI+'">'
+            '<j:conditional xml:id="ten_days"><tei:fs type="opensiddur:holiday-aggregate"><tei:f name="aseret-ymei-tshuva"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
+            '<tei:p>Excluded Ten Days addition.</tei:p><j:endConditional target="#ten_days"/>'
+            '<tei:p>Full Kaddish remains.</tei:p></root>').encode())
+        position = unit.index(target); unit.remove(target)
+        for child in reversed(list(probe)):unit.insert(position, child)
+        following = etree.fromstring(('<root xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xmlns:tei="'+TEI+'">'
+            '<j:conditional xml:id="restored"><tei:fs type="opensiddur:holiday-aggregate"><tei:f name="aseret-ymei-tshuva"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
+            '<tei:p>Caller context restored.</tei:p><j:endConditional target="#restored"/></root>').encode())
+        fixture = etree.Element('root', nsmap={'tei':TEI,'j':j[1:-1]})
+        text = etree.SubElement(fixture, f'{{{TEI}}}text');text.append(unit)
+        for child in list(following):text.append(child)
+        with tempfile.TemporaryDirectory() as temp:
+            project = Path(temp)/'fixture';project.mkdir()
+            (project/'index.xml').write_bytes(etree.tostring(fixture))
+            data = LinearData();data.xml_cache.base_path = Path(temp)
+            CompilerProcessor.load_init_settings(data, yaml_to_declaration_entries({
+                'asher:expansions': {'repetitions_present': True},
+                'opensiddur:holiday-aggregate': {'aseret-ymei-tshuva': True}}))
+            output = etree.tostring(CompilerProcessor('fixture','index.xml',linear_data=data).process(),encoding='unicode')
+        self.assertNotIn('Excluded Ten Days addition.', output)
+        self.assertIn('Full Kaddish remains.', output)
+        self.assertIn('Caller context restored.', output)
