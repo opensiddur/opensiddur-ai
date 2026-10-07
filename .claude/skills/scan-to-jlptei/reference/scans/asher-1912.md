@@ -82,7 +82,8 @@ Use `python -m opensiddur.importer.asher_selichot.check_first_day_pdf PDF --cont
 for the current opening settings. Its 16pt baseline limit is measured for this
 output, not a general scan requirement.
 
-For normalized authoring of the Hebrew opening, attach verse-ending colons and
+For normalized authoring of the Hebrew opening, encode Hebrew two-dot verse stops as U+05C3
+HEBREW PUNCTUATION SOF PASUQ (׃), not U+003A COLON (:). Attach these stops and
 other closing punctuation to the preceding word. Do not carry the scan’s visual
 gap into XML as an ordinary breakable space: TeX can strand the punctuation on a
 new line. Preserve physical spacing in the first-pass evidence and document its

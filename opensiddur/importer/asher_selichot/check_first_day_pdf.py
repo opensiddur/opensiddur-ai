@@ -30,8 +30,10 @@ def check(tree):
                 he_rows.append((page_no, float(he[0].get('y')), ''.join(base(c.get('c')) for c in sorted(he,key=lambda c:float(c.get('x')),reverse=True))))
             left = [c for c in chars if float(c.get('x')) < gutter]
             left_text = ''.join(c.get('c') for c in left).strip()
-            if ':' in left_text and all(c.isspace() or c.isdigit() or c == ':' for c in left_text):
+            if any(c in ':׃' for c in left_text) and all(c.isspace() or c.isdigit() or c in ':׃' for c in left_text):
                 raise ValueError(f'Stranded Hebrew punctuation on PDF page {page_no}')
+            if page_no >= 5 and he and ':' in left_text and not any(c.isascii() and c.isalpha() for c in left_text):
+                raise ValueError('Hebrew verse stop must be U+05C3 sof pasuq, not a colon')
             if 'Ps. cxlv.' in plain(''.join(c.get('c') for c in left)):
                 citation.append(left)
     deltas=[]
@@ -55,7 +57,7 @@ def check(tree):
 
 
 def controls(tree):
-    for kind in ['direction','alignment','boundary','punctuation']:
+    for kind in ['direction','alignment','boundary','punctuation','wrong-stop']:
         broken=copy.deepcopy(tree)
         if kind=='direction':
             line=next(l for l in broken.findall('.//line') if 'Ps. cxlv.' in l.get('text','') and float(l.find('.//char').get('x'))<288)
@@ -69,9 +71,12 @@ def controls(tree):
                         if float(c.get('x'))>288:c.set('y',str(float(c.get('y'))+50))
         elif kind=='boundary':
             etree.SubElement(broken.find('page'),'line',text='SECOND DAY')
+        elif kind=='punctuation':
+            line=etree.SubElement(broken.findall('page')[4],'line',text='׃')
+            etree.SubElement(line,'char',c='׃',x='250',y='400')
         else:
-            line=etree.SubElement(broken.findall('page')[4],'line',text=':')
-            etree.SubElement(line,'char',c=':',x='250',y='400')
+            stop=next(c for c in broken.findall('.//char') if c.get('c')=='׃')
+            stop.set('c',':')
         try:check(broken)
         except ValueError:pass
         else:raise AssertionError(f'{kind} control escaped detection')
@@ -87,7 +92,7 @@ def main(argv=None):
         tree=etree.parse(str(xml)).getroot()
     print('Prayer baseline differences:',check(tree))
     if args.control:
-        controls(tree);print('Reversed citation, shifted prayer, wrong boundary, and stranded punctuation controls rejected')
+        controls(tree);print('Reversed citation, shifted prayer, wrong boundary, stranded punctuation, and wrong verse-stop controls rejected')
     return 0
 
 
