@@ -189,7 +189,76 @@ def _inline(text: str, closing: str) -> str:
     return text
 
 
+# ── The settings panel ──────────────────────────────────────────────────────
+
+BASIC_SETTINGS_FILE = HERE / "basic_settings.yaml"
+#: At most this many settings at the top of the panel...
+BASIC_LIMIT = 6
+#: ...each deciding at least this share of the text that any setting decides.
+BASIC_THRESHOLD = 0.01
+
+
+def read_basic_settings(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[str, Any]:
+    with open(spec_file, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def basic_controls(spec_file: Path = BASIC_SETTINGS_FILE) -> list[dict[str, Any]]:
+    """The composite controls (basic_settings.yaml), each with the features its options set."""
+    controls = read_basic_settings(spec_file)["controls"]
+    for control in controls:
+        control["features"] = sorted(
+            {(fs, name) for option in control["options"]
+             for fs, features in option["set"].items() for name in features})
+    return controls
+
+
+def settings_catalogue(book: BookConditions, controls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """What goes at the top of this book's settings panel, best first.
+
+    The candidates are the composite controls the book has a use for -- those setting a
+    feature its conditions read -- and every feature no such control covers. Each scores the
+    text it decides: the characters of the scopes that read any of its features, each scope
+    counted once. The top `BASIC_LIMIT`, if they decide at least `BASIC_THRESHOLD` of the
+    book's conditional text, are the basic settings; everything is in the Advanced box anyway.
+    """
+    features = {(f.fs, f.name): f for f in book.features}
+
+    def chars(cids: set[int]) -> int:
+        return sum(book.scope_chars[cid] for cid in cids)
+
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    covered: set[tuple[str, str]] = set()
+    for control in controls:
+        read = [key for key in map(tuple, control["features"]) if key in features]
+        if not read:
+            continue
+        covered.update(read)
+        cids = {cid for key in read for cid in features[key].cids}
+        candidates.append((chars(cids), {
+            "type": "control", "id": control["id"], "label": control["label"],
+            "options": control["options"]}))
+    for key, feature in features.items():
+        if key not in covered:
+            candidates.append((chars(set(feature.cids)),
+                               {"type": "feature", "fs": feature.fs, "name": feature.name}))
+
+    candidates.sort(key=lambda candidate: -candidate[0])
+    floor = BASIC_THRESHOLD * book.conditional_chars
+    return [entry for score, entry in candidates[:BASIC_LIMIT] if score and score >= floor]
+
+
+def feature_words(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[tuple[str, str], dict[str, Any]]:
+    """The labels basic_settings.yaml gives single features, and their values, by feature."""
+    words = read_basic_settings(spec_file).get("features") or {}
+    return {(fs, name): {"label": spec.get("label"),
+                         "values": {str(value): label
+                                    for value, label in (spec.get("values") or {}).items()}}
+            for fs, features in words.items() for name, spec in features.items()}
+
+
 def book_json(book: BookConditions, book_identifier: str, defaults: dict) -> str:
+    words = feature_words()
     data = {
         "version": 1,
         "id": book_identifier,
@@ -197,9 +266,14 @@ def book_json(book: BookConditions, book_identifier: str, defaults: dict) -> str
         "scopes": book.scopes,
         "defaults": defaults,
         "features": [
-            {"fs": f.fs, "name": f.name, "values": f.values, "scopes": f.scopes}
+            {"fs": f.fs, "name": f.name, "values": f.values, "scopes": f.scopes,
+             "kind": f.kind, "calendar": f.calendar,
+             **({"label": words[(f.fs, f.name)]["label"],
+                 "valueLabels": words[(f.fs, f.name)]["values"]}
+                if (f.fs, f.name) in words else {})}
             for f in book.features
         ],
+        "basic": settings_catalogue(book, basic_controls()),
         "calendarScopes": calendar_scopes(book),
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change

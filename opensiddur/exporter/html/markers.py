@@ -40,7 +40,12 @@ from opensiddur.exporter.condition_eval import (
 )
 from opensiddur.exporter.conditional_markers import check_pairing
 from opensiddur.exporter.conditional_settings import J_CONDITIONAL, J_END_CONDITIONAL, XML_ID
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE, TEI_NS, is_element_node
+from opensiddur.exporter.constants import (
+    JLPTEI_NAMESPACE,
+    PROCESSING_NAMESPACE,
+    TEI_NS,
+    is_element_node,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,14 +61,31 @@ TEI_NOTE = f"{{{TEI_NS}}}note"
 
 @dataclass
 class Feature:
-    """A reader-supplied feature the book's conditions ask about, for the settings panel."""
+    """A feature the book's undecided conditions ask about, for the settings panel."""
 
     fs: str
     name: str
     #: The values conditions compare it with, in the order first met.
     values: list[Any] = field(default_factory=list)
-    #: How many scopes turn on it.
-    scopes: int = 0
+    #: The scopes that turn on it, where it was not pinned.
+    cids: list[int] = field(default_factory=list)
+    #: Whether a device could one day answer it from its clock and its location.
+    calendar: bool = False
+    #: How much of the book's text turns on it, in characters (see `measure_text`).
+    chars: int = 0
+
+    @property
+    def scopes(self) -> int:
+        return len(self.cids)
+
+    @property
+    def kind(self) -> str:
+        """binary, numeric or string, by the values conditions compare it with."""
+        if all(isinstance(value, bool) for value in self.values):
+            return "binary"
+        if all(isinstance(value, dict) and "num" in value for value in self.values):
+            return "numeric"
+        return "string"
 
 
 @dataclass
@@ -73,6 +95,10 @@ class BookConditions:
     #: For each scope, by its number, the index of its expression.
     scopes: list[int] = field(default_factory=list)
     features: list[Feature] = field(default_factory=list)
+    #: For each scope, the characters of text it governs.
+    scope_chars: list[int] = field(default_factory=list)
+    #: The characters of text governed by any scope, each counted once.
+    conditional_chars: int = 0
 
 
 def _leaf_values(condition: dict[str, Any]):
@@ -132,8 +158,10 @@ def _number_scopes(root: etree.ElementBase) -> tuple[dict[str, etree.ElementBase
         openers[xml_id] = opener
 
         for fs, name in sorted(condition_features(node)):
-            if is_reader_supplied(fs) and name not in pinned.get(fs, {}):
-                features.setdefault((fs, name), Feature(fs, name)).scopes += 1
+            if name not in pinned.get(fs, {}):
+                feature = features.setdefault(
+                    (fs, name), Feature(fs, name, calendar=not is_reader_supplied(fs)))
+                feature.cids.append(cid)
         for fs, name, value in _leaf_values(expression["cond"]):
             feature = features.get((fs, name))
             if feature is not None and value not in feature.values:
@@ -234,6 +262,46 @@ def _assign(root: etree.ElementBase, measured) -> None:
     walk(root, frozenset())
 
 
+_CONDITION_TAGS = frozenset(
+    f"{{{namespace}}}{name}" for namespace, name in (
+        (TEI_NS, "fs"), (JLPTEI_NAMESPACE, "all"), (JLPTEI_NAMESPACE, "any"),
+        (JLPTEI_NAMESPACE, "none"), (JLPTEI_NAMESPACE, "one")))
+
+
+def _text_length(element: etree.ElementBase) -> int:
+    """The characters of text in an element, not counting spaces or a condition's values."""
+    if element.tag in _CONDITION_TAGS:
+        return 0
+    length = len("".join((element.text or "").split()))
+    for child in element:
+        if is_element_node(child):
+            length += _text_length(child)
+        length += len("".join((child.tail or "").split()))
+    return length
+
+
+def measure_text(root: etree.ElementBase, book: BookConditions) -> None:
+    """How much text each scope governs, and each feature turns, for ranking the settings.
+
+    A labelled element or span counts its whole text towards each scope it is labelled with;
+    its ancestors are never labelled with the same scope, so no scope counts a character
+    twice. A feature counts the text of every scope that turns on it -- text that two of
+    those scopes govern together counts twice, which ranking can bear.
+    """
+    book.scope_chars = [0] * len(book.scopes)
+    for element in root.iter():
+        labels = element.get(P_SCOPES)
+        if not labels:
+            continue
+        length = _text_length(element)
+        for cid in labels.split():
+            book.scope_chars[int(cid)] += length
+        if not any(ancestor.get(P_SCOPES) for ancestor in element.iterancestors()):
+            book.conditional_chars += length
+    for feature in book.features:
+        feature.chars = sum(book.scope_chars[cid] for cid in feature.cids)
+
+
 def _is_reading_division(element: etree.ElementBase) -> bool:
     unit = element.get("unit") or ""
     return element.tag == TEI_MILESTONE and unit.startswith(("aliyah", "maftir"))
@@ -270,4 +338,5 @@ def prepare(root: etree.ElementBase) -> BookConditions:
     if book.scopes:
         _silence(openers)
         _assign(root, _measure(root))
+        measure_text(root, book)
     return book

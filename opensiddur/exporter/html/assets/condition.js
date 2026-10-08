@@ -116,12 +116,30 @@
   // Derivations whose every input is the reader's, as client_settings.CLIENT_DERIVATIONS.
   // Each takes a getter returning an active value or null, and returns the features it
   // derives, or null when it cannot run.
+  // calendar/compute.ALWAYS_YOM_TOV: the festivals every day of which is yom tov.
+  var ALWAYS_YOM_TOV = ["shavuot", "rosh-hashana", "yom-kippur", "shmini-atzeret"];
+
   var DERIVATIONS = {
     // calendar/compute.compute_quorum: ten adults are also three.
     "opensiddur:quorum": function (get) {
       var minyan = get("opensiddur:quorum", "minyan");
       if (minyan === null || !truthy(minyan)) return null;
       return { zimmun: true };
+    },
+    // calendar/compute.compute_recitation: Ma'ariv has no repetition.
+    "opensiddur:recitation": function (get) {
+      var maariv = get("opensiddur:service-time", "maariv");
+      if (maariv === null || !truthy(maariv)) return null;
+      return { silent: true, repetition: false };
+    },
+    // calendar/compute.compute_holiday_from_aggregate: a day that is not yom tov is none of
+    // the festivals that are yom tov throughout.
+    "opensiddur:holiday": function (get) {
+      var yomTov = get("opensiddur:holiday-aggregate", "yom-tov");
+      if (yomTov === null || truthy(yomTov)) return null;
+      var derived = {};
+      ALWAYS_YOM_TOV.forEach(function (festival) { derived[festival] = 0; });
+      return derived;
     }
   };
 
@@ -215,6 +233,7 @@
     resolve: resolve,
     Settings: Settings,
     DERIVATIONS: DERIVATIONS,
+    ALWAYS_YOM_TOV: ALWAYS_YOM_TOV,
     scopeCss: scopeCss
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

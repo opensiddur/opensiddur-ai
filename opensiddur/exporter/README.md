@@ -54,8 +54,20 @@ or `python -m opensiddur.exporter.books --format html` for the books in the sett
   condition: what the document declared there, and what was derived from it.
 - The settings file's declarations become the book's defaults. Read without scripts, the
   page shows exactly what the PDF of the same settings file shows.
-- Calendar settings are not yet answered on the device. Passages that depend on them show
-  every option with its rubric, as in print.
+- Calendar settings are not yet answered on the device. Until they are, the reader sets them
+  by hand. Passages that depend on one left unset show every option with its rubric, as in
+  print.
+
+The settings panel has two parts:
+- **The top:** the settings that decide the most of the book's text. The build decides which,
+  for each book, and writes them into it.
+- **An Advanced box,** holding every feature the book's conditions read, one by one.
+
+The top settings are plain choices that set several features at once: where, the day of the
+week, the kind of day, the service, the reading cycle and the rite. They are defined in
+`html/basic_settings.yaml`, along with the words for single features. Each option there sets
+only what it is sure of; an ordinary day, for example, is not Rosh Hodesh. The reading cycle is
+the reader's in an electronic book, so the humash carries both cycles.
 
 The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
 (`condition_eval.py`, `client_settings.py`). The tests run the same corpus

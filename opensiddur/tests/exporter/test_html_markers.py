@@ -214,13 +214,64 @@ class TestFeatures(unittest.TestCase):
                      '<tei:p>x</tei:p>' + _end("a"))
         self.assertEqual(prepare(root).features, [])
 
-    def test_calendar_and_pinned_features_are_not_the_readers(self):
+    def test_calendar_features_are_offered_and_pinned_ones_are_not(self):
         root = _tree(
             _cond("a", fs="opensiddur:holiday", name="purim") + "<tei:p>x</tei:p>" + _end("a")
             + _cond("b", fs="opensiddur:quorum", name="minyan",
                     pinned='{"opensiddur:quorum": {"minyan": false}}')
             + "<tei:p>y</tei:p>" + _end("b"))
-        self.assertEqual(prepare(root).features, [])
+        self.assertEqual(
+            [(f.fs, f.name, f.calendar) for f in prepare(root).features],
+            [("opensiddur:holiday", "purim", True)])
+
+    def test_kinds(self):
+        root = _tree(
+            _cond("a", name="flag") + "<tei:p>x</tei:p>" + _end("a")
+            + '<j:conditional xml:id="b"><tei:fs type="t:x"><tei:f name="day">'
+              '<tei:numeric value="1" max="2"/></tei:f></tei:fs></j:conditional>'
+              '<tei:p>y</tei:p>' + _end("b")
+            + '<j:conditional xml:id="c"><tei:fs type="t:x"><tei:f name="rite">'
+              '<tei:symbol value="ashkenaz"/></tei:f></tei:fs></j:conditional>'
+              '<tei:p>z</tei:p>' + _end("c"))
+        self.assertEqual({f.name: f.kind for f in prepare(root).features},
+                         {"flag": "binary", "day": "numeric", "rite": "string"})
+
+
+class TestText(unittest.TestCase):
+    """How much text each scope governs, for ranking the settings."""
+
+    def test_each_scope_counts_its_text(self):
+        root = _tree(_cond("a") + "<tei:p>four</tei:p>" + _end("a")
+                     + _cond("b") + "<tei:p>seven c</tei:p>" + _end("b") + "<tei:p>free</tei:p>")
+        book = prepare(root)
+        self.assertEqual(book.scope_chars, [4, 6])
+        self.assertEqual(book.conditional_chars, 10)
+
+    def test_nested_scopes_count_shared_text_for_each(self):
+        root = _tree(_cond("a") + "<tei:p>out</tei:p>" + _cond("b") + "<tei:p>in</tei:p>"
+                     + _end("b") + _end("a"))
+        book = prepare(root)
+        self.assertEqual(book.scope_chars, [5, 2])
+        self.assertEqual(book.conditional_chars, 5)
+
+    def test_crossing_scopes(self):
+        root = _tree("<tei:p>" + _cond("a") + "one " + _cond("b") + "two " + _end("a")
+                     + "three" + _end("b") + "</tei:p>")
+        book = prepare(root)
+        self.assertEqual(book.scope_chars, [6, 8])
+        self.assertEqual(book.conditional_chars, 11)
+
+    def test_rubrics_count_but_conditions_do_not(self):
+        root = _tree(_cond("a") + _cond("b", rubric="Say:") + "<tei:p>x</tei:p>" + _end("b")
+                     + _end("a"))
+        book = prepare(root)
+        self.assertEqual(book.scope_chars[0], len("Say:") + 1)
+
+    def test_a_feature_counts_its_scopes(self):
+        root = _tree(_cond("a", name="f") + "<tei:p>abc</tei:p>" + _end("a")
+                     + _cond("b", name="f") + "<tei:p>de</tei:p>" + _end("b")
+                     + _cond("c", name="g") + "<tei:p>z</tei:p>" + _end("c"))
+        self.assertEqual({f.name: f.chars for f in prepare(root).features}, {"f": 5, "g": 1})
 
 
 if __name__ == "__main__":

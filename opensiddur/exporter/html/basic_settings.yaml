@@ -1,0 +1,203 @@
+# The electronic book's basic settings: choices a reader makes in one step, each of which sets
+# several features at once, consistently.
+#
+# Until the calendar is ported to the reader's device, the day, the place and the service are
+# set by hand, and these are the plain words for them. Every feature can still be set one by one
+# in the settings panel's Advanced box.
+#
+# A control appears in a book only when the book's conditions read one of the features it sets.
+# Which controls -- and which single features -- reach the top of the panel is decided for each
+# book when it is built, by how much of its text they decide (html.py, settings_catalogue).
+#
+# Each option sets every feature listed under it; a feature the option does not list is left as
+# it was set before, or unset. So an option says only what it is sure of: "Rosh Hodesh" leaves
+# Hanukkah unset, because Rosh Hodesh Tevet falls in Hanukkah.
+#
+# Shape: controls: [{id, label, options: [{label, set: {fs type: {feature: value}}}]}]. A value
+# is set as a reader would set it: true/false, a number, or a string.
+#
+# `features` gives single features words of their own, wherever they appear in the panel:
+# {fs type: {feature: {label, values: {value: label}}}}. A feature not named here is shown by its
+# own name.
+
+controls:
+
+  - id: place
+    label: Where
+    options:
+      - label: Israel
+        set: {opensiddur:israel: {is-israel: true}}
+      - label: Outside Israel
+        set: {opensiddur:israel: {is-israel: false}}
+
+  - id: reading-cycle
+    label: Torah reading cycle
+    options:
+      - label: Annual
+        set:
+          opensiddur:reading-cycle:
+            {annual: true, triennial: false, triennial-year-1: false, triennial-year-2: false,
+             triennial-year-3: false}
+      - label: Triennial, year 1
+        set:
+          opensiddur:reading-cycle:
+            {annual: false, triennial: true, triennial-year-1: true, triennial-year-2: false,
+             triennial-year-3: false}
+      - label: Triennial, year 2
+        set:
+          opensiddur:reading-cycle:
+            {annual: false, triennial: true, triennial-year-1: false, triennial-year-2: true,
+             triennial-year-3: false}
+      - label: Triennial, year 3
+        set:
+          opensiddur:reading-cycle:
+            {annual: false, triennial: true, triennial-year-1: false, triennial-year-2: false,
+             triennial-year-3: true}
+
+  - id: rite
+    label: Rite
+    options:
+      - label: Ashkenaz
+        set: {opensiddur:rite: {ashkenaz: true, sepharad: false}}
+      - label: Sepharad
+        set: {opensiddur:rite: {ashkenaz: false, sepharad: true}}
+
+  # The service by the hour of the day. Musaf is not here: in the conditions it means "today
+  # has a Musaf", which the day decides, not the hour.
+  - id: service
+    label: Service
+    options:
+      - label: Shaharit
+        set: {opensiddur:service-time: {shaharit: true, minha: false, maariv: false}}
+      - label: Minha
+        set: {opensiddur:service-time: {shaharit: false, minha: true, maariv: false}}
+      - label: Maariv
+        set: {opensiddur:service-time: {shaharit: false, minha: false, maariv: true}}
+
+  - id: day-of-week
+    label: Day of the week
+    options:
+      - label: Sunday
+        set: {opensiddur:day-of-week: {hebrew-day: 1, secular-day: 1},
+              opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Monday
+        set: {opensiddur:day-of-week: {hebrew-day: 2, secular-day: 2},
+              opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Tuesday
+        set: {opensiddur:day-of-week: {hebrew-day: 3, secular-day: 3},
+              opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Wednesday
+        set: {opensiddur:day-of-week: {hebrew-day: 4, secular-day: 4},
+              opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Thursday
+        set: {opensiddur:day-of-week: {hebrew-day: 5, secular-day: 5},
+              opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Friday
+        set: {opensiddur:day-of-week: {hebrew-day: 6, secular-day: 6},
+              opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Shabbat
+        set: {opensiddur:day-of-week: {hebrew-day: 7, secular-day: 7},
+              opensiddur:holiday-aggregate: {shabbat: true}}
+
+  # A first draft, for review: which features each kind of day can be sure of.
+  - id: kind-of-day
+    label: Kind of day
+    options:
+      - label: An ordinary day
+        set:
+          opensiddur:holiday-aggregate:
+            {yom-tov: false, chol-hamoed: false, minor-fast: false, aseret-ymei-tshuva: false,
+             high-holidays: false}
+          opensiddur:holiday:
+            {rosh-hodesh: 0, hanukkah: 0, purim: 0, shushan-purim: 0, pesah: 0, sukkot: 0,
+             tisha-bav: 0}
+      - label: Rosh Hodesh
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false, chol-hamoed: false}
+          opensiddur:holiday: {rosh-hodesh: 1}
+      - label: Hol HaMoed Pesah
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false, chol-hamoed: true, regalim: true}
+          opensiddur:holiday: {pesah: 3, sukkot: 0}
+      - label: Hol HaMoed Sukkot
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false, chol-hamoed: true, regalim: true}
+          opensiddur:holiday: {sukkot: 3, pesah: 0}
+      - label: Pesah (yom tov)
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: true, chol-hamoed: false, regalim: true}
+          opensiddur:holiday: {pesah: 1, sukkot: 0, shavuot: 0}
+      - label: Shavuot
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: true, chol-hamoed: false, regalim: true}
+          opensiddur:holiday: {shavuot: 1, pesah: 0, sukkot: 0}
+      - label: Sukkot (yom tov)
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: true, chol-hamoed: false, regalim: true}
+          opensiddur:holiday: {sukkot: 1, pesah: 0, shavuot: 0}
+      - label: Shemini Atzeret / Simhat Torah
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: true, chol-hamoed: false}
+          opensiddur:holiday: {shmini-atzeret: 1, sukkot: 0, pesah: 0}
+      - label: Rosh Hashanah
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: true, high-holidays: true, aseret-ymei-tshuva: true}
+          opensiddur:holiday: {rosh-hashana: 1, yom-kippur: 0}
+      - label: Yom Kippur
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: true, high-holidays: true, aseret-ymei-tshuva: true}
+          opensiddur:holiday: {yom-kippur: 1, rosh-hashana: 0}
+      - label: The Ten Days of Repentance
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false, high-holidays: false, aseret-ymei-tshuva: true}
+      - label: Hanukkah
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false}
+          opensiddur:holiday: {hanukkah: 1}
+      - label: Purim
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false}
+          opensiddur:holiday: {purim: 1}
+      - label: A fast day
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false, minor-fast: true}
+          opensiddur:holiday: {tisha-bav: 0}
+      - label: Tisha b'Av
+        set:
+          opensiddur:holiday-aggregate: {yom-tov: false, minor-fast: true}
+          opensiddur:holiday: {tisha-bav: 1}
+
+features:
+  opensiddur:hebrew-date:
+    month:
+      label: Hebrew month
+      values: {1: Nisan, 2: Iyar, 3: Sivan, 4: Tammuz, 5: Av, 6: Elul, 7: Tishrei, 8: Heshvan,
+               9: Kislev, 10: Tevet, 11: Shevat, 12: Adar (Adar I in a leap year), 13: Adar II}
+    day:
+      label: Day of the Hebrew month
+    leap-year:
+      label: A leap year
+  opensiddur:quorum:
+    minyan:
+      label: A minyan is present
+    zimmun:
+      label: Three or more ate together (zimmun)
+  opensiddur:override:
+    house-of-mourning:
+      label: In a house of mourning
+    omit-tahanun:
+      label: Tahanun is omitted today
+    brit-milah:
+      label: A brit milah today
+    wedding:
+      label: A wedding
+    sheva-brachot:
+      label: Sheva brachot
+  opensiddur:recitation:
+    repetition:
+      label: The Reader's repetition
+    silent:
+      label: The silent Amidah
+  opensiddur:israel:
+    is-israel:
+      label: In Israel
