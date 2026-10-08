@@ -133,3 +133,16 @@ second-day rhymed lines. Immutable first readings, same-assistant image-pass
 corrections and English OCR comparison provenance are retained in source evidence.
 Later-day encoding, full-volume conversion, publication and release integration
 remain outside current coverage; these modules form the final book's foundation.
+
+
+## Upstream base merge
+
+Merged upstream `main` into the Asher code branch (merge ec28aaf), and upstream
+`main` into the companion projects branch. The source branch already contains
+current `master`. No conflicts required manual resolution. After the merge,
+compiler, conditional-marker, marker reconstruction, parallel integration,
+XSLT, rendered TOC and Asher importer regressions pass 611 tests and 138 subtests.
+Both complete Asher editions were recompiled against the standalone companion
+projects. Their generated TeX is byte-identical to the inputs of the verified
+43-page documentary and 70-page expanded PDFs, so those PDFs remain current.
+The full-suite result above predates this merge; these are its affected checks.
