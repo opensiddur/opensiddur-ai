@@ -97,6 +97,26 @@ class TestStaticDefaults(_Compiling):
         self.assertIn("opensiddur:override", {entry[0] for entry in printed})
 
 
+ANNUAL_HAFTARAH = '''
+  <j:conditional xml:id="c"><tei:fs type="opensiddur:reading-cycle">
+    <tei:f name="annual"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+  <tei:p>the annual haftarah</tei:p>
+  <j:endConditional target="#c"/>'''
+
+
+class TestReadingCycle(_Compiling):
+    """Annual or triennial is the reader's choice in an electronic book."""
+
+    def test_print_reads_the_annual_cycle(self):
+        root = self._compile(ANNUAL_HAFTARAH, electronic=False)
+        self.assertIn("the annual haftarah", "".join(root.itertext()))
+        self.assertIsNone(root.find(f".//{{{J}}}conditional"))
+
+    def test_electronic_leaves_the_cycle_to_the_reader(self):
+        root = self._compile(ANNUAL_HAFTARAH, electronic=True)
+        self.assertIsNotNone(root.find(f".//{{{J}}}conditional"))
+
+
 class TestPinnedValues(_Compiling):
 
     def test_declared_and_derived_values_are_pinned(self):
@@ -109,8 +129,12 @@ class TestPinnedValues(_Compiling):
         conditional = root.find(f".//{{{J}}}conditional")
         pinned = conditional.find(f"{{{P}}}pinned")
         self.assertIsNotNone(pinned)
+        # The service too: the device derives the recitation from it, and must not from the
+        # reader's choice of service where the section has said which it is.
         self.assertEqual(
-            json.loads(pinned.text), {"opensiddur:recitation": {"repetition": False}})
+            json.loads(pinned.text),
+            {"opensiddur:recitation": {"repetition": False},
+             "opensiddur:service-time": {"maariv": True}})
 
     def test_print_pins_nothing(self):
         root = self._compile(MAARIV_SECTION, electronic=False)

@@ -116,12 +116,30 @@
   // Derivations whose every input is the reader's, as client_settings.CLIENT_DERIVATIONS.
   // Each takes a getter returning an active value or null, and returns the features it
   // derives, or null when it cannot run.
+  // calendar/compute.ALWAYS_YOM_TOV: the festivals every day of which is yom tov.
+  var ALWAYS_YOM_TOV = ["shavuot", "rosh-hashana", "yom-kippur", "shmini-atzeret"];
+
   var DERIVATIONS = {
     // calendar/compute.compute_quorum: ten adults are also three.
     "opensiddur:quorum": function (get) {
       var minyan = get("opensiddur:quorum", "minyan");
       if (minyan === null || !truthy(minyan)) return null;
       return { zimmun: true };
+    },
+    // calendar/compute.compute_recitation: Ma'ariv has no repetition.
+    "opensiddur:recitation": function (get) {
+      var maariv = get("opensiddur:service-time", "maariv");
+      if (maariv === null || !truthy(maariv)) return null;
+      return { silent: true, repetition: false };
+    },
+    // calendar/compute.compute_holiday_from_aggregate: a day that is not yom tov is none of
+    // the festivals that are yom tov throughout.
+    "opensiddur:holiday": function (get) {
+      var yomTov = get("opensiddur:holiday-aggregate", "yom-tov");
+      if (yomTov === null || truthy(yomTov)) return null;
+      var derived = {};
+      ALWAYS_YOM_TOV.forEach(function (festival) { derived[festival] = 0; });
+      return derived;
     }
   };
 
@@ -205,6 +223,17 @@
     return { css: css, states: states };
   }
 
+  // Whether each section of the book has text that shows, given the expressions' states:
+  // book.sections[i] is null when some of its text is governed by no scope, or else the sets
+  // of scopes its runs of text turn on -- it shows if one set has no scope that is false.
+  function sectionsShown(book, states) {
+    return (book.sections || []).map(function (sets) {
+      return sets === null || sets.some(function (set) {
+        return set.every(function (cid) { return states[book.scopes[cid]] !== FALSE; });
+      });
+    });
+  }
+
   root.OSCond = {
     TRUE: TRUE,
     FALSE: FALSE,
@@ -215,6 +244,8 @@
     resolve: resolve,
     Settings: Settings,
     DERIVATIONS: DERIVATIONS,
-    scopeCss: scopeCss
+    ALWAYS_YOM_TOV: ALWAYS_YOM_TOV,
+    scopeCss: scopeCss,
+    sectionsShown: sectionsShown
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

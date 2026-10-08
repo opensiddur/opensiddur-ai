@@ -127,6 +127,11 @@
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'head'"/>
             </xsl:call-template>
+            <!-- Which section it heads, for the contents to know whether any of its text shows
+                 (markers.py, _sections). -->
+            <xsl:if test="@p:section">
+                <xsl:attribute name="data-section" select="@p:section"/>
+            </xsl:if>
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
