@@ -250,6 +250,8 @@ def poetic_lines(node, fragments, rule):
         remaining_notes = list(fragment['notes']['he'])
         for words in re.findall(r'[^'+re.escape(stops)+r']+['+re.escape(stops)+r']|[^'+re.escape(stops)+r']+$', data['text']):
             words = words.strip()
+            # A phrase dot is printed apart from the word, but must not wrap alone.
+            words = re.sub(r' +(?=·$)', '\u00a0', words)
             if not words:
                 continue
             if line is None:

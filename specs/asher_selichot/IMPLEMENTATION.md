@@ -6,7 +6,7 @@ The skill entrypoint dynamically loads the selected edition subsection. Shared t
 accept explicit book profiles; Asher uses scan-based identity because both languages
 repeat printed labels. Archive page labels remain candidates until image verified.
 
-Current coverage: title n1/n2 and the first five complete days through n83/n84.
+Current coverage: title n1/n2 and the first six complete days through n91/n92.
 Daily scope files record image-verified boundaries; the first day ends at n51/n52. Readings are derived from these images; OCR and independent readings check
 those readings. The source README records editorial additions and target ranges.
 

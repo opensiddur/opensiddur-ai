@@ -368,3 +368,11 @@
 {"urn": "urn:x-opensiddur:text:poem:yehabbienu_tsel_yado/mirdat_laylah", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yehabbienu_tsel_yado", "label_en": "mirdat laylah"}
 {"urn": "urn:x-opensiddur:text:poem:yehabbienu_tsel_yado/ahor_vaqedem", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yehabbienu_tsel_yado", "label_en": "ahor vaqedem"}
 {"urn": "urn:x-opensiddur:text:poem:yehabbienu_tsel_yado/qadem_na", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yehabbienu_tsel_yado", "label_en": "qadem na"}
+{"urn": "urn:x-opensiddur:text:poem:ani_yom_ira_eilekha_eqra", "status": "canonical", "label_he": "אני יום אירא אליך אקרא"}
+{"urn": "urn:x-opensiddur:text:poem:betulat_bat_yehudah", "status": "canonical", "label_he": "בתולת בת יהודה"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "status": "canonical", "label_he": "חוקר הכל וסוקר"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/hoqer", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "hoqer"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/yotsri_asher_bazeret", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "yotsri asher bazeret"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/tsur_leshimkha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "tsur leshimkha"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/hasin_qarov", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "hasin qarov"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/lo_ish_el", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "lo ish el"}

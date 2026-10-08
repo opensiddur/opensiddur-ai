@@ -29,7 +29,7 @@ class SecondDayTest(unittest.TestCase):
         self.assertTrue(all(m.get('unit')=='stanza' for m in milestones))
         self.assertIsNone(root.find(f'.//{{{TEI}}}lg[@corresp]'))
         lines=root.findall(f'.//{{{TEI}}}lg')[1].findall(f'{{{TEI}}}l')
-        self.assertEqual('לילה ויום ·',''.join(lines[0].itertext()).strip())
+        self.assertEqual('לילה ויום\u00a0·',''.join(lines[0].itertext()).strip())
         self.assertIsNotNone(lines[0].find(f'{{{TEI}}}pb'))
         choices=root.findall(f'.//{{{TEI}}}choice')
         self.assertEqual(['כי אתה׃','ישראל נושע · כי אתה׃'],[''.join(c.find(f'{{{TEI}}}expan').itertext()) for c in choices])

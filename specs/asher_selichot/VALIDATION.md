@@ -8,7 +8,7 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and the first five complete days are encoded through Archive n83/n84, before the sixth-day body heading. There are 134 XML files (67 per language): 60 independent named texts and seven book/service assemblies. Daily checkpoints below record current validation and rendering results. Independent Hebrew proofreading remains pending.
+Both title pages and the first six complete days are encoded through Archive n91/n92, before the seventh-day body heading. There are 142 XML files (71 per language): 63 independent named texts and eight book/service assemblies. Daily checkpoints below record current validation and rendering results. Independent Hebrew proofreading remains pending.
 
 ## First-three-day validation baseline
 
@@ -178,3 +178,22 @@ The bilingual service is complete through the next printed day heading. Schema v
   0 of 6272 Hebrew runs are set left to right; control: 6091 of 6272 flagged when every run is reversed.
 
 Both editions pass deliberately broken controls for alignment, note duplication, direction and stale contents destinations. Source-specific branch/join tests and importer checks pass. Rendered contents and the new pizmon pages were inspected visually.
+
+## Phrase-dot binding and fifth-day upstream merge
+
+Visual inspection at the fifth-day checkpoint found phrase dots stranded by wrapping. The sixth-day generator binds phrase dots to preceding words with nonbreaking spaces, including prose and expansion branches. Serialization preserves those spaces while normalizing source glyphs. The new geometry check rejects the original PDF (first occurrence on PDF page 21) and a synthetic isolated-dot control. Regeneration applies this correction throughout the encoded book.
+
+Before the fifth-day push, upstream code main `1e65d16` merged cleanly as `762ecc6`. Post-merge checks passed 80 tests and 132 subtests, with five skips. Both documentary and expanded compiler outputs were byte-identical before and after that merge. Projects main was already contained.
+
+## Sixth-day checkpoint (2026-10-07)
+
+The bilingual service is complete through the next printed day heading. Schema validation, source-order reverse comparison, note/choice audits, standalone URN/transclusion resolution and registry checks pass. Independent Hebrew proofreading remains pending.
+
+- Documentary: 69 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [13.55, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  0 of 2414 Hebrew runs are set left to right; control: 2352 of 2414 flagged when every run is reversed.
+- Expanded: 188 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  0 of 7586 Hebrew runs are set left to right; control: 7340 of 7586 flagged when every run is reversed.
+
+Both editions pass deliberately broken controls for alignment, note duplication, direction and stale contents destinations. Source-specific branch/join tests and importer checks pass. Rendered contents and the new pizmon pages were inspected visually.
+
+Sixth-day importer checks: 37 tests and 12 subtests pass. All 142 XML files validate and documentary readings match. The Hebrew-only final opening cue remains absent from both English editions. Phrase-dot binding checks pass across the full book and detect the deliberately broken control.
