@@ -196,3 +196,41 @@ Use `python -m opensiddur.importer.asher_selichot.check_book_pdf PDF --control`
 (and `--expanded` for that view) for the two-day book. It scopes the older
 first-day checks to the bookmarked first-day range, excludes the generated TOC,
 and independently checks second-day stanzas, notes and expansion boundaries.
+
+## Third-day continuation and swapped openings
+
+The third day starts below the second-day conclusion on n59/n60 and ends above
+the fourth-day section heading on n67/n68. Its verified printed page sequence is:
+
+| Printed page | Hebrew scan / Archive leaf | English scan / Archive leaf |
+|---|---|---|
+| 29 | s60 / n59 | s61 / n60 |
+| 30 | s62 / n61 | s63 / n62 |
+| 31 | s66 / n65 | s67 / n66 |
+| 32 | s64 / n63 | s65 / n64 |
+| 33 | s68 / n67 | s69 / n68 |
+
+The Archive openings for 31 and 32 are swapped. Read in image-verified printed
+order while retaining actual scan identities on facsimile links. Record the
+ordering evidence in `third-day-scope.json`; never infer a missing page solely
+from a discontinuity in the physical scan sequence.
+
+The three independent piyyutim use incipit identities `eqra_beshimkha_lehahaziq_bekha`,
+`taarog_eilekha_kaayal`, and `shahar_qamti`. Shahar qamti has six Hebrew verse
+groups paired with English prose, four נפשי refrain choices, and a final שחר
+choice supplying its entire opening including the refrain. The last English
+full refrain ends with a period, while the first ends with an exclamation mark;
+retain each printed occurrence. Keep all eight English footnotes at their
+image-verified anchors. The Palestine note follows “thy poor people.”
+
+The small Hebrew-only repeated-verse instruction on printed 31 retains Hebrew
+language and direction; mixed English/Hebrew rubrics retain their own language
+spans. Expanded day-three instructions follow the same verified opening,
+repeated-verse, prayer-pair and conclusion ranges as day two. Scope its secondary
+Full Kaddish with its own declaration, `first_day=false` and Ten Days false.
+
+Running page headers are pagination evidence, not body headings. In particular,
+“PROPITIATORY PRAYERS FOR THE FIRST DAY.” above Bemotzaei menuhah is an English
+running header: retain it in source evidence, omit it from the poem body and
+TOC, and preserve the actual Hebrew פזמון heading. The day headings remain
+at the top bookmark level, above the piyyut's printed heading.

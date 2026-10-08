@@ -1,9 +1,9 @@
-description: Asher 1912 complete first and second days through n60, work in progress.
+description: Asher 1912 complete first three days through n68, work in progress.
   Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — first and second days
+  title: Asher Selichoth — first three days
 priority:
   transclusion:
   - asher_selichot_he_1912

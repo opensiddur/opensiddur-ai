@@ -340,3 +340,12 @@
 {"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/mituvkha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "mituvkha"}
 {"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/yivashu", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "yivashu"}
 {"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/haqshivah", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "haqshivah"}
+{"urn": "urn:x-opensiddur:text:poem:eqra_beshimkha_lehahaziq_bekha", "status": "canonical", "label_he": "eqra beshimkha lehahaziq bekha"}
+{"urn": "urn:x-opensiddur:text:poem:taarog_eilekha_kaayal", "status": "canonical", "label_he": "taarog eilekha kaayal"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti", "status": "canonical", "label_he": "שחר קמתי"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti/shahar_qamti", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "shahar qamti"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti/lefanim_zot", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "lefanim zot"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti/mizbeah", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "mizbeah"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti/hen_bihyot", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "hen bihyot"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti/hen_qedem", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "hen qedem"}
+{"urn": "urn:x-opensiddur:text:poem:shahar_qamti/hazeh_qadosh", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "hazeh qadosh"}

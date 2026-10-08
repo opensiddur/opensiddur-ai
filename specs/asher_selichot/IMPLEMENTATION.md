@@ -131,3 +131,23 @@ checks footnotes and page boundaries separately from supplied text. The book PDF
 checker uses outline destinations to scope legacy first-day checks and checks
 second-day stanza alignment, footnote occurrences, expansion branches and
 bookmark hierarchy with failing controls.
+
+
+## Third-day continuation
+
+Extend both book entrypoints through n67/n68, before the fourth-day heading.
+Follow verified printed page order 29, 30, 31, 32, 33: the Archive openings for
+31 and 32 are swapped. Preserve actual facsimile identities and bilingual
+pairing separately. Three new reusable poem modules and `third_day.xml` bring
+the projects to 59 files per language (54 independent texts, five assemblies).
+Generalize numbered-day authoring and reverse checks, retaining day-two wrappers.
+Preserve Hebrew-only verse instructions and all eight English notes. Use six
+stanza alignment ranges, four refrain choices and one complete-opening choice
+for Shahar qamti. Expanded cues use the verified existing ranges with a separate
+third-day Kaddish declaration. Exclude fourth-day material.
+
+Remove the first pizmon's miscategorized English running page header from the
+body and contents while retaining source evidence and the Hebrew printed heading.
+Synthetic checks exercise reordered page identities, closed day-specific scopes,
+Hebrew-only rubric direction, and running-header exclusion. Render checks audit
+day-three stanzas, notes, expansions and day boundaries with broken controls.

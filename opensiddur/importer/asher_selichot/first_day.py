@@ -88,7 +88,7 @@ def opening(lang, project, data):
     return root
 
 
-def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False):
+def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False, include_third_day=False):
     urn = ('urn:x-opensiddur:text:siddur:selichot' + ('/expanded' if expanded else '')) if book else FIRST_DAY
     title = 'Asher Selichoth' if book else 'First-day Selichot'
     if expanded:
@@ -98,6 +98,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
     edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading; remaining book sections await encoding.'
     if book and include_second_day:
         edition.text = 'First and second days through Archive leaves n59–60, ending before the third-day heading. Hebrew pointing awaits independent proofreading; remaining days await encoding.'
+    if book and include_third_day:
+        edition.text = 'First three days through Archive leaves n67–68, ending before the fourth-day heading. Hebrew pointing awaits independent proofreading; remaining days await encoding.'
     if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     if book:
@@ -108,12 +110,16 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         if include_second_day:
             from .second_day import SECOND_DAY
             element(div, 'j:transclude', target=SECOND_DAY)
+        if include_third_day:
+            from .third_day import THIRD_DAY
+            element(div, 'j:transclude', target=THIRD_DAY)
         return root
     return root
 
 
 def documents(source):
     include_second_day = (source/'second-day.json').exists()
+    include_third_day = (source/'third-day.json').exists()
     structure = source.parent/'poetry-structure.json'
     poetry = json.loads(structure.read_text())['units'] if structure.exists() else {}
     title_data = json.loads((source/'title-pages.json').read_text())
@@ -121,8 +127,8 @@ def documents(source):
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
-        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day)
-        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day)
+        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day)
+        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day)
         service = entry(lang, project, title_data)
         service_div = service.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         root = opening(lang, project, reading[lang])

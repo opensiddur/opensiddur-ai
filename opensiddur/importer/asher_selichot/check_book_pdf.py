@@ -1,4 +1,4 @@
-"""Verify both encoded days, the contents page and the bookmark hierarchy."""
+"""Verify encoded days, the contents page and the bookmark hierarchy."""
 import argparse
 import copy
 import subprocess
@@ -22,9 +22,9 @@ def outline_rows(reader):
     return rows
 
 
-def day_bookmarks(rows):
+def day_bookmarks(rows, captions=("FIRST DAY", "SECOND DAY")):
     days=[]
-    for caption in ['FIRST DAY','SECOND DAY']:
+    for caption in captions:
         hits=[r for r in rows if caption in r[1] and r[0]==0]
         if len(hits)!=1:raise ValueError('Each day requires one top-level bookmark: '+caption)
         days.append(hits[0])
@@ -99,11 +99,53 @@ def second_day_check(tree, expanded):
     return deltas
 
 
+def third_day_check(tree, expanded):
+    for chars in latin_note_runs(tree).values():
+        xs=[float(c.get('x')) for c in chars]
+        if any(b<a-0.05 for a,b in zip(xs,xs[1:])):
+            raise ValueError('Reversed third-day Latin footnote')
+    he,en=[],[]
+    for number,page in enumerate(tree.findall('page'),1):
+        gutter=288 if number%2 else 324
+        for line in page.findall('.//line'):
+            chars=line.findall('.//char')
+            h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
+            e=[c for c in chars if float(c.get('x'))>gutter]
+            if h:he.append((number,float(h[0].get('y')),''.join(base(c.get('c')) for c in sorted(h,key=lambda c:float(c.get('x')),reverse=True))))
+            if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
+    anchors=[('שחרקמתי','At dawn of day I'),('לפניםזאת','In former days'),('מזבח','While the altar'),
+             ('הןבהיות','Lo, when the service'),('הןקדם','Formerly the clean priests'),('חזהקדוש','Behold, O most holy One')]
+    deltas=[];previous=(0,0)
+    for ha,ea in anchors:
+        h=next((r for r in he if ha in r[2] and r[:2]>=previous),None)
+        e=next((r for r in en if ea in r[2] and r[:2]>=previous),None)
+        if h is None or e is None:raise ValueError('Missing third-day stanza '+ha+' / '+ea)
+        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Third-day stanza alignment failed: '+str((h,e)))
+        deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
+    text=plain(' '.join(l.get('text','') for l in tree.findall('.//line')))
+    for phrase,count in [('this prayer is intended for the Reader.',1),('During the crusades.',1),
+                         ('The time of our redemption.',1),('our brethren in Palestine.',1),
+                         ('Of the whole nation.',1),('before the destruction of the temple.',1),
+                         ('See Joma ii. 2.',1),('Joma xxv.',1)]:
+        if text.count(phrase)!=count:raise ValueError('Third-day footnote occurrence: '+phrase)
+    if 'FOURTH DAY' in text:raise ValueError('Fourth-day material is outside the encoded boundary')
+    body=' '.join(' '.join(r[2] for r in en).split())
+    if expanded:
+        for phrase in ['Say ', 'Conclude the Service', 'Wherever the words','(Let my life,','(At dawn of day &c.)']:
+            if phrase in body:raise ValueError('Expanded third day retains a fulfilled cue: '+phrase)
+        if body.count('Omnipotent King, who')!=3:raise ValueError('Third day requires three prayer-pair expansions')
+        if body.count('May the prayers and supplications')!=1:raise ValueError('Third day requires one closing Full Kaddish')
+    else:
+        if 'Conclude the Service as on the first day' not in body:raise ValueError('Missing third-day closing rubric')
+        if body.count('(Let my life,')!=5:raise ValueError('Expected four printed refrain cues plus the rubric’s quoted cue')
+    return deltas
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('pdf',type=Path);parser.add_argument('--expanded',action='store_true');parser.add_argument('--control',action='store_true')
     args=parser.parse_args(argv)
-    reader=PdfReader(args.pdf);rows=outline_rows(reader);days=day_bookmarks(rows)
+    reader=PdfReader(args.pdf);rows=outline_rows(reader);days=day_bookmarks(rows, ("FIRST DAY", "SECOND DAY", "THIRD DAY") if any("THIRD DAY" in r[1] for r in rows) else ("FIRST DAY", "SECOND DAY"))
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
         subprocess.run(['mutool','draw','-F','stext','-o',str(path),str(args.pdf)],check=True,capture_output=True)
@@ -116,10 +158,12 @@ def main(argv=None):
                 digits=[c for c in line.findall('.//char') if c.get('c','').isdigit()]
                 xs=[float(c.get('x')) for c in digits]
                 if xs!=sorted(xs):raise ValueError('Reversed TOC page number')
-        first=slice_day(tree,days[0],days[1],keep_titles=True);second=slice_day(tree,days[1])
+        first=slice_day(tree,days[0],days[1],keep_titles=True);second=slice_day(tree,days[1],days[2] if len(days)>2 else None)
+        third=slice_day(tree,days[2]) if len(days)>2 else None
         first_deltas=check_first(first,complete=True,expanded=args.expanded)
         poem_deltas=check_poem(first,args.expanded,complete=True)
         second_deltas=second_day_check(second,args.expanded)
+        third_deltas=third_day_check(third,args.expanded) if third is not None else []
         if args.control:
             first_controls(first,complete=True,expanded=args.expanded);poem_controls(first,args.expanded,complete=True)
             broken=[(1 if 'SECOND DAY' in r[1] else r[0],*r[1:]) for r in rows]
@@ -142,7 +186,24 @@ def main(argv=None):
             try:second_day_check(broken,args.expanded)
             except ValueError:pass
             else:raise AssertionError('Shifted second-day stanza escaped detection')
-        print(f'{len(reader.pages)} pages; contents generated; day bookmarks above pizmons; first-day prayers {first_deltas}; first pizmon {poem_deltas}; second pizmon {second_deltas}; footnotes and expansion boundaries checked; controls={args.control}')
+        if args.control and third is not None:
+            broken=copy.deepcopy(third)
+            note=next(l for l in broken.findall('.//line') if 'Of the whole nation.' in l.get('text',''))
+            note.getparent().append(copy.deepcopy(note))
+            try:third_day_check(broken,args.expanded)
+            except ValueError:pass
+            else:raise AssertionError('Duplicate third-day note escaped detection')
+            broken=copy.deepcopy(third)
+            for number,page in enumerate(broken.findall('page'),1):
+                gutter=288 if number%2 else 324
+                for line in page.findall('.//line'):
+                    if 'In former days' in plain(line.get('text','')):
+                        for char in line.findall('.//char'):
+                            if float(char.get('x'))>gutter:char.set('y',str(float(char.get('y'))+50))
+            try:third_day_check(broken,args.expanded)
+            except ValueError:pass
+            else:raise AssertionError('Shifted third-day stanza escaped detection')
+        print(f'{len(reader.pages)} pages; contents generated; day bookmarks above pizmons; first-day prayers {first_deltas}; first pizmon {poem_deltas}; second pizmon {second_deltas}; third pizmon {third_deltas}; footnotes and expansion boundaries checked; controls={args.control}')
     return 0
 
 
