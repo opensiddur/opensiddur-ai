@@ -301,6 +301,7 @@ def book_json(
             for f in book.features
         ],
         "basic": settings_catalogue(book, controls),
+        "sections": book.sections,
         "calendarScopes": calendar_scopes(book),
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change

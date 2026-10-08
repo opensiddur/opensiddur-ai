@@ -500,6 +500,13 @@ class TestBuildBook(unittest.TestCase):
         result = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults);", book)
         self.assertEqual(result["css"].strip(), css)
 
+    def test_sections_shown(self):
+        node = require_node(self)
+        book = {"scopes": [0, 1, 1], "sections": [None, [[0]], [[0], [1]], [[0, 2]]]}
+        result = run_js(node, "return OSCond.sectionsShown(args, ['false', 'true']);", book)
+        # Scope 0 is false, scopes 1 and 2 true: a section shows if one of its sets is clear.
+        self.assertEqual(result, [True, False, True, False])
+
     def test_the_device_follows_the_reader(self):
         node = require_node(self)
         book = self._book(self._build())

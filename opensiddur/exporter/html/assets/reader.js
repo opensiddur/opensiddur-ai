@@ -406,9 +406,12 @@
     var frame = dialogFrame("os-contents", "Contents", "Close");
     var list = el("ol", { class: "os-contents" });
     var headings = document.querySelectorAll(".os-book h1, .os-book h2, .os-book h3");
+    var shown = OSCond.sectionsShown(book, OSCond.scopeCss(book, reader, book.defaults).states);
     Array.prototype.forEach.call(headings, function (heading, index) {
       if (heading.closest(".col-parallel")) return;  // a translated heading repeats its row's
       if (!heading.getClientRects().length) return;  // in a passage the settings hide
+      // A section none of whose text will show, though its heading does.
+      if (heading.dataset.section !== undefined && !shown[Number(heading.dataset.section)]) return;
       if (!heading.id) heading.id = "os-heading-" + index;
       var link = el("a", { href: "#" + heading.id, text: heading.textContent.trim() });
       link.addEventListener("click", function () { frame.dialog.close(); });

@@ -55,6 +55,9 @@ P_SPAN = f"{{{PROCESSING_NAMESPACE}}}span"
 P_PINNED = f"{{{PROCESSING_NAMESPACE}}}pinned"
 P_PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
 P_SILENT = f"{{{PROCESSING_NAMESPACE}}}silent"
+P_SECTION = f"{{{PROCESSING_NAMESPACE}}}section"
+P_HEADING_LEVEL = f"{{{PROCESSING_NAMESPACE}}}heading-level"
+TEI_HEAD = f"{{{TEI_NS}}}head"
 TEI_MILESTONE = f"{{{TEI_NS}}}milestone"
 TEI_NOTE = f"{{{TEI_NS}}}note"
 
@@ -99,6 +102,10 @@ class BookConditions:
     scope_chars: list[int] = field(default_factory=list)
     #: The characters of text governed by any scope, each counted once.
     conditional_chars: int = 0
+    #: For each section (a heading, and what follows it up to the next heading at its level or
+    #: above), None if some of its text is governed by no scope, or else the distinct sets of
+    #: scopes that govern its runs of text: it shows if any one set has no scope that is false.
+    sections: list[list[list[int]] | None] = field(default_factory=list)
 
 
 def _leaf_values(condition: dict[str, Any]):
@@ -235,6 +242,55 @@ def _span(text: str, scopes: frozenset[int]) -> etree.ElementBase:
     return span
 
 
+def _sections(root: etree.ElementBase, measured, book: BookConditions) -> None:
+    """Which scopes each section's text turns on, so that the book's contents can leave out a
+    section none of whose text will show (see BookConditions.sections).
+
+    A heading in the translation column repeats its row's, and is no section of its own; its
+    text, like any heading's, is not the section's. Nor are a scope's markers -- the rubric says
+    when the text applies, and is not the text.
+    """
+    open_sections: list[tuple[int, int]] = []  # (level, index), innermost last
+    found: list[set[frozenset[int]] | None] = []
+
+    def record(text, active):
+        if not (text and text.strip()):
+            return
+        for _, index in open_sections:
+            if found[index] is None:
+                continue
+            if active:
+                found[index].add(active)
+            else:
+                found[index] = None
+
+    def walk(element, stream):
+        if element.tag == P_PARALLEL_ITEM:
+            stream = element.get("role")
+        if element.tag == TEI_HEAD:
+            if stream != "parallel":
+                level = int(element.get(P_HEADING_LEVEL) or 2)
+                while open_sections and open_sections[-1][0] >= level:
+                    open_sections.pop()
+                index = len(found)
+                found.append(set())
+                open_sections.append((level, index))
+                element.set(P_SECTION, str(index))
+            return
+        if _is_marker(element):
+            return
+        record(element.text, measured[element][0])
+        for child in element:
+            if is_element_node(child):
+                walk(child, stream)
+                record(child.tail, measured[child][1])
+            else:
+                record(child.tail, measured[element][0])
+
+    walk(root, None)
+    book.sections = [None if sets is None else sorted(sorted(s) for s in sets) for sets in found]
+
+
 def _assign(root: etree.ElementBase, measured) -> None:
     """Label each element and run of text with the scopes that govern it and not its parent."""
 
@@ -338,6 +394,8 @@ def prepare(root: etree.ElementBase) -> BookConditions:
     openers, book = _number_scopes(root)
     if book.scopes:
         _silence(openers)
-        _assign(root, _measure(root))
+        measured = _measure(root)
+        _sections(root, measured, book)
+        _assign(root, measured)
         measure_text(root, book)
     return book

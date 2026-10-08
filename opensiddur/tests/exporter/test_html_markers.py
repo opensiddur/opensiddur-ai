@@ -237,6 +237,52 @@ class TestFeatures(unittest.TestCase):
                          {"flag": "binary", "day": "numeric", "rite": "string"})
 
 
+class TestSections(unittest.TestCase):
+    """Which scopes each section's text turns on, for the contents."""
+
+    @staticmethod
+    def _head(text, level=2):
+        return f'<tei:head p:heading-level="{level}">{text}</tei:head>'
+
+    def test_unconditional_text_always_shows(self):
+        root = _tree("<tei:div>" + self._head("A") + "<tei:p>always</tei:p>" + _cond("a")
+                     + "<tei:p>sometimes</tei:p>" + _end("a") + "</tei:div>")
+        self.assertEqual(prepare(root).sections, [None])
+
+    def test_all_conditional_text(self):
+        root = _tree("<tei:div>" + self._head("A") + _cond("a") + "<tei:p>x</tei:p>" + _end("a")
+                     + _cond("b") + "<tei:p>y " + _cond("c") + "z" + _end("c") + "</tei:p>"
+                     + _end("b") + "</tei:div>")
+        self.assertEqual(prepare(root).sections, [[[0], [1], [1, 2]]])
+
+    def test_a_section_runs_to_the_next_heading_at_its_level(self):
+        """A chapter shows if any of its parts does."""
+        root = _tree("<tei:div>" + self._head("Chapter", 2)
+                     + "<tei:div>" + self._head("Part 1", 3) + _cond("a") + "<tei:p>x</tei:p>"
+                     + _end("a") + "</tei:div>"
+                     + "<tei:div>" + self._head("Part 2", 3) + _cond("b") + "<tei:p>y</tei:p>"
+                     + _end("b") + "</tei:div></tei:div>"
+                     + "<tei:div>" + self._head("Next chapter", 2) + "<tei:p>z</tei:p></tei:div>")
+        root_sections = prepare(root).sections
+        self.assertEqual(root_sections, [[[0], [1]], [[0]], [[1]], None])
+        heads = [h.get(f"{{{P}}}section") for h in root.iter(f"{{{TEI_NS}}}head")]
+        self.assertEqual(heads, ["0", "1", "2", "3"])
+
+    def test_headings_and_rubrics_are_not_the_sections_text(self):
+        root = _tree("<tei:div>" + self._head("A") + _cond("a", rubric="Say:")
+                     + "<tei:p>x</tei:p>" + _end("a") + "</tei:div>")
+        self.assertEqual(prepare(root).sections, [[[0]]])
+
+    def test_a_translated_heading_is_not_a_section(self):
+        root = _tree(
+            '<p:parallel><p:parallelItem role="primary">' + self._head("Heb") + _cond("a")
+            + '<tei:p>h</tei:p>' + _end("a") + '</p:parallelItem><p:parallelItem role="parallel">'
+            + self._head("Eng") + _cond("b") + '<tei:p>e</tei:p>' + _end("b")
+            + '</p:parallelItem></p:parallel>')
+        book = prepare(root)
+        self.assertEqual(book.sections, [[[0], [1]]])
+
+
 class TestText(unittest.TestCase):
     """How much text each scope governs, for ranking the settings."""
 

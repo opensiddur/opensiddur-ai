@@ -223,6 +223,17 @@
     return { css: css, states: states };
   }
 
+  // Whether each section of the book has text that shows, given the expressions' states:
+  // book.sections[i] is null when some of its text is governed by no scope, or else the sets
+  // of scopes its runs of text turn on -- it shows if one set has no scope that is false.
+  function sectionsShown(book, states) {
+    return (book.sections || []).map(function (sets) {
+      return sets === null || sets.some(function (set) {
+        return set.every(function (cid) { return states[book.scopes[cid]] !== FALSE; });
+      });
+    });
+  }
+
   root.OSCond = {
     TRUE: TRUE,
     FALSE: FALSE,
@@ -234,6 +245,7 @@
     Settings: Settings,
     DERIVATIONS: DERIVATIONS,
     ALWAYS_YOM_TOV: ALWAYS_YOM_TOV,
-    scopeCss: scopeCss
+    scopeCss: scopeCss,
+    sectionsShown: sectionsShown
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);
