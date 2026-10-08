@@ -105,7 +105,8 @@ def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
 
     Returns ``(succeeded, output, needs_rerun)``. ``succeeded`` reflects exit
     code; ``needs_rerun`` is True when the log contains rerun indicators
-    (which reledmac/reledpar emit on every non-final pass).
+    or the table of contents changed during this pass. Pagination changes can
+    leave stale TOC pages without producing a log warning.
     """
     cmd = [
         "lualatex",
@@ -119,6 +120,8 @@ def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
 
     # Stream output live so long passes are observable. We later parse the .log
     # file for rerun markers (more reliable than stdout).
+    toc_path = output_dir / f"{tex_file.stem}.toc"
+    previous_toc = toc_path.read_bytes() if toc_path.exists() else None
     result = subprocess.run(cmd, text=True, cwd=tex_file.parent)
     output = ""
     if log_path.exists():
@@ -139,6 +142,8 @@ def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
             "reledpar may not have created",
         )
     )
+    if toc_path.exists() and toc_path.read_bytes() != previous_toc:
+        needs_rerun = True
     return result.returncode == 0, output, needs_rerun
 
 

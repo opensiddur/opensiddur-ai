@@ -512,6 +512,26 @@ class TestRunLualatex(unittest.TestCase):
         self.assertEqual(cmd[-1], "doc.tex")
         self.assertEqual(mock_run.call_args.kwargs["cwd"], self.tex_file.parent)
 
+    def test_manual_loop_waits_for_toc_pages_even_without_log_markers(self):
+        toc = self.output_dir / 'doc.toc'
+        contents = iter([b'heading page 64', b'heading page 63', b'heading page 63'])
+        def run(*args, **kwargs):
+            toc.write_bytes(next(contents))
+            return Mock(returncode=0)
+        with patch('subprocess.run', side_effect=run) as command:
+            self.assertTrue(_run_manual_loop(self.tex_file, self.output_dir, max_runs=5))
+        self.assertEqual(3, command.call_count)
+
+    def test_unchanged_toc_does_not_force_another_pass(self):
+        toc = self.output_dir / 'doc.toc'
+        toc.write_bytes(b'heading page 63')
+        def run(*args, **kwargs):
+            toc.write_bytes(b'heading page 63')
+            return Mock(returncode=0)
+        with patch('subprocess.run', side_effect=run) as command:
+            self.assertTrue(_run_manual_loop(self.tex_file, self.output_dir, max_runs=5))
+        self.assertEqual(1, command.call_count)
+
 
 class TestRunBibtex(unittest.TestCase):
     def setUp(self):
