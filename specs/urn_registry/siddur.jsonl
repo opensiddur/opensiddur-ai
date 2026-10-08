@@ -1306,3 +1306,21 @@
 {"urn": "urn:x-opensiddur:text:siddur:selichot/fourth_day/final_prayer_cue/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fourth_day/final_prayer_cue", "label_en": "Printed instruction"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/fourth_day/conclusion_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fourth_day", "label_en": "conclusion instruction"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/fourth_day/conclusion_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fourth_day/conclusion_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "status": "canonical", "label_he": "סליחות ליום חמישי", "label_en": "PROPITIATORY PRAYERS FOR THE FIFTH DAY."}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/opening_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "opening instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/opening_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day/opening_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/lo_kehatainu", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "lo kehatainu"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/keraham_av", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "keraham av"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/selah_na", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "selah na"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/hateh_elohai", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "hateh elohai"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/first_prayer_cue", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "first prayer cue"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/first_prayer_cue/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day/first_prayer_cue", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/im_avoneinu", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "im avoneinu"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/verses_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "verses instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/verses_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day/verses_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/refrain_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "refrain instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/refrain_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day/refrain_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/final_prayer_cue", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "final prayer cue"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/final_prayer_cue/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day/final_prayer_cue", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/conclusion_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day", "label_en": "conclusion instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/fifth_day/conclusion_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/fifth_day/conclusion_instruction", "label_en": "Printed instruction"}

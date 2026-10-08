@@ -185,7 +185,7 @@ def numbered_day_check(tree, expanded, data, scope):
         if h is None or e is None:raise ValueError('Missing numbered-day stanza '+str(anchor))
         if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Numbered-day stanza alignment failed: '+str((h,e)))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
-    normalize=lambda s:' '.join(re.sub(r'-\s+','',plain(s)).split())
+    normalize=lambda s:' '.join(re.sub(r'-\s+','',re.sub(r'[\u0590-\u05ff]', '', plain(s))).split())
     text=normalize(' '.join(l.get('text','') for l in tree.findall('.//line')))
     notes=Counter(normalize(n['text']) for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
     for phrase,count in notes.items():
@@ -237,8 +237,10 @@ def main(argv=None):
             if args.control:
                 broken=copy.deepcopy(portion)
                 phrase=next(n['text'] for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
-                line=next(l for l in broken.findall('.//line') if phrase[:25] in plain(l.get('text','')))
-                line.getparent().append(copy.deepcopy(line))
+                fingerprint=' '.join(re.sub(r'[\u0590-\u05ff]', '', phrase).split())[:25]
+                line=next(l for l in broken.findall('.//line') if fingerprint in plain(l.get('text','')))
+                duplicate=copy.deepcopy(line);duplicate.set('text',phrase)
+                line.getparent().append(duplicate)
                 try:numbered_day_check(broken,args.expanded,data,scope)
                 except ValueError:pass
                 else:raise AssertionError('Duplicate numbered-day note escaped detection')

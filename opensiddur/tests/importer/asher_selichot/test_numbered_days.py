@@ -37,3 +37,27 @@ class NumberedDaysTest(unittest.TestCase):
         self.assertEqual(rows[::2],day_bookmarks(rows,[word+' DAY' for word in words]))
         rows[-2]=(1,*rows[-2][1:])
         with self.assertRaises(ValueError):day_bookmarks(rows,[word+' DAY' for word in words])
+
+    def test_mixed_footnote_keeps_hebrew_language_and_anchor(self):
+        from opensiddur.importer.asher_selichot.first_day import words_with_notes
+        from opensiddur.importer.asher_selichot.build import XML
+        node=etree.Element(f'{{{TEI}}}p')
+        words_with_notes(node,'A friend is remembered.',[{'anchor':'friend','text':'קרן הפוך is an allusion to Job.'}],'en')
+        note=node.find(f'{{{TEI}}}note')
+        self.assertEqual('en',note.get(XML+'lang'))
+        self.assertEqual('he',note.find(f'{{{TEI}}}foreign').get(XML+'lang'))
+        self.assertEqual('A friend',node.text)
+        self.assertEqual(' is remembered.',note.tail)
+        self.assertEqual('קרן הפוך is an allusion to Job.',''.join(note.itertext()))
+
+    def test_english_word_join_retains_source_page_break(self):
+        from opensiddur.importer.asher_selichot.second_day import printed_unit
+        node=etree.Element(f'{{{TEI}}}body')
+        def fragment(scan,text,join=False):
+            return {'he':{'scan':f's{scan}','printed_page':'39','text':'שיר'},
+                    'en':{'scan':f's{scan+1}','printed_page':'39','text':text,'join_next':join},
+                    'notes':{'he':[],'en':[]}}
+        printed_unit(node,{'kind':'poem','fragments':[fragment(80,'sacri',True),fragment(82,'fices.')]},'en','urn:x-opensiddur:text:poem:fixture')
+        para=node.find(f'.//{{{TEI}}}p')
+        self.assertEqual('sacrifices.',''.join(para.itertext()).strip())
+        self.assertIn('/n82_medium.jpg',para.find(f'{{{TEI}}}pb').get('facs'))

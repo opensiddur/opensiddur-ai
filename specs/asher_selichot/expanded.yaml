@@ -1,9 +1,9 @@
-description: Asher 1912 expanded first four days through n76, with Birnbaum
+description: Asher 1912 expanded first five days through n84, with Birnbaum
   Full Kaddish fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded first four days
+  title: Asher Selichoth — expanded first five days
 priority:
   transclusion:
   - asher_selichot_he_1912
