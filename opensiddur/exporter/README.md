@@ -54,8 +54,30 @@ or `python -m opensiddur.exporter.books --format html` for the books in the sett
   condition: what the document declared there, and what was derived from it.
 - The settings file's declarations become the book's defaults. Read without scripts, the
   page shows exactly what the PDF of the same settings file shows.
-- Calendar settings are not yet answered on the device. Passages that depend on them show
-  every option with its rubric, as in print.
+- Calendar settings are not yet answered on the device. Until they are, the reader sets them
+  by hand. Passages that depend on one left unset show every option with its rubric, as in
+  print.
+
+The settings panel has two parts:
+- **The top:** the settings that decide the most of the book's text. The build decides which,
+  for each book, and writes them into it.
+- **An Advanced box,** holding every feature the book's conditions read, one by one.
+
+The top settings are plain choices that set several features at once: where, the day of the
+week, the kind of day, the service, the reading cycle and the rite. They are defined in
+`html/basic_settings.yaml`, along with the words for single features. Each option sets only
+what it is sure of. Options that would change nothing in a given book are left out of it.
+
+The kinds of day are not written by hand. `html/kinds_of_day.py` defines each kind as a test on
+what the compiler derives for a date ("Pesah, first day" is the dates on which `pesah` is 1). It
+scans five years of the calendar, in Israel and outside it, and keeps only the features that
+come out the same on every such date. So Rosh Hodesh leaves Hanukkah unset, because Rosh Hodesh
+Tevet falls in Hanukkah, and an ordinary day leaves the omer unset.
+
+The result is committed as `html/kinds_of_day.json`. After changing the kinds, or the calendar,
+run `python -m opensiddur.exporter.html.kinds_of_day`; a test fails if the file is stale.
+
+The reading cycle is the reader's in an electronic book, so the humash carries both cycles.
 
 The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
 (`condition_eval.py`, `client_settings.py`). The tests run the same corpus

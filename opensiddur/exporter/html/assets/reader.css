@@ -187,17 +187,44 @@ p.rubric { text-align: start; }
 
 .os-dialog {
   width: min(40rem, calc(100vw - 32px));
-  max-height: calc(100vh - 4rem);
+  max-height: calc(100vh - 2rem);
+  padding: 0;
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   font: 0.95rem/1.4 system-ui, sans-serif;
 }
+/* A header and a footer that stay put, and a body between them that scrolls: the buttons are
+   always in reach, however many settings there are. */
+.os-dialog[open] { display: flex; flex-direction: column; }
 .os-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
-.os-dialog h2 { margin-top: 0; font-size: 1.25rem; }
+.os-dialog-header, .os-dialog-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  flex: none;
+}
+.os-dialog-header { justify-content: space-between; border-bottom: 1px solid var(--line); }
+.os-dialog-footer { border-top: 1px solid var(--line); }
+.os-dialog-header h2 { margin: 0; font-size: 1.25rem; }
+.os-dialog-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0.5rem 1rem 1rem; }
+.os-dialog .os-x {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  border: 0;
+  background: none;
+}
+.os-dialog .os-primary { font-weight: 600; border-color: var(--accent); }
+.os-spacer { flex: 1; }
 .os-dialog fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 0 0 1rem; }
 .os-dialog legend { font-weight: 600; padding: 0 0.3rem; }
+.os-basic { margin: 0.5rem 0 1rem; }
+.os-advanced > summary { cursor: pointer; font-weight: 600; margin: 0.5rem 0; }
 .os-setting {
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 1.4fr);
@@ -205,10 +232,13 @@ p.rubric { text-align: start; }
   align-items: center;
   margin: 0.4rem 0;
 }
-.os-setting select { font: inherit; max-width: 100%; }
+.os-setting select, .os-setting input { font: inherit; max-width: 100%; }
 .os-setting-count { grid-column: 2; font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 30rem) {
+  .os-setting { grid-template-columns: 1fr; }
+  .os-setting-count { grid-column: 1; }
+}
 .os-note { color: var(--muted); font-size: 0.85rem; }
-.os-dialog-buttons { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 1rem; }
 .os-contents { padding-inline-start: 1.2rem; }
 .os-contents a { color: var(--ink); }
 .os-contents-h2 { margin-inline-start: 1rem; }

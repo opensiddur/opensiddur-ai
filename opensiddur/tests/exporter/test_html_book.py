@@ -12,8 +12,19 @@ from lxml import etree
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.html.css import typography_css, xslt_parameters
-from opensiddur.exporter.html.html import XSLT_FILE, build_book
-from opensiddur.exporter.html.markers import prepare
+from opensiddur.exporter.client_settings import is_reader_supplied
+from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
+from opensiddur.exporter.derived_settings import STATIC_DEFAULTS
+from opensiddur.exporter.html.html import (
+    XSLT_FILE,
+    basic_controls,
+    build_book,
+    feature_words,
+    settings_catalogue,
+)
+from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
+from opensiddur.exporter.linear import get_linear_data, reset_linear_data
 from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.typography import TypographyConfig
 from opensiddur.tests.exporter.js_engine import require_node, run_js
@@ -232,6 +243,111 @@ class TestCss(unittest.TestCase):
         self.assertNotIn(".ch { display: none; }", css)
 
 
+class TestSettingsCatalogue(unittest.TestCase):
+    """Which settings reach the top of a book's panel, decided when it is built."""
+
+    CONTROLS = [
+        {"id": "both", "label": "Both", "features": [["t:x", "a"], ["t:x", "b"]],
+         "options": [{"label": "On", "set": {"t:x": {"a": True, "b": True}}}]},
+        {"id": "unread", "label": "Unread", "features": [["t:y", "z"]],
+         "options": [{"label": "On", "set": {"t:y": {"z": True}}}]},
+    ]
+
+    @staticmethod
+    def _book(chars: dict[str, int]) -> BookConditions:
+        """One scope per feature, each reading its feature as true."""
+        features = [Feature("t:x", name, [True], cids=[i]) for i, name in enumerate(chars)]
+        expressions = [{"cond": {"fs": "t:x", "f": [{"name": name, "v": True}]}, "pinned": {}}
+                       for name in chars]
+        book = BookConditions(expressions=expressions, scopes=list(range(len(chars))),
+                              features=features, scope_chars=list(chars.values()))
+        book.conditional_chars = sum(book.scope_chars)
+        return book
+
+    @staticmethod
+    def _names(entries):
+        return [entry.get("label") or entry["name"] for entry in entries]
+
+    def test_a_control_takes_the_text_of_all_its_features(self):
+        book = self._book({"a": 30, "b": 30, "c": 50})
+        self.assertEqual(self._names(settings_catalogue(book, self.CONTROLS)), ["Both", "c"])
+
+    def test_a_feature_a_control_covers_is_not_offered_alone(self):
+        book = self._book({"a": 10, "c": 50})
+        self.assertNotIn("a", self._names(settings_catalogue(book, self.CONTROLS)))
+
+    def test_a_control_the_book_has_no_use_for_is_left_out(self):
+        book = self._book({"c": 50})
+        self.assertEqual(self._names(settings_catalogue(book, self.CONTROLS)), ["c"])
+
+    def test_at_most_six(self):
+        book = self._book({name: 10 for name in "cdefghij"})
+        self.assertEqual(len(settings_catalogue(book, [])), 6)
+
+    def test_options_that_change_nothing_are_dropped(self):
+        controls = [{"id": "c", "label": "C", "features": [["t:x", "a"], ["t:y", "z"]],
+                     "options": [{"label": "Useful", "set": {"t:x": {"a": False}}},
+                                 {"label": "Idle", "set": {"t:y": {"z": True}}}]}]
+        entry = settings_catalogue(self._book({"a": 10}), controls)[0]
+        self.assertEqual([option["label"] for option in entry["options"]], ["Useful"])
+
+    def test_a_control_with_nothing_useful_is_dropped(self):
+        controls = [{"id": "c", "label": "C", "features": [["t:x", "a"]],
+                     "options": [{"label": "Idle", "set": {"t:y": {"z": True}}}]}]
+        self.assertEqual(self._names(settings_catalogue(self._book({"a": 10}), controls)), ["a"])
+
+    def test_the_books_default_is_still_an_option(self):
+        """An option that repeats the book's default stays, so the reader can name it."""
+        controls = [{"id": "c", "label": "C", "features": [["t:x", "a"]],
+                     "options": [{"label": "Default", "set": {"t:x": {"a": True}}},
+                                 {"label": "Other", "set": {"t:x": {"a": False}}}]}]
+        entry = settings_catalogue(self._book({"a": 10}), controls)[0]
+        self.assertEqual([option["label"] for option in entry["options"]], ["Default", "Other"])
+
+    def test_too_little_text_stays_in_advanced(self):
+        book = self._book({"c": 1000, "d": 9})
+        self.assertEqual(self._names(settings_catalogue(book, [])), ["c"])
+
+
+class TestBasicSettingsSpec(unittest.TestCase):
+    """basic_settings.yaml names features the compiler really produces."""
+
+    @classmethod
+    def setUpClass(cls):
+        reset_linear_data()
+        linear_data = get_linear_data()
+        CompilerProcessor.load_init_settings(linear_data, yaml_to_declaration_entries({
+            "opensiddur:gregorian-date": {"year": 2026, "month": 4, "day": 6},
+            "opensiddur:location": {"latitude": 31.78, "longitude": 35.22},
+            "opensiddur:time": {"hour": 9, "minute": 0}}))
+        cls.calendar = {(e.fs_type, e.feature_name) for e in linear_data.conditional_settings}
+        cls.calendar |= {(fs, name) for fs, features in STATIC_DEFAULTS.items() for name in features}
+        reset_linear_data()
+
+    def _check(self, fs, name):
+        if not is_reader_supplied(fs) or fs in STATIC_DEFAULTS:
+            self.assertIn((fs, name), self.calendar, f"{fs} {name} is not a feature the compiler sets")
+        self.assertRegex(fs, r"^[a-z]+:[a-z-]+$")
+
+    def test_controls(self):
+        controls = basic_controls()
+        self.assertEqual(len({c["id"] for c in controls}), len(controls))
+        for control in controls:
+            with self.subTest(control=control["id"]):
+                self.assertTrue(control["options"])
+                for option in control["options"]:
+                    for fs, features in option["set"].items():
+                        for name, value in features.items():
+                            self._check(fs, name)
+                            self.assertIsInstance(value, (bool, int, str))
+
+    def test_feature_words(self):
+        for (fs, name), words in feature_words().items():
+            with self.subTest(feature=(fs, name)):
+                self._check(fs, name)
+                self.assertTrue(words["label"])
+
+
 SETTINGS = """\
 book:
   project: proj
@@ -326,6 +442,32 @@ class TestBuildBook(unittest.TestCase):
             "{display:none}",
         ])
 
+    def test_the_panel_is_decided_when_the_book_is_built(self):
+        spec = self.base / "basic.yaml"
+        spec.write_text(
+            "controls:\n"
+            "  - id: celebration\n"
+            "    label: Celebration\n"
+            "    note: A note.\n"
+            "    options:\n"
+            "      - {label: A wedding, set: {opensiddur:override: {wedding: true}}}\n"
+            "      - {label: No wedding, set: {opensiddur:override: {wedding: false}}}\n"
+            "features:\n"
+            "  opensiddur:quorum:\n"
+            "    minyan: {label: Ten present, values: {true: Yes, false: No}}\n",
+            encoding="utf-8")
+        self.compiled.write_bytes(_compiled(BODY))
+        book = self._book(build_book(self.compiled, self.settings, self.base, spec))
+        minyan = next(f for f in book["features"] if f["name"] == "minyan")
+        self.assertEqual((minyan["kind"], minyan["calendar"], minyan["label"]),
+                         ("binary", False, "Ten present"))
+        self.assertEqual(
+            [(e["type"], e.get("label") or e.get("name")) for e in book["basic"]],
+            [("control", "Celebration"), ("feature", "minyan"), ("feature", "s")])
+        celebration = book["basic"][0]
+        self.assertEqual(celebration["note"], "A note.")
+        self.assertEqual([o["label"] for o in celebration["options"]], ["A wedding", "No wedding"])
+
     def test_script_text_cannot_close_the_script(self):
         page = self._build()
         data = self._between(page, '<script type="application/json" id="os-book">', "</script>")
@@ -357,6 +499,13 @@ class TestBuildBook(unittest.TestCase):
         css = self._between(page, '<style id="os-cond-default">', "</style>").strip()
         result = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults);", book)
         self.assertEqual(result["css"].strip(), css)
+
+    def test_sections_shown(self):
+        node = require_node(self)
+        book = {"scopes": [0, 1, 1], "sections": [None, [[0]], [[0], [1]], [[0, 2]]]}
+        result = run_js(node, "return OSCond.sectionsShown(args, ['false', 'true']);", book)
+        # Scope 0 is false, scopes 1 and 2 true: a section shows if one of its sets is clear.
+        self.assertEqual(result, [True, False, True, False])
 
     def test_the_device_follows_the_reader(self):
         node = require_node(self)

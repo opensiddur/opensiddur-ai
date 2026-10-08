@@ -13,7 +13,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.exporter.calendar.compute import SettingSnapshot
+from opensiddur.exporter.calendar.compute import ALWAYS_YOM_TOV, SettingSnapshot
 from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, resolve
 from opensiddur.exporter.condition_eval import (
     TriState,
@@ -107,26 +107,41 @@ class TestJavaScript(unittest.TestCase):
             with self.subTest(op=op, operands=ops):
                 self.assertEqual(result, _combine(op.upper(), [TriState(v) for v in ops]).value)
 
+    #: The one input each device derivation reads.
+    DERIVATION_INPUTS = {
+        "opensiddur:quorum": ("opensiddur:quorum", "minyan"),
+        "opensiddur:recitation": ("opensiddur:service-time", "maariv"),
+        "opensiddur:holiday": ("opensiddur:holiday-aggregate", "yom-tov"),
+    }
+
     def test_derivations_are_the_clients(self):
         """The device runs the derivations client_settings says it does, and gives the same
-        results for every combination of their inputs that can be set."""
+        results for every value their input can be set to."""
         self.assertEqual(
             run_js(self.node, "return Object.keys(OSCond.DERIVATIONS).sort();"),
             sorted(CLIENT_DERIVATIONS))
-        inputs = [None, True, False, 0, 1, "", "yes", {"num": 10}]
+        self.assertEqual(sorted(self.DERIVATION_INPUTS), sorted(CLIENT_DERIVATIONS))
+        values = [None, True, False, 0, 1, "", "yes", {"num": 10}, {"num": 0}]
+        cases = [(fs, value) for fs in sorted(CLIENT_DERIVATIONS) for value in values]
         results = run_js(
             self.node,
-            "return args.map(v => OSCond.DERIVATIONS['opensiddur:quorum']("
-            "(fs, f) => f === 'minyan' ? v : null));",
-            inputs)
-        for value, result in zip(inputs, results, strict=True):
-            with self.subTest(minyan=value):
-                def get(fs, f, value=value):
+            "return args.cases.map(([fs, v]) => OSCond.DERIVATIONS[fs]("
+            "(f, n) => (f === args.inputs[fs][0] && n === args.inputs[fs][1]) ? v : null));",
+            {"cases": cases, "inputs": self.DERIVATION_INPUTS})
+        for (fs, value), result in zip(cases, results, strict=True):
+            with self.subTest(derivation=fs, input=value):
+                def get(f, n, fs=fs, value=value):
                     decoded = value_from_json(value)
-                    return None if f != "minyan" or decoded is Undefined else decoded
+                    if (f, n) != self.DERIVATION_INPUTS[fs] or decoded is Undefined:
+                        return None
+                    return decoded
 
-                self.assertEqual(
-                    result, CLIENT_DERIVATIONS["opensiddur:quorum"](SettingSnapshot(get)))
+                # Python says "nothing" with None or {}; the device with null.
+                expected = CLIENT_DERIVATIONS[fs](SettingSnapshot(get)) or None
+                self.assertEqual(result, expected)
+
+    def test_festivals_always_yom_tov_are_the_compilers(self):
+        self.assertEqual(run_js(self.node, "return OSCond.ALWAYS_YOM_TOV;"), list(ALWAYS_YOM_TOV))
 
 
 if __name__ == "__main__":

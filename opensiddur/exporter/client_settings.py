@@ -34,12 +34,14 @@ from opensiddur.exporter.calendar.compute import (
     FS_ISRAEL,
     FS_LOCATION,
     FS_QUORUM,
-    FS_READING_CYCLE,
+    FS_RECITATION,
     FS_SERVICE_TIME,
     FS_TIME,
     FS_TORAH,
     SettingSnapshot,
+    compute_holiday_from_aggregate,
     compute_quorum,
+    compute_recitation,
 )
 from opensiddur.exporter.calendar.hallel import FS_HALLEL
 from opensiddur.exporter.calendar.motzaei_shabbat import FS_MOTZAEI_SHABBAT
@@ -68,15 +70,15 @@ CALENDAR_FS_TYPES: frozenset[str] = frozenset({
     FS_HALLEL,
     FS_MOTZAEI_SHABBAT,
     FS_AVOT,
-    # Annual or triennial is the reader's to choose, but the cycle's year comes from the
-    # date, and the two are one feature structure.
-    FS_READING_CYCLE,
 })
 
-#: Derivations the device runs, because every one of their inputs is the reader's. Each must
-#: have a counterpart in `condition.js`'s `DERIVATIONS`, which a test checks.
+#: Derivations the device runs: every input is one the reader can set, and none needs the
+#: calendar. Each must have a counterpart in `condition.js`'s `DERIVATIONS`, which a test
+#: checks.
 CLIENT_DERIVATIONS: dict[str, Any] = {
     FS_QUORUM: compute_quorum,
+    FS_RECITATION: compute_recitation,
+    FS_HOLIDAY: compute_holiday_from_aggregate,
 }
 
 

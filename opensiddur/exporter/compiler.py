@@ -666,8 +666,11 @@ class CompilerProcessor:
         settings, which are the book's defaults, the reader's to change.
         """
         features = set(condition_features(node))
+        read = {fs for fs, _ in features}
         for spec in DERIVATION_SPECS:
-            if spec.fs_type in CLIENT_DERIVATIONS and any(fs == spec.fs_type for fs, _ in features):
+            # The device's own derivation only: a structure can also be derived from the date,
+            # which the device does not do, and whose inputs are no concern of it.
+            if spec.fs_type in read and spec.compute is CLIENT_DERIVATIONS.get(spec.fs_type):
                 features |= spec.required_inputs
         pinned: dict[str, dict[str, object]] = {}
         for fs_type, feature_name in sorted(features):

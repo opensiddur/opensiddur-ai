@@ -1,0 +1,138 @@
+# The electronic book's basic settings: choices a reader makes in one step, each of which sets
+# several features at once, consistently.
+#
+# Until the calendar is ported to the reader's device, the day, the place and the service are
+# set by hand, and these are the plain words for them. Every feature can still be set one by one
+# in the settings panel's Advanced box.
+#
+# A control appears in a book only when the book's conditions read one of the features it sets.
+# Which controls -- and which single features -- reach the top of the panel is decided for each
+# book when it is built, by how much of its text they decide (html.py, settings_catalogue).
+#
+# Choosing an option clears every feature the control sets, then sets the ones the option lists.
+# So an option lists only what it is sure of, and leaves the rest unset: every passage that
+# turns on something unset is shown, with its rubric.
+#
+# Shape: controls: [{id, label, note?, options: [{label, set: {fs type: {feature: value}}}]}]. A
+# value is set as a reader would set it: true/false, a number, or a string. A control may take
+# its options from a generated file instead (`options_from`), as "Kind of day" does.
+#
+# `features` gives single features words of their own, wherever they appear in the panel:
+# {fs type: {feature: {label, values: {value: label}}}}. A feature not named here is shown by its
+# own name.
+
+controls:
+
+  - id: place
+    label: Where
+    options:
+      - label: Israel
+        set: {opensiddur:israel: {is-israel: true}}
+      - label: Outside Israel
+        set: {opensiddur:israel: {is-israel: false}}
+
+  - id: reading-cycle
+    label: Torah reading cycle
+    options:
+      - label: Annual
+        set:
+          opensiddur:reading-cycle:
+            {annual: true, triennial: false, triennial-year-1: false, triennial-year-2: false,
+             triennial-year-3: false}
+      - label: Triennial, year 1
+        set:
+          opensiddur:reading-cycle:
+            {annual: false, triennial: true, triennial-year-1: true, triennial-year-2: false,
+             triennial-year-3: false}
+      - label: Triennial, year 2
+        set:
+          opensiddur:reading-cycle:
+            {annual: false, triennial: true, triennial-year-1: false, triennial-year-2: true,
+             triennial-year-3: false}
+      - label: Triennial, year 3
+        set:
+          opensiddur:reading-cycle:
+            {annual: false, triennial: true, triennial-year-1: false, triennial-year-2: false,
+             triennial-year-3: true}
+
+  - id: rite
+    label: Rite
+    options:
+      - label: Ashkenaz
+        set: {opensiddur:rite: {ashkenaz: true, sepharad: false}}
+      - label: Sepharad
+        set: {opensiddur:rite: {ashkenaz: false, sepharad: true}}
+
+  # The service by the hour of the day. Musaf is not here: in the conditions it means "today
+  # has a Musaf", which the day decides, not the hour.
+  - id: service
+    label: Service
+    options:
+      - label: Shaharit
+        set: {opensiddur:service-time: {shaharit: true, minha: false, maariv: false}}
+      - label: Minha
+        set: {opensiddur:service-time: {shaharit: false, minha: true, maariv: false}}
+      - label: Maariv
+        set: {opensiddur:service-time: {shaharit: false, minha: false, maariv: true}}
+
+  # The Hebrew day: from nightfall, the next day. Friday night is Shabbat.
+  - id: day-of-week
+    label: Day of the week
+    note: From nightfall, choose the next day.
+    options:
+      - label: Sunday
+        set: {opensiddur:day-of-week: {hebrew-day: 1}, opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Monday
+        set: {opensiddur:day-of-week: {hebrew-day: 2}, opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Tuesday
+        set: {opensiddur:day-of-week: {hebrew-day: 3}, opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Wednesday
+        set: {opensiddur:day-of-week: {hebrew-day: 4}, opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Thursday
+        set: {opensiddur:day-of-week: {hebrew-day: 5}, opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Friday
+        set: {opensiddur:day-of-week: {hebrew-day: 6}, opensiddur:holiday-aggregate: {shabbat: false}}
+      - label: Shabbat
+        set: {opensiddur:day-of-week: {hebrew-day: 7}, opensiddur:holiday-aggregate: {shabbat: true}}
+
+  # Each kind of day sets what the calendar shows to be the same on every such day, over five
+  # years, in Israel and outside it (kinds_of_day.py, which writes the file).
+  - id: kind-of-day
+    label: Kind of day
+    note: From nightfall, choose the next day.
+    options_from: kinds_of_day.json
+
+features:
+  opensiddur:hebrew-date:
+    month:
+      label: Hebrew month
+      values: {1: Nisan, 2: Iyar, 3: Sivan, 4: Tammuz, 5: Av, 6: Elul, 7: Tishrei, 8: Heshvan,
+               9: Kislev, 10: Tevet, 11: Shevat, 12: Adar (Adar I in a leap year), 13: Adar II}
+    day:
+      label: Day of the Hebrew month
+    leap-year:
+      label: A leap year
+  opensiddur:quorum:
+    minyan:
+      label: A minyan is present
+    zimmun:
+      label: Three or more ate together (zimmun)
+  opensiddur:override:
+    house-of-mourning:
+      label: In a house of mourning
+    omit-tahanun:
+      label: Tahanun is omitted today
+    brit-milah:
+      label: A brit milah today
+    wedding:
+      label: A wedding
+    sheva-brachot:
+      label: Sheva brachot
+  opensiddur:recitation:
+    repetition:
+      label: The Reader's repetition
+    silent:
+      label: The silent Amidah
+  opensiddur:israel:
+    is-israel:
+      label: In Israel

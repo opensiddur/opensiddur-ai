@@ -214,13 +214,110 @@ class TestFeatures(unittest.TestCase):
                      '<tei:p>x</tei:p>' + _end("a"))
         self.assertEqual(prepare(root).features, [])
 
-    def test_calendar_and_pinned_features_are_not_the_readers(self):
+    def test_calendar_features_are_offered_and_pinned_ones_are_not(self):
         root = _tree(
             _cond("a", fs="opensiddur:holiday", name="purim") + "<tei:p>x</tei:p>" + _end("a")
             + _cond("b", fs="opensiddur:quorum", name="minyan",
                     pinned='{"opensiddur:quorum": {"minyan": false}}')
             + "<tei:p>y</tei:p>" + _end("b"))
-        self.assertEqual(prepare(root).features, [])
+        self.assertEqual(
+            [(f.fs, f.name, f.calendar) for f in prepare(root).features],
+            [("opensiddur:holiday", "purim", True)])
+
+    def test_kinds(self):
+        root = _tree(
+            _cond("a", name="flag") + "<tei:p>x</tei:p>" + _end("a")
+            + '<j:conditional xml:id="b"><tei:fs type="t:x"><tei:f name="day">'
+              '<tei:numeric value="1" max="2"/></tei:f></tei:fs></j:conditional>'
+              '<tei:p>y</tei:p>' + _end("b")
+            + '<j:conditional xml:id="c"><tei:fs type="t:x"><tei:f name="rite">'
+              '<tei:symbol value="ashkenaz"/></tei:f></tei:fs></j:conditional>'
+              '<tei:p>z</tei:p>' + _end("c"))
+        self.assertEqual({f.name: f.kind for f in prepare(root).features},
+                         {"flag": "binary", "day": "numeric", "rite": "string"})
+
+
+class TestSections(unittest.TestCase):
+    """Which scopes each section's text turns on, for the contents."""
+
+    @staticmethod
+    def _head(text, level=2):
+        return f'<tei:head p:heading-level="{level}">{text}</tei:head>'
+
+    def test_unconditional_text_always_shows(self):
+        root = _tree("<tei:div>" + self._head("A") + "<tei:p>always</tei:p>" + _cond("a")
+                     + "<tei:p>sometimes</tei:p>" + _end("a") + "</tei:div>")
+        self.assertEqual(prepare(root).sections, [None])
+
+    def test_all_conditional_text(self):
+        root = _tree("<tei:div>" + self._head("A") + _cond("a") + "<tei:p>x</tei:p>" + _end("a")
+                     + _cond("b") + "<tei:p>y " + _cond("c") + "z" + _end("c") + "</tei:p>"
+                     + _end("b") + "</tei:div>")
+        self.assertEqual(prepare(root).sections, [[[0], [1], [1, 2]]])
+
+    def test_a_section_runs_to_the_next_heading_at_its_level(self):
+        """A chapter shows if any of its parts does."""
+        root = _tree("<tei:div>" + self._head("Chapter", 2)
+                     + "<tei:div>" + self._head("Part 1", 3) + _cond("a") + "<tei:p>x</tei:p>"
+                     + _end("a") + "</tei:div>"
+                     + "<tei:div>" + self._head("Part 2", 3) + _cond("b") + "<tei:p>y</tei:p>"
+                     + _end("b") + "</tei:div></tei:div>"
+                     + "<tei:div>" + self._head("Next chapter", 2) + "<tei:p>z</tei:p></tei:div>")
+        root_sections = prepare(root).sections
+        self.assertEqual(root_sections, [[[0], [1]], [[0]], [[1]], None])
+        heads = [h.get(f"{{{P}}}section") for h in root.iter(f"{{{TEI_NS}}}head")]
+        self.assertEqual(heads, ["0", "1", "2", "3"])
+
+    def test_headings_and_rubrics_are_not_the_sections_text(self):
+        root = _tree("<tei:div>" + self._head("A") + _cond("a", rubric="Say:")
+                     + "<tei:p>x</tei:p>" + _end("a") + "</tei:div>")
+        self.assertEqual(prepare(root).sections, [[[0]]])
+
+    def test_a_translated_heading_is_not_a_section(self):
+        root = _tree(
+            '<p:parallel><p:parallelItem role="primary">' + self._head("Heb") + _cond("a")
+            + '<tei:p>h</tei:p>' + _end("a") + '</p:parallelItem><p:parallelItem role="parallel">'
+            + self._head("Eng") + _cond("b") + '<tei:p>e</tei:p>' + _end("b")
+            + '</p:parallelItem></p:parallel>')
+        book = prepare(root)
+        self.assertEqual(book.sections, [[[0], [1]]])
+
+
+class TestText(unittest.TestCase):
+    """How much text each scope governs, for ranking the settings."""
+
+    def test_each_scope_counts_its_text(self):
+        root = _tree(_cond("a") + "<tei:p>four</tei:p>" + _end("a")
+                     + _cond("b") + "<tei:p>seven c</tei:p>" + _end("b") + "<tei:p>free</tei:p>")
+        book = prepare(root)
+        self.assertEqual(book.scope_chars, [4, 6])
+        self.assertEqual(book.conditional_chars, 10)
+
+    def test_nested_scopes_count_shared_text_for_each(self):
+        root = _tree(_cond("a") + "<tei:p>out</tei:p>" + _cond("b") + "<tei:p>in</tei:p>"
+                     + _end("b") + _end("a"))
+        book = prepare(root)
+        self.assertEqual(book.scope_chars, [5, 2])
+        self.assertEqual(book.conditional_chars, 5)
+
+    def test_crossing_scopes(self):
+        root = _tree("<tei:p>" + _cond("a") + "one " + _cond("b") + "two " + _end("a")
+                     + "three" + _end("b") + "</tei:p>")
+        book = prepare(root)
+        self.assertEqual(book.scope_chars, [6, 8])
+        self.assertEqual(book.conditional_chars, 11)
+
+    def test_rubrics_count_but_conditions_do_not(self):
+        root = _tree(_cond("a") + _cond("b", rubric="Say:") + "<tei:p>x</tei:p>" + _end("b")
+                     + _end("a"))
+        book = prepare(root)
+        self.assertEqual(book.scope_chars[0], len("Say:") + 1)
+
+    def test_a_feature_counts_its_scopes(self):
+        root = _tree(_cond("a", name="f") + "<tei:p>abc</tei:p>" + _end("a")
+                     + _cond("b", name="f") + "<tei:p>de</tei:p>" + _end("b")
+                     + _cond("c", name="g") + "<tei:p>z</tei:p>" + _end("c"))
+        self.assertEqual({f.name: f.chars for f in prepare(root).features}, {"f": 5, "g": 1})
 
 
 if __name__ == "__main__":
