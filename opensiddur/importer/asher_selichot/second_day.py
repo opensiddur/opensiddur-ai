@@ -1,5 +1,6 @@
-"""The printed second day and its source-verified service expansions."""
+"""Numbered Asher services and their source-verified expansions."""
 import json
+import re
 from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
 from .first_day import (poetic_lines, words_with_notes, mixed_words, expansion_scope,
                         EXPANSION_TARGETS)
@@ -27,11 +28,11 @@ def printed_unit(parent, reading, lang, context):
     else:
         node = element(unit, 'note' if reading['kind']=='rubric' else 'p')
         if reading['kind']=='rubric':
-            node.set('type', 'instruction');node.set(XML+'lang', 'en')
+            node.set('type', 'instruction');node.set(XML+'lang', lang if lang=='he' and not re.search('[A-Za-z]', reading['fragments'][0][lang]['text']) else 'en')
         for i, fragment in enumerate(reading['fragments']):
             data = fragment[lang]
             if i:pb(node, data['scan'], data['printed_page'])
-            if reading['kind']=='rubric' and lang=='he':mixed_words(node, data['text'])
+            if reading['kind']=='rubric' and lang=='he' and node.get(XML+'lang')=='en':mixed_words(node, data['text'])
             else:words_with_notes(node, data['text'], fragment['notes'][lang], lang)
             if len(node):node[-1].tail=(node[-1].tail or '')+' '
             else:node.text=(node.text or '')+' '
@@ -39,7 +40,7 @@ def printed_unit(parent, reading, lang, context):
 
 
 def pizmon(lang, project, reading, refrain):
-    root, text = document(lang, project, 'ישראל נושע', reading['urn'])
+    root, text = document(lang, project, reading.get('title_he', 'ישראל נושע'), reading['urn'])
     div = element(element(text,'body'),'div',corresp=reading['urn'])
     first = reading['stanzas'][0]['fragments'][0][lang]
     pb(div, first['scan'], first['printed_page'])
@@ -67,7 +68,7 @@ def pizmon(lang, project, reading, refrain):
     return root
 
 
-def conclusion(parent, source):
+def conclusion(parent, source, day_name="second"):
     """Transclude the closing prayers without importing a first-day heading/context."""
     closing = json.loads((source/'first-day-continuation.json').read_text())['sections']['closing']
     for group in closing:
@@ -75,23 +76,25 @@ def conclusion(parent, source):
         if group['kind']=='rubric':
             for target in EXPANSION_TARGETS[group['id']]:element(parent,'j:transclude',target=target)
         else:element(parent,'j:transclude',target=text_urn(group['id']))
-    declaration = element(parent,'j:declare');declaration.set(XML+'id','second_day_kaddish')
+    declaration = element(parent,'j:declare');declaration.set(XML+'id',day_name+'_day_kaddish')
     fs = element(declaration,'fs',type='asher:selichot')
     f = element(fs,'f');f.set('name','first_day');element(f,'binary',value='false')
-    # The numbered second-day service copies this edition's first-day conclusion.
+    # These numbered services copy this edition's first-day conclusion.
     fs = element(declaration,'fs',type='opensiddur:holiday-aggregate')
     f = element(fs,'f');f.set('name','aseret-ymei-tshuva');element(f,'binary',value='false')
     element(parent,'j:transclude',target=PRAYER+'kaddish/shalem')
-    element(parent,'j:endDeclare',target='#second_day_kaddish')
+    element(parent,'j:endDeclare',target='#'+day_name+'_day_kaddish')
 
 
-def documents(source):
-    data = json.loads((source/'second-day.json').read_text())
+def numbered_documents(source, day_name):
+    day_urn = 'urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day'
+    data = json.loads((source/(day_name+'-day.json')).read_text())
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
-        root, text = document(lang, project, data['heading'][lang], SECOND_DAY)
-        service = element(element(text,'body'),'div',corresp=SECOND_DAY)
-        pb(service, 's52' if lang=='he' else 's53', '25')
+        root, text = document(lang, project, data['heading'][lang], day_urn)
+        service = element(element(text,'body'),'div',corresp=day_urn)
+        first = data['units'][0]['fragments'][0][lang]
+        pb(service, first['scan'], first['printed_page'])
         element(service,'head',data['heading'][lang])
         for reading in data['units']:
             if reading.get('filename'):
@@ -102,23 +105,23 @@ def documents(source):
                 yield project, reading['filename']+'.xml', module
                 element(service,'j:transclude',target=reading['urn'])
             elif reading['kind']=='rubric':
-                unit = element(service,'div',corresp=SECOND_DAY+'/'+reading['id'])
+                unit = element(service,'div',corresp=day_urn+'/'+reading['id'])
                 feature = 'refrains_present' if reading['id']=='refrain_instruction' else 'prayers_present'
-                expansion_scope(unit,'second_'+reading['id']+'_printed',False,feature=feature)
-                printed_unit(unit,reading,lang,SECOND_DAY+'/'+reading['id']+'/printed')
-                element(unit,'j:endConditional',target='#second_'+reading['id']+'_printed')
+                expansion_scope(unit,day_name+'_'+reading['id']+'_printed',False,feature=feature)
+                printed_unit(unit,reading,lang,day_urn+'/'+reading['id']+'/printed')
+                element(unit,'j:endConditional',target='#'+day_name+'_'+reading['id']+'_printed')
                 if reading['id']=='refrain_instruction':continue
-                expansion_scope(unit,'second_'+reading['id']+'_expanded',True,feature=feature)
-                if reading['id']=='conclusion_instruction':conclusion(unit,source)
+                expansion_scope(unit,day_name+'_'+reading['id']+'_expanded',True,feature=feature)
+                if reading['id']=='conclusion_instruction':conclusion(unit,source,day_name)
                 else:
                     targets = OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS
                     for target in targets:element(unit,'j:transclude',target=target)
-                element(unit,'j:endConditional',target='#second_'+reading['id']+'_expanded')
-            else:printed_unit(service,reading,lang,SECOND_DAY+'/'+reading['id'])
-        yield project,'second_day.xml',root
+                element(unit,'j:endConditional',target='#'+day_name+'_'+reading['id']+'_expanded')
+            else:printed_unit(service,reading,lang,day_urn+'/'+reading['id'])
+        yield project,day_name+'_day.xml',root
 
 
-def verify_readings(source, project_directory):
+def verify_numbered_readings(source, project_directory, day_name):
     """Follow the printed service order and compare only documentary choice branches."""
     import copy
     import re
@@ -126,40 +129,41 @@ def verify_readings(source, project_directory):
     from lxml import etree
     from opensiddur.importer.scan.reverse import streams, check
     normalize = lambda value: ' '.join(unicodedata.normalize('NFKD', value).split())
-    data = json.loads((source/'second-day.json').read_text())
+    day_urn = 'urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day'
+    data = json.loads((source/(day_name+'-day.json')).read_text())
     for lang in ['he', 'en']:
         project = project_directory/f'asher_selichot_{lang}_1912'
-        root = etree.parse(str(project/'second_day.xml')).getroot()
+        root = etree.parse(str(project/(day_name+'_day.xml'))).getroot()
         service = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
-        if service.get('corresp') != SECOND_DAY or normalize(service.find(f'{{{TEI}}}head').text) != normalize(data['heading'][lang]):
-            raise ValueError('Second day needs its printed top-level heading')
+        if service.get('corresp') != day_urn or normalize(service.find(f'{{{TEI}}}head').text) != normalize(data['heading'][lang]):
+            raise ValueError('Numbered day needs its printed top-level heading')
         units = [n for n in service if n.tag not in [f'{{{TEI}}}pb', f'{{{TEI}}}head']]
         if len(units) != len(data['units']):
-            raise ValueError('Second-day boundary or source order changed')
+            raise ValueError('Numbered-day boundary or source order changed')
         for reading, unit in zip(data['units'], units):
             if reading.get('filename'):
                 if unit.tag != '{http://jewishliturgy.org/ns/jlptei/2}transclude' or unit.get('target') != reading['urn']:
-                    raise ValueError('Second-day independent poems must follow printed order')
+                    raise ValueError('Numbered-day independent poems must follow printed order')
                 module = etree.parse(str(project/(reading['filename']+'.xml')))
                 if module.find(f'.//{{{TEI}}}idno[@type="urn"]').text != reading['urn']+'@'+project.name:
-                    raise ValueError('Second-day canonical module identity changed')
+                    raise ValueError('Numbered-day canonical module identity changed')
                 unit = module.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
-            elif unit.get('corresp') != SECOND_DAY+'/'+reading['id']:
-                raise ValueError('Second-day inline units are out of source order')
+            elif unit.get('corresp') != day_urn+'/'+reading['id']:
+                raise ValueError('Numbered-day inline units are out of source order')
             unit = copy.deepcopy(unit)
             if reading['kind'] == 'rubric':
                 scopes = unit.findall('{http://jewishliturgy.org/ns/jlptei/2}conditional')
                 wanted = ['false'] if reading['id'] == 'refrain_instruction' else ['false', 'true']
                 if [n.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary').get('value') for n in scopes] != wanted:
-                    raise ValueError('Second-day instruction branch polarity changed')
+                    raise ValueError('Numbered-day instruction branch polarity changed')
                 if len(scopes) == 2:
                     start = scopes[1]
                     end = unit.find('{http://jewishliturgy.org/ns/jlptei/2}endConditional[@target="#'+start.get(XML+'id')+'"]')
-                    if end is None:raise ValueError('Unclosed second-day expansion')
+                    if end is None:raise ValueError('Unclosed numbered-day expansion')
                     if reading['id'] != 'conclusion_instruction':
                         expected_targets = OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS
                         if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != expected_targets:
-                            raise ValueError('Second-day referenced prayer range changed')
+                            raise ValueError('Numbered-day referenced prayer range changed')
                     else:
                         closing = json.loads((source/'first-day-continuation.json').read_text())['sections']['closing']
                         expected_targets = []
@@ -168,12 +172,12 @@ def verify_readings(source, project_directory):
                             expected_targets.extend(EXPANSION_TARGETS[group['id']] if group['kind']=='rubric' else [text_urn(group['id'])])
                         expected_targets.append(PRAYER+'kaddish/shalem')
                         if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != expected_targets:
-                            raise ValueError('Second-day closing prayer range changed')
+                            raise ValueError('Numbered-day closing prayer range changed')
                         declaration = unit.find('{http://jewishliturgy.org/ns/jlptei/2}declare')
                         for typ, feature in [('asher:selichot','first_day'), ('opensiddur:holiday-aggregate','aseret-ymei-tshuva')]:
                             value = declaration.find(f'{{{TEI}}}fs[@type="{typ}"]/{{{TEI}}}f[@name="{feature}"]/{{{TEI}}}binary')
                             if value is None or value.get('value') != 'false':
-                                raise ValueError('Second-day Kaddish must not inherit first-day or Ten Days context')
+                                raise ValueError('Numbered-day Kaddish must not inherit first-day or Ten Days context')
                     children=list(unit)
                     for n in children[children.index(start):children.index(end)+1]:unit.remove(n)
             expected = {}
@@ -185,7 +189,7 @@ def verify_readings(source, project_directory):
                 for fragment in part['fragments']:
                     value=fragment[lang];words=value['text'];page=value['scan']
                     expected_notes.extend(n['text'] for n in fragment['notes'][lang])
-                    if reading['kind']=='rubric' and lang=='he':
+                    if reading['kind']=='rubric' and lang=='he' and re.search('[A-Za-z]', reading['fragments'][0]['he']['text']):
                         append(page,'he',' '.join(re.findall(r'[\u0590-\u05ff]+',words)))
                         append(page,'en',re.sub(r'[\u0590-\u05ff]+','',words).replace(' · ',' '))
                     else:append(page,lang,words)
@@ -194,7 +198,7 @@ def verify_readings(source, project_directory):
                     if part.get('opening_cue'):append(page,lang,part['opening_cue'][lang])
             notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             if [normalize(' '.join(n.itertext())) for n in notes] != list(map(normalize,expected_notes)):
-                raise ValueError('Second-day printed footnotes changed')
+                raise ValueError('Numbered-day printed footnotes changed')
             for n in notes+unit.findall(f'{{{TEI}}}head'):
                 parent=n.getparent();prev=n.getprevious()
                 if prev is None:parent.text=(parent.text or '')+(n.tail or '')
@@ -202,7 +206,7 @@ def verify_readings(source, project_directory):
                 parent.remove(n)
             unit.set(XML+'lang',lang)
             actual=streams(unit,include_notes=True)
-            if reading['kind']=='rubric' and lang=='he':actual={k:v.replace(' · ',' ') for k,v in actual.items()}
+            if reading['kind']=='rubric' and lang=='he' and re.search('[A-Za-z]', reading['fragments'][0]['he']['text']):actual={k:v.replace(' · ',' ') for k,v in actual.items()}
             differences=check(actual,expected)
             if differences:raise ValueError(f'{reading["id"]}: {differences}')
             if reading['kind']=='pizmon':
@@ -211,5 +215,13 @@ def verify_readings(source, project_directory):
                 if len(choices)!=5 or [normalize(''.join(n.find(f'{{{TEI}}}expan').itertext())) for n in choices] != [normalize(data['refrain'][lang])]*4+[normalize(opening)]:
                     raise ValueError('Pizmon expansions must reproduce this edition’s verified refrain/opening')
                 if lang=='he' and len(unit.findall(f'{{{TEI}}}lg'))!=6:
-                    raise ValueError('Israel Nosha must retain six poetic stanzas')
-    print('Second day: printed order, page streams, seven English footnotes and five refrain choices per language checked')
+                    raise ValueError('The pizmon must retain six poetic stanzas')
+    print(day_name.title()+' day: printed order, page streams, footnotes and five refrain choices per language checked')
+
+
+def documents(source):
+    yield from numbered_documents(source, 'second')
+
+
+def verify_readings(source, project_directory):
+    return verify_numbered_readings(source, project_directory, 'second')

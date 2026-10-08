@@ -78,7 +78,7 @@ def poem(lang,project,data):
     root,text=document(lang,project,'במוצאי מנוחה' if lang=='he' else 'On the outgoing of the Sabbath',POEM)
     div=element(element(text,'body'),'div',corresp=POEM)
     pb(div,'s32' if lang=='he' else 's33','15')
-    element(div,'head','פזמון' if lang=='he' else data['heading'])
+    if lang=='he':element(div,'head','פזמון')
     marker(div,POEM+'/rubric')
     rubric=expansion_instruction(div, 'refrain_instruction', 'refrains_present')
     rubric.set(XML+'lang','en')
@@ -191,6 +191,9 @@ def build(source_root,project_directory):
     if (readings/'second-day.json').exists():
         from .second_day import documents as second_day_documents
         authored.extend(second_day_documents(readings))
+    if (readings/'third-day.json').exists():
+        from .third_day import documents as third_day_documents
+        authored.extend(third_day_documents(readings))
     for project, name, root in authored:
         xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
         valid,errors=validate(xml)

@@ -54,6 +54,9 @@ def verify(source_root, project_directory):
         if (source/'second-day.json').exists():
             from .second_day import SECOND_DAY
             targets.append(SECOND_DAY)
+        if (source/'third-day.json').exists():
+            from .third_day import THIRD_DAY
+            targets.append(THIRD_DAY)
         for name in ['index.xml', 'expanded.xml']:
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
@@ -62,6 +65,9 @@ def verify(source_root, project_directory):
     verify_continuation(source, Path(project_directory))
     if (source/'second-day.json').exists():
         from .second_day import verify_readings
+        verify_readings(source, Path(project_directory))
+    if (source/'third-day.json').exists():
+        from .third_day import verify_readings
         verify_readings(source, Path(project_directory))
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
