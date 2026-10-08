@@ -115,3 +115,19 @@ identities, source boundaries and editorial context separately. Regenerate both
 views, resolve URNs, and render both PDFs after the reorganization. The full book
 and independent Hebrew pointing review remain pending; do not encode temporary
 coverage status in canonical text identities.
+
+
+## Second day and generated contents
+
+Extend the existing book assemblies with the printed second-day range n51–n60,
+ending before the third-day heading. Four new canonical incipit modules and one
+second-day assembly per language preserve bilingual verse/prose structure and
+seven English footnotes. Expand the source-verified opening, repeated verses,
+three prayer pairs, closing range and secondary Full Kaddish; omit fulfilled
+instructions. Both day headers must be top-level bookmarks above their pizmons.
+All four local export settings enable a generated TOC through heading level two.
+Reverse verification follows printed order, selects abbreviation branches and
+checks footnotes and page boundaries separately from supplied text. The book PDF
+checker uses outline destinations to scope legacy first-day checks and checks
+second-day stanza alignment, footnote occurrences, expansion branches and
+bookmark hierarchy with failing controls.

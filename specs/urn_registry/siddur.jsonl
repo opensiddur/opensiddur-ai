@@ -1247,3 +1247,22 @@
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/ashamnu_repeat_2", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: ashamnu repeat 2"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/first_day/reader_kaddish", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/first_day", "label_en": "Selichot first day: reader kaddish"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/expanded", "status": "canonical", "label_en": "selichot/expanded", "parent": "urn:x-opensiddur:text:siddur:selichot"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot", "label_he": "סליחות ליום שני", "label_en": "Second-day Selichot"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/opening_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "opening instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/opening_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/opening_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/al_tizkor_lanu", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "al tizkor lanu"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/keraham_av", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "keraham av"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/selah_na", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "selah na"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/hateh_elohai", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "hateh elohai"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/first_prayer_cue", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "first prayer cue"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/first_prayer_cue/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/first_prayer_cue", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/verses_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "verses instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/verses_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/verses_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/second_prayer_cue", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "second prayer cue"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/second_prayer_cue/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/second_prayer_cue", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/refrain_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "refrain instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/refrain_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/refrain_instruction", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/final_prayer_cue", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "final prayer cue"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/final_prayer_cue/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/final_prayer_cue", "label_en": "Printed instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/conclusion_instruction", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day", "label_en": "conclusion instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:selichot/second_day/conclusion_instruction/printed", "status": "canonical", "parent": "urn:x-opensiddur:text:siddur:selichot/second_day/conclusion_instruction", "label_en": "Printed instruction"}

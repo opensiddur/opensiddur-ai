@@ -1,9 +1,9 @@
-description: Asher 1912 expanded first day through n52, with Birnbaum Full Kaddish
-  fallback. Work in progress; excluded from releases.
+description: Asher 1912 expanded first and second days through n60, with Birnbaum
+  Full Kaddish fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded first day
+  title: Asher Selichoth — expanded first and second days
 priority:
   transclusion:
   - asher_selichot_he_1912
@@ -23,7 +23,7 @@ annotations: []
 typography:
   page_header:
     all:
-      left: סליחות ליום ראשון
+      left: סליחות
       right: '{page}'
   instructions:
     from: both
@@ -31,6 +31,9 @@ typography:
     hebrew:
     - name: SBL Hebrew
       normal_size: 12
+  table_of_contents:
+    enabled: true
+    depth: 2
 declarations:
   asher:expansions:
     refrains_present: true

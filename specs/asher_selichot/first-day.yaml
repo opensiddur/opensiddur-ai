@@ -1,9 +1,9 @@
-description: Asher 1912 complete first day through n52, work in progress. Incomplete
-  book, excluded from releases.
+description: Asher 1912 complete first and second days through n60, work in progress.
+  Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — first day
+  title: Asher Selichoth — first and second days
 priority:
   transclusion:
   - asher_selichot_he_1912
@@ -20,7 +20,7 @@ annotations: []
 typography:
   page_header:
     all:
-      left: סליחות ליום ראשון
+      left: סליחות
       right: '{page}'
   instructions:
     from: both
@@ -28,6 +28,9 @@ typography:
     hebrew:
     - name: SBL Hebrew
       normal_size: 12
+  table_of_contents:
+    enabled: true
+    depth: 2
 declarations:
   asher:expansions:
     refrains_present: false

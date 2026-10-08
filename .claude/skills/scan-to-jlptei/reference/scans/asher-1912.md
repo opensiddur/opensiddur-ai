@@ -56,7 +56,7 @@ Its measured gutter is x=288pt on odd PDF pages and x=324pt on even pages.
 All expanded stanza starts share a baseline. In documentary output, the first
 differs by 13.55pt after unequal rubric lengths; the other seven share a baseline. The poem check allows at most 16pt and requires the same page.
 These are edition calibration values, not defaults for other settings or scans.
-Run `python -m opensiddur.importer.asher_selichot.check_pdf PDF --complete --control`
+For a first-day-only export, run `python -m opensiddur.importer.asher_selichot.check_pdf PDF --complete --control`
 (with `--expanded` for the expanded view). The shared direction check separately
 reverses Hebrew glyph runs as its failing control.
 
@@ -165,3 +165,34 @@ Reusable prayers and repeated verse ranges likewise use prayer identities,
 independent of Asher or the day on which this source prints them. The source
 README's module table records the reading-ID to filename/URN correspondence.
 Do not add experimental-phase labels to titles, filenames or canonical identities.
+
+
+## Second-day continuation
+
+The second day begins below the first-day closing rubric on n51/n52 and ends
+above the third-day section heading in the middle of n59/n60. These openings
+print 25–29 in both languages; do not treat the final running third-day heading
+as a section boundary. Use the printed day heading as the top-level service
+heading and its printed Hebrew פזמון as a subordinate heading. Do not invent an
+English pizmon caption where none is printed. Enable
+`typography.table_of_contents.enabled: true` with `depth: 2` in these export settings.
+
+Israel Nosha has six Hebrew verse groups paired with English prose paragraphs.
+Use named stanza milestones to align them; retain page breaks inside a continuing
+verse. Four כי אתה cues expand the edition’s full refrain; the final וישראל נושע
+cue expands the first stanza including its refrain. The seven English footnotes
+include two distinct occurrences of “The three patriarchs.” Keep the unusual
+singular “God of our Father!” as printed, pending any documented adjudication.
+
+The second-day opening rubric reuses the printed first-day ranges through
+כי רבו עוונינו, then El erekh apayim through ורב חסד לכל קראיך. Its conclusion
+reuses the closing range beginning Zekhor rahamekha and a secondary-source Full
+Kaddish. Preserve first-day context only for the first day: second-day Kaddish
+must not inherit `first_day=true`. Scope its copied pre-Rosh-Hashanah conclusion
+with `first_day=false`, `aseret-ymei-tshuva=false`, then restore caller context.
+Expanded output omits each instruction whose prescribed text is present.
+
+Use `python -m opensiddur.importer.asher_selichot.check_book_pdf PDF --control`
+(and `--expanded` for that view) for the two-day book. It scopes the older
+first-day checks to the bookmarked first-day range, excludes the generated TOC,
+and independently checks second-day stanzas, notes and expansion boundaries.

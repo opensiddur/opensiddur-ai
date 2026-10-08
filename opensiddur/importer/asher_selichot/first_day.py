@@ -88,7 +88,7 @@ def opening(lang, project, data):
     return root
 
 
-def entry(lang, project, title_data, expanded=False, *, book=False):
+def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False):
     urn = ('urn:x-opensiddur:text:siddur:selichot' + ('/expanded' if expanded else '')) if book else FIRST_DAY
     title = 'Asher Selichoth' if book else 'First-day Selichot'
     if expanded:
@@ -96,6 +96,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False):
     root, text = document(lang, project, title, urn, index=book)
     edition = root.find(f'.//{{{TEI}}}edition')
     edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading; remaining book sections await encoding.'
+    if book and include_second_day:
+        edition.text = 'First and second days through Archive leaves n59–60, ending before the third-day heading. Hebrew pointing awaits independent proofreading; remaining days await encoding.'
     if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     if book:
@@ -103,11 +105,15 @@ def entry(lang, project, title_data, expanded=False, *, book=False):
     div = element(element(text, 'body'), 'div', corresp=urn)
     if book:
         element(div, 'j:transclude', target=FIRST_DAY)
+        if include_second_day:
+            from .second_day import SECOND_DAY
+            element(div, 'j:transclude', target=SECOND_DAY)
         return root
     return root
 
 
 def documents(source):
+    include_second_day = (source/'second-day.json').exists()
     structure = source.parent/'poetry-structure.json'
     poetry = json.loads(structure.read_text())['units'] if structure.exists() else {}
     title_data = json.loads((source/'title-pages.json').read_text())
@@ -115,8 +121,8 @@ def documents(source):
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
-        yield project, 'index.xml', entry(lang, project, title_data, book=True)
-        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True)
+        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day)
+        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day)
         service = entry(lang, project, title_data)
         service_div = service.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         root = opening(lang, project, reading[lang])
@@ -176,11 +182,11 @@ EXPANSION_TARGETS = {
 }
 
 
-def expansion_scope(parent, identity, present):
+def expansion_scope(parent, identity, present, *, feature='repetitions_present'):
     conditional = element(parent, 'j:conditional')
     conditional.set(XML+'id', identity)
     fs = element(conditional, 'fs', type='asher:expansions')
-    f = element(fs, 'f'); f.set('name', 'repetitions_present')
+    f = element(fs, 'f'); f.set('name', feature)
     element(f, 'binary', value='true' if present else 'false')
 
 

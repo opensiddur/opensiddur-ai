@@ -50,12 +50,19 @@ def verify(source_root, project_directory):
         if any(''.join(c.find(f'{{{TEI}}}expan').itertext())!=refrain for c in choices[:-1]):
             raise ValueError('Short cue must expand to this edition’s printed refrain')
         from .first_day import FIRST_DAY
-        for name,targets in [('index.xml',[FIRST_DAY]),('expanded.xml',[FIRST_DAY])]:
+        targets = [FIRST_DAY]
+        if (source/'second-day.json').exists():
+            from .second_day import SECOND_DAY
+            targets.append(SECOND_DAY)
+        for name in ['index.xml', 'expanded.xml']:
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
                 raise ValueError(f'{name}: unexpected reference expansion boundary')
     verify_opening(source, Path(project_directory))
     verify_continuation(source, Path(project_directory))
+    if (source/'second-day.json').exists():
+        from .second_day import verify_readings
+        verify_readings(source, Path(project_directory))
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
     print(f'{files} schema-valid files; {len(actual)} documentary page/language streams match; expansion targets and forms checked')
