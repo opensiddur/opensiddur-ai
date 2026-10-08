@@ -1,11 +1,16 @@
 name: Release book
 
-# Builds one printed book, opensiddur-projects/settings/<book>/<variant>.yaml, at the
-# opensiddur-projects commit a release tag pins, and attaches it to that release as
-# <book>-<variant>-<tag>.pdf (opensiddur-ai#153).
+# Builds one book, opensiddur-projects/settings/<book>/<variant>.yaml, at the
+# opensiddur-projects commit a release tag pins, in both its forms, and attaches them to that
+# release: the electronic book as <book>-<variant>-<tag>.html (opensiddur-ai#92) and the printed
+# one as <book>-<variant>-<tag>.pdf (opensiddur-ai#153).
+#
+# The electronic book is built first. It takes seconds where the PDF can take hours, and a PDF
+# that fails or times out does not keep it off the release. Each form has its own output
+# directory, so each keeps its own log.
 #
 # release-books.yml runs this once per settings file. Run it by hand to rebuild a single book
-# for a tag; the new PDF replaces the old one.
+# for a tag; the new files replace the old ones.
 
 on:
   workflow_call:
@@ -54,9 +59,7 @@ jobs:
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           git submodule update --init --depth 1 opensiddur-projects
 
-      - name: Install TeX
-        run: sudo bash opensiddur/exporter/tex/install-tex.sh
-
+      # Before either build: checking a book's settings checks that its fonts are installed.
       - name: Install fonts
         run: |
           sudo apt-get install --no-install-recommends --no-install-suggests -y \
@@ -79,13 +82,28 @@ jobs:
       - name: Build reference database
         run: uv run python -m opensiddur.exporter.refdb
 
-      - name: Build the book
+      - name: Build the electronic book
         run: |
-          uv run python -m opensiddur.exporter.books "$BOOK" \
-            --output-directory "$RUNNER_TEMP/books" --suffix "$TAG"
+          uv run python -m opensiddur.exporter.books "$BOOK" --format html \
+            --output-directory "$RUNNER_TEMP/books/html" --suffix "$TAG"
 
-      - name: Attach the book to the release
-        run: gh release upload "$TAG" "$RUNNER_TEMP"/books/*.pdf --clobber
+      - name: Attach the electronic book to the release
+        run: gh release upload "$TAG" "$RUNNER_TEMP"/books/html/*.html --clobber
+
+      - name: Install TeX
+        if: ${{ !cancelled() }}
+        run: sudo bash opensiddur/exporter/tex/install-tex.sh
+
+      - name: Build the printed book
+        id: pdf
+        if: ${{ !cancelled() }}
+        run: |
+          uv run python -m opensiddur.exporter.books "$BOOK" --format pdf \
+            --output-directory "$RUNNER_TEMP/books/pdf" --suffix "$TAG"
+
+      - name: Attach the printed book to the release
+        if: ${{ !cancelled() && steps.pdf.outcome == 'success' }}
+        run: gh release upload "$TAG" "$RUNNER_TEMP"/books/pdf/*.pdf --clobber
 
       - name: Name the log artifact
         if: always()
@@ -96,5 +114,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT }}
-          path: ${{ runner.temp }}/books/*.log
+          path: ${{ runner.temp }}/books/*/*.log
           if-no-files-found: ignore

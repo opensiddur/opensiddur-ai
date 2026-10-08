@@ -25,7 +25,7 @@ from opensiddur.exporter.conditional_settings import (
     TEI_VALT,
     TEI_VNOT,
 )
-from opensiddur.exporter.constants import is_element_node
+from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
 from opensiddur.exporter.linear import NumericValue, Undefined, parse_numeric_literal
 
 
@@ -169,10 +169,16 @@ def _parse_condition_node(element: ElementBase) -> ConditionNode:
 
 
 def _condition_children(conditional_el: ElementBase) -> list[ElementBase]:
-    """Return condition AST source children (exclude tei:note, comments and PIs)."""
+    """Return condition AST source children.
+
+    Excluded: tei:note, comments and PIs, and anything the compiler added in its processing
+    namespace (an electronic book's p:pinned).
+    """
     return [
         child for child in conditional_el
-        if is_element_node(child) and child.tag != TEI_NOTE
+        if is_element_node(child)
+        and child.tag != TEI_NOTE
+        and not child.tag.startswith(f"{{{PROCESSING_NAMESPACE}}}")
     ]
 
 
@@ -299,3 +305,117 @@ def evaluate_condition(node: ConditionNode, processor: _SettingLookup) -> TriSta
         return _evaluate_fs(node, processor)
     child_results = [evaluate_condition(child, processor) for child in node.children]
     return _combine(node.op, child_results)
+
+
+# ── JSON ─────────────────────────────────────────────────────────────────────
+#
+# An electronic book carries its undecided conditions to the reader's device as JSON, and
+# evaluates them there (html/assets/condition.js). The shapes:
+#
+#   condition   {"op": "all"|"any"|"none"|"one", "args": [condition, ...]}
+#               {"fs": "<tei:fs/@type>", "f": [{"name": "<tei:f/@name>", "v": <value>}, ...]}
+#   value       true | false                      tei:binary
+#               "<text>"                          tei:string, tei:symbol
+#               {"num": n} | {"num": n, "max": m} tei:numeric
+#               {"undefined": true}               tei:default, tei:symbol[@value='undefined']
+#               {"alt": [value, ...]}             tei:vAlt
+#               {"not": value}                    tei:vNot
+#
+# A *setting* -- an active value, rather than one a condition asks for -- is true, false, a
+# string, a plain number (as YAML gives it), {"num": n} (as a tei:numeric declaration gives
+# it), or null for undefined. The distinction between a plain number and {"num": n} is kept
+# because the evaluator keeps it: a binary condition matches an active 1, but not an active
+# tei:numeric 1.
+
+
+def _condition_value_to_json(value: Any) -> Any:
+    if value is Undefined:
+        return {"undefined": True}
+    if isinstance(value, NumericValue):
+        encoded = {"num": value.value}
+        if value.max_value is not None:
+            encoded["max"] = value.max_value
+        return encoded
+    if isinstance(value, tuple):
+        if value and value[0] == "vNot":
+            return {"not": _condition_value_to_json(value[1])}
+        return {"alt": [_condition_value_to_json(alt) for alt in value]}
+    if isinstance(value, (bool, str)):
+        return value
+    raise ValueError(f"Cannot encode condition value {value!r}")
+
+
+def _condition_value_from_json(encoded: Any) -> Any:
+    if isinstance(encoded, (bool, str)):
+        return encoded
+    if isinstance(encoded, dict):
+        if encoded.get("undefined"):
+            return Undefined
+        if "num" in encoded:
+            return NumericValue(value=encoded["num"], max_value=encoded.get("max"))
+        if "not" in encoded:
+            return ("vNot", _condition_value_from_json(encoded["not"]))
+        if "alt" in encoded:
+            return tuple(_condition_value_from_json(alt) for alt in encoded["alt"])
+    raise ValueError(f"Cannot decode condition value {encoded!r}")
+
+
+def condition_to_json(node: ConditionNode) -> dict[str, Any]:
+    """The JSON form of a parsed condition."""
+    if isinstance(node, FsCondition):
+        return {
+            "fs": node.fs_type,
+            "f": [{"name": f.feature_name, "v": _condition_value_to_json(f.value)}
+                  for f in node.features],
+        }
+    return {"op": node.op.lower(), "args": [condition_to_json(child) for child in node.children]}
+
+
+def condition_from_json(encoded: dict[str, Any]) -> ConditionNode:
+    """A parsed condition from its JSON form."""
+    if "fs" in encoded:
+        return FsCondition(
+            fs_type=encoded["fs"],
+            features=tuple(
+                FeatureCondition(
+                    fs_type=encoded["fs"],
+                    feature_name=f["name"],
+                    value=_condition_value_from_json(f["v"]),
+                )
+                for f in encoded["f"]
+            ),
+        )
+    return CombinatorCondition(
+        op=encoded["op"].upper(),
+        children=tuple(condition_from_json(child) for child in encoded["args"]),
+    )
+
+
+def value_to_json(value: Any) -> Any:
+    """The JSON form of an active setting value."""
+    if value is Undefined:
+        return None
+    if isinstance(value, NumericValue):
+        encoded = {"num": value.value}
+        if value.max_value is not None:
+            encoded["max"] = value.max_value
+        return encoded
+    if isinstance(value, (bool, int, float, str)):
+        return value
+    raise ValueError(f"Cannot encode setting value {value!r}")
+
+
+def value_from_json(encoded: Any) -> Any:
+    """An active setting value from its JSON form."""
+    if encoded is None:
+        return Undefined
+    if isinstance(encoded, dict):
+        return NumericValue(value=encoded["num"], max_value=encoded.get("max"))
+    return encoded
+
+
+def condition_features(node: ConditionNode) -> set[tuple[str, str]]:
+    """Every (fs type, feature name) a condition reads."""
+    if isinstance(node, FsCondition):
+        return {(f.fs_type, f.feature_name) for f in node.features}
+    return set().union(*(condition_features(child) for child in node.children))

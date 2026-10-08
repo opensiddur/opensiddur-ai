@@ -9,9 +9,11 @@ from opensiddur.exporter.linear import (
     DeclarationFeatureValue,
     LinearData,
     ParallelColumnOrder,
+    Undefined,
     get_linear_data,
 )
 from opensiddur.exporter.compiler import CompilerProcessor
+from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.typography import TypographyConfig
@@ -176,6 +178,16 @@ def load_settings(
         linear_data.parallel_column_order = settings.parallel.column_order
     if settings.declarations:
         entries = yaml_to_declaration_entries(settings.declarations)
+        if linear_data.defer_reader_settings:
+            # The reader's settings are the book's defaults, which the reader can change; they
+            # reach the electronic book from the settings file, not from the compile. They stay
+            # on the stack, undefined, so that they still rank as explicit: a derivation does
+            # not override them, any more than it would in print.
+            entries = [
+                entry.model_copy(update={"value": Undefined})
+                if is_reader_supplied(entry.fs_type) else entry
+                for entry in entries
+            ]
         CompilerProcessor.load_init_settings(linear_data, entries)
     else:
         recalculate_derived_settings(linear_data, trigger=SettingChangeTrigger.INIT)

@@ -1,0 +1,231 @@
+/* The base styles of an Open Siddur electronic book. The book's own typography (css.py) is
+   layered over them; the conditions' rules (reader.js) over that. */
+
+:root {
+  --font-latin: "Linux Libertine O", serif;
+  --font-hebrew: "Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", serif;
+  --line-spacing: 1.35;
+  --text-align: justify;
+  --paragraph-spacing: 0.75em;
+  --cond-rule-width: 25%;
+  --cond-rule-thickness: 0.4pt;
+
+  --ink: #1d1b16;
+  --paper: #fdfbf6;
+  --muted: #6b6457;
+  --accent: #8a3b12;
+  --line: #d9d2c3;
+  --panel: #ffffff;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e9e4d8;
+    --paper: #17150f;
+    --muted: #a59d8c;
+    --accent: #e39a6b;
+    --line: #3d382d;
+    --panel: #221f17;
+    color-scheme: dark;
+  }
+}
+
+html { background: var(--paper); }
+
+body {
+  margin: 0;
+  padding: 0 16px 4rem;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-latin);
+  font-size: 1.125rem;
+  line-height: var(--line-spacing);
+}
+
+:lang(he), :lang(arc), :lang(yi) { font-family: var(--font-hebrew); }
+/* Pointed Hebrew wants a size more than the Latin beside it. Set on the column, once: :lang()
+   follows inheritance, so a rule on it would compound at every level. */
+.col:is([lang|="he"], [lang|="arc"], [lang|="yi"]) { font-size: 1.12em; }
+
+.os-book { max-width: 72rem; margin: 0 auto; }
+
+/* ── Text ────────────────────────────────────────────────────────────── */
+
+p, .lg { margin: 0 0 var(--paragraph-spacing); }
+p { text-align: var(--text-align); hyphens: auto; }
+.np { display: block; margin-top: 0.4em; }
+span:is(.div, .lg, .list, .item, .label, .head, .doc-title) { display: block; }
+.l { padding-inline-start: 1.5em; text-indent: -1.5em; }
+.head { font-weight: normal; line-height: 1.25; margin: 1.6em 0 0.6em; text-align: center; }
+h1.head { font-size: 1.8em; }
+h2.head { font-size: 1.45em; }
+h3.head { font-size: 1.2em; }
+h4.head, h5.head, h6.head { font-size: 1.05em; font-variant: small-caps; }
+
+.title-page { text-align: center; margin: 3rem 0; }
+.titlePart-main { font-size: 2.2em; }
+.title-page p { text-align: center; }
+
+.rend-italic { font-style: italic; }
+.rend-bold { font-weight: bold; }
+.rend-small-caps, .rend-smallcaps { font-variant: small-caps; }
+.rend-sup, .rend-superscript { vertical-align: super; font-size: 0.75em; }
+.rend-small { font-size: 0.85em; }
+.rend-large { font-size: 1.2em; }
+.rend-centred, .rend-center { text-align: center; }
+.divineName { white-space: nowrap; }
+
+.v {
+  font-size: 0.65em;
+  vertical-align: super;
+  color: var(--muted);
+  padding-inline-end: 0.2em;
+  font-family: var(--font-latin);
+}
+.ch { font-size: 1.6em; font-weight: bold; padding-inline-end: 0.3em; color: var(--accent); }
+.aliyah, .parsha { font-variant: small-caps; font-size: 0.85em; color: var(--accent); padding-inline: 0.3em; }
+.citation { display: block; text-align: center; font-style: italic; color: var(--muted); margin: 0.4em 0; }
+.section-separator { display: block; text-align: center; margin: 1em 0; color: var(--muted); }
+.pb { display: none; }
+.option-alt::before, .written-alt::before { content: " ("; }
+.option-alt::after, .written-alt::after { content: ")"; }
+.read { font-style: italic; }
+.list { padding-inline-start: 1.5em; }
+
+/* ── Rubrics and notes ───────────────────────────────────────────────── */
+
+.rubric {
+  font-family: var(--font-latin);
+  font-style: italic;
+  font-size: 0.9em;
+  color: var(--accent);
+}
+p.rubric { text-align: start; }
+
+.note-ref {
+  font: inherit;
+  font-size: 0.65em;
+  vertical-align: super;
+  line-height: 1;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0 0.15em;
+  cursor: pointer;
+}
+.note[popover] {
+  max-width: min(36rem, calc(100vw - 32px));
+  margin: auto;
+  padding: 1rem 1.25rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: start;
+}
+.note-number { font-weight: bold; padding-inline-end: 0.5em; color: var(--accent); }
+
+/* ── Parallel text ───────────────────────────────────────────────────── */
+
+.tr { display: contents; }
+.par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2rem;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 6rem;
+}
+.par-primary_last > .col-primary { order: 2; }
+.col { min-width: 0; }
+.col > .div, .col .div { margin: 0; }
+@media (max-width: 40rem) {
+  .par { grid-template-columns: 1fr; row-gap: 0.4rem; }
+  .col-parallel { padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
+}
+
+/* ── Undecided passages ──────────────────────────────────────────────── */
+
+.cm-inline .cm-br { color: var(--muted); }
+.cm-block { margin: 0.3em 0; }
+.cm-block .cm-br {
+  display: block;
+  width: var(--cond-rule-width);
+  margin: 0.4em auto;
+  border-top: var(--cond-rule-thickness) solid var(--muted);
+}
+.cm-block.cm-open:not(.cm-norubric) .cm-br { display: none; }
+/* A scope that only says which reading begins here: its label is enough (markers.py). */
+.cm-silent { display: none; }
+
+/* ── The book's controls ─────────────────────────────────────────────── */
+
+.os-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  font-family: system-ui, sans-serif;
+}
+.os-toolbar[hidden] { display: none; }
+.os-toolbar button, .os-dialog button {
+  font: 0.9rem system-ui, sans-serif;
+  padding: 0.4rem 0.8rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.os-dialog {
+  width: min(40rem, calc(100vw - 32px));
+  max-height: calc(100vh - 4rem);
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: 0.95rem/1.4 system-ui, sans-serif;
+}
+.os-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+.os-dialog h2 { margin-top: 0; font-size: 1.25rem; }
+.os-dialog fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 0 0 1rem; }
+.os-dialog legend { font-weight: 600; padding: 0 0.3rem; }
+.os-setting {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 1.4fr);
+  gap: 0.2rem 0.75rem;
+  align-items: center;
+  margin: 0.4rem 0;
+}
+.os-setting select { font: inherit; max-width: 100%; }
+.os-setting-count { grid-column: 2; font-size: 0.8rem; color: var(--muted); }
+.os-note { color: var(--muted); font-size: 0.85rem; }
+.os-dialog-buttons { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 1rem; }
+.os-contents { padding-inline-start: 1.2rem; }
+.os-contents a { color: var(--ink); }
+.os-contents-h2 { margin-inline-start: 1rem; }
+.os-contents-h3 { margin-inline-start: 2rem; font-size: 0.9em; }
+
+.os-about {
+  max-width: 72rem;
+  margin: 4rem auto 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font: 0.85rem/1.5 system-ui, sans-serif;
+}
+.os-about h2 { font-size: 1rem; color: var(--ink); }
+
+@media print {
+  body { padding: 0; background: none; color: #000; }
+  .os-toolbar, .os-dialog, .note-ref { display: none !important; }
+  .par { content-visibility: visible; }
+}

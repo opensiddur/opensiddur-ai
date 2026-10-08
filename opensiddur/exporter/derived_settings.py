@@ -5,6 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
+from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.calendar.compute import (
     FS_READING_CYCLE,
     READING_CYCLE_DEFAULTS,
@@ -104,6 +105,9 @@ def _collect_contributors(
 
 def _push_static_defaults(linear_data: LinearData) -> None:
     for fs_type, features in STATIC_DEFAULTS.items():
+        if linear_data.defer_reader_settings and is_reader_supplied(fs_type):
+            # The book's default for its reader to change, not a value to compile in.
+            continue
         for feature_name, value in features.items():
             if get_active_setting_entry(linear_data, fs_type, feature_name) is not None:
                 continue

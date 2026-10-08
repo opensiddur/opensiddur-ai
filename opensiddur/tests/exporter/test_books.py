@@ -172,6 +172,51 @@ class TestBooks(unittest.TestCase):
             self.assertEqual(cmd[cmd.index("--project-directory") + 1], str(self.project_dir))
         self.assertTrue((self.output_dir / "a-one.log").exists())
 
+    def test_build_html_compiles_for_the_reader(self):
+        path = self._book("a/one")
+        self.output_dir.mkdir(exist_ok=True)
+        with patch.object(books.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)) as run:
+            result = books.build(path, self.settings_dir, self.project_dir, self.output_dir,
+                                 "v1.0.0", formats=("html",))
+        self.assertTrue(result.ok)
+        self.assertIsNone(result.output_pdf)
+        self.assertEqual(result.output_html, self.output_dir / "a-one-v1.0.0.html")
+        compile_cmd, html_cmd = (c.args[0] for c in run.call_args_list)
+        self.assertEqual(compile_cmd[compile_cmd.index("--destination") + 1], "electronic")
+        self.assertEqual(html_cmd[:3], [sys.executable, "-m", "opensiddur.exporter.html.html"])
+        self.assertEqual(html_cmd[3:5], [compile_cmd[compile_cmd.index("-o") + 1],
+                                         str(self.output_dir / "a-one-v1.0.0.html")])
+
+    def test_build_both_compiles_each_separately(self):
+        path = self._book("a/one")
+        self.output_dir.mkdir(exist_ok=True)
+        with patch.object(books.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)) as run:
+            result = books.build(path, self.settings_dir, self.project_dir, self.output_dir,
+                                 formats=("pdf", "html"))
+        self.assertEqual((result.output_pdf.name, result.output_html.name),
+                         ("a-one.pdf", "a-one.html"))
+        stages = [c.args[0][2] for c in run.call_args_list]
+        self.assertEqual(stages, ["opensiddur.exporter.compiler", "opensiddur.exporter.pdf.pdf",
+                                  "opensiddur.exporter.compiler", "opensiddur.exporter.html.html"])
+        print_compile, electronic_compile = run.call_args_list[0].args[0], run.call_args_list[2].args[0]
+        self.assertNotIn("--destination", print_compile)
+        self.assertIn("--destination", electronic_compile)
+
+    def test_build_reports_failed_html(self):
+        with patch.object(books.subprocess, "run",
+                          side_effect=[subprocess.CompletedProcess([], 0),
+                                       subprocess.CompletedProcess([], 1)]):
+            self.output_dir.mkdir(exist_ok=True)
+            result = books.build(self._book("a/one"), self.settings_dir, self.project_dir,
+                                 self.output_dir, formats=("html",))
+        self.assertIn("rendering failed", result.error)
+        self.assertIsNone(result.output_html)
+
+    def test_output_name_extension(self):
+        self.assertEqual(books.output_name("humash/annual", "v1", "html"), "humash-annual-v1.html")
+
     def test_build_stops_at_failed_compile(self):
         with patch.object(books.subprocess, "run",
                           return_value=subprocess.CompletedProcess([], 1)) as run:
@@ -213,6 +258,16 @@ class TestBooks(unittest.TestCase):
                           return_value=subprocess.CompletedProcess([], 0)):
             code, _ = self._main("-o", str(self.output_dir))
         self.assertEqual(code, 0)
+
+    def test_main_format_html(self):
+        self._book("a/one")
+        with patch.object(books.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)) as run:
+            code, out = self._main("-o", str(self.output_dir), "--format", "html")
+        self.assertEqual(code, 0)
+        self.assertEqual([c.args[0][2] for c in run.call_args_list],
+                         ["opensiddur.exporter.compiler", "opensiddur.exporter.html.html"])
+        self.assertIn("a-one.html", out)
 
     def test_main_select_a_book_selects_all_its_settings(self):
         self._book("a/one")
