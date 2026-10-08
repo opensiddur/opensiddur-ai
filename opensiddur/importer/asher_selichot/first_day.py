@@ -231,6 +231,9 @@ def words_with_notes(parent, words, notes, lang):
             first, following = note['text'].split('\n',1)
             p = element(node,'p');p.set(XML+'lang','en');mixed_words(p,first)
             element(node,'p',following)
+        elif lang == 'en' and re.search(r'[\u05d0-\u05ea]', note['text']):
+            node.set(XML+'lang', 'en')
+            mixed_words(node, note['text'])
         else:
             node.text = note['text']
     append_words(parent, rest)

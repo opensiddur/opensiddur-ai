@@ -1,4 +1,4 @@
-# Reproducing the Asher first-three-day encoding
+# Reproducing the Asher Selichoth encoding
 
 Use the three companion `feat_asher-selichot-pilot` worktrees; the branch name
 is historical. Pass standalone source/project directories explicitly. Initialize
@@ -6,7 +6,11 @@ code submodules, install dependencies and build the schema before validation.
 Archive requests use efraim@opensiddur.org. Scan images, OCR cache, compiled XML,
 TeX and PDFs remain untracked under `output/asher_selichot`.
 
-## Coverage and evidence
+## Current coverage
+
+Both title pages and the first five complete days are encoded through Archive n83/n84, before the sixth-day body heading. There are 134 XML files (67 per language): 60 independent named texts and seven book/service assemblies. Daily checkpoints below record current validation and rendering results. Independent Hebrew proofreading remains pending.
+
+## First-three-day validation baseline
 
 Both title pages and the first three complete days are encoded, ending above the
 fourth-day section heading on Archive n67/n68. Printed pages 31 and 32 have
@@ -136,7 +140,7 @@ and third-day verse/footnote pages were also inspected visually.
 Independent Hebrew consonant/pointing proofreading remains pending, especially
 in dense rhymed lines. Immutable first readings, same-assistant image-pass
 adjudications and English OCR comparison provenance remain in source evidence.
-Further-day conversion, publication and release integration remain outside current
+Conversion beyond the currently encoded days, publication and release integration remain outside current
 coverage. Local settings keep this incomplete book out of automatic releases.
 
 ## Fourth-day checkpoint (2026-10-07)
@@ -163,3 +167,14 @@ and documentary pizmon page were inspected visually. `check_book_pdf` now takes
 
 Independent Hebrew proofreading remains pending. Days five through seven are
 being added in subsequent daily checkpoints; Erev Rosh Hashanah is outside scope.
+
+## Fifth-day checkpoint (2026-10-07)
+
+The bilingual service is complete through the next printed day heading. Schema validation, source-order reverse comparison, note/choice audits, standalone URN/transclusion resolution and registry checks pass. Independent Hebrew proofreading remains pending.
+
+- Documentary: 63 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [13.55, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  0 of 2149 Hebrew runs are set left to right; control: 2098 of 2149 flagged when every run is reversed.
+- Expanded: 159 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  0 of 6272 Hebrew runs are set left to right; control: 6091 of 6272 flagged when every run is reversed.
+
+Both editions pass deliberately broken controls for alignment, note duplication, direction and stale contents destinations. Source-specific branch/join tests and importer checks pass. Rendered contents and the new pizmon pages were inspected visually.

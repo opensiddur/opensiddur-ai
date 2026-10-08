@@ -34,8 +34,9 @@ def printed_unit(parent, reading, lang, context):
             if i:pb(node, data['scan'], data['printed_page'])
             if reading['kind']=='rubric' and lang=='he' and node.get(XML+'lang')=='en':mixed_words(node, data['text'])
             else:words_with_notes(node, data['text'], fragment['notes'][lang], lang)
-            if len(node):node[-1].tail=(node[-1].tail or '')+' '
-            else:node.text=(node.text or '')+' '
+            if not data.get('join_next'):
+                if len(node):node[-1].tail=(node[-1].tail or '')+' '
+                else:node.text=(node.text or '')+' '
     return unit
 
 
@@ -58,7 +59,7 @@ def pizmon(lang, project, reading, refrain):
         else:
             for i,f in enumerate(fragments):
                 if i:pb(block, f[lang]['scan'], f[lang]['printed_page'])
-                words_with_notes(block,f[lang]['text']+' ',f['notes'][lang],lang)
+                words_with_notes(block,f[lang]['text']+('' if f[lang].get('join_next') else ' '),f['notes'][lang],lang)
         node = element(block,'l') if lang=='he' else block
         if stanza.get('cue'):
             segment = element(node,'seg',type='refrain')
