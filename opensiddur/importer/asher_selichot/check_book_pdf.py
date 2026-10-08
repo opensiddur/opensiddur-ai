@@ -205,6 +205,17 @@ def numbered_day_check(tree, expanded, data, scope):
     return deltas
 
 
+def check_phrase_dots(tree):
+    """A wrapped Hebrew verse must not leave its terminal phrase dot alone."""
+    for number,page in enumerate(tree.findall('page'),1):
+        gutter=288 if number%2 else 324
+        for line in page.findall('.//line'):
+            left=''.join(c.get('c','') for c in line.findall('.//char')
+                         if float(c.get('x'))<gutter).strip()
+            if any(c in '·∙' for c in left) and all(c.isspace() or c.isdigit() or c in '·∙' for c in left):
+                raise ValueError('Stranded Hebrew phrase dot on PDF page '+str(number))
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('pdf',type=Path);parser.add_argument('--expanded',action='store_true');parser.add_argument('--control',action='store_true')
@@ -220,6 +231,7 @@ def main(argv=None):
         text=' '.join(l.get('text','') for l in tree.findall('.//line'))
         if 'Contents' not in text:raise ValueError('Missing generated contents page')
         check_contents(tree,rows,reader.page_labels)
+        check_phrase_dots(tree)
         first=slice_day(tree,days[0],days[1],keep_titles=True);second=slice_day(tree,days[1],days[2] if len(days)>2 else None)
         third=slice_day(tree,days[2],days[3] if len(days)>3 else None) if len(days)>2 else None
         first_deltas=check_first(first,complete=True,expanded=args.expanded)
@@ -255,6 +267,12 @@ def main(argv=None):
                 except ValueError:pass
                 else:raise AssertionError('Shifted numbered-day stanza escaped detection')
         if args.control:
+            broken_dot=copy.deepcopy(tree)
+            line=etree.SubElement(broken_dot.find('page'),'line')
+            etree.SubElement(line,'char',c='∙',x='150',y='150')
+            try:check_phrase_dots(broken_dot)
+            except ValueError:pass
+            else:raise AssertionError('Stranded phrase-dot control escaped detection')
             broken=copy.deepcopy(tree)
             toc=next(p for p in broken.findall('page') if any('Contents' in l.get('text','') for l in p.findall('.//line')))
             digit=next(c for c in toc.findall('.//char') if c.get('c','').isdigit())

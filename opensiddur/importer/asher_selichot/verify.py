@@ -1,6 +1,7 @@
 """Verify the edition against independent documentary streams and its expansion policy."""
 import argparse
 import json
+import unicodedata
 from pathlib import Path
 from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT, PROJECT_DIRECTORY
@@ -45,9 +46,10 @@ def verify(source_root, project_directory):
         else:
             expected_final=data['en']['poem']['stanzas'][0]
             refrain='to hearken unto our hymns of praise, and unto our supplication.'
-        if ''.join(choices[-1].find(f'{{{TEI}}}expan').itertext())!=expected_final:
+        normalize = lambda text: ' '.join(unicodedata.normalize('NFKD', text).split())
+        if normalize(''.join(choices[-1].find(f'{{{TEI}}}expan').itertext()))!=normalize(expected_final):
             raise ValueError('Concluding cue must expand to the entire opening stanza')
-        if any(''.join(c.find(f'{{{TEI}}}expan').itertext())!=refrain for c in choices[:-1]):
+        if any(normalize(''.join(c.find(f'{{{TEI}}}expan').itertext()))!=normalize(refrain) for c in choices[:-1]):
             raise ValueError('Short cue must expand to this edition’s printed refrain')
         from .first_day import FIRST_DAY
         targets = [FIRST_DAY]

@@ -39,7 +39,7 @@ class FirstDayTest(unittest.TestCase):
                        {'ashamnu_mikol':{'line_stops':'·׃'}})
         lines = root.findall(f'.//{{{TEI}}}lg/{{{TEI}}}l')
         self.assertEqual(3, len(lines))
-        self.assertEqual('גלה ממנו משוש ·', ''.join(lines[1].itertext()).strip())
+        self.assertEqual('גלה ממנו משוש\u00a0·', ''.join(lines[1].itertext()).strip())
         self.assertIsNotNone(lines[1].find(f'{{{TEI}}}pb'))
         self.assertEqual(1, len(lines[2].findall(f'{{{TEI}}}note')))
         english = section('en', 'fixture', 'closing', [group],

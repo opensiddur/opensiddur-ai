@@ -171,6 +171,13 @@ def dependency(lang,project,name,pages):
     return root
 
 
+def normalized_xml(root):
+    """Normalize source glyphs while preserving binding spaces before phrase dots."""
+    xml=etree.tostring(root,encoding='unicode',pretty_print=True)
+    xml='\u00a0'.join(unicodedata.normalize('NFKD',part) for part in xml.split('\u00a0'))
+    return xml.replace(' ·','\u00a0·')
+
+
 def build(source_root,project_directory):
     data=json.loads((Path(source_root)/'asher_selichot/scan_reading/refrain-and-prayers.json').read_text())
     documents=[]
@@ -180,7 +187,7 @@ def build(source_root,project_directory):
         for name,pages in data[lang]['prayers'].items():
             docs[name+'.xml']=dependency(lang,project,name,pages)
         for name,root in docs.items():
-            xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
+            xml=normalized_xml(root)
             valid,errors=validate(xml)
             if not valid:
                 raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
@@ -199,7 +206,7 @@ def build(source_root,project_directory):
         if (readings/(day_name+'-day.json')).exists():
             authored.extend(numbered_documents(readings, day_name))
     for project, name, root in authored:
-        xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
+        xml=normalized_xml(root)
         valid,errors=validate(xml)
         if not valid:
             raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))

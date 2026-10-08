@@ -61,3 +61,42 @@ class NumberedDaysTest(unittest.TestCase):
         para=node.find(f'.//{{{TEI}}}p')
         self.assertEqual('sacrifices.',''.join(para.itertext()).strip())
         self.assertIn('/n82_medium.jpg',para.find(f'{{{TEI}}}pb').get('facs'))
+
+    def test_missing_english_opening_cue_is_not_invented(self):
+        def fragment(he,en):
+            return {'he':{'scan':'s90','printed_page':'44','text':he},
+                    'en':{'scan':'s91','printed_page':'44','text':en},
+                    'notes':{'he':[],'en':[]}}
+        ref={'he':'עננו׃','en':'Answer us.'}
+        reading={'urn':'urn:x-opensiddur:text:poem:fixture','stanzas':[
+            {'id':'first','fragments':[fragment('שיר׃','Song.')],'refrain':ref},
+            {'id':'last','fragments':[fragment('אחרון׃','Last.')],'refrain':ref,
+             'opening_cue':{'he':'שיר וכו׳','en':''}}]}
+        en=pizmon('en','fixture',reading,ref)
+        he=pizmon('he','fixture',reading,ref)
+        self.assertEqual([],en.findall(f'.//{{{TEI}}}choice'))
+        self.assertEqual(1,len(he.findall(f'.//{{{TEI}}}choice')))
+        self.assertEqual('Last. Answer us.', ''.join(en.findall(f'.//{{{TEI}}}body/{{{TEI}}}div/{{{TEI}}}p')[-1].itertext()).strip())
+
+    def test_hebrew_phrase_dot_is_bound_to_preceding_word(self):
+        from opensiddur.importer.asher_selichot.first_day import poetic_lines
+        node=etree.Element(f'{{{TEI}}}lg')
+        fragments=[{'he':{'scan':'s90','printed_page':'44','text':'מילה · סוף׃'},
+                    'notes':{'he':[]}}]
+        poetic_lines(node,fragments,{'line_stops':'·׃'})
+        self.assertEqual(['מילה\u00a0·','סוף׃'],[l.text for l in node])
+
+    def test_render_check_rejects_a_stranded_hebrew_phrase_dot(self):
+        from opensiddur.importer.asher_selichot.check_book_pdf import check_phrase_dots
+        tree=etree.Element('document');page=etree.SubElement(tree,'page')
+        line=etree.SubElement(page,'line')
+        etree.SubElement(line,'char',c='∙',x='100',y='100')
+        with self.assertRaisesRegex(ValueError,'Stranded Hebrew phrase dot'):check_phrase_dots(tree)
+        etree.SubElement(line,'char',c='ם',x='110',y='100')
+        check_phrase_dots(tree)
+
+    def test_serialization_preserves_binding_spaces_and_normalizes_glyphs(self):
+        from opensiddur.importer.asher_selichot.build import normalized_xml
+        node=etree.Element(f'{{{TEI}}}p');node.text='שׁיר · סוף\u00a0·'
+        restored=etree.fromstring(normalized_xml(node).encode())
+        self.assertEqual('שׁיר\u00a0· סוף\u00a0·',restored.text)
