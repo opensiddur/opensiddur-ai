@@ -39,6 +39,25 @@ def day_bookmarks(rows, captions=("FIRST DAY", "SECOND DAY")):
     return days
 
 
+def check_contents(tree, rows, page_labels):
+    """Compare rendered TOC numbers with the current bookmark destinations."""
+    numbers=[]
+    for page in tree.findall('page'):
+        if not any('Contents' in line.get('text','') for line in page.findall('.//line')):continue
+        baselines={}
+        for line in page.findall('.//line'):
+            digits=[c for c in line.findall('.//char') if c.get('c','').isdigit()]
+            xs=[float(c.get('x')) for c in digits]
+            if xs!=sorted(xs):raise ValueError('Reversed TOC page number')
+            for char in digits:
+                baseline=round(float(char.get('y')),2)
+                baselines.setdefault(baseline,[]).append(char)
+        numbers.extend(''.join(c.get('c') for c in sorted(chars,key=lambda c:float(c.get('x'))))
+                       for _,chars in sorted(baselines.items()))
+    expected=[page_labels[row[2]-1] for row in rows]
+    if numbers!=expected:raise ValueError(f'TOC pages differ from bookmark destinations: {numbers} != {expected}')
+
+
 def slice_day(tree, start, end=None, keep_titles=False):
     """Retain original page slots, so parity-dependent column gutters remain valid."""
     result=copy.deepcopy(tree)
@@ -66,6 +85,7 @@ def second_day_check(tree, expanded):
     for number,page in enumerate(tree.findall('page'),1):
         gutter=288 if number%2 else 324
         for line in page.findall('.//line'):
+            if plain(line.get('text','')).strip().isdigit():continue  # Reledmac line numbers are not prayer words.
             chars=line.findall('.//char')
             h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
@@ -108,6 +128,7 @@ def third_day_check(tree, expanded):
     for number,page in enumerate(tree.findall('page'),1):
         gutter=288 if number%2 else 324
         for line in page.findall('.//line'):
+            if plain(line.get('text','')).strip().isdigit():continue  # Reledmac line numbers are not prayer words.
             chars=line.findall('.//char')
             h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
@@ -152,12 +173,7 @@ def main(argv=None):
         tree=etree.parse(str(path)).getroot()
         text=' '.join(l.get('text','') for l in tree.findall('.//line'))
         if 'Contents' not in text:raise ValueError('Missing generated contents page')
-        for page in tree.findall('page'):
-            if not any('Contents' in l.get('text','') for l in page.findall('.//line')):continue
-            for line in page.findall('.//line'):
-                digits=[c for c in line.findall('.//char') if c.get('c','').isdigit()]
-                xs=[float(c.get('x')) for c in digits]
-                if xs!=sorted(xs):raise ValueError('Reversed TOC page number')
+        check_contents(tree,rows,reader.page_labels)
         first=slice_day(tree,days[0],days[1],keep_titles=True);second=slice_day(tree,days[1],days[2] if len(days)>2 else None)
         third=slice_day(tree,days[2]) if len(days)>2 else None
         first_deltas=check_first(first,complete=True,expanded=args.expanded)
@@ -165,6 +181,13 @@ def main(argv=None):
         second_deltas=second_day_check(second,args.expanded)
         third_deltas=third_day_check(third,args.expanded) if third is not None else []
         if args.control:
+            broken=copy.deepcopy(tree)
+            toc=next(p for p in broken.findall('page') if any('Contents' in l.get('text','') for l in p.findall('.//line')))
+            digit=next(c for c in toc.findall('.//char') if c.get('c','').isdigit())
+            digit.set('c','9' if digit.get('c')!='9' else '8')
+            try:check_contents(broken,rows,reader.page_labels)
+            except ValueError:pass
+            else:raise AssertionError('Stale TOC page escaped detection')
             first_controls(first,complete=True,expanded=args.expanded);poem_controls(first,args.expanded,complete=True)
             broken=[(1 if 'SECOND DAY' in r[1] else r[0],*r[1:]) for r in rows]
             try:day_bookmarks(broken)

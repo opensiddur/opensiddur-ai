@@ -38,3 +38,36 @@ class ThirdDayTest(unittest.TestCase):
         root=poem('en','fixture',{'running_header':'PROPITIATORY PRAYERS FOR THE FIRST DAY.','rubric':'Repeat the refrain.','stanzas':['Opening.'], 'cues':{}, 'conclusion':'Say the prayer.'})
         self.assertIsNone(root.find(f'.//{{{TEI}}}head'))
         self.assertNotIn('PROPITIATORY PRAYERS',' '.join(root.itertext()))
+
+    def test_third_day_kaddish_restores_its_own_calendar_scope(self):
+        from opensiddur.importer.asher_selichot.second_day import conclusion
+        root=etree.Element('{'+TEI+'}div')
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)
+            (source/'first-day-continuation.json').write_text(json.dumps({'sections':{'closing':[{'id':'reader_kaddish'}]}}))
+            conclusion(root,source,'third')
+        declaration=root.find('{'+J+'}declare')
+        self.assertEqual('third_day_kaddish',declaration.get(XML+'id'))
+        self.assertEqual(['first_day','aseret-ymei-tshuva'],[n.get('name') for n in declaration.findall('.//{'+TEI+'}f')])
+        self.assertEqual(['false','false'],[n.get('value') for n in declaration.findall('.//{'+TEI+'}binary')])
+        self.assertEqual('urn:x-opensiddur:text:prayer:kaddish/shalem',root.find('{'+J+'}transclude').get('target'))
+        self.assertEqual('#third_day_kaddish',root[-1].get('target'))
+
+    def test_third_day_bookmark_must_be_above_its_pizmon(self):
+        from opensiddur.importer.asher_selichot.check_book_pdf import day_bookmarks
+        captions=('FIRST DAY','SECOND DAY','THIRD DAY')
+        rows=[(0,'FIRST DAY',7,650),(1,'פזמון',22,600),(0,'SECOND DAY',37,600),(1,'פזמון',41,600),(0,'THIRD DAY',42,600),(1,'פזמון',47,600)]
+        self.assertEqual(rows[::2],day_bookmarks(rows,captions))
+        with self.assertRaisesRegex(ValueError,'top-level bookmark'):
+            day_bookmarks(rows[:4]+[(1,*rows[4][1:]),rows[5]],captions)
+
+    def test_contents_rejects_stale_pages_despite_correct_bookmarks(self):
+        from opensiddur.importer.asher_selichot.check_book_pdf import check_contents
+        tree=etree.Element('document');page=etree.SubElement(tree,'page')
+        etree.SubElement(page,'line',text='Contents')
+        line=etree.SubElement(page,'line',text='64')
+        for x,char in enumerate('64'):etree.SubElement(line,'char',c=char,x=str(490+x*5),y='200')
+        with self.assertRaisesRegex(ValueError,'TOC pages differ'):
+            check_contents(tree,[(0,'THIRD DAY',2,600)],['62','63'])
+        line[-1].set('c','3')
+        check_contents(tree,[(0,'THIRD DAY',2,600)],['62','63'])
