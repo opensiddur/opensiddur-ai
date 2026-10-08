@@ -194,6 +194,10 @@ def build(source_root,project_directory):
     if (readings/'third-day.json').exists():
         from .third_day import documents as third_day_documents
         authored.extend(third_day_documents(readings))
+    from .second_day import numbered_documents
+    for day_name in ['fourth', 'fifth', 'sixth', 'seventh']:
+        if (readings/(day_name+'-day.json')).exists():
+            authored.extend(numbered_documents(readings, day_name))
     for project, name, root in authored:
         xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
         valid,errors=validate(xml)

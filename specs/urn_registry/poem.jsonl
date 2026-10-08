@@ -349,3 +349,11 @@
 {"urn": "urn:x-opensiddur:text:poem:shahar_qamti/hen_bihyot", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "hen bihyot"}
 {"urn": "urn:x-opensiddur:text:poem:shahar_qamti/hen_qedem", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "hen qedem"}
 {"urn": "urn:x-opensiddur:text:poem:shahar_qamti/hazeh_qadosh", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:shahar_qamti", "label_en": "hazeh qadosh"}
+{"urn": "urn:x-opensiddur:text:poem:ayeh_kol_nifleotekha", "status": "canonical", "label_he": "ayeh kol nifleotekha"}
+{"urn": "urn:x-opensiddur:text:poem:aryeh_bayaar_damiti", "status": "canonical", "label_he": "aryeh bayaar damiti"}
+{"urn": "urn:x-opensiddur:text:poem:beashmoret_haboqer", "status": "canonical", "label_he": "באשמורת הבקר"}
+{"urn": "urn:x-opensiddur:text:poem:beashmoret_haboqer/beashmoret_haboqer", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:beashmoret_haboqer", "label_en": "beashmoret haboqer"}
+{"urn": "urn:x-opensiddur:text:poem:beashmoret_haboqer/tsarei", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:beashmoret_haboqer", "label_en": "tsarei"}
+{"urn": "urn:x-opensiddur:text:poem:beashmoret_haboqer/hai_rokhev", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:beashmoret_haboqer", "label_en": "hai rokhev"}
+{"urn": "urn:x-opensiddur:text:poem:beashmoret_haboqer/qomem_aron", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:beashmoret_haboqer", "label_en": "qomem aron"}
+{"urn": "urn:x-opensiddur:text:poem:beashmoret_haboqer/malqi_qadosh", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:beashmoret_haboqer", "label_en": "malqi qadosh"}

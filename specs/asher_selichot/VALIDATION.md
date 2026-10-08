@@ -138,3 +138,28 @@ in dense rhymed lines. Immutable first readings, same-assistant image-pass
 adjudications and English OCR comparison provenance remain in source evidence.
 Further-day conversion, publication and release integration remain outside current
 coverage. Local settings keep this incomplete book out of automatic releases.
+
+## Fourth-day checkpoint (2026-10-07)
+
+Complete day four on n67–n76 adds Ayeh kol nifleotekha, Aryeh bayaar damiti
+and the five-stanza Beashmoret haboqer, in independent incipit modules.
+The Hebrew פזמון heading precedes its printed repetition rubric. Hebrew and
+English source page breaks differ; the final English stanza has no additional
+full refrain before its opening cue. All eight English footnotes are retained.
+
+All 126 XML files validate and match source readings; both projects resolve
+URNs/transclusions and the registry has zero errors/warnings. Importer checks:
+31 tests and 12 subtests. Full suite: 3,211 tests and 4,781 subtests passed,
+18 skipped, in 606.48 seconds. After correcting the broken alignment control to
+shift only English glyphs, the importer checks passed again.
+
+Documentary: 56 pages, five fourth-pizmon start differences of 0pt, 0 reversed
+Hebrew runs out of 1,904; the reversed control flags 1,859. Expanded: 130 pages,
+five start differences of 0pt, 0 reversed runs out of 5,077; reversed control
+flags 4,941. Both book checks pass with broken controls, including notes,
+fulfilled cues, prayer boundaries and eight current TOC destinations. The TOCs
+and documentary pizmon page were inspected visually. `check_book_pdf` now takes
+`--source-root` so standalone companion evidence is used explicitly.
+
+Independent Hebrew proofreading remains pending. Days five through seven are
+being added in subsequent daily checkpoints; Erev Rosh Hashanah is outside scope.

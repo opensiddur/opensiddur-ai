@@ -44,14 +44,19 @@ def pizmon(lang, project, reading, refrain):
     div = element(element(text,'body'),'div',corresp=reading['urn'])
     first = reading['stanzas'][0]['fragments'][0][lang]
     pb(div, first['scan'], first['printed_page'])
-    if lang=='he':element(div,'head','פזמון')  # No such heading is printed in English.
+    if lang=='he' and not reading.get('heading_before_rubric'):element(div,'head','פזמון')  # No such heading is printed in English.
     opening = ' '.join(f[lang]['text'] for f in reading['stanzas'][0]['fragments'])+' '+refrain[lang]
     for stanza in reading['stanzas']:
+        fragments = [f for f in stanza['fragments'] if f[lang]['text']]
+        if not fragments:raise ValueError('Every stanza needs text in each language')
+        first_fragment = fragments[0][lang]
+        if stanza is not reading['stanzas'][0] and reading['stanzas'][reading['stanzas'].index(stanza)-1]['fragments'][-1][lang]['scan'] != first_fragment['scan']:
+            pb(div, first_fragment['scan'], first_fragment['printed_page'])
         marker(div, reading['urn']+'/'+stanza['id'])
         block = element(div, 'lg' if lang=='he' else 'p')
-        if lang=='he':poetic_lines(block, stanza['fragments'], {'line_stops':'·׃'})
+        if lang=='he':poetic_lines(block, fragments, {'line_stops':'·׃'})
         else:
-            for i,f in enumerate(stanza['fragments']):
+            for i,f in enumerate(fragments):
                 if i:pb(block, f[lang]['scan'], f[lang]['printed_page'])
                 words_with_notes(block,f[lang]['text']+' ',f['notes'][lang],lang)
         node = element(block,'l') if lang=='he' else block
@@ -106,6 +111,8 @@ def numbered_documents(source, day_name):
                 element(service,'j:transclude',target=reading['urn'])
             elif reading['kind']=='rubric':
                 unit = element(service,'div',corresp=day_urn+'/'+reading['id'])
+                if lang == 'he' and reading.get('heading_before'):
+                    element(unit, 'head', reading['heading_before'])
                 feature = 'refrains_present' if reading['id']=='refrain_instruction' else 'prayers_present'
                 expansion_scope(unit,day_name+'_'+reading['id']+'_printed',False,feature=feature)
                 printed_unit(unit,reading,lang,day_urn+'/'+reading['id']+'/printed')
@@ -114,7 +121,7 @@ def numbered_documents(source, day_name):
                 expansion_scope(unit,day_name+'_'+reading['id']+'_expanded',True,feature=feature)
                 if reading['id']=='conclusion_instruction':conclusion(unit,source,day_name)
                 else:
-                    targets = OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS
+                    targets = reading.get('expansion_targets', OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS)
                     for target in targets:element(unit,'j:transclude',target=target)
                 element(unit,'j:endConditional',target='#'+day_name+'_'+reading['id']+'_expanded')
             else:printed_unit(service,reading,lang,day_urn+'/'+reading['id'])
@@ -161,7 +168,7 @@ def verify_numbered_readings(source, project_directory, day_name):
                     end = unit.find('{http://jewishliturgy.org/ns/jlptei/2}endConditional[@target="#'+start.get(XML+'id')+'"]')
                     if end is None:raise ValueError('Unclosed numbered-day expansion')
                     if reading['id'] != 'conclusion_instruction':
-                        expected_targets = OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS
+                        expected_targets = reading.get('expansion_targets', OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS)
                         if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != expected_targets:
                             raise ValueError('Numbered-day referenced prayer range changed')
                     else:
@@ -188,12 +195,14 @@ def verify_numbered_readings(source, project_directory, day_name):
             for part in parts:
                 for fragment in part['fragments']:
                     value=fragment[lang];words=value['text'];page=value['scan']
+                    if not words:continue
                     expected_notes.extend(n['text'] for n in fragment['notes'][lang])
                     if reading['kind']=='rubric' and lang=='he' and re.search('[A-Za-z]', reading['fragments'][0]['he']['text']):
                         append(page,'he',' '.join(re.findall(r'[\u0590-\u05ff]+',words)))
                         append(page,'en',re.sub(r'[\u0590-\u05ff]+','',words).replace(' · ',' '))
                     else:append(page,lang,words)
                 if reading['kind']=='pizmon':
+                    page = next(f[lang]['scan'] for f in reversed(part['fragments']) if f[lang]['text'])
                     append(page,lang,(part.get('cue') or part['refrain'])[lang])
                     if part.get('opening_cue'):append(page,lang,part['opening_cue'][lang])
             notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
@@ -212,11 +221,15 @@ def verify_numbered_readings(source, project_directory, day_name):
             if reading['kind']=='pizmon':
                 choices=unit.findall(f'.//{{{TEI}}}choice')
                 opening=' '.join(f[lang]['text'] for f in parts[0]['fragments'])+' '+data['refrain'][lang]
-                if len(choices)!=5 or [normalize(''.join(n.find(f'{{{TEI}}}expan').itertext())) for n in choices] != [normalize(data['refrain'][lang])]*4+[normalize(opening)]:
+                expected_expansions = []
+                for stanza in parts:
+                    if stanza.get('cue'):expected_expansions.append(normalize(data['refrain'][lang]))
+                    if stanza.get('opening_cue'):expected_expansions.append(normalize(opening))
+                if [normalize(''.join(n.find(f'{{{TEI}}}expan').itertext())) for n in choices] != expected_expansions:
                     raise ValueError('Pizmon expansions must reproduce this edition’s verified refrain/opening')
-                if lang=='he' and len(unit.findall(f'{{{TEI}}}lg'))!=6:
-                    raise ValueError('The pizmon must retain six poetic stanzas')
-    print(day_name.title()+' day: printed order, page streams, footnotes and five refrain choices per language checked')
+                if lang=='he' and len(unit.findall(f'{{{TEI}}}lg'))!=len(parts):
+                    raise ValueError('The pizmon must retain its source stanzas')
+    print(day_name.title()+' day: printed order, page streams, footnotes and source refrain choices per language checked')
 
 
 def documents(source):

@@ -1,6 +1,10 @@
 """Verify encoded days, the contents page and the bookmark hierarchy."""
 import argparse
 import copy
+import json
+import re
+from collections import Counter
+from opensiddur.common.constants import SOURCETEXTS_ROOT
 import subprocess
 import tempfile
 from pathlib import Path
@@ -162,11 +166,53 @@ def third_day_check(tree, expanded):
     return deltas
 
 
+def numbered_day_check(tree, expanded, data, scope):
+    """Measure the independently recorded stanza anchors and printed apparatus."""
+    he,en=[],[]
+    for number,page in enumerate(tree.findall('page'),1):
+        gutter=288 if number%2 else 324
+        for line in page.findall('.//line'):
+            if plain(line.get('text','')).strip().isdigit():continue
+            chars=line.findall('.//char')
+            h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
+            e=[c for c in chars if float(c.get('x'))>gutter]
+            if h:he.append((number,float(h[0].get('y')),''.join(base(c.get('c')) for c in sorted(h,key=lambda c:float(c.get('x')),reverse=True))))
+            if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
+    deltas=[];previous=(0,0)
+    for anchor in scope['pizmon_stanza_anchors']:
+        h=next((r for r in he if anchor['he'] in r[2] and r[:2]>=previous),None)
+        e=next((r for r in en if anchor['en'] in r[2] and r[:2]>=previous),None)
+        if h is None or e is None:raise ValueError('Missing numbered-day stanza '+str(anchor))
+        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Numbered-day stanza alignment failed: '+str((h,e)))
+        deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
+    normalize=lambda s:' '.join(re.sub(r'-\s+','',plain(s)).split())
+    text=normalize(' '.join(l.get('text','') for l in tree.findall('.//line')))
+    notes=Counter(normalize(n['text']) for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
+    for phrase,count in notes.items():
+        if text.count(phrase)!=count:raise ValueError('Numbered-day footnote occurrence: '+phrase)
+    for chars in latin_note_runs(tree).values():
+        xs=[float(c.get('x')) for c in chars]
+        if any(b<a-0.05 for a,b in zip(xs,xs[1:])):raise ValueError('Reversed numbered-day Latin footnote')
+    body=normalize(' '.join(r[2] for r in en))
+    if expanded:
+        for phrase in ['Say ', 'Conclude the Service', 'Wherever the words', 'Wherever the word']:
+            if phrase in body:raise ValueError('Expanded service retains a fulfilled cue: '+phrase)
+        pair_count=sum(u['id'].endswith('prayer_cue') for u in data['units'])
+        if body.count('Omnipotent King, who')!=pair_count:raise ValueError('Numbered-day prayer-pair expansion count')
+        if body.count('May the prayers and supplications')!=1:raise ValueError('Numbered day requires one Full Kaddish')
+    elif 'Conclude the Service as on the first day' not in body:
+        raise ValueError('Missing numbered-day closing rubric')
+    return deltas
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('pdf',type=Path);parser.add_argument('--expanded',action='store_true');parser.add_argument('--control',action='store_true')
+    parser.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT)
     args=parser.parse_args(argv)
-    reader=PdfReader(args.pdf);rows=outline_rows(reader);days=day_bookmarks(rows, ("FIRST DAY", "SECOND DAY", "THIRD DAY") if any("THIRD DAY" in r[1] for r in rows) else ("FIRST DAY", "SECOND DAY"))
+    reader=PdfReader(args.pdf);rows=outline_rows(reader)
+    captions=[word+' DAY' for word in ['FIRST','SECOND','THIRD','FOURTH','FIFTH','SIXTH','SEVENTH'] if any(word+' DAY' in r[1] for r in rows)]
+    days=day_bookmarks(rows,captions)
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
         subprocess.run(['mutool','draw','-F','stext','-o',str(path),str(args.pdf)],check=True,capture_output=True)
@@ -175,11 +221,37 @@ def main(argv=None):
         if 'Contents' not in text:raise ValueError('Missing generated contents page')
         check_contents(tree,rows,reader.page_labels)
         first=slice_day(tree,days[0],days[1],keep_titles=True);second=slice_day(tree,days[1],days[2] if len(days)>2 else None)
-        third=slice_day(tree,days[2]) if len(days)>2 else None
+        third=slice_day(tree,days[2],days[3] if len(days)>3 else None) if len(days)>2 else None
         first_deltas=check_first(first,complete=True,expanded=args.expanded)
         poem_deltas=check_poem(first,args.expanded,complete=True)
         second_deltas=second_day_check(second,args.expanded)
         third_deltas=third_day_check(third,args.expanded) if third is not None else []
+        later_deltas={}
+        for i,day_name in enumerate(['fourth','fifth','sixth','seventh'],3):
+            if i>=len(days):break
+            source=args.source_root/'asher_selichot'
+            data=json.loads((source/'scan_reading'/(day_name+'-day.json')).read_text())
+            scope=json.loads((source/(day_name+'-day-scope.json')).read_text())
+            portion=slice_day(tree,days[i],days[i+1] if i+1<len(days) else None)
+            later_deltas[day_name]=numbered_day_check(portion,args.expanded,data,scope)
+            if args.control:
+                broken=copy.deepcopy(portion)
+                phrase=next(n['text'] for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
+                line=next(l for l in broken.findall('.//line') if phrase[:25] in plain(l.get('text','')))
+                line.getparent().append(copy.deepcopy(line))
+                try:numbered_day_check(broken,args.expanded,data,scope)
+                except ValueError:pass
+                else:raise AssertionError('Duplicate numbered-day note escaped detection')
+                broken=copy.deepcopy(portion);anchor=scope['pizmon_stanza_anchors'][1]['en']
+                for number,page in enumerate(broken.findall('page'),1):
+                    for line in page.findall('.//line'):
+                        if anchor in plain(line.get('text','')):
+                            for char in line.findall('.//char'):
+                                if float(char.get('x'))>(288 if number%2 else 324):
+                                    char.set('y',str(float(char.get('y'))+50))
+                try:numbered_day_check(broken,args.expanded,data,scope)
+                except ValueError:pass
+                else:raise AssertionError('Shifted numbered-day stanza escaped detection')
         if args.control:
             broken=copy.deepcopy(tree)
             toc=next(p for p in broken.findall('page') if any('Contents' in l.get('text','') for l in p.findall('.//line')))
@@ -226,7 +298,7 @@ def main(argv=None):
             try:third_day_check(broken,args.expanded)
             except ValueError:pass
             else:raise AssertionError('Shifted third-day stanza escaped detection')
-        print(f'{len(reader.pages)} pages; contents generated; day bookmarks above pizmons; first-day prayers {first_deltas}; first pizmon {poem_deltas}; second pizmon {second_deltas}; third pizmon {third_deltas}; footnotes and expansion boundaries checked; controls={args.control}')
+        print(f'{len(reader.pages)} pages; contents generated; day bookmarks above pizmons; first-day prayers {first_deltas}; first pizmon {poem_deltas}; second pizmon {second_deltas}; third pizmon {third_deltas}; later pizmons {later_deltas}; footnotes and expansion boundaries checked; controls={args.control}')
     return 0
 
 
