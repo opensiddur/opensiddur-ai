@@ -53,6 +53,7 @@ from opensiddur.exporter.conditional_settings import (
     XML_ID,
     parse_declare_element,
 )
+from opensiddur.exporter.conditional_markers import check_pairing
 from opensiddur.exporter.condition_eval import (
     TriState,
     evaluate_condition,
@@ -146,6 +147,13 @@ class CompilerProcessor:
         self._urn_resolver = UrnResolver(self._refdb)
 
         self.root_language = None
+
+        # The markers of conditional scopes the range's bounds cut through. See
+        # _place_conditional_marker.
+        self._scopes_before_start: list[tuple[str, ElementBase]] = []
+        self._markers_at_start: list[ElementBase] = []
+        self._scopes_open_in_range: list[str] = []
+        self._closers_due: list[ElementBase] = []
 
     @property
     def _in_parallel_compilation(self) -> bool:
@@ -854,6 +862,80 @@ class CompilerProcessor:
 
         return False
 
+    # ── Conditional scopes cut by a range ───────────────────────────────────
+    # Used by the range processors, ExternalCompilerProcessor and InlineCompilerProcessor.
+
+    def _place_conditional_marker(
+        self, element: ElementBase, marker: Optional[ElementBase], before_start: bool,
+    ) -> list[ElementBase]:
+        """Emit a conditional's marker (or its kept rubric) so the range's scopes stay paired.
+
+        A range transcluded from the middle of a file can start or end inside a conditional
+        scope. The scope's text that falls in the range is still governed by it, so the
+        range carries the scope's markers too -- but only those of scopes that overlap it:
+
+        - a scope that opens before the start and closes before it governs nothing in the
+          range, and neither its marker nor its rubric is emitted;
+        - one still open at the start opens there (`_open_scopes_at_start`);
+        - one the range ends inside closes where the range ends (`_closer_for`), since its
+          own closer lies past the end and is never visited.
+
+        Emitting the marker of every scope met before the start, as the compiler used to,
+        left openers with no closer and rubrics for passages that were not there.
+        """
+        if marker is not None:
+            marker = self._rewrite_ids(marker)
+        if element.tag == J_CONDITIONAL:
+            if marker is None:
+                return []
+            xml_id = element.get(XML_ID)
+            if before_start:
+                self._scopes_before_start.append((xml_id, marker))
+                return []
+            if marker.tag == J_CONDITIONAL:
+                self._scopes_open_in_range.append(xml_id)
+            return [marker]
+        if element.tag == J_END_CONDITIONAL:
+            xml_id = (element.get("target") or "").removeprefix("#")
+            if before_start:
+                self._scopes_before_start = [
+                    scope for scope in self._scopes_before_start if scope[0] != xml_id]
+                return []
+            if xml_id in self._scopes_open_in_range:
+                self._scopes_open_in_range.remove(xml_id)
+        return [] if marker is None else [marker]
+
+    def _open_scopes_at_start(self) -> None:
+        """Open, at the range's start, the scopes still open around it.
+
+        They count as open from this moment -- the start can also be the end, and the end
+        must know to close them -- but their markers wait for the start element's output,
+        which `_process_element` puts them in front of.
+        """
+        for xml_id, marker in self._scopes_before_start:
+            if marker.tag == J_CONDITIONAL:
+                self._scopes_open_in_range.append(xml_id)
+            self._markers_at_start.append(marker)
+        self._scopes_before_start = []
+
+    def _closer_for(self, xml_id: str) -> ElementBase:
+        """A `j:endConditional` for a scope whose own closer lies past the range's end.
+
+        Rewritten in the same processing context as the opener, so the two still pair.
+        """
+        closer = etree.Element(J_END_CONDITIONAL, nsmap=self.ns_map)
+        closer.set("target", f"#{xml_id}")
+        self._rewrite_single_element_ids(closer)
+        return closer
+
+    def _flush_closers_due(self, append_to: ElementBase | list[ElementBase]) -> None:
+        """Append the closers owed by a range that just ended, after the end and its tail."""
+        if not self._closers_due:
+            return
+        for closer in self._closers_due:
+            append_to.append(closer)
+        self._closers_due = []
+
     def _handle_conditional_element(self, element: ElementBase) -> tuple[bool, ElementBase | None]:
         """Process j:conditional / j:endConditional, and strip j:condition.
 
@@ -1234,6 +1316,8 @@ def main(argv: list[str] | None = None):  # pragma: no cover
     close_up_whitespace(result)
     join_split_paragraphs(result)
     merge_credits(result, linear_data)
+    for problem in check_pairing(result):
+        logger.warning("conditional markers do not pair: %s", problem)
     etree.ElementTree(result).write(
         args.output_file if args.output_file else sys.stdout,
         pretty_print=True,

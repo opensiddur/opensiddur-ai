@@ -10,6 +10,13 @@ opensiddur-projects https://github.com/opensiddur/opensiddur-projects (submodule
 The other two repositories are git submodules of this one, so a release tag pins the exact
 source and project commits it was built against. See `RELEASE_PROCEDURE.md`.
 
+**Paired PRs.** opensiddur-projects PRs are validated by this repository's validators
+(`.github/workflows/validate-projects.yml`). When project XML depends on an unmerged change here
+(registry entries, schema, validators), give both PRs the same branch name: the projects check
+then validates against that opensiddur-ai branch instead of main, and warns that it did. Merge
+the opensiddur-ai PR first, re-run the projects check (it falls back to main once the branch is
+deleted), then merge the projects PR.
+
 This repository has 3 parts: 
 (1) schema documentation for the Jewish Liturgy Project TEI extension (`JLPTEI-3.md`) and formal RelaxNG and Schematron schemas (schema/ subdirectory)
 (2) importers (opensiddur/importer/ subdirectory) that 

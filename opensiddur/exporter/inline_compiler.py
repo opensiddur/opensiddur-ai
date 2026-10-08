@@ -66,6 +66,7 @@ class InlineCompilerProcessor(CompilerProcessor):
             if element is self.start_element:
                 context['before_start'] = False
                 context['command'] = _ProcessingCommand.COPY_TEXT_AND_RECURSE
+                self._open_scopes_at_start()
                 return context
 
         # is after start?
@@ -89,6 +90,10 @@ class InlineCompilerProcessor(CompilerProcessor):
             if element is self.end_element:
                 context['after_end'] = True
                 context["include_tail_after_end"] = self.include_tail_after_end
+                # The scopes the range ends inside close where it ends, innermost first.
+                self._closers_due = [
+                    self._closer_for(xml_id) for xml_id in reversed(self._scopes_open_in_range)]
+                self._scopes_open_in_range = []
         elif context['after_end']:
             # force exclusion of tails after the end element
             context["command"] = _ProcessingCommand.SKIP
@@ -96,6 +101,26 @@ class InlineCompilerProcessor(CompilerProcessor):
         return context
 
     def _process_element(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
+        """Process the given element, putting the markers of the scopes still open around
+        the range's start in front of the start's text."""
+        result = self._process_element_contents(element, root)
+        if self._markers_at_start and element is self.start_element:
+            # This element was the range's start: the scopes still open around it open here,
+            # in front of its text.
+            markers = self._markers_at_start
+            self._markers_at_start = []
+            if result.tag != f"{{{PROCESSING_NAMESPACE}}}transcludeInline":
+                wrapper = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transcludeInline", nsmap=self.ns_map)
+                wrapper.text = ""
+                wrapper.append(result)
+                result = wrapper
+            markers[-1].tail = (markers[-1].tail or "") + (result.text or "")
+            result.text = ""
+            for marker in reversed(markers):
+                result.insert(0, marker)
+        return result
+
+    def _process_element_contents(self, element: ElementBase, root: Optional[ElementBase] = None) -> ElementBase:
         """
         Process the given element and return the text content.
         """
@@ -127,20 +152,30 @@ class InlineCompilerProcessor(CompilerProcessor):
 
         handled, conditional_copy = self._handle_conditional_element(element)
         if handled:
+            # Placed before the context update: a closer can be the range's end element
+            # itself, and the update is what settles which scopes the end leaves open.
+            placed = self._place_conditional_marker(
+                element, conditional_copy, context['before_start'])
             self._update_processing_context_after(element)
-            if conditional_copy is not None:
-                return self._rewrite_ids(conditional_copy)
-            return text_element
+            return placed[0] if placed else text_element
 
-        # Check if this element itself is a transclusion
-        transcluded = self._transclude(element, type_override='inline')
-        if transcluded is not None:
-            # Don't process children of j:transclude elements - just return the p:transclude
-            # The tail will be handled by the parent's processing
-            self._update_processing_context_after(element)
-            return transcluded
+        # Before the range's start, a transclusion or annotation must not be resolved at
+        # all: resolving it here would leak content that RECURSE is meant to suppress
+        # entirely (see #53), and would raise on an unresolvable target that will never
+        # actually appear in the output.
+        if context["command"] != _ProcessingCommand.RECURSE:
+            # Check if this element itself is a transclusion
+            transcluded = self._transclude(element, type_override='inline')
+            if transcluded is not None:
+                # Don't process children of j:transclude elements - just return the p:transclude
+                # The tail will be handled by the parent's processing
+                self._update_processing_context_after(element)
+                return transcluded
 
-        annotations, annotation_command = self._annotate(element, root)
+            annotations, annotation_command = self._annotate(element, root)
+        else:
+            annotations, annotation_command = [], _AnnotationCommand.NONE
+
         if annotation_command == _AnnotationCommand.REPLACE:
             # This is a case of an instructional notation that needs to replace the current element
             # and *not* be treated as inline text
@@ -184,8 +219,13 @@ class InlineCompilerProcessor(CompilerProcessor):
                     text_element.append(processed)
                     previous_child = processed
                 else:
-                    # Extract text from nested p:transcludeInline elements
-                    text_element.text += processed.text or ""
+                    # Extract text from nested p:transcludeInline elements. It follows
+                    # whatever is already here, so it goes on the last child's tail if any:
+                    # appended to the text, it would jump ahead of an earlier marker.
+                    if previous_child is not None:
+                        previous_child.tail = (previous_child.tail or "") + (processed.text or "")
+                    else:
+                        text_element.text += processed.text or ""
                     # Also extract any p:transclude children (nested transclusions)
                     for nested_child in processed:
                         text_element.append(nested_child)
@@ -209,6 +249,11 @@ class InlineCompilerProcessor(CompilerProcessor):
                         previous_child.tail = (previous_child.tail or "") + " " + child.tail
                     else:
                         text_element.text += " " + child.tail
+            if self._closers_due:
+                # The range ended at this child: close the scopes it ends inside, after the
+                # end and its tail.
+                self._flush_closers_due(text_element)
+                previous_child = text_element[-1]
 
         if annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
@@ -237,6 +282,9 @@ class InlineCompilerProcessor(CompilerProcessor):
             ))
 
             element = self._process_element(root, root)
+            # Owed only when the range ended on the root itself, with no parent loop
+            # to place them in.
+            self._flush_closers_due(element)
 
             # pop the processing context
             self.linear_data.processing_context.pop()
