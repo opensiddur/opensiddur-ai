@@ -1,9 +1,9 @@
-description: Asher 1912 complete first six days through n92, work in progress.
+description: Asher 1912 complete first seven days through n100, work in progress.
   Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — first six days
+  title: Asher Selichoth — first seven days
 priority:
   transclusion:
   - asher_selichot_he_1912
