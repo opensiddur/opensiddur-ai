@@ -331,3 +331,12 @@
 {"urn": "urn:x-opensiddur:text:poem:maran_divishmaya", "status": "canonical", "label_en": "maran divishmaya"}
 {"urn": "urn:x-opensiddur:text:poem:maran_divishmaya/captive", "status": "canonical", "label_en": "maran divishmaya/captive", "parent": "urn:x-opensiddur:text:poem:maran_divishmaya"}
 {"urn": "urn:x-opensiddur:text:poem:maran_divishmaya/slave", "status": "canonical", "label_en": "maran divishmaya/slave", "parent": "urn:x-opensiddur:text:poem:maran_divishmaya"}
+{"urn": "urn:x-opensiddur:text:poem:eiyyeh_qinatkha_ugevurotekha", "status": "canonical", "label_en": "eiyyeh qinatkha ugevurotekha"}
+{"urn": "urn:x-opensiddur:text:poem:avvitikha_qivitikha_meerets_merhaqim", "status": "canonical", "label_en": "avvitikha qivitikha meerets merhaqim"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha", "status": "canonical", "label_en": "yisrael nosha"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/yisrael_nosha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "yisrael nosha"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/shearekha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "shearekha"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/pohadim", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "pohadim"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/mituvkha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "mituvkha"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/yivashu", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "yivashu"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/haqshivah", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha", "label_en": "haqshivah"}

@@ -1067,3 +1067,4 @@
 {"urn": "urn:x-opensiddur:text:prayer:kaddish/selichot_preface", "status": "canonical", "label_en": "kaddish/selichot preface", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
 {"urn": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli/repeat", "status": "canonical", "label_en": "adonai boqer tishma qoli/repeat", "parent": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli"}
 {"urn": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha/repeat", "status": "canonical", "label_en": "hateh elohai oznekha/repeat", "parent": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha"}
+{"urn": "urn:x-opensiddur:text:prayer:ein_qore_beshimkha", "status": "canonical", "label_en": "ein qore beshimkha"}

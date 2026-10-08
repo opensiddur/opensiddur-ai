@@ -186,7 +186,12 @@ def build(source_root,project_directory):
                 raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
             documents.append((out/name,xml))
     from .first_day import documents as first_day_documents, OBSOLETE_ASSEMBLIES
-    for project, name, root in first_day_documents(Path(source_root)/'asher_selichot/scan_reading'):
+    readings = Path(source_root)/'asher_selichot/scan_reading'
+    authored = list(first_day_documents(readings))
+    if (readings/'second-day.json').exists():
+        from .second_day import documents as second_day_documents
+        authored.extend(second_day_documents(readings))
+    for project, name, root in authored:
         xml=unicodedata.normalize('NFKD',etree.tostring(root,encoding='unicode',pretty_print=True))
         valid,errors=validate(xml)
         if not valid:
