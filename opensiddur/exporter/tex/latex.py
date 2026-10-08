@@ -30,6 +30,7 @@ from opensiddur.common.xslt import xslt_transform_string  # noqa: E402
 from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 from opensiddur.exporter.typography import TypographyConfig  # noqa: E402
 from opensiddur.exporter.tex.running_heads import build_page_style_tex  # noqa: E402
+from opensiddur.exporter.conditional_markers import mark_silent_scopes  # noqa: E402
 from opensiddur.exporter.tex.page_references import resolve_page_references  # noqa: E402
 from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
     build_typography_preamble,
@@ -225,6 +226,9 @@ def transform_xml_to_tex(
         parsed = etree.parse(input_file)
         root = parsed.getroot()
         resolve_page_references(root)
+        # Whether a scope prints delimiters is decided here, on the whole document: the
+        # stylesheet meets a scope's two markers in different streams, and in copies.
+        mark_silent_scopes(root)
         input_xml = etree.tostring(root, encoding="unicode")
         root_language = root.get("{http://www.w3.org/XML/1998/namespace}lang")
         page_style_tex = build_page_style_tex(

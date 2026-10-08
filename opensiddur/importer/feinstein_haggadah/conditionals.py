@@ -22,6 +22,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from opensiddur.importer.feinstein_haggadah.sections import urn_for_section
+from opensiddur.importer.util.occasion import (
+    DAY_OF_WEEK,
+    HEBREW_DATE,
+    ISRAEL,
+    Feature,
+    all_of,
+    any_of,
+    holiday,
+    none_of,
+)
 
 class ConditionalError(Exception):
     """A conditional in the table could not be placed in the source text."""
@@ -62,6 +72,22 @@ CONDITIONS: dict[str, str] = {
         '<tei:f name="pesah"><tei:numeric value="2"/></tei:f>'
         "</tei:fs>"
     ),
+    # The seder: the first night of Pesah, and the second outside Israel, where the second day
+    # is a festival day too.
+    "seder_night": any_of(
+        holiday("pesah", 1),
+        all_of(holiday("pesah", 2), Feature(ISRAEL, "is-israel", False)),
+    ).markup(),
+    # The search for leaven is made on the night of 14 Nisan, and what is found burned the next
+    # morning -- both on 13 Nisan when the 14th falls on Shabbat, the Friday being the 13th.
+    "bedikat_chametz": all_of(
+        Feature(HEBREW_DATE, "month", 1),
+        any_of(
+            all_of(Feature(HEBREW_DATE, "day", 14),
+                   none_of(Feature(DAY_OF_WEEK, "hebrew-day", 7))),
+            all_of(Feature(HEBREW_DATE, "day", 13), Feature(DAY_OF_WEEK, "hebrew-day", 6)),
+        ),
+    ).markup(),
     "zimmun": (
         '<tei:fs type="opensiddur:quorum">'
         '<tei:f name="zimmun"><tei:binary value="true"/></tei:f>'
@@ -155,10 +181,12 @@ class Transclusion:
     """A whole section, marked around its transclusion in the parent document.
 
     A section's presence is decided when it is included, so the whole file is transcluded or it
-    is not; the child stands as an unconditional document in its own right.
+    is not; the child stands as an unconditional document in its own right. Neither source
+    marks a section off as a whole, so its scope is never ``type="marked"``.
     """
 
     child_slug: str
+    bracketed = False
 
 
 Scope = Paragraphs | Inline | Transclusion
@@ -333,6 +361,32 @@ CONDITIONALS: tuple[Conditional, ...] = (
             "Prepared before a festival that runs into Shabbat — that is, when the festival "
             "falls on Friday."
         ),
+    ),
+    # -- Occasions -----------------------------------------------------------------------
+    # The running order's own gates: which night or day each part of the book is for. They are
+    # for the processor, not the reader -- the book says what each part is in its heading -- so
+    # they carry no rubric and no note, and an edition with no date prints the parts as they
+    # are (schema/JLPTEI-3.md, *Conditions on a running order*).
+    Conditional(
+        slug="index",
+        cond_id="index_seder",
+        condition="seder_night",
+        scope_he=Transclusion("seder"),
+        scope_en=Transclusion("seder"),
+    ),
+    Conditional(
+        slug="pre_seder",
+        cond_id="pre_seder_bedikat_chametz",
+        condition="bedikat_chametz",
+        scope_he=Transclusion("bedikat_chametz"),
+        scope_en=Transclusion("bedikat_chametz"),
+    ),
+    Conditional(
+        slug="pre_seder",
+        cond_id="pre_seder_biur_chametz",
+        condition="bedikat_chametz",
+        scope_he=Transclusion("biur_chametz"),
+        scope_en=Transclusion("biur_chametz"),
     ),
     # -- Quorum --------------------------------------------------------------------------
     # The zimmun: the invitation to bless, said only when three have eaten together.

@@ -36,9 +36,10 @@ NS = {"h": H}
 
 
 def _cond(xml_id: str, name: str, value: str = "true", rubric: str = "",
-          fs: str = "opensiddur:override") -> str:
+          fs: str = "opensiddur:override", marked: bool = False) -> str:
     note = f'<tei:note type="instruction">{rubric}</tei:note>' if rubric else ""
-    return (f'<j:conditional xml:id="{xml_id}">{note}<tei:fs type="{fs}"><tei:f name="{name}">'
+    kind = ' type="marked"' if marked else ""
+    return (f'<j:conditional xml:id="{xml_id}"{kind}>{note}<tei:fs type="{fs}"><tei:f name="{name}">'
             f'<tei:binary value="{value}"/></tei:f></tei:fs></j:conditional>')
 
 
@@ -80,27 +81,44 @@ class TestConditionalRendering(unittest.TestCase):
         self.assertEqual(closer.xpath("string(h:span[@class='cm-br'])", namespaces=NS), "")
 
     def test_inline_scope_is_bracketed(self):
-        main = _render("<tei:p>before " + _cond("a", "wedding")
+        """A scope the book itself brackets keeps its brackets."""
+        main = _render("<tei:p>before " + _cond("a", "wedding", marked=True)
                        + "inside<j:endConditional target=\"#a\"/> after</tei:p>")
         paragraph = main.find(f".//{{{H}}}p")
         opener, words, closer = paragraph
         self.assertEqual(opener.tag, f"{{{H}}}span")
-        self.assertEqual(_classes(opener), ["cm", "cm-open", "m0", "cm-inline", "cm-norubric"])
+        self.assertEqual(_classes(opener),
+                         ["cm", "cm-open", "m0", "cm-inline", "cm-norubric", "cm-marked"])
+        self.assertEqual(_classes(closer), ["cm", "cm-close", "m0", "cm-inline", "cm-marked"])
         self.assertEqual(opener.findtext(f"{{{H}}}span"), "[")
         self.assertEqual((words.text, _classes(words)), ("inside", ["c0"]))
         self.assertEqual(closer.findtext(f"{{{H}}}span"), "]")
         self.assertEqual("".join(paragraph.itertext()), "before [inside] after")
 
     def test_brackets_follow_the_settings(self):
-        main = _render("<tei:p>" + _cond("a", "wedding") + "x<j:endConditional target=\"#a\"/></tei:p>",
+        main = _render("<tei:p>" + _cond("a", "wedding", marked=True) + "x<j:endConditional target=\"#a\"/></tei:p>",
                        **{"inline-open": "⟨", "inline-close": "⟩"})
         self.assertEqual("".join(main.find(f".//{{{H}}}p").itertext()), "⟨x⟩")
 
     def test_block_brackets_instead_of_a_rule(self):
-        main = _render(_cond("a", "wedding") + "<tei:p>x</tei:p><j:endConditional target=\"#a\"/>",
+        main = _render(_cond("a", "wedding", marked=True) + "<tei:p>x</tei:p><j:endConditional target=\"#a\"/>",
                        block="brackets")
         closer = main.xpath("//h:div[contains(@class, 'cm-close')]", namespaces=NS)[0]
         self.assertEqual("".join(closer.itertext()), "]")
+
+    def test_an_unmarked_scope_with_no_rubric_is_silent(self):
+        """A direction to the device, such as an occasion's gate: what it governs is shown or
+        hidden, with nothing around it."""
+        main = _render(_cond("a", "wedding") + "<tei:p>x</tei:p><j:endConditional target=\"#a\"/>")
+        markers = main.xpath("//*[contains(@class, 'cm ')]", namespaces=NS)
+        self.assertEqual([("cm-silent" in _classes(m)) for m in markers], [True, True])
+        self.assertEqual(_classes(main.xpath("//h:p", namespaces=NS)[0]), ["c0"])
+
+    def test_a_marked_scope_with_a_rubric_keeps_its_rule(self):
+        main = _render(_cond("a", "wedding", rubric="At a wedding:", marked=True)
+                       + "<tei:p>verse</tei:p><j:endConditional target=\"#a\"/>")
+        opener = main.xpath("//h:section[@class='body']/*", namespaces=NS)[0]
+        self.assertEqual(_classes(opener), ["cm", "cm-open", "m0", "cm-block", "cm-marked"])
 
     def test_silent_scopes_are_marked(self):
         main = _render('<tei:div>' + _cond("a", "wedding")

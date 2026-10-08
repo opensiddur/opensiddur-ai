@@ -33,6 +33,7 @@
     <!-- The first element to carry a URN gets it as its id, so #urn:x-opensiddur:... links
          to it; the parallel column's copy, and every later one, does not, ids being unique. -->
     <xsl:key name="corresp" match="*[@corresp]" use="tokenize(@corresp)[1]"/>
+    <xsl:key name="opener" match="j:conditional[@p:cid]" use="@p:cid"/>
 
     <xsl:accumulator name="note-number" as="xs:integer" initial-value="0">
         <xsl:accumulator-rule match="tei:note[not(@type = 'instruction')]" select="$value + 1"/>
@@ -405,6 +406,8 @@
     <xsl:template match="j:conditional[@p:cid] | j:endConditional[@p:cid]">
         <xsl:variable name="in-text" select="f:in-text(.)"/>
         <xsl:variable name="opens" select="exists(self::j:conditional)"/>
+        <!-- The book's own marks are on the opener; the closer shares its scope number. -->
+        <xsl:variable name="opener" select="if ($opens) then . else key('opener', @p:cid)"/>
         <xsl:element name="{if ($in-text) then 'span' else 'div'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class"
@@ -413,7 +416,8 @@
                                          if ($in-text) then 'cm-inline' else 'cm-block',
                                          if ($opens and not(tei:note[1][@type = 'instruction']))
                                          then 'cm-norubric' else (),
-                                         if (@p:silent = 'true') then 'cm-silent' else ())"/>
+                                         if (@p:silent = 'true') then 'cm-silent' else (),
+                                         if ($opener/@type = 'marked') then 'cm-marked' else ())"/>
             </xsl:call-template>
             <xsl:if test="$opens">
                 <xsl:apply-templates select="tei:note[@type = 'instruction']" mode="rubric"/>

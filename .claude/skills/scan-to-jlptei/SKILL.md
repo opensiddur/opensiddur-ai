@@ -250,6 +250,25 @@ check that silently measures nothing is worse than no check, because it is belie
   a prayer, where the diff then reports it as the print's own words.
 
 **Conditions**
+- **Gate every occasion's section in the running order.** A section said only on some days
+  (the weekday or Sabbath services, Hallel, a festival's service, Ḥanukkah) is conditioned
+  where the index transcludes it: the outermost point, so that one condition governs the
+  whole section. Build the condition from what the calendar derives (`opensiddur:holiday`,
+  `holiday-aggregate`, `hebrew-date`, `service-time`) with `opensiddur/importer/util/occasion.py`,
+  which also declares inside the gate whatever the condition fixes to one value. A book left
+  ungated shows its Sabbath services to a reader who set a Monday. See *Conditions on a
+  running order* in `schema/JLPTEI-3.md`.
+- **A gate says nothing to the reader.** It is a direction to the processor: no instruction
+  note, and not `type="marked"`, so an edition with no date prints the section bare. Keep
+  `opensiddur:override` out of a gate; it counts as false when undefined, and the section
+  would vanish from every edition that names no occasion.
+- **How an undecided passage looks follows the book.** Put `type="marked"` on a conditional
+  whose passage the book itself sets off (brackets, parentheses, a line): the markers then
+  stand for those marks, and the edition reproduces them. Give it an instruction note only
+  where the book prints a rubric. A conditional with neither prints with no delimiters.
+- **A section that serves several occasions declares none of them.** Birnbaum's Sabbath
+  Shaḥarith is also the festivals', so declaring `shabbat=true` in it would drop the festival
+  text; gate it on either occasion and let its own conditions choose.
 - **Compile for a day on which the condition is TRUE, not only for one where it is false.**
   A settings file that leaves a conditional resolving false proves nothing about it. Both of
   this book's day-dependent passages were only ever compiled on weekdays, so neither had

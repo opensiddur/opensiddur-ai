@@ -89,3 +89,36 @@ def check_pairing(root: etree.ElementBase) -> list[PairingProblem]:
         if xml_id not in closed:
             problems.append(PairingProblem(UNCLOSED, xml_id, opener.sourceline))
     return problems
+
+
+P_SILENT = f"{{{PROCESSING_NAMESPACE}}}silent"
+_TEI_NOTE = "{http://www.tei-c.org/ns/1.0}note"
+
+
+def is_silent(opener: etree.ElementBase) -> bool:
+    """Whether an undecided scope is shown with no delimiters of its own.
+
+    How a scope is set off follows the source. One the source itself marks off -- with
+    brackets, parentheses or a line -- is `type="marked"`, and takes the standard delimiters.
+    One with an instruction is set off by it. One with neither is a direction to the
+    processor, not to the reader: an occasion's gate around a whole section, or the reading
+    divisions of a humash's cycles (schema/JLPTEI-3.md, *How an undecided scope is set off*).
+    """
+    return opener.find(_TEI_NOTE) is None and opener.get("type") != "marked"
+
+
+def mark_silent_scopes(root: etree.ElementBase) -> None:
+    """Mark both markers of every silent scope under `root` with `p:silent="true"`.
+
+    The mark goes on the closer as well because each output stage meets the two apart: a
+    scope around a section of parallel columns opens in one stream and closes in another, and
+    the closer has no way back to its opener once a stage has copied it.
+    """
+    silent: set[str] = set()
+    for opener in root.iter(J_CONDITIONAL):
+        if is_silent(opener):
+            opener.set(P_SILENT, "true")
+            silent.add(opener.get(XML_ID))
+    for closer in root.iter(J_END_CONDITIONAL):
+        if (closer.get("target") or "").removeprefix("#") in silent:
+            closer.set(P_SILENT, "true")

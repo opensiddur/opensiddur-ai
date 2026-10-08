@@ -156,8 +156,9 @@ p.rubric { text-align: start; }
   margin: 0.4em auto;
   border-top: var(--cond-rule-thickness) solid var(--muted);
 }
-.cm-block.cm-open:not(.cm-norubric) .cm-br { display: none; }
-/* A scope that only says which reading begins here: its label is enough (markers.py). */
+.cm-block.cm-open:not(.cm-norubric):not(.cm-marked) .cm-br { display: none; }
+/* A scope the book does not mark and no rubric announces: what it governs is enough
+   (markers.py, _silence). One the book marks (.cm-marked) keeps its rule under its rubric. */
 .cm-silent { display: none; }
 
 /* ── The book's controls ─────────────────────────────────────────────── */

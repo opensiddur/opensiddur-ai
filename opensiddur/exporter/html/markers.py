@@ -38,7 +38,7 @@ from opensiddur.exporter.condition_eval import (
     condition_to_json,
     parse_condition_element,
 )
-from opensiddur.exporter.conditional_markers import check_pairing
+from opensiddur.exporter.conditional_markers import check_pairing, mark_silent_scopes
 from opensiddur.exporter.conditional_settings import J_CONDITIONAL, J_END_CONDITIONAL, XML_ID
 from opensiddur.exporter.constants import (
     JLPTEI_NAMESPACE,
@@ -54,12 +54,9 @@ P_SCOPES = f"{{{PROCESSING_NAMESPACE}}}scopes"
 P_SPAN = f"{{{PROCESSING_NAMESPACE}}}span"
 P_PINNED = f"{{{PROCESSING_NAMESPACE}}}pinned"
 P_PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
-P_SILENT = f"{{{PROCESSING_NAMESPACE}}}silent"
 P_SECTION = f"{{{PROCESSING_NAMESPACE}}}section"
 P_HEADING_LEVEL = f"{{{PROCESSING_NAMESPACE}}}heading-level"
 TEI_HEAD = f"{{{TEI_NS}}}head"
-TEI_MILESTONE = f"{{{TEI_NS}}}milestone"
-TEI_NOTE = f"{{{TEI_NS}}}note"
 
 
 @dataclass
@@ -359,41 +356,11 @@ def measure_text(root: etree.ElementBase, book: BookConditions) -> None:
         feature.chars = sum(book.scope_chars[cid] for cid in feature.cids)
 
 
-def _is_reading_division(element: etree.ElementBase) -> bool:
-    unit = element.get("unit") or ""
-    return element.tag == TEI_MILESTONE and unit.startswith(("aliyah", "maftir"))
-
-
-def _silence(openers: dict[str, etree.ElementBase]) -> None:
-    """Mark the scopes that only say which reading division begins here (p:silent).
-
-    A humash marks where each aliyah begins, in every cycle it follows, and which apply
-    depends on the year's reading pattern. The label is the whole of what such a scope
-    governs, and showing it or not says all there is to say: a rule or a bracket around it
-    would only crowd the page. The PDF stage silences the same scopes (reledmac.xslt,
-    f:governs-markers-only).
-    """
-    for opener in openers.values():
-        if opener.find(TEI_NOTE) is not None:
-            continue
-        between = []
-        sibling = opener.getnext()
-        while sibling is not None and sibling.tag != J_END_CONDITIONAL:
-            between.append(sibling)
-            sibling = sibling.getnext()
-        if (sibling is None or sibling.get(P_CID) != opener.get(P_CID) or not between
-                or not all(_is_reading_division(node) for node in between)
-                or any((node.tail or "").strip() for node in [opener, *between])):
-            continue
-        opener.set(P_SILENT, "true")
-        sibling.set(P_SILENT, "true")
-
-
 def prepare(root: etree.ElementBase) -> BookConditions:
     """Number, collect and label the undecided scopes in a compiled document, in place."""
     openers, book = _number_scopes(root)
     if book.scopes:
-        _silence(openers)
+        mark_silent_scopes(root)
         measured = _measure(root)
         _sections(root, measured, book)
         _assign(root, measured)

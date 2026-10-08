@@ -106,14 +106,19 @@ def conditional_markers(
 
     The opening marker carries the condition and, where the sources give none of their own, an
     editorial note explaining when the passage applies. That note sits on the ``j:conditional``
-    rather than inside its scope, so it is shown only when the condition cannot be decided.
+    rather than inside its scope, so it is shown only when the condition cannot be decided. A
+    passage the source brackets is ``type="marked"``.
     """
     note = entry.note_for(lang)
     note_markup = (
         f'<tei:note type="instruction">{_xml_escape(note)}</tei:note>' if note else ""
     )
+    # Where the source brackets the passage, the markers stand for those brackets, and an
+    # edition that cannot decide the condition prints them as the source did.
+    scope = entry.scope_for(lang)
+    marked = ' type="marked"' if scope is not None and scope.bracketed else ""
     opening = (
-        f'<j:conditional xml:id="cond_{entry.cond_id}">'
+        f'<j:conditional xml:id="cond_{entry.cond_id}"{marked}>'
         f"{note_markup}{condition_markup(entry.condition)}"
         "</j:conditional>"
     )

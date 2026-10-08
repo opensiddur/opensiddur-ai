@@ -1400,9 +1400,10 @@ class TestConditionalRendering(unittest.TestCase):
         self.assertIn("conditional", body)
 
     def test_inline_conditional_is_bracketed(self):
+        """A passage the book itself brackets is bracketed when undecided."""
         out = self._transform_body(
             f"""<tei:p><tei:milestone unit="verse" n="1"/>before <j:conditional
-              xml:id="c">{self.CONDITION}</j:conditional>conditional<j:endConditional
+              xml:id="c" type="marked">{self.CONDITION}</j:conditional>conditional<j:endConditional
               target="#c"/> after</tei:p>"""
         )
         body = self._document_body(out)
@@ -1416,7 +1417,7 @@ class TestConditionalRendering(unittest.TestCase):
     def test_block_conditional_gets_rules(self):
         out = self._transform_body(
             f"""<tei:div>
-              <j:conditional xml:id="c">{self.CONDITION}</j:conditional>
+              <j:conditional xml:id="c" type="marked">{self.CONDITION}</j:conditional>
               <tei:p><tei:milestone unit="verse" n="1"/>conditional paragraph</tei:p>
               <j:endConditional target="#c"/>
             </tei:div>"""
@@ -1448,7 +1449,7 @@ class TestConditionalRendering(unittest.TestCase):
         out = self._transform_body(
             f"""<tei:div>
               <tei:milestone unit="verse" n="1"/>before <j:conditional
-                xml:id="c">{self.CONDITION}</j:conditional>conditional<j:endConditional
+                xml:id="c" type="marked">{self.CONDITION}</j:conditional>conditional<j:endConditional
                 target="#c"/> after
             </tei:div>"""
         )
@@ -1457,6 +1458,75 @@ class TestConditionalRendering(unittest.TestCase):
         self.assertIn(r"\OSCondEndInline{}", body)
         self.assertNotIn(r"\OSCondStartBlock", body)
         self.assertNotIn(r"\OSCondEndBlock", body)
+
+    def test_unmarked_block_conditional_without_a_note_is_silent(self):
+        """A direction to the processor -- an occasion's gate around a section -- prints the
+        section with nothing around it."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">{self.CONDITION}</j:conditional>
+              <tei:p><tei:milestone unit="verse" n="1"/>conditional paragraph</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn(r"\OSCond", body)
+        self.assertIn("conditional paragraph", body)
+
+    def test_unmarked_inline_conditional_without_a_note_is_silent(self):
+        out = self._transform_body(
+            f"""<tei:p><tei:milestone unit="verse" n="1"/>before <j:conditional
+              xml:id="c">{self.CONDITION}</j:conditional>conditional<j:endConditional
+              target="#c"/> after</tei:p>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn(r"\OSCond", body)
+        self.assertRegex(body, r"before\s+conditional\s+after")
+
+    def test_a_noted_unmarked_block_has_its_note_and_a_closing_rule(self):
+        """The instruction announces the passage; a rule shows where it ends."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">
+                <tei:note type="instruction">On Shabbat add:</tei:note>{self.CONDITION}
+              </j:conditional>
+              <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn(r"\OSCondStartBlock", body)
+        self.assertIn(r"\OSCondEndBlock{}", body)
+        self.assertEqual(1, body.count("On Shabbat add:"))
+
+    def test_a_noted_marked_block_has_both_rules_and_its_note(self):
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c" type="marked">
+                <tei:note type="instruction">On Shabbat add:</tei:note>{self.CONDITION}
+              </j:conditional>
+              <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartBlock{}", body)
+        self.assertIn(r"\OSCondEndBlock{}", body)
+        self.assertEqual(1, body.count("On Shabbat add:"))
+        self.assertLess(body.index(r"\OSCondStartBlock"), body.index("On Shabbat add:"))
+
+    def test_a_noted_marked_inline_scope_has_its_note_once_and_both_brackets(self):
+        out = self._transform_body(
+            f"""<tei:div>
+              <tei:milestone unit="verse" n="1"/>before <j:conditional xml:id="c" type="marked"
+                ><tei:note type="instruction">On Shabbat:</tei:note>{self.CONDITION}</j:conditional
+                >conditional<j:endConditional target="#c"/> after
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertEqual(1, body.count("On Shabbat:"))
+        self.assertIn(r"\OSCondStartInline{}", body)
+        self.assertIn(r"\OSCondEndInline{}", body)
 
     def test_conditional_around_aliyah_markers_only_is_silent(self):
         """\\OSaliyah brackets its own label, so a delimiter would double the brackets."""
@@ -4374,7 +4444,7 @@ class TestRowsWithoutACounterpart(unittest.TestCase):
         condition = ('<tei:fs type="opensiddur:holiday-aggregate"><tei:f name="shabbat">'
                      '<tei:binary value="true"/></tei:f></tei:fs>')
         he = (f'<tei:div><tei:head>הושענות</tei:head><tei:p>'
-              f'<tei:milestone unit="verse" n="7"/>לפני <j:conditional xml:id="c">{condition}'
+              f'<tei:milestone unit="verse" n="7"/>לפני <j:conditional xml:id="c" type="marked">{condition}'
               f'</j:conditional>בשבת<j:endConditional target="#c"/> אחרי</tei:p></tei:div>')
         body = self._body(self._sandwich((he, self.APPARATUS_ONLY)))
         full_width = body.split(r"\Columns", 1)[1].split(r"\begin{pairs}", 1)[0]
