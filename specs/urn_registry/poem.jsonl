@@ -376,3 +376,15 @@
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/tsur_leshimkha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "tsur leshimkha"}
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/hasin_qarov", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "hasin qarov"}
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/lo_ish_el", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "lo ish el"}
+{"urn": "urn:x-opensiddur:text:poem:ein_teliyah_lerosh", "status": "canonical", "label_he": "אין תליה לראש"}
+{"urn": "urn:x-opensiddur:text:poem:al_yimat_lefanekha", "status": "canonical", "label_he": "אל ימעט לפניך"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "status": "canonical", "label_he": "חננו יי חננו"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/honenu", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "honenu"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_beshalishmo", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh beshalishmo"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_belegyonam", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh belegyonam"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_bemaginam", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh bemaginam"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_betsahelah", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh betsahelah"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_behanufat", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh behanufat"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_beqarnei", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh beqarnei"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_betakhus_arkhan", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh betakhus arkhan"}
+{"urn": "urn:x-opensiddur:text:poem:honenu_adonai_honenu/eleh_benitshonmo", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:honenu_adonai_honenu", "label_en": "eleh benitshonmo"}

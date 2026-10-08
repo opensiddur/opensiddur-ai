@@ -100,3 +100,21 @@ class NumberedDaysTest(unittest.TestCase):
         node=etree.Element(f'{{{TEI}}}p');node.text='שׁיר · סוף\u00a0·'
         restored=etree.fromstring(normalized_xml(node).encode())
         self.assertEqual('שׁיר\u00a0· סוף\u00a0·',restored.text)
+
+    def test_additional_english_refrain_cue_keeps_printed_sequence(self):
+        ref={'he':'עזרנו׃','en':'Help us.'}
+        fragment={'he':{'scan':'s98','printed_page':'48','text':'חננו׃'},
+                  'en':{'scan':'s99','printed_page':'48','text':'Be gracious.'},
+                  'notes':{'he':[],'en':[]}}
+        reading={'urn':'urn:x-opensiddur:text:poem:fixture','stanzas':[
+            {'id':'opening','fragments':[fragment],'refrain':ref,
+             'trailing_cue':{'he':'','en':'(Help us, &c.)'}}]}
+        en=pizmon('en','fixture',reading,ref)
+        he=pizmon('he','fixture',reading,ref)
+        para=en.find(f'.//{{{TEI}}}body/{{{TEI}}}div/{{{TEI}}}p')
+        self.assertEqual('Help us.',para.find(f'{{{TEI}}}seg').text)
+        choices=para.findall(f'{{{TEI}}}seg/{{{TEI}}}choice')
+        self.assertEqual(1,len(choices))
+        self.assertEqual('(Help us, &c.)',choices[0].find(f'{{{TEI}}}abbr').text)
+        self.assertEqual('Help us.',choices[0].find(f'{{{TEI}}}expan').text)
+        self.assertEqual([],he.findall(f'.//{{{TEI}}}choice'))

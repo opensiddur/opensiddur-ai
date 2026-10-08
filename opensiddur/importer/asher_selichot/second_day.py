@@ -65,6 +65,11 @@ def pizmon(lang, project, reading, refrain):
             segment = element(node,'seg',type='refrain')
             choice(segment, stanza['cue'][lang], refrain[lang])
         else:element(node,'seg',stanza['refrain'][lang],type='refrain')
+        if stanza.get('trailing_cue', {}).get(lang):
+            node = element(block, 'l') if lang=='he' else block
+            if lang=='en':block[-1].tail=' '
+            segment = element(node, 'seg', type='refrain')
+            choice(segment, stanza['trailing_cue'][lang], refrain[lang])
         if stanza.get('opening_cue', {}).get(lang):
             node = element(block,'l') if lang=='he' else block
             if lang=='en':block[-1].tail=' '
@@ -205,6 +210,7 @@ def verify_numbered_readings(source, project_directory, day_name):
                 if reading['kind']=='pizmon':
                     page = next(f[lang]['scan'] for f in reversed(part['fragments']) if f[lang]['text'])
                     append(page,lang,(part.get('cue') or part['refrain'])[lang])
+                    if part.get('trailing_cue', {}).get(lang):append(page,lang,part['trailing_cue'][lang])
                     if part.get('opening_cue', {}).get(lang):append(page,lang,part['opening_cue'][lang])
             notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             if [normalize(' '.join(n.itertext())) for n in notes] != list(map(normalize,expected_notes)):
@@ -225,6 +231,7 @@ def verify_numbered_readings(source, project_directory, day_name):
                 expected_expansions = []
                 for stanza in parts:
                     if stanza.get('cue'):expected_expansions.append(normalize(data['refrain'][lang]))
+                    if stanza.get('trailing_cue', {}).get(lang):expected_expansions.append(normalize(data['refrain'][lang]))
                     if stanza.get('opening_cue', {}).get(lang):expected_expansions.append(normalize(opening))
                 if [normalize(''.join(n.find(f'{{{TEI}}}expan').itertext())) for n in choices] != expected_expansions:
                     raise ValueError('Pizmon expansions must reproduce this edition’s verified refrain/opening')

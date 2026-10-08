@@ -234,3 +234,39 @@ Running page headers are pagination evidence, not body headings. In particular,
 running header: retain it in source evidence, omit it from the poem body and
 TOC, and preserve the actual Hebrew פזמון heading. The day headings remain
 at the top bookmark level, above the piyyut's printed heading.
+
+## Days four through seven
+
+Use the large body headings to delimit these days; the running headers can
+announce the following day before its body begins. The paired ranges overlap
+because two days share a printed page.
+
+| Day | Archive leaves | Pizmon stanza groups |
+|---|---|---|
+| Fourth | n67–n76 | 5 |
+| Fifth | n75–n84 | 8 |
+| Sixth | n83–n92 | 5 |
+| Seventh | n91–n100 | 9, including the opening refrain |
+
+Keep independently printed Hebrew and English cue positions. In day five,
+“O extend thy grace” follows the ocean stanza's English refrain cue, while
+its Hebrew counterpart precedes that cue. Do not move the English sentence
+across the cue to match Hebrew grouping. Day five prints only two prayer-pair
+instructions; the other days in this table print three.
+
+The sixth-day final חוקר cue appears only in Hebrew. Expand its verified Hebrew
+opening without inventing an English cue or repetition. Day seven prints an
+additional English `(Help us, &c.)` after its opening full refrain; preserve that
+English choice without adding a Hebrew counterpart. Its Hebrew repetition rubric
+names נשענו and עזרנו in reverse order: preserve the documentary wording and use
+the complete image-verified refrain for expansion, documenting the resolution.
+The English page-47 numeral is not visible: keep its printed label unknown and
+record page 47 and translation pairing as separately verified evidence.
+
+Bind this edition's spaced Hebrew phrase dots to the preceding word using a
+nonbreaking space, including prose and expanded choice branches. Preserve it
+through Unicode normalization; NFKD alone turns U+00A0 into a breakable space.
+Check the serialized XML and rendered glyph rows for stranded dots (SBL Hebrew
+extracts the printed dot as ∙). Stop day seven at its closing Kaddish cue before
+the large Erev Rosh Hashanah heading on n99/n100. Source scope/proofreading files
+record the detailed boundaries and unresolved independent Hebrew review.
