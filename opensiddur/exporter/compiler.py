@@ -18,6 +18,7 @@ import argparse
 from contextlib import contextmanager
 from enum import Enum
 import hashlib
+import json
 import logging
 from pathlib import Path
 import re
@@ -35,6 +36,8 @@ from opensiddur.exporter.constants import (
 
 #: The instruction a conditional carries, which outlives a condition that holds.
 TEI_NOTE = f"{{{TEI_NS}}}note"
+from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, is_reader_supplied
+from opensiddur.exporter.derivation_graph import DERIVATION_SPECS
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.linear import (
     ConditionalScope,
@@ -56,8 +59,10 @@ from opensiddur.exporter.conditional_settings import (
 from opensiddur.exporter.conditional_markers import check_pairing
 from opensiddur.exporter.condition_eval import (
     TriState,
+    condition_features,
     evaluate_condition,
     parse_condition_element,
+    value_to_json,
 )
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.annotation_placement import place_structural_annotations_in_tree
@@ -645,6 +650,35 @@ class CompilerProcessor:
                 return el
         return None
 
+    def _pin_known_values(self, retained: ElementBase, node) -> None:
+        """Record on a retained conditional the values the compile knows for its condition.
+
+        An electronic book resolves the condition again on the reader's device, which knows
+        only the reader's settings. What the document itself declared where the condition
+        stands -- a section that is Ma'ariv, a passage for a minyan -- and what was derived from
+        it is part of the text, and goes with the condition, in p:pinned as JSON:
+        {"<fs type>": {"<feature>": <value>}}, values as condition_eval.value_to_json, an
+        explicit undefined as null.
+
+        Pinned: the features the condition reads, and the inputs of any derivation the device
+        runs for a structure it reads -- so that a document's minyan reaches the device that
+        derives a zimmun from it. Not pinned: the settings file's own values for the reader's
+        settings, which are the book's defaults, the reader's to change.
+        """
+        features = set(condition_features(node))
+        for spec in DERIVATION_SPECS:
+            if spec.fs_type in CLIENT_DERIVATIONS and any(fs == spec.fs_type for fs, _ in features):
+                features |= spec.required_inputs
+        pinned: dict[str, dict[str, object]] = {}
+        for fs_type, feature_name in sorted(features):
+            entry = self.get_active_setting_entry(fs_type, feature_name)
+            if entry is None or (entry.source == "init" and is_reader_supplied(fs_type)):
+                continue
+            pinned.setdefault(fs_type, {})[feature_name] = value_to_json(entry.value)
+        if pinned:
+            holder = etree.SubElement(retained, f"{{{PROCESSING_NAMESPACE}}}pinned")
+            holder.text = json.dumps(pinned, ensure_ascii=False, sort_keys=True)
+
     def _copy_element_subtree(self, element: ElementBase) -> ElementBase:
         """Deep-copy an element subtree for retained conditional markers.
 
@@ -957,7 +991,10 @@ class CompilerProcessor:
             if self._should_skip_conditional_content():
                 return True, None
             if result == TriState.UNDEFINED:
-                return True, self._copy_element_subtree(element)
+                retained = self._copy_element_subtree(element)
+                if self.linear_data.defer_reader_settings:
+                    self._pin_known_values(retained, node)
+                return True, retained
             if result == TriState.TRUE:
                 # The instruction outlives the condition that carried it. It is the rubric
                 # the edition prints -- "When the Reader repeats the Shemoneh Esreh, the
@@ -1281,6 +1318,13 @@ def main(argv: list[str] | None = None):  # pragma: no cover
         default=PROJECT_DIRECTORY,
         help="Base directory containing project subdirectories (default: <repo>/opensiddur-projects/project).",
     )
+    parser.add_argument(
+        "--destination",
+        choices=("print", "electronic"),
+        default="print",
+        help="What the compiled file is for. 'electronic' leaves the settings a reader supplies "
+             "undecided, for an electronic book to resolve on the reader's device.",
+    )
     args = parser.parse_args(argv)
 
     from opensiddur.exporter.settings import load_default_settings, load_settings, read_settings
@@ -1294,6 +1338,7 @@ def main(argv: list[str] | None = None):  # pragma: no cover
         args.file_name = args.file_name or book.file_name
     reset_linear_data()
     linear_data = get_linear_data()
+    linear_data.defer_reader_settings = args.destination == "electronic"
 
     if args.settings:
         linear_data = load_settings(
@@ -1316,6 +1361,8 @@ def main(argv: list[str] | None = None):  # pragma: no cover
     close_up_whitespace(result)
     join_split_paragraphs(result)
     merge_credits(result, linear_data)
+    if linear_data.defer_reader_settings:
+        result.set(f"{{{PROCESSING_NAMESPACE}}}destination", "electronic")
     for problem in check_pairing(result):
         logger.warning("conditional markers do not pair: %s", problem)
     etree.ElementTree(result).write(

@@ -1385,6 +1385,20 @@ class TestConditionalRendering(unittest.TestCase):
             </tei:TEI>"""
         )
 
+    def test_pinned_values_are_not_text(self):
+        """An electronic-book compile records known values on a retained conditional, in
+        p:pinned. They are data for the reader's device, never words on a page."""
+        out = self._transform_body(
+            f"""<tei:p>before <j:conditional xmlns:p="http://jewishliturgy.org/ns/processing"
+              xml:id="c">{self.CONDITION}<p:pinned>{{"opensiddur:service-time":
+              {{"maariv": true}}}}</p:pinned></j:conditional>conditional<j:endConditional
+              target="#c"/> after</tei:p>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn("service-time", body)
+        self.assertNotIn("maariv", body)
+        self.assertIn("conditional", body)
+
     def test_inline_conditional_is_bracketed(self):
         out = self._transform_body(
             f"""<tei:p><tei:milestone unit="verse" n="1"/>before <j:conditional

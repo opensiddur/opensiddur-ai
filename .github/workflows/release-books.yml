@@ -1,7 +1,8 @@
 name: Release books
 
-# Builds a printed book (PDF) for every settings file in opensiddur-projects/settings/<book>/, at the
-# opensiddur-projects commit the release pins, and attaches them to the release (opensiddur-ai#153).
+# Builds every book in opensiddur-projects/settings/<book>/, at the opensiddur-projects commit the
+# release pins, as an electronic book (HTML) and a printed one (PDF), and attaches them to the
+# release (opensiddur-ai#92, #153).
 #
 # One job lists the settings files; each is then built by its own run of release-book.yml, so a
 # book has its own log, status and timeout, and a failing or slow book holds up no other. A book

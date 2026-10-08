@@ -1,0 +1,19 @@
+{
+  "description": "Which layer a value comes from: pinned over the reader over defaults over derived. Uses the quorum derivation (a minyan is also a zimmun), the one that runs on the device.",
+  "cases": [
+    {"name": "pinned beats the reader", "condition": "<tei:fs type='t:x'><tei:f name='a'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"t:x": {"a": true}}, "reader": {"t:x": {"a": false}}, "expected": "true"},
+    {"name": "reader beats a default", "condition": "<tei:fs type='t:x'><tei:f name='a'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"t:x": {"a": true}}, "defaults": {"t:x": {"a": false}}, "expected": "true"},
+    {"name": "a feature the reader has not set takes the default", "condition": "<tei:fs type='t:x'><tei:f name='a'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"t:x": {"b": true}}, "defaults": {"t:x": {"a": false}}, "expected": "false"},
+    {"name": "the reader's null shows every option, over a default", "condition": "<tei:fs type='t:x'><tei:f name='a'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"t:x": {"a": null}}, "defaults": {"t:x": {"a": false}}, "expected": "undefined"},
+    {"name": "the reader's null minyan derives no zimmun", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"opensiddur:quorum": {"minyan": null}}, "defaults": {"opensiddur:quorum": {"minyan": true}}, "expected": "undefined"},
+    {"name": "a pinned null is pinned", "condition": "<tei:fs type='t:x'><tei:f name='a'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"t:x": {"a": null}}, "reader": {"t:x": {"a": true}}, "expected": "undefined"},
+    {"name": "a minyan is a zimmun", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"opensiddur:quorum": {"minyan": true}}, "expected": "true"},
+    {"name": "no minyan says nothing about a zimmun", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"opensiddur:quorum": {"minyan": false}}, "expected": "undefined"},
+    {"name": "a default minyan is a zimmun", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "defaults": {"opensiddur:quorum": {"minyan": true}}, "expected": "true"},
+    {"name": "a pinned minyan is a zimmun", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"opensiddur:quorum": {"minyan": true}}, "expected": "true"},
+    {"name": "an explicit zimmun is not derived over", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"opensiddur:quorum": {"minyan": true, "zimmun": false}}, "expected": "false"},
+    {"name": "an explicit null zimmun is not derived over", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "reader": {"opensiddur:quorum": {"minyan": true}}, "defaults": {"opensiddur:quorum": {"zimmun": null}}, "expected": "undefined"},
+    {"name": "a truthy minyan is a minyan", "condition": "<tei:fs type='opensiddur:quorum'><tei:f name='zimmun'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"opensiddur:quorum": {"minyan": {"num": 10}}}, "expected": "true"},
+    {"name": "a minyan and a mourner", "condition": "<j:all><tei:fs type='opensiddur:quorum'><tei:f name='minyan'><tei:binary value='true'/></tei:f></tei:fs><tei:fs type='opensiddur:override'><tei:f name='house-of-mourning'><tei:binary value='false'/></tei:f></tei:fs></j:all>", "reader": {"opensiddur:quorum": {"minyan": true}}, "defaults": {"opensiddur:override": {"house-of-mourning": false}}, "expected": "true"}
+  ]
+}

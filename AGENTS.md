@@ -151,6 +151,8 @@ sources/          →  importer/  →  project/       →  exporter/  →  PDF
 - `calendar/compute.py`: computes Hebrew/Gregorian calendar, holiday, and Torah-reading feature values used by condition evaluation
 - `urn.py` / `refdb.py`: `UrnResolver` and `ReferenceDatabase` resolve `urn:x-opensiddur:` URIs to files via SQLite
 - `tex/latex.py`, `pdf/pdf.py`: LuaLaTeX/PDF output stages (driven by `tex/reledmac.xslt`; uses `reledmac` + `reledpar` for critical-edition apparatus and parallel-text alignment)
+- `html/html.py`: the electronic-book output stage, one self-contained HTML file (driven by `html/html.xslt`). Compile with `--destination electronic` first. The undecided conditions are resolved on the reader's device by `html/assets/condition.js`, a port of `condition_eval.py`/`client_settings.py` that is tested against them under Node (`$OPENSIDDUR_NODE`, or `node` on the PATH)
+- `metadata.py`: licences, credits and typography settings, shared by the output stages
 
 The compiler uses a **processing context state machine** — see `specs/COMPILER_SPECIFICATION.md` for the full spec. Each context on the stack has a `command` field (`COPY_AND_RECURSE`, `COPY_ELEMENT_AND_RECURSE`, `RECURSE`, `SKIP`, `COPY_TEXT_AND_RECURSE`) controlling element handling.
 

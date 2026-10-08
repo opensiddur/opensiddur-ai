@@ -121,6 +121,10 @@ class LinearData(BaseModel):
     # words are taken -- and a reader of the compiled text would see the credits of the
     # one file that happened to be the root.
     credits: list[tuple[str, str, str, str]] = Field(default_factory=list)
+    # Compiling for an electronic book: the settings the reader supplies (client_settings) are
+    # left undecided, for the reader's device to resolve, and each retained conditional records
+    # the values the compile did know (p:pinned).
+    defer_reader_settings: bool = False
 
 _linear_data = LinearData()
 
