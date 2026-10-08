@@ -5,7 +5,8 @@ The settings directory (opensiddur-projects/settings/) has one subdirectory per 
 that book's settings files: settings/humash/annual.yaml, settings/humash/triennial.yaml. Each
 names the root file it formats in its `book:` key and says how it differs from its siblings in
 `description:`. The release builds every one of them and attaches the PDFs to the release
-(.github/workflows/release-books.yml), named <book>-<settings>[-<tag>].pdf.
+(.github/workflows/release-books.yml), named <book>-<settings>[-<tag>].pdf, and the electronic
+books beside them as .html.
 
 `--format html` builds the electronic book instead, or as well (`--format pdf --format html`):
 one self-contained <book>-<settings>[-<tag>].html (opensiddur/exporter/html/html.py). It is

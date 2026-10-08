@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `python -m opensiddur.exporter.html.html` renders the compiled file.
   - `python -m opensiddur.exporter.books --format html` builds the electronic books in the
     settings directory, alone or alongside the PDFs.
+  - Every release attaches each book as `<book>-<variant>-<tag>.html` as well as `.pdf`. The
+    electronic book is built first, and a PDF that fails does not keep it off the release.
   - The device's evaluator is a JavaScript port of the compiler's. The two are tested
     against one corpus of cases, the JavaScript under Node.
 
