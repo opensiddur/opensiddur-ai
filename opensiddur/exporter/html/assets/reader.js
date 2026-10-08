@@ -105,8 +105,8 @@
 
   var refreshers = [];
 
+  // A change previews at once; it is kept (saved) only when the reader says Done.
   function changed() {
-    saveSettings(reader);
     apply();
     refreshers.forEach(function (refresh) { refresh(); });
   }
@@ -214,7 +214,7 @@
     });
     refreshers.push(refresh);
     refresh();
-    return row(entry.label, select);
+    return row(entry.label, select, entry.note);
   }
 
   // One feature: a select of its values, or for a number without names, a number field.
@@ -234,11 +234,24 @@
     var note = passages(feature.scopes);
 
     if (feature.kind === "numeric" && !named) {
-      var input = el("input", { type: "number", inputmode: "numeric",
+      var input = el("input", { type: "number", inputmode: "numeric", step: "1", min: "0",
                                 placeholder: hasDefault ? "Default: " + describe(fallback) : "Not set" });
       input.addEventListener("change", function () {
+        // A number field reports what it cannot read as empty: that is not "unset".
+        if (input.validity.badInput) {
+          input.setCustomValidity("Enter a whole number, or clear the field.");
+          input.reportValidity();
+          return;
+        }
         var text = input.value.trim();
-        setValue(feature.fs, feature.name, text === "" ? undefined : Number(text));
+        var number = Number(text);
+        if (text !== "" && !(Number.isInteger(number) && number >= 0)) {
+          input.setCustomValidity("Enter a whole number, or clear the field.");
+          input.reportValidity();
+          return;
+        }
+        input.setCustomValidity("");
+        setValue(feature.fs, feature.name, text === "" ? undefined : number);
         changed();
       });
       refreshers.push(function () {
@@ -276,26 +289,34 @@
 
   // A header with the title and ×, a body that scrolls, and a footer that does not, so its
   // buttons are always in reach however long the body.
-  function dialogFrame(id, title, onDismiss) {
+  function dialogFrame(id, title, closeLabel) {
     var dialog = el("dialog", { id: id, class: "os-dialog", "aria-labelledby": id + "-title" });
-    var close = el("button", { type: "button", class: "os-x", "aria-label": "Close", text: "×" });
-    close.addEventListener("click", onDismiss);
+    var close = el("button", { type: "button", class: "os-x", "aria-label": closeLabel, text: "×" });
+    close.addEventListener("click", function () { dialog.close(); });
     var body = el("div", { class: "os-dialog-body" });
     var footer = el("div", { class: "os-dialog-footer" });
     dialog.appendChild(el("div", { class: "os-dialog-header" }, [
       el("h2", { id: id + "-title", text: title }), close]));
     dialog.appendChild(body);
     dialog.appendChild(footer);
-    // Escape: the dialog closes itself; dismiss does the rest.
-    dialog.addEventListener("cancel", function (event) {
-      event.preventDefault();
-      onDismiss();
+    // A click on the backdrop lands on the dialog element itself -- but so does the end of a
+    // drag that began inside it, and a press that began inside it is not a click outside.
+    var pressedOutside = false;
+    dialog.addEventListener("pointerdown", function (event) {
+      pressedOutside = event.target === dialog && outside(dialog, event);
     });
-    // A click on the backdrop lands on the dialog element itself.
     dialog.addEventListener("click", function (event) {
-      if (event.target === dialog) onDismiss();
+      if (pressedOutside && event.target === dialog && outside(dialog, event)) dialog.close();
+      pressedOutside = false;
     });
+    // Escape closes the dialog by itself; what closing means is the close event's to say.
     return { dialog: dialog, body: body, footer: footer };
+  }
+
+  function outside(dialog, event) {
+    var box = dialog.getBoundingClientRect();
+    return event.clientX < box.left || event.clientX > box.right ||
+           event.clientY < box.top || event.clientY > box.bottom;
   }
 
   function button(text, className, onClick) {
@@ -306,14 +327,19 @@
 
   function settingsDialog() {
     var snapshot = "{}";
-    var frame = dialogFrame("os-settings", "Settings", cancel);
+    var done = false;
+    var frame = dialogFrame("os-settings", "Settings", "Cancel");
 
-    // ×, Cancel, Escape and the backdrop all leave the settings as they were when it opened.
-    function cancel() {
-      reader = JSON.parse(snapshot);
-      changed();
-      frame.dialog.close();
-    }
+    // However the dialog closes -- ×, Cancel, Escape, a click outside -- the settings go back
+    // to what they were when it opened, unless the reader said Done.
+    frame.dialog.addEventListener("close", function () {
+      if (done) {
+        saveSettings(reader);
+      } else {
+        reader = JSON.parse(snapshot);
+        changed();
+      }
+    });
 
     var body = frame.body;
     body.appendChild(el("p", { class: "os-note", text:
@@ -352,7 +378,8 @@
     if (book.calendarScopes) {
       body.appendChild(el("p", { class: "os-note", text:
         book.calendarScopes + " passages depend on the day, the time or the place. Set them " +
-        "here, by hand: this edition cannot yet read them from your device." }));
+        "here, by hand: this edition cannot yet read them from your device, nor work out one " +
+        "from another. A Hebrew date does not say what kind of day it is: set that too." }));
     }
 
     frame.footer.appendChild(button("Clear all", "os-clear", function () {
@@ -360,11 +387,15 @@
       changed();
     }));
     frame.footer.appendChild(el("span", { class: "os-spacer" }));
-    frame.footer.appendChild(button("Cancel", "", cancel));
-    frame.footer.appendChild(button("Done", "os-primary", function () { frame.dialog.close(); }));
+    frame.footer.appendChild(button("Cancel", "", function () { frame.dialog.close(); }));
+    frame.footer.appendChild(button("Done", "os-primary", function () {
+      done = true;
+      frame.dialog.close();
+    }));
 
     frame.open = function () {
       snapshot = JSON.stringify(reader);
+      done = false;
       refreshers.forEach(function (refresh) { refresh(); });
       frame.dialog.showModal();
     };
@@ -372,7 +403,7 @@
   }
 
   function contentsDialog() {
-    var frame = dialogFrame("os-contents", "Contents", function () { frame.dialog.close(); });
+    var frame = dialogFrame("os-contents", "Contents", "Close");
     var list = el("ol", { class: "os-contents" });
     var headings = document.querySelectorAll(".os-book h1, .os-book h2, .os-book h3");
     Array.prototype.forEach.call(headings, function (heading, index) {

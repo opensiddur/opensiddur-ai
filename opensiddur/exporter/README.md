@@ -65,9 +65,19 @@ The settings panel has two parts:
 
 The top settings are plain choices that set several features at once: where, the day of the
 week, the kind of day, the service, the reading cycle and the rite. They are defined in
-`html/basic_settings.yaml`, along with the words for single features. Each option there sets
-only what it is sure of; an ordinary day, for example, is not Rosh Hodesh. The reading cycle is
-the reader's in an electronic book, so the humash carries both cycles.
+`html/basic_settings.yaml`, along with the words for single features. Each option sets only
+what it is sure of. Options that would change nothing in a given book are left out of it.
+
+The kinds of day are not written by hand. `html/kinds_of_day.py` defines each kind as a test on
+what the compiler derives for a date ("Pesah, first day" is the dates on which `pesah` is 1). It
+scans five years of the calendar, in Israel and outside it, and keeps only the features that
+come out the same on every such date. So Rosh Hodesh leaves Hanukkah unset, because Rosh Hodesh
+Tevet falls in Hanukkah, and an ordinary day leaves the omer unset.
+
+The result is committed as `html/kinds_of_day.json`. After changing the kinds, or the calendar,
+run `python -m opensiddur.exporter.html.kinds_of_day`; a test fails if the file is stale.
+
+The reading cycle is the reader's in an electronic book, so the humash carries both cycles.
 
 The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
 (`condition_eval.py`, `client_settings.py`). The tests run the same corpus

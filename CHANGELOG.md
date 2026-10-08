@@ -28,14 +28,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **The top of the panel** has plain choices: where, the day of the week, the kind of
       day, the service, the reading cycle, the rite. Each sets several features at once
       (`html/basic_settings.yaml`). Only the ones that decide the most of the book's text
-      are there; the book's build decides which.
+      are there; the book's build decides which. Options that change nothing in a book are
+      left out of it.
+    - **The kinds of day are worked out from the calendar.** Each sets what is the same on
+      every such day over five years, in Israel and outside it (`html/kinds_of_day.py`). The
+      first and second days of a festival are separate choices.
     - **An Advanced box** sets any feature one by one.
     - The reading cycle is now the reader's, so an electronic humash carries both cycles.
     - The device also derives the recitation from the service, and the festivals a day that
       is not yom tov cannot be.
   - **The settings dialog** opens with × in the upper-right corner. ×, Cancel, Escape or a
-    click outside leaves the settings as they were; Done keeps them. Its buttons stay on
-    screen however far the settings scroll.
+    click outside leaves the settings as they were; Done keeps and saves them. Its buttons
+    stay on screen however far the settings scroll.
 
 ### Fixed
 - Undecided conditional scopes keep both of their markers through compilation (#219). In a

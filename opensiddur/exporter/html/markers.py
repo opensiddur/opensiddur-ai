@@ -289,6 +289,7 @@ def measure_text(root: etree.ElementBase, book: BookConditions) -> None:
     those scopes govern together counts twice, which ranking can bear.
     """
     book.scope_chars = [0] * len(book.scopes)
+    book.conditional_chars = 0
     for element in root.iter():
         labels = element.get(P_SCOPES)
         if not labels:

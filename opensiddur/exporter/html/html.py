@@ -207,10 +207,27 @@ def basic_controls(spec_file: Path = BASIC_SETTINGS_FILE) -> list[dict[str, Any]
     """The composite controls (basic_settings.yaml), each with the features its options set."""
     controls = read_basic_settings(spec_file)["controls"]
     for control in controls:
+        if "options_from" in control:
+            with open(spec_file.parent / control.pop("options_from"), encoding="utf-8") as f:
+                control["options"] = json.load(f)
         control["features"] = sorted(
             {(fs, name) for option in control["options"]
              for fs, features in option["set"].items() for name in features})
     return controls
+
+
+def _useful_options(book: BookConditions, control: dict[str, Any]) -> list[dict[str, Any]]:
+    """The control's options that decide something in this book.
+
+    Measured against nothing set at all, not against the book's defaults: an option the book
+    starts from (the humash's annual cycle) is still one the reader must be able to name.
+    """
+    def states(reader):
+        return [resolve(e["cond"], pinned=e["pinned"], reader=reader)
+                for e in book.expressions]
+
+    unset = states({})
+    return [option for option in control["options"] if states(option["set"]) != unset]
 
 
 def settings_catalogue(book: BookConditions, controls: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -233,11 +250,15 @@ def settings_catalogue(book: BookConditions, controls: list[dict[str, Any]]) -> 
         read = [key for key in map(tuple, control["features"]) if key in features]
         if not read:
             continue
+        options = _useful_options(book, control)
+        if not options:
+            continue
         covered.update(read)
         cids = {cid for key in read for cid in features[key].cids}
         candidates.append((chars(cids), {
             "type": "control", "id": control["id"], "label": control["label"],
-            "options": control["options"]}))
+            **({"note": control["note"]} if control.get("note") else {}),
+            "options": options}))
     for key, feature in features.items():
         if key not in covered:
             candidates.append((chars(set(feature.cids)),
@@ -257,8 +278,14 @@ def feature_words(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[tuple[str, str]
             for fs, features in words.items() for name, spec in features.items()}
 
 
-def book_json(book: BookConditions, book_identifier: str, defaults: dict) -> str:
-    words = feature_words()
+def book_json(
+    book: BookConditions,
+    book_identifier: str,
+    defaults: dict,
+    basic_settings: Path = BASIC_SETTINGS_FILE,
+) -> str:
+    words = feature_words(basic_settings)
+    controls = basic_controls(basic_settings)
     data = {
         "version": 1,
         "id": book_identifier,
@@ -273,7 +300,7 @@ def book_json(book: BookConditions, book_identifier: str, defaults: dict) -> str
                 if (f.fs, f.name) in words else {})}
             for f in book.features
         ],
-        "basic": settings_catalogue(book, basic_controls()),
+        "basic": settings_catalogue(book, controls),
         "calendarScopes": calendar_scopes(book),
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change
@@ -285,6 +312,7 @@ def build_book(
     compiled_file: Path,
     settings_file: Path | None = None,
     project_directory: Path | None = None,
+    basic_settings: Path = BASIC_SETTINGS_FILE,
 ) -> str:
     """The electronic book, as one HTML document."""
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
@@ -313,7 +341,7 @@ def build_book(
         "@@DEFAULT_CONDITIONS@@": scope_css(book, expression_states(book, defaults)),
         "@@MAIN@@": main,
         "@@ABOUT@@": about_html(title, compiled_file, project_directory),
-        "@@BOOK@@": book_json(book, book_id(root, title), defaults),
+        "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings),
         "@@CONDITION_JS@@": _inline(
             (ASSETS / "condition.js").read_text(encoding="utf-8"), "</script"),
         "@@READER_JS@@": _inline(

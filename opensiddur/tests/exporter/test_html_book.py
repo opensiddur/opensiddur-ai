@@ -254,10 +254,13 @@ class TestSettingsCatalogue(unittest.TestCase):
     ]
 
     @staticmethod
-    def _book(chars: dict[str, int], scope_chars=None) -> BookConditions:
+    def _book(chars: dict[str, int]) -> BookConditions:
+        """One scope per feature, each reading its feature as true."""
         features = [Feature("t:x", name, [True], cids=[i]) for i, name in enumerate(chars)]
-        book = BookConditions(scopes=list(range(len(chars))), features=features,
-                              scope_chars=scope_chars or list(chars.values()))
+        expressions = [{"cond": {"fs": "t:x", "f": [{"name": name, "v": True}]}, "pinned": {}}
+                       for name in chars]
+        book = BookConditions(expressions=expressions, scopes=list(range(len(chars))),
+                              features=features, scope_chars=list(chars.values()))
         book.conditional_chars = sum(book.scope_chars)
         return book
 
@@ -280,6 +283,26 @@ class TestSettingsCatalogue(unittest.TestCase):
     def test_at_most_six(self):
         book = self._book({name: 10 for name in "cdefghij"})
         self.assertEqual(len(settings_catalogue(book, [])), 6)
+
+    def test_options_that_change_nothing_are_dropped(self):
+        controls = [{"id": "c", "label": "C", "features": [["t:x", "a"], ["t:y", "z"]],
+                     "options": [{"label": "Useful", "set": {"t:x": {"a": False}}},
+                                 {"label": "Idle", "set": {"t:y": {"z": True}}}]}]
+        entry = settings_catalogue(self._book({"a": 10}), controls)[0]
+        self.assertEqual([option["label"] for option in entry["options"]], ["Useful"])
+
+    def test_a_control_with_nothing_useful_is_dropped(self):
+        controls = [{"id": "c", "label": "C", "features": [["t:x", "a"]],
+                     "options": [{"label": "Idle", "set": {"t:y": {"z": True}}}]}]
+        self.assertEqual(self._names(settings_catalogue(self._book({"a": 10}), controls)), ["a"])
+
+    def test_the_books_default_is_still_an_option(self):
+        """An option that repeats the book's default stays, so the reader can name it."""
+        controls = [{"id": "c", "label": "C", "features": [["t:x", "a"]],
+                     "options": [{"label": "Default", "set": {"t:x": {"a": True}}},
+                                 {"label": "Other", "set": {"t:x": {"a": False}}}]}]
+        entry = settings_catalogue(self._book({"a": 10}), controls)[0]
+        self.assertEqual([option["label"] for option in entry["options"]], ["Default", "Other"])
 
     def test_too_little_text_stays_in_advanced(self):
         book = self._book({"c": 1000, "d": 9})
@@ -420,13 +443,30 @@ class TestBuildBook(unittest.TestCase):
         ])
 
     def test_the_panel_is_decided_when_the_book_is_built(self):
-        book = self._book(self._build())
-        wedding = next(f for f in book["features"] if f["name"] == "wedding")
-        self.assertEqual((wedding["kind"], wedding["calendar"], wedding["label"]),
-                         ("binary", False, "A wedding"))
+        spec = self.base / "basic.yaml"
+        spec.write_text(
+            "controls:\n"
+            "  - id: celebration\n"
+            "    label: Celebration\n"
+            "    note: A note.\n"
+            "    options:\n"
+            "      - {label: A wedding, set: {opensiddur:override: {wedding: true}}}\n"
+            "      - {label: No wedding, set: {opensiddur:override: {wedding: false}}}\n"
+            "features:\n"
+            "  opensiddur:quorum:\n"
+            "    minyan: {label: Ten present, values: {true: Yes, false: No}}\n",
+            encoding="utf-8")
+        self.compiled.write_bytes(_compiled(BODY))
+        book = self._book(build_book(self.compiled, self.settings, self.base, spec))
+        minyan = next(f for f in book["features"] if f["name"] == "minyan")
+        self.assertEqual((minyan["kind"], minyan["calendar"], minyan["label"]),
+                         ("binary", False, "Ten present"))
         self.assertEqual(
-            [(e["type"], e.get("name")) for e in book["basic"]],
-            [("feature", "wedding"), ("feature", "minyan"), ("feature", "s")])
+            [(e["type"], e.get("label") or e.get("name")) for e in book["basic"]],
+            [("control", "Celebration"), ("feature", "minyan"), ("feature", "s")])
+        celebration = book["basic"][0]
+        self.assertEqual(celebration["note"], "A note.")
+        self.assertEqual([o["label"] for o in celebration["options"]], ["A wedding", "No wedding"])
 
     def test_script_text_cannot_close_the_script(self):
         page = self._build()
