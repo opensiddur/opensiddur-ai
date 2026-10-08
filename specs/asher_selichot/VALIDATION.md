@@ -1,41 +1,45 @@
-# Reproducing the Asher first- and second-day encoding
+# Reproducing the Asher first-three-day encoding
 
-Use the three companion `feat_asher-selichot-pilot` worktrees (the historical
-branch name is retained). Pass standalone source and project directories
-explicitly: `sourcetexts/feat_asher-selichot-pilot/sources` and
-`opensiddur-projects/feat_asher-selichot-pilot/project`. Initialize code submodules,
-install dependencies and build the schema before trusting validation. Archive
-requests used efraim@opensiddur.org. Images, compiled XML, TeX and PDFs remain
-untracked under output/asher_selichot.
+Use the three companion `feat_asher-selichot-pilot` worktrees; the branch name
+is historical. Pass standalone source/project directories explicitly. Initialize
+code submodules, install dependencies and build the schema before validation.
+Archive requests use efraim@opensiddur.org. Scan images, OCR cache, compiled XML,
+TeX and PDFs remain untracked under `output/asher_selichot`.
 
-## Coverage and reusable modules
+## Coverage and evidence
 
-Both title pages (n1/n2), the entire first day (through n51/n52), and the entire
-second day (from the midpage heading on n51/n52 to the closing rubric in the
-middle of n59/n60) are encoded. The third-day section is excluded, despite the
-third-day running header above the last second-day material.
+Both title pages and the first three complete days are encoded, ending above the
+fourth-day section heading on Archive n67/n68. Printed pages 31 and 32 have
+swapped Archive openings: Hebrew order is s60, s62, s66, s64, s68; English is
+s61, s63, s67, s65, s69. `third-day-scope.json` documents image-verified order,
+page labels, pairing and boundaries independently from physical scan identity.
 
-There are 55 XML files per language: 51 independent named texts and four actual
+There are 59 XML files per language: 54 independent named texts and five actual
 book/service assemblies (`index.xml`, `expanded.xml`, `first_day.xml`,
-`second_day.xml`). Both book entrypoints include the title pages and transclude
-the same two day assemblies. Common prayers use common names; piyyutim use their
-distinctive incipits. Publication `@project` suffixes retain edition provenance.
-Artificial authoring-batch grouping files remain removed. The source
-`text-modules.json` records all independent module identities.
+`second_day.xml`, `third_day.xml`). Each independent piyyut has an incipit URN;
+common prayers retain common names. Edition provenance is in `@project`.
+Artificial authoring-batch grouping files remain removed.
 
-The second day adds Eiyyeh qinatkha, Ein qore beshimkha, Avvitikha qivitikha and
-Israel Nosha. Hebrew poems use `lg`/`l`, retaining page breaks inside continuing
-verses; English translations retain printed prose. Israel Nosha has six named
-stanza milestones, terminated before unrelated text, four short refrain choices
-and a final choice expanding the entire opening stanza including its refrain.
-Seven English notes match the scan; two have the same patriarchs wording.
+The third day adds Eqra beshimkha lehahaziq bekha, Taarog eilekha kaayal and
+Shahar qamti. Hebrew poetry retains `lg`/`l` and internal page breaks; English
+retains printed prose. Shahar qamti has six named stanza milestones, four short
+refrain choices and a final complete-opening choice. All eight English notes
+retain image-verified anchors. Its pure Hebrew repeated-verse rubric retains
+Hebrew language. The invocation אלהינו ואלהי אבותינו remains body text.
 
-The first-day poetic adjudication remains recorded separately in
-`poetry-structure.json`: Mi Sheanah has 20 verse lines and terminal refrains,
-Anenu has 35 terminal responses, and Rahmana has four before changing petitions.
-The invocation אלהינו ואלהי אבותינו remains body text in each piyyut.
+The first pizmon's English running page header is reclassified as source
+metadata and removed from its body and TOC. The actual Hebrew פזמון heading
+remains. All three day headings are top-level bookmarks above their pizmons.
+All four local settings generate contents through level two.
 
-## Regenerate and verify
+Expanded numbered-day services replace fulfilled instructions with the verified
+opening range, bounded repeated verses, three El Melekh/Vayaavor pairs, and
+closing prayers from Zekhor rahamekha. The unprinted Full Kaddish is supplied
+from Birnbaum through default settings. Each numbered-day declaration sets
+`first_day=false`, `aseret-ymei-tshuva=false`, then restores caller context.
+First-day Kaddish keeps its own `first_day=true`, Ten Days false scope.
+
+## Regeneration and reference checks
 
 ```bash
 python -m opensiddur.importer.asher_selichot.download --source-root "$source_root" --output-root "$output_root" --regenerate
@@ -47,20 +51,16 @@ python -m opensiddur.exporter.validate_urn_references asher_selichot_en_1912 --p
 python -m opensiddur.common.urn_registry --check --project-directory "$project_root"
 ```
 
-All 110 Asher XML files validate. Six opening page/language streams, seven
-refrain/prayer streams and 96 first-day continuation units match readings.
-The second-day verification follows all 15 units per language in source order,
-compares documentary branches by scan page/language, checks footnotes separately,
-and audits referenced prayer ranges and five refrain expansions per language.
-Both language projects resolve all URNs/transclusions. The registry has 3,009
-records: 2,937 canonical, 50 aliases and 22 contexts; zero errors/warnings and
-four informational alias-migration notes concerning other projects.
+All 118 XML files validate. Six opening page/language streams, seven
+refrain/prayer streams, 96 first-day continuation units and all 15 units per
+language in each numbered day match documentary readings. Reverse checks
+follow encoded printed order, compare only documentary choice branches, audit
+footnotes separately and check referenced prayer ranges/expansions. Both
+projects resolve all URNs/transclusions. Registry: 3,038 records, 2,966 canonical,
+50 aliases, 22 contexts; zero errors/warnings, four informational migration notes
+concerning other projects. Skill frontmatter validates and reference links resolve.
 
-## Compile and render
-
-All four local export settings enable `typography.table_of_contents` through
-level two. Both day headings are top-level bookmarks; each printed pizmon is a
-child. The second-day English scan has no pizmon caption, so none is invented.
+## Compile, render and audit
 
 ```bash
 export TEXMFVAR=/tmp/asher-tex-cache
@@ -73,76 +73,68 @@ python -m opensiddur.importer.asher_selichot.check_book_pdf "$pdf" --control
 python -m opensiddur.importer.scan.pdf_direction "$pdf" "$tex" --control
 ```
 
-Add `--expanded` to the book checker for that view. PDF builds and the full suite
-run serially because they use the shared reference database. Refresh it for the
-standalone companion projects after the tests. SBL Hebrew at 12pt supplies the
-raised phrase dots; the checker uses edition-calibrated 288pt/324pt alternating
-gutters and a 16pt stanza baseline tolerance.
+Add `--expanded` for the expanded book check. PDF builds and the full suite run
+serially because both use the reference database. Restore standalone companion
+references after tests. SBL Hebrew at 12pt supplies phrase dots. The source-specific
+geometry checks use 288pt/324pt alternating gutters, 16pt stanza tolerance and
+apparatus fonts up to 10pt. Isolated reledmac line numbers are excluded from
+prayer-word comparison.
 
 | Rendered check | Documentary | Expanded |
 |---|---|---|
-| PDF pages | 43 | 70 |
-| First-day prayer-start differences | six 0pt | six 0pt |
-| First pizmon stanza-start differences | first 13.55pt, seven 0pt | eight 0pt |
-| Second pizmon stanza-start differences | six 0pt | six 0pt |
-| Reversed Hebrew runs | 0 / 1,403 | 0 / 2,610 |
-| Reversed-run control flags | 1,372 / 1,403 | 2,544 / 2,610 |
-| TOC and bookmark hierarchy | pass | pass |
-| Apparatus and expansion boundaries | pass | pass |
+| PDF pages | 49 | 100 |
+| First-day prayer starts | six 0pt differences | six 0pt differences |
+| First pizmon stanza starts | first 13.55pt, seven 0pt | eight 0pt |
+| Second pizmon stanza starts | six 0pt | six 0pt |
+| Third pizmon stanza starts | six 0pt | six 0pt |
+| Reversed Hebrew runs | 0 / 1,657 | 0 / 3,845 |
+| Reversed-run control flags | 1,621 / 1,657 | 3,747 / 3,845 |
 
-The book checker scopes the existing first-day checks using PDF outline
-destinations while retaining page parity and excluding the TOC. It independently
-checks second-day stanzas, notes, direction, fulfilled cues and referenced prayer
-occurrences. The original second-day footnote citing Deut. iv. 31 occurs once;
-expanded closing transclusions also carry their own separately sourced note with
-that citation. Broken controls reject shifted stanza starts, duplicated notes,
-wrong abbreviation branches, incorrectly nested day bookmarks, collapsed verses,
-stranded/wrong punctuation, omitted repetitions and unwanted calendar additions.
-Visual inspection confirmed both day/pizmon hierarchy and the corrected TOC.
+Book checks scope each day by outline destinations while retaining page parity.
+They audit notes, language direction, fulfilled cues, prayer occurrences and the
+fourth-day boundary. Broken controls reject duplicate notes, shifted stanzas,
+wrong choices, incorrectly nested bookmarks, collapsed verses, wrong/stranded
+punctuation, omitted repetitions and unwanted calendar additions. The TOC check
+also compares rendered page numbers against current bookmark destinations and
+rejects deliberately stale numbers.
 
-Expanded second-day text supplies the verified opening range, bounded repeated
-verses, three El Melekh/Vayaavor pairs and the first-day closing range beginning
-Zekhor rahamekha. Fulfilled instructions are omitted. The secondary Full Kaddish
-uses the Birnbaum projects selected in settings; its scope has `first_day=false`
-and `aseret-ymei-tshuva=false`, then restores caller context. The first-day
-Kaddish retains its own `first_day=true`, Ten Days false declaration.
+## Generic TOC convergence defect
 
-A generic TOC defect discovered during rendering is fixed separately in code
-PR #225: Polyglossia's `.toc` language switches mirrored Hebrew-only entries,
-reversing page 35 as 53. Each contents line now uses an LTR slot while preserving
-Hebrew title runs and bookmark text. Its LuaLaTeX regression fails on the original
-exporter and passes after the fix. The regression, LaTeX driver and XSLT tests
-pass 348 tests and 126 subtests. TOC-depth assertions retain local-scope checks
-while allowing the direction setup. The fix is also applied to this worktree's PDF builds.
+The initial expanded build stopped after two passes while the TOC still showed
+third day on page 64; the heading and bookmark had settled on page 63. Its `.toc`
+file had changed without a LaTeX rerun warning. Separate code PR #226 compares
+`.toc` contents before/after each pass and requests another pass on change.
+The 64 → 63 → 63 regression fails on the original driver and passes with the
+fix; an unchanged TOC adds no pass. All 43 PDF-driver tests pass with writable
+TeX cache settings. The fix is applied here for the final Asher PDF build.
+The new book check reproduces and rejects the original stale TOC result.
 
-## Regression status and remaining work
+Earlier generic TOC direction fixes remain separate in PR #225; earlier
+conditional/transclusion and mixed-language apparatus fixes were tracked in
+#217 and #218.
 
-The final full suite passes 3,052 tests and 4,673 subtests, with 12 skipped.
-It emits one existing invalid `\p` escape warning in an unrelated XSLT-test
-docstring. The two earlier TOC string assertions were updated in the separate
-fix PR; the complete rerun is clean. Both PDF builds and the suite ran serially.
+## Upstream merge, regressions and limits
 
-Synthetic importer checks cover poetry/page crossings, shared identities,
-abbreviation expansions, existing repetition-feature defaults, source-verified
-opening boundaries, contents settings and bookmark hierarchy. The full suite
-includes Birnbaum regressions and the generic compiler/apparatus fixes tracked
-separately in #217 and #218.
+Merged current upstream `main` (8891637) into the code branch as 221ce00 before
+pushing. The settings-example conflict retains both abbreviation selection and
+upstream electronic-book typography guidance. Sources/projects already contain
+their current `master`/`main` bases. Final compilation includes the enlarged-image
+Hebrew adjudications recorded in the source proofreading evidence.
 
-Independent Hebrew pointing proofreading remains pending, especially dense
-second-day rhymed lines. Immutable first readings, same-assistant image-pass
-corrections and English OCR comparison provenance are retained in source evidence.
-Later-day encoding, full-volume conversion, publication and release integration
-remain outside current coverage; these modules form the final book's foundation.
+Synthetic importer checks cover reordered scans, pure Hebrew rubric direction,
+closed day-specific conditional/declaration scopes, reusable identities, poetry,
+choice expansions, contents settings, bookmark hierarchy and stale TOC detection.
+The final full suite passes: 3,209 tests and 4,781 subtests, with 18 skips,
+in 587.15 seconds. This includes relevant Birnbaum regressions. Both projects
+resolve all URNs/transclusions after restoring the standalone reference database.
+The final 49-page documentary and 100-page expanded renders both pass the book
+and direction checks, including deliberately broken controls. Documentary day
+three starts on printed PDF page 36; expanded day three starts on page 63.
+All six contents entries match the current bookmark destinations. The final TOCs
+and third-day verse/footnote pages were also inspected visually.
 
-
-## Upstream base merge
-
-Merged upstream `main` into the Asher code branch (merge ec28aaf), and upstream
-`main` into the companion projects branch. The source branch already contains
-current `master`. No conflicts required manual resolution. After the merge,
-compiler, conditional-marker, marker reconstruction, parallel integration,
-XSLT, rendered TOC and Asher importer regressions pass 611 tests and 138 subtests.
-Both complete Asher editions were recompiled against the standalone companion
-projects. Their generated TeX is byte-identical to the inputs of the verified
-43-page documentary and 70-page expanded PDFs, so those PDFs remain current.
-The full-suite result above predates this merge; these are its affected checks.
+Independent Hebrew consonant/pointing proofreading remains pending, especially
+in dense rhymed lines. Immutable first readings, same-assistant image-pass
+adjudications and English OCR comparison provenance remain in source evidence.
+Further-day conversion, publication and release integration remain outside current
+coverage. Local settings keep this incomplete book out of automatic releases.
