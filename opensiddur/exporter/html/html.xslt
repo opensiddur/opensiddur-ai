@@ -236,6 +236,7 @@
                 <xsl:with-param name="class"
                                 select="(if (self::p:span) then () else local-name(),
                                          @type ! concat(local-name(..), '-', .),
+                                         @p:optional-reference ! concat('oref', .),
                                          tokenize(@rend) ! concat('rend-', .))"/>
             </xsl:call-template>
             <xsl:apply-templates/>
@@ -259,8 +260,14 @@
         </a>
     </xsl:template>
 
+    <!-- The first occurrence of a destination owns the id, which works without scripts. The
+         reader's script goes to the first occurrence its settings show (data-page-label). -->
     <xsl:template match="tei:anchor[@type='page-label']">
-        <span class="page-label" id="{@n}"/>
+        <span class="page-label" data-page-label="{@n}">
+            <xsl:if test="not(@subtype = 'repeat')">
+                <xsl:attribute name="id" select="@n"/>
+            </xsl:if>
+        </span>
     </xsl:template>
 
     <xsl:template match="tei:ref">

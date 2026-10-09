@@ -81,9 +81,14 @@ The reading cycle is the reader's in an electronic book, so the humash carries b
 
 A page reference (`tei:ref type="page"`) becomes a link to the passage. The words around it come
 from the source ("continued on page"), so the link shows a symbol, →, where print has the number:
-the XSLT parameters `page-ref-text` and `page-ref-label` set it and its spoken label. The
-destination and the removal of optional references whose passage is absent are the PDF's
-(`page_references.py`). A link to a passage that the reader's settings hide goes nowhere.
+the XSLT parameters `page-ref-text` and `page-ref-label` set it and its spoken label.
+- The destination is chosen as for the PDF (`page_references.py`), and an optional reference
+  whose passage the book leaves out is dropped, as in print.
+- The reader's settings can hide the first occurrence of a destination. Every occurrence is
+  labelled, and the link goes to the first one shown.
+- An optional reference is hidden while no occurrence of its destination shows
+  (`BookConditions.optional_references`).
+- A required reference to a passage the settings hide stays, and goes nowhere.
 
 The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
 (`condition_eval.py`, `client_settings.py`). The tests run the same corpus

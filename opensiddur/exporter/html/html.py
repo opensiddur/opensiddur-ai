@@ -117,6 +117,10 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
             hidden += [f".c{cid}", f".m{cid}"]
         elif state == TriState.TRUE:
             settled += [f".m{cid}.cm-close", f".m{cid}.cm-norubric", f".m{cid} .cm-br"]
+    for number, destinations in enumerate(book.optional_references):
+        if not all(any(all(states[book.scopes[cid]] != TriState.FALSE for cid in scopes)
+                       for scopes in occurrences) for occurrences in destinations):
+            hidden.append(f".oref{number}")
     css = ""
     if hidden:
         css += ",".join(hidden) + "{display:none}\n"
@@ -303,6 +307,7 @@ def book_json(
         ],
         "basic": settings_catalogue(book, controls),
         "sections": book.sections,
+        "optionalReferences": book.optional_references,
         "calendarScopes": calendar_scopes(book),
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change
@@ -327,7 +332,8 @@ def build_book(
             "%s was not compiled with --destination electronic: the settings a reader would "
             "choose were decided when it was compiled", compiled_file)
 
-    resolve_page_references(root)
+    # The reader's settings can hide the first occurrence of a destination: label them all.
+    resolve_page_references(root, every_occurrence=True)
     book = prepare(root)
     main = xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),

@@ -56,7 +56,7 @@ def _compiled(body: str, *, electronic: bool = True, lang: str = "en") -> bytes:
 
 def _render(body: str, **params) -> etree.ElementBase:
     root = etree.fromstring(_compiled(body))
-    resolve_page_references(root)
+    resolve_page_references(root, every_occurrence=True)
     prepare(root)
     return etree.fromstring(xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),
@@ -231,6 +231,56 @@ class TestPageReferences(unittest.TestCase):
         self.assertFalse(main.xpath("//h:a", namespaces=NS))
         self.assertNotIn("Grace", "".join(main.itertext()))
         self.assertIn("After.", "".join(main.itertext()))
+
+    def test_the_first_occurrence_owns_the_id_and_every_occurrence_is_marked(self):
+        main = _render(f'<tei:p>See {PAGE_REF}.</tei:p>'
+                       + _cond("a", "wedding") + f'<tei:div corresp="{URN}"><tei:p>One</tei:p></tei:div>'
+                       + '<j:endConditional target="#a"/>'
+                       + _cond("b", "wedding", "false")
+                       + f'<tei:div corresp="{URN}"><tei:p>Other</tei:p></tei:div>'
+                       + '<j:endConditional target="#b"/>')
+        label = main.xpath("string(//h:a/@href)", namespaces=NS)[1:]
+        first, repeat = main.xpath("//*[@data-page-label=$label]", label=label)
+        self.assertEqual(first.get("id"), label)
+        self.assertIsNone(repeat.get("id"))
+        self.assertEqual(len(main.xpath("//*[@id=$label]", label=label)), 1)
+
+    def test_optional_reference_records_where_its_destination_occurs(self):
+        root = etree.fromstring(_compiled(
+            '<tei:p><tei:note type="instruction"><tei:seg type="optional-page-reference">'
+            f'Hallel: page {PAGE_REF}.</tei:seg></tei:note></tei:p>'
+            + _cond("a", "hallel") + f'<tei:div corresp="{URN}"><tei:p>One</tei:p></tei:div>'
+            + '<j:endConditional target="#a"/>'
+            + _cond("b", "wedding")
+            + f'<tei:div corresp="{URN}"><tei:p>Other</tei:p></tei:div>'
+            + '<j:endConditional target="#b"/>'))
+        resolve_page_references(root, every_occurrence=True)
+        book = prepare(root)
+        # One page reference, whose destination occurs under scope 0 and under scope 1.
+        self.assertEqual(book.optional_references, [[[[0], [1]]]])
+        main = etree.fromstring(xslt_transform_string(
+            XSLT_FILE, etree.tostring(root, encoding="unicode"),
+            xslt_params=xslt_parameters(TypographyConfig())))
+        seg, = main.xpath("//h:span[contains(@class, 'seg-optional-page-reference')]",
+                          namespaces=NS)
+        self.assertIn("oref0", _classes(seg))
+
+    def test_optional_reference_that_always_reaches_is_not_numbered(self):
+        root = etree.fromstring(_compiled(
+            '<tei:p><tei:note type="instruction"><tei:seg type="optional-page-reference">'
+            f'Hallel: page {PAGE_REF}.</tei:seg></tei:note></tei:p>'
+            + _cond("a", "hallel") + f'<tei:div corresp="{URN}"><tei:p>One</tei:p></tei:div>'
+            + '<j:endConditional target="#a"/>'
+            + f'<tei:div corresp="{URN}"><tei:p>Unconditional</tei:p></tei:div>'))
+        resolve_page_references(root, every_occurrence=True)
+        self.assertEqual(prepare(root).optional_references, [])
+
+    def test_optional_reference_in_a_conditional_rubric(self):
+        rubric = (f'<tei:seg type="optional-page-reference">Hallel: page {PAGE_REF}.</tei:seg>')
+        main = _render(_cond("a", "wedding", rubric=rubric) + '<tei:p>Text</tei:p>'
+                       + '<j:endConditional target="#a"/>'
+                       + f'<tei:div corresp="{URN}"><tei:p>Hallel</tei:p></tei:div>')
+        self.assertEqual(len(main.xpath("//h:a[@class='page-ref']", namespaces=NS)), 1)
 
     def test_required_reference_to_an_absent_passage_is_an_error(self):
         with self.assertRaisesRegex(ValueError, "destination absent"):
@@ -572,6 +622,29 @@ class TestBuildBook(unittest.TestCase):
         css = self._between(page, '<style id="os-cond-default">', "</style>").strip()
         result = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults);", book)
         self.assertEqual(result["css"].strip(), css)
+
+    def test_optional_reference_goes_when_every_destination_does(self):
+        """The destination occurs at a wedding and at a circumcision. The settings file says
+        it is a wedding, and not a circumcision."""
+        self.compiled.write_bytes(_compiled(
+            '<tei:p><tei:note type="instruction"><tei:seg type="optional-page-reference">'
+            f'Grace: page {PAGE_REF}.</tei:seg></tei:note></tei:p>'
+            + _cond("a", "wedding", value="false")
+            + f'<tei:div corresp="{URN}"><tei:p>One</tei:p></tei:div>'
+            + '<j:endConditional target="#a"/>'
+            + _cond("b", "brit-milah")
+            + f'<tei:div corresp="{URN}"><tei:p>Other</tei:p></tei:div>'
+            + '<j:endConditional target="#b"/>'))
+        page = build_book(self.compiled, self.settings, self.base)
+        css = self._between(page, '<style id="os-cond-default">', "</style>").strip()
+        self.assertIn(".oref0", css.split("{")[0].split(","))
+        node = require_node(self)
+        book = self._book(page)
+        device = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults).css;", book)
+        self.assertEqual(device.strip(), css)
+        milah = run_js(node, "return OSCond.scopeCss(args, {'opensiddur:override': "
+                             "{'brit-milah': true}}, args.defaults).css;", book)
+        self.assertNotIn(".oref0", milah)
 
     def test_sections_shown(self):
         node = require_node(self)

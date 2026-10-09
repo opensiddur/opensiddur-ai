@@ -55,8 +55,12 @@ P_SPAN = f"{{{PROCESSING_NAMESPACE}}}span"
 P_PINNED = f"{{{PROCESSING_NAMESPACE}}}pinned"
 P_PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
 P_SECTION = f"{{{PROCESSING_NAMESPACE}}}section"
+P_OPTIONAL_REFERENCE = f"{{{PROCESSING_NAMESPACE}}}optional-reference"
 P_HEADING_LEVEL = f"{{{PROCESSING_NAMESPACE}}}heading-level"
 TEI_HEAD = f"{{{TEI_NS}}}head"
+TEI_ANCHOR = f"{{{TEI_NS}}}anchor"
+TEI_SEG = f"{{{TEI_NS}}}seg"
+TEI_REF = f"{{{TEI_NS}}}ref"
 
 
 @dataclass
@@ -103,6 +107,11 @@ class BookConditions:
     #: above), None if some of its text is governed by no scope, or else the distinct sets of
     #: scopes that govern its runs of text: it shows if any one set has no scope that is false.
     sections: list[list[list[int]] | None] = field(default_factory=list)
+    #: For each optional page reference whose destination the settings can hide, by its number
+    #: (p:optional-reference), the destinations of its page references: for each, the distinct
+    #: sets of scopes that govern its occurrences. It shows if every destination has a set with
+    #: no scope that is false.
+    optional_references: list[list[list[list[int]]]] = field(default_factory=list)
 
 
 def _leaf_values(condition: dict[str, Any]):
@@ -288,6 +297,33 @@ def _sections(root: etree.ElementBase, measured, book: BookConditions) -> None:
     book.sections = [None if sets is None else sorted(sorted(s) for s in sets) for sets in found]
 
 
+def _optional_references(root: etree.ElementBase, measured, book: BookConditions) -> None:
+    """When each optional page reference can reach its destination (see
+    BookConditions.optional_references), numbering the ones the settings can strand.
+
+    Print drops an optional reference whose destination did not survive compilation. The reader's
+    settings can hide a destination the electronic book keeps -- every occurrence of it, which
+    page_references labels -- and the reference goes with it.
+    """
+    labels: dict[str, list[etree.ElementBase]] = {}
+    for anchor in root.iter(TEI_ANCHOR):
+        if anchor.get("type") == "page-label":
+            labels.setdefault(anchor.get("n"), []).append(anchor)
+    book.optional_references = []
+    for span in root.iter(TEI_SEG):
+        # One in a conditional's own rubric is the marker's, which is never labelled.
+        if span.get("type") != "optional-page-reference" or span not in measured:
+            continue
+        refs = []
+        for ref in span.iter(TEI_REF):
+            occurrences = {measured[anchor][0] for anchor in labels.get(ref.get("target"), [])}
+            if ref.get("type") == "page" and occurrences and frozenset() not in occurrences:
+                refs.append(sorted(sorted(scopes) for scopes in occurrences))
+        if refs:
+            span.set(P_OPTIONAL_REFERENCE, str(len(book.optional_references)))
+            book.optional_references.append(refs)
+
+
 def _assign(root: etree.ElementBase, measured) -> None:
     """Label each element and run of text with the scopes that govern it and not its parent."""
 
@@ -363,6 +399,7 @@ def prepare(root: etree.ElementBase) -> BookConditions:
         mark_silent_scopes(root)
         measured = _measure(root)
         _sections(root, measured, book)
+        _optional_references(root, measured, book)
         _assign(root, measured)
         measure_text(root, book)
     return book
