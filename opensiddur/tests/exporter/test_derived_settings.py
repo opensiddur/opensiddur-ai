@@ -75,6 +75,31 @@ class TestDerivedSettingsFramework(unittest.TestCase):
         self.assertTrue(entry.value)
         self.assertEqual(entry.source, "init")
 
+    def test_paratext_defaults_to_kept(self):
+        """A volume that says nothing keeps its prefaces and its title pages."""
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
+        for feature in ("include", "title-page"):
+            with self.subTest(feature=feature):
+                entry = get_active_setting_entry(
+                    self.linear_data, "opensiddur:paratext", feature)
+                self.assertIs(entry.value, True)
+                self.assertEqual(entry.source, "derived")
+
+    def test_declared_paratext_wins_over_default(self):
+        self.linear_data.conditional_settings.append(
+            self._entry(INIT_DECLARE_ID, "opensiddur:paratext", "include", False, source="init")
+        )
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
+        entry = get_active_setting_entry(self.linear_data, "opensiddur:paratext", "include")
+        self.assertIs(entry.value, False)
+        self.assertEqual(entry.source, "init")
+
+    def test_an_electronic_book_leaves_paratext_to_its_reader(self):
+        self.linear_data.defer_reader_settings = True
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
+        self.assertIsNone(
+            get_active_setting_entry(self.linear_data, "opensiddur:paratext", "include"))
+
     CYCLE = "opensiddur:reading-cycle"
 
     def _cycle(self) -> dict[str, object]:

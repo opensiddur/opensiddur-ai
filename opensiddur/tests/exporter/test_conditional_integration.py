@@ -597,5 +597,68 @@ class TestRiteConditions(unittest.TestCase):
         self.assertIn("romaniote haftarah", out)
 
 
+class TestParatextConditions(unittest.TestCase):
+    """opensiddur:paratext, which lets an edition leave out what is not prayer.
+
+    Both features default to true, so a volume that declares nothing keeps its prefaces and
+    title pages, and the gates are decided rather than left marked. See schema/JLPTEI-3.md,
+    "Setting attribute values".
+    """
+
+    FRONT = '''
+        <tei:front>
+            <tei:pb n="i"/>
+            <j:conditional xml:id="title_page_1"><tei:fs type="opensiddur:paratext">
+                <tei:f name="title-page"><tei:binary value="true"/></tei:f>
+            </tei:fs></j:conditional>
+            <tei:titlePage><tei:docTitle><tei:titlePart>synthetic title</tei:titlePart></tei:docTitle></tei:titlePage>
+            <j:endConditional target="#title_page_1"/>
+            <tei:pb n="iii"/>
+            <j:conditional xml:id="paratext_introduction"><tei:fs type="opensiddur:paratext">
+                <tei:f name="include"><tei:binary value="true"/></tei:f>
+            </tei:fs></j:conditional>
+            <tei:div><tei:p>synthetic introduction</tei:p></tei:div>
+            <j:endConditional target="#paratext_introduction"/>
+        </tei:front>
+        <tei:body><tei:div><tei:p>synthetic prayer</tei:p></tei:div></tei:body>
+    '''
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.base = Path(self.temp_dir.name)
+        self.project_dir = self.base / "test_project"
+        self.project_dir.mkdir(parents=True)
+        get_linear_data().xml_cache.base_path = self.base
+        (self.project_dir / "index.xml").write_bytes(_text_xml(self.FRONT))
+
+    def _compile(self, **paratext: bool) -> str:
+        CompilerProcessor.load_init_settings(
+            get_linear_data(),
+            yaml_to_declaration_entries({"opensiddur:paratext": paratext} if paratext else {}),
+        )
+        return etree.tostring(
+            CompilerProcessor("test_project", "index.xml").process(), encoding="unicode")
+
+    def test_undeclared_keeps_everything_and_decides_the_gates(self):
+        out = self._compile()
+        self.assertIn("synthetic title", out)
+        self.assertIn("synthetic introduction", out)
+        self.assertNotIn("conditional", out)
+
+    def test_include_false_drops_the_introduction_and_keeps_the_title_page(self):
+        out = self._compile(include=False)
+        self.assertNotIn("synthetic introduction", out)
+        self.assertIn("synthetic title", out)
+        self.assertIn("synthetic prayer", out)
+
+    def test_title_page_false_drops_the_title_page_and_keeps_its_page_break(self):
+        out = self._compile(**{"title-page": False})
+        self.assertNotIn("synthetic title", out)
+        self.assertIn("synthetic introduction", out)
+        self.assertEqual(re.findall(r'<tei:pb n="([^"]+)"', out), ["i", "iii"])
+
+
 if __name__ == "__main__":
     unittest.main()

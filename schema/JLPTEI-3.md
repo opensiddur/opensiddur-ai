@@ -701,6 +701,9 @@ transcludes it without declaring a `corresp` of its own. That keeps the introduc
 side is compiled, and — because a project is never set in parallel against itself — stops it being paired
 against text it does not translate.
 
+None of it is prayer, and an edition may leave it out: each section of front matter, and
+each title page, is gated on `opensiddur:paratext` (see *Setting attribute values*).
+
 `tei:titlePage` is the exception. It belongs to `model.frontPart`, which only `tei:front` admits, so it
 cannot arrive inside the `tei:div` a transclusion delivers. A transcribed title leaf is written into its
 own project's `tei:front`; where two editions of one book each print one, both carry the same `@corresp`
@@ -1506,6 +1509,60 @@ where undefined is equivalent to false.
 The feature set is open — a rite that is not listed below is still valid. Known rite names:
 `ashkenaz`, `sepharad`, `edot_hamizrach`, `teimani_baladi`, `teimani_shami`, `italiani`,
 `romaniote`, `nusach_ari`.
+
+A book also prints matter that is neither prayer nor commentary on it: a dedication, a
+preface, acknowledgements, an introduction, an epilogue or afterword, and any other prose
+of the book's own about the book. An edition used day to day as a siddur may want none of
+it, and may not want the title pages either. Both are selected by `opensiddur:paratext`:
+```xml
+<tei:fs type="opensiddur:paratext">
+   <tei:f name="include">
+      <!-- dedications, prefaces, acknowledgements, introductions, epilogues and other
+      prose that is neither liturgy nor commentary on it -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="title-page">
+      <!-- each transcribed tei:titlePage, a copyright verso included -->
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
+
+**Every such passage is gated, always**, wherever it falls — in `tei:front`, in `tei:back`,
+or before one section in the middle of the book. A prose section goes behind
+`include`, and each `tei:titlePage` behind `title-page`, each in a `j:conditional` of its
+own, around the `j:transclude` that brings the section in or around the title page written
+into the index. Like a gate on a running order (*Conditions on a running order*), it is a
+direction to the processor: it carries no instruction note and is not `type="marked"`. A
+title leaf's `tei:pb` stays outside the gate, so the foliation still runs unbroken when the
+title page is left out. The page breaks inside a gated section are the section's own, and
+are left out with it.
+```xml
+<tei:front>
+   <tei:pb n="[I]"/>
+   <j:conditional xml:id="title_page_3">
+      <tei:fs type="opensiddur:paratext">
+         <tei:f name="title-page"><tei:binary value="true"/></tei:f>
+      </tei:fs>
+   </j:conditional>
+   <tei:titlePage>...</tei:titlePage>
+   <j:endConditional target="#title_page_3"/>
+   <j:conditional xml:id="paratext_introduction">
+      <tei:fs type="opensiddur:paratext">
+         <tei:f name="include"><tei:binary value="true"/></tei:f>
+      </tei:fs>
+   </j:conditional>
+   <j:transclude type="external" target="urn:x-opensiddur:text:front:introduction"/>
+   <j:endConditional target="#paratext_introduction"/>
+</tei:front>
+```
+
+Neither feature covers instructions and rubrics, which belong to the prayers they direct,
+or notes and commentary, which are chosen by the exporter's `annotations` and `print_once`
+settings. Both features **default to true**: a volume that declares nothing keeps all of
+it, and one leaves it out by declaring `false`. An electronic book leaves both to its
+reader.
+
 
 The zman tefillah is also able to be calculated (though there may also be other settings required to determine how to calculate it):
 ```xml

@@ -59,11 +59,74 @@ class FrontMatterTestCase(unittest.TestCase):
                 self.assertEqual(len(designations), len(set(designations)))
 
     def test_a_leaf_with_no_section_contributes_a_bare_page_break(self):
-        """So that each side's foliation runs unbroken through the front matter."""
+        """So that each side's foliation runs unbroken through the front matter. A title
+        leaf's page break is lifted out of its title page, so it stands at the top too."""
         block = self.parsed(common.PROJECT_HE)
         top = [e.get("n") for e in block if etree.QName(e).localname == "pb"]
-        self.assertEqual(
-            top, [front.DESIGNATION[leaf] for leaf in front.BARE[common.PROJECT_HE]])
+        leaves = sorted(set(front.BARE[common.PROJECT_HE])
+                        | set(dict(front.TITLE_LEAVES[common.PROJECT_HE])))
+        self.assertEqual(top, [front.DESIGNATION[leaf] for leaf in leaves])
+
+    def gates(self, block):
+        """Each element of the block, paired with the paratext feature gating it, if any."""
+        open_gate = None
+        for element in block:
+            name = etree.QName(element).localname
+            if name == "conditional":
+                feature = element.find("tei:fs/tei:f", NS)
+                self.assertEqual(element.find("tei:fs", NS).get("type"), "opensiddur:paratext")
+                self.assertIsNone(element.get("type"), "a paratext gate is never marked")
+                self.assertIsNone(element.find("tei:note", NS), "a paratext gate says nothing")
+                open_gate = (element.get("{http://www.w3.org/XML/1998/namespace}id"),
+                             feature.get("name"))
+            elif name == "endConditional":
+                self.assertEqual(element.get("target"), "#" + open_gate[0])
+                open_gate = None
+            else:
+                yield element, open_gate and open_gate[1]
+
+    def test_every_section_is_gated_as_paratext(self):
+        for project in (common.PROJECT_HE, common.PROJECT_EN):
+            with self.subTest(project=project):
+                for element, feature in self.gates(self.parsed(project)):
+                    if etree.QName(element).localname == "transclude":
+                        self.assertEqual(feature, "include")
+
+    def test_every_title_page_is_gated_as_a_title_page(self):
+        for project in (common.PROJECT_HE, common.PROJECT_EN):
+            with self.subTest(project=project):
+                gated = [e for e, feature in self.gates(self.parsed(project))
+                         if etree.QName(e).localname == "titlePage"
+                         and feature == "title-page"]
+                self.assertEqual(len(gated), len(front.TITLE_LEAVES[project]))
+
+    def test_no_page_break_is_gated(self):
+        """Leaving the paratext out must not break the foliation."""
+        for project in (common.PROJECT_HE, common.PROJECT_EN):
+            with self.subTest(project=project):
+                block = self.parsed(project)
+                for element, feature in self.gates(block):
+                    if etree.QName(element).localname == "pb":
+                        self.assertIsNone(feature)
+                for title_page in block.findall("tei:titlePage", NS):
+                    self.assertIsNone(title_page.find("tei:pb", NS))
+
+    def test_a_title_leaf_without_its_page_break_is_refused(self):
+        """Rather than gate a page break away with the title page it sits in."""
+        name = dict(front.TITLE_LEAVES[common.PROJECT_HE])[2]
+        (self.fragments / name).write_text(
+            '<tei:titlePage xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:docTitle>'
+            '<tei:titlePart>t</tei:titlePart></tei:docTitle></tei:titlePage>\n',
+            encoding="utf-8")
+        with self.assertRaises(ValueError):
+            front.front_block(common.PROJECT_HE)
+
+    def test_gate_ids_are_unique(self):
+        for project in (common.PROJECT_HE, common.PROJECT_EN):
+            with self.subTest(project=project):
+                ids = [e.get("{http://www.w3.org/XML/1998/namespace}id")
+                       for e in self.parsed(project).findall("j:conditional", NS)]
+                self.assertEqual(len(ids), len(set(ids)))
 
     def test_a_page_break_in_the_front_matter_names_no_printing(self):
         block = self.parsed(common.PROJECT_EN)
