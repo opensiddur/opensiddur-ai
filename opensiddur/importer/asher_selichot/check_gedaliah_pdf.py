@@ -1,0 +1,112 @@
+"""Check Gedaliah stanza alignment, apparatus, and fulfilled reference boundaries."""
+import copy
+import re
+from lxml import etree
+from .check_pdf import plain
+from .check_first_day_pdf import latin_note_runs
+from opensiddur.importer.scan.pdf_direction import base
+
+ANCHORS = [('הוריתדרך', 'Thou didst teach the way'),
+           ('אזמאזמקדם', 'From the earliest times'),
+           ('הןראשעפרות', 'Lo, the first who was formed'),
+           ('טעהונע', 'His son committed a crime'),
+           ('מחלליצועי', 'He who unstable as water'),
+           ('פרץגדרות', 'King Ahab, the son of Omri'),
+           ('שננולשונם', 'The inhabitants of that great city'),
+           ('בוחןכליות', 'Thou who searchest the innermost')]
+
+
+def check(tree, expanded=False):
+    text=plain(' '.join(n.get('text','') for n in tree.findall('.//line')))
+    # These long fingerprints remain distinctive even when a note wraps.
+    for phrase in ['the fundamental stone of the world.', 'One of the names of the Messiah.',
+                   'Nebuchadnezzar, the destroyer of the first temple.',
+                   'The holy Law is here personified.', 'The advent of the Messiah.',
+                   'Because they did not even deserve the seven Laws of Noah.', 'See Levit. xii. 8.']:
+        if text.count(phrase)!=1:raise ValueError('Gedaliah footnote missing or duplicated: '+phrase)
+    for chars in latin_note_runs(tree).values():
+        xs=[float(c.get('x')) for c in chars]
+        if any(b<a-0.05 for a,b in zip(xs,xs[1:])):raise ValueError('Reversed Gedaliah Latin apparatus')
+    marginal=[]
+    for page in tree.findall('page'):
+        rows={}
+        for font in page.findall('.//font'):
+            if float(font.get('size','100'))>10:continue
+            for c in font.findall('char'):
+                if base(c.get('c','')):rows.setdefault(round(float(c.get('y')),2),[]).append(c)
+        marginal.extend(''.join(base(c.get('c')) for c in sorted(chars,key=lambda c:float(c.get('x')),reverse=True)) for chars in rows.values())
+    if sum(row.count('עשרההרוגימלכות') for row in marginal)!=1:
+        raise ValueError('Gedaliah unattached Hebrew marginal note missing or duplicated')
+    he,en=[],[]
+    for number,page in enumerate(tree.findall('page'),1):
+        gutter=288 if number%2 else 324
+        hrows,erows={},{}
+        for line in page.findall('.//line'):
+            for c in line.findall('.//char'):
+                x=float(c.get('x'));y=round(float(c.get('y')),2)
+                if x<gutter and base(c.get('c',' ')):hrows.setdefault(y,[]).append(c)
+                elif x>gutter:erows.setdefault(y,[]).append(c)
+        he.extend((number,y,''.join(base(c.get('c')) for c in sorted(chars,key=lambda c:float(c.get('x')),reverse=True))) for y,chars in hrows.items())
+        for y,chars in erows.items():
+            words='';right=None
+            for c in sorted(chars,key=lambda c:float(c.get('x'))):
+                if right is not None and float(c.get('x'))-right>2 and words and not words[-1].isspace():words+=' '
+                words+=c.get('c','');quad=list(map(float,c.get('quad').split()));right=max(quad[0::2])
+            en.append((number,y,plain(words)))
+    deltas=[];previous=(0,0)
+    for h_anchor,e_anchor in ANCHORS:
+        e=next((r for r in en if e_anchor in r[2] and r[:2]>=previous),None)
+        matches=[r for r in he if h_anchor in r[2] and r[:2]>=previous]
+        h=min(matches,key=lambda r:abs(r[0]-e[0])*1000+abs(r[1]-e[1])) if matches and e else None
+        if h is None or e is None:raise ValueError('Missing Gedaliah stanza: '+e_anchor)
+        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Gedaliah stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
+        deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
+    body=' '.join(r[2] for r in en)
+    body=re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)','',body)
+    if expanded:
+        opening=body.split('At the time ere yet',1)[0]
+        if opening.count('Pardon us, our Father!')!=1:raise ValueError('Gedaliah opening must include the following Selah lanu once')
+        for cue in ['Conclude the Service from', 'Say ', 'Wherever the words', 'During the Ten Days of Repentance']:
+            if cue in body:raise ValueError('Fulfilled Gedaliah cue remains: '+cue)
+        if body.count('May the prayers and supplications')!=1:raise ValueError('Gedaliah requires one supplied Full Kaddish')
+        if body.count('Thou didst teach the way')!=8:raise ValueError('Gedaliah requires the full refrain and seven repetitions')
+        if body.count('Omnipotent King, who')!=7:raise ValueError('Gedaliah prayer-pair reference boundary changed')
+    elif 'Conclude the Service from' not in body:raise ValueError('Missing documentary Gedaliah closing instruction')
+    print('Gedaliah PDF: apparatus, fulfilled cues and reference boundaries checked; 8 stanza start deltas '+str(deltas))
+
+
+def controls(tree,expanded):
+    broken=copy.deepcopy(tree)
+    line=next(n for n in broken.findall('.//line') if 'The holy Law is here personified.' in plain(n.get('text','')))
+    line.getparent().append(copy.deepcopy(line))
+    try:check(broken,expanded)
+    except ValueError:pass
+    else:raise AssertionError('Duplicate Gedaliah note escaped detection')
+    broken=copy.deepcopy(tree)
+    for number,page in enumerate(broken.findall('page'),1):
+        for line in page.findall('.//line'):
+            if 'King Ahab' in plain(line.get('text','')):
+                for c in line.findall('.//char'):
+                    if float(c.get('x'))>(288 if number%2 else 324):c.set('y',str(float(c.get('y'))+50))
+    try:check(broken,expanded)
+    except ValueError:pass
+    else:raise AssertionError('Shifted Gedaliah stanza escaped detection')
+
+    broken=copy.deepcopy(tree)
+    line=next(n for n in broken.findall('.//line') if 'עשרה הרוגי מלכות' in n.get('text',''))
+    line.getparent().remove(line)
+    try:check(broken,expanded)
+    except ValueError:pass
+    else:raise AssertionError('Missing Gedaliah marginal note escaped detection')
+
+    if expanded:
+        for phrase in ['During the Ten Days of Repentance, add:', 'Pardon us, our Father!']:
+            broken=copy.deepcopy(tree)
+            line=etree.SubElement(broken.find('page'),'line',text=phrase)
+            font=etree.SubElement(line,'font',name='LinuxLibertineO',size='10.95')
+            for i,char in enumerate(phrase):
+                x=400+i*2
+                etree.SubElement(font,'char',c=char,x=str(x),y='100',quad=f'{x} 90 {x+2} 90 {x} 100 {x+2} 100')
+            try:check(broken,expanded)
+            except ValueError:pass
+            else:raise AssertionError('Fulfilled rubric or duplicated opening escaped detection')

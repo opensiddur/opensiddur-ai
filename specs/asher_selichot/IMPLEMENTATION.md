@@ -159,7 +159,7 @@ independent incipit modules, two subordinate pizmon bookmarks, and documentary /
 expanded cue branches. Preserve language-specific repeat ranges and Ark positions.
 The printed-52 extra-petition milestone has an explicit terminal same-unit marker.
 The final Full Kaddish excludes first-day and Ten Days context. Preserve Tamid’s
-numbered references while tracking the unavailable explanatory text separately.
+numbered note markers without inventing targets or presuming explanatory notes exist.
 
 Bound the page-52 repetitions separately under `prayer:keraham_av` and
 `prayer:selichot/ki_lo_al_tsidqotenu`; their translation differs from pages 9/10.
@@ -177,3 +177,45 @@ Run `python -m opensiddur.importer.asher_selichot.erev_rosh_hashanah` on the
 compiled expanded XML to verify all 12 repeat-cue pairings and the exact
 page-52 translation variant. Compiler fix #231 keeps inline references inside
 parallel paragraphs; both synthetic regressions failed before that fix.
+
+## Tzom Gedaliah continuation
+
+The next complete service covers n183/n184–n207/n208 (printed 91–103), in 38
+source-ordered bilingual units. Nine independent piyyutim and six scriptural
+prayer modules use reusable incipit URNs; the service assembly is the actual
+liturgical running order. Hebrew poems are verse; English retains printed prose.
+Horita derekh teshuvah has eight shared stanza units, seven verified refrain
+expansions, and a cross-page Reuben/Judah unit with different printed cue positions.
+The top-level service bookmark contains its subordinate Hebrew pizmon bookmark.
+
+Four unequal repeat lists use one aligned prose block, as on Erev. Hebrew cites
+the page-52 reprinted petitions; English cites the earlier page-9/10 ranges.
+Closing repetition includes the printed confessions through Mahi umasi, followed
+by Makhnise rahamim and the first-day closing prayers. Editorial Full Kaddish
+uses the secondary source with first_day=false and Ten Days=true, then restores
+scope. Fulfilled cues disappear. The holiday gate encloses the service in the
+book's running order, without printing an undecided-occasion instruction.
+
+Preserve the unattached printed-103 Hebrew marginal note as explicitly documented
+editorial commentary; its original target remains unknown. Mixed Hebrew within
+English body and apparatus receives explicit language spans. Immutable staged and
+assembled first readings precede independent English OCR, with separate image
+adjudication and hashes. Independent Hebrew proofreading remains pending.
+
+Run `python -m opensiddur.importer.asher_selichot.tzom_gedaliah` against the
+compiled expanded XML before rendering. Its four petition checks complement the
+book PDF check's eight pizmon starts, apparatus samples and expansion boundaries.
+Broken controls must reject duplicate notes and displaced stanza starts.
+
+The supplied Kaddish has an empty editorial override of
+`instruction:aseret_yemei_teshuvah/add`, so its fulfilled secondary “add” rubric
+is omitted while the Reader cue remains. Compiler PR #232 respects instruction
+selection inside a resolved conditional, including intentionally empty wording;
+its ordinary/external/inline regressions fail before the fix. The fix is applied
+on the Asher branch and tested with the actual expanded book.
+
+Gedaliah's opening ends at Shomea tefillah's “for it is great”; the following
+Selah lanu is printed once. The abbreviated Hebrew כי רבו citation is ambiguous;
+the source adjudication documents the editorial boundary from the explicit
+English cue and adjacent reprint. The PDF check rejects an extra opening Selah
+lanu, including a deliberately injected duplicate.

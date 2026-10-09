@@ -291,9 +291,9 @@ Full Kaddish with first_day=false and Ten Days=false.
 Zekhor berit alternates two different refrains; do not apply a single-refrain
 pizmon default. Both its final Zekhor cue and Shofet’s final cue repeat the complete
 opening. Preserve bracketed responses in Shelosh esreh middot, including the
-closing bracket attached to its verse. Tefillah teqah contains 26 numbered English
-references whose explanations have not been located in the available scan;
-preserve the printed markers and document the unresolved apparatus. Its English
+closing bracket attached to its verse. Tefillah teqah contains 26 printed superscript numbers with no identified
+targets. Preserve them as unresolved printed note markers; do not describe them
+as references or presume that explanatory notes exist. Its English
 body contains לשון הרע and needs an explicit Hebrew language span.
 
 When Erev cues refer to printed 52, use that page’s bounded reprinted petitions
@@ -314,3 +314,52 @@ petition pairings; it rejects lost page-52 translation wording.
 
 Transliterate אלוהַּ as `eloah`; use `el_eloah_dalefah_eini` for the poem
 filename and canonical identity.
+
+## Tzom Gedaliah
+
+The large service heading begins below Erev on n183/n184, printed 91. The complete
+service ends at the final conclusion cue on n207/n208, printed 103. Keep the
+service heading above its Hebrew-only פזמון heading in the bookmarks and contents.
+Horita derekh teshuvah has eight shared stanza units across printed 99–100, with
+seven abbreviation choices per language. The English Reuben/Judah stanza repeats
+its refrain between the two examples; Hebrew repeats after both. Preserve the
+cue's independently printed position and the page break inside the continuing verse.
+
+The opening repeats the earlier page-1/2–7 range, ending at Shomea tefillah’s
+“for it is great,” before the reprinted Selah lanu. The abbreviated Hebrew
+כי רבו citation is ambiguous; document the editorial boundary supported by
+the explicit English cue and adjacent reprint. Do not duplicate Selah lanu. The preliminary prayer pair uses
+El erekh apayim and preliminary Vayaavor; later pairs use El melekh and Vayaavor.
+Hebrew petition cues name additional introductory petitions; English cites 9/10.
+Keep unequal lists in one paired inline-transclusion paragraph, as for Erev.
+The closing repetition ends at גמירא בשביא, including Mahi umasi. The final cue
+starts at מכניסי רחמים, excluding Mahi umasi. These are separately bounded ranges.
+In the secondary-source Full Kaddish declare first_day=false and Ten Days=true,
+then restore caller context. Gate the service in the index with the calendar's
+`opensiddur:holiday/tzom-gedalia`; an undecided gate has no printed instruction.
+
+English printed 103 has a marginal Hebrew note עשרה הרוגי מלכות without a visible
+matching body marker. Preserve it with an explicitly documented editorial attachment
+to the final cue, carried into expanded output; do not claim its original target.
+English printed 92 contains תשובה in the body and שתית in a footnote. Give these
+Hebrew spans explicit language and check their rendered direction.
+
+Before rendering, run `python -m
+opensiddur.importer.asher_selichot.tzom_gedaliah <compiled-expanded.xml>` to
+check the four paired petition expansions and their earlier translation wording.
+Then run the book PDF checks with the standalone source root and `--control`;
+Gedaliah checks measure all eight shared pizmon starts, note occurrence and
+fulfilled cue / closing range boundaries.
+
+For supplied secondary-source readings, omit fulfilled “add” rubrics as well as
+Asher's own fulfilled “say” cues. The Gedaliah assembly uses an explicitly empty
+editorial override for `instruction:aseret_yemei_teshuvah/add`, selected by the
+Asher instruction priorities. Retain performance instructions such as “Reader.”
+Check the compiled text and rendered PDF for the unwanted rubric; do not infer
+its suppression merely from correct selection of the Ten Days text.
+
+Before a whole-book PDF build, audit each opening's final referenced phrase against
+its target module and the immediately following printed paragraph. Do not copy
+another day's expansion list without this check. In Gedaliah, including the old
+Selah lanu module would duplicate the following reprint. Verify the expanded
+opening includes that prayer once; the PDF checker also tests an injected duplicate.

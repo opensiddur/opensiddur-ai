@@ -208,6 +208,9 @@ def build(source_root,project_directory):
     if (readings/'erev-rosh-hashanah.json').exists():
         from .erev_rosh_hashanah import documents as erev_documents
         authored.extend(erev_documents(readings))
+    if (readings/'tzom-gedaliah.json').exists():
+        from .tzom_gedaliah import documents as gedaliah_documents
+        authored.extend(gedaliah_documents(readings))
     for project, name, root in authored:
         xml=normalized_xml(root)
         valid,errors=validate(xml)
