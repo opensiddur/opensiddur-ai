@@ -1,4 +1,4 @@
-"""Resolve page pointers against content surviving compilation, before typesetting."""
+"""Resolve page pointers against content surviving compilation, before typesetting or rendering."""
 import hashlib
 from lxml import etree
 
@@ -17,7 +17,7 @@ def _remove_preserving_tail(node):
 
 
 def resolve_page_references(root):
-    """Replace edition-qualified text URNs with TeX labels in the compiled edition.
+    """Replace edition-qualified text URNs with labels in the compiled edition.
 
     Optional spans disappear when any of their destinations is absent. Repeated
     content uses the first surviving occurrence in the requested source edition.

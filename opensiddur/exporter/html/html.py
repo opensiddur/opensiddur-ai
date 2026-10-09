@@ -49,6 +49,7 @@ from opensiddur.exporter.metadata import (
     role_name,
     role_order,
 )
+from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter.typography import TypographyConfig
 
 logger = logging.getLogger(__name__)
@@ -326,6 +327,7 @@ def build_book(
             "%s was not compiled with --destination electronic: the settings a reader would "
             "choose were decided when it was compiled", compiled_file)
 
+    resolve_page_references(root)
     book = prepare(root)
     main = xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),

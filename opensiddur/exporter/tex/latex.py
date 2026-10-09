@@ -31,7 +31,7 @@ from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 from opensiddur.exporter.typography import TypographyConfig  # noqa: E402
 from opensiddur.exporter.tex.running_heads import build_page_style_tex  # noqa: E402
 from opensiddur.exporter.conditional_markers import mark_silent_scopes  # noqa: E402
-from opensiddur.exporter.tex.page_references import resolve_page_references  # noqa: E402
+from opensiddur.exporter.page_references import resolve_page_references  # noqa: E402
 from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
     build_typography_preamble,
     documentclass_options,

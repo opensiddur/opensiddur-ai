@@ -441,11 +441,32 @@
     contents.dialog.showModal();
   });
 
-  // Passages shown or hidden above may have moved a linked one: go to it again.
-  if (location.hash) {
-    var id = location.hash.slice(1);
+  // Rows off screen are not laid out (content-visibility: auto) until the browser passes them,
+  // and their real heights move a linked passage after the browser has jumped to it. Go to it
+  // again, frame by frame, until it stays put, or until the reader scrolls.
+  var settling = 0;
+  function settleOn(hash) {
+    var id = hash.slice(1);
     try { id = decodeURIComponent(id); } catch (e) { /* use it as it is */ }
-    var target = document.getElementById(id);
-    if (target) target.scrollIntoView();
+    var target = id && document.getElementById(id);
+    if (!target) return;
+    var run = ++settling, frames = 0, still = 0;
+    (function check() {
+      if (run !== settling) return;
+      var top = target.getBoundingClientRect().top;
+      if (Math.abs(top) > 2) { target.scrollIntoView(); still = 0; } else still++;
+      if (still < 3 && ++frames < 60) requestAnimationFrame(check);
+    })();
   }
+  ["wheel", "touchstart", "keydown"].forEach(function (type) {
+    window.addEventListener(type, function () { settling++; }, { passive: true });
+  });
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest && event.target.closest('a[href^="#"]');
+    if (link) requestAnimationFrame(function () { settleOn(link.getAttribute("href")); });
+  });
+  window.addEventListener("hashchange", function () { settleOn(location.hash); });
+
+  // Passages shown or hidden above may have moved a linked one: go to it again.
+  if (location.hash) settleOn(location.hash);
 })();

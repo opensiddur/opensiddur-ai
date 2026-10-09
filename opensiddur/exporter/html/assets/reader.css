@@ -88,6 +88,14 @@ h4.head, h5.head, h6.head { font-size: 1.05em; font-variant: small-caps; }
 .citation { display: block; text-align: center; font-style: italic; color: var(--muted); margin: 0.4em 0; }
 .section-separator { display: block; text-align: center; margin: 1em 0; color: var(--muted); }
 .pb { display: none; }
+/* Where print gives a page number, a link to the passage. */
+.page-ref {
+  color: var(--accent);
+  text-decoration: none;
+  font-style: normal;
+  padding-inline: 0.15em;
+}
+.page-ref:hover, .page-ref:focus-visible { text-decoration: underline; }
 .option-alt::before, .written-alt::before { content: " ("; }
 .option-alt::after, .written-alt::after { content: ")"; }
 .read { font-style: italic; }

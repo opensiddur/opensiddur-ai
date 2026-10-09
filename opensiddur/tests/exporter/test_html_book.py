@@ -25,6 +25,7 @@ from opensiddur.exporter.html.html import (
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
+from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.typography import TypographyConfig
 from opensiddur.tests.exporter.js_engine import require_node, run_js
@@ -55,6 +56,7 @@ def _compiled(body: str, *, electronic: bool = True, lang: str = "en") -> bytes:
 
 def _render(body: str, **params) -> etree.ElementBase:
     root = etree.fromstring(_compiled(body))
+    resolve_page_references(root)
     prepare(root)
     return etree.fromstring(xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),
@@ -188,6 +190,51 @@ class TestStructure(unittest.TestCase):
         main = _render('<tei:p><tei:unknownThing>kept</tei:unknownThing></tei:p>')
         self.assertEqual(main.xpath("string(//h:span[@class='tei-unknownThing'])", namespaces=NS),
                          "kept")
+
+
+URN = "urn:x-opensiddur:text:prayer:grace"
+PAGE_REF = f'<tei:ref type="page" target="{URN}@proj"/>'
+
+
+class TestPageReferences(unittest.TestCase):
+    """Where print gives a page number, the electronic book links to the passage."""
+
+    def test_reference_links_to_an_anchor_in_its_destination(self):
+        main = _render(f'<tei:p>Grace continues on page {PAGE_REF}.</tei:p>'
+                       f'<tei:div corresp="{URN}"><tei:p>Blessed</tei:p></tei:div>')
+        link, = main.xpath("//h:a", namespaces=NS)
+        self.assertEqual(_classes(link), ["page-ref"])
+        self.assertEqual(link.text, "→")
+        self.assertEqual(link.get("aria-label"), "Go to the passage")
+        label = link.get("href")[1:]
+        self.assertTrue(label.startswith("os-page-"))
+        anchor, = main.xpath("//*[@id=$label]", label=label)
+        self.assertEqual(_classes(anchor), ["page-label"])
+        self.assertEqual(anchor.getparent().get("id"), URN)
+
+    def test_references_to_one_destination_share_its_anchor(self):
+        main = _render(f'<tei:p>See {PAGE_REF} and {PAGE_REF}.</tei:p>'
+                       f'<tei:div corresp="{URN}"><tei:p>Blessed</tei:p></tei:div>')
+        hrefs = {link.get("href") for link in main.xpath("//h:a", namespaces=NS)}
+        self.assertEqual(len(hrefs), 1)
+        self.assertEqual(len(main.xpath("//*[@class='page-label']")), 1)
+
+    def test_the_symbol_is_a_parameter(self):
+        main = _render(f'<tei:p>See {PAGE_REF}.</tei:p><tei:div corresp="{URN}"/>',
+                       **{"page-ref-text": "here"})
+        self.assertEqual(main.xpath("string(//h:a)", namespaces=NS), "here")
+
+    def test_optional_reference_to_an_absent_passage_is_removed(self):
+        main = _render('<tei:p>Before.<tei:note type="instruction">'
+                       f'<tei:seg type="optional-page-reference">Grace: page {PAGE_REF}.</tei:seg>'
+                       '</tei:note> After.</tei:p>')
+        self.assertFalse(main.xpath("//h:a", namespaces=NS))
+        self.assertNotIn("Grace", "".join(main.itertext()))
+        self.assertIn("After.", "".join(main.itertext()))
+
+    def test_required_reference_to_an_absent_passage_is_an_error(self):
+        with self.assertRaisesRegex(ValueError, "destination absent"):
+            _render(f"<tei:p>Grace continues on page {PAGE_REF}.</tei:p>")
 
 
 class TestBlocksInText(unittest.TestCase):
@@ -436,6 +483,14 @@ class TestBuildBook(unittest.TestCase):
         self.assertNotRegex(page, r'<(script|link)[^>]*\b(src|href)=')
         self.assertIn("OSCond", page)
         self.assertIn('<main xmlns="http://www.w3.org/1999/xhtml" class="os-book"', page)
+
+    def test_page_references_link_within_the_page(self):
+        self.compiled.write_bytes(_compiled(
+            f'<tei:p>Grace continues on page {PAGE_REF}.</tei:p>'
+            f'<tei:div corresp="{URN}"><tei:p>Blessed</tei:p></tei:div>'))
+        page = build_book(self.compiled, self.settings, self.base)
+        href, = re.findall(r'<a [^>]*href="#([^"]+)"', page)
+        self.assertIn(f'id="{href}"', page)
 
     def test_title_from_the_settings(self):
         self.assertIn("<title>The Settings Title</title>", self._build())
