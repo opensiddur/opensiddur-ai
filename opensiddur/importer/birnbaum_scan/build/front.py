@@ -23,8 +23,18 @@ only ``tei:front`` admits; a transcluded section arrives inside a ``tei:div``, w
 not. So the two title leaves are written into each index's ``tei:front`` literally, and
 carry ``front:title_page``/``front:copyright`` on themselves so the two sides still
 declare the correspondence. Only the prose sections are transcluded.
+
+**Gates.** None of this is prayer, and an edition may leave any of it out: each prose
+section is gated on ``opensiddur:paratext/include`` and each title leaf on
+``opensiddur:paratext/title-page``, both true unless a volume says otherwise. A title
+leaf's page break is lifted out in front of its gate, so the foliation still runs
+unbroken when the title page is left out. A prose section's page breaks are its own, and
+go with it.
 """
+import re
 from pathlib import Path
+
+from opensiddur.importer.util.occasion import gate, paratext, title_page
 
 from .common import FRONT, FRONT_SIGIL, PROJECT_EN, PROJECT_HE, pb
 
@@ -64,10 +74,26 @@ TITLE_LEAVES = {
 BARE = {PROJECT_HE: (1, 6, 8, 10), PROJECT_EN: (1, 7, 8, 10)}
 
 
-def fragment(name: str) -> str:
-    """One committed reading, indented to sit inside ``tei:front``."""
+#: The page break a title leaf's fragment opens with, inside its ``tei:titlePage``.
+LEADING_PB = re.compile(r"\A(<tei:titlePage\b[^>]*>)\s*(<tei:pb\b[^>]*/>)")
+
+
+def gated_lines(xml_id: str, condition, lines: list[str]) -> list[str]:
+    """``lines`` inside a paratext gate, which says nothing to the reader."""
+    opening, closing = gate(xml_id, condition)
+    return ["      " + opening, *lines, "      " + closing]
+
+
+def title_leaf(name: str, leaf: int) -> list[str]:
+    """A title leaf written out: its page break, then the title page behind its gate."""
     text = (FRAGMENTS / name).read_text(encoding="utf-8").rstrip("\n")
-    return "\n".join("      " + line if line else line for line in text.split("\n"))
+    match = LEADING_PB.match(text)
+    if match is None:
+        # Left inside, the leaf's page break would go with the title page it is gated on.
+        raise ValueError(f"{name}: a title leaf must open with its own tei:pb")
+    text = match.group(1) + text[match.end():]
+    body = "\n".join("        " + line if line else line for line in text.split("\n"))
+    return ["      " + match.group(2), *gated_lines(f"title_page_{leaf}", title_page(), [body])]
 
 
 def section_body(section) -> str:
@@ -88,10 +114,11 @@ def front_block(project: str) -> str:
     lines = ["    <tei:front>"]
     for leaf in sorted(set(titles) | set(starts) | set(BARE[project])):
         if leaf in titles:
-            lines.append(fragment(titles[leaf]))
+            lines.extend(title_leaf(titles[leaf], leaf))
         elif leaf in starts:
-            lines.append('      <j:transclude type="external" '
-                         f'target="{FRONT}{starts[leaf]["slug"]}"/>')
+            slug = starts[leaf]["slug"]
+            lines.extend(gated_lines(f"paratext_{slug}", paratext(), [
+                f'        <j:transclude type="external" target="{FRONT}{slug}"/>']))
         else:
             lines.append("      " + pb(f"s{leaf}", sigil=FRONT_SIGIL,
                                        n=DESIGNATION[leaf]))

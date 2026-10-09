@@ -24,6 +24,10 @@ SERVICE_TIME = "opensiddur:service-time"
 HEBREW_DATE = "opensiddur:hebrew-date"
 DAY_OF_WEEK = "opensiddur:day-of-week"
 ISRAEL = "opensiddur:israel"
+#: Matter of the book's that is neither prayer nor commentary on it. Not an occasion, but gated
+#: the same way: a direction to the processor, with nothing said to the reader
+#: (``schema/JLPTEI-3.md``, *Setting attribute values*).
+PARATEXT = "opensiddur:paratext"
 
 #: The feature structures a gate may declare. The others are what the calendar derives *from* --
 #: a date, a place, a day of the week -- and declaring part of one would recompute everything
@@ -93,6 +97,16 @@ def aggregate(name: str, value: bool = True) -> Feature:
 
 def service(name: str) -> Feature:
     return Feature(SERVICE_TIME, name)
+
+
+def paratext() -> Feature:
+    """A preface, dedication, introduction, epilogue or other prose that is not liturgy."""
+    return Feature(PARATEXT, "include")
+
+
+def title_page() -> Feature:
+    """A transcribed title leaf, its copyright verso included."""
+    return Feature(PARATEXT, "title-page")
 
 
 def fixed(condition: Condition) -> list[Feature]:
