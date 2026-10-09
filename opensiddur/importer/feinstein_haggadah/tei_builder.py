@@ -116,7 +116,7 @@ def conditional_markers(
     # Where the source brackets the passage, the markers stand for those brackets, and an
     # edition that cannot decide the condition prints them as the source did.
     scope = entry.scope_for(lang)
-    marked = ' type="marked"' if scope is not None and scope.bracketed else ""
+    marked = ' type="marked"' if scope is not None and scope.is_marked else ""
     opening = (
         f'<j:conditional xml:id="cond_{entry.cond_id}"{marked}>'
         f"{note_markup}{condition_markup(entry.condition)}"

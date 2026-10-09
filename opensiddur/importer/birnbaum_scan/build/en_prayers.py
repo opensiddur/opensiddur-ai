@@ -125,7 +125,7 @@ prayer("amidah_qedushah", "Kedushah", "amidah/qedushah", 84, 86, "\n".join([
     "eternity we will proclaim thy holiness; thy praise, our God, shall never depart from our "
     "mouth, for thou art a great and holy God and King.</tei:p>",
     "          </tei:div>",
-    cond("cond_qedushah_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_qedushah_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/qedushah/haeil_haqadosh", "Blessed art thou, O Lord, holy God."),
     endcond("cond_qedushah_seal_ordinary"),
     cond("cond_qedushah_seal_aseret",
@@ -138,7 +138,7 @@ prayer("amidah_qedushah", "Kedushah", "amidah/qedushah", 84, 86, "\n".join([
 prayer("amidah_qedushat_hashem", "Sanctification of God’s name", "amidah/qedushat_hashem", 86, 86, "\n".join([
     f'        <tei:div corresp="{U}amidah/qedushat_hashem">',
     d(U + "amidah/qedushat_hashem/atah_qadosh", "Thou art holy and thy name is holy, and holy beings praise thee daily."),
-    cond("cond_qh_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_qh_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/qedushat_hashem/haeil_haqadosh", "Blessed art thou, O Lord, holy God."),
     endcond("cond_qh_seal_ordinary"),
     cond("cond_qh_seal_aseret",
@@ -212,7 +212,7 @@ prayer("amidah_mishpat", "Blessing for justice", "amidah/mishpat", 88, 88, "\n".
     d(U + "amidah/mishpat/hashivah_shofteinu", "Restore our judges as at first, and our counselors as at the beginning; remove from "
             "us sorrow and sighing; reign thou alone over us, O Lord, in kindness and mercy, and "
             "clear us in judgment."),
-    cond("cond_mishpat_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_mishpat_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/mishpat/melekh_ohev_tzedaqah",
       "Blessed art thou, O Lord, King, who lovest righteousness and justice."),
     endcond("cond_mishpat_seal_ordinary"),
@@ -382,7 +382,7 @@ prayer("amidah_shalom", "Blessing for peace", "amidah/shalom", 96, 96, "\n".join
       "light of thy countenance thou hast given us, Lord our God, a Torah of life, "
       "lovingkindness, charity, blessing, mercy, life and peace. May it please thee to bless thy "
       "people Israel with peace at all times and hours."),
-    cond("cond_shalom_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_shalom_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/shalom/hamevarekh",
       "Blessed art thou, O Lord, who blessest thy people Israel with peace."),
     endcond("cond_shalom_seal_ordinary"),

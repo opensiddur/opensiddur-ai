@@ -162,9 +162,15 @@ def write(project: str, name: str, text: str) -> Path:
 
 
 def cond(cid: str, *, note: str = "", note_lang: str = "en", fs: str = "", negate: bool = False,
-         note_urn: str = "", note_resp: str = "") -> str:
-    """A j:conditional: the rubric the edition prints, and the test it states."""
-    parts = [f'        <j:conditional xml:id="{cid}">']
+         note_urn: str = "", note_resp: str = "", marked: bool = False) -> str:
+    """A j:conditional: the rubric the edition prints, and the test it states.
+
+    ``marked`` says the book itself sets the passage off -- parentheses, or the asterisk that
+    keys an ordinary reading to its substitute -- so an edition that cannot decide the
+    condition sets it off too (schema/JLPTEI-3.md, *How an undecided scope is set off*).
+    """
+    kind = ' type="marked"' if marked else ""
+    parts = [f'        <j:conditional xml:id="{cid}"{kind}>']
     if note:
         attributes = (f' corresp="{note_urn}"' if note_urn else "")
         attributes += f' resp="{note_resp}"' if note_resp else ""

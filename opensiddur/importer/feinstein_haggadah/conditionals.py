@@ -163,6 +163,12 @@ class Paragraphs:
     first: int
     last: int | None = None
     bracketed: bool = False
+    #: Whether the passage is ``type="marked"``: by default, whether the source brackets it.
+    marked: bool | None = None
+
+    @property
+    def is_marked(self) -> bool:
+        return self.bracketed if self.marked is None else self.marked
 
     @property
     def through(self) -> int:
@@ -184,6 +190,14 @@ class Inline:
     end_before_text: str
     end_after_text: str
     bracketed: bool = True
+    #: Whether the passage is ``type="marked"``: by default, whether the source brackets it.
+    #: Set it where the source's marking was lost -- a born-digital text that brackets every
+    #: other such passage -- to restore the marking without swallowing brackets not there.
+    marked: bool | None = None
+
+    @property
+    def is_marked(self) -> bool:
+        return self.bracketed if self.marked is None else self.marked
 
 
 @dataclass(frozen=True)
@@ -197,6 +211,7 @@ class Transclusion:
 
     child_slug: str
     bracketed = False
+    is_marked = False
 
 
 Scope = Paragraphs | Inline | Transclusion
@@ -267,10 +282,12 @@ CONDITIONALS: tuple[Conditional, ...] = (
         condition="shabbat",
         scope_he=Inline("חֵרוּתֵֽנוּ", "בְּאַהֲבָה", "בְּאַהֲבָה", "מִקְרָא קֹֽדֶשׁ"),
         # The English words are already in the running text, merely never bracketed, so the
-        # markers swallow nothing.
+        # markers swallow nothing. The 2009 translation is born digital and parenthesises every
+        # other Shabbat insertion of this kiddush, as the Hebrew does this one: the marking was
+        # lost, and is restored.
         scope_en=Inline(
             "of our liberation", "with love", "with love", "a holy convocation",
-            bracketed=False,
+            bracketed=False, marked=True,
         ),
     ),
     Conditional(

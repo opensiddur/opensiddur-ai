@@ -125,7 +125,7 @@ prayer("amidah_qedushah", "קְדֻשָּׁה", "amidah/qedushah", 83, 85, "\n".
     "        </tei:div>",
     # The asterisk marks the seal as substitutable: on the Ten Days הָאֵל הַקָּדוֹשׁ is NOT
     # said and הַמֶּלֶךְ הַקָּדוֹשׁ stands in its place. Two exclusive readings, not an addition.
-    cond("cond_qedushah_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_qedushah_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/qedushah/haeil_haqadosh",
       "בָּרוּךְ אַתָּה, יְיָ, הָאֵל הַקָּדוֹשׁ.", indent=10),
     endcond("cond_qedushah_seal_ordinary"),
@@ -141,7 +141,7 @@ prayer("amidah_qedushah", "קְדֻשָּׁה", "amidah/qedushah", 83, 85, "\n".
 prayer("amidah_qedushat_hashem", "קְדֻשַּׁת הַשֵּׁם", "amidah/qedushat_hashem", 85, 85, "\n".join([
     f'        <tei:div corresp="{U}amidah/qedushat_hashem">',
     d(U + "amidah/qedushat_hashem/atah_qadosh", "אַתָּה קָדוֹשׁ וְשִׁמְךָ קָדוֹשׁ, וּקְדוֹשִׁים בְּכָל יוֹם יְהַלְלֽוּךָ סֶּֽלָה.", indent=10),
-    cond("cond_qh_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_qh_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/qedushat_hashem/haeil_haqadosh",
       "בָּרוּךְ אַתָּה, יְיָ, הָאֵל הַקָּדוֹשׁ.", indent=10),
     endcond("cond_qh_seal_ordinary"),
@@ -218,7 +218,7 @@ prayer("amidah_mishpat", "בִּרְכַּת מִשְׁפָּט", "amidah/mishpa
     f'        <tei:div corresp="{U}amidah/mishpat">',
     d(U + "amidah/mishpat/hashivah_shofteinu", "הָשִֽׁיבָה שׁוֹפְטֵֽינוּ כְּבָרִאשׁוֹנָה, וְיוֹעֲצֵֽינוּ כְּבַתְּחִלָּה; וְהָסֵר מִמֶּֽנּוּ יָגוֹן וַאֲנָחָה; "
             "וּמְלוֹךְ עָלֵֽינוּ, אַתָּה יְיָ לְבַדְּךָ, בְּחֶֽסֶד וּבְרַחֲמִים, וְצַדְּקֵֽנוּ בַּמִּשְׁפָּט.", indent=10),
-    cond("cond_mishpat_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_mishpat_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/mishpat/melekh_ohev_tzedaqah",
       "בָּרוּךְ אַתָּה, יְיָ, מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט.", indent=10),
     endcond("cond_mishpat_seal_ordinary"),
@@ -400,7 +400,7 @@ prayer("amidah_shalom", "בִּרְכַּת שָׁלוֹם", "amidah/shalom", 95
       "בָּרְכֵֽנוּ אָבִֽינוּ, כֻּלָּֽנוּ כְּאֶחָד, בְּאוֹר פָּנֶֽיךָ; כִּי בְאוֹר פָּנֶֽיךָ נָתַֽתָּ לָּֽנוּ, "
       "יְיָ אֱלֹהֵֽינוּ, תּוֹרַת חַיִּים וְאַהֲבַת חֶֽסֶד, וּצְדָקָה וּבְרָכָה וְרַחֲמִים, וְחַיִּים וְשָׁלוֹם. "
       "וְטוֹב בְּעֵינֶֽיךָ לְבָרֵךְ אֶת עַמְּךָ יִשְׂרָאֵל בְּכָל עֵת וּבְכָל שָׁעָה בִּשְׁלוֹמֶֽךָ.", indent=10),
-    cond("cond_shalom_seal_ordinary", fs=AYT, negate=True),
+    cond("cond_shalom_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/shalom/hamevarekh",
       "בָּרוּךְ אַתָּה, יְיָ, הַמְבָרֵךְ אֶת עַמּוֹ יִשְׂרָאֵל בַּשָּׁלוֹם.", indent=10),
     endcond("cond_shalom_seal_ordinary"),

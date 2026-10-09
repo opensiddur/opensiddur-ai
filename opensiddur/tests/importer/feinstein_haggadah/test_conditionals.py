@@ -229,6 +229,18 @@ class TestEmission(unittest.TestCase):
         body = self._raw("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
         self.assertIn('<j:conditional xml:id="cond_inline">', body)
 
+    def test_a_lost_marking_is_restored_without_swallowing_anything(self):
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל", bracketed=False, marked=True),
+        )
+        body = self._raw("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
+        self.assertIn('<j:conditional xml:id="cond_inline" type="marked">', body)
+        self.assertEqual(_strip_conditions(body).count("בֵּית"), 1)
+        self.assertIn("גִּימֶל", body)
+
     def test_a_bracketed_paragraph_scope_is_marked(self):
         entry = Conditional(
             slug="kadesh", cond_id="para", condition="shabbat",
