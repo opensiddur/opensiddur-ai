@@ -29,6 +29,10 @@
     <xsl:param name="inline-open" as="xs:string" select="'['"/>
     <xsl:param name="inline-close" as="xs:string" select="']'"/>
     <xsl:param name="block" as="xs:string" select="'rule'"/>
+    <!-- A page reference links to its destination. The source's own words ("continued on page")
+         surround it, so the link shows a symbol where print shows the number. -->
+    <xsl:param name="page-ref-text" as="xs:string" select="'→'"/>
+    <xsl:param name="page-ref-label" as="xs:string" select="'Go to the passage'"/>
 
     <!-- The first element to carry a URN gets it as its id, so #urn:x-opensiddur:... links
          to it; the parallel column's copy, and every later one, does not, ids being unique. -->
@@ -232,6 +236,7 @@
                 <xsl:with-param name="class"
                                 select="(if (self::p:span) then () else local-name(),
                                          @type ! concat(local-name(..), '-', .),
+                                         @p:optional-reference ! concat('oref', .),
                                          tokenize(@rend) ! concat('rend-', .))"/>
             </xsl:call-template>
             <xsl:apply-templates/>
@@ -243,6 +248,26 @@
             <xsl:call-template name="attributes"/>
             <xsl:apply-templates/>
         </a>
+    </xsl:template>
+
+    <!-- Resolved by page_references.resolve_page_references: @target is a page label's @n. -->
+    <xsl:template match="tei:ref[@type='page']">
+        <a href="#{@target}" aria-label="{$page-ref-label}">
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class" select="'page-ref'"/>
+            </xsl:call-template>
+            <xsl:value-of select="$page-ref-text"/>
+        </a>
+    </xsl:template>
+
+    <!-- The first occurrence of a destination owns the id, which works without scripts. The
+         reader's script goes to the first occurrence its settings show (data-page-label). -->
+    <xsl:template match="tei:anchor[@type='page-label']">
+        <span class="page-label" data-page-label="{@n}">
+            <xsl:if test="not(@subtype = 'repeat')">
+                <xsl:attribute name="id" select="@n"/>
+            </xsl:if>
+        </span>
     </xsl:template>
 
     <xsl:template match="tei:ref">

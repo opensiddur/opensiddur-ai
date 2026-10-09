@@ -1757,6 +1757,9 @@ with LaTeX `\pageref`. The final number is the page in the generated document,
 including separate Hebrew and English pages in parallel editions. Normal LaTeX
 reruns resolve forward references. Original `tei:pb/@n` remains source foliation.
 
+The electronic book has no pages. The same label becomes an HTML anchor in the destination,
+and the reference becomes a link to it, shown as a symbol (→) between the source's own words.
+
 Wrap independently removable instruction text in
 `tei:seg type="optional-page-reference"`. If any of that span's page destinations
 is absent after compilation (including conditional filtering), the exporter omits

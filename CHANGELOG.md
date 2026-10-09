@@ -40,6 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **The settings dialog** opens with × in the upper-right corner. ×, Cancel, Escape or a
     click outside leaves the settings as they were; Done keeps and saves them. Its buttons
     stay on screen however far the settings scroll.
+  - **Page references link to the passage.** Where the PDF prints a page number ("Grace is
+    continued on page 52"), the electronic book links to the passage, shown as →. They used
+    to show an empty gap.
+    - The link goes to the first occurrence of the passage that the settings show.
+    - An optional reference to a passage the book leaves out is dropped, as in print. One to a
+      passage the settings hide is hidden with it.
+  - **Links within the book land on their passage.** A contents entry or a page reference to a
+    passage far down could stop short of it, because the rows between are not laid out until
+    the browser reaches them. The reader now goes to it again until it stays put, and it lands
+    below the toolbar rather than under it.
 
 ### Fixed
 - Undecided conditional scopes keep both of their markers through compilation (#219). In a

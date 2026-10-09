@@ -441,11 +441,61 @@
     contents.dialog.showModal();
   });
 
-  // Passages shown or hidden above may have moved a linked one: go to it again.
-  if (location.hash) {
-    var id = location.hash.slice(1);
-    try { id = decodeURIComponent(id); } catch (e) { /* use it as it is */ }
-    var target = document.getElementById(id);
-    if (target) target.scrollIntoView();
+  // ── Links within the book ──────────────────────────────────────────
+
+  // The toolbar stays at the top of the window: a passage linked to goes below it.
+  function padForToolbar() {
+    document.documentElement.style.scrollPaddingTop = toolbar.offsetHeight + "px";
   }
+  padForToolbar();
+  window.addEventListener("resize", padForToolbar);
+
+  // Where a link goes. A page reference's destination can occur more than once, and the
+  // settings can hide the first: go to the first they show.
+  function destination(hash) {
+    var id = hash.slice(1);
+    try { id = decodeURIComponent(id); } catch (e) { /* use it as it is */ }
+    if (!id) return null;
+    var copies = document.querySelectorAll('[data-page-label="' + CSS.escape(id) + '"]');
+    for (var i = 0; i < copies.length; i++) {
+      if (copies[i].getClientRects().length) return copies[i];
+    }
+    return document.getElementById(id);
+  }
+
+  // Rows off screen are not laid out (content-visibility: auto) until the browser passes them,
+  // and their real heights move a passage after the browser has gone to it. Go to it again
+  // whenever it moves, until it has stayed put for a few frames, or until the reader scrolls.
+  var settling = 0;
+  function settleOn(hash) {
+    var target = destination(hash);
+    if (!target) return;
+    var run = ++settling, frames = 0, still = 0;
+    target.scrollIntoView();
+    var last = target.getBoundingClientRect().top;
+    (function check() {
+      if (run !== settling) return;
+      var top = target.getBoundingClientRect().top;
+      if (Math.abs(top - last) > 1) {
+        target.scrollIntoView();
+        last = target.getBoundingClientRect().top;
+        still = 0;
+      } else still++;
+      if (still < 3 && ++frames < 60) requestAnimationFrame(check);
+    })();
+  }
+  ["wheel", "touchstart", "pointerdown", "keydown"].forEach(function (type) {
+    window.addEventListener(type, function () { settling++; }, { passive: true });
+  });
+  document.addEventListener("click", function (event) {
+    if (event.defaultPrevented || event.button || event.ctrlKey || event.metaKey
+        || event.shiftKey || event.altKey) return;
+    var link = event.target.closest && event.target.closest('a[href^="#"]');
+    // After the browser's own jump, which goes nowhere if the settings hide the first copy.
+    if (link) requestAnimationFrame(function () { settleOn(link.getAttribute("href")); });
+  });
+  window.addEventListener("hashchange", function () { settleOn(location.hash); });
+
+  // Passages shown or hidden above may have moved a linked one: go to it again.
+  if (location.hash) settleOn(location.hash);
 })();
