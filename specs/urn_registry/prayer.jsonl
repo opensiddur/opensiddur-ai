@@ -1068,3 +1068,7 @@
 {"urn": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli/repeat", "status": "canonical", "label_en": "adonai boqer tishma qoli/repeat", "parent": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli"}
 {"urn": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha/repeat", "status": "canonical", "label_en": "hateh elohai oznekha/repeat", "parent": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha"}
 {"urn": "urn:x-opensiddur:text:prayer:ein_qore_beshimkha", "status": "canonical", "label_en": "ein qore beshimkha"}
+{"urn": "urn:x-opensiddur:text:prayer:selichot/rahamekha_rabbim", "status": "canonical", "label_en": "selichot/rahamekha rabbim"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratson_shetehe_hashanah", "status": "canonical", "label_en": "yehi ratson shetehe hashanah"}
+{"urn": "urn:x-opensiddur:text:prayer:keraham_av", "status": "canonical", "label_en": "Like a father has compassion: scriptural petitions"}
+{"urn": "urn:x-opensiddur:text:prayer:selichot/ki_lo_al_tsidqotenu", "status": "canonical", "label_en": "For we do not presume: Daniel petitions"}

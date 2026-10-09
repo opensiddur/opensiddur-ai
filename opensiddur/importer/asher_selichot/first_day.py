@@ -88,7 +88,7 @@ def opening(lang, project, data):
     return root
 
 
-def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False, include_third_day=False, additional_days=()):
+def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False, include_third_day=False, additional_days=(), include_erev=False):
     urn = ('urn:x-opensiddur:text:siddur:selichot' + ('/expanded' if expanded else '')) if book else FIRST_DAY
     title = 'Asher Selichoth' if book else 'First-day Selichot'
     if expanded:
@@ -102,6 +102,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         edition.text = 'First three days through Archive leaves n67–68, ending before the fourth-day heading. Hebrew pointing awaits independent proofreading; remaining days await encoding.'
     if book and additional_days:
         edition.text = 'Complete services through the '+additional_days[-1]+' day. Hebrew pointing awaits independent proofreading; later services await encoding.'
+    if include_erev:
+        edition.text = 'First seven services and Erev Rosh Hashanah through Archive n183/n184, ending before the Fast of Gedaliah. Hebrew pointing awaits independent proofreading; later services await encoding.'
     if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     if book:
@@ -117,6 +119,9 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
             element(div, 'j:transclude', target=THIRD_DAY)
         for day_name in additional_days:
             element(div, 'j:transclude', target='urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day')
+        if include_erev:
+            from .erev_rosh_hashanah import EREV
+            element(div, 'j:transclude', target=EREV)
         return root
     return root
 
@@ -132,8 +137,8 @@ def documents(source):
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
-        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days)
-        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days)
+        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists())
+        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists())
         service = entry(lang, project, title_data)
         service_div = service.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         root = opening(lang, project, reading[lang])
@@ -248,7 +253,7 @@ def poetic_lines(node, fragments, rule):
         if i:
             pb(line if line is not None else node, data['scan'], data['printed_page'])
         remaining_notes = list(fragment['notes']['he'])
-        for words in re.findall(r'[^'+re.escape(stops)+r']+['+re.escape(stops)+r']|[^'+re.escape(stops)+r']+$', data['text']):
+        for words in re.findall(r'[^'+re.escape(stops)+r']+['+re.escape(stops)+r'][\]\)]?|[^'+re.escape(stops)+r']+$', data['text']):
             words = words.strip()
             # A phrase dot is printed apart from the word, but must not wrap alone.
             words = re.sub(r' +(?=·$)', '\u00a0', words)
@@ -267,7 +272,7 @@ def poetic_lines(node, fragments, rule):
                 element(line, 'seg', words[match.start():], type='refrain')
             else:
                 words_with_notes(line, words, notes, 'he')
-            if words[-1] in stops:
+            if words.rstrip('])')[-1] in stops:
                 line = None
             elif not data.get('join_next'):
                 append_words(line, ' ')

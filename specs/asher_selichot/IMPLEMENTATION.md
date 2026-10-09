@@ -151,3 +151,29 @@ body and contents while retaining source evidence and the Hebrew printed heading
 Synthetic checks exercise reordered page identities, closed day-specific scopes,
 Hebrew-only rubric direction, and running-header exclusion. Render checks audit
 day-three stanzas, notes, expansions and day boundaries with broken controls.
+
+## Erev Rosh Hashanah continuation
+
+Encode n99–n184 as one real service assembly with 113 source-ordered units,
+independent incipit modules, two subordinate pizmon bookmarks, and documentary /
+expanded cue branches. Preserve language-specific repeat ranges and Ark positions.
+The printed-52 extra-petition milestone has an explicit terminal same-unit marker.
+The final Full Kaddish excludes first-day and Ten Days context. Preserve Tamid’s
+numbered references while tracking the unavailable explanatory text separately.
+
+Bound the page-52 repetitions separately under `prayer:keraham_av` and
+`prayer:selichot/ki_lo_al_tsidqotenu`; their translation differs from pages 9/10.
+Choose the version indicated by the cue, including the explicit English
+page-58 reference to 52.
+
+Expanded repeat cues can list different petitions in Hebrew and English. Set
+them as one paired prose paragraph with inline transclusions and a shared
+alignment milestone for the cue; retain bounded prayer targets in the source
+modules. Separate external blocks for unequal target lists can shift later
+translations. Verify the compiled pairings and the page-52 translation wording
+before rendering, in addition to checking passage starts in the PDF.
+
+Run `python -m opensiddur.importer.asher_selichot.erev_rosh_hashanah` on the
+compiled expanded XML to verify all 12 repeat-cue pairings and the exact
+page-52 translation variant. Compiler fix #231 keeps inline references inside
+parallel paragraphs; both synthetic regressions failed before that fix.

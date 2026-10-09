@@ -223,6 +223,7 @@ def main(argv=None):
     args=parser.parse_args(argv)
     reader=PdfReader(args.pdf);rows=outline_rows(reader)
     captions=[word+' DAY' for word in ['FIRST','SECOND','THIRD','FOURTH','FIFTH','SIXTH','SEVENTH'] if any(word+' DAY' in r[1] for r in rows)]
+    if any('DAY BEFORE NEW YEAR' in r[1] for r in rows):captions.append('DAY BEFORE NEW YEAR')
     days=day_bookmarks(rows,captions)
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
@@ -266,6 +267,11 @@ def main(argv=None):
                 try:numbered_day_check(broken,args.expanded,data,scope)
                 except ValueError:pass
                 else:raise AssertionError('Shifted numbered-day stanza escaped detection')
+        if len(days)>7:
+            from .check_erev_pdf import check as erev_check, controls as erev_controls
+            erev_portion=slice_day(tree,days[7])
+            erev_check(erev_portion,args.expanded)
+            if args.control:erev_controls(erev_portion,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')

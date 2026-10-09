@@ -205,6 +205,9 @@ def build(source_root,project_directory):
     for day_name in ['fourth', 'fifth', 'sixth', 'seventh']:
         if (readings/(day_name+'-day.json')).exists():
             authored.extend(numbered_documents(readings, day_name))
+    if (readings/'erev-rosh-hashanah.json').exists():
+        from .erev_rosh_hashanah import documents as erev_documents
+        authored.extend(erev_documents(readings))
     for project, name, root in authored:
         xml=normalized_xml(root)
         valid,errors=validate(xml)
