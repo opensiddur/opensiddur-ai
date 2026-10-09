@@ -91,8 +91,11 @@ def shared(lang, prayers):
                              'חָנֵּֽנוּ' if lang=='he' else 'O grant us',suffix='conclusion')
     if lang=='he':
         boundary=f'<tei:milestone unit="prayer-part" corresp="{PRAYER}amidah/binah/conclusion"/>'
-        prefix=conditional('vechanenu', '',
-            '<j:all>'+feature('opensiddur:service-time','maariv')+HAVDALAH+'</j:all>', 'וְ')
+        # Printed (וְ)חָנֵּנוּ: the parentheses mark the prefix as Saturday night's. Joined
+        # with nothing between, or the prefix would print as a word of its own.
+        prefix=(cond('arvit_vechanenu', fs='<j:all>'+feature('opensiddur:service-time','maariv')
+                     +HAVDALAH+'</j:all>', marked=True).strip()
+                +'וְ'+endcond('arvit_vechanenu').strip())
         p['body']=p['body'].replace(boundary,boundary+prefix)
     from .arvit_printings import apply
     return apply(lang,result)

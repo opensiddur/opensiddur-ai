@@ -1631,6 +1631,52 @@ When a condition is evaluated, the current in-scope setting of the feature is co
 
 If any of the values in the condition are `undefined`, the condition may evaluate to `undefined` (see the truth table below). `j:conditional` allows a `tei:note` element of type `instruction` as a child element, as a sibling to the condition. If the condition evaluates to `undefined`, the note will be included. It will be excluded if the condition evaluates to either `true` (in which case, the text must always be included) or `false` (in which case the text is excluded). The conditional note itself may also have inline conditionals. 
 
+##### How an undecided scope is set off
+
+A scope whose condition evaluates to `undefined` is kept, and how it is set off from the text
+around it follows the source:
+
+- **`@type="marked"`**: the source itself marks the passage off, with brackets, parentheses or a
+  line. The standard delimiters are reproduced around it (brackets within running text, a rule
+  around blocks), with its instruction, if it has one.
+- **An instruction** and no `@type`: the instruction announces the passage, as the source's
+  rubric does, and a closing delimiter shows where it ends. The instruction may be the
+  conditional's own `tei:note`, or the `tei:note type="instruction"` the scope opens with.
+- **Neither**: the conditional is a direction to the processor, not to the reader, and the passage
+  is kept with no delimiters at all. The occasion conditions on a book's running order, around
+  the transclusion of each section that is said only on some days, are of this kind (see
+  [Conditions on a running order](#conditions-on-a-running-order)).
+
+##### Conditions on a running order
+
+A section that is said only on some occasions -- the weekday services, the Sabbath services,
+Hallel, the festival services -- is conditioned at its transclusion in the running order: the
+outermost point at which the condition can be stated, so that one condition governs the whole
+section. The condition uses the features the calendar derives (`opensiddur:holiday`,
+`opensiddur:holiday-aggregate`, `opensiddur:hebrew-date`, `opensiddur:service-time`), and it has no
+instruction note, since nothing is said to the reader. Where the condition fixes a feature to a
+single value, that value is also declared (`j:declare`) inside the conditional, so that the
+section's own conditions on it are decided even when the date is not. For example:
+
+```xml
+<j:conditional xml:id="gate_akdamut">
+   <tei:fs type="opensiddur:holiday">
+      <tei:f name="shavuot"><tei:numeric value="1"/></tei:f>
+   </tei:fs>
+</j:conditional>
+<j:declare xml:id="gate_akdamut_declare">
+   <tei:fs type="opensiddur:holiday">
+      <tei:f name="shavuot"><tei:numeric value="1"/></tei:f>
+   </tei:fs>
+</j:declare>
+<j:transclude type="external" target="urn:x-opensiddur:text:siddur:regalim/akdamut"/>
+<j:endDeclare target="#gate_akdamut_declare"/>
+<j:endConditional target="#gate_akdamut"/>
+```
+
+Features that count as `false` when undefined (`opensiddur:override`) do not belong in such a
+condition: an edition with no occasion would lose the section.
+
 ##### Truth tables
 
 The truth tables are here:

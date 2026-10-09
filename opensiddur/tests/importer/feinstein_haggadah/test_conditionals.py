@@ -44,7 +44,8 @@ from opensiddur.tests.importer.feinstein_haggadah import support
 def _strip_conditions(xml: str) -> str:
     """Collapse each condition to a marker, so the shape of the output is readable."""
     xml = re.sub(r"\s*<tei:fs.*?</tei:fs>\s*", "", xml, flags=re.DOTALL)
-    xml = re.sub(r'<j:conditional xml:id="cond_([^"]+)">\s*</j:conditional>', r"[\1[", xml)
+    xml = re.sub(r'<j:conditional xml:id="cond_([^"]+)"(?: type="marked")?>\s*</j:conditional>',
+                 r"[\1[", xml)
     xml = re.sub(r'<j:endConditional target="#cond_([^"]+)"/>', r"]\1]", xml)
     return xml
 
@@ -163,8 +164,11 @@ class TestEmission(unittest.TestCase):
     """
 
     def _render(self, slug, section, *conditionals, lang="he", **kwargs):
+        return _strip_conditions(self._raw(slug, section, *conditionals, lang=lang, **kwargs))
+
+    def _raw(self, slug, section, *conditionals, lang="he", **kwargs):
         with _entries(*conditionals):
-            return _strip_conditions(section_body(slug, section, lang=lang, **kwargs))
+            return section_body(slug, section, lang=lang, **kwargs)
 
     def test_inline_scope_replaces_the_brackets(self):
         entry = Conditional(
@@ -202,6 +206,68 @@ class TestEmission(unittest.TestCase):
         # letter of the paragraph must survive.
         text = re.search(r"<tei:p>(.*?)</tei:p>", body, re.DOTALL).group(1)
         self.assertEqual(re.sub(r"\[[a-z_]+\[|\][a-z_]+\]", "", text), "אָלֶף בֵּית גִּימֶל")
+
+    def test_a_bracketed_scope_is_marked(self):
+        """The markers stand for the source's brackets, so an edition that cannot decide the
+        condition prints them as the source did."""
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל"),
+        )
+        body = self._raw("kadesh", _section("אָלֶף (בֵּית) גִּימֶל"), entry)
+        self.assertIn('<j:conditional xml:id="cond_inline" type="marked">', body)
+
+    def test_an_unbracketed_scope_is_not_marked(self):
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל", bracketed=False),
+        )
+        body = self._raw("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
+        self.assertIn('<j:conditional xml:id="cond_inline">', body)
+
+    def test_a_lost_marking_is_restored_without_swallowing_anything(self):
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל", bracketed=False, marked=True),
+        )
+        body = self._raw("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
+        self.assertIn('<j:conditional xml:id="cond_inline" type="marked">', body)
+        self.assertEqual(_strip_conditions(body).count("בֵּית"), 1)
+        self.assertIn("גִּימֶל", body)
+
+    def test_a_bracketed_paragraph_scope_is_marked(self):
+        entry = Conditional(
+            slug="kadesh", cond_id="para", condition="shabbat",
+            scope_he=Paragraphs(1, bracketed=True),
+        )
+        body = self._raw("kadesh", _section("(אָלֶף)", "בֵּית"), entry)
+        self.assertIn('<j:conditional xml:id="cond_para" type="marked">', body)
+
+    def test_a_transcluded_section_is_never_marked(self):
+        entry = Conditional(
+            slug="nirtzah", cond_id="child", condition="first_night",
+            scope_he=Transclusion("it_happened_at_midnight"),
+        )
+        body = self._raw("nirtzah", None, entry, child_slugs=["it_happened_at_midnight"])
+        self.assertIn('<j:conditional xml:id="cond_child">', body)
+
+    def test_an_unbracketed_scope_closes_on_its_last_word(self):
+        """The closer goes before the space after the scope, not after it, so that a bracket
+        printed for it hugs the words it closes."""
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל", bracketed=False),
+        )
+        body = self._render("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
+        self.assertIn("[inline[בֵּית]inline] גִּימֶל", body)
 
     def test_paragraph_scope_brackets_whole_paragraphs(self):
         entry = Conditional(
@@ -253,6 +319,19 @@ class TestEmission(unittest.TestCase):
         body = self._render("kadesh", _section("אָלֶף", "בֵּית"), entry)
         between = body[body.index("[para["):body.index("]para]")]
         self.assertIn('<tei:note type="instruction">בשבת מתחילין כאן</tei:note>', between)
+
+    def test_a_scope_the_source_parenthesises_with_its_rubric_is_marked(self):
+        """The English sets a Shabbat insertion as "(on Shabbat say: ...)": the parentheses
+        set the passage off, and the rubric sits inside the scope."""
+        entry = Conditional(slug="kadesh", cond_id="src", condition="shabbat")
+        section = SectionContent(slug="kadesh", blocks=[
+            TextBlock(kind="instruction", english="on Shabbat say:", starts_paragraph=True,
+                      governs=True),
+            TextBlock(kind="paragraph", english="Sabbaths for rest and", governed=True),
+        ])
+        body = self._raw("kadesh", section, entry, lang="en")
+        self.assertIn('<j:conditional xml:id="cond_src" type="marked">', body)
+        self.assertRegex(body, r'</j:conditional>\s*<tei:note type="instruction">on Shabbat say:')
 
     def test_an_editorial_note_sits_on_the_conditional_itself(self):
         """Shown only when the condition cannot be decided, unlike a source rubric."""

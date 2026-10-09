@@ -23,8 +23,9 @@ URNS = {'hashkivenu': PRAYER+'hashkivenu/hapores_sukkat_shalom',
         'wine':PRAYER+'borei_pri_hagafen'}
 
 
-def conditional(cid,rubric,fs,content,*,negate=False):
-    return cond('shabbat_arvit_'+cid,note=rubric,fs=fs,negate=negate)+content+endcond('shabbat_arvit_'+cid)
+def conditional(cid,rubric,fs,content,*,negate=False,marked=False):
+    return (cond('shabbat_arvit_'+cid,note=rubric,fs=fs,negate=negate,marked=marked)
+            +content+endcond('shabbat_arvit_'+cid))
 
 
 def xml(text):
@@ -62,8 +63,9 @@ def prayers(lang,earlier):
     # Only the substituted word is conditional; the remainder of the paragraph
     # follows both readings once, outside their scopes.
     magen=xml(data.MAGEN_PREFIX[side])
-    magen+=conditional('magen_el','',TEN_DAYS,'הָאֵל' if not side else 'God',negate=True)
-    magen+=conditional('magen_melekh','',TEN_DAYS,'הַמֶּֽלֶךְ' if not side else 'King')
+    # The book stars הָאֵל and gives הַמֶּלֶךְ in the starred note: both are marked.
+    magen+=conditional('magen_el','',TEN_DAYS,'הָאֵל' if not side else 'God',negate=True,marked=True)
+    magen+=conditional('magen_melekh','',TEN_DAYS,'הַמֶּֽלֶךְ' if not side else 'King',marked=True)
     magen+=xml(data.MAGEN_REMAINDER[side])
     substitution = ('<tei:foreign xml:lang="he">הַמֶּֽלֶךְ</tei:foreign> for '
                     '<tei:foreign xml:lang="he">הָאֵל</tei:foreign>.'

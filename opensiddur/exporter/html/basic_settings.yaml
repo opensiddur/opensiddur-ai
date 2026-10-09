@@ -75,7 +75,8 @@ controls:
       - label: Maariv
         set: {opensiddur:service-time: {shaharit: false, minha: false, maariv: true}}
 
-  # The Hebrew day: from nightfall, the next day. Friday night is Shabbat.
+  # The Hebrew day: from nightfall, the next day. Friday night is Shabbat, and Saturday night is
+  # Sunday -- so only Sunday may be the close of the Sabbath (motzaei-shabbat).
   - id: day-of-week
     label: Day of the week
     note: From nightfall, choose the next day.
@@ -83,17 +84,23 @@ controls:
       - label: Sunday
         set: {opensiddur:day-of-week: {hebrew-day: 1}, opensiddur:holiday-aggregate: {shabbat: false}}
       - label: Monday
-        set: {opensiddur:day-of-week: {hebrew-day: 2}, opensiddur:holiday-aggregate: {shabbat: false}}
+        set: {opensiddur:day-of-week: {hebrew-day: 2},
+              opensiddur:holiday-aggregate: {shabbat: false, motzaei-shabbat: false}}
       - label: Tuesday
-        set: {opensiddur:day-of-week: {hebrew-day: 3}, opensiddur:holiday-aggregate: {shabbat: false}}
+        set: {opensiddur:day-of-week: {hebrew-day: 3},
+              opensiddur:holiday-aggregate: {shabbat: false, motzaei-shabbat: false}}
       - label: Wednesday
-        set: {opensiddur:day-of-week: {hebrew-day: 4}, opensiddur:holiday-aggregate: {shabbat: false}}
+        set: {opensiddur:day-of-week: {hebrew-day: 4},
+              opensiddur:holiday-aggregate: {shabbat: false, motzaei-shabbat: false}}
       - label: Thursday
-        set: {opensiddur:day-of-week: {hebrew-day: 5}, opensiddur:holiday-aggregate: {shabbat: false}}
+        set: {opensiddur:day-of-week: {hebrew-day: 5},
+              opensiddur:holiday-aggregate: {shabbat: false, motzaei-shabbat: false}}
       - label: Friday
-        set: {opensiddur:day-of-week: {hebrew-day: 6}, opensiddur:holiday-aggregate: {shabbat: false}}
+        set: {opensiddur:day-of-week: {hebrew-day: 6},
+              opensiddur:holiday-aggregate: {shabbat: false, motzaei-shabbat: false}}
       - label: Shabbat
-        set: {opensiddur:day-of-week: {hebrew-day: 7}, opensiddur:holiday-aggregate: {shabbat: true}}
+        set: {opensiddur:day-of-week: {hebrew-day: 7},
+              opensiddur:holiday-aggregate: {shabbat: true, motzaei-shabbat: false}}
 
   # Each kind of day sets what the calendar shows to be the same on every such day, over five
   # years, in Israel and outside it (kinds_of_day.py, which writes the file).

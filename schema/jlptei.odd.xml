@@ -418,6 +418,20 @@
         <memberOf key="att.global"/>
         <memberOf key="model.global"/>
       </classes>
+      <attList>
+        <attDef ident="type" usage="opt" mode="add">
+          <desc>How the source sets the passage off when the condition cannot be decided.
+            Without it, an undecided scope is set off by its instruction <gi>tei:note</gi>
+            if it has one, and otherwise not at all: a conditional with neither is a
+            direction to the processor, not to the reader.</desc>
+          <valList type="closed">
+            <valItem ident="marked">
+              <desc>The source itself marks the passage off, with brackets, parentheses or a
+                line, so the standard delimiters are reproduced around it.</desc>
+            </valItem>
+          </valList>
+        </attDef>
+      </attList>
       <content>
         <sequence>
           <elementRef key="note" minOccurs="0"/>

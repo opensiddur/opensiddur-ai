@@ -5,6 +5,20 @@ One function for both projects. The English index used to be derived from the He
 by byte-exact string replacement, which meant reflowing the Hebrew literal silently
 changed the English file; the two now differ only in the arguments passed here.
 """
+from opensiddur.importer.util.occasion import (
+    DAY_OF_WEEK,
+    HEBREW_DATE,
+    ISRAEL,
+    Feature,
+    aggregate,
+    all_of,
+    any_of,
+    gated,
+    holiday,
+    none_of,
+    service,
+)
+
 from .avot import caller as avot_caller
 from .common import PROJECT_EN, PROJECT_HE, SIDDUR
 
@@ -22,10 +36,100 @@ EDITION = {
 TRANSLATION_NOTE = ("The English of this project is Birnbaum’s own translation, printed "
                     "on the pages facing the Hebrew.")
 
-#: The running order, in the order the book prints it. Shaḥarith li-Yladim is on pages
-#: 1-2 and so comes first. It is filed under the occasion `all` rather than `chol`: a
-#: child says it every morning, Sabbaths and festivals included, and filing it under
-#: weekdays would be a claim the book does not make. See SIDDUR_URN_SCHEME.md.
+#: The occasions the running order gates its sections on. Each is a condition on what the
+#: calendar derives (schema/JLPTEI-3.md, *Conditions on a running order*); a section with none
+#: is said on any day. The Hebrew day begins at nightfall, so a date with no time is the whole
+#: Hebrew day, and Friday evening already belongs to the Sabbath.
+SHABBAT = aggregate("shabbat")
+YOM_TOV = aggregate("yom-tov")
+#: The weekday services are also those of Rosh Hodesh, Hol ha-Moed, Hanukkah and Purim: "not
+#: a Sabbath or a festival", not "an ordinary day".
+WEEKDAY = none_of(SHABBAT, YOM_TOV)
+#: Birnbaum's Sabbath Maariv, Shaharit and Minha are the festivals' too: they choose between
+#: the two by conditions of their own, so they are gated on either and declare neither.
+SHABBAT_OR_FESTIVAL = any_of(SHABBAT, YOM_TOV)
+#: A festival day of the three pilgrimage festivals, Shemini Atzeret with them; the same
+#: condition as the festival service's own (festival.py, REGALIM).
+FESTIVAL = all_of(YOM_TOV, any_of(holiday("pesah", 1, 8), holiday("shavuot", 1, 2),
+                                  holiday("sukkot", 1, 7), holiday("shmini-atzeret", 1, 2)))
+#: Candle lighting and Kabbalat Shabbat come before nightfall, on the Hebrew Friday.
+HEBREW_FRIDAY_OR_SHABBAT = any_of(Feature(DAY_OF_WEEK, "hebrew-day", 6), SHABBAT)
+IN_ISRAEL = Feature(ISRAEL, "is-israel", True)
+IN_DIASPORA = Feature(ISRAEL, "is-israel", False)
+
+#: The running order, in the order the book prints it, as (target, gate). Shaḥarith
+#: li-Yladim is on pages 1-2 and so comes first. It is filed under the occasion `all` rather
+#: than `chol`: a child says it every morning, Sabbaths and festivals included, and filing it
+#: under weekdays would be a claim the book does not make. See SIDDUR_URN_SCHEME.md.
+CHOL = (
+    ("chol/shacharit", all_of(WEEKDAY, service("shaharit"))),
+    ("chol/minchah", all_of(WEEKDAY, service("minha"))),
+    ("chol/arvit", all_of(WEEKDAY, service("maariv"))),
+)
+SHABBAT_SECTIONS = (
+    # The Hebrew Friday, which is also what an electronic book's reader sets as the day.
+    ("shabbat/preparations", HEBREW_FRIDAY_OR_SHABBAT),
+    # Often said before nightfall, while it is still the Hebrew Friday.
+    ("shabbat/kabbalat_service", HEBREW_FRIDAY_OR_SHABBAT),
+    ("shabbat/arvit", all_of(SHABBAT_OR_FESTIVAL, service("maariv"))),
+    ("shabbat/leil_shabbat", SHABBAT),
+    ("shabbat/shacharit", all_of(SHABBAT_OR_FESTIVAL, service("shaharit"))),
+    # The Sabbath Musaf, and the prayers after Musaf on festivals and Hol ha-Moed too: the
+    # festival Musaf ends with its Amidah, and this section chooses its own Amidah by
+    # conditions on both. So it declares neither.
+    ("shabbat/musaf", any_of(SHABBAT, YOM_TOV, aggregate("chol-hamoed"))),
+    ("shabbat/day_meal", SHABBAT),
+)
+#: Minha and the Pirkei Avot that follows it on summer Sabbath afternoons share one gate.
+SHABBAT_MINCHAH = all_of(SHABBAT_OR_FESTIVAL, service("minha"))
+#: Saturday night, and the Sabbath whose end it is: a volume dated to a Sabbath, with no
+#: time, is the Sabbath's Hebrew day, on which motzaei-shabbat is never true.
+SHABBAT_CONCLUSION = any_of(SHABBAT, aggregate("motzaei-shabbat"))
+OCCASIONS = (
+    # Birnbaum gives no window; the Ashkenazic custom is from the third day of the month to
+    # the middle of it.
+    ("berakhot/birkat_halevanah", Feature(HEBREW_DATE, "day", 3, 15)),
+    ("hallel", any_of(holiday("rosh-hodesh", 1, 2), holiday("hanukkah", 1, 8),
+                      holiday("pesah", 1, 8), holiday("shavuot", 1, 2), holiday("sukkot", 1, 7),
+                      holiday("shmini-atzeret", 1, 2))),
+    ("rosh_chodesh/musaf", holiday("rosh-hodesh", 1, 2)),
+    # The festival service opens with the eruv tavshilin, made on the eve of the festival.
+    ("regalim", any_of(FESTIVAL, aggregate("eruv-tavshilin"))),
+    # The same days as yizkor.py's own OCCASION.
+    ("yizkor", any_of(holiday("yom-kippur", 1), holiday("shmini-atzeret", 1),
+                      all_of(IN_ISRAEL, any_of(holiday("pesah", 7), holiday("shavuot", 1))),
+                      all_of(IN_DIASPORA, any_of(holiday("pesah", 8), holiday("shavuot", 2))))),
+    # Musaf of Hol ha-Moed is the festival Musaf.
+    ("regalim/musaf", any_of(FESTIVAL, aggregate("chol-hamoed"))),
+    ("regalim/morning_meal", FESTIVAL),
+    ("sefirat_haomer", holiday("omer", 1, 49)),
+    ("regalim/akdamut", holiday("shavuot", 1)),
+    # Rosh Hashanah, and Kapparoth on the eve of Yom Kippur: the Ten Days.
+    ("rosh_hashanah/minchah_maariv_and_rites", aggregate("aseret-ymei-tshuva")),
+    ("sukkot/rites", any_of(holiday("sukkot", 1, 7), holiday("shmini-atzeret", 1, 2))),
+    ("chanukah", holiday("hanukkah", 1, 8)),
+    ("purim", any_of(holiday("purim", 1), holiday("shushan-purim", 1))),
+    # Not gated: the life-cycle services turn on opensiddur:override, which counts as false
+    # when undefined, so a gate would take them out of every edition that names no occasion.
+    ("lifecycle", None),
+    ("concluding_prayers", None),
+)
+
+
+def _entry(target: str, condition, indent: int = 8) -> str:
+    """One section of the running order, inside its occasion's gate."""
+    pad = " " * indent
+    xml_id = "occasion_" + target.replace("/", "_")
+    return pad + gated(xml_id, condition,
+                       f'\n{pad}<j:transclude type="external" target="{S}{target}"/>\n{pad}'
+                       if condition is not None else
+                       f'<j:transclude type="external" target="{S}{target}"/>')
+
+
+def _entries(entries, indent: int) -> str:
+    return "\n".join(_entry(target, condition, indent) for target, condition in entries)
+
+
 BODY = f"""      <tei:div corresp="{S}siddur">
         <tei:div corresp="{S}all">
           <tei:div corresp="{S}all/shacharit">
@@ -33,37 +137,15 @@ BODY = f"""      <tei:div corresp="{S}siddur">
           </tei:div>
         </tei:div>
         <tei:div corresp="{S}chol">
-          <j:transclude type="external" target="{S}chol/shacharit"/>
-          <j:transclude type="external" target="{S}chol/minchah"/>
-      <j:transclude type="external" target="{S}chol/arvit"/>
+{_entries(CHOL, 10)}
         </tei:div>
         <tei:div corresp="{S}shabbat">
-          <j:transclude type="external" target="{S}shabbat/preparations"/>
-          <j:transclude type="external" target="{S}shabbat/kabbalat_service"/>
-          <j:transclude type="external" target="{S}shabbat/arvit"/>
-          <j:transclude type="external" target="{S}shabbat/leil_shabbat"/>
-          <j:transclude type="external" target="{S}shabbat/shacharit"/>
-          <j:transclude type="external" target="{S}shabbat/musaf"/>
-          <j:transclude type="external" target="{S}shabbat/day_meal"/>
-          <j:transclude type="external" target="{S}shabbat/minchah"/>
-          {avot_caller()}
-          <j:transclude type="external" target="{S}shabbat/conclusion"/>
+{_entries(SHABBAT_SECTIONS, 10)}
+          {gated("occasion_shabbat_minchah", SHABBAT_MINCHAH,
+                 f'<j:transclude type="external" target="{S}shabbat/minchah"/>{avot_caller()}')}
+{_entry("shabbat/conclusion", SHABBAT_CONCLUSION, 10)}
         </tei:div>
-        <j:transclude type="external" target="{S}berakhot/birkat_halevanah"/>
-        <j:transclude type="external" target="{S}hallel"/>
-        <j:transclude type="external" target="{S}rosh_chodesh/musaf"/>
-        <j:transclude type="external" target="{S}regalim"/>
-        <j:transclude type="external" target="{S}yizkor"/>
-        <j:transclude type="external" target="{S}regalim/musaf"/>
-        <j:transclude type="external" target="{S}regalim/morning_meal"/>
-        <j:transclude type="external" target="{S}sefirat_haomer"/>
-        <j:transclude type="external" target="{S}regalim/akdamut"/>
-        <j:transclude type="external" target="{S}rosh_hashanah/minchah_maariv_and_rites"/>
-        <j:transclude type="external" target="{S}sukkot/rites"/>
-        <j:transclude type="external" target="{S}chanukah"/>
-        <j:transclude type="external" target="{S}purim"/>
-        <j:transclude type="external" target="{S}lifecycle"/>
-        <j:transclude type="external" target="{S}concluding_prayers"/>
+{_entries(OCCASIONS, 8)}
       </tei:div>"""
 
 
