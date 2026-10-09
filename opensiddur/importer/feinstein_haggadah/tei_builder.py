@@ -215,6 +215,9 @@ class InlineAnchor:
     #: A bracket the anchor stands in place of. The anchor is moved onto that bracket and
     #: swallows it, since the markup now expresses what the bracket meant.
     replaces_bracket: str | None = None
+    #: Whether the anchor closes on the words before it: placed before the space that ends
+    #: them, not after it, so that a closing bracket hugs the words it closes.
+    snug: bool = False
 
     @property
     def at_section_start(self) -> bool:
@@ -300,6 +303,9 @@ def _resolve_insertions(
             offset, consumes = _bracket_offset(
                 joined, offset, anchor.replaces_bracket, anchor.label, slug
             )
+        elif anchor.snug:
+            while offset > 0 and joined[offset - 1].isspace():
+                offset -= 1
         index = max(i for i, start in enumerate(starts) if start <= offset)
         resolved.setdefault(index, []).append(
             (offset - starts[index], anchor.markup, consumes)
@@ -368,6 +374,7 @@ def inline_conditional_anchors(
                 before_text=scope.end_before_text,
                 after_text=scope.end_after_text,
                 replaces_bracket=")" if scope.bracketed else None,
+                snug=not scope.bracketed,
             )
         )
     return anchors
@@ -494,8 +501,11 @@ def _render_blocks(
                         f"left to name it. Both projects must name a passage alike."
                     )
                 cond_id = queue.pop(0)
+                # Governing rubrics are found inside the source's parentheses, which set the
+                # passage off: the scope is marked.
                 parts.append(
-                    f'<j:conditional xml:id="cond_{cond_id}">{condition}</j:conditional>'
+                    f'<j:conditional xml:id="cond_{cond_id}" type="marked">{condition}'
+                    "</j:conditional>"
                 )
                 parts.append(note)
                 pending_close.insert(0, f'<j:endConditional target="#cond_{cond_id}"/>')

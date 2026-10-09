@@ -257,6 +257,18 @@ class TestEmission(unittest.TestCase):
         body = self._raw("nirtzah", None, entry, child_slugs=["it_happened_at_midnight"])
         self.assertIn('<j:conditional xml:id="cond_child">', body)
 
+    def test_an_unbracketed_scope_closes_on_its_last_word(self):
+        """The closer goes before the space after the scope, not after it, so that a bracket
+        printed for it hugs the words it closes."""
+        entry = Conditional(
+            slug="kadesh",
+            cond_id="inline",
+            condition="shabbat",
+            scope_he=Inline("אָלֶף", "בֵּית", "בֵּית", "גִּימֶל", bracketed=False),
+        )
+        body = self._render("kadesh", _section("אָלֶף בֵּית גִּימֶל"), entry)
+        self.assertIn("[inline[בֵּית]inline] גִּימֶל", body)
+
     def test_paragraph_scope_brackets_whole_paragraphs(self):
         entry = Conditional(
             slug="kadesh", cond_id="para", condition="shabbat", scope_he=Paragraphs(1)
@@ -307,6 +319,19 @@ class TestEmission(unittest.TestCase):
         body = self._render("kadesh", _section("אָלֶף", "בֵּית"), entry)
         between = body[body.index("[para["):body.index("]para]")]
         self.assertIn('<tei:note type="instruction">בשבת מתחילין כאן</tei:note>', between)
+
+    def test_a_scope_the_source_parenthesises_with_its_rubric_is_marked(self):
+        """The English sets a Shabbat insertion as "(on Shabbat say: ...)": the parentheses
+        set the passage off, and the rubric sits inside the scope."""
+        entry = Conditional(slug="kadesh", cond_id="src", condition="shabbat")
+        section = SectionContent(slug="kadesh", blocks=[
+            TextBlock(kind="instruction", english="on Shabbat say:", starts_paragraph=True,
+                      governs=True),
+            TextBlock(kind="paragraph", english="Sabbaths for rest and", governed=True),
+        ])
+        body = self._raw("kadesh", section, entry, lang="en")
+        self.assertIn('<j:conditional xml:id="cond_src" type="marked">', body)
+        self.assertRegex(body, r'</j:conditional>\s*<tei:note type="instruction">on Shabbat say:')
 
     def test_an_editorial_note_sits_on_the_conditional_itself(self):
         """Shown only when the condition cannot be decided, unlike a source rubric."""
