@@ -1,9 +1,9 @@
-description: Asher 1912 complete services through Tzom Gedaliah, n208, work in progress.
+description: Asher 1912 complete services through the second penitential day, n232, work in progress.
   Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — services through Tzom Gedaliah
+  title: Asher Selichoth — services through the second penitential day
 priority:
   transclusion:
   - asher_selichot_he_1912

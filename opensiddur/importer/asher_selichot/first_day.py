@@ -89,7 +89,7 @@ def opening(lang, project, data):
     return root
 
 
-def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False, include_third_day=False, additional_days=(), include_erev=False, include_gedaliah=False):
+def entry(lang, project, title_data, expanded=False, *, book=False, include_second_day=False, include_third_day=False, additional_days=(), include_erev=False, include_gedaliah=False, include_penitential_second=False):
     urn = ('urn:x-opensiddur:text:siddur:selichot' + ('/expanded' if expanded else '')) if book else FIRST_DAY
     title = 'Asher Selichoth' if book else 'First-day Selichot'
     if expanded:
@@ -107,6 +107,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         edition.text = 'First seven services and Erev Rosh Hashanah through Archive n183/n184, ending before the Fast of Gedaliah. Hebrew pointing awaits independent proofreading; later services await encoding.'
     if include_gedaliah:
         edition.text = 'Complete services through Tzom Gedaliah, Archive n207/n208 (printed 103). Hebrew pointing awaits independent proofreading; later services await encoding.'
+    if include_penitential_second:
+        edition.text = 'Complete services through the second penitential day, Archive n231/n232 (printed 115). Hebrew pointing awaits independent proofreading; later services await encoding.'
     if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     if book:
@@ -132,6 +134,13 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
             for markup in [opening_markup, '<j:transclude target="'+GEDALIAH+'"/>', closing_markup]:
                 fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
                 div.extend(fragment)
+        if include_penitential_second:
+            from .penitential_second_day import PENITENTIAL_SECOND_DAY
+            from opensiddur.importer.util.occasion import gate, aggregate
+            opening_markup, closing_markup = gate('penitential_second_occasion', aggregate('aseret-ymei-tshuva'))
+            for markup in [opening_markup, '<j:transclude target="'+PENITENTIAL_SECOND_DAY+'"/>', closing_markup]:
+                fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
+                div.extend(fragment)
         return root
     return root
 
@@ -147,8 +156,8 @@ def documents(source):
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
-        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists())
-        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists())
+        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists())
+        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists())
         service = entry(lang, project, title_data)
         service_div = service.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         root = opening(lang, project, reading[lang])

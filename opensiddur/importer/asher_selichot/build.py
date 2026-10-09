@@ -211,6 +211,9 @@ def build(source_root,project_directory):
     if (readings/'tzom-gedaliah.json').exists():
         from .tzom_gedaliah import documents as gedaliah_documents
         authored.extend(gedaliah_documents(readings))
+    if (readings/'penitential-second-day.json').exists():
+        from .penitential_second_day import documents as penitential_documents
+        authored.extend(penitential_documents(readings))
     for project, name, root in authored:
         xml=normalized_xml(root)
         valid,errors=validate(xml)

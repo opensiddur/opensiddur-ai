@@ -363,3 +363,35 @@ its target module and the immediately following printed paragraph. Do not copy
 another day's expansion list without this check. In Gedaliah, including the old
 Selah lanu module would duplicate the following reprint. Verify the expanded
 opening includes that prayer once; the PDF checker also tests an injected duplicate.
+
+## Second penitential day
+
+The second day of the Ten Days of Repentance occupies n209–n232, printed 104–115.
+Keep its large bilingual body heading above the Hebrew-only פזמון heading. The
+final conclusion cue is at the bottom of printed 115; the running headers do not
+supply additional body headings. Its opening has the same ambiguous Hebrew כי רבו
+citation as Gedaliah: the explicit English endpoint and following Selah lanu
+reprint bound the expansion at Shomea tefillah, before Selah lanu.
+
+All four repeated-petition cues explicitly cite printed 52 in English as well as
+Hebrew. Use that page's bounded reprinted petitions for both languages, with one
+shared alignment milestone and inline transclusions. The closing repetition ends
+at Mahi umasi / גמירא בשביא; the final continuation begins Makhnise rahamim.
+The supplied Full Kaddish uses first_day=false and Ten Days=true; the existing
+Asher empty editorial override suppresses its fulfilled “add” instruction.
+
+Bein keseh le'asor has seven shared semantic units, seven Hebrew abbreviation cues
+and six English cues. The surety and supplication passages form one shared unit:
+Hebrew prints an additional cue between them, while English joins them before
+its cue. Preserve that internal difference. The opening crosses printed 111–112;
+retain the page break inside the continuing verse line, without moving its preceding
+text after the break when wrapping the refrain. Its final cue repeats the complete opening.
+Shaarei shamayim is verse, with the terminal ותעל תפלתם clauses marked as refrains.
+The English introduction calls the gates seven, though the body enumerates eight;
+retain this printed wording. Both body and apparatus contain Hebrew spans.
+
+Readings, immutable first captures, complete pre-OCR snapshots, comparison hashes,
+adjudication and pending independent Hebrew review are recorded in the source's
+`penitential-second-day*` evidence files. Check the seven shared pizmon starts,
+notes, mixed-language apparatus, fulfilled cues, and supplied-prayer boundaries
+through the book PDF checker, including its deliberately broken controls.
