@@ -228,3 +228,52 @@ The bilingual service is complete through the next printed day heading. Schema v
   0 of 8853 Hebrew runs are set left to right; control: 8530 of 8853 flagged when every run is reversed.
 
 Both editions pass deliberately broken controls for alignment, note duplication, direction and stale contents destinations. Source-specific branch/join tests and importer checks pass. Rendered contents and the new pizmon pages were inspected visually.
+
+## Erev Rosh Hashanah checkpoint (2026-10-08)
+
+The complete bilingual service covers n99–n184 (printed 49–91), stopping after
+the Reader’s Kaddish cue before the Fast of Gedaliah. Its 113 source-ordered units
+retain immutable initial capture bytes, separate English OCR findings, targeted
+image adjudications and initial/working hashes. Twenty-one independent text
+modules per language plus the service assembly extend the projects to 194 files.
+Canonical names use eloah, including el_eloah_dalefah_eini.
+
+All XML validates; documentary readings, printed choice branches, 26 Tamid
+reference markers, footnotes, language-specific expansion targets and calendar
+scopes pass reverse verification. All URNs/transclusions resolve with no registry
+errors or warnings. The registry’s four existing alias-migration notes remain.
+
+The 12 repeat cues compile as paired prose paragraphs with inline transclusions.
+Printed-58 targets preserve the reprinted page-52 translation; cues citing 9/10
+retain the earlier readings. Fulfilled instructions are omitted from expansion,
+Ark instructions stay in their printed positions, and secondary Full Kaddish is
+scoped with first_day=false and Ten Days=false.
+
+Compiler PR #231 isolates the inline-boundary fix: both new regressions fail on
+the original code; 100 focused compiler tests pass with it. The fix is applied to
+this branch. Importer checks pass 51 tests and 12 subtests. Upstream main 1427f08
+was merged as f1a98f7 before the full suite; the companion branches already
+contained their upstream main/master.
+
+Documentary: 139 pages and 17 TOC/bookmark destinations; the six checked Erev
+starts have differences [0, 0, 0, 0, 0, 0]pt. No Hebrew runs are left to right
+among 5,580; the reversal control flags 5,248. The first-day pizmon’s measured
+13.55pt difference remains within its scan-specific 16pt bound; all later checked
+stanza starts match. The service opening and pizmon were inspected visually.
+
+Expanded: 303 pages and 17 TOC/bookmark destinations; the six checked Erev starts
+have differences [0, 0, 0, 0, 0, 0]pt. No Hebrew runs are left to right among
+12,793; the reversal control flags 12,004. Both pizmons, their repeated refrains,
+and the mixed-language Tamid passage were inspected visually.
+
+Both editions pass deliberately broken controls for alignment, note duplication,
+service boundaries, language direction, phrase-dot binding and stale contents.
+Full suite: 3,262 tests and 4,812 subtests pass; 20 skipped, in 646.17 seconds.
+Afterward, the standalone reference database was restored and all 194 files
+passed validation and reverse comparison again. Recompilation with the corrected
+eloah identities produces byte-identical TeX, so the naming change preserves the
+verified expanded PDF layout.
+
+Independent Hebrew proofreading and remaining English OCR adjudication are
+pending. The 26 Tamid reference explanations have not been located and are not
+invented. Later services and release integration remain outside this checkpoint.
