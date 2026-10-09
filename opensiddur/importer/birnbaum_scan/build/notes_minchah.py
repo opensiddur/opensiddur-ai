@@ -7,7 +7,7 @@ def note(target, text, *, lemma='', kind='commentary', n=''):
 
 
 NOTES = [
-    note(ROOT+'/opening',
+    note(ROOT,
         'occurs in the Bible frequently in the sense of “gift” and “meal-offering.” It is only in talmudic literature that Minḥah denotes the afternoon service. Minḥah is one of the three daily services mentioned in Daniel 6:11 (“and three times a day he kneeled upon his knees, praying and giving thanks before his God”). According to tradition, the patriarchs Abraham, Isaac and Jacob were the authors of the three daily services. Both Shaḥarith and Minḥah correspond to the daily sacrifice (Tamid) which was offered in the Temple in the morning and in the afternoon. Since the recital of the Shema is obligatory only “when you lie down and when you rise up,” it is not included in the afternoon service. Minḥah may be recited at any time from noon (12:30) to sunset. The Minḥah service was postponed in the nineteenth century to very near sunset for the sake of convenience, so that Minḥah might be followed by Ma‘ariv after a short interval.', lemma='מנחה'),
     note(ROOT+'/opening', 'On <tei:foreign xml:lang="he">אשרי</tei:foreign>, see pages 57–59.'),
     note(ROOT+'/ki_shem', 'precedes the <tei:hi rend="italic">Amidahs</tei:hi> of <tei:hi rend="italic">Musaf</tei:hi> and <tei:hi rend="italic">Minḥah</tei:hi> only. In <tei:hi rend="italic">Shaḥarith</tei:hi> and <tei:hi rend="italic">Ma‘ariv</tei:hi> this verse is omitted, because there it would interrupt the connection between the benediction <tei:foreign xml:lang="he">גאל ישראל</tei:foreign> and the <tei:hi rend="italic">Amidah</tei:hi>.', lemma='כי שם'),
