@@ -73,13 +73,15 @@ CONDITIONS: dict[str, str] = {
         "</tei:fs>"
     ),
     # The seder: the first night of Pesah, and the second outside Israel, where the second day
-    # is a festival day too.
+    # is a festival day too. A volume dated with no time to the day of the first seder -- the
+    # eve, 14 Nisan, until nightfall -- has it as well.
     "seder_night": any_of(
+        all_of(Feature(HEBREW_DATE, "month", 1), Feature(HEBREW_DATE, "day", 14)),
         holiday("pesah", 1),
         all_of(holiday("pesah", 2), Feature(ISRAEL, "is-israel", False)),
     ).markup(),
-    # The search for leaven is made on the night of 14 Nisan, and what is found burned the next
-    # morning -- both on 13 Nisan when the 14th falls on Shabbat, the Friday being the 13th.
+    # The search for leaven is made on the night of 14 Nisan -- the night of the 13th when the
+    # 14th falls on Shabbat, the Friday being the 13th.
     "bedikat_chametz": all_of(
         Feature(HEBREW_DATE, "month", 1),
         any_of(
@@ -87,6 +89,14 @@ CONDITIONS: dict[str, str] = {
                    none_of(Feature(DAY_OF_WEEK, "hebrew-day", 7))),
             all_of(Feature(HEBREW_DATE, "day", 13), Feature(DAY_OF_WEEK, "hebrew-day", 6)),
         ),
+    ).markup(),
+    # The leaven is burned on the morning of the 14th, on the Friday before when the 14th is
+    # Shabbat; the final nullification, which is what this section prints, is said on the
+    # 14th either way.
+    "biur_chametz": all_of(
+        Feature(HEBREW_DATE, "month", 1),
+        any_of(Feature(HEBREW_DATE, "day", 14),
+               all_of(Feature(HEBREW_DATE, "day", 13), Feature(DAY_OF_WEEK, "hebrew-day", 6))),
     ).markup(),
     "zimmun": (
         '<tei:fs type="opensiddur:quorum">'
@@ -384,7 +394,7 @@ CONDITIONALS: tuple[Conditional, ...] = (
     Conditional(
         slug="pre_seder",
         cond_id="pre_seder_biur_chametz",
-        condition="bedikat_chametz",
+        condition="biur_chametz",
         scope_he=Transclusion("biur_chametz"),
         scope_en=Transclusion("biur_chametz"),
     ),

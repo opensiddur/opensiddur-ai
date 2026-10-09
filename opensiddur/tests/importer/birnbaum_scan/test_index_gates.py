@@ -110,7 +110,8 @@ class TestTheGates(unittest.TestCase):
 
     def test_the_sabbath_services_that_serve_festivals_declare_no_occasion(self):
         """Declaring shabbat=true in them would drop their festival text."""
-        for section in ("shabbat/arvit", "shabbat/shacharit", "shabbat/minchah"):
+        for section in ("shabbat/arvit", "shabbat/shacharit", "shabbat/musaf",
+                        "shabbat/minchah"):
             with self.subTest(section):
                 self.assertNotIn(("opensiddur:holiday-aggregate", "shabbat"),
                                  self._declared(section))
@@ -171,8 +172,8 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
 
     def test_friday_is_for_the_sabbath_s_preparations(self):
         self._assert_days(CalendarDay(date=(2026, 11, 20)), {
-            "shabbat/preparations": TRUE, "shabbat/kabbalat_service": FALSE,
-            "chol/shacharit": UNDEFINED,
+            "shabbat/preparations": TRUE, "shabbat/kabbalat_service": TRUE,
+            "shabbat/arvit": FALSE, "chol/shacharit": UNDEFINED,
         })
 
     def test_friday_evening_is_the_sabbath(self):
@@ -203,7 +204,9 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
         self._assert_days(CalendarDay(date=(2027, 6, 11)), {
             "regalim/akdamut": TRUE, "regalim": TRUE, "regalim/musaf": TRUE,
             "regalim/morning_meal": TRUE, "hallel": TRUE, "shabbat/shacharit": UNDEFINED,
-            "chol/shacharit": FALSE, "yizkor": TRUE, "shabbat/musaf": FALSE,
+            "chol/shacharit": FALSE, "yizkor": TRUE,
+            # Its prayers after Musaf are the festival's too.
+            "shabbat/musaf": TRUE,
         })
 
     def test_yizkor_is_on_the_second_day_of_shavuot_outside_israel(self):
@@ -215,7 +218,7 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
         self._assert_days(CalendarDay(date=(2026, 10, 1)), {
             "chol/shacharit": UNDEFINED, "regalim/musaf": TRUE, "hallel": TRUE,
             "sukkot/rites": TRUE, "regalim": FALSE, "regalim/morning_meal": FALSE,
-            "yizkor": FALSE,
+            "yizkor": FALSE, "shabbat/musaf": TRUE, "shabbat/shacharit": FALSE,
         })
 
     def test_rosh_hashanah(self):

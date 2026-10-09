@@ -1528,6 +1528,47 @@ class TestConditionalRendering(unittest.TestCase):
         self.assertIn(r"\OSCondStartInline{}", body)
         self.assertIn(r"\OSCondEndInline{}", body)
 
+    def test_a_scope_that_opens_with_its_rubric_keeps_its_delimiters(self):
+        """The rubric sits inside the scope it governs, as JLPTEI-3.md has it, and announces
+        it; the reader still needs to see where the passage ends."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">{self.CONDITION}</j:conditional>
+              <tei:note type="instruction">On Shabbat add:</tei:note>
+              <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondEndBlock{}", body)
+        self.assertIn("On Shabbat add:", body)
+
+    def test_a_closer_marked_silent_is_silent_without_its_opener(self):
+        """A gate around parallel columns closes in the stream after them, apart from its
+        opener; latex.py marks the closer for that reason."""
+        out = self._transform_body(
+            """<tei:div xmlns:p="http://jewishliturgy.org/ns/processing">
+              <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
+              <j:endConditional target="#elsewhere" p:silent="true"/>
+              <j:endConditional target="#elsewhere-too"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertEqual(1, body.count(r"\OSCondEnd"))
+
+    def test_a_scope_marked_not_silent_beforehand_keeps_its_delimiters(self):
+        """latex.py's decision stands over the stylesheet's own test."""
+        out = self._transform_body(
+            f"""<tei:div xmlns:p="http://jewishliturgy.org/ns/processing">
+              <j:conditional xml:id="c" p:silent="false">{self.CONDITION}</j:conditional>
+              <tei:p><tei:milestone unit="verse" n="1"/>text</tei:p>
+              <j:endConditional target="#c" p:silent="false"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertIn(r"\OSCondStartBlock{}", body)
+        self.assertIn(r"\OSCondEndBlock{}", body)
+
     def test_conditional_around_aliyah_markers_only_is_silent(self):
         """\\OSaliyah brackets its own label, so a delimiter would double the brackets."""
         out = self._transform_body(

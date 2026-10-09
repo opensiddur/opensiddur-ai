@@ -52,6 +52,8 @@ SHABBAT_OR_FESTIVAL = any_of(SHABBAT, YOM_TOV)
 #: condition as the festival service's own (festival.py, REGALIM).
 FESTIVAL = all_of(YOM_TOV, any_of(holiday("pesah", 1, 8), holiday("shavuot", 1, 2),
                                   holiday("sukkot", 1, 7), holiday("shmini-atzeret", 1, 2)))
+#: Candle lighting and Kabbalat Shabbat come before nightfall, on the Hebrew Friday.
+HEBREW_FRIDAY_OR_SHABBAT = any_of(Feature(DAY_OF_WEEK, "hebrew-day", 6), SHABBAT)
 IN_ISRAEL = Feature(ISRAEL, "is-israel", True)
 IN_DIASPORA = Feature(ISRAEL, "is-israel", False)
 
@@ -65,15 +67,17 @@ CHOL = (
     ("chol/arvit", all_of(WEEKDAY, service("maariv"))),
 )
 SHABBAT_SECTIONS = (
-    # Candle lighting is on Friday, before the Sabbath begins: the Hebrew Friday, which is what
-    # an electronic book's reader sets as the day of the week.
-    ("shabbat/preparations", any_of(Feature(DAY_OF_WEEK, "hebrew-day", 6), SHABBAT)),
-    ("shabbat/kabbalat_service", SHABBAT),
+    # The Hebrew Friday, which is also what an electronic book's reader sets as the day.
+    ("shabbat/preparations", HEBREW_FRIDAY_OR_SHABBAT),
+    # Often said before nightfall, while it is still the Hebrew Friday.
+    ("shabbat/kabbalat_service", HEBREW_FRIDAY_OR_SHABBAT),
     ("shabbat/arvit", all_of(SHABBAT_OR_FESTIVAL, service("maariv"))),
     ("shabbat/leil_shabbat", SHABBAT),
     ("shabbat/shacharit", all_of(SHABBAT_OR_FESTIVAL, service("shaharit"))),
-    # On a festival that falls on the Sabbath, the festival's Musaf is said instead.
-    ("shabbat/musaf", SHABBAT),
+    # The Sabbath Musaf, and the prayers after Musaf on festivals and Hol ha-Moed too: the
+    # festival Musaf ends with its Amidah, and this section chooses its own Amidah by
+    # conditions on both. So it declares neither.
+    ("shabbat/musaf", any_of(SHABBAT, YOM_TOV, aggregate("chol-hamoed"))),
     ("shabbat/day_meal", SHABBAT),
 )
 #: Minha and the Pirkei Avot that follows it on summer Sabbath afternoons share one gate.

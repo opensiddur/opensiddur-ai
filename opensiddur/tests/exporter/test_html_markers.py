@@ -192,11 +192,31 @@ class TestSilence(unittest.TestCase):
 
     def test_a_rubric_is_not_silent(self):
         self.assertEqual(self._silent(_cond("a", rubric="Say:") + self.ALIYAH + _end("a")),
-                         [None, None])
+                         ["false", "false"])
+
+    def test_a_scope_that_opens_with_its_rubric_is_not_silent(self):
+        """A source's own rubric sits inside the scope it governs, and announces it."""
+        self.assertEqual(
+            self._silent(_cond("a") + '<tei:note type="instruction">On Shabbat say:</tei:note>'
+                         + "<tei:p>x</tei:p>" + _end("a")),
+            ["false", "false"])
+
+    def test_a_rubric_after_the_paragraph_s_milestone_still_opens_the_scope(self):
+        self.assertEqual(
+            self._silent(_cond("a") + '<tei:milestone unit="paragraph" n="1"/>'
+                         + '<tei:note type="instruction">On Shabbat say:</tei:note>'
+                         + "<tei:p>x</tei:p>" + _end("a")),
+            ["false", "false"])
+
+    def test_a_rubric_after_text_does_not_open_the_scope(self):
+        self.assertEqual(
+            self._silent(_cond("a") + "<tei:p>x</tei:p>"
+                         + '<tei:note type="instruction">Then say:</tei:note>' + _end("a")),
+            ["true", "true"])
 
     def test_a_marked_scope_is_not_silent(self):
         self.assertEqual(self._silent(_cond("a", marked=True) + "<tei:p>x</tei:p>" + _end("a")),
-                         [None, None])
+                         ["false", "false"])
 
     def test_crossing_scopes_are_silenced_by_their_own_opener(self):
         root = _tree(_cond("a") + "<tei:p>x</tei:p>" + _cond("b", marked=True)
@@ -204,8 +224,8 @@ class TestSilence(unittest.TestCase):
         prepare(root)
         markers = [(el.tag.rsplit("}", 1)[1], el.get(f"{{{P}}}silent"))
                    for el in root.iter(f"{{{J}}}conditional", f"{{{J}}}endConditional")]
-        self.assertEqual(markers, [("conditional", "true"), ("conditional", None),
-                                   ("endConditional", "true"), ("endConditional", None)])
+        self.assertEqual(markers, [("conditional", "true"), ("conditional", "false"),
+                                   ("endConditional", "true"), ("endConditional", "false")])
 
 
 class TestFeatures(unittest.TestCase):

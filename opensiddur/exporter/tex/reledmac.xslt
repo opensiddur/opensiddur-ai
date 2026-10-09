@@ -3964,14 +3964,18 @@
          reading divisions of a cycle, whose markers \OSaliyah already brackets. Delimiters
          there would only crowd the page — and a block delimiter is a full-measure box,
          which broke each aliyah label onto a line of its own. -->
-    <!-- latex.py marks both markers of a silent scope beforehand (p:silent), since the two
-         are often met apart; the test here is for a document that was not. -->
+    <!-- latex.py records on both markers whether a scope is silent beforehand (p:silent),
+         since the two are often met apart; the test here is for a document that was not.
+         A rubric the scope opens with announces it as its own note would. -->
     <xsl:function name="f:is-silent" as="xs:boolean">
         <xsl:param name="start" as="element()"/>
-        <xsl:sequence select="$start/@p:silent = 'true'
-            or (exists(f:matching-end($start))
-                and empty($start/tei:note)
-                and not($start/@type = 'marked'))"/>
+        <xsl:variable name="first-governed" select="$start/following-sibling::node()[
+            not(self::text()[normalize-space() = '']) and not(self::tei:milestone or self::tei:pb)][1]"/>
+        <xsl:sequence select="if ($start/@p:silent) then $start/@p:silent = 'true' else
+            not($start/@type = 'marked')
+            and empty($start/tei:note)
+            and empty($first-governed[self::tei:note[@type = 'instruction']])
+            and exists(f:matching-end($start))"/>
     </xsl:function>
 
     <!-- True when a conditional governs no block content, so its delimiters can be the

@@ -95,30 +95,56 @@ P_SILENT = f"{{{PROCESSING_NAMESPACE}}}silent"
 _TEI_NOTE = "{http://www.tei-c.org/ns/1.0}note"
 
 
+#: What a scope can begin with before its first words without being text: where a paragraph or
+#: page begins.
+_INVISIBLE = frozenset({"{http://www.tei-c.org/ns/1.0}milestone", "{http://www.tei-c.org/ns/1.0}pb"})
+
+
+def _opens_with_an_instruction(opener: etree.ElementBase) -> bool:
+    """Whether the first thing a scope governs is its rubric.
+
+    JLPTEI-3.md has a reading instruction sit inside the text it controls, so a source's own
+    rubric -- "On Shabbat say:" -- is often the scope's first child rather than the
+    conditional's note. It announces the scope all the same.
+    """
+    node = opener
+    while True:
+        if (node.tail or "").strip():
+            return False
+        node = node.getnext()
+        if node is None or node.tag not in _INVISIBLE:
+            break
+    return node is not None and node.tag == _TEI_NOTE and node.get("type") == "instruction"
+
+
 def is_silent(opener: etree.ElementBase) -> bool:
     """Whether an undecided scope is shown with no delimiters of its own.
 
     How a scope is set off follows the source. One the source itself marks off -- with
     brackets, parentheses or a line -- is `type="marked"`, and takes the standard delimiters.
-    One with an instruction is set off by it. One with neither is a direction to the
-    processor, not to the reader: an occasion's gate around a whole section, or the reading
-    divisions of a humash's cycles (schema/JLPTEI-3.md, *How an undecided scope is set off*).
+    One with an instruction, its own or the rubric it opens with, is set off by it. One with
+    neither is a direction to the processor, not to the reader: an occasion's gate around a
+    whole section, or the reading divisions of a humash's cycles (schema/JLPTEI-3.md, *How an
+    undecided scope is set off*).
     """
-    return opener.find(_TEI_NOTE) is None and opener.get("type") != "marked"
+    return (opener.get("type") != "marked" and opener.find(_TEI_NOTE) is None
+            and not _opens_with_an_instruction(opener))
 
 
 def mark_silent_scopes(root: etree.ElementBase) -> None:
-    """Mark both markers of every silent scope under `root` with `p:silent="true"`.
+    """Record on both markers of every scope under `root` whether it is silent (`p:silent`).
 
     The mark goes on the closer as well because each output stage meets the two apart: a
     scope around a section of parallel columns opens in one stream and closes in another, and
-    the closer has no way back to its opener once a stage has copied it.
+    the closer has no way back to its opener once a stage has copied it. Both values are
+    written, so that a stage's own fallback test never overrides this one.
     """
-    silent: set[str] = set()
+    silent: dict[str, str] = {}
     for opener in root.iter(J_CONDITIONAL):
-        if is_silent(opener):
-            opener.set(P_SILENT, "true")
-            silent.add(opener.get(XML_ID))
+        value = "true" if is_silent(opener) else "false"
+        opener.set(P_SILENT, value)
+        silent[opener.get(XML_ID)] = value
     for closer in root.iter(J_END_CONDITIONAL):
-        if (closer.get("target") or "").removeprefix("#") in silent:
-            closer.set(P_SILENT, "true")
+        value = silent.get((closer.get("target") or "").removeprefix("#"))
+        if value is not None:
+            closer.set(P_SILENT, value)

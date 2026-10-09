@@ -62,28 +62,36 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
                                                   time=(20, 30)), TRUE),
             ("no second seder in Jerusalem", CalendarDay(date=(2026, 4, 2), place=JERUSALEM,
                                                         time=(20, 30)), FALSE),
-            ("the eve of Pesah", CalendarDay(date=(2026, 4, 1)), FALSE),
+            ("the day of the first seder, with no time", CalendarDay(date=(2026, 4, 1)), TRUE),
+            ("the day before it", CalendarDay(date=(2026, 3, 31)), FALSE),
+            ("the third day of Pesah", CalendarDay(date=(2026, 4, 4), place=NEW_YORK), FALSE),
             ("an ordinary day", CalendarDay(date=(2026, 11, 16)), FALSE),
         ))
 
-    def test_leaven_is_searched_for_and_burned_on_the_eve_of_pesah(self):
-        for cond_id in ("pre_seder_bedikat_chametz", "pre_seder_biur_chametz"):
-            with self.subTest(cond_id):
-                self._assert(cond_id, "pre_seder", (
-                    # 14 Nisan 5786 is a Wednesday: searched Tuesday night, burned Wednesday.
-                    ("the night of the fourteenth", CalendarDay(date=(2026, 3, 31),
-                                                               place=NEW_YORK, time=(20, 30)), TRUE),
-                    ("the fourteenth", CalendarDay(date=(2026, 4, 1)), TRUE),
-                    ("the thirteenth", CalendarDay(date=(2026, 3, 31)), FALSE),
-                    # 14 Nisan 5785 was a Sabbath: both were done on the Thursday night and
-                    # Friday before it, the 13th.
-                    ("Thursday night when the fourteenth is a Sabbath",
-                     CalendarDay(date=(2025, 4, 10), place=NEW_YORK, time=(20, 30)), TRUE),
-                    ("Friday the thirteenth", CalendarDay(date=(2025, 4, 11)), TRUE),
-                    ("a Sabbath fourteenth", CalendarDay(date=(2025, 4, 12)), FALSE),
-                    ("the first day of Pesah", CalendarDay(date=(2026, 4, 2)), FALSE),
-                ))
+    def test_leaven_is_searched_for_on_the_night_of_the_fourteenth(self):
+        self._assert("pre_seder_bedikat_chametz", "pre_seder", (
+            # 14 Nisan 5786 is a Wednesday: searched Tuesday night.
+            ("the night of the fourteenth", CalendarDay(date=(2026, 3, 31), place=NEW_YORK,
+                                                       time=(20, 30)), TRUE),
+            ("the fourteenth", CalendarDay(date=(2026, 4, 1)), TRUE),
+            ("the thirteenth", CalendarDay(date=(2026, 3, 31)), FALSE),
+            # 14 Nisan 5785 was a Sabbath: searched on the Thursday night before it.
+            ("Thursday night when the fourteenth is a Sabbath",
+             CalendarDay(date=(2025, 4, 10), place=NEW_YORK, time=(20, 30)), TRUE),
+            ("a Sabbath fourteenth", CalendarDay(date=(2025, 4, 12)), FALSE),
+            ("the first day of Pesah", CalendarDay(date=(2026, 4, 2)), FALSE),
+        ))
 
+    def test_leaven_is_nullified_on_the_fourteenth(self):
+        """Burned on the Friday when the 14th is a Sabbath, but the final nullification --
+        which is what the section prints -- is said on the Sabbath morning itself."""
+        self._assert("pre_seder_biur_chametz", "pre_seder", (
+            ("the fourteenth", CalendarDay(date=(2026, 4, 1)), TRUE),
+            ("the thirteenth", CalendarDay(date=(2026, 3, 31)), FALSE),
+            ("Friday the thirteenth", CalendarDay(date=(2025, 4, 11)), TRUE),
+            ("a Sabbath fourteenth", CalendarDay(date=(2025, 4, 12)), TRUE),
+            ("the first day of Pesah", CalendarDay(date=(2026, 4, 2)), FALSE),
+        ))
 
 if __name__ == "__main__":
     unittest.main()

@@ -1639,8 +1639,9 @@ around it follows the source:
 - **`@type="marked"`**: the source itself marks the passage off, with brackets, parentheses or a
   line. The standard delimiters are reproduced around it (brackets within running text, a rule
   around blocks), with its instruction, if it has one.
-- **An instruction note** and no `@type`: the instruction announces the passage, as the source's
-  rubric does, and a closing delimiter shows where it ends.
+- **An instruction** and no `@type`: the instruction announces the passage, as the source's
+  rubric does, and a closing delimiter shows where it ends. The instruction may be the
+  conditional's own `tei:note`, or the `tei:note type="instruction"` the scope opens with.
 - **Neither**: the conditional is a direction to the processor, not to the reader, and the passage
   is kept with no delimiters at all. The occasion conditions on a book's running order, around
   the transclusion of each section that is said only on some days, are of this kind (see
