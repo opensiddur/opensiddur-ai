@@ -3568,7 +3568,8 @@
         <xsl:choose>
             <!-- Marker-only instructions announce their own labels. Within a paragraph
                  or verse, however, the instruction cannot show where an addition ends. -->
-            <xsl:when test="tei:note[@type='instruction'] and f:is-inline-conditional(.)
+            <xsl:when test="tei:note[@type='instruction'] and not(@type = 'marked')
+                            and f:is-inline-conditional(.)
                             and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true')"/>
             <xsl:when test="f:is-inline-conditional(.)">
                 <xsl:apply-templates select="tei:note" mode="emit"/>
@@ -3577,15 +3578,17 @@
             <!-- A block that announces itself needs no rule to open it: the instruction
                  says which passage this is and on what it depends, and a rule above it
                  only reads as a stray line. The closing rule stays, since nothing else
-                 shows where the passage stops. -->
-            <xsl:when test="tei:note[@type='instruction']"/>
+                 shows where the passage stops. A scope the book marks off takes its rule
+                 all the same. -->
+            <xsl:when test="tei:note[@type='instruction'] and not(@type = 'marked')"/>
             <xsl:otherwise>
                 <xsl:text>\OSCondStartBlock{}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
         <!-- The note, when there is one, explains the condition the reader must judge. -->
         <xsl:if test="not(f:is-inline-conditional(.))
-                      or (tei:note[@type='instruction'] and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true'))">
+                      or (tei:note[@type='instruction'] and not(@type = 'marked')
+                          and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true'))">
             <xsl:apply-templates select="tei:note" mode="emit"/>
         </xsl:if>
     </xsl:template>
@@ -3596,6 +3599,7 @@
             <!-- Matching the opening: a scope whose instruction stands in for its
                  opening bracket takes no closing one. -->
             <xsl:when test="exists($start/tei:note[@type='instruction'])
+                            and not($start/@type = 'marked')
                             and f:is-inline-conditional($start)
                             and not($start/ancestor::tei:p or $start/ancestor::tei:l)"/>
             <xsl:when test="if (exists($start))
@@ -3967,19 +3971,26 @@
             else ()"/>
     </xsl:function>
 
-    <!-- True when a conditional governs nothing but aliyah markers. The markers are
-         auto-generated and \OSaliyah already brackets each one, so a delimiter around
-         them would only double the brackets; and a block delimiter is a full-measure
-         box, which is what was breaking each label onto a line of its own. A conditional
-         carrying an explanatory note is never silent — the note has to be shown. -->
-    <xsl:function name="f:governs-markers-only" as="xs:boolean">
+    <!-- True when an undecided conditional is printed without delimiters. How a scope is
+         set off follows the book. A scope the book itself marks off — with brackets,
+         parentheses or a line — is @type="marked", and takes the standard delimiters. One
+         that carries an instruction is set off by it. One with neither is a direction to the
+         processor, not to the reader: an occasion's gate around a whole service, or the
+         reading divisions of a cycle, whose markers \OSaliyah already brackets. Delimiters
+         there would only crowd the page — and a block delimiter is a full-measure box,
+         which broke each aliyah label onto a line of its own. -->
+    <!-- latex.py records on both markers whether a scope is silent beforehand (p:silent),
+         since the two are often met apart; the test here is for a document that was not.
+         A rubric the scope opens with announces it as its own note would. -->
+    <xsl:function name="f:is-silent" as="xs:boolean">
         <xsl:param name="start" as="element()"/>
-        <xsl:variable name="governed" select="f:governed-nodes($start)"/>
-        <xsl:sequence select="exists(f:matching-end($start))
+        <xsl:variable name="first-governed" select="$start/following-sibling::node()[
+            not(self::text()[normalize-space() = '']) and not(self::tei:milestone or self::tei:pb)][1]"/>
+        <xsl:sequence select="if ($start/@p:silent) then $start/@p:silent = 'true' else
+            not($start/@type = 'marked')
             and empty($start/tei:note)
-            and exists($governed[f:is-aliyah-marker(.)])
-            and (every $n in $governed
-                 satisfies (f:is-aliyah-marker($n) or f:is-structural-space($n)))"/>
+            and empty($first-governed[self::tei:note[@type = 'instruction']])
+            and exists(f:matching-end($start))"/>
     </xsl:function>
 
     <!-- True when a conditional governs no block content, so its delimiters can be the
@@ -4000,7 +4011,7 @@
     <!-- One pass over the flattened leaves, dropping two kinds of noise that only become
          visible once a text carries many overlapping reading divisions:
 
-         (1) the delimiters of a conditional that governs nothing but aliyah markers, and
+         (1) the delimiters of a silent conditional (f:is-silent), and
          (2) a marker repeating a label already shown at the same point.
 
          (2) arises for the combined parshiyot, where the same triennial aliyah is reached
@@ -4025,7 +4036,7 @@
             <xsl:param name="after-space" as="xs:boolean" select="false()"/>
             <xsl:choose>
                 <xsl:when test="self::j:conditional">
-                    <xsl:variable name="silent" select="f:governs-markers-only(.)"/>
+                    <xsl:variable name="silent" select="f:is-silent(.)"/>
                     <xsl:if test="not($silent)">
                         <xsl:sequence select="."/>
                     </xsl:if>
@@ -4039,7 +4050,11 @@
                     </xsl:next-iteration>
                 </xsl:when>
                 <xsl:when test="self::j:endConditional">
-                    <xsl:variable name="silent" select="substring(string(@target), 2) = $silent-ids"/>
+                    <!-- A closer is often met in a different stream from its opener: a gate
+                         around a section of parallel columns closes in the full-width stream
+                         after them. So it carries its scope's silence itself (p:silent). -->
+                    <xsl:variable name="silent" select="@p:silent = 'true'
+                        or substring(string(@target), 2) = $silent-ids"/>
                     <xsl:if test="not($silent)">
                         <xsl:sequence select="."/>
                     </xsl:if>

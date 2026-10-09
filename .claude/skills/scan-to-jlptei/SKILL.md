@@ -94,5 +94,21 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
   URNs for the people responsible for this transcription, not check-source editors.
 - Refresh the reference database for the project directory being built. Run builds
   and tests serially because both use it. Keep images, TeX, XML, and PDFs in output/.
+- **Gate every occasion's section in the running order.** A section said only on some days
+  (the weekday or Sabbath services, Hallel, a festival's service, Ḥanukkah) is conditioned
+  where the index transcludes it: the outermost point, so that one condition governs the
+  whole section. Build the condition from what the calendar derives (`opensiddur:holiday`,
+  `holiday-aggregate`, `hebrew-date`, `service-time`) with `opensiddur/importer/util/occasion.py`,
+  which also declares inside the gate whatever the condition fixes to one value. A book left
+  ungated shows its Sabbath services to a reader who set a Monday. See *Conditions on a
+  running order* in `schema/JLPTEI-3.md`.
+- **A gate says nothing to the reader.** It is a direction to the processor: no instruction
+  note, and not `type="marked"`, so an edition with no date prints the section bare. Keep
+  `opensiddur:override` out of a gate; it counts as false when undefined, and the section
+  would vanish from every edition that names no occasion.
+- **How an undecided passage looks follows the book.** Put `type="marked"` on a conditional
+  whose passage the book itself sets off (brackets, parentheses, a line): the markers then
+  stand for those marks, and the edition reproduces them. Give it an instruction note only
+  where the book prints a rubric. A conditional with neither prints with no delimiters.
 - Exercise conditional passages with settings making them both true and false.
   Schema validity alone cannot establish correct rendered content.

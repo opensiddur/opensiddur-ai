@@ -907,7 +907,9 @@ def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
             holidays.get(k, 0) > 0 for k in ("pesah", "shavuot", "rosh-hashana", "sukkot")
         ),
         "neila": holidays.get("yom-kippur", 0) > 0 and aware_dt >= z.plag_hamincha.local,
-        "slihot": z.alot_hashachar.local <= aware_dt < z.netz_hachama.local,
+        # Selichot may be said from nightfall until the end of the time for Shacharit:
+        # the first night's at midnight, the rest before dawn or before Shacharit itself.
+        "slihot": aware_dt >= z.tset_hakohavim.local or aware_dt < z.sof_zman_tfilla_gra.local,
     }
 
 

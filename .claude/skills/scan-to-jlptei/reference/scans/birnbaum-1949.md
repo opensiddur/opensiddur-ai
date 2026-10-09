@@ -479,3 +479,9 @@ variable is the change.
 counts — one repro split at Hebrew ×6 against English ×30 and not at ×10. If a minimal
 repro fails to show a defect the real document shows, the repro is wrong, not the defect.
 Sweep the lengths, or cut the real document down instead of building one up.
+
+## Occasion gates
+
+- **A section that serves several occasions declares none of them.** Birnbaum's Sabbath
+  Shaḥarith is also the festivals', so declaring `shabbat=true` in it would drop the festival
+  text; gate it on either occasion and let its own conditions choose.

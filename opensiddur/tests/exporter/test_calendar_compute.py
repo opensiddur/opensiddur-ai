@@ -302,6 +302,28 @@ class TestComputeFunctions(unittest.TestCase):
         self.assertIn("minha", result)
         self.assertIn("slihot", result)
 
+    def test_service_time_slihot_runs_from_nightfall_to_the_end_of_shaharit(self):
+        """Selichot may be said from nightfall -- the first night's are at midnight -- until
+        the end of the time for Shacharit (about 9:40 in Jerusalem at the end of September)."""
+        def slihot_at(hour):
+            return compute_service_time(_snapshot({
+                (FS_GREGORIAN, "year"): 2024,
+                (FS_GREGORIAN, "month"): 9,
+                (FS_GREGORIAN, "day"): 25,
+                (FS_LOCATION, "latitude"): 31.78,
+                (FS_LOCATION, "longitude"): 35.22,
+                (FS_TIME, "hour"): hour,
+                (FS_TIME, "minute"): 0,
+                (FS_TIME, "second"): 0,
+            }))["slihot"]
+
+        self.assertTrue(slihot_at(0))
+        self.assertTrue(slihot_at(5))
+        self.assertTrue(slihot_at(8))
+        self.assertFalse(slihot_at(11))
+        self.assertFalse(slihot_at(15))
+        self.assertTrue(slihot_at(23))
+
     def test_service_time_yom_kippur_neila(self):
         snap = _snapshot({
             (FS_GREGORIAN, "year"): 2024,

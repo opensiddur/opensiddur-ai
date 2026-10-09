@@ -22,6 +22,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from opensiddur.importer.feinstein_haggadah.sections import urn_for_section
+from opensiddur.importer.util.occasion import (
+    DAY_OF_WEEK,
+    HEBREW_DATE,
+    ISRAEL,
+    Feature,
+    all_of,
+    any_of,
+    holiday,
+    none_of,
+)
 
 class ConditionalError(Exception):
     """A conditional in the table could not be placed in the source text."""
@@ -62,6 +72,32 @@ CONDITIONS: dict[str, str] = {
         '<tei:f name="pesah"><tei:numeric value="2"/></tei:f>'
         "</tei:fs>"
     ),
+    # The seder: the first night of Pesah, and the second outside Israel, where the second day
+    # is a festival day too. A volume dated with no time to the day of the first seder -- the
+    # eve, 14 Nisan, until nightfall -- has it as well.
+    "seder_night": any_of(
+        all_of(Feature(HEBREW_DATE, "month", 1), Feature(HEBREW_DATE, "day", 14)),
+        holiday("pesah", 1),
+        all_of(holiday("pesah", 2), Feature(ISRAEL, "is-israel", False)),
+    ).markup(),
+    # The search for leaven is made on the night of 14 Nisan -- the night of the 13th when the
+    # 14th falls on Shabbat, the Friday being the 13th.
+    "bedikat_chametz": all_of(
+        Feature(HEBREW_DATE, "month", 1),
+        any_of(
+            all_of(Feature(HEBREW_DATE, "day", 14),
+                   none_of(Feature(DAY_OF_WEEK, "hebrew-day", 7))),
+            all_of(Feature(HEBREW_DATE, "day", 13), Feature(DAY_OF_WEEK, "hebrew-day", 6)),
+        ),
+    ).markup(),
+    # The leaven is burned on the morning of the 14th, on the Friday before when the 14th is
+    # Shabbat; the final nullification, which is what this section prints, is said on the
+    # 14th either way.
+    "biur_chametz": all_of(
+        Feature(HEBREW_DATE, "month", 1),
+        any_of(Feature(HEBREW_DATE, "day", 14),
+               all_of(Feature(HEBREW_DATE, "day", 13), Feature(DAY_OF_WEEK, "hebrew-day", 6))),
+    ).markup(),
     "zimmun": (
         '<tei:fs type="opensiddur:quorum">'
         '<tei:f name="zimmun"><tei:binary value="true"/></tei:f>'
@@ -127,6 +163,12 @@ class Paragraphs:
     first: int
     last: int | None = None
     bracketed: bool = False
+    #: Whether the passage is ``type="marked"``: by default, whether the source brackets it.
+    marked: bool | None = None
+
+    @property
+    def is_marked(self) -> bool:
+        return self.bracketed if self.marked is None else self.marked
 
     @property
     def through(self) -> int:
@@ -148,6 +190,14 @@ class Inline:
     end_before_text: str
     end_after_text: str
     bracketed: bool = True
+    #: Whether the passage is ``type="marked"``: by default, whether the source brackets it.
+    #: Set it where the source's marking was lost -- a born-digital text that brackets every
+    #: other such passage -- to restore the marking without swallowing brackets not there.
+    marked: bool | None = None
+
+    @property
+    def is_marked(self) -> bool:
+        return self.bracketed if self.marked is None else self.marked
 
 
 @dataclass(frozen=True)
@@ -155,10 +205,13 @@ class Transclusion:
     """A whole section, marked around its transclusion in the parent document.
 
     A section's presence is decided when it is included, so the whole file is transcluded or it
-    is not; the child stands as an unconditional document in its own right.
+    is not; the child stands as an unconditional document in its own right. Neither source
+    marks a section off as a whole, so its scope is never ``type="marked"``.
     """
 
     child_slug: str
+    bracketed = False
+    is_marked = False
 
 
 Scope = Paragraphs | Inline | Transclusion
@@ -229,11 +282,14 @@ CONDITIONALS: tuple[Conditional, ...] = (
         condition="shabbat",
         scope_he=Inline("חֵרוּתֵֽנוּ", "בְּאַהֲבָה", "בְּאַהֲבָה", "מִקְרָא קֹֽדֶשׁ"),
         # The English words are already in the running text, merely never bracketed, so the
-        # markers swallow nothing.
+        # markers swallow nothing. The 2009 translation is born digital and sets every other
+        # Shabbat insertion of this kiddush as "(on Shabbat say: ...)", as the Hebrew brackets
+        # this one: the marking and its rubric were lost, and are restored.
         scope_en=Inline(
             "of our liberation", "with love", "with love", "a holy convocation",
-            bracketed=False,
+            bracketed=False, marked=True,
         ),
+        rubric_en="on Shabbat say:",
     ),
     Conditional(
         slug="kadesh",
@@ -333,6 +389,32 @@ CONDITIONALS: tuple[Conditional, ...] = (
             "Prepared before a festival that runs into Shabbat — that is, when the festival "
             "falls on Friday."
         ),
+    ),
+    # -- Occasions -----------------------------------------------------------------------
+    # The running order's own gates: which night or day each part of the book is for. They are
+    # for the processor, not the reader -- the book says what each part is in its heading -- so
+    # they carry no rubric and no note, and an edition with no date prints the parts as they
+    # are (schema/JLPTEI-3.md, *Conditions on a running order*).
+    Conditional(
+        slug="index",
+        cond_id="index_seder",
+        condition="seder_night",
+        scope_he=Transclusion("seder"),
+        scope_en=Transclusion("seder"),
+    ),
+    Conditional(
+        slug="pre_seder",
+        cond_id="pre_seder_bedikat_chametz",
+        condition="bedikat_chametz",
+        scope_he=Transclusion("bedikat_chametz"),
+        scope_en=Transclusion("bedikat_chametz"),
+    ),
+    Conditional(
+        slug="pre_seder",
+        cond_id="pre_seder_biur_chametz",
+        condition="biur_chametz",
+        scope_he=Transclusion("biur_chametz"),
+        scope_en=Transclusion("biur_chametz"),
     ),
     # -- Quorum --------------------------------------------------------------------------
     # The zimmun: the invitation to bless, said only when three have eaten together.

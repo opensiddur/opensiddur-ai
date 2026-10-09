@@ -17,10 +17,11 @@ def _tree(body: str) -> etree.ElementBase:
 
 
 def _cond(xml_id: str, fs: str = "t:x", name: str | None = None, rubric: str = "",
-          pinned: str = "") -> str:
+          pinned: str = "", marked: bool = False) -> str:
     note = f'<tei:note type="instruction">{rubric}</tei:note>' if rubric else ""
     pin = f"<p:pinned>{pinned}</p:pinned>" if pinned else ""
-    return (f'<j:conditional xml:id="{xml_id}">{note}<tei:fs type="{fs}">'
+    kind = ' type="marked"' if marked else ""
+    return (f'<j:conditional xml:id="{xml_id}"{kind}>{note}<tei:fs type="{fs}">'
             f'<tei:f name="{name or xml_id}"><tei:binary value="true"/></tei:f></tei:fs>{pin}'
             f'</j:conditional>')
 
@@ -161,7 +162,7 @@ class TestColumns(unittest.TestCase):
 
 
 class TestSilence(unittest.TestCase):
-    """A scope that governs only where a reading division begins is shown by its label."""
+    """A scope the book does not mark and no rubric announces shows no markers of its own."""
 
     ALIYAH = '<tei:milestone unit="aliyah.triennial.1" n="first"/>'
 
@@ -179,18 +180,52 @@ class TestSilence(unittest.TestCase):
         prepare(root)
         self.assertEqual(root.find(f"{{{TEI_NS}}}milestone").get(P_SCOPES), "0")
 
-    def test_text_is_not_silent(self):
+    def test_text_is_silent(self):
+        """An occasion's gate around a whole section, say."""
         self.assertEqual(self._silent(_cond("a") + self.ALIYAH + "<tei:p>x</tei:p>" + _end("a")),
-                         [None, None])
+                         ["true", "true"])
+
+    def test_silent_text_is_still_governed(self):
+        root = _tree(_cond("a") + "<tei:p>x</tei:p>" + _end("a"))
+        prepare(root)
+        self.assertEqual(root.find(f"{{{TEI_NS}}}p").get(P_SCOPES), "0")
 
     def test_a_rubric_is_not_silent(self):
         self.assertEqual(self._silent(_cond("a", rubric="Say:") + self.ALIYAH + _end("a")),
-                         [None, None])
+                         ["false", "false"])
 
-    def test_other_milestones_are_not_silent(self):
+    def test_a_scope_that_opens_with_its_rubric_is_not_silent(self):
+        """A source's own rubric sits inside the scope it governs, and announces it."""
         self.assertEqual(
-            self._silent(_cond("a") + '<tei:milestone unit="verse" n="1"/>' + _end("a")),
-            [None, None])
+            self._silent(_cond("a") + '<tei:note type="instruction">On Shabbat say:</tei:note>'
+                         + "<tei:p>x</tei:p>" + _end("a")),
+            ["false", "false"])
+
+    def test_a_rubric_after_the_paragraph_s_milestone_still_opens_the_scope(self):
+        self.assertEqual(
+            self._silent(_cond("a") + '<tei:milestone unit="paragraph" n="1"/>'
+                         + '<tei:note type="instruction">On Shabbat say:</tei:note>'
+                         + "<tei:p>x</tei:p>" + _end("a")),
+            ["false", "false"])
+
+    def test_a_rubric_after_text_does_not_open_the_scope(self):
+        self.assertEqual(
+            self._silent(_cond("a") + "<tei:p>x</tei:p>"
+                         + '<tei:note type="instruction">Then say:</tei:note>' + _end("a")),
+            ["true", "true"])
+
+    def test_a_marked_scope_is_not_silent(self):
+        self.assertEqual(self._silent(_cond("a", marked=True) + "<tei:p>x</tei:p>" + _end("a")),
+                         ["false", "false"])
+
+    def test_crossing_scopes_are_silenced_by_their_own_opener(self):
+        root = _tree(_cond("a") + "<tei:p>x</tei:p>" + _cond("b", marked=True)
+                     + "<tei:p>y</tei:p>" + _end("a") + "<tei:p>z</tei:p>" + _end("b"))
+        prepare(root)
+        markers = [(el.tag.rsplit("}", 1)[1], el.get(f"{{{P}}}silent"))
+                   for el in root.iter(f"{{{J}}}conditional", f"{{{J}}}endConditional")]
+        self.assertEqual(markers, [("conditional", "true"), ("conditional", "false"),
+                                   ("endConditional", "true"), ("endConditional", "false")])
 
 
 class TestFeatures(unittest.TestCase):
