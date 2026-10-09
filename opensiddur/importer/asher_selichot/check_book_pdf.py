@@ -50,7 +50,8 @@ def check_contents(tree, rows, page_labels):
         if not any('Contents' in line.get('text','') for line in page.findall('.//line')):continue
         baselines={}
         for line in page.findall('.//line'):
-            digits=[c for c in line.findall('.//char') if c.get('c','').isdigit()]
+            # These settings put TOC page numbers at x=481–502pt; the title may contain '2nd'.
+            digits=[c for c in line.findall('.//char') if c.get('c','').isdigit() and float(c.get('x'))>=475]
             xs=[float(c.get('x')) for c in digits]
             if xs!=sorted(xs):raise ValueError('Reversed TOC page number')
             for char in digits:
@@ -225,6 +226,7 @@ def main(argv=None):
     captions=[word+' DAY' for word in ['FIRST','SECOND','THIRD','FOURTH','FIFTH','SIXTH','SEVENTH'] if any(word+' DAY' in r[1] for r in rows)]
     if any('DAY BEFORE NEW YEAR' in r[1] for r in rows):captions.append('DAY BEFORE NEW YEAR')
     if any('FAST OF GEDALIAH' in r[1] for r in rows):captions.append('FAST OF GEDALIAH')
+    if any('2nd OF THE PENITENTIAL DAYS' in r[1] for r in rows):captions.append('2nd OF THE PENITENTIAL DAYS')
     days=day_bookmarks(rows,captions)
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
@@ -275,9 +277,14 @@ def main(argv=None):
             if args.control:erev_controls(erev_portion,args.expanded)
         if len(days)>8:
             from .check_gedaliah_pdf import check as gedaliah_check, controls as gedaliah_controls
-            gedaliah_portion=slice_day(tree,days[8])
+            gedaliah_portion=slice_day(tree,days[8],days[9] if len(days)>9 else None)
             gedaliah_check(gedaliah_portion,args.expanded)
             if args.control:gedaliah_controls(gedaliah_portion,args.expanded)
+        if len(days)>9:
+            from .check_penitential_pdf import check as penitential_check, controls as penitential_controls
+            portion=slice_day(tree,days[9])
+            penitential_check(portion,args.expanded)
+            if args.control:penitential_controls(portion,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')
@@ -287,7 +294,7 @@ def main(argv=None):
             else:raise AssertionError('Stranded phrase-dot control escaped detection')
             broken=copy.deepcopy(tree)
             toc=next(p for p in broken.findall('page') if any('Contents' in l.get('text','') for l in p.findall('.//line')))
-            digit=next(c for c in toc.findall('.//char') if c.get('c','').isdigit())
+            digit=next(c for c in toc.findall('.//char') if c.get('c','').isdigit() and float(c.get('x'))>=475)
             digit.set('c','9' if digit.get('c')!='9' else '8')
             try:check_contents(broken,rows,reader.page_labels)
             except ValueError:pass

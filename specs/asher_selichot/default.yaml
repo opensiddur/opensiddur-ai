@@ -1,9 +1,9 @@
-description: Asher 1912 expanded services through Tzom Gedaliah, n208, with Birnbaum
+description: Asher 1912 expanded services through the second penitential day, n232, with Birnbaum
   Full Kaddish fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded services through Tzom Gedaliah
+  title: Asher Selichoth — expanded services through the second penitential day
 priority:
   transclusion:
   - asher_selichot_he_1912

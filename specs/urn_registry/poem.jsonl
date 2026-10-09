@@ -439,3 +439,19 @@
 {"urn": "urn:x-opensiddur:text:poem:im_afes_rova_haqen", "status": "canonical", "label_en": "im afes rova haqen"}
 {"urn": "urn:x-opensiddur:text:poem:tashuv_terahamenu_shuv_shevitenu", "status": "canonical", "label_en": "tashuv terahamenu shuv shevitenu"}
 {"urn": "urn:x-opensiddur:text:poem:torah_haqedoshah_hithaneni", "status": "canonical", "label_en": "torah haqedoshah hithaneni"}
+{"urn": "urn:x-opensiddur:text:poem:anahnu_hahomer_veatah_yotserenu", "status": "canonical", "label_en": "anahnu hahomer veatah yotserenu"}
+{"urn": "urn:x-opensiddur:text:poem:ashem_baalei_ashmah_haqarta_miqedem", "status": "canonical", "label_en": "ashem baalei ashmah haqarta miqedem"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor", "status": "canonical", "label_en": "bein keseh leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_1", "status": "canonical", "label_en": "bein keseh leasor/stanza 1", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_2", "status": "canonical", "label_en": "bein keseh leasor/stanza 2", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_3", "status": "canonical", "label_en": "bein keseh leasor/stanza 3", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_4", "status": "canonical", "label_en": "bein keseh leasor/stanza 4", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_5", "status": "canonical", "label_en": "bein keseh leasor/stanza 5", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_6", "status": "canonical", "label_en": "bein keseh leasor/stanza 6", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_7", "status": "canonical", "label_en": "bein keseh leasor/stanza 7", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
+{"urn": "urn:x-opensiddur:text:poem:el_har_hamor_givat_horiyah", "status": "canonical", "label_en": "el har hamor givat horiyah"}
+{"urn": "urn:x-opensiddur:text:poem:elohai_boshti_venikhlamti_leharim_panai", "status": "canonical", "label_en": "elohai boshti venikhlamti leharim panai"}
+{"urn": "urn:x-opensiddur:text:poem:orkha_vaamitkha_shelah", "status": "canonical", "label_en": "orkha vaamitkha shelah"}
+{"urn": "urn:x-opensiddur:text:poem:shaarei_shamayim_belulei_esh_umayim", "status": "canonical", "label_en": "shaarei shamayim belulei esh umayim"}
+{"urn": "urn:x-opensiddur:text:poem:shiharnukha_biqshanukha_yotser_harim", "status": "canonical", "label_en": "shiharnukha biqshanukha yotser harim"}
+{"urn": "urn:x-opensiddur:text:poem:tohelet_yisrael_hesed_lo_neezav", "status": "canonical", "label_en": "tohelet yisrael hesed lo neezav"}
