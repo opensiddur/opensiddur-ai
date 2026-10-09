@@ -1,9 +1,9 @@
-description: Asher 1912 expanded first seven days and Erev Rosh Hashanah through n184, with Birnbaum
+description: Asher 1912 expanded services through Tzom Gedaliah, n208, with Birnbaum
   Full Kaddish fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded first seven days and Erev Rosh Hashanah
+  title: Asher Selichoth — expanded services through Tzom Gedaliah
 priority:
   transclusion:
   - asher_selichot_he_1912

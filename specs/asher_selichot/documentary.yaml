@@ -1,9 +1,9 @@
-description: Asher 1912 complete first seven days and Erev Rosh Hashanah through n184, work in progress.
+description: Asher 1912 complete services through Tzom Gedaliah, n208, work in progress.
   Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — first seven days and Erev Rosh Hashanah
+  title: Asher Selichoth — services through Tzom Gedaliah
 priority:
   transclusion:
   - asher_selichot_he_1912

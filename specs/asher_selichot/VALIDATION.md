@@ -239,7 +239,7 @@ modules per language plus the service assembly extend the projects to 194 files.
 Canonical names use eloah, including el_eloah_dalefah_eini.
 
 All XML validates; documentary readings, printed choice branches, 26 Tamid
-reference markers, footnotes, language-specific expansion targets and calendar
+printed note markers, footnotes, language-specific expansion targets and calendar
 scopes pass reverse verification. All URNs/transclusions resolve with no registry
 errors or warnings. The registry’s four existing alias-migration notes remain.
 
@@ -275,5 +275,71 @@ eloah identities produces byte-identical TeX, so the naming change preserves the
 verified expanded PDF layout.
 
 Independent Hebrew proofreading and remaining English OCR adjudication are
-pending. The 26 Tamid reference explanations have not been located and are not
-invented. Later services and release integration remain outside this checkpoint.
+pending. The 26 Tamid superscripts are unresolved printed note markers; their targets
+are unknown and explanatory notes are not presumed to exist. Later services and release integration remain outside this checkpoint.
+
+## Tzom Gedaliah checkpoint (2026-10-09)
+
+The complete service covers n183/n184–n207/n208 (printed 91–103), including 38
+source-ordered units, nine independent piyyutim and six scriptural prayer modules
+per language. The projects contain 226 schema-valid files. Documentary page
+streams, footnotes, source order, bilingual targets, all seven refrain choices per
+language and the eight shared Horita stanza boundaries pass reverse verification.
+Evidence hashes reject stale working readings; independent Hebrew review remains
+pending. Separate initial captures, complete pre-OCR assembly, English OCR findings
+and same-reader image adjudications are retained.
+
+All URNs and transclusions resolve; the registry has no errors or warnings, with
+four pre-existing alias-migration notes. The importer suite passes 60 tests and
+12 subtests. Four expanded unequal petition lists preserve their compiled bilingual
+pairings. The secondary Full Kaddish compiles with the Ten Days doubling, לעלא לעלא;
+a synthetic ordinary-reading control fails. The service's unmarked holiday gate
+and restoration of Kaddish setting scopes are checked.
+
+Documentary: 158 pages and 19 TOC/bookmark destinations. All eight Gedaliah stanza
+start differences measure 0pt; the first-day 13.55pt difference remains within
+its existing 16pt bound. Seven distinctive English note fingerprints and the
+unattached Hebrew marginal note occur once; Latin apparatus order is checked by
+glyph coordinates. No Hebrew runs are left to right among 6,330; the reversal
+control flags 5,758. Broken controls reject duplicated notes, missing marginal
+commentary, shifted stanza starts, stale contents and stranded phrase dots. The
+service transition, opening, pizmon and final note were inspected visually.
+
+Visual inspection of the first expanded rendering found a retained secondary
+“During the Ten Days of Repentance, add” rubric. An explicit empty Asher instruction
+override suppresses that fulfilled rubric. Compiler PR #232 fixes the bypassed
+instruction selection inside a resolved conditional; both regressions fail on
+unfixed ordinary/external/inline compilation, and 74 focused tests with 22 subtests
+pass afterward. The fix is applied to this branch. Actual compiled output retains
+the Ten Days doubling and omits the rubric. Documentary TeX remains byte-identical;
+the expanded TeX differs only by removal of that rubric macro.
+
+Corrected expanded: 349 pages and 19 contents/bookmark destinations. All eight
+Gedaliah stanza start differences measure 0pt. No Hebrew runs are left to right
+among 14,777; the reversal control flags 13,487. The final Kaddish was inspected
+visually: both לעילא words remain in one prose paragraph, the fulfilled rubric is
+absent, and the Reader cue remains. All book controls pass, including reinserting
+that unwanted rubric. The Hebrew marginal note appears once in both editions.
+
+Final range audit: the English Gedaliah opening ends at Shomea tefillah's “for it
+is great,” before the following reprinted Selah lanu. The abbreviated Hebrew
+כי רבו citation is ambiguous. The documented editorial boundary removes the
+extra earlier Selah lanu while preserving the printed citation. Initial and
+assembled evidence remain immutable; the working hash and adjudication record
+were updated. Both changed service files validate and reverse verification passes.
+The PDF checker rejects the original rendering's duplicated opening. The 60
+importer tests and 12 subtests pass after the correction.
+
+Full suite: 3,341 tests and 5,031 subtests passed, with 20 skipped, in 737.98s.
+The standalone reference database was restored, all URNs/transclusions resolve,
+and the registry has no errors or warnings. All 226 project hashes match the
+validated snapshot after the full suite. The range correction changes source
+expansion data; the final rendering and its new boundary control are checked
+separately below.
+
+Final expanded after the opening correction: 349 pages, 19 TOC/bookmark entries,
+and all eight Gedaliah stanza starts at 0pt difference. No reversed Hebrew runs
+among 14,775; the reversed control flags 13,485. The opening contains Selah lanu
+once, both injected duplication and fulfilled-rubric controls fail as intended,
+and all book note, alignment, direction and boundary controls pass. All final
+Gedaliah documentary streams match, evidence hashes are current, and URNs resolve.

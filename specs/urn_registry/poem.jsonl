@@ -422,3 +422,20 @@
 {"urn": "urn:x-opensiddur:text:poem:el_rahum_shimkha/extended", "status": "canonical", "label_en": "el rahum shimkha/extended"}
 {"urn": "urn:x-opensiddur:text:poem:tefillah_teqah_tahanun_tivhar", "status": "canonical", "label_en": "tefillah teqah tahanun tivhar"}
 {"urn": "urn:x-opensiddur:text:poem:ish_anav_hillah_fanekha", "status": "canonical", "label_en": "ish anav hillah fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:amanta_meaz_areshet_sefatayim", "status": "canonical", "label_en": "amanta meaz areshet sefatayim"}
+{"urn": "urn:x-opensiddur:text:poem:avelah_nafshi_vehashakh_toari", "status": "canonical", "label_en": "avelah nafshi vehashakh toari"}
+{"urn": "urn:x-opensiddur:text:poem:az_terem_nimtehu_nivlei_shehaqim", "status": "canonical", "label_en": "az terem nimtehu nivlei shehaqim"}
+{"urn": "urn:x-opensiddur:text:poem:elohim_ein_biltekha", "status": "canonical", "label_en": "elohim ein biltekha"}
+{"urn": "urn:x-opensiddur:text:poem:et_adonai_behimamtseo_ledorsho_qidamti", "status": "canonical", "label_en": "et adonai behimamtseo ledorsho qidamti"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah", "status": "canonical", "label_en": "horita derekh teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_1", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 1", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_2", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 2", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_3", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 3", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_4", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 4", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_5", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 5", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_6", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 6", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_7", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 7", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah/stanza_8", "status": "canonical", "label_en": "horita derekh teshuvah/stanza 8", "parent": "urn:x-opensiddur:text:poem:horita_derekh_teshuvah"}
+{"urn": "urn:x-opensiddur:text:poem:im_afes_rova_haqen", "status": "canonical", "label_en": "im afes rova haqen"}
+{"urn": "urn:x-opensiddur:text:poem:tashuv_terahamenu_shuv_shevitenu", "status": "canonical", "label_en": "tashuv terahamenu shuv shevitenu"}
+{"urn": "urn:x-opensiddur:text:poem:torah_haqedoshah_hithaneni", "status": "canonical", "label_en": "torah haqedoshah hithaneni"}

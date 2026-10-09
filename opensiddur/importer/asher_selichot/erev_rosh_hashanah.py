@@ -121,7 +121,7 @@ def printed(parent, reading, lang, context):
         if reading.get('invocation',True) and '\n' in fragments[0]['he']['text'] and fragments[0]['he']['text'].startswith('אלהינו'):
             invocation,fragments[0]['he']['text']=fragments[0]['he']['text'].split('\n',1)
             element(node,'l',invocation).tail=' '
-        poetic_lines(node,fragments,{'line_stops':'׃' if reading['kind']=='poem' and reading['id'] not in ['el_rahum_shemekha','ukhshehatau_yisrael'] else '·׃',
+        poetic_lines(node,fragments,{'line_stops':reading.get('line_stops', '׃' if reading['kind']=='poem' and reading['id'] not in ['el_rahum_shemekha','ukhshehatau_yisrael'] else '·׃'),
                                     **({'refrain':'הוּא יַעֲנֵנוּ'} if reading['kind']=='litany' else {'refrain':'עֲנֵנוּ'} if reading['id']=='anenu' else {'refrain':'עֲנֵינָא'} if reading['id']=='rahmana' else {})})
         for line in node.findall(f'{{{TEI}}}l'):
             if reading.get('bracketed_responses') and line.text and '[' in line.text:
