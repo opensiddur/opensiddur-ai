@@ -1006,6 +1006,13 @@ class CompilerProcessor:
                 # instruction with it, the passage not being said at all.
                 kept = element.find(TEI_NOTE)
                 if kept is not None and kept.get("type") == "instruction":
+                    # A resolved rubric remains an instruction, so the edition's
+                    # instruction priority must still choose its wording. An empty
+                    # selected wording intentionally suppresses a fulfilled rubric.
+                    selected, command = self._annotate(kept)
+                    if command == _AnnotationCommand.REPLACE:
+                        note = selected[0]
+                        return True, note if "".join(note.itertext()).strip() else None
                     return True, self._copy_element_subtree(kept)
             return True, None
 
