@@ -60,6 +60,9 @@ def verify(source_root, project_directory):
             from .third_day import THIRD_DAY
             targets.append(THIRD_DAY)
         targets.extend('urn:x-opensiddur:text:siddur:selichot/'+day+'_day' for day in ['fourth','fifth','sixth','seventh'] if (source/(day+'-day.json')).exists())
+        if (source/'erev-rosh-hashanah.json').exists():
+            from .erev_rosh_hashanah import EREV
+            targets.append(EREV)
         for name in ['index.xml', 'expanded.xml']:
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
@@ -75,6 +78,9 @@ def verify(source_root, project_directory):
     from .second_day import verify_numbered_readings
     for day in ['fourth','fifth','sixth','seventh']:
         if (source/(day+'-day.json')).exists():verify_numbered_readings(source, Path(project_directory), day)
+    if (source/'erev-rosh-hashanah.json').exists():
+        from .erev_rosh_hashanah import verify_readings as verify_erev
+        verify_erev(source,Path(project_directory))
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
     print(f'{files} schema-valid files; {len(actual)} documentary page/language streams match; expansion targets and forms checked')

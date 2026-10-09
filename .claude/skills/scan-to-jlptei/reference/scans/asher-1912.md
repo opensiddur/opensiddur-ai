@@ -270,3 +270,47 @@ Check the serialized XML and rendered glyph rows for stranded dots (SBL Hebrew
 extracts the printed dot as ∙). Stop day seven at its closing Kaddish cue before
 the large Erev Rosh Hashanah heading on n99/n100. Source scope/proofreading files
 record the detailed boundaries and unresolved independent Hebrew review.
+
+## Erev Rosh Hashanah
+
+The service begins under the large body heading on n99/n100 (printed 49) and
+ends at the Reader’s Kaddish cue on n183/n184 (printed 91), before Gedaliah.
+It has two pizmon headings; keep each above its repetition instruction and below
+the service heading. The English page heading is “DAY BEFORE NEW YEAR”.
+
+Read Hebrew and English repeat instructions independently. Most Hebrew cues add
+רחמיך רבים and אל תבוא from printed 52 before the familiar כרחם אב range;
+most English cues begin at “Like a father” on 9. The printed-58 English cue instead
+begins at “Thy mercy is great” on 52. After Shofet kol haarets, Hebrew stops before
+the Daniel verses, which follow in full on 71, while English explicitly repeats
+them. Keep Ark instructions when expanding: after Shelosh esreh middot the Ark
+opens between El melekh and Vayaavor; after Shofet the Hebrew closes it before
+the pair, but English closes it after the pair. Scope the final secondary-source
+Full Kaddish with first_day=false and Ten Days=false.
+
+Zekhor berit alternates two different refrains; do not apply a single-refrain
+pizmon default. Both its final Zekhor cue and Shofet’s final cue repeat the complete
+opening. Preserve bracketed responses in Shelosh esreh middot, including the
+closing bracket attached to its verse. Tefillah teqah contains 26 numbered English
+references whose explanations have not been located in the available scan;
+preserve the printed markers and document the unresolved apparatus. Its English
+body contains לשון הרע and needs an explicit Hebrew language span.
+
+When Erev cues refer to printed 52, use that page’s bounded reprinted petitions
+(`prayer:keraham_av`, `prayer:selichot/ki_lo_al_tsidqotenu`), preserving their
+wording and punctuation. English cues citing 9/10 use the earlier ranges; do
+not assume that repeated passages are identical.
+
+Expanded repeat cues can list different petitions in Hebrew and English. Set
+them as one paired prose paragraph with inline transclusions and a shared
+alignment milestone for the cue; retain bounded prayer targets in the source
+modules. Separate external blocks for unequal target lists can shift later
+translations. Verify the compiled pairings and the page-52 translation wording
+before rendering, in addition to checking passage starts in the PDF.
+
+Use `python -m opensiddur.importer.asher_selichot.erev_rosh_hashanah
+<compiled-expanded.xml>` before the PDF build to check all 12 expanded
+petition pairings; it rejects lost page-52 translation wording.
+
+Transliterate אלוהַּ as `eloah`; use `el_eloah_dalefah_eini` for the poem
+filename and canonical identity.
