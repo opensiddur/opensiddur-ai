@@ -488,7 +488,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             segments = [[]]
             transcludes = []
             for el in elements:
-                if el.tag == f"{{{p_ns}}}transclude":
+                if (el.tag == f"{{{p_ns}}}transclude"
+                        and el.get('type', 'external') == 'external'):
                     transcludes.append(el)
                     segments.append([])
                 else:
