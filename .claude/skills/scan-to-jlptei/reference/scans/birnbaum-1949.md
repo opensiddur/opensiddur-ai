@@ -1,0 +1,487 @@
+# Birnbaum 1949 scan subsection
+
+Load only for Philip Birnbaum’s ha-Siddur ha-Shalem (1949), Archive item
+`PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949`, or when comparing scans.
+The following observations and shortcuts are evidence about this edition; do not
+apply its glyph rules, page arithmetic, transcription templates, or measurements
+to another scan without checking that scan. Repository paths are relative to its root.
+
+# Reading a scan into JLPTEI
+
+The page is the evidence. A transcription of the book, however good, is a proofreading
+check on the reading and never its source — `specs/BIRNBAUM_FROM_SCAN.md` opens with why,
+and `opensiddur/importer/birnbaum_scan/__init__.py` states it in three lines.
+
+Everything below is what those documents do not already say. Where this file and a
+document disagree, **the document wins and this file is wrong** — fix it.
+
+## Order of work
+
+| | | |
+|---|---|---|
+| 1 | Fetch and cut the leaf | `python -m opensiddur.importer.birnbaum_scan.pages 81 82 83` |
+| 2 | Read the page into prose | by hand, into `readings/{printed}.md` |
+| 3 | Build the transcription slice | `python -m opensiddur.importer.birnbaum_scan.transcription 25` — from the page file, never by hand |
+| 4 | Diff the slice against the reading | `compare` |
+| 5 | Adjudicate each difference | go back to the image; record in `verdicts/{printed}.json` |
+| 6 | Author the TEI | hand-written, one function per prayer |
+| 7 | Compile and render | `exporter.compiler`, then `exporter.pdf.pdf` |
+| 8 | **Measure** the PDF | `../measuring-the-pdf.md` |
+
+Steps 1, 3 and 4 explain themselves: the module docstrings of `opensiddur/importer/birnbaum_scan/pages.py`, `transcription.py` and `compare.py`
+carry the reasoning — why a page is fetched once, why bands overlap and are enlarged, why
+differences are counted in three buckets and not merely resolved. Read them rather than a
+summary of them.
+
+A printed page number is not a leaf number is not a scan page. `pages.json` is the only
+place that correspondence lives; never re-derive it.
+
+## What two languages change
+
+**The alignment unit is the `p:parallel` block, and you choose it.** Two sides join on
+*exact URN equality* — `schema/JLPTEI-3.md`, `### Alignment`. So granularity is an
+authoring decision, not a rendering one: two passages line up because you gave them their
+own matching `@corresp`, and inside a block the columns drift and only resync at the next
+block boundary. If a passage must start level with its translation, give it a URN of its
+own. A `@corresp` repeated within one document breaks the join **silently**.
+
+The compiler's own invariants are in `specs/COMPILER_SPECIFICATION.md`, `## Parallel
+Compilation`.
+
+**A rubric can sit on different rows in the two columns, and be correct.** A rubric whose
+direction differs from the text around it cannot share a line with it, so it takes a line
+of its own; in the facing column, where it does not cross, the same rubric runs in. The
+result is one rubric on two different rows. That is the layout working, not failing.
+
+Set `typography.instructions.from: both` when rubrics fall mid-passage rather than at
+alignment boundaries — anything else needs them *at* boundaries, or a column ends up with
+a rubric nowhere near the words it governs. `doc/typography.md`, ``## `instructions` ``.
+
+**Column geometry means nothing by itself.** Which column is left tells you nothing about
+which is read first; the two sides of an opening invert. The linearised order must
+preserve *reading* order — `specs/BIRNBAUM_FROM_SCAN.md`, `## What the print does, that
+the encoding has to carry`, which sets out the rest of these (asterisk means substitution,
+simultaneous columns, bare day-names, a page turn mid-sentence).
+
+**When order or geometry is in doubt, crop the block and look at it.** Inferring column
+order from surrounding text is how a page gets read backwards. Cropping costs a minute.
+
+## Verifying the rendered PDF
+
+**Measure it; do not look at it.** A parallel-layout defect is a geometric fact — a row
+nobody used, a rubric split across a blank line, a number inside its own column — and the
+eye is unreliable about all three, in both directions. Recipes and the specific
+measurements that have caught real defects are in `../measuring-the-pdf.md`.
+
+One rule generalises past this project: **an assertion that cannot fail proves nothing.**
+When a measurement passes, feed the pre-fix state back into it and confirm it goes red. A
+check that silently measures nothing is worse than no check, because it is believed.
+
+## Traps
+
+**Encoding**
+- **A division must earn its level.** Emit one only when it carries a `@corresp`, or when
+  it groups several children that belong together (a heading with the passages under it).
+  A division that names nothing and groups nothing — one URN-bearing `tei:div` holding a
+  single bare `tei:div` holding the words — is a level for every reader and every
+  stylesheet to see through, and the validator will not object to it. Words go directly
+  inside the division that names them:
+
+  ```xml
+  <tei:div corresp="urn:x-opensiddur:text:prayer:modeh_ani">
+    <tei:p>…</tei:p>          <!-- right: the naming division holds the words -->
+  </tei:div>
+  ```
+
+  The rule it is easy to over-apply is that *a division holds content or subdivisions but
+  never both*. That is real, and it bites when words would sit alongside a
+  `j:conditional`; the fix there is to give those words a division **with a URN**, not an
+  anonymous one. If you find yourself writing an unnamed wrapper, ask what it names or
+  what it groups — and if the answer is neither, delete it.
+- One instruction URN per distinct rubric *text*. Sharing a URN between rubrics that say
+  different things makes the compiler print one where the other belongs.
+- A page turn falls mid-sentence; `tei:pb` is valid inside `tei:p`.
+- Slugs are unique per foundation page, not globally.
+- Chapter and verse are separated by a colon.
+
+**Reading**
+- **Bands are reliable for consonants and not for points.** In the first 479 words the
+  consonantal skeleton was never once wrong, and seven readings of the *pointing* had to
+  be corrected before committing. At 3x a semicolon and a comma are one mark, a patach and
+  a qamats differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot the
+  neighbouring letter can lend it.
+- **So the transcription is the instrument that finds pointing errors, not a formality
+  run afterwards.** Six of those seven were caught by the diff rather than by looking
+  harder. Where it disagrees about a point, the presumption is a 12x crop — not that the
+  reading stands. Where it flags a variant in a `{{נוסח}}` template it has been right
+  every time.
+- **Do not reach for "the scan cannot settle it" when what is missing is the word.** An
+  `unresolved` verdict is a claim about the image, and it is the wrong one whenever the
+  reading follows from knowing the text: a sin dot that will not resolve in the crop is
+  still settled if the word is עָשָׂה. From inside the crop the two failure modes look
+  identical, so ask what the word is before blaming the scan.
+- **One dot can be two marks: a combined shin dot and holam is encoded as both.** Birnbaum
+  prints a single dot where a holam meets a shin, and the holam is still logically there,
+  so both characters go in -- `מֹשֶׁה`, not `משֶׁה`. This is the one deliberate departure
+  from recording what the page shows, and the test that licenses it is whether dropping the
+  mark changes what the word *is*: a qamats read as qamats qatan leaves the word intact, a
+  dropped holam does not. `specs/BIRNBAUM_FROM_SCAN.md` has the full decision.
+- **A meteg is decided on the image, one at a time, never in bulk.** On a single page the
+  disputed metegs have fallen in both directions at once -- some the reading invented, some
+  it missed -- so any rule of thumb gets half of them wrong. There is no shortcut here and
+  the queue should keep surfacing them individually.
+- **A comma read off a band at 3x is not evidence.** This print uses commas *and*
+  semicolons, sometimes in one line, and at band magnification the semicolon's upper dot
+  merges into the comma's body. Two of the first three misreadings on printed page 3 were
+  exactly this. Where punctuation carries a sense break, crop it and look at 12x.
+- **The same goes for a dagesh in a wide letter.** A mem or a bet with nothing in it reads
+  at 3x much like one with a point, and a neighbouring letter's dagesh is easily annexed
+  to it. Page 3's third catch was a dagesh in מאד that is not there; what looked like it
+  belonged to the tav of the word before.
+- **In verse, the lineation *is* the text.** The rule below is for prose. A poem's lines
+  are its structure — Birnbaum's own footnote says Adon Olam "is composed of ten lines" —
+  so keep them, and settle the whitespace differences they produce as `print` rather than
+  carrying them to a person. Where such a poem is set in two columns, the columns are the
+  two halves of one line: splitting on the column would give twenty lines and contradict
+  the book's statement about itself.
+- **Lift the Hebrew as paragraphs, not as printed lines.** `compare` counts a line break
+  against a space as a whitespace difference, so a `hebrew/{printed}.txt` that preserves
+  the print's line wrapping reports a difference per line and buries the real ones. The
+  print's lineation belongs in `readings/`, which is prose about the page, not in the
+  slice being diffed.
+- **Correct the reading before committing it, and say so in `accuracy.md`.** A difference
+  the image settles *for the transcription* vanishes from the tally once the reading is
+  fixed, so the tally alone will always report zero misreadings. The prose is the only
+  place the method's real error rate survives.
+
+**A second reader**
+- **The diff can only surface a disagreement, never a shared error.** Where the reading
+  and the transcription are wrong in the same way, nothing in the comparison fires and the
+  page looks settled. Both of the worst errors found on this book so far were of that kind,
+  and neither could have come out of `compare`.
+- **A blind second reader is the only thing that finds them.** Put a fresh agent on the
+  page image with the two candidates and tell it plainly that both may be wrong. Asked that
+  way it has returned "neither", correctly, on a word where the reading and the
+  transcription agreed with each other and the print disagreed with both.
+- **Its prose is not evidence, even when its answer is right.** Of fourteen justifications
+  checked, one invented a corroborating detail outright — a "reddish ink cast" on the ink,
+  where measurement puts ink and blank paper at the same R−B — and one described the right
+  feature in the wrong place. Verify every claim that would change a file: crop the
+  coordinates it gives, or measure the pixels it cites.
+- **A high score on an easy page proves nothing.** A page whose answers follow from knowing
+  Biblical Hebrew — metegs in stress positions, `אֶל־מֹשֶׁה` taking a maqqef — can be
+  answered perfectly without reading the image at all. Test a second reader on a question
+  where both candidates are wrong; that is the only kind that separates reading from
+  priors.
+- **Never let it decide.** Use it to triage and to escalate: it says "neither", it claims
+  an absence, or it disagrees with the reading. Those three go to a person.
+
+**The transcription**
+- **Apply the one mechanical rule mechanically.** Qamats qatan is the only class this
+  comparison settles without going back to the image, so it is the one that gets applied by
+  hand page after page — and applying it by hand is how a difference that merely *looks*
+  like it gets a `print` it never earned. `compare --settle-qamats-qatan` records the rule's
+  verdicts and refuses everything else. Put on twenty pages already adjudicated it found two
+  where the edition had dropped a **dagesh** as well as reading the vowel as qatan
+  (`כָּל` against `כׇל`): two things differing, the rule covering neither, and both filed
+  under it. The verdicts were right and the reasons were invented.
+- **A word is not a class.** `כל` came out of that with a dagesh on two pages and without one
+  on a third, in the same print. Anything that looks like it could be settled in bulk is
+  worth one page's worth of checking before it is.
+- **Check the authored text against the reading, page by page.** `compare` asks how far the
+  transcription stands from the reading; nothing asks whether the TEI carries what the
+  reading records. `reverse` does, and it is a diff rather than a tally, so one wrong vowel
+  fails it. Put on nine pages that had validated, resolved and compiled, it found a
+  correction that had reached `hebrew/7.txt` and `corrections.jsonl` and never reached the
+  generator: `לְהָנִיחַ` still standing where the editor had settled `לְהַנִֽיחַ`. Nothing
+  else could see it — once the reading is fixed the transcription agrees with it, and the
+  schema, the registry and the reference database have no opinion about a vowel.
+- **Order it by printed page, not by file.** A first attempt concatenated the authored files
+  in filename order and reported 380 words missing that were present in a different place.
+  Ordering by page is what makes the answer mean anything, and it puts a failure on the page
+  whose image settles it.
+- **A transclusion has to be declared, and each declaration is a debt.** A unit that
+  transcludes a text another unit realises emits nothing for it, so the words are on the
+  page in print and absent from the files. Naming them keeps the check honest; a stale
+  declaration would silently excuse a real omission, so the tool fails when a declared
+  phrase is not in the reading either.
+- **The comparison is blind to what both sides are missing.** Printed page 21's last line
+  — nine words — was absent from the reading *and* from the hand-made slice, so nothing
+  fired: 166 files validated, the suite passed, `refdb` was clean. It surfaced only when
+  the slice was rebuilt from the page file and came back nine words longer than the
+  reading. Anything that re-derives one side independently is worth more than another
+  check run over both.
+- **A wall of consonantal differences is a boundary problem, not a finding.** A real
+  disagreement about consonants is rare — none survived in the first two thousand words
+  once the slices were right — so a page reporting them by the dozen has a section missing
+  or duplicated on one side. The signature is a word-count gap plus that wall. Find the
+  section before anyone looks at a crop; a passage may have no section of its own and live
+  inside a variant one, named `א` or `ב` rather than for its words.
+- **Build the slice from the page, not by hand.** The printed page's own wikitext already
+  records which foundation spans it sets and in what order; deciding that again by eye is
+  how a span goes missing. `transcription.page_slice` renders the page and the CLI writes
+  the file. Three things a hand-assembled slice got wrong, all found by mechanising it:
+  a span that *wraps* other spans is truncated at the first inner `<קטע סוף=` unless the
+  end tag is matched **by name**; the text *between* two transclusions is part of the
+  reading, so concatenating spans manufactures paragraph breaks and eats sentence-final
+  punctuation that `compare` then reports as real differences; and a `{{מרכז|...}}`
+  wrapper holds braces of its own, so a rule that removes only brace-free templates either
+  leaves its braces behind or, run after substitution, deletes the words inside it.
+- **Both sides of the comparison must hold the same kind of thing.** Span names say which
+  kind: `הוראה` is the edition's Hebrew rendering of an *English* rubric, so there is
+  nothing on his page to compare it against; `כותרת` is a heading and `מקור` a scripture
+  citation, and he prints both in the Hebrew column but they are read into `readings/`
+  rather than `hebrew/`. Leave out all three, on both sides. Include any of them on one
+  side only and the tally is noise.
+- **A missing span must refuse to write the file.** Page files and foundation pages get
+  snapshotted at different revisions, so a rename or a typo fixed on one side reads as a
+  span that is not there. Record the known ones by name; never fall back to a guess, and
+  never write a slice with a hole in it — a hole reads downstream as a wall of consonantal
+  differences, which is the one signature below that sends people looking at crops.
+- **Resolve `{{נוסח}}`; never strip it.** The Wikisource foundation text marks the places
+  its editors knew the print differs from what they set, and names Birnbaum's own reading
+  in the template. Stripping it as markup throws away precisely what the comparison is
+  for, *and* manufactures differences: a stripped template reads as a word the
+  transcription dropped. Use
+  `opensiddur.importer.birnbaum_scan.transcription.resolve`.
+- **One of the four conventions inverts.** `{{נוסח|X|=בירנבוים|אחרים=Y}}` and
+  `{{נוסח|X|=בירנבוים ועבו"י|אחרים=Y}}` make **X** the reading and `אחרים=` the variant.
+  A rule that simply prefers a `בירנבוים=` parameter takes the wrong side of every one of
+  them.
+- **A `בירנבוים=` value is not always a word.** At least one is a sentence about how he
+  sets two Torah portions. Substituting it drops a line of Hebrew prose into the middle of
+  a prayer, where the diff then reports it as the print's own words.
+
+**Conditions**
+- **Compile for a day on which the condition is TRUE, not only for one where it is false.**
+  A settings file that leaves a conditional resolving false proves nothing about it. Both of
+  this book's day-dependent passages were only ever compiled on weekdays, so neither had
+  ever fired — one because the unit was filed under the wrong occasion, the other because
+  the calendar was wrong. Each took a settings file written to make it true.
+- **Choose that day knowing what it exercises.** Rosh Ḥodesh comes in two shapes, one day or
+  two, computed differently; the first of an odd-numbered Hebrew month passed against a
+  calendar that was wrong about every even one. A date picked for convenience tests whatever
+  it happens to test.
+
+**The apparatus**
+- **A note that never renders still validates.** An apparatus can be schema-valid, indexed
+  by `refdb`, resolve every target and pass the registry while a two-column compile emits
+  none of it. Nothing short of compiling the way it will be read, and looking for the notes,
+  catches that — and a unit with a single note can look as though it works. Count them.
+- **A Hebrew run inside a note is set in the note's direction, not its own.** `note-content`
+  forces `\textdir TLT` on an English note, and anything Hebrew left unwrapped inside one is
+  laid out left to right and renders reversed. `tei:foreign` had the wrapper; the apparatus
+  **catchword** did not, because it is a quotation of the text and so a `tei:label` — and
+  every one of forty-seven lemma-keyed notes printed its catchword backwards.
+- **`pdftotext` shows a reversed Hebrew run the right way round.** It reorders RTL on output,
+  so the extracted text of a broken page reads correctly and every text-level assertion
+  passes. Render the page and look at it, or take the glyphs' own x coordinates.
+- **Three words of English are not a fingerprint.** Measuring whether a note is set twice by
+  matching its first three long words reported two false duplicates; six words showed each
+  note on exactly one page. A measurement that cannot tell a duplicate from a coincidence
+  has not measured anything.
+- **A note keys to the nearest canonical URN.** An `#id` target resolves only inside the
+  one file that declares it — `refdb.get_references_to` scopes id lookups by project *and*
+  file name — so an apparatus in its own file can reach the text only by URN. That is also
+  what lets one edition's notes be swapped or combined with another's.
+- **Where the lemma falls mid-paragraph, give the phrase a `tei:seg` with its own URN.**
+  Never reach for a `tei:anchor` to place a note more precisely; the seg is what the
+  alignment of the two columns wants anyway.
+- **Set `annotations:` in the settings, or no standoff note exists.** It defaults to
+  empty, and an unset apparatus is not an error — the compile simply comes out with no
+  notes and says nothing about it.
+- **A note attached to a parallel text is found while compiling both columns.** Both sides
+  realise the same URNs, which is what makes them parallel, so the apparatus prints twice
+  per opening unless each column drops the projects that are themselves columns. Narrowing
+  only the facing column does not fix it: the primary column still holds the configured
+  list, and naming the apparatus project is that list's whole purpose.
+
+**Attribution**
+- The reading is ours. A transcription used as a check is not a source, and the people who
+  made it are not this text's transcribers.
+- The author of the book gets no `respStmt` — he is a source. `schema/JLPTEI-3.md`,
+  `#### Contributors and contributor URNs`.
+- Every `opensiddur.org` contributor URN must be registered in
+  `specs/urn_registry/contributor.jsonl`; this is validated, and an unregistered one is a
+  typo that credits a different person.
+
+**Tooling**
+- Never run the test suite while a build is running: both use the reference database at `database/reference.db`, and
+  the collision shows up as an unrelated test failing.
+- Refresh `refdb` for the project directory you are building, or sources and licences
+  quietly come out thinner than they should — the compiled XML is identical either way, so
+  nothing warns you.
+- `--` inside an XML comment is illegal, and in `opensiddur/exporter/tex/reledmac.xslt` it fails *every*
+  transform-based test at once, which reads as catastrophe rather than typo. Use an em
+  dash.
+- A comment that loses its opening `<!--` is still well-formed XML: the prose becomes a
+  text node and lands in the LaTeX preamble. `TestPreambleIsAllTeX` guards this.
+
+## Where things are written down
+
+| Document | Covers |
+|---|---|
+| `specs/BIRNBAUM_FROM_SCAN.md` | The procedure end to end, and what this print does that the encoding must carry |
+| `schema/JLPTEI-3.md` | The schema: alignment, contributors, conditionals, transclusion, URN scope |
+| `specs/COMPILER_SPECIFICATION.md` | Transclusion, conditionals, parallel-compilation invariants |
+| `doc/typography.md` | Every typography setting, including `parallel` and `instructions` |
+| `doc/exporter-settings.example.yaml` | A complete annotated settings file |
+| `AGENTS.md` | Repository layout, JLPTEI authoring rules, testing conventions |
+| `specs/birnbaum_scan/accuracy.md` | How far one transcription stood from this print, measured |
+| `sourcetexts`, `sources/birnbaum_siddur/scan_reading/` | The reading itself, page by page |
+
+`schema/jlptei.odd.xml` is authoritative where the prose disagrees with it. Run the
+validator.
+
+## Birnbaum PDF calibration
+
+At 11pt a row advances **13.5pt**. So:
+
+- `+13.5` — the next row, as expected
+- `+27` — one row nobody used
+- anything between, say `+19.5` — either a taller row (Hebrew with nikkud sets taller than
+  Latin) or something leaking; look before concluding
+
+Hebrew and Latin baselines within *the same* row differ by about 2.5pt. Collapse anything
+closer than ~6pt into one row before measuring advances, or every row looks like two.
+
+
+## Historical PDF measurements and examples
+
+# Measuring a parallel PDF
+
+Assertions on the emitted `.tex` cannot see any of this. Where a line lands is decided by
+TeX, out of machinery that reledpar drives per column and per row, so the only way to know
+whether a two-column page is right is to measure the PDF.
+
+Keep the intermediate TeX while building — `--tex-output <path>` — because the answer to
+"why did it do that" is usually in it.
+
+## Getting rows out of a page
+
+```python
+import re, subprocess
+
+def words(pdf, page):
+    """Every word on one page as (x0, y0, x1, text)."""
+    xml = subprocess.run(["pdftotext", "-bbox", "-f", str(page), "-l", str(page), pdf, "-"],
+                         capture_output=True, text=True).stdout
+    return [(float(m.group(1)), float(m.group(2)), float(m.group(3)), m.group(4))
+            for m in re.finditer(
+                r'<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="[\d.]+">([^<]*)</word>',
+                xml)
+            if m.group(4).strip() and float(m.group(2)) > 90]   # 90 clears the folio
+```
+
+Determine row advances and baseline tolerances from the current output’s font
+sizes and line spacing. Scan-specific calibration examples belong in that scan’s
+subsection; do not apply their numerical thresholds to another edition.
+
+## The four measurements that have caught real defects
+
+**A rubric's own lines are contiguous.** Pull the rubric strings out of the emitted TeX,
+find the first and last word of each in the PDF, and require the span to cover no more rows
+than the rubric has lines. A blank row through the middle of one rubric is never wanted.
+
+**The same rubric starts on the same row in both columns.** Only meaningful for a rubric
+that opens a `\pstart` in both — see the caveat about drift in `SKILL.md`.
+
+**No line number lies inside its column's text.** Cluster the page's text into two columns
+at the widest horizontal gap, take each column's span, and require every margin number's
+box to fall entirely outside it. Stronger than "no collision on the same line", which
+passes by luck whenever no numbered line happens to be full measure.
+
+**Numbers restart on every page in both columns.** With `firstlinenum` 5 and increment 5, each
+page's lowest number in each column should be 5. The right-hand series has its own
+switches; a left column that resets while the right runs on to 320 is the signature.
+
+**Every Hebrew run is set right to left.** Not only headings, and not only the main columns:
+a lemma in a footnote, a quoted phrase in the introduction, a label in a list. The check that
+scales to a whole book is the shared `opensiddur.importer.scan.pdf_direction` command — sort each
+line's glyphs by their own x, which is what a reader sees left to right, and score that
+against the source's Hebrew letter n-grams both ways round. Correctly set Hebrew scores
+higher reversed. It needs no pairing between note and page and no font table, so it covers
+every run in the document at once, including the ones no assertion was written for.
+
+Run it with `--control`, which re-runs over reversed runs: it should flag nearly everything.
+
+**A Latin heading is painted left to right.** Where the two columns head a section in
+different languages, the facing title is set inside the other column's direction, and a
+reversed heading is a real defect that reads perfectly in `pdftotext` output. Take the
+glyphs' own x coordinates, sort ascending, join, and require the expected string — not its
+reverse — to appear. A heading is not covered by any rubric check: measure it separately,
+or a whole section title can come out backwards with every rubric assertion still green.
+
+## How the measurement lies
+
+Every one of these produced a confident wrong answer before it was caught.
+
+**An RTL column is right-aligned.** A word's `xMin` says nothing about where its line
+begins; short lines start far to the right. Measure RTL lines from `xMax`, or from the
+line's own extent, never from a single word's left edge.
+
+**`pdftotext` merges a margin line number into the text line beside it.** A line that looks
+17pt too wide is usually a line with `30` appended. Strip a trailing bare integer before
+measuring a line's extent.
+
+**Inline verse numbers look exactly like line numbers.** Both are bare integers. Tell them
+apart by position — a margin number sits clear of the text by `\linenumsep`, an inline one
+is adjacent — not by pattern.
+
+**`pdftotext` reading order hides a reversed run.** It reorders RTL runs on output, so a
+Latin heading typeset right to left comes back in the correct order and looks fine. Only
+the glyph coordinates show it. The same caution applies to any assertion about order taken
+from `pdftotext` text output rather than from `-bbox`.
+
+**A regex over the emitted TeX is not a check on the PDF, and a one-line window is not a
+check on anything.** After fixing the backwards apparatus catchword I verified it with
+`re.finditer(r"\\Bfootnote\{.*?\n(.*?)\n", tex, re.S)` and a `\\texthebrew\{[^{}]*\}` strip,
+and reported that no Hebrew remained unwrapped in any of the book's 101 footnotes. The
+capture took **one line** after `\Bfootnote{`, so every multi-paragraph note went unexamined,
+and `[^{}]*` cannot strip a group containing braces. The all-clear was false and the user
+had to say so. Two rules out of it: match balanced braces, and confirm a rendering fix
+against the rendering.
+
+**The extractor's character order is not the page's order.** `mutool ... -F stext` normalises
+some lines to logical order and leaves others in visual order, in the same document — the
+main Hebrew column of one page came out each way. So "the characters came out left to right"
+flagged 1537 runs, nearly all of them correctly set. Only the glyphs' x coordinates, scored
+against text you already know, answer the question. (`pdftotext` has the matching failure,
+above.)
+
+**Matching \pstart counts do not mean the text is in the column.** reledmac's `\pstart`
+takes two optional bracket arguments, and TeX skips whitespace and newlines looking for one,
+so a paragraph whose first character is `[` is read as `\pstart`'s argument and executed
+instead of typeset. Birnbaum's `[We pray] for Israel` came out as a bare "We pray" in the
+gutter between the columns, brackets gone, the paragraph starting at "for". Every alignment
+assertion stayed green throughout, because swallowing an optional argument removes text from
+the paragraph without unbalancing anything either side counts. The same trap waits behind any
+macro with an optional argument -- `\\`, `\item` -- so if text can start a paragraph, it can
+start with a bracket.
+
+**A window after a macro name is not its argument.** Slicing a fixed number of characters
+after `\\OSheadTranslation{` reaches past the argument into the `\\addcontentsline` that
+follows, which carries a direction wrapper of its own — so an assertion about the
+argument's wrapper passes on the wrong text. Match balanced braces instead. This kept a
+test green against the very stylesheet bug it was written to catch.
+
+**Metadata, colophon and bibliography pages are not parallel text.** A column-splitting
+heuristic will happily bisect a full-width licence block and report nonsense. Restrict to
+pages that actually have two columns, or exclude the tail explicitly.
+
+**A whole-document before/after is not a controlled comparison.** Changing a macro removes
+or adds rows, which reflows pagination, so "page 7" is not the same content in both builds.
+To isolate one construct: cut its `\pstart` pair out of the emitted TeX, wrap it in the
+real preamble, and compile that alone. Content and pagination then hold still and the only
+variable is the change.
+
+**Reproduction can be content-sensitive.** Some defects appear only at particular line
+counts — one repro split at Hebrew ×6 against English ×30 and not at ×10. If a minimal
+repro fails to show a defect the real document shows, the repro is wrong, not the defect.
+Sweep the lengths, or cut the real document down instead of building one up.
+
+## Occasion gates
+
+- **A section that serves several occasions declares none of them.** Birnbaum's Sabbath
+  Shaḥarith is also the festivals', so declaring `shabbat=true` in it would drop the festival
+  text; gate it on either occasion and let its own conditions choose.

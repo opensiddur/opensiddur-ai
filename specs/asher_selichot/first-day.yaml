@@ -1,0 +1,38 @@
+description: Asher 1912 complete first and second days through n60, work in progress.
+  Incomplete book, excluded from releases.
+book:
+  project: asher_selichot_he_1912
+  file_name: index.xml
+  title: Asher Selichoth — first and second days
+priority:
+  transclusion:
+  - asher_selichot_he_1912
+  - asher_selichot_en_1912
+  instructions:
+  - asher_selichot_he_1912
+  - asher_selichot_en_1912
+parallel:
+  projects:
+  - asher_selichot_en_1912
+readings:
+  abbreviations: abbreviated
+annotations: []
+typography:
+  page_header:
+    all:
+      left: סליחות
+      right: '{page}'
+  instructions:
+    from: both
+  fonts:
+    hebrew:
+    - name: SBL Hebrew
+      normal_size: 12
+  table_of_contents:
+    enabled: true
+    depth: 2
+declarations:
+  asher:expansions:
+    refrains_present: false
+    prayers_present: false
+    repetitions_present: false

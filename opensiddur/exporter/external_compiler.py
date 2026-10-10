@@ -296,7 +296,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             start_marker.tail = None
             result.extend(opening)
 
-        for child in element:
+        for child in self._reading_children(element):
             is_external_transclude = (
                 child.tag == f"{{{JLPTEI_NAMESPACE}}}transclude"
                 and child.get('type', 'external') == 'external'
@@ -1226,7 +1226,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if element.tag == f"{{{TEI_NS}}}head" and context["command"] != _ProcessingCommand.RECURSE:
             copied.set(f"{{{PROCESSING_NAMESPACE}}}heading-level", str(max(1, self.linear_data.heading_depth)))
 
-        for child in element:
+        for child in self._reading_children(element):
             child_result = self._process_element(child, root)
             append_to.extend(child_result)
             if (

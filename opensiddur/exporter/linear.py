@@ -69,10 +69,17 @@ class ParallelColumnOrder(StrEnum):
     PRIMARY_LAST = "primary_last"
 
 
+class AbbreviationReading(StrEnum):
+    ABBREVIATED = "abbreviated"
+    EXPANDED = "expanded"
+
+
 class LinearData(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         validate_assignment=True)
+
+    abbreviation_reading: AbbreviationReading = AbbreviationReading.ABBREVIATED
 
     # Logical headed-division nesting, preserved while parallel assembly splits containers.
     heading_depth: int = 0

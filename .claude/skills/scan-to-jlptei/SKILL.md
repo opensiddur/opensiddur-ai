@@ -1,255 +1,99 @@
 ---
 name: scan-to-jlptei
-description: Convert a scanned book into JLPTEI by reading its pages — fetching and enlarging leaves, reading the print, measuring a transcription against it, authoring the TEI, and checking the rendered PDF. Use when converting a scan, especially a facing-page bilingual one (Hebrew opposite English), or when a parallel PDF looks wrong.
+description: Convert scanned books to JLPTEI by reading page images, checking independent text, authoring source-grounded XML, and verifying rendered PDFs. Load the relevant scan subsection for edition-specific conventions.
 ---
 
-# Reading a scan into JLPTEI
+# Reading scans into JLPTEI
 
-The page is the evidence. A transcription of the book, however good, is a proofreading
-check on the reading and never its source — `specs/BIRNBAUM_FROM_SCAN.md` opens with why,
-and `opensiddur/importer/birnbaum_scan/__init__.py` states it in three lines.
+The page image is the source. OCR and existing transcriptions are proofreading
+checks, never substitutes for reading the print. Preserve edition-specific text,
+pointing, rubrics, poetry, and apparatus; do not silently import a familiar wording.
 
-Everything below is what those documents do not already say. Where this file and a
-document disagree, **the document wins and this file is wrong** — fix it.
+## Dynamically loaded scan subsections
 
-## Order of work
+Identify the edition and Archive item before applying any scan-specific rules.
+Load **only** its subsection. Load both only for an explicit comparison.
 
-| | | |
+| Scan / names | Archive identifier | Subsection |
 |---|---|---|
-| 1 | Fetch and cut the leaf | `python -m opensiddur.importer.birnbaum_scan.pages 81 82 83` |
-| 2 | Read the page into prose | by hand, into `readings/{printed}.md` |
-| 3 | Build the transcription slice | `python -m opensiddur.importer.birnbaum_scan.transcription 25` — from the page file, never by hand |
-| 4 | Diff the slice against the reading | `compare` |
-| 5 | Adjudicate each difference | go back to the image; record in `verdicts/{printed}.json` |
-| 6 | Author the TEI | hand-written, one function per prayer |
-| 7 | Compile and render | `exporter.compiler`, then `exporter.pdf.pdf` |
-| 8 | **Measure** the PDF | `reference/measuring-the-pdf.md` |
+| Birnbaum, ha-Siddur ha-Shalem, Daily Prayer Book, 1949 | `PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949` | [Birnbaum 1949](reference/scans/birnbaum-1949.md) |
+| Asher, Selichoth / Selichot / Slichot, 1912 reprint | `selichothdavidasher1912` | [Asher 1912](reference/scans/asher-1912.md) |
 
-Steps 1, 3 and 4 explain themselves: the module docstrings of `opensiddur/importer/birnbaum_scan/pages.py`, `transcription.py` and `compare.py`
-carry the reasoning — why a page is fetched once, why bands overlap and are enlarged, why
-differences are counted in three buckets and not merely resolved. Read them rather than a
-summary of them.
+For another scan, start with this shared workflow. Establish its conventions from
+images, record them in a new `reference/scans/<edition>.md`, and add one routing row.
+Do not load other editions as a source of defaults for its glyphs or pagination.
 
-A printed page number is not a leaf number is not a scan page. `pages.json` is the only
-place that correspondence lives; never re-derive it.
+## Shared workflow
 
-## What two languages change
+1. Read repository authoring instructions and the selected scan subsection.
+2. Fetch metadata and derive a leaf map. Separate scan identity, printed labels,
+   language, and verified translation pairing. Unknown labels stay unknown; no
+   parity-based language or pairing guesses. Record image corrections separately.
+3. Cache full-resolution images outside git. Read whole pages for structure, then
+   overlapping bands and targeted crops for ambiguous pointing and punctuation.
+4. Write a scan-first reading before opening OCR or another transcription. Keep
+   poem structure distinct from prose wrapping. Commit readings and provenance.
+5. Compare an independently derived check of the same content. Use English OCR
+   only for English; when no Hebrew transcription exists, make an independent
+   image reading. Record comparison source, scope, corrections, and unresolved
+   findings. A diff cannot detect an error shared by both readings.
+6. Return to the image to adjudicate differences. Do not transfer an edition’s
+   mechanical settlement rules to another edition. A second reader can triage
+   difficult marks; verify its claims against crops and retain uncertainty.
+7. Author JLPTEI with source-page links and registered URNs. Preserve the printed
+   forms of abbreviations in `tei:choice/tei:abbr`; put verified editorial
+   expansions in `tei:expan`. Document expansion and transclusion decisions.
+   When an expanded view supplies the requested text, omit the instructions that
+   requested that expansion. Retain instructions whose requested text is absent.
+8. Validate and resolve references. Reverse-check the **printed** XML branch
+   against the readings in source-page order. Audit editorial additions separately.
+9. Compile each intended view and measure its actual PDF. Read
+   [PDF measurement methods](reference/measuring-the-pdf.md) at this stage.
+   Verify alignment, text presence, apparatus, and direction using glyph positions.
+   Confirm checks reject deliberately broken controls.
 
-**The alignment unit is the `p:parallel` block, and you choose it.** Two sides join on
-*exact URN equality* — `schema/JLPTEI-3.md`, `### Alignment`. So granularity is an
-authoring decision, not a rendering one: two passages line up because you gave them their
-own matching `@corresp`, and inside a block the columns drift and only resync at the next
-block boundary. If a passage must start level with its translation, give it a URN of its
-own. A `@corresp` repeated within one document breaks the join **silently**.
+## Authoring and operation
 
-The compiler's own invariants are in `specs/COMPILER_SPECIFICATION.md`, `## Parallel
-Compilation`.
-
-**A rubric can sit on different rows in the two columns, and be correct.** A rubric whose
-direction differs from the text around it cannot share a line with it, so it takes a line
-of its own; in the facing column, where it does not cross, the same rubric runs in. The
-result is one rubric on two different rows. That is the layout working, not failing.
-
-Set `typography.instructions.from: both` when rubrics fall mid-passage rather than at
-alignment boundaries — anything else needs them *at* boundaries, or a column ends up with
-a rubric nowhere near the words it governs. `doc/typography.md`, ``## `instructions` ``.
-
-**Column geometry means nothing by itself.** Which column is left tells you nothing about
-which is read first; the two sides of an opening invert. The linearised order must
-preserve *reading* order — `specs/BIRNBAUM_FROM_SCAN.md`, `## What the print does, that
-the encoding has to carry`, which sets out the rest of these (asterisk means substitution,
-simultaneous columns, bare day-names, a page turn mid-sentence).
-
-**When order or geometry is in doubt, crop the block and look at it.** Inferring column
-order from surrounding text is how a page gets read backwards. Cropping costs a minute.
-
-## Verifying the rendered PDF
-
-**Measure it; do not look at it.** A parallel-layout defect is a geometric fact — a row
-nobody used, a rubric split across a blank line, a number inside its own column — and the
-eye is unreliable about all three, in both directions. Recipes and the specific
-measurements that have caught real defects are in `reference/measuring-the-pdf.md`.
-
-One rule generalises past this project: **an assertion that cannot fail proves nothing.**
-When a measurement passes, feed the pre-fix state back into it and confirm it goes red. A
-check that silently measures nothing is worse than no check, because it is believed.
-
-## Traps
-
-**Encoding**
-- **A division must earn its level.** Emit one only when it carries a `@corresp`, or when
-  it groups several children that belong together (a heading with the passages under it).
-  A division that names nothing and groups nothing — one URN-bearing `tei:div` holding a
-  single bare `tei:div` holding the words — is a level for every reader and every
-  stylesheet to see through, and the validator will not object to it. Words go directly
-  inside the division that names them:
-
-  ```xml
-  <tei:div corresp="urn:x-opensiddur:text:prayer:modeh_ani">
-    <tei:p>…</tei:p>          <!-- right: the naming division holds the words -->
-  </tei:div>
-  ```
-
-  The rule it is easy to over-apply is that *a division holds content or subdivisions but
-  never both*. That is real, and it bites when words would sit alongside a
-  `j:conditional`; the fix there is to give those words a division **with a URN**, not an
-  anonymous one. If you find yourself writing an unnamed wrapper, ask what it names or
-  what it groups — and if the answer is neither, delete it.
-- One instruction URN per distinct rubric *text*. Sharing a URN between rubrics that say
-  different things makes the compiler print one where the other belongs.
-- A page turn falls mid-sentence; `tei:pb` is valid inside `tei:p`.
-- Slugs are unique per foundation page, not globally.
-- Chapter and verse are separated by a colon.
-
-**Reading**
-- **Bands are reliable for consonants and not for points.** In the first 479 words the
-  consonantal skeleton was never once wrong, and seven readings of the *pointing* had to
-  be corrected before committing. At 3x a semicolon and a comma are one mark, a patach and
-  a qamats differ by a tail a pixel or two long, and a dagesh in a wide letter is a dot the
-  neighbouring letter can lend it.
-- **So the transcription is the instrument that finds pointing errors, not a formality
-  run afterwards.** Six of those seven were caught by the diff rather than by looking
-  harder. Where it disagrees about a point, the presumption is a 12x crop — not that the
-  reading stands. Where it flags a variant in a `{{נוסח}}` template it has been right
-  every time.
-- **Do not reach for "the scan cannot settle it" when what is missing is the word.** An
-  `unresolved` verdict is a claim about the image, and it is the wrong one whenever the
-  reading follows from knowing the text: a sin dot that will not resolve in the crop is
-  still settled if the word is עָשָׂה. From inside the crop the two failure modes look
-  identical, so ask what the word is before blaming the scan.
-- **One dot can be two marks: a combined shin dot and holam is encoded as both.** Birnbaum
-  prints a single dot where a holam meets a shin, and the holam is still logically there,
-  so both characters go in -- `מֹשֶׁה`, not `משֶׁה`. This is the one deliberate departure
-  from recording what the page shows, and the test that licenses it is whether dropping the
-  mark changes what the word *is*: a qamats read as qamats qatan leaves the word intact, a
-  dropped holam does not. `specs/BIRNBAUM_FROM_SCAN.md` has the full decision.
-- **A meteg is decided on the image, one at a time, never in bulk.** On a single page the
-  disputed metegs have fallen in both directions at once -- some the reading invented, some
-  it missed -- so any rule of thumb gets half of them wrong. There is no shortcut here and
-  the queue should keep surfacing them individually.
-- **A comma read off a band at 3x is not evidence.** This print uses commas *and*
-  semicolons, sometimes in one line, and at band magnification the semicolon's upper dot
-  merges into the comma's body. Two of the first three misreadings on printed page 3 were
-  exactly this. Where punctuation carries a sense break, crop it and look at 12x.
-- **The same goes for a dagesh in a wide letter.** A mem or a bet with nothing in it reads
-  at 3x much like one with a point, and a neighbouring letter's dagesh is easily annexed
-  to it. Page 3's third catch was a dagesh in מאד that is not there; what looked like it
-  belonged to the tav of the word before.
-- **In verse, the lineation *is* the text.** The rule below is for prose. A poem's lines
-  are its structure — Birnbaum's own footnote says Adon Olam "is composed of ten lines" —
-  so keep them, and settle the whitespace differences they produce as `print` rather than
-  carrying them to a person. Where such a poem is set in two columns, the columns are the
-  two halves of one line: splitting on the column would give twenty lines and contradict
-  the book's statement about itself.
-- **Lift the Hebrew as paragraphs, not as printed lines.** `compare` counts a line break
-  against a space as a whitespace difference, so a `hebrew/{printed}.txt` that preserves
-  the print's line wrapping reports a difference per line and buries the real ones. The
-  print's lineation belongs in `readings/`, which is prose about the page, not in the
-  slice being diffed.
-- **Correct the reading before committing it, and say so in `accuracy.md`.** A difference
-  the image settles *for the transcription* vanishes from the tally once the reading is
-  fixed, so the tally alone will always report zero misreadings. The prose is the only
-  place the method's real error rate survives.
-
-**A second reader**
-- **The diff can only surface a disagreement, never a shared error.** Where the reading
-  and the transcription are wrong in the same way, nothing in the comparison fires and the
-  page looks settled. Both of the worst errors found on this book so far were of that kind,
-  and neither could have come out of `compare`.
-- **A blind second reader is the only thing that finds them.** Put a fresh agent on the
-  page image with the two candidates and tell it plainly that both may be wrong. Asked that
-  way it has returned "neither", correctly, on a word where the reading and the
-  transcription agreed with each other and the print disagreed with both.
-- **Its prose is not evidence, even when its answer is right.** Of fourteen justifications
-  checked, one invented a corroborating detail outright — a "reddish ink cast" on the ink,
-  where measurement puts ink and blank paper at the same R−B — and one described the right
-  feature in the wrong place. Verify every claim that would change a file: crop the
-  coordinates it gives, or measure the pixels it cites.
-- **A high score on an easy page proves nothing.** A page whose answers follow from knowing
-  Biblical Hebrew — metegs in stress positions, `אֶל־מֹשֶׁה` taking a maqqef — can be
-  answered perfectly without reading the image at all. Test a second reader on a question
-  where both candidates are wrong; that is the only kind that separates reading from
-  priors.
-- **Never let it decide.** Use it to triage and to escalate: it says "neither", it claims
-  an absence, or it disagrees with the reading. Those three go to a person.
-
-**The transcription**
-- **Apply the one mechanical rule mechanically.** Qamats qatan is the only class this
-  comparison settles without going back to the image, so it is the one that gets applied by
-  hand page after page — and applying it by hand is how a difference that merely *looks*
-  like it gets a `print` it never earned. `compare --settle-qamats-qatan` records the rule's
-  verdicts and refuses everything else. Put on twenty pages already adjudicated it found two
-  where the edition had dropped a **dagesh** as well as reading the vowel as qatan
-  (`כָּל` against `כׇל`): two things differing, the rule covering neither, and both filed
-  under it. The verdicts were right and the reasons were invented.
-- **A word is not a class.** `כל` came out of that with a dagesh on two pages and without one
-  on a third, in the same print. Anything that looks like it could be settled in bulk is
-  worth one page's worth of checking before it is.
-- **Check the authored text against the reading, page by page.** `compare` asks how far the
-  transcription stands from the reading; nothing asks whether the TEI carries what the
-  reading records. `reverse` does, and it is a diff rather than a tally, so one wrong vowel
-  fails it. Put on nine pages that had validated, resolved and compiled, it found a
-  correction that had reached `hebrew/7.txt` and `corrections.jsonl` and never reached the
-  generator: `לְהָנִיחַ` still standing where the editor had settled `לְהַנִֽיחַ`. Nothing
-  else could see it — once the reading is fixed the transcription agrees with it, and the
-  schema, the registry and the reference database have no opinion about a vowel.
-- **Order it by printed page, not by file.** A first attempt concatenated the authored files
-  in filename order and reported 380 words missing that were present in a different place.
-  Ordering by page is what makes the answer mean anything, and it puts a failure on the page
-  whose image settles it.
-- **A transclusion has to be declared, and each declaration is a debt.** A unit that
-  transcludes a text another unit realises emits nothing for it, so the words are on the
-  page in print and absent from the files. Naming them keeps the check honest; a stale
-  declaration would silently excuse a real omission, so the tool fails when a declared
-  phrase is not in the reading either.
-- **The comparison is blind to what both sides are missing.** Printed page 21's last line
-  — nine words — was absent from the reading *and* from the hand-made slice, so nothing
-  fired: 166 files validated, the suite passed, `refdb` was clean. It surfaced only when
-  the slice was rebuilt from the page file and came back nine words longer than the
-  reading. Anything that re-derives one side independently is worth more than another
-  check run over both.
-- **A wall of consonantal differences is a boundary problem, not a finding.** A real
-  disagreement about consonants is rare — none survived in the first two thousand words
-  once the slices were right — so a page reporting them by the dozen has a section missing
-  or duplicated on one side. The signature is a word-count gap plus that wall. Find the
-  section before anyone looks at a crop; a passage may have no section of its own and live
-  inside a variant one, named `א` or `ב` rather than for its words.
-- **Build the slice from the page, not by hand.** The printed page's own wikitext already
-  records which foundation spans it sets and in what order; deciding that again by eye is
-  how a span goes missing. `transcription.page_slice` renders the page and the CLI writes
-  the file. Three things a hand-assembled slice got wrong, all found by mechanising it:
-  a span that *wraps* other spans is truncated at the first inner `<קטע סוף=` unless the
-  end tag is matched **by name**; the text *between* two transclusions is part of the
-  reading, so concatenating spans manufactures paragraph breaks and eats sentence-final
-  punctuation that `compare` then reports as real differences; and a `{{מרכז|...}}`
-  wrapper holds braces of its own, so a rule that removes only brace-free templates either
-  leaves its braces behind or, run after substitution, deletes the words inside it.
-- **Both sides of the comparison must hold the same kind of thing.** Span names say which
-  kind: `הוראה` is the edition's Hebrew rendering of an *English* rubric, so there is
-  nothing on his page to compare it against; `כותרת` is a heading and `מקור` a scripture
-  citation, and he prints both in the Hebrew column but they are read into `readings/`
-  rather than `hebrew/`. Leave out all three, on both sides. Include any of them on one
-  side only and the tally is noise.
-- **A missing span must refuse to write the file.** Page files and foundation pages get
-  snapshotted at different revisions, so a rename or a typo fixed on one side reads as a
-  span that is not there. Record the known ones by name; never fall back to a guess, and
-  never write a slice with a hole in it — a hole reads downstream as a wall of consonantal
-  differences, which is the one signature below that sends people looking at crops.
-- **Resolve `{{נוסח}}`; never strip it.** The Wikisource foundation text marks the places
-  its editors knew the print differs from what they set, and names Birnbaum's own reading
-  in the template. Stripping it as markup throws away precisely what the comparison is
-  for, *and* manufactures differences: a stripped template reads as a word the
-  transcription dropped. Use
-  `opensiddur.importer.birnbaum_scan.transcription.resolve`.
-- **One of the four conventions inverts.** `{{נוסח|X|=בירנבוים|אחרים=Y}}` and
-  `{{נוסח|X|=בירנבוים ועבו"י|אחרים=Y}}` make **X** the reading and `אחרים=` the variant.
-  A rule that simply prefers a `בירנבוים=` parameter takes the wrong side of every one of
-  them.
-- **A `בירנבוים=` value is not always a word.** At least one is a sentence about how he
-  sets two Torah portions. Substituting it drops a line of Hebrew prose into the middle of
-  a prayer, where the diff then reports it as the print's own words.
-
-**Conditions**
+- `schema/jlptei.odd.xml` and validation are authoritative; consult
+  `schema/JLPTEI-3.md` for alignment, milestone scope, contributors, and transclusion.
+- Give divisions a semantic identity or a real grouping purpose. Use distinct
+  instruction URNs for distinct rubric texts. Page breaks may occur inside prose.
+- Build the final book from reusable text modules from the outset. Put each
+  independent piyyut or prayer in its own file, named for its established common
+  name or distinctive incipit. Use source-independent canonical URNs (for example,
+  `urn:x-opensiddur:text:prayer:ashrei`); the edition belongs in the publication
+  URN's `@project` suffix and source metadata. Do not put a scan name, experimental
+  phase such as “pilot”, or a service position into a reusable text's identity.
+  Reuse existing registry identities for common prayers and their parts; do not
+  identify a single petition as an entire longer prayer. Keep service-order files
+  as assemblies of URN transclusions and printed rubrics. `index.xml` is the book
+  entrypoint; incomplete coverage belongs in edition metadata and documentation,
+  rather than in text identities. Verify references, source order, alignment and
+  both rendered views after splitting modules.
+- Keep grouping files only for real, useful book or service divisions supported
+  by the source. Do not create files for temporary reading batches or editorial
+  positions such as “before the piyyut”, especially when they contain piyyutim.
+  A service should directly transclude its independent texts and retain its
+  printed rubrics. Put the conditional replacement for a printed cue alongside
+  that cue, so expanded settings can use the same service assembly. Remove
+  redundant view-specific assemblies and their obsolete URNs; update the importer
+  so regeneration does not recreate deleted scaffolding.
+- Alignment needs exact shared URNs, at the granularity the translation supports.
+  Reusing a correspondence within one document can silently break alignment.
+- Readings, verse structure, headings, rubrics, and notes are different evidence
+  streams: compare like with like and check all streams for omissions.
+- Encode poetry and verse litanies with `tei:lg`/`tei:l`, including when the scan
+  packs multiple poetic lines into a prose-shaped block. Mark repeated inline
+  responses with `tei:seg type="refrain"`. Establish semantic line boundaries
+  from the scan's wording, parallelism, acrostics and punctuation; physical
+  wrapping and page breaks alone do not establish verse boundaries. Keep a
+  verse crossing a page in the same `tei:l` with an internal `tei:pb`. Preserve
+  a prose translation as prose. Audit line and refrain structure separately
+  from word equality, and inspect the rendered lineation.
+- The book’s author/translator belongs in source metadata. Register contributor
+  URNs for the people responsible for this transcription, not check-source editors.
+- Refresh the reference database for the project directory being built. Run builds
+  and tests serially because both use it. Keep images, TeX, XML, and PDFs in output/.
 - **Gate every occasion's section in the running order.** A section said only on some days
   (the weekday or Sabbath services, Hallel, a festival's service, Ḥanukkah) is conditioned
   where the index transcludes it: the outermost point, so that one condition governs the
@@ -277,85 +121,5 @@ check that silently measures nothing is worse than no check, because it is belie
   whose passage the book itself sets off (brackets, parentheses, a line): the markers then
   stand for those marks, and the edition reproduces them. Give it an instruction note only
   where the book prints a rubric. A conditional with neither prints with no delimiters.
-- **A section that serves several occasions declares none of them.** Birnbaum's Sabbath
-  Shaḥarith is also the festivals', so declaring `shabbat=true` in it would drop the festival
-  text; gate it on either occasion and let its own conditions choose.
-- **Compile for a day on which the condition is TRUE, not only for one where it is false.**
-  A settings file that leaves a conditional resolving false proves nothing about it. Both of
-  this book's day-dependent passages were only ever compiled on weekdays, so neither had
-  ever fired — one because the unit was filed under the wrong occasion, the other because
-  the calendar was wrong. Each took a settings file written to make it true.
-- **Choose that day knowing what it exercises.** Rosh Ḥodesh comes in two shapes, one day or
-  two, computed differently; the first of an odd-numbered Hebrew month passed against a
-  calendar that was wrong about every even one. A date picked for convenience tests whatever
-  it happens to test.
-
-**The apparatus**
-- **A note that never renders still validates.** An apparatus can be schema-valid, indexed
-  by `refdb`, resolve every target and pass the registry while a two-column compile emits
-  none of it. Nothing short of compiling the way it will be read, and looking for the notes,
-  catches that — and a unit with a single note can look as though it works. Count them.
-- **A Hebrew run inside a note is set in the note's direction, not its own.** `note-content`
-  forces `\textdir TLT` on an English note, and anything Hebrew left unwrapped inside one is
-  laid out left to right and renders reversed. `tei:foreign` had the wrapper; the apparatus
-  **catchword** did not, because it is a quotation of the text and so a `tei:label` — and
-  every one of forty-seven lemma-keyed notes printed its catchword backwards.
-- **`pdftotext` shows a reversed Hebrew run the right way round.** It reorders RTL on output,
-  so the extracted text of a broken page reads correctly and every text-level assertion
-  passes. Render the page and look at it, or take the glyphs' own x coordinates.
-- **Three words of English are not a fingerprint.** Measuring whether a note is set twice by
-  matching its first three long words reported two false duplicates; six words showed each
-  note on exactly one page. A measurement that cannot tell a duplicate from a coincidence
-  has not measured anything.
-- **A note keys to the nearest canonical URN.** An `#id` target resolves only inside the
-  one file that declares it — `refdb.get_references_to` scopes id lookups by project *and*
-  file name — so an apparatus in its own file can reach the text only by URN. That is also
-  what lets one edition's notes be swapped or combined with another's.
-- **Where the lemma falls mid-paragraph, give the phrase a `tei:seg` with its own URN.**
-  Never reach for a `tei:anchor` to place a note more precisely; the seg is what the
-  alignment of the two columns wants anyway.
-- **Set `annotations:` in the settings, or no standoff note exists.** It defaults to
-  empty, and an unset apparatus is not an error — the compile simply comes out with no
-  notes and says nothing about it.
-- **A note attached to a parallel text is found while compiling both columns.** Both sides
-  realise the same URNs, which is what makes them parallel, so the apparatus prints twice
-  per opening unless each column drops the projects that are themselves columns. Narrowing
-  only the facing column does not fix it: the primary column still holds the configured
-  list, and naming the apparatus project is that list's whole purpose.
-
-**Attribution**
-- The reading is ours. A transcription used as a check is not a source, and the people who
-  made it are not this text's transcribers.
-- The author of the book gets no `respStmt` — he is a source. `schema/JLPTEI-3.md`,
-  `#### Contributors and contributor URNs`.
-- Every `opensiddur.org` contributor URN must be registered in
-  `specs/urn_registry/contributor.jsonl`; this is validated, and an unregistered one is a
-  typo that credits a different person.
-
-**Tooling**
-- Never run the test suite while a build is running: both use the reference database at `database/reference.db`, and
-  the collision shows up as an unrelated test failing.
-- Refresh `refdb` for the project directory you are building, or sources and licences
-  quietly come out thinner than they should — the compiled XML is identical either way, so
-  nothing warns you.
-- `--` inside an XML comment is illegal, and in `opensiddur/exporter/tex/reledmac.xslt` it fails *every*
-  transform-based test at once, which reads as catastrophe rather than typo. Use an em
-  dash.
-- A comment that loses its opening `<!--` is still well-formed XML: the prose becomes a
-  text node and lands in the LaTeX preamble. `TestPreambleIsAllTeX` guards this.
-
-## Where things are written down
-
-| Document | Covers |
-|---|---|
-| `specs/BIRNBAUM_FROM_SCAN.md` | The procedure end to end, and what this print does that the encoding must carry |
-| `schema/JLPTEI-3.md` | The schema: alignment, contributors, conditionals, transclusion, URN scope |
-| `specs/COMPILER_SPECIFICATION.md` | Transclusion, conditionals, parallel-compilation invariants |
-| `doc/typography.md` | Every typography setting, including `parallel` and `instructions` |
-| `doc/exporter-settings.example.yaml` | A complete annotated settings file |
-| `AGENTS.md` | Repository layout, JLPTEI authoring rules, testing conventions |
-| `specs/birnbaum_scan/accuracy.md` | How far one transcription stood from this print, measured |
-| `sourcetexts`, `sources/birnbaum_siddur/scan_reading/` | The reading itself, page by page |
-
-`schema/jlptei.odd.xml` is authoritative where the prose disagrees with it. Run the
-validator.
+- Exercise conditional passages with settings making them both true and false.
+  Schema validity alone cannot establish correct rendered content.

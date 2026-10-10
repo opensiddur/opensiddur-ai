@@ -627,6 +627,16 @@ To indicate a _kri/ktiv_ (read/written) section, use:
 When there is a _kri_ without a corresponding _ktiv_, use `tei:choice` with an empty `j:written`.
 When there is a _ktiv_ without a corresponding _kri_, use `tei:choice` with an empty `j:read`.
 
+To preserve a printed abbreviation alongside its editorial expansion, use
+`tei:choice` with `tei:abbr` and `tei:expan`. The exporter setting
+`readings.abbreviations` selects `abbreviated` (default) or `expanded` before
+inline transclusion flattens the text. This does not select between kri/ktiv or
+`j:option` readings. Record the evidence for expansions in the source README.
+
+```xml
+<tei:choice><tei:abbr>Hearken, &amp;c.</tei:abbr><tei:expan>Hearken to our prayer.</tei:expan></tei:choice>
+```
+
 To indicate alternate wordings of the same text, exactly one of which is read, use `j:option`
 inside a `tei:choice`. Use `xml:lang` where the alternates differ in language, and `corresp` to
 carry a URN by which a setting may select one:

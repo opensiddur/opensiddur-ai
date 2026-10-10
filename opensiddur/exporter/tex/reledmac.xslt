@@ -3375,6 +3375,16 @@
         </xsl:if>
     </xsl:template>
 
+    <!-- English citations embedded in a Hebrew paragraph need a scoped LTR
+         direction even when they contain no digits (e.g. Ps. cxlv.). Start the
+         surrounding paragraph before switching direction so a citation-only
+         span does not change the paragraph direction. -->
+    <xsl:template match="tei:foreign[@xml:lang='en']" mode="emit" priority="10">
+        <xsl:text>\leavevmode{\textdir TLT\foreignlanguage{english}{\textit{</xsl:text>
+        <xsl:apply-templates mode="emit"/>
+        <xsl:text>}}}</xsl:text>
+    </xsl:template>
+
     <xsl:template match="tei:foreign" mode="emit">
         <xsl:text>\textit{</xsl:text>
         <xsl:apply-templates mode="emit"/>
@@ -3605,6 +3615,11 @@
 
     <xsl:template match="tei:choice" mode="emit">
         <xsl:choose>
+            <xsl:when test="tei:abbr or tei:expan">
+                <!-- Compiled choices contain one selected form. Uncompiled input defaults
+                     to the printed abbreviation, rather than concatenating both. -->
+                <xsl:apply-templates select="(tei:abbr, tei:expan)[1]/node()" mode="emit"/>
+            </xsl:when>
             <xsl:when test="j:option">
                 <!-- Alternate wordings: exactly one is read, but nothing here has chosen
                      between them, so all are shown, the first plain and the rest bracketed

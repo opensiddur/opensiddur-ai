@@ -1035,3 +1035,46 @@
 {"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/3", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/3"}
 {"urn": "urn:x-opensiddur:text:prayer:tefillah_lishlom_medinat_yisrael/4", "status": "canonical", "label_en": "tefillah lishlom medinat yisrael/4"}
 {"urn": "urn:x-opensiddur:text:prayer:zokher_haberit", "status": "canonical", "label_en": "zokher haberit"}
+{"urn": "urn:x-opensiddur:text:prayer:el_melekh_yoshev", "status": "canonical", "label_en": "el melekh yoshev"}
+{"urn": "urn:x-opensiddur:text:prayer:vayaavor", "status": "canonical", "label_en": "vayaavor"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/shalem", "status": "canonical", "parent": "urn:x-opensiddur:text:prayer:kaddish", "label_he": "קדיש שלם", "label_en": "Full Kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:lekha_adonai_hatsedaqah", "status": "canonical", "label_en": "lekha adonai hatsedaqah"}
+{"urn": "urn:x-opensiddur:text:prayer:shomea_tefillah", "status": "canonical", "label_en": "shomea tefillah"}
+{"urn": "urn:x-opensiddur:text:prayer:selah_lanu_avinu", "status": "canonical", "label_en": "selah lanu avinu"}
+{"urn": "urn:x-opensiddur:text:prayer:ki_al_rahamekha", "status": "canonical", "label_en": "ki al rahamekha"}
+{"urn": "urn:x-opensiddur:text:prayer:vayaavor/selichot_preliminary", "status": "canonical", "label_en": "vayaavor/selichot preliminary", "parent": "urn:x-opensiddur:text:prayer:vayaavor"}
+{"urn": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli", "status": "canonical", "label_en": "adonai boqer tishma qoli"}
+{"urn": "urn:x-opensiddur:text:prayer:selah_na", "status": "canonical", "label_en": "selah na"}
+{"urn": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha", "status": "canonical", "label_en": "hateh elohai oznekha"}
+{"urn": "urn:x-opensiddur:text:prayer:miqveh_yisrael", "status": "canonical", "label_en": "miqveh yisrael"}
+{"urn": "urn:x-opensiddur:text:prayer:tavo_lefanekha_tefillatenu", "status": "canonical", "label_en": "tavo lefanekha tefillatenu"}
+{"urn": "urn:x-opensiddur:text:prayer:zekhor_rahamekha", "status": "canonical", "label_en": "zekhor rahamekha"}
+{"urn": "urn:x-opensiddur:text:prayer:zekhor_lanu_berit_rishonim", "status": "canonical", "label_en": "zekhor lanu berit rishonim"}
+{"urn": "urn:x-opensiddur:text:prayer:shema_qolenu", "status": "canonical", "label_en": "shema qolenu"}
+{"urn": "urn:x-opensiddur:text:prayer:amarenu_haazinah", "status": "canonical", "label_en": "amarenu haazinah"}
+{"urn": "urn:x-opensiddur:text:prayer:viduy", "status": "canonical", "label_en": "viduy"}
+{"urn": "urn:x-opensiddur:text:prayer:viduy/introduction", "status": "canonical", "label_en": "viduy/introduction", "parent": "urn:x-opensiddur:text:prayer:viduy"}
+{"urn": "urn:x-opensiddur:text:prayer:ashamnu", "status": "canonical", "label_en": "ashamnu"}
+{"urn": "urn:x-opensiddur:text:prayer:meshiah_tsidqekha", "status": "canonical", "label_en": "meshiah tsidqekha"}
+{"urn": "urn:x-opensiddur:text:prayer:anenu", "status": "canonical", "label_en": "anenu"}
+{"urn": "urn:x-opensiddur:text:prayer:mi_sheanah", "status": "canonical", "label_en": "mi sheanah"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana", "status": "canonical", "label_en": "rahmana"}
+{"urn": "urn:x-opensiddur:text:prayer:vayomer_david", "status": "canonical", "label_en": "vayomer david"}
+{"urn": "urn:x-opensiddur:text:prayer:rahum_vehanun", "status": "canonical", "label_en": "rahum vehanun"}
+{"urn": "urn:x-opensiddur:text:prayer:mahi_umasi", "status": "canonical", "label_en": "mahi umasi"}
+{"urn": "urn:x-opensiddur:text:prayer:mitratseh_berahamim", "status": "canonical", "label_en": "mitratseh berahamim"}
+{"urn": "urn:x-opensiddur:text:prayer:vaanahnu_lo_neda", "status": "canonical", "label_en": "vaanahnu lo neda"}
+{"urn": "urn:x-opensiddur:text:prayer:kaddish/selichot_preface", "status": "canonical", "label_en": "kaddish/selichot preface", "parent": "urn:x-opensiddur:text:prayer:kaddish"}
+{"urn": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli/repeat", "status": "canonical", "label_en": "adonai boqer tishma qoli/repeat", "parent": "urn:x-opensiddur:text:prayer:adonai_boqer_tishma_qoli"}
+{"urn": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha/repeat", "status": "canonical", "label_en": "hateh elohai oznekha/repeat", "parent": "urn:x-opensiddur:text:prayer:hateh_elohai_oznekha"}
+{"urn": "urn:x-opensiddur:text:prayer:ein_qore_beshimkha", "status": "canonical", "label_en": "ein qore beshimkha"}
+{"urn": "urn:x-opensiddur:text:prayer:selichot/rahamekha_rabbim", "status": "canonical", "label_en": "selichot/rahamekha rabbim"}
+{"urn": "urn:x-opensiddur:text:prayer:yehi_ratson_shetehe_hashanah", "status": "canonical", "label_en": "yehi ratson shetehe hashanah"}
+{"urn": "urn:x-opensiddur:text:prayer:keraham_av", "status": "canonical", "label_en": "Like a father has compassion: scriptural petitions"}
+{"urn": "urn:x-opensiddur:text:prayer:selichot/ki_lo_al_tsidqotenu", "status": "canonical", "label_en": "For we do not presume: Daniel petitions"}
+{"urn": "urn:x-opensiddur:text:prayer:beit_qodshenu_vetifartenu", "status": "canonical", "label_en": "beit qodshenu vetifartenu"}
+{"urn": "urn:x-opensiddur:text:prayer:dirshu_adonai_behimamtseo", "status": "canonical", "label_en": "dirshu adonai behimamtseo"}
+{"urn": "urn:x-opensiddur:text:prayer:elohim_lanu_mahaseh_vaoz", "status": "canonical", "label_en": "elohim lanu mahaseh vaoz"}
+{"urn": "urn:x-opensiddur:text:prayer:hetivah_virtsonkha_et_tsiyon", "status": "canonical", "label_en": "hetivah virtsonkha et tsiyon"}
+{"urn": "urn:x-opensiddur:text:prayer:shuvah_yisrael_ad_adonai", "status": "canonical", "label_en": "shuvah yisrael ad adonai"}
+{"urn": "urn:x-opensiddur:text:prayer:tashuv_terahamenu_vetikhbosh", "status": "canonical", "label_en": "tashuv terahamenu vetikhbosh"}
