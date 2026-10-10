@@ -117,7 +117,7 @@ class FirstDayTest(unittest.TestCase):
             source = Path(temp)
             (source/'title-pages.json').write_text(json.dumps({'he':title,'en':title}))
             readings = {lang:dict(opening, kaddish=['First part.',
-                'Blessed. '+('יִתְבָּרַךְ' if lang=='he' else 'and may his hallowed')+' name.'])
+                'Blessed. '+('יִתְבָּרַךְ' if lang=='he' else 'and may his hallowed')+(' לְעֵלָּא מִן כָּל׃' if lang=='he' else ' name.')])
                 for lang in ('he','en')}
             (source/'first-day-opening.json').write_text(json.dumps(readings))
             (source/'first-day-continuation.json').write_text(json.dumps({'sections':{'preface':groups}}))

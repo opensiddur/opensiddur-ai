@@ -64,6 +64,8 @@ def check(tree, expanded=False):
     body=' '.join(r[2] for r in en)
     body=re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)','',body)
     if expanded:
+        if ''.join(r[2] for r in he).count('לעלאלעלאמןכלברכתא')!=2:
+            raise ValueError('Ten Days Half and Full Kaddishes must both double leela')
         opening=body.split('At the time ere yet',1)[0]
         if opening.count('Pardon us, our Father!')!=1:raise ValueError('Gedaliah opening must include the following Selah lanu once')
         for cue in ['Conclude the Service from', 'Say ', 'Wherever the words', 'During the Ten Days of Repentance']:
@@ -99,6 +101,16 @@ def controls(tree,expanded):
     except ValueError:pass
     else:raise AssertionError('Missing Gedaliah marginal note escaped detection')
 
+    if expanded:
+        broken=copy.deepcopy(tree)
+        line=etree.SubElement(broken.find('page'),'line',text='לעלא לעלא מן כל ברכתא')
+        font=etree.SubElement(line,'font',size='12')
+        for i,char in enumerate('לעלאלעלאמןכלברכתא'):
+            x=250-i*5
+            etree.SubElement(font,'char',c=char,x=str(x),y='701',quad=f'{x} 690 {x+5} 690 {x} 705 {x+5} 705')
+        try:check(broken,expanded)
+        except ValueError:pass
+        else:raise AssertionError('Wrong seasonal Kaddish count escaped detection')
     if expanded:
         for phrase in ['During the Ten Days of Repentance, add:', 'Pardon us, our Father!']:
             broken=copy.deepcopy(tree)

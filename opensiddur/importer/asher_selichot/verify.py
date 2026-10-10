@@ -181,6 +181,16 @@ def opening_documentary(project):
         unit=copy.deepcopy(module.find(f'.//{{{TEI}}}body/{{{TEI}}}div'))
         if unit.get('corresp') != reference.get('target'):
             raise ValueError('Opening correspondence must match its canonical identity')
+        # Remove the documented editorial addition before checking printed words.
+        seasonal=unit.find('.//{'+J+'}conditional[@xml:id="asher_half_kaddish_ten_days"]',namespaces={'xml':'http://www.w3.org/XML/1998/namespace'})
+        if seasonal is not None:
+            end=seasonal.getnext();parent=seasonal.getparent();previous=seasonal.getprevious()
+            feature=seasonal.find('.//{'+TEI+'}fs[@type="opensiddur:holiday-aggregate"]/{'+TEI+'}f[@name="aseret-ymei-tshuva"]/{'+TEI+'}binary[@value="true"]')
+            addition=unicodedata.normalize('NFKD',' לְעֵלָּא')
+            if feature is None or seasonal.tail!=addition:raise ValueError('Unexpected seasonal Half Kaddish addition')
+            if end is None or end.tag!='{'+J+'}endConditional' or end.get('target')!='#asher_half_kaddish_ten_days':raise ValueError('Unclosed seasonal Half Kaddish')
+            previous.tail=(previous.tail or '')+(end.tail or '')
+            parent.remove(seasonal);parent.remove(end)
         div.replace(reference,unit)
     return root
 
