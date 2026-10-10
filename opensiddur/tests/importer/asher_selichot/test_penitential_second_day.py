@@ -64,3 +64,27 @@ class PenitentialSecondDayTests(unittest.TestCase):
         check_contents(tree,[(0,'service',1,None)],['115'])
         number[0].set('c','9')
         with self.assertRaises(ValueError):check_contents(tree,[(0,'service',1,None)],['115'])
+
+    def test_contents_continuation_page_is_checked(self):
+        from opensiddur.importer.asher_selichot.check_book_pdf import check_contents
+        tree=etree.Element('document')
+        pages=[etree.SubElement(tree,'page') for _ in range(4)]
+        etree.SubElement(pages[0],'line',text='Contents')
+        for number,page in enumerate(pages[:2],1):
+            line=etree.SubElement(page,'line',text=str(number))
+            etree.SubElement(line,'char',c=str(number),x='490',y='100')
+        rows=[(0,'service',3,None),(1,'pizmon',4,None)]
+        labels=['i','ii','1','2']
+        check_contents(tree,rows,labels)
+        pages[1].find('.//char').set('c','9')
+        with self.assertRaises(ValueError):check_contents(tree,rows,labels)
+
+    def test_previous_service_note_below_next_heading_is_retained(self):
+        from opensiddur.importer.asher_selichot.check_book_pdf import slice_day
+        tree=etree.Element('document');page=etree.SubElement(tree,'page',height='800')
+        for text,y,size in [('last prayer',100,12),('next service',200,12),('earlier note',700,9),('other note',720,9)]:
+            line=etree.SubElement(page,'line',text=text)
+            font=etree.SubElement(line,'font',size=str(size))
+            etree.SubElement(font,'char',c='x',x='400',y=str(y))
+        result=slice_day(tree,(0,'old',1,750),(0,'new',1,600),trailing_note_texts=('earlier note',))
+        self.assertEqual([n.get('text') for n in result.findall('.//line')],['last prayer','earlier note'])

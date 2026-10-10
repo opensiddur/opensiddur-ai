@@ -63,7 +63,12 @@ def check(tree, expanded=False):
         if body.count('May the prayers and supplications')!=1:raise ValueError('second penitential day requires one supplied Full Kaddish')
         if body.count('Between the new year’s day')!=7:raise ValueError('second penitential day requires seven full refrain occurrences')
         if body.count('Omnipotent King, who')!=7:raise ValueError('second penitential day prayer-pair reference boundary changed')
-    elif 'Conclude the Service from' not in body:raise ValueError('Missing documentary second penitential day closing instruction')
+    else:
+        if 'Conclude the Service from' not in body:raise ValueError('Missing documentary second penitential day closing instruction')
+        # The preceding rubric quotes the abbreviation once as an instruction.
+        poem=body.partition('Between the new year’s day')[2]
+        if poem.count('(Between, &c.)')!=6 or body.count('Between the new year’s day')!=1:
+            raise ValueError('Documentary second penitential day must retain six abbreviated English cues')
     print('second penitential day PDF: apparatus, fulfilled cues and reference boundaries checked; 7 stanza start deltas '+str(deltas))
 
 
@@ -76,8 +81,13 @@ def controls(tree,expanded):
         except ValueError:pass
         else:raise AssertionError('Missing penitential note escaped detection')
     broken=copy.deepcopy(tree)
-    line=next(n for n in broken.findall('.//line') if 'Thy servants unanimously' in plain(n.get('text','')))
-    for char in line.findall('.//char'):char.set('y',str(float(char.get('y'))+50))
+    for number,page in enumerate(broken.findall('page'),1):
+        for line in page.findall('.//line'):
+            if 'Thy servants unanimously' in plain(line.get('text','')):
+                # MuPDF can put both columns in one line: move only English.
+                for char in line.findall('.//char'):
+                    if float(char.get('x'))>(288 if number%2 else 324):
+                        char.set('y',str(float(char.get('y'))+50))
     try:check(broken,expanded)
     except ValueError:pass
     else:raise AssertionError('Shifted penitential stanza escaped detection')
