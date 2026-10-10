@@ -102,10 +102,16 @@ class GedaliahTests(unittest.TestCase):
                 etree.SubElement(item,'{'+TEI+'}milestone',corresp=urn)
                 if role=='parallel':item[-1].tail='Like a father hath compassion; for we do not presume; delay not for thine own sake'
         service=etree.SubElement(root,'{'+ns+'}transclude',target=gedaliah.GEDALIAH)
+        half=etree.SubElement(service,'{'+ns+'}transclude',target=gedaliah.PRAYER+'kaddish/chatzi')
+        half_item=etree.SubElement(half,'{'+ns+'}parallelItem',role='primary')
+        half_item.text='לעלא לעלא מן כל ברכתא'
         kaddish=etree.SubElement(service,'{'+ns+'}transclude',target=gedaliah.PRAYER+'kaddish/shalem')
         item=etree.SubElement(kaddish,'{'+ns+'}parallelItem',role='primary')
         item.text='לעלא לעלא מן כל ברכתא'
         gedaliah.verify_compiled(root)
+        half_item.text='לעלא מן כל ברכתא'
+        with self.assertRaisesRegex(ValueError,'Half Kaddish seasonal reading'):gedaliah.verify_compiled(root)
+        half_item.text='לעלא לעלא מן כל ברכתא'
         item.text='לעלא מן כל ברכתא'
         with self.assertRaisesRegex(ValueError,'Ten Days reading'):gedaliah.verify_compiled(root)
 
