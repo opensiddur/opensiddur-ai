@@ -398,3 +398,16 @@ adjudication and pending independent Hebrew review are recorded in the source's
 `penitential-second-day*` evidence files. Check the seven shared pizmon starts,
 notes, mixed-language apparatus, fulfilled cues, and supplied-prayer boundaries
 through the book PDF checker, including its deliberately broken controls.
+
+## Seasonal Half Kaddish
+
+The shared Half Kaddish on printed 3 (n7) prints a single לְעֵלָּא. Preserve that
+scan reading. The service edition includes an explicitly documented editorial
+second לְעֵלָּא under `opensiddur:holiday-aggregate/aseret-ymei-tshuva=true`,
+following the user's seasonal correction; it is not another word printed on n7.
+Keep the existing מִן כָּל wording. Scope pre–Rosh Hashanah services with Ten Days
+false, and the Gedaliah / penitential-day opening expansions with Ten Days true;
+restore caller settings afterward. Check the Half Kaddish as well as Full Kaddish:
+correct selection in the closing prayer does not prove the opening is correct.
+Reverse verification removes only the documented editorial addition before
+comparing the shared module with the printed page-3 reading.

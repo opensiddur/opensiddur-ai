@@ -7,7 +7,7 @@ import unicodedata
 from collections import defaultdict
 from lxml import etree
 from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
-from .first_day import poetic_lines, words_with_notes, mixed_words, expansion_scope, append_words
+from .first_day import poetic_lines, words_with_notes, mixed_words, expansion_scope, append_words, verify_half_kaddish
 from .erev_rosh_hashanah import printed as ordinary_printed, targets
 
 PENITENTIAL_SECOND_DAY = 'urn:x-opensiddur:text:siddur:selichot/penitential_second_day'
@@ -34,6 +34,7 @@ def verify_compiled(tree):
         seen.extend(markers)
     if len(seen)!=4 or len(set(seen))!=4:raise ValueError('Missing or duplicate second penitential day petition passages')
     service=tree.find('.//{'+ns+'}transclude[@target="'+PENITENTIAL_SECOND_DAY+'"]')
+    verify_half_kaddish(service, ten_days=True)
     kaddish=service.findall('.//{'+ns+'}transclude[@target="'+PRAYER+'kaddish/shalem"]') if service is not None else []
     if len(kaddish)!=1:raise ValueError('Missing or duplicate second penitential day Full Kaddish')
     words=''.join(''.join(n.itertext()) for n in kaddish[0].findall('.//{'+ns+'}parallelItem[@role="primary"]'))
@@ -147,9 +148,15 @@ def expanded_rubric(parent,reading,lang):
         for target in targets(reading,lang):element(block,'j:transclude',target=target,type='inline').tail=' '
         element(div,'milestone',unit='prayer')
     else:
+        opening=reading['id']=='opening_instruction'
+        if opening:
+            declaration=element(parent,'j:declare');declaration.set(XML+'id','penitential_second_day_opening_ten_days')
+            fs=element(declaration,'fs',type='opensiddur:holiday-aggregate')
+            feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva');element(feature,'binary',value='true')
         for target in targets(reading,lang):
             if reading.get('supply_kaddish') and target==PRAYER+'kaddish/shalem':full_kaddish(parent)
             else:element(parent,'j:transclude',target=target)
+        if opening:element(parent,'j:endDeclare',target='#penitential_second_day_opening_ten_days')
         # Preserve any printed apparatus attached to a fulfilled instruction.
         for note in reading['fragments'][0]['notes'][lang]:
             block=element(element(parent,'div'),'p');node=element(block,'note',type='commentary')

@@ -12,6 +12,18 @@ OBSOLETE_ASSEMBLIES = ('first_day_opening', 'first_day_preface',
                        'first_day_before_piyyut', 'first_day_closing', 'first_day_expanded')
 
 
+def verify_half_kaddish(service, ten_days):
+    """Check the selected Hebrew branch inside this compiled service."""
+    ns='http://jewishliturgy.org/ns/processing'
+    passages=service.findall('.//{'+ns+'}transclude[@target="'+PRAYER+'kaddish/chatzi"]') if service is not None else []
+    if len(passages)!=1:raise ValueError('Missing or duplicate Half Kaddish')
+    words=''.join(''.join(n.itertext()) for n in passages[0].findall('.//{'+ns+'}parallelItem[@role="primary"]'))
+    letters=''.join(c for c in unicodedata.normalize('NFD',words) if 'א'<=c<='ת')
+    expected='לעלאלעלאמןכלברכתא' if ten_days else 'לעלאמןכלברכתא'
+    if letters.count('לעלא')!=(2 if ten_days else 1) or expected not in letters:
+        raise ValueError('Half Kaddish seasonal reading differs')
+
+
 def titles(front, readings):
     for lang in ['he', 'en']:
         data = readings[lang]
@@ -86,6 +98,15 @@ def opening(lang, project, data):
     before, after = words.split(split, 1)
     verse(p, PRAYER+'kaddish/yehe_shmeh', before.rstrip())
     verse(p, PRAYER+'kaddish/yitbarakh', split+after)
+    if lang=='he':
+        # The scan prints one le'ela; the seasonal addition is editorial.
+        node=p[-1];word=unicodedata.normalize('NFKD','לְעֵלָּא')
+        prefix,suffix=node.tail.split(word,1);node.tail=prefix+word
+        condition=element(p,'j:conditional');condition.set(XML+'id','asher_half_kaddish_ten_days')
+        fs=element(condition,'fs',type='opensiddur:holiday-aggregate')
+        feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva')
+        element(feature,'binary',value='true');condition.tail=' '+word
+        element(p,'j:endConditional',target='#asher_half_kaddish_ten_days').tail=suffix
     return root
 
 
@@ -115,6 +136,9 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         titles(element(text, 'front'), title_data)
     div = element(element(text, 'body'), 'div', corresp=urn)
     if book:
+        declaration=element(div,'j:declare');declaration.set(XML+'id','asher_pre_rosh_hashanah_services')
+        fs=element(declaration,'fs',type='opensiddur:holiday-aggregate')
+        feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva');element(feature,'binary',value='false')
         element(div, 'j:transclude', target=FIRST_DAY)
         if include_second_day:
             from .second_day import SECOND_DAY
@@ -127,6 +151,7 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         if include_erev:
             from .erev_rosh_hashanah import EREV
             element(div, 'j:transclude', target=EREV)
+        element(div,'j:endDeclare',target='#asher_pre_rosh_hashanah_services')
         if include_gedaliah:
             from .tzom_gedaliah import GEDALIAH
             from opensiddur.importer.util.occasion import gate, holiday
