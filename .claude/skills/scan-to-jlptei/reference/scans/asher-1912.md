@@ -341,6 +341,9 @@ then restore caller context. Gate the service in the index with the calendar's
 English printed 103 has a marginal Hebrew note עשרה הרוגי מלכות without a visible
 matching body marker. Preserve it with an explicitly documented editorial attachment
 to the final cue, carried into expanded output; do not claim its original target.
+In the combined PDF, this apparatus can sit below the following service heading
+on the same page. Retain the known Gedaliah note when clipping its body for checks;
+a vertical body boundary alone cannot establish apparatus ownership.
 English printed 92 contains תשובה in the body and שתית in a footnote. Give these
 Hebrew spans explicit language and check their rendered direction.
 

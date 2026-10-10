@@ -45,9 +45,14 @@ def day_bookmarks(rows, captions=("FIRST DAY", "SECOND DAY")):
 
 def check_contents(tree, rows, page_labels):
     """Compare rendered TOC numbers with the current bookmark destinations."""
-    numbers=[]
-    for page in tree.findall('page'):
-        if not any('Contents' in line.get('text','') for line in page.findall('.//line')):continue
+    numbers=[];in_contents=False
+    first_body_page=min(row[2] for row in rows)
+    for number,page in enumerate(tree.findall('page'),1):
+        if any('Contents' in line.get('text','') for line in page.findall('.//line')):
+            in_contents=True
+        elif in_contents and number>=first_body_page:
+            break
+        if not in_contents:continue
         baselines={}
         for line in page.findall('.//line'):
             # These settings put TOC page numbers at x=481–502pt; the title may contain '2nd'.
@@ -63,7 +68,7 @@ def check_contents(tree, rows, page_labels):
     if numbers!=expected:raise ValueError(f'TOC pages differ from bookmark destinations: {numbers} != {expected}')
 
 
-def slice_day(tree, start, end=None, keep_titles=False):
+def slice_day(tree, start, end=None, keep_titles=False, trailing_note_texts=()):
     """Retain original page slots, so parity-dependent column gutters remain valid."""
     result=copy.deepcopy(tree)
     pages=result.findall('page')
@@ -77,7 +82,10 @@ def slice_day(tree, start, end=None, keep_titles=False):
             after_start=number>start_page or (number==start_page and y>=height-start_top-2)
             before_end=number<end_page or (number==end_page and y<height-end_top-2)
             title=keep_titles and number<=4
-            if not(title or (after_start and before_end)):line.getparent().remove(line)
+            # An earlier service's apparatus can sit below the next body heading.
+            trailing_note=(number==end_page and any(phrase in line.get('text','') for phrase in trailing_note_texts)
+                           and any(float(font.get('size','100'))<=10 for font in line.findall('.//font')))
+            if not(title or (after_start and before_end) or trailing_note):line.getparent().remove(line)
     return result
 
 
@@ -277,7 +285,8 @@ def main(argv=None):
             if args.control:erev_controls(erev_portion,args.expanded)
         if len(days)>8:
             from .check_gedaliah_pdf import check as gedaliah_check, controls as gedaliah_controls
-            gedaliah_portion=slice_day(tree,days[8],days[9] if len(days)>9 else None)
+            gedaliah_portion=slice_day(tree,days[8],days[9] if len(days)>9 else None,
+                                       trailing_note_texts=('עשרה הרוגי מלכות',))
             gedaliah_check(gedaliah_portion,args.expanded)
             if args.control:gedaliah_controls(gedaliah_portion,args.expanded)
         if len(days)>9:
