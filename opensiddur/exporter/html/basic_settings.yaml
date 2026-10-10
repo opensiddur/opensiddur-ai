@@ -135,6 +135,11 @@ features:
       label: A wedding
     sheva-brachot:
       label: Sheva brachot
+  opensiddur:paratext:
+    include:
+      label: Prefaces, introductions and other front and back matter
+    title-page:
+      label: Title pages
   opensiddur:recitation:
     repetition:
       label: The Reader's repetition

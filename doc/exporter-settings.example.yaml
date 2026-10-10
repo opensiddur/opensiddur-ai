@@ -73,6 +73,11 @@ declarations:
     pesah: 0
   opensiddur:override:
     omit-tahanun: true
+  # Prefaces, introductions and the like, and the title pages. Both default to true; a
+  # siddur meant for daily use may leave them out.
+  opensiddur:paratext:
+    include: false
+    title-page: false
   # Who is present. Unset means undefined, which keeps conditional passages together with
   # the instruction saying when to read them. Setting minyan true derives zimmun true.
   opensiddur:quorum:

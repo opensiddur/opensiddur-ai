@@ -106,6 +106,17 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
   note, and not `type="marked"`, so an edition with no date prints the section bare. Keep
   `opensiddur:override` out of a gate; it counts as false when undefined, and the section
   would vanish from every edition that names no occasion.
+- **Gate everything that is not prayer and not commentary, always.** A dedication, preface,
+  acknowledgements, introduction, epilogue or afterword — any prose of the book's about the
+  book — goes behind `opensiddur:paratext/include`, and every transcribed `tei:titlePage`
+  (a copyright verso too) behind `opensiddur:paratext/title-page`. One `j:conditional` per
+  section, around its `j:transclude` or the title page itself, wherever it falls: front,
+  back or mid-book. Like an occasion's gate it has no note and is not marked; keep a title
+  leaf's `tei:pb` outside the gate so the foliation survives without it (a
+  section's own page breaks go with it). Rubrics and the
+  apparatus are neither. Use `paratext()` / `title_page()` from
+  `opensiddur/importer/util/occasion.py`, and compile once with each feature declared
+  `false`. See `opensiddur:paratext` in `schema/JLPTEI-3.md`.
 - **How an undecided passage looks follows the book.** Put `type="marked"` on a conditional
   whose passage the book itself sets off (brackets, parentheses, a line): the markers then
   stand for those marks, and the edition reproduces them. Give it an instruction note only

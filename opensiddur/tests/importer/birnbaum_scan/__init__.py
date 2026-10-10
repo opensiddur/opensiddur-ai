@@ -19,9 +19,11 @@ def write_synthetic_front(directory: Path) -> Path:
         (directory / section["fragment"]).write_text(
             f'<tei:div {TEI_NS} corresp="urn:x-opensiddur:text:front:{section["slug"]}">'
             f"<tei:p>words</tei:p></tei:div>\n", encoding="utf-8")
-    for _, name in (pair for pairs in front.TITLE_LEAVES.values() for pair in pairs):
+    for leaf, name in (pair for pairs in front.TITLE_LEAVES.values() for pair in pairs):
+        # As the reading does, the title page opens with its own leaf's page break.
         (directory / name).write_text(
-            f'<tei:titlePage {TEI_NS} corresp="urn:x-opensiddur:text:front:title_page">'
+            f'<tei:titlePage {TEI_NS} corresp="urn:x-opensiddur:text:front:title_page">\n'
+            f'  <tei:pb n="{front.DESIGNATION[leaf]}" ed="1949"/>\n'
             f"<tei:docTitle><tei:titlePart>t</tei:titlePart></tei:docTitle>"
             f"</tei:titlePage>\n", encoding="utf-8")
     return directory
