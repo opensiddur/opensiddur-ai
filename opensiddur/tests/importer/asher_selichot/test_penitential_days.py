@@ -8,6 +8,20 @@ from opensiddur.importer.scan.reverse import streams
 
 
 class LaterPenitentialDaysTests(unittest.TestCase):
+    def test_opening_words_are_not_mistaken_for_concluding_cue(self):
+        f={'he':{'scan':'s300','printed_page':'149','text':'יי יי אל רחום׃'},
+           'en':{'scan':'s301','printed_page':'149','text':'The Eternal is merciful.'},'notes':{'he':[],'en':[]}}
+        g={'he':{'scan':'s302','printed_page':'150','text':'אזכרה׃ יי יי'},
+           'en':{'scan':'s303','printed_page':'150','text':'I remember. (The Eternal, &c.)'},'notes':{'he':[],'en':[]}}
+        r={'fragments':[f,g],'stanzas':[{'fragments':[f]},{'fragments':[g]}],
+           'refrain':{'he':'','en':''},'refrain_cues':{'he':'(?!)','en':'(?!)'},
+           'opening_cue':{'he':'יי יי','en':'(The Eternal, &c.)'}}
+        for lang in ['he','en']:
+            root=etree.Element('{'+TEI+'}body');day.pizmon(root,r,lang,'urn:example')
+            choices=root.findall('.//{'+TEI+'}choice')
+            self.assertEqual(len(choices),1)
+            self.assertEqual(choices[0].find('{'+TEI+'}expan').text,f[lang]['text'])
+
     def test_english_final_cue_repeats_opening_including_refrain(self):
         f={'en':{'scan':'s275','printed_page':'136','text':'Thou who dwellest. My life at my request.'},'notes':{'en':[]}}
         g={'en':{'scan':'s277','printed_page':'137','text':'Let my voice. (My life, &c.) (Thou who dwellest, &c.)'},'notes':{'en':[]}}

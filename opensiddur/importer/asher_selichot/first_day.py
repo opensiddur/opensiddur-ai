@@ -268,7 +268,7 @@ def append_words(parent, words):
 
 def mixed_words(parent, words):
     """Keep the edition's English rubrics and Hebrew reference cues explicit."""
-    for part in re.split(r'([\u0590-\u05ff][\u0590-\u05ff ·\s]*[\u0590-\u05ff])', words):
+    for part in re.split(r'([\u0590-\u05ff](?:[\u0590-\u05ff ·\s]*[\u0590-\u05ff])?)', words):
         if re.search(r'[\u05d0-\u05ea]', part):
             element(parent, 'foreign', part).set(XML+'lang', 'he')
         else:

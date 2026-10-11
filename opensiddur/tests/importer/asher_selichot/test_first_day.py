@@ -6,6 +6,20 @@ from opensiddur.importer.scan.reverse import streams
 
 
 class FirstDayTest(unittest.TestCase):
+    def test_single_hebrew_letter_does_not_reverse_english_note(self):
+        from opensiddur.importer.asher_selichot.first_day import words_with_notes
+        parent = etree.Element(f'{{{TEI}}}p')
+        text = 'With reference to Job xxxiii. 29. See also Talmud Joma, 86, א.'
+        words_with_notes(parent, 'countenance;',
+                         [{'anchor': 'countenance;', 'text': text}], 'en')
+        note = parent.find(f'{{{TEI}}}note')
+        self.assertEqual('en', note.get(XML+'lang'))
+        self.assertEqual('With reference to Job xxxiii. 29. See also Talmud Joma, 86, ', note.text)
+        foreign = note.find(f'{{{TEI}}}foreign')
+        self.assertEqual('א', foreign.text)
+        self.assertEqual('.', foreign.tail)
+        self.assertEqual(text, ''.join(note.itertext()))
+
     def test_rendered_litany_rejects_collapsed_verses_and_lost_refrains(self):
         from opensiddur.importer.asher_selichot.check_first_day_pdf import check_mi_sheanah
         rows = [(1, n*15, 'מישענהאבינוהואיעננו') for n in range(20)]

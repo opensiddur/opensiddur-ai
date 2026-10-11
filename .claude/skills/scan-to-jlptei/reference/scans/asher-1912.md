@@ -438,3 +438,15 @@ range, then the printed-52 father/mercy and Daniel ranges. Do not copy another
 cue's broader starting point. The apparent truncated “ardent pass” at the end
 of English printed 133 has no visible continuation on 134; retain and document
 it pending independent review rather than completing an unseen word.
+
+The fifth penitential day occupies n281–n308, printed 140–153 upper, ending before
+the Erev Yom Kippur body heading. Ezkerah elohim veehemayah has five shared units:
+the thirteen-attributes opening, Ezkerah, Middat harahamim, Tamakhti, and Yehi ratson.
+Only the final Hebrew יי יי / English “The Eternal, &c.” cue repeats the complete
+opening. Do not convert the opening's identical initial words into a cue, invent
+short refrain repetitions, or invent a repetition rubric. The Hebrew פזמון is
+a real subordinate heading; English has none. The five petition-repeat cues use
+the complete printed-52 ranges. Hebrew and English notes include mixed language
+text that requires explicit direction. Preserve the apparent printed English
+“recited has thirteen attributes” on 147 and the reversed page citation 12, 11;
+record image adjudication rather than silently correcting the edition.

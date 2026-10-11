@@ -42,9 +42,11 @@ def pizmon(parent, reading, lang, context):
     """Preserve independent printed cues within shared bilingual semantic units."""
     unit=element(parent,'div',corresp=context)
     first=reading['fragments'][0][lang];pb(unit,first['scan'],first['printed_page'])
+    if reading.get('heading',{}).get(lang):element(unit,'head',reading['heading'][lang])
     previous=first['scan']
     cue_pattern=reading['refrain_cues'][lang]
     opening_cue=reading.get('opening_cue',{}).get(lang)
+    opening_pattern=re.escape(opening_cue)+r'(?=\s*$)' if opening_cue else None
     opening=' '.join(f[lang]['text'] for f in reading['stanzas'][0]['fragments'])
     for number,stanza in enumerate(reading['stanzas'],1):
         fragments=stanza['fragments'];first=fragments[0][lang]
@@ -58,14 +60,14 @@ def pizmon(parent, reading, lang, context):
                 cues.append((match.group(0),opening if opening_cue and match.group(0)==opening_cue else reading['refrain'][lang]))
                 return '__CUE_'+str(len(cues)-1)+'__|'
             for fragment in prepared:
-                fragment['he']['text']=re.sub('(?:'+cue_pattern+')'+('|'+re.escape(opening_cue) if opening_cue else ''),cue_token,fragment['he']['text'])
+                fragment['he']['text']=re.sub('(?:'+cue_pattern+')'+('|'+opening_pattern if opening_pattern else ''),cue_token,fragment['he']['text'])
             poetic_lines(block,prepared,{'line_stops':'·׃|'})
             for line in block.findall(f'{{{TEI}}}l'):
                 if line.text and re.fullmatch(r'__CUE_\d+__\|',line.text):
                     cue,expansion=cues[int(line.text.split('_')[3])];line.text=None
                     choice(element(line,'seg',type='refrain'),cue,expansion)
         else:
-            pattern='(?:'+cue_pattern+')'+('|'+re.escape(opening_cue) if opening_cue else '')
+            pattern='(?:'+cue_pattern+')'+('|'+opening_pattern if opening_pattern else '')
             for index,fragment in enumerate(fragments):
                 data=fragment[lang]
                 if index:pb(block,data['scan'],data['printed_page'])
