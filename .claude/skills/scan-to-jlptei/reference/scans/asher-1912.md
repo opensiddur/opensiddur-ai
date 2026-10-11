@@ -562,3 +562,31 @@ texts: encode unresolved markers without invented reference targets or notes.
 When a provisional capture guessed apparatus text, retain its immutable evidence,
 remove the guesses from working text, and disclose the correction. Incidental OCR
 exposure from a preceding service's full-page context must also be disclosed.
+
+
+## Yom Kippur Katan
+
+Printed188–203 upper, n377–n408, ends above the circumcision heading. Use an
+explicit monthly-service occasion while the printed Psalm-order customs remain
+ambiguous: the first rubric says New Moon on Sabbath/Sunday, the last its eve.
+Preserve the different conditions without inventing a derived calendar rule.
+Keep once/twice/seven-times repetitions and Ark actions as performance instructions.
+
+Yom zeh has five shared stanza units and four short opening-repeat cues in each
+language; Bat ammi has six units and four refrain cues per language at different
+positions. Rahmana has ten units, nine full Hebrew responses and eight English
+abbreviations. Encode each printed occurrence independently. Bracketed full
+responses in Masat kappai and Samar stay marked as refrains even across a page break.
+English interrupts Samar after Remember the on193 with a petition rubric before
+bull on194; Hebrew puts its counterpart before the poem. Preserve the English
+interleaved rubric within the reusable module, with conditional inline expansions.
+
+Petition cues cite9/10 and use the earlier bounded ranges. The first Ashamnu cue
+uses the reprint above in Hebrew and the original on18 in English. The second
+uses the page200 reprint in both. Opening Kaddish is supplied as Half Kaddish;
+closing Reader Kaddish occurs only on the Hebrew page and its expanded English
+is editorial. Scope supplied Kaddishes with first_day=false, Ten Days=false;
+keep Reader/Mourner roles. Aleinu and Mourner Kaddish use secondary defaults.
+Nine source notes must survive exactly once. Enlarged s399 confirms printed
+Jer. iii. 2.; do not silently correct a documentary citation. Record incidental
+English OCR exposure of the next section when its shared opening has been read.

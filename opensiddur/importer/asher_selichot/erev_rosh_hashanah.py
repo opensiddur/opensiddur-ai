@@ -135,7 +135,8 @@ def printed(parent, reading, lang, context):
     else:
         for i, fragment in enumerate(reading['fragments']):
             data=fragment[lang]
-            if i:pb(node,data['scan'],data['printed_page'])
+            if fragment.get('paragraph_start'):node=element(unit,'p')
+            if i and data['scan']!=reading['fragments'][i-1][lang]['scan']:pb(node,data['scan'],data['printed_page'])
             if reading['id']=='adonai_boqer_tishma_qoli':
                 prefix='רַחֲמֶיךָ' if lang=='he' else 'Thy mercy is great'
                 before,after=data['text'].split(prefix,1)

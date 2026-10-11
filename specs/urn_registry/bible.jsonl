@@ -1,2 +1,5 @@
 {"urn": "urn:x-opensiddur:text:bible:psalms", "status": "canonical", "label_en": "Psalms"}
 {"urn": "urn:x-opensiddur:text:bible:psalms/6", "status": "canonical", "label_en": "psalms/6", "parent": "urn:x-opensiddur:text:bible:psalms"}
+{"urn": "urn:x-opensiddur:text:bible:psalms/102", "status": "canonical", "label_en": "psalms/102", "parent": "urn:x-opensiddur:text:bible:psalms"}
+{"urn": "urn:x-opensiddur:text:bible:psalms/20", "status": "canonical", "label_en": "psalms/20", "parent": "urn:x-opensiddur:text:bible:psalms"}
+{"urn": "urn:x-opensiddur:text:bible:psalms/8", "status": "canonical", "label_en": "psalms/8", "parent": "urn:x-opensiddur:text:bible:psalms"}

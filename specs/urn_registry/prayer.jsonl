@@ -1079,3 +1079,19 @@
 {"urn": "urn:x-opensiddur:text:prayer:shuvah_yisrael_ad_adonai", "status": "canonical", "label_en": "shuvah yisrael ad adonai"}
 {"urn": "urn:x-opensiddur:text:prayer:tashuv_terahamenu_vetikhbosh", "status": "canonical", "label_en": "tashuv terahamenu vetikhbosh"}
 {"urn": "urn:x-opensiddur:text:prayer:selichot/rahamekha_rabbim/al_tavo", "status": "canonical", "label_en": "selichot/rahamekha rabbim/al tavo", "parent": "urn:x-opensiddur:text:prayer:selichot/rahamekha_rabbim"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan", "status": "canonical", "label_en": "rahmana adkar lan"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim_im_amadti", "status": "canonical", "label_en": "ribbon haolamim im amadti"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim_lo_al_atsmi", "status": "canonical", "label_en": "ribbon haolamim lo al atsmi"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim_lule_hataenu", "status": "canonical", "label_en": "ribbon haolamim lule hataenu"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_haolamim_minhag_bet_dinekha", "status": "canonical", "label_en": "ribbon haolamim minhag bet dinekha"}
+{"urn": "urn:x-opensiddur:text:prayer:ribbon_olamim_qodem_kol_davar", "status": "canonical", "label_en": "ribbon olamim qodem kol davar"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_1", "status": "canonical", "label_en": "rahmana adkar lan/stanza 1", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_10", "status": "canonical", "label_en": "rahmana adkar lan/stanza 10", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_2", "status": "canonical", "label_en": "rahmana adkar lan/stanza 2", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_3", "status": "canonical", "label_en": "rahmana adkar lan/stanza 3", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_4", "status": "canonical", "label_en": "rahmana adkar lan/stanza 4", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_5", "status": "canonical", "label_en": "rahmana adkar lan/stanza 5", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_6", "status": "canonical", "label_en": "rahmana adkar lan/stanza 6", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_7", "status": "canonical", "label_en": "rahmana adkar lan/stanza 7", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_8", "status": "canonical", "label_en": "rahmana adkar lan/stanza 8", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}
+{"urn": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan/stanza_9", "status": "canonical", "label_en": "rahmana adkar lan/stanza 9", "parent": "urn:x-opensiddur:text:prayer:rahmana_adkar_lan"}

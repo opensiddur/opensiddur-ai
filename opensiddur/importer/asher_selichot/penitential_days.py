@@ -13,7 +13,7 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast', 'tammuz-fast')
+FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast', 'tammuz-fast', 'yom-kippur-katan')
 SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
@@ -95,7 +95,7 @@ def pizmon(parent, reading, lang, context):
                                 if re.fullmatch(full_pattern,part):element(block,'seg',part,type='refrain')
                                 else:words_with_notes(block,part,[n for n in fragment['notes'][lang] if n['anchor'] in part],lang)
                         else:words_with_notes(block,piece,fragment['notes'][lang],lang)
-                    if not (data.get('join_next') and piece_index==len(pieces)-1):append_words(block,' ')
+                if not data.get('join_next'):append_words(block,' ')
         previous=fragments[-1][lang]['scan']
         if lang=='he':
             for line in block.findall(f'{{{TEI}}}l'):
@@ -106,11 +106,37 @@ def pizmon(parent, reading, lang, context):
     return unit
 
 
-def printed(parent,reading,lang,context):
+def printed(parent,reading,lang,context,day=None):
+    if not any(f[lang]['text'] for f in reading['fragments']):
+        return element(parent,'div',corresp=context)
     if reading['kind']=='pizmon':return pizmon(parent,reading,lang,context)
     reading=copy.deepcopy(reading)
     if reading['kind']=='poem':reading['line_stops']='·׃'
     unit=ordinary_printed(parent,reading,lang,context)
+    if lang=='he' and reading.get('bracketed_responses'):
+        for line in unit.findall(f'.//{{{TEI}}}l'):
+            if (line.text or '').startswith('[') and ''.join(line.itertext()).rstrip().endswith(']'):
+                words=line.text;children=list(line);line.text=None
+                response=element(line,'seg',words,type='refrain')
+                for child in children:line.remove(child);response.append(child)
+    for item in reading.get('interleaved_rubrics',[]):
+        rubric=item['reading']
+        if not rubric['fragments'][0][lang]['text']:continue
+        blocks=unit.findall(f'{{{TEI}}}p')
+        block=blocks[item['before_fragment']]
+        insertion=element(unit,'div',corresp=context+'/'+rubric['id'])
+        unit.remove(insertion);unit.insert(unit.index(block),insertion)
+        stem=day.replace('-','_')+'_'+rubric['id']
+        expansion_scope(insertion,stem+'_printed',False)
+        ordinary_printed(insertion,rubric,lang,context+'/'+rubric['id']+'/printed')
+        element(insertion,'j:endConditional',target='#'+stem+'_printed')
+        expansion_scope(insertion,stem+'_expanded',True)
+        expanded_rubric(insertion,rubric,lang,day)
+        element(insertion,'j:endConditional',target='#'+stem+'_expanded')
+    if reading.get('interleaved_rubrics') and unit.find(f'{{{TEI}}}div') is not None:
+        for block in list(unit.findall(f'{{{TEI}}}p')):
+            position=unit.index(block);unit.remove(block)
+            wrapper=element(unit,'div');unit.remove(wrapper);unit.insert(position,wrapper);wrapper.append(block)
     if lang=='en':wrap_hebrew(unit)
     elif reading.get('reader_label'):
         block=unit.find(f'{{{TEI}}}p')
@@ -120,19 +146,20 @@ def printed(parent,reading,lang,context):
     return unit
 
 
-def full_kaddish(parent,day):
-    declaration=element(parent,'j:declare');declaration.set(XML+'id','penitential_'+day+'_day_kaddish')
+def full_kaddish(parent,day,target=PRAYER+'kaddish/shalem',stem=None):
+    stem=stem or 'penitential_'+day+'_day_kaddish'
+    declaration=element(parent,'j:declare');declaration.set(XML+'id',stem)
     for typ,name,value in [('asher:selichot','first_day','false'),('opensiddur:holiday-aggregate','aseret-ymei-tshuva','false' if day in FAST_SERVICES else 'true')]:
         fs=element(declaration,'fs',type=typ);f=element(fs,'f');f.set('name',name);element(f,'binary',value=value)
-    element(parent,'j:transclude',target=PRAYER+'kaddish/shalem')
-    element(parent,'j:endDeclare',target='#penitential_'+day+'_day_kaddish')
+    element(parent,'j:transclude',target=target)
+    element(parent,'j:endDeclare',target='#'+stem)
 
 
 def expanded_rubric(parent,reading,lang,day):
     context=service_urn(day)
     if reading.get('performance_instruction',{}).get(lang):
         role=element(element(parent,'div'),'note',reading['performance_instruction'][lang],type='instruction');role.set(XML+'lang','en')
-    if reading['id'].startswith('verses_after_'):
+    if reading['id'].startswith(('verses_after_', 'verses_before_')) or reading.get('paired_inline'):
         # As on Erev, the two language lists belong to one paired prose block.
         div=element(parent,'div');element(div,'milestone',unit='prayer',corresp=context+'/'+reading['id']+'/expanded')
         block=element(div,'p')
@@ -145,7 +172,9 @@ def expanded_rubric(parent,reading,lang,day):
             fs=element(declaration,'fs',type='opensiddur:holiday-aggregate')
             feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva');element(feature,'binary',value='false' if day in FAST_SERVICES else 'true')
         for target in targets(reading,lang):
-            if reading.get('supply_kaddish') and target==PRAYER+'kaddish/shalem':full_kaddish(parent,day)
+            if reading.get('performance_before_target',{}).get(target):
+                role=element(element(parent,'div'),'note',reading['performance_before_target'][target],type='instruction');role.set(XML+'lang','en')
+            if reading.get('supply_kaddish') and target in (PRAYER+'kaddish/shalem',PRAYER+'kaddish/chatzi',PRAYER+'kaddish/yatom'):full_kaddish(parent,day,target,'penitential_'+day+'_'+reading['id']+'_kaddish')
             else:element(parent,'j:transclude',target=target)
         if opening:element(parent,'j:endDeclare',target='#penitential_'+day+'_day_opening_ten_days')
         # Preserve any printed apparatus attached to a fulfilled instruction.
@@ -167,7 +196,7 @@ def documents(source,day):
             context=reading.get('urn',context_urn+'/'+reading['id'])
             if reading.get('filename'):
                 module,body=document(lang,project,reading['filename'].replace('_',' '),context)
-                printed(element(body,'body'),reading,lang,context)
+                printed(element(body,'body'),reading,lang,context,day)
                 yield project,reading['filename']+'.xml',module
                 element(service,'j:transclude',target=context)
             elif reading['kind']=='rubric' and (any(targets(reading,language) for language in ('he','en')) or reading.get('refrain_instruction')):
@@ -212,6 +241,17 @@ def verify_readings(source,project_directory,day):
                 node=etree.parse(str(project/(reading['filename']+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
             elif node.get('corresp')!=context:raise ValueError('penitential day inline order changed')
             node=copy.deepcopy(node)
+            for item in reading.get('interleaved_rubrics',[]):
+                rubric=item['reading'];embedded=node.find(f'{{{TEI}}}div[@corresp="{context}/{rubric["id"]}"]')
+                words=rubric['fragments'][0][lang]['text']
+                if not words:
+                    if embedded is not None:raise ValueError('Invented counterpart rubric')
+                    continue
+                if embedded is None:raise ValueError('Missing interleaved source rubric')
+                printed_note=embedded.find(f'.//{{{TEI}}}note[@type="instruction"]')
+                if normalize(''.join(printed_note.itertext()))!=normalize(words):raise ValueError('Interleaved rubric wording changed')
+                if [n.get('target') for n in embedded.findall(f'.//{{{J}}}transclude')]!=targets(rubric,lang):raise ValueError('Interleaved expansion targets changed')
+                node.remove(embedded)
             scopes=node.findall(f'{{{J}}}conditional')
             if scopes:
                 if [s.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary').get('value') for s in scopes]!=(['false'] if reading.get('refrain_instruction') else ['false','true']):raise ValueError('penitential day expansion polarity changed')
@@ -219,7 +259,7 @@ def verify_readings(source,project_directory,day):
                     if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=targets(reading,lang):raise ValueError('penitential day expansion range changed')
                     if reading.get('supply_kaddish'):
                         declaration=node.find(f'{{{J}}}declare')
-                        if [n.get('value') for n in declaration.findall(f'.//{{{TEI}}}binary')]!=['false','true']:raise ValueError('penitential day Kaddish must use Ten Days context')
+                        if [n.get('value') for n in declaration.findall(f'.//{{{TEI}}}binary')]!=['false','false' if day in FAST_SERVICES else 'true']:raise ValueError('Service Kaddish seasonal context changed')
                     start=scopes[1];end=node.find(f'{{{J}}}endConditional[@target="#{start.get(XML+"id")}"]');children=list(node)
                     for child in children[children.index(start):children.index(end)+1]:node.remove(child)
             notes=node.findall(f'.//{{{TEI}}}note[@type="commentary"]')

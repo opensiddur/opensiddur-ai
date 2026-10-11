@@ -8,11 +8,11 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through Seventeenth of Tammuz, Archive
-n375/n376 (printed187), are encoded. There are364 project XML documents,182 per
-language. The twelve changed/new Tammuz documents validate after preceding
-checkpoints. Fourteen bilingual units and three reusable poems use native
-tzom-tammuz. Independent Hebrew proof remains pending.
+Both title pages and complete services through Yom Kippur Katan, Archive
+n407/n408 (printed203 upper), are encoded. There are 394 project XML documents,
+197 per language. All validate and reverse-check against documentary readings;
+both projects resolve all references. The registry has 3997 records with zero
+errors or warnings. Independent Hebrew proofreading remains pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -710,3 +710,16 @@ fourteen subtests pass. Native tzom-tammuz=1/0 compilation includes/excludes the
 service correctly and respects title-page=false. The latest full-suite run remains
 the Monday checkpoint. Tevet/Esther CI is checked separately; coverage target
 failures remain disclosed.
+
+## Yom Kippur Katan checkpoint
+
+Sixty-one bilingual source units cover printed188–203 upper. Documentary and
+expanded PDFs contain26/36 pages. All21 paired stanza starts align with zero
+baseline delta. Nine source notes occur exactly once; mixed-language direction,
+fulfilled-cue removal, independent refrain positions, performance instructions,
+interleaved Samar petitions, supplied Kaddishes, TOC/hierarchy and phrase dots pass.
+Missing-note and shifted-stanza controls fail as intended. Hebrew direction checks
+find0/783 and0/1213 reversed runs; reversed controls flag777/1201. Explicit occasion
+inclusion/exclusion and title-page suppression pass. All102 Asher unit tests pass.
+The prior full-suite and cumulative-PDF counts below are historical; a final book
+run follows the remaining circumcision section. No independent Hebrew proof is claimed.

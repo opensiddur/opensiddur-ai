@@ -575,3 +575,21 @@
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_2", "status": "canonical", "label_en": "sheeh neessar/stanza 2", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_3", "status": "canonical", "label_en": "sheeh neessar/stanza 3", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_4", "status": "canonical", "label_en": "sheeh neessar/stanza 4", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
+{"urn": "urn:x-opensiddur:text:poem:al_taas_immanu_khalah", "status": "canonical", "label_en": "al taas immanu khalah"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh", "status": "canonical", "label_en": "bat ammi lo tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:elohei_besar_ammekha_samar", "status": "canonical", "label_en": "elohei besar ammekha samar"}
+{"urn": "urn:x-opensiddur:text:poem:masat_kappai_minhat_erev", "status": "canonical", "label_en": "masat kappai minhat erev"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_1", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 1", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_2", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 2", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_3", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 3", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_4", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 4", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_5", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 5", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_6", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 6", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
+{"urn": "urn:x-opensiddur:text:poem:elohei_besar_ammekha_samar/verses_after_samar", "status": "canonical", "label_en": "elohei besar ammekha samar/verses after samar", "parent": "urn:x-opensiddur:text:poem:elohei_besar_ammekha_samar"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai/stanza_1", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai/stanza 1", "parent": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai/stanza_2", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai/stanza 2", "parent": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai/stanza_3", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai/stanza 3", "parent": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai/stanza_4", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai/stanza 4", "parent": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai"}
+{"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai/stanza_5", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai/stanza 5", "parent": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai"}
+{"urn": "urn:x-opensiddur:text:poem:elohei_besar_ammekha_samar/verses_after_samar/printed", "status": "canonical", "label_en": "elohei besar ammekha samar/verses after samar/printed", "parent": "urn:x-opensiddur:text:poem:elohei_besar_ammekha_samar/verses_after_samar"}
