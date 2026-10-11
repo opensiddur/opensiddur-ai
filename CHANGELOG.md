@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
-- Settings declared in a transcluded file no longer leak into the file that transcludes it.
+- Settings declared in a transcluded file no longer leak into the file that transcludes it (#239).
   Each file's checkpoint cut the settings stack back to its old length. A recalculation of
   derived settings moves entries around inside the stack, so the cut could keep the inner
   file's `j:declare` and drop one of the outer file's derived values. The checkpoint now
