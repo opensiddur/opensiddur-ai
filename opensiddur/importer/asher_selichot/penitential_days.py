@@ -13,7 +13,7 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast')
+FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet')
 SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
@@ -83,7 +83,8 @@ def pizmon(parent, reading, lang, context):
             for index,fragment in enumerate(fragments):
                 data=fragment[lang]
                 if index:pb(block,data['scan'],data['printed_page'])
-                for piece in re.split('('+pattern+')',data['text']):
+                pieces=re.split('('+pattern+')',data['text'])
+                for piece_index,piece in enumerate(pieces):
                     if not piece:continue
                     if re.fullmatch(pattern,piece):
                         choice(element(block,'seg',type='refrain'),piece,opening if piece==opening_cue else reading['refrain'][lang])
@@ -94,7 +95,7 @@ def pizmon(parent, reading, lang, context):
                                 if re.fullmatch(full_pattern,part):element(block,'seg',part,type='refrain')
                                 else:words_with_notes(block,part,[n for n in fragment['notes'][lang] if n['anchor'] in part],lang)
                         else:words_with_notes(block,piece,fragment['notes'][lang],lang)
-                    append_words(block,' ')
+                    if not (data.get('join_next') and piece_index==len(pieces)-1):append_words(block,' ')
         previous=fragments[-1][lang]['scan']
         if lang=='he':
             for line in block.findall(f'{{{TEI}}}l'):

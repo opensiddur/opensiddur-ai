@@ -8,11 +8,11 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through the final Monday fast, Archive
-n349/n350 (printed 174 upper), are encoded. There are 340 schema-valid project XML
-documents, 170 per language. The final Monday adds fourteen bilingual units and
-three independent poems. Its occasion combines an explicit selector with
-the native Monday weekday. Independent Hebrew proofreading remains pending.
+Both title pages and complete services through Tenth of Tevet, Archive
+n357/n358 (printed 178 upper), are encoded. There are 348 project XML documents, 174 per language. Twelve changed/new documents
+validate at this checkpoint, following the full 340-document validation. Tevet
+adds fifteen bilingual units and three independent poems, with a native
+asara-btevet occasion gate. Independent Hebrew proofreading remains pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -634,3 +634,28 @@ all book checks and broken controls pass. Hebrew direction reports 0/23,871
 reversed runs; the reversal control flags 21,547. Its second contents page was
 inspected visually. This resolves the interrupted Monday rebuild recorded above;
 it does not claim cumulative coverage of Thursday or the final Monday.
+
+
+## Tenth of Tevet, Archive n349–n358
+
+Complete through printed178 upper, above Esther's heading. Avotai has fourteen
+paired stanza units, thirteen Hebrew choices and twelve English choices, each
+expanding the complete opening. Its internal page breaks retain one joined
+English word, to-/wards. Three reusable poems and fifteen units retain immutable
+captures, assembled pre-OCR snapshots, English comparisons and image corrections.
+Ten English notes retain their anchors; expanded English has twenty-four notes
+including the transcluded Monday conclusion. No Full Kaddish is inserted.
+
+All twelve changed/new XML files validate; source reverse checks and evidence
+hashes pass. Both project URN checks and the registry check pass. The complete
+project scope is 348 XML documents. All 94 Asher tests and fourteen subtests pass,
+including word-join and native holiday regressions. Actual compilation includes
+Tevet for asara-btevet=1 and excludes it for 0, honoring title-page gates.
+
+Standalone documentary/expanded PDFs have 11/21 pages, converged in three passes.
+All fourteen stanza start deltas are zero. Note counts, apparatus direction,
+refrain and prayer ranges, word joining, performance instructions, contents and
+bookmark hierarchy pass. Missing-note and shifted-stanza controls are rejected.
+Hebrew direction: 0/288 and 0/751; reversal controls flag 288 and 745. Documentary
+and expanded pizmon pages were inspected visually. Independent Hebrew proof
+remains pending, especially rare vocabulary and pointing.

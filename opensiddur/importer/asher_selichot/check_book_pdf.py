@@ -239,7 +239,7 @@ def main(argv=None):
     if any('DAY BEFORE NEW YEAR' in r[1] for r in rows):captions.append('DAY BEFORE NEW YEAR')
     if any('FAST OF GEDALIAH' in r[1] for r in rows):captions.append('FAST OF GEDALIAH')
     if any('2nd OF THE PENITENTIAL DAYS' in r[1] for r in rows):captions.append('2nd OF THE PENITENTIAL DAYS')
-    for caption in ['3rd OF THE PENITENTIAL DAYS','FOURTH OF THE PENITENTIAL DAYS','FIFTH OF THE PENITENTIAL DAYS','DAY BEFORE THE DAY OF ATONEMENT','SECOND FAST','FIFTH FAST','LAST OF THE THREE FASTS']:
+    for caption in ['3rd OF THE PENITENTIAL DAYS','FOURTH OF THE PENITENTIAL DAYS','FIFTH OF THE PENITENTIAL DAYS','DAY BEFORE THE DAY OF ATONEMENT','SECOND FAST','FIFTH FAST','LAST OF THE THREE FASTS','FAST OF TEBETH']:
         if any(caption in r[1] for r in rows):captions.append(caption)
     days=day_bookmarks(rows,captions)
     with tempfile.TemporaryDirectory() as temp:
@@ -344,6 +344,11 @@ def main(argv=None):
             portion=slice_day(tree,days[16],days[17] if len(days)>17 else None)
             fast_check(portion,'last-monday-fast',args.source_root,args.expanded)
             if args.control:fast_controls(portion,'last-monday-fast',args.source_root,args.expanded)
+        if len(days)>17:
+            from .check_fast_pdf import check as fast_check, controls as fast_controls
+            portion=slice_day(tree,days[17],days[18] if len(days)>18 else None)
+            fast_check(portion,'tenth-tevet',args.source_root,args.expanded)
+            if args.control:fast_controls(portion,'tenth-tevet',args.source_root,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')

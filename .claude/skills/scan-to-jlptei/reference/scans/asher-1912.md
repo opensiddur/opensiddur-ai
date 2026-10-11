@@ -535,3 +535,11 @@ Thirteen Attributes opening is prose followed by four verse stanza units; its
 only abbreviated cue repeats that opening at the end. Preserve the maqqef join
 across printed173/174. Opening and conclusion use Monday ranges without importing
 a Full Kaddish or discarding unsupplied weekday-service instructions.
+
+Tenth of Tevet covers printed174 lower–178 upper, n349–n358, with a native
+asara-btevet occasion gate. Its Avotai has fourteen shared stanza units and
+thirteen Hebrew/twelve English short cues, all expanding the complete opening.
+The final English stanza has no cue. Distinguish stanza-opening קמי פיהם from
+כל־קמי within the preceding stanza; preserve maqqef words when segmenting.
+English to-/wards spans a facsimile break and renders as one word. Keep all ten
+source notes and the fourteen notes inherited from Monday's expanded conclusion.

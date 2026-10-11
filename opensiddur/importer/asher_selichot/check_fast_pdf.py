@@ -60,14 +60,14 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
         xs=[float(c.get('x'))for c in chars]
         if any(b<a-.05 for a,b in zip(xs,xs[1:])):raise ValueError('Reversed fast Latin apparatus')
     normalize=lambda words:strip_numeric_markers(plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(words.split()))))
-    text=plain(' '.join(n.get('text','')for n in tree.findall('.//line')))
+    text=plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(n.get('text','')for n in tree.findall('.//line'))))
     body=normalize(' '.join(r[2]for r in en))
-    notes=([('In rewarding the good',1),('Viz., Ishmael.',1)] if day=='thursday-fast' else [('Ps. cii. 28.',1)])
+    notes=[(phrase,1) for phrase in ({'thursday-fast':['In rewarding the good','Viz., Ishmael.'],'last-monday-fast':['Ps. cii. 28.'],'tenth-tevet':['viz., The 8th, 9th, and 10th','Ptolomæus Philadelphus','The 9th of Tebeth','Ezekiel.','Ezek. xxiv. 1.','Tebeth is the tenth month','The daughter of Zion','Abi Sonoach','Nebusaradon.','Ezek. xxiv. 3.']}[day])]
     if expanded:notes += [('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah vi. 7.',1),('Ezek. xxxvi. 25.',2)]
     for fingerprint,count in notes:
         if text.count(fingerprint)!=count:raise ValueError('Fast footnote occurrence: '+fingerprint)
     if 'May the prayers and supplications' in body:raise ValueError('Unrequested Full Kaddish supplied')
-    following='LAST OF THE THREE FASTS' if day=='thursday-fast' else 'TENTH OF TEBETH'
+    following={'thursday-fast':'LAST OF THE THREE FASTS','last-monday-fast':'FAST OF TEBETH','tenth-tevet':'FAST OF ESTHER'}[day]
     if following in body:raise ValueError('Following fast entered current service')
     if body.count('Prayers are said as on other week days')!=1:raise ValueError('Weekday Amidah performance rubric lost')
     if expanded:
@@ -75,14 +75,18 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
             if cue in body:raise ValueError('Fulfilled fast cue remains: '+cue)
         for phrase in ['The Reader continues the Ameedah','Conclude the service as on other week-days.']:
             if body.count(phrase)!=1:raise ValueError('Unsupplied performance instruction lost: '+phrase)
-        if body.count('Omnipotent King, who')!=3 or body.count('take us for thy heritage.')!=(4 if day=='thursday-fast' else 6):raise ValueError('Fast prayer pair bounds changed')
+        if body.count('Omnipotent King, who')!=3 or body.count('take us for thy heritage.')!=(6 if day=='last-monday-fast' else 4):raise ValueError('Fast prayer pair bounds changed')
     if day=='thursday-fast':
         if not expanded and (body.count('(For thou art great, &c.)')!=5 or body.count('(Israel is saved, &c.)')!=1):raise ValueError('Documentary fast cues changed')
         if body.count('Israel is saved by the Lord')!=(2 if expanded else 1):raise ValueError('Fast opening repeat count')
         if body.count('for thou art great in pardoning and full of compassion.')!=(7 if expanded else 2):raise ValueError('Fast full refrain count')
-    else:
+    elif day=='last-monday-fast':
         if body.count('(The Eternal, &c.)')!=(0 if expanded else 1):raise ValueError('Final Monday opening cue changed')
         if body.count('an Omnipotent God, merciful and gracious')!=(2 if expanded else 1):raise ValueError('Final Monday attributes count')
+    if day=='tenth-tevet':
+        if body.count('(When, &c.)')!=(0 if expanded else 13):raise ValueError('Tevet cue count changed')
+        if body.count('When our forefathers trusted')!=(13 if expanded else 1):raise ValueError('Tevet complete refrain count changed')
+        if 'advanced towards the holy city' not in body:raise ValueError('Tevet facsimile word join lost')
     print(day+': '+str(len(notes))+' apparatus fingerprints; stanza start deltas '+str(deltas))
     return he,en
 
@@ -90,7 +94,7 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
 def controls(tree,day,source_root,expanded):
     he,en=check(tree,day,source_root,expanded)
     broken=copy.deepcopy(tree)
-    fingerprint='In rewarding the good' if day=='thursday-fast' else 'Ps. cii. 28.'
+    fingerprint={'thursday-fast':'In rewarding the good','last-monday-fast':'Ps. cii. 28.','tenth-tevet':'The 9th of Tebeth'}[day]
     note=next(n for n in broken.findall('.//line')if fingerprint in n.get('text',''));note.getparent().remove(note)
     try:check(broken,day,source_root,expanded)
     except ValueError:pass
@@ -114,7 +118,7 @@ def controls(tree,day,source_root,expanded):
 
 
 def main(argv=None):
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--day',required=True,choices=['thursday-fast','last-monday-fast']);p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');p.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT);a=p.parse_args(argv)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--day',required=True,choices=['thursday-fast','last-monday-fast','tenth-tevet']);p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');p.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT);a=p.parse_args(argv)
     with tempfile.TemporaryDirectory()as tmp:
         xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.day,a.source_root,a.expanded)
         if a.control:controls(tree,a.day,a.source_root,a.expanded)

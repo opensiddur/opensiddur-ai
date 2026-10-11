@@ -55,3 +55,20 @@ class MondayFastTests(unittest.TestCase):
         self.assertEqual(len(root.findall('.//{'+TEI+'}p')),1)
         self.assertEqual(len(root.findall('.//{'+TEI+'}lg')),0)
         self.assertEqual(''.join(root.itertext()).strip(),'יי · אל · רחום׃')
+
+    def test_pizmon_word_crosses_facsimile_without_editorial_space(self):
+        a={'en':{'scan':'s355','printed_page':'176','text':'advanced to','join_next':True},'notes':{'en':[]}}
+        b={'en':{'scan':'s357','printed_page':'177','text':'wards Jerusalem.'},'notes':{'en':[]}}
+        reading={'fragments':[a,b],'stanzas':[{'fragments':[a,b]}],'refrain_cues':{'en':'(?!)'},'refrain':{'en':''}}
+        root=etree.Element('{'+TEI+'}body');service.pizmon(root,reading,'en','urn:example')
+        block=root.find('.//{'+TEI+'}p')
+        self.assertEqual(''.join(block.itertext()).strip(),'advanced towards Jerusalem.')
+        self.assertEqual(block.find('{'+TEI+'}pb').get('n'),'177')
+
+    def test_tevet_uses_native_holiday(self):
+        from opensiddur.importer.asher_selichot.first_day import entry
+        with patch('opensiddur.importer.asher_selichot.first_day.titles'):
+            root=entry('he','example',{},book=True,remaining_services=('tenth-tevet',))
+        gate=root.find('.//{'+service.J+'}conditional[@xml:id="tenth_tevet_occasion"]',namespaces={'xml':XML[1:-1]})
+        fs=gate.find('{'+TEI+'}fs')
+        self.assertEqual((fs.get('type'),fs[0].get('name'),fs[0][0].get('value')),('opensiddur:holiday','asara-btevet','1'))
