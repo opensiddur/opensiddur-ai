@@ -8,6 +8,19 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
+Both title pages and complete services through Erev Yom Kippur, Archive n319/n320
+(printed 159 upper), are encoded. The Second Fast body heading is excluded.
+There are 316 schema-valid project XML documents, 158 per language. The new
+service has 22 bilingual units, three independent poems, seven paired pizmon
+stanzas and seven English notes. Its native occasion is 9 Tishrei. See
+[the Erev Yom Kippur specification](erev-yom-kippur.md) and the source evidence.
+Independent Hebrew proofreading remains pending.
+
+The checkpoints below record earlier scopes and results; the final section records
+the current rendering and test run.
+
+## Seven-day checkpoint
+
 Both title pages and the first seven complete days are encoded through Archive
 n99/n100, stopping before the Erev Rosh Hashanah body heading. There are 150 XML
 files, 75 per language: 66 independent named texts and nine book/service
@@ -410,3 +423,36 @@ it, retaining the full identifier and hyperlink target.
 
 The later coverage report at cf7549e remains below target: project 84.42%,
 patch 37.82%. Functional tests and code analysis pass.
+
+## Erev Yom Kippur, Archive n307–n320
+
+The service begins under the large body heading on printed 153 and ends at the
+Reader's Kaddish on printed 159, before the Second Fast body heading. Its 22
+bilingual units add three independent incipit-named poems, seven shared Yertseh
+stanza units and seven English notes. The fourth stanza crosses a page; full
+printed refrain variants remain distinct. The closing repeat expands the whole
+first stanza. The Ezekiel xxxvi.25 note below the Second Fast heading belongs to
+Erev's preceding purification verse, not the following service.
+
+The two opening citations conflict. Expanded output follows the complete Hebrew
+Ashrei-through-Shomea range, excluding the Selah lanu reprint immediately after
+it; this is an explicit editorial resolution. The unexplained raised English
+mark remains unresolved. Three El melekh/Vayaavor pairs and one bounded petition
+range expand in place. The final Full Kaddish uses the secondary-source default,
+retaining the Reader role and seasonal settings. No Makhnise rahamim conclusion
+is inserted. The index gates the entire service on 9 Tishrei.
+
+Immutable first captures, complete pre-OCR snapshots and frozen comparison
+inputs accompany the working readings. English Archive OCR was checked against
+seven English pages; independent Hebrew proofreading remains pending. Enlarged
+images settled the final Yertseh readings כְּהִתְוַעֲדוּ and וָאִכַּף. Earlier
+unresolved findings remain recorded rather than silently normalized.
+
+The standalone documentary and expanded PDFs have 13 and 22 pages respectively.
+Both have two bookmarks, with the day above its pizmon. The cumulative editions
+have 242 and 555 pages respectively, each with 29 contents/bookmark destinations.
+All seven Erev stanza starts share identical Hebrew/English baselines. Rendering
+checks cover seven notes occurring once, note direction, fulfilled instructions,
+opening range, seasonal Kaddishes, closing prayers and the Second Fast boundary.
+Deliberately broken controls must fail. The separate bibliography repair #236 is
+merged upstream and included in these builds.

@@ -239,7 +239,7 @@ def main(argv=None):
     if any('DAY BEFORE NEW YEAR' in r[1] for r in rows):captions.append('DAY BEFORE NEW YEAR')
     if any('FAST OF GEDALIAH' in r[1] for r in rows):captions.append('FAST OF GEDALIAH')
     if any('2nd OF THE PENITENTIAL DAYS' in r[1] for r in rows):captions.append('2nd OF THE PENITENTIAL DAYS')
-    for caption in ['3rd OF THE PENITENTIAL DAYS','FOURTH OF THE PENITENTIAL DAYS','FIFTH OF THE PENITENTIAL DAYS']:
+    for caption in ['3rd OF THE PENITENTIAL DAYS','FOURTH OF THE PENITENTIAL DAYS','FIFTH OF THE PENITENTIAL DAYS','DAY BEFORE THE DAY OF ATONEMENT']:
         if any(caption in r[1] for r in rows):captions.append(caption)
     days=day_bookmarks(rows,captions)
     with tempfile.TemporaryDirectory() as temp:
@@ -319,9 +319,14 @@ def main(argv=None):
             if args.control:fourth_penitential_controls(portion,args.expanded)
         if len(days)>12:
             from .check_penitential_fifth_pdf import check as fifth_penitential_check, controls as fifth_penitential_controls
-            portion=slice_day(tree,days[12],None)
+            portion=slice_day(tree,days[12],days[13] if len(days)>13 else None)
             fifth_penitential_check(portion,args.expanded)
             if args.control:fifth_penitential_controls(portion,args.expanded)
+        if len(days)>13:
+            from .check_erev_yom_kippur_pdf import check as yk_check, controls as yk_controls
+            portion=slice_day(tree,days[13],None)
+            yk_check(portion,args.expanded)
+            if args.control:yk_controls(portion,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')

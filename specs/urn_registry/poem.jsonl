@@ -502,3 +502,13 @@
 {"urn": "urn:x-opensiddur:text:poem:omets_yosif_tahor_yadayim", "status": "canonical", "label_en": "omets yosif tahor yadayim"}
 {"urn": "urn:x-opensiddur:text:poem:oznekha_hatteh_vehaqshev_leheqer_ranen", "status": "canonical", "label_en": "oznekha hatteh vehaqshev leheqer ranen"}
 {"urn": "urn:x-opensiddur:text:poem:teshuvah_hashuvah_qedumah_meaz_lehetiv", "status": "canonical", "label_en": "teshuvah hashuvah qedumah meaz lehetiv"}
+{"urn": "urn:x-opensiddur:text:poem:adon_befaqdekha_enosh_labbeqarim", "status": "canonical", "label_en": "adon befaqdekha enosh labbeqarim"}
+{"urn": "urn:x-opensiddur:text:poem:adon_din_im_yeduqdaq", "status": "canonical", "label_en": "adon din im yeduqdaq"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha", "status": "canonical", "label_en": "yertseh tsom ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_1", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 1", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_2", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 2", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_3", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 3", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_4", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 4", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_5", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 5", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_6", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 6", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_7", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}

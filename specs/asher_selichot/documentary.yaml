@@ -1,9 +1,9 @@
-description: Asher 1912 complete services through the fifth penitential day, n308,
-  work in progress. Incomplete book, excluded from releases.
+description: Asher 1912 complete services through the Erev Yom Kippur, n320, work
+  in progress. Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — services through the fifth penitential day
+  title: Asher Selichoth — services through the Erev Yom Kippur
 priority:
   transclusion:
   - asher_selichot_he_1912

@@ -13,15 +13,24 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
+SERVICES = DAYS + ('erev-yom-kippur',)
+
+def manifest_name(day):
+    if day not in SERVICES: raise ValueError('Unsupported selichot service: '+day)
+    return 'erev-yom-kippur' if day=='erev-yom-kippur' else 'penitential-'+day+'-day'
+
+def service_filename(day):
+    return manifest_name(day).replace('-', '_')+'.xml'
 
 def service_urn(day):
+    if day=='erev-yom-kippur': return 'urn:x-opensiddur:text:siddur:selichot/erev_yom_kippur'
     if day not in DAYS: raise ValueError('Unsupported penitential day: '+day)
     return SERVICE_PREFIX+day+'_day'
 J = 'http://jewishliturgy.org/ns/jlptei/2'
 
 
 def readings(source,day):
-    manifest=json.loads((source/('penitential-'+day+'-day.json')).read_text())
+    manifest=json.loads((source/(manifest_name(day)+'.json')).read_text())
     units=[json.loads((source/name).read_text()) for name in manifest['readings']]
     if not manifest['complete'] or units[0]['id']!='opening_instruction' or units[-1]['id']!='conclusion':
         raise ValueError(day+' penitential day boundaries are incomplete')
@@ -75,12 +84,18 @@ def pizmon(parent, reading, lang, context):
                     if not piece:continue
                     if re.fullmatch(pattern,piece):
                         choice(element(block,'seg',type='refrain'),piece,opening if piece==opening_cue else reading['refrain'][lang])
-                    else:words_with_notes(block,piece,fragment['notes'][lang],lang)
+                    else:
+                        full_pattern=reading.get('full_refrain_pattern',{}).get(lang)
+                        if full_pattern:
+                            for part in re.split('('+full_pattern+')',piece):
+                                if re.fullmatch(full_pattern,part):element(block,'seg',part,type='refrain')
+                                else:words_with_notes(block,part,[n for n in fragment['notes'][lang] if n['anchor'] in part],lang)
+                        else:words_with_notes(block,piece,fragment['notes'][lang],lang)
                     append_words(block,' ')
         previous=fragments[-1][lang]['scan']
         if lang=='he':
             for line in block.findall(f'{{{TEI}}}l'):
-                if line.text and line.text.strip()==reading['refrain'][lang]:
+                if line.text and (line.text.strip()==reading['refrain'][lang] or re.fullmatch(reading.get('full_refrain_pattern',{}).get(lang,'(?!)'),line.text.strip())):
                     words=line.text;line.text=None;element(line,'seg',words,type='refrain')
         block.tail=' '
     element(unit,'milestone',unit='stanza')
@@ -106,6 +121,8 @@ def full_kaddish(parent,day):
 
 def expanded_rubric(parent,reading,lang,day):
     context=service_urn(day)
+    if reading.get('performance_instruction',{}).get(lang):
+        role=element(element(parent,'div'),'note',reading['performance_instruction'][lang],type='instruction');role.set(XML+'lang','en')
     if reading['id'].startswith('verses_after_'):
         # As on Erev, the two language lists belong to one paired prose block.
         div=element(parent,'div');element(div,'milestone',unit='prayer',corresp=context+'/'+reading['id']+'/expanded')
@@ -155,11 +172,11 @@ def documents(source,day):
                     expansion_scope(unit,stem+'_expanded',True,feature=feature)
                     expanded_rubric(unit,reading,lang,day);element(unit,'j:endConditional',target='#'+stem+'_expanded')
             else:printed(service,reading,lang,context)
-        yield project,'penitential_'+day+'_day.xml',root
+        yield project,service_filename(day),root
 
 
 def verify_evidence(source,units,day):
-    folder="penitential-"+day+"-day"
+    folder=manifest_name(day)
     records=json.loads((source.parent/(folder+'-proofreading.json')).read_text())['readings']
     if [r['id'] for r in records]!=[u['id'] for u in units]:raise ValueError('Stale penitential day proofreading scope')
     for r in records:
@@ -175,7 +192,7 @@ def verify_readings(source,project_directory,day):
     manifest,units=readings(source,day);verify_evidence(source,units,day)
     for lang in ['he','en']:
         project=project_directory/f'asher_selichot_{lang}_1912'
-        service=etree.parse(str(project/('penitential_'+day+'_day.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+        service=etree.parse(str(project/(service_filename(day)))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         if normalize(service.find(f'{{{TEI}}}head').text)!=normalize(manifest['heading'][lang]):raise ValueError('penitential day heading changed')
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]
         if len(nodes)!=len(units):raise ValueError('penitential day source order changed')

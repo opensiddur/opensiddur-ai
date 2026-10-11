@@ -464,3 +464,32 @@ Retain the verified previous-service apparatus when clipping day checks; the
 second penitential day's “With reference to Ps. xlii. 9.” is such a case after
 adding the third day. Confirm ownership from the source anchor and PDF, rather
 than moving the note into the following service.
+
+## Erev Yom Kippur
+
+This service begins below the fifth penitential day on n307/n308, printed 153,
+and ends at the Reader’s Kaddish on n319/n320, printed 159. The Second Fast running
+header already appears over its closing text; only the large body heading starts
+that following service. Preserve the Erev heading above its Hebrew-only פזמון.
+Gate its running-order entry on native Hebrew date month 7, day 9.
+
+Yertseh tsom ammekha has seven paired stanza units, including one crossing the
+printed-156/157 page break. Its refrains are printed in full, with Hebrew defective/
+plene and English “this sign”/“that sign” variants. Mark those full refrains as
+refrains without replacing their wording. Only the final ירצה / “Be pleased” cue
+expands the complete opening. There is no printed repetition instruction.
+
+Read this opening independently: Hebrew names Ashrei through Shomea tefillah,
+while English names “for thou hearest prayer” with an inconsistent page citation.
+The source evidence documents the complete shared Hebrew preliminary range as
+an editorial expansion; retain both documentary citations and the unresolved
+superscript-like mark after English page 7. Do not claim that phrase ends Ashrei.
+The preliminary prayer pair and the closing petitions are reprinted in full.
+Supply only Full Kaddish at the final cue, with first_day=false and Ten Days=true;
+retain the Reader performance role, omit its fulfilled “says Kaddish” instruction,
+and do not import another day’s Makhnise rahamim conclusion.
+
+The English Ezek. xxxvi. 25. footnote at the bottom of printed 159 belongs to
+Erev’s closing purification passage, although the Second Fast body intervenes
+above the apparatus. Retain that source-owned note with Erev; when adding the
+Second Fast later, do not assign it by vertical position alone.
