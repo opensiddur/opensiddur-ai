@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - A fraction `tei:numeric` (`1/2`) crashed; it now parses.
   - A `tei:f` with two values silently used the first; it is now an error.
 - The schema now checks what the compiler relies on:
-  - every `j:declare` is closed by a `j:endDeclare` that follows it, within the same element;
+  - every `j:declare` is closed by a `j:endDeclare` that follows it as its sibling;
   - a `j:declare` holds only `tei:fs`, and no `tei:vAlt` or `tei:vNot`;
   - every `tei:fs` in a condition or declaration has a `@type` and at least one `tei:f`;
   - the note of a `j:conditional` is an instruction.

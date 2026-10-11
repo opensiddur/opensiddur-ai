@@ -70,6 +70,11 @@ class TestParseConditionalSettings(unittest.TestCase):
             with self.subTest(raw=raw), self.assertRaisesRegex(ValueError, "tei:binary"):
                 self._parse_fs(f'<tei:f name="b"><tei:binary value="{raw}"/></tei:f>')
 
+    def test_a_malformed_numeric_is_an_error(self):
+        for raw in ("1/0", "1 / 2", "a/2"):
+            with self.subTest(raw=raw), self.assertRaisesRegex(ValueError, "teidata.numeric"):
+                self._parse_fs(f'<tei:f name="n"><tei:numeric value="{raw}"/></tei:f>')
+
     def test_numeric_fraction(self):
         entries = self._parse_fs(
             '<tei:f name="half"><tei:numeric value="1/2"/></tei:f>'
@@ -420,6 +425,31 @@ class TestExternalCompilerDeclareIntegration(unittest.TestCase):
         proc = ExternalCompilerProcessor("test_project", "e.xml")
         proc.process()
         self.assertIsNone(proc.get_active_setting("t:fs", "x"))
+
+    def test_an_unclosed_declaration_leaves_a_dated_stack_as_it_was(self):
+        """With derived values on the stack, an unclosed declaration still does not leak.
+
+        A dated volume has derived settings, which the declaration's recalculation moves within
+        the stack. Cutting the stack back to its old length kept the declaration and lost one
+        of the derived values.
+        """
+        CompilerProcessor.load_init_settings(get_linear_data(), yaml_to_declaration_entries({
+            "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+            "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+        }))
+        before = list(get_linear_data().conditional_settings)
+        body = (
+            '<j:declare xml:id="s">'
+            '<tei:fs type="t:fs"><tei:f name="x"><tei:numeric value="1"/></tei:f></tei:fs>'
+            '</j:declare>'
+            '<tei:p>text</tei:p>'
+        )
+        self._write("e.xml", _declare_xml(body).decode())
+        proc = ExternalCompilerProcessor("test_project", "e.xml")
+        proc.process()
+        self.assertIsNone(proc.get_active_setting("t:fs", "x"))
+        self.assertEqual(get_linear_data().conditional_settings, before)
+        self.assertEqual(proc.get_active_setting("opensiddur:holiday", "pesah"), 1)
 
 
 if __name__ == "__main__":

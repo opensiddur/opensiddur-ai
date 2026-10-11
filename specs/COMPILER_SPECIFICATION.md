@@ -233,10 +233,10 @@ Note: `tei:default` in **conditions** means undefined/any-value for tristate eva
 |---|---|---|---|
 | When derived values appear | First lookup during condition evaluation | Each INIT / DECLARE; removed/rebuilt on END_DECLARE | Same as (2), plus static defaults at INIT |
 | Spec alignment | Weak — JLPTEI-3 recalc at setting change point | **Strong** — matches spec and existing hooks | Strong; (3) is (2) + init-time static defaults |
-| Stack / contributor model | Ad-hoc cache + invalidation | **Reuses** `contributors` + `derived_dependency_index` | Same as (2) |
+| Stack / contributor model | Ad-hoc cache + invalidation | **Reuses** `contributors` on each derived entry | Same as (2) |
 | Correctness across document order | OK if cache invalidated on every declare | **Deterministic** before every element | Same as (2) |
 
-**Chosen approach:** (2) eager on declare/init/endDeclare, with the static-default slice of (3) for `opensiddur:override` at INIT. Implementation: `derived_settings.py`, `derivation_graph.py`, `calendar/`.
+**Chosen approach:** (2) eager on declare/init/endDeclare, with the static-default slice of (3): static defaults (`STATIC_DEFAULTS` in `derived_settings.py`) are pushed at INIT, and pushed again whenever a derived value of the same feature is withdrawn. Implementation: `derived_settings.py`, `derivation_graph.py`, `calendar/`.
 
 ## Transclusion Processing
 

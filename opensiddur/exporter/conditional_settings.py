@@ -60,12 +60,13 @@ def _parse_numeric(element: ElementBase) -> NumericValue:
 
 
 def parse_value_element(element: ElementBase, *, in_condition: bool,
-                        negation_allowed: bool = True) -> Any:
+                        inside: str | None = None) -> Any:
     """The value one feature-value element stands for.
 
     Declarations and conditions read values alike, except that only a condition may give
     alternatives (``tei:vAlt``, a tuple) or a negation (``tei:vNot``, ``("vNot", value)``). A
-    negation stands alone: it is not one of a set of alternatives.
+    negation stands alone: it is neither one of a set of alternatives nor itself negated.
+    ``inside`` names the alternation or negation the element is in, if any.
     """
     tag = element.tag
     if tag == TEI_NUMERIC:
@@ -85,16 +86,23 @@ def parse_value_element(element: ElementBase, *, in_condition: bool,
     if tag in (TEI_VALT, TEI_VNOT) and not in_condition:
         raise ValueError("tei:vAlt and tei:vNot belong in conditions, not in j:declare")
     if tag == TEI_VALT:
-        return tuple(parse_value_element(alternative, in_condition=True, negation_allowed=False)
-                     for alternative in _value_children(element))
+        return tuple(parse_value_element(alternative, in_condition=True, inside="vAlt")
+                     for alternative in _element_children(element))
     if tag == TEI_VNOT:
-        if not negation_allowed:
+        if inside == "vAlt":
             raise ValueError("tei:vNot cannot be one of the alternatives of a tei:vAlt")
-        inner = _value_children(element)
+        if inside == "vNot":
+            raise ValueError("tei:vNot cannot be negated again")
+        inner = _element_children(element)
         if len(inner) != 1:
             raise ValueError("tei:vNot must contain exactly one value element")
-        return ("vNot", parse_value_element(inner[0], in_condition=True, negation_allowed=False))
+        return ("vNot", parse_value_element(inner[0], in_condition=True, inside="vNot"))
     raise ValueError(f"Unsupported value element {tag!r}")
+
+
+def _element_children(element: ElementBase) -> list[ElementBase]:
+    """The children that are elements, leaving out comments and processing instructions."""
+    return [child for child in element if isinstance(child.tag, str)]
 
 
 def _value_children(element: ElementBase) -> list[ElementBase]:

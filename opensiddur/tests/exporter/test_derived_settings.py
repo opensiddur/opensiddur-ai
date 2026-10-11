@@ -152,6 +152,28 @@ class TestDerivedSettingsFramework(unittest.TestCase):
             "triennial-year-3": True,
         })
 
+    def test_a_withdrawn_cycle_year_falls_back_to_the_static_default(self):
+        """When the date that chose a cycle year becomes unknown, the annual reading returns."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2028, "month": 1, "day": 8},
+                "opensiddur:reading-cycle": {"triennial": True},
+            }),
+        )
+        self.assertTrue(self._cycle()["triennial-year-3"])
+        self.linear_data.conditional_settings.append(ConditionalSettingEntry(
+            declare_id="inner", fs_type="opensiddur:gregorian-date", feature_name="day",
+            value=Undefined, source="declared"))
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.DECLARE,
+                                     declare_id="inner")
+        self.assertEqual(self._cycle(), {
+            "annual": True,
+            "triennial-year-1": False,
+            "triennial-year-2": False,
+            "triennial-year-3": False,
+        })
+
     def test_a_volume_for_a_whole_cycle_keeps_all_three_years(self):
         """A printed humash covering a cycle turns on every year; a date would allow only one."""
         CompilerProcessor.load_init_settings(
@@ -292,9 +314,6 @@ class TestDerivedSettingsFramework(unittest.TestCase):
         recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.DECLARE,
                                      declare_id="inner")
         self.assertIsNone(get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah"))
-        # A static default is not withdrawn with the values derived beside it.
-        self.assertTrue(
-            get_active_setting_entry(self.linear_data, "opensiddur:reading-cycle", "annual").value)
 
     def test_a_declared_hebrew_date_does_not_warn(self):
         with self.assertNoLogs("opensiddur.exporter.derived_settings", level="WARNING"):

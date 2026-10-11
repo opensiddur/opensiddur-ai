@@ -901,7 +901,10 @@ feature structures (under the `tei:fs` element). These
 attributes are called "settings." Settings are encoded in
 setting-declaration sections, encoded with `j:declare`).
 
-The processing model defines certain constant-named feature structures. The subsequent sections will define those sections:
+The processing model defines certain constant-named feature structures. The subsequent sections will define those sections.
+The listings that follow name each structure's features and the kind of value each one takes; they
+are not declarations. A value element shown without `@value` stands for its kind. A declaration
+or a condition always gives the value, for example `<tei:binary value="true"/>`.
 
 Absolute time, if defined, is processed first. 
 
@@ -1711,7 +1714,7 @@ Settings are declared in XML using the `j:declare` element. The part of the text
 ```
 The `j:declare` element declares a set of `tei:fs` settings as in-scope.
 It must have an `xml:id` attribute that is referenced by 
-the `j:endDeclare` element. Every `j:declare` element must be matched with a `j:endDeclare` element that follows it, and every element that begins between the two must also end between them, as for `j:conditional`. The `j:declare` holds only `tei:fs` elements, each with a `@type` and at least one `tei:f`. It gives values, not alternatives: `tei:vAlt` and `tei:vNot` are for conditions. The schema enforces all of these.
+the `j:endDeclare` element. Every `j:declare` element must be matched with a `j:endDeclare` element that follows it as its sibling, so that every element that begins between the two also ends between them. If one were inside an element and the other outside it, leaving that element out (for a false condition, or outside a transcluded range) would separate the declaration from its end. The `j:declare` holds only `tei:fs` elements, each with a `@type` and at least one `tei:f`. It gives values, not alternatives: `tei:vAlt` and `tei:vNot` are for conditions. The schema enforces all of these.
 
 Declaration blocks may be nested and declaration blocks may also cross each other's boundaries.
 

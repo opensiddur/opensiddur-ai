@@ -414,6 +414,12 @@
               <gi>endDeclare</gi> may be left out -- by a false condition or a transcluded range
               -- and the marker that ends the declaration goes with it.
             </sch:assert>
+            <sch:assert test="parent::* is $opener/parent::*">
+              A <gi>declare</gi> and its <gi>endDeclare</gi> must be siblings. A declaration
+              that begins inside an element and ends outside it is pushed only when that element
+              is processed; when it is left out, the <gi>endDeclare</gi> ends a declaration that
+              was never made.
+            </sch:assert>
           </sch:rule>
         </constraint>
       </constraintSpec>

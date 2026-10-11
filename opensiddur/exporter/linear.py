@@ -45,7 +45,12 @@ def parse_numeric_literal(raw: str) -> int | float:
         pass
     if "/" in text:
         numerator, _, denominator = text.partition("/")
-        quotient = Fraction(int(numerator), int(denominator))
+        try:
+            quotient = Fraction(int(numerator), int(denominator))
+        except (ValueError, ZeroDivisionError):
+            raise ValueError(f"not a teidata.numeric: {raw!r}") from None
+        if numerator != numerator.strip() or denominator != denominator.strip():
+            raise ValueError(f"not a teidata.numeric: {raw!r}")
         return int(quotient) if quotient.denominator == 1 else float(quotient)
     return float(text)
 
@@ -94,7 +99,6 @@ class LinearData(BaseModel):
     conditional_settings: list[ConditionalSettingEntry] = Field(default_factory=list)
     # open j:conditional scopes (innermost last)
     conditional_scope_stack: list[ConditionalScope] = Field(default_factory=list)
-    # contributor declare_id -> stack indices of derived entries that depend on it
     # project priority for URN resolution of texts
     project_priority: list[str] = Field(default_factory=list)
     # project priority for URN resolution of instructions
