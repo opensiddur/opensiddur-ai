@@ -49,7 +49,7 @@ def check(tree, expanded=False):
         if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('fifth penitential day stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     body=' '.join(r[2] for r in en)
-    body=re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)','',body)
+    body=re.sub(r'(?<=[A-Za-z,.;:!?])(?:\s*\d+)+(?=[,.;!?]|\s)','',body)
     if expanded:
         if ''.join(r[2] for r in he).count('לעלאלעלאמןכלברכתא')!=2:
             raise ValueError('Ten Days Half and Full Kaddishes must both double leela')

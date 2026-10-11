@@ -450,9 +450,66 @@ unresolved findings remain recorded rather than silently normalized.
 
 The standalone documentary and expanded PDFs have 13 and 22 pages respectively.
 Both have two bookmarks, with the day above its pizmon. The cumulative editions
-have 242 and 555 pages respectively, each with 29 contents/bookmark destinations.
+have 241 and 554 pages respectively, each with 29 contents/bookmark destinations.
 All seven Erev stanza starts share identical Hebrew/English baselines. Rendering
 checks cover seven notes occurring once, note direction, fulfilled instructions,
 opening range, seasonal Kaddishes, closing prayers and the Second Fast boundary.
 Deliberately broken controls must fail. The separate bibliography repair #236 is
 merged upstream and included in these builds.
+
+The first full-suite invocation could not write LuaLaTeX's default font cache;
+PDF fixtures consequently failed before producing their output. Re-running with
+`TEXMFVAR=/tmp/asher-tex-cache TEXMFCACHE=/tmp/asher-tex-cache` passed 3,397 tests
+and 5,060 subtests, with 21 skips (563.18s). Both project reference checks pass;
+the registry has 3,701 records, zero errors and zero warnings. Final source
+verification validates all 316 files and all 22 new bilingual units.
+
+Visual inspection then found the bare Hebrew-only pizmon heading stranded before
+its first stanza. Separate compiler PR [#238](https://github.com/opensiddur/opensiddur-ai/pull/238)
+routes a bare single primary title through the existing spanning-heading path.
+Its 30-section rendering fixture fails against the original stylesheet and
+passes after the repair. The separate branch's full suite passes 3,303 tests and
+5,065 subtests, with 21 skips (649.87s). The repair is integrated here; all 83
+Asher tests and 14 subtests pass after integration. The Asher PDF audit now also
+rejects a missing or stranded pizmon heading, and rejects the original expanded
+PDF that exposed this defect. Reference checks and PDF builds run serially after
+the suites, restoring the standalone companion project database.
+
+
+Final standalone PDFs retain 13 documentary and 22 expanded pages. Their seven
+stanza-start deltas are all 0pt; the repaired heading and seven English notes
+pass, as do all deliberately broken controls. Hebrew direction is 0/399
+(documentary) and 0/787 (expanded); reversed controls flag 398 and 775 runs.
+The repaired documentary pizmon page was inspected visually. The final cumulative
+documentary has 241 pages and passes all whole-book checks and broken controls,
+including the new heading check. Hebrew direction is 0/9,526, with 8,570 runs
+flagged by the reversed control. Both final Hebrew corrections remain in all four
+compiled views; all 316 project hashes remain unchanged after testing.
+
+
+Final cumulative expanded: 554 pages, converged in three LaTeX passes, with 29
+contents/bookmark destinations. All whole-book audits and broken controls pass;
+all Erev stanza starts have 0pt paired deltas. Hebrew direction is 0/23,285,
+with 21,034 runs flagged by the reversed control. The repaired expanded pizmon
+page was inspected visually: the title stays with its complete opening stanza
+and both English notes read correctly.
+
+The pagination change exposed two PDF-audit extraction cases rather than text
+loss: consecutive line/footnote markers (`5 509`) inside a prayer fingerprint,
+and a line number following punctuation (`fathers, 35 may`). The fifth-day and
+Erev checks now remove these rendering markers before counting their unchanged
+prayer fingerprints. Three synthetic full-check fixtures cover consecutive
+markers, punctuation-adjacent markers and a genuinely missing prayer; both
+positive cases fail against the earlier checker, and the missing prayer remains
+rejected. The original fifth-day target of eleven heritage endings is retained.
+
+
+The final main/master refresh merged opensiddur-ai #237 (calendar corrections)
+and opensiddur-projects #74 (Birnbaum Minhah fast-day conditions). The post-merge
+full suite passed 3,430 tests and 5,128 subtests, with 21 skips (649.01s); the three
+numeric-marker fixtures also pass against the final checker. Both project URN
+checks and the 3,701-record registry pass, with zero errors and warnings. All 316
+XML files and their source readings verify again. All four complete compiled XML
+views are identical under canonical XML comparison before and after the merges,
+so the verified PDFs remain current. The two final Hebrew corrections and all
+316 project hashes remain intact. Independent Hebrew proofreading remains pending.
