@@ -55,8 +55,10 @@ def check_contents(tree, rows, page_labels):
         if not in_contents:continue
         baselines={}
         for line in page.findall('.//line'):
-            # These settings put TOC page numbers at x=481–502pt; the title may contain '2nd'.
-            digits=[c for c in line.findall('.//char') if c.get('c','').isdigit() and float(c.get('x'))>=475]
+            # The mirrored 36pt margin shift also moves the TOC number column.
+            # Ordinals in wrapped titles can reach the odd-page column on even pages.
+            number_column=475+(36 if number%2==0 else 0)
+            digits=[c for c in line.findall('.//char') if c.get('c','').isdigit() and float(c.get('x'))>=number_column]
             xs=[float(c.get('x')) for c in digits]
             if xs!=sorted(xs):raise ValueError('Reversed TOC page number')
             for char in digits:
@@ -68,7 +70,7 @@ def check_contents(tree, rows, page_labels):
     if numbers!=expected:raise ValueError(f'TOC pages differ from bookmark destinations: {numbers} != {expected}')
 
 
-def slice_day(tree, start, end=None, keep_titles=False, trailing_note_texts=()):
+def slice_day(tree, start, end=None, keep_titles=False, trailing_note_texts=(), prior_note_texts=()):
     """Retain original page slots, so parity-dependent column gutters remain valid."""
     result=copy.deepcopy(tree)
     pages=result.findall('page')
@@ -85,7 +87,9 @@ def slice_day(tree, start, end=None, keep_titles=False, trailing_note_texts=()):
             # An earlier service's apparatus can sit below the next body heading.
             trailing_note=(number==end_page and any(phrase in line.get('text','') for phrase in trailing_note_texts)
                            and any(float(font.get('size','100'))<=10 for font in line.findall('.//font')))
-            if not(title or (after_start and before_end) or trailing_note):line.getparent().remove(line)
+            prior_note=(number==start_page and any(phrase in line.get('text','') for phrase in prior_note_texts)
+                        and any(float(font.get('size','100'))<=10 for font in line.findall('.//font')))
+            if prior_note or not(title or (after_start and before_end) or trailing_note):line.getparent().remove(line)
     return result
 
 
@@ -293,17 +297,24 @@ def main(argv=None):
             if args.control:gedaliah_controls(gedaliah_portion,args.expanded)
         if len(days)>9:
             from .check_penitential_pdf import check as penitential_check, controls as penitential_controls
-            portion=slice_day(tree,days[9],days[10] if len(days)>10 else None)
+            portion=slice_day(tree,days[9],days[10] if len(days)>10 else None,
+                              trailing_note_texts=('With reference to Ps. xlii. 9.',),
+                              prior_note_texts=('עשרה הרוגי מלכות',))
             penitential_check(portion,args.expanded)
             if args.control:penitential_controls(portion,args.expanded)
         if len(days)>10:
             from .check_penitential_third_pdf import check as third_penitential_check, controls as third_penitential_controls
-            portion=slice_day(tree,days[10],days[11] if len(days)>11 else None)
+            third_last_notes=('Joseph. (Deut. xxxiii. 17.)', 'Ezek. xxxiv. 31.',
+                              'Exod. xix. 4.', 'Names of angels.')
+            portion=slice_day(tree,days[10],days[11] if len(days)>11 else None,
+                              trailing_note_texts=third_last_notes,
+                              prior_note_texts=('With reference to Ps. xlii. 9.',))
             third_penitential_check(portion,args.expanded)
             if args.control:third_penitential_controls(portion,args.expanded)
         if len(days)>11:
             from .check_penitential_fourth_pdf import check as fourth_penitential_check, controls as fourth_penitential_controls
-            portion=slice_day(tree,days[11],days[12] if len(days)>12 else None)
+            portion=slice_day(tree,days[11],days[12] if len(days)>12 else None,
+                              prior_note_texts=third_last_notes)
             fourth_penitential_check(portion,args.expanded)
             if args.control:fourth_penitential_controls(portion,args.expanded)
         if len(days)>12:

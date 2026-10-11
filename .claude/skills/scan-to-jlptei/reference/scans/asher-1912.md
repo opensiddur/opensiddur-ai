@@ -447,6 +447,20 @@ opening. Do not convert the opening's identical initial words into a cue, invent
 short refrain repetitions, or invent a repetition rubric. The Hebrew פזמון is
 a real subordinate heading; English has none. The five petition-repeat cues use
 the complete printed-52 ranges. Hebrew and English notes include mixed language
-text that requires explicit direction. Preserve the apparent printed English
+text that requires explicit direction. Wrap even a single Hebrew reference letter
+(such as א in the Job/Joma footnote on printed 144) in its own Hebrew foreign
+span, while the surrounding English note remains English. Measure Latin glyph
+positions as well as Hebrew runs; an English note wrapped as Hebrew can reverse
+word order while each Latin word still looks normal. Preserve the apparent printed English
 “recited has thirteen attributes” on 147 and the reversed page citation 12, 11;
 record image adjudication rather than silently correcting the edition.
+
+For cumulative PDF checks, measure the TOC number column on each mirrored page.
+With the current Asher export margins, its left cutoff is 475pt on odd pages and
+511pt on even pages; the ordinal in “3rd” can reach 480pt on a continuation page.
+Do not treat that ordinal as a destination number. A note anchored to the end of
+one service can appear below the next service's body heading on the same page.
+Retain the verified previous-service apparatus when clipping day checks; the
+second penitential day's “With reference to Ps. xlii. 9.” is such a case after
+adding the third day. Confirm ownership from the source anchor and PDF, rather
+than moving the note into the following service.

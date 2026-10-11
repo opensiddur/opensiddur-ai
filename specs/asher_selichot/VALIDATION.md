@@ -343,3 +343,42 @@ among 14,775; the reversed control flags 13,485. The opening contains Selah lanu
 once, both injected duplication and fulfilled-rubric controls fail as intended,
 and all book note, alignment, direction and boundary controls pass. All final
 Gedaliah documentary streams match, evidence hashes are current, and URNs resolve.
+
+
+## Third through fifth penitential days (2026-10-10)
+
+Third day covers n233–n258, fourth n257–n282, and fifth n281–n308; the shared
+boundary pages are split at the verified body headings. Each day was checked,
+committed and pushed separately in code, sources and projects. The services add
+111 bilingual units, 28 independent poem modules and 61 English apparatus notes.
+All 308 project XML files validate and match the scan readings, including notes,
+printed abbreviation branches, source order and expansion ranges. Both projects
+resolve their URNs/transclusions. Registry: 3,664 records, no errors or warnings.
+Immutable initial and pre-OCR readings, English OCR candidates and image
+adjudications accompany each service; independent Hebrew proofreading is pending.
+
+Per-day documentary/expanded PDFs: third 22/50 pages, fourth 21/49, fifth 22/51.
+Their pizmon starts (six, eight, five respectively) align on identical baselines.
+Prayer pairs, paired petition ranges, full-opening repeats, fulfilled-cue omission,
+notes and scoped seasonal Half/Full Kaddishes pass, with deliberately broken
+controls. Fifth day has 0/697 documentary and 0/1,936 expanded reversed Hebrew
+runs; reversed controls flag 692 and 1,885. The initial fifth-day apparatus check
+caught an authoring error: a single Hebrew letter caused its English footnote
+to be marked as Hebrew. The mixed-language authoring helper and regression fixture
+now wrap only the letter. The corrected note was inspected visually.
+
+Cumulative documentary: 232 pages, 27 contents/bookmark destinations. All
+whole-book controls pass, including the three new day scopes. Hebrew direction:
+0/9,128 reversed runs; reversed control flags 8,213. The growing contents exposed
+a checker error: an even page's title ordinal fell into the odd page's number
+column. The checker now measures mirrored number columns, with an ordinal
+fixture. Boundary checks retain verified notes from the preceding service below
+the next body heading and exclude those notes from the following day; a synthetic
+ownership fixture covers the exclusion. The relevant source anchors and the
+second/third-day boundary were inspected in the PDF.
+
+GitHub functional tests and code analysis pass at e9ab0df. Coverage gates remain
+below their 85% targets: project 84.45%, patch 37.88%; the previous fourth-day
+checkpoint also failed both coverage gates. PDF measurements run separately from
+CI coverage and are retained in the untracked output directory. Skill frontmatter
+and reference paths validate; both scan-specific subsections remain routed.

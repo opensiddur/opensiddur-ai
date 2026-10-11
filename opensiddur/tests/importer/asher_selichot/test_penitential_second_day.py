@@ -72,12 +72,24 @@ class PenitentialSecondDayTests(unittest.TestCase):
         etree.SubElement(pages[0],'line',text='Contents')
         for number,page in enumerate(pages[:2],1):
             line=etree.SubElement(page,'line',text=str(number))
-            etree.SubElement(line,'char',c=str(number),x='490',y='100')
+            etree.SubElement(line,'char',c=str(number),x=str(490 if number==1 else 526),y='100')
+        ordinal=etree.SubElement(pages[1],'line',text='3rd penitential day')
+        etree.SubElement(ordinal,'char',c='3',x='480',y='80')
         rows=[(0,'service',3,None),(1,'pizmon',4,None)]
         labels=['i','ii','1','2']
         check_contents(tree,rows,labels)
         pages[1].find('.//char').set('c','9')
         with self.assertRaises(ValueError):check_contents(tree,rows,labels)
+
+    def test_previous_service_note_is_excluded_from_following_service(self):
+        from opensiddur.importer.asher_selichot.check_book_pdf import slice_day
+        tree=etree.Element('document');page=etree.SubElement(tree,'page',height='800')
+        for text,y,size in [('new service',300,12),('earlier note',700,9),('new note',720,9)]:
+            line=etree.SubElement(page,'line',text=text)
+            font=etree.SubElement(line,'font',size=str(size))
+            etree.SubElement(font,'char',c=text[0],x='100',y=str(y))
+        clipped=slice_day(tree,(0,'new service',1,500),prior_note_texts=('earlier note',))
+        self.assertEqual([l.get('text')for l in clipped.findall('.//line')],['new service','new note'])
 
     def test_previous_service_note_below_next_heading_is_retained(self):
         from opensiddur.importer.asher_selichot.check_book_pdf import slice_day

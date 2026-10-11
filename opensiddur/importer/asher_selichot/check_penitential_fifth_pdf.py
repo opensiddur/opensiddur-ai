@@ -58,7 +58,8 @@ def check(tree, expanded=False):
         for cue in ['Conclude the Service from', 'Say ', 'Wherever the words', 'During the Ten Days of Repentance']:
             if cue in body:raise ValueError('Fulfilled fifth penitential day cue remains: '+cue)
         if body.count('May the prayers and supplications')!=1:raise ValueError('fifth penitential day requires one supplied Full Kaddish')
-        if body.count('being; an Omnipotent God')!=2:raise ValueError('fifth penitential day must repeat the complete thirteen-attributes opening')
+        # Nine supplied Vayaavor passages plus the printed and repeated opening.
+        if body.count('being; an Omnipotent God')!=2 or body.count('take us for thy heritage.')!=11:raise ValueError('fifth penitential day must repeat the complete thirteen-attributes opening')
         if body.count('Omnipotent King, who')!=8:raise ValueError('fifth penitential day prayer-pair reference boundary changed')
     else:
         if 'Conclude the Service from' not in body:raise ValueError('Missing documentary fifth penitential day closing instruction')
@@ -106,6 +107,14 @@ def controls(tree,expanded):
         try:check(broken,expanded)
         except ValueError:pass
         else:raise AssertionError('Fulfilled penitential cue escaped detection')
+    if expanded:
+        broken=copy.deepcopy(tree)
+        lines=[n for n in broken.findall('.//line') if 'Omnipotent God' in plain(n.get('text',''))]
+        if len(lines)!=2:raise AssertionError('Opening-repeat control cannot locate its two lines')
+        lines[-1].getparent().remove(lines[-1])
+        try:check(broken,expanded)
+        except ValueError:pass
+        else:raise AssertionError('Missing expanded opening escaped detection')
     broken=copy.deepcopy(tree)
     chars=next(iter(latin_note_runs(broken).values()))
     for index,char in enumerate(chars):char.set('x',str(600-index*5))
