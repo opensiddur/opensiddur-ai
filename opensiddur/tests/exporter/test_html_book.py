@@ -18,9 +18,11 @@ from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.derived_settings import STATIC_DEFAULTS
 from opensiddur.exporter.html.html import (
     XSLT_FILE,
+    always_basic,
     basic_controls,
     build_book,
     feature_words,
+    read_basic_settings,
     settings_catalogue,
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
@@ -423,6 +425,47 @@ class TestSettingsCatalogue(unittest.TestCase):
         book = self._book({"c": 1000, "d": 9})
         self.assertEqual(self._names(settings_catalogue(book, [])), ["c"])
 
+    def test_a_top_feature_is_at_the_top_however_little_it_decides(self):
+        book = self._book({"c": 1000, "d": 9})
+        self.assertEqual(self._names(settings_catalogue(book, [], frozenset({("t:x", "d")}))),
+                         ["c", "d"])
+
+    def test_a_top_feature_does_not_count_towards_the_limit(self):
+        book = self._book({**{name: 100 for name in "cdefgh"}, "i": 1})
+        names = self._names(settings_catalogue(book, [], frozenset({("t:x", "i")})))
+        self.assertEqual(names, list("cdefgh") + ["i"])
+
+    def test_a_top_feature_that_ranks_is_listed_once(self):
+        book = self._book({"c": 1000, "d": 9})
+        self.assertEqual(self._names(settings_catalogue(book, [], frozenset({("t:x", "c")}))),
+                         ["c"])
+
+    def test_a_top_feature_the_book_does_not_read_is_left_out(self):
+        book = self._book({"c": 1000})
+        self.assertEqual(self._names(settings_catalogue(book, [], frozenset({("t:x", "z")}))),
+                         ["c"])
+
+    def test_a_control_that_sets_a_top_feature_is_at_the_top(self):
+        book = self._book({"a": 1, "c": 1000})
+        self.assertEqual(
+            self._names(settings_catalogue(book, self.CONTROLS, frozenset({("t:x", "a")}))),
+            ["c", "Both"])
+
+    def test_top_features_are_read_from_the_spec(self):
+        with tempfile.TemporaryDirectory() as directory:
+            spec = Path(directory) / "basic.yaml"
+            spec.write_text("controls: []\n"
+                            "features:\n"
+                            "  t:x:\n"
+                            "    a: {label: A, top: true}\n"
+                            "    b: {label: B}\n", encoding="utf-8")
+            self.assertEqual(always_basic(spec), {("t:x", "a")})
+
+    def test_a_top_control(self):
+        controls = [{**self.CONTROLS[0], "top": True}]
+        book = self._book({"a": 1, "c": 1000})
+        self.assertEqual(self._names(settings_catalogue(book, controls)), ["c", "Both"])
+
 
 class TestBasicSettingsSpec(unittest.TestCase):
     """basic_settings.yaml names features the compiler really produces."""
@@ -449,6 +492,9 @@ class TestBasicSettingsSpec(unittest.TestCase):
         self.assertEqual(len({c["id"] for c in controls}), len(controls))
         for control in controls:
             with self.subTest(control=control["id"]):
+                self.assertLessEqual(
+                    set(control), {"id", "label", "note", "top", "options", "features"})
+                self.assertIsInstance(control.get("top", False), bool)
                 self.assertTrue(control["options"])
                 for option in control["options"]:
                     for fs, features in option["set"].items():
@@ -461,6 +507,13 @@ class TestBasicSettingsSpec(unittest.TestCase):
             with self.subTest(feature=(fs, name)):
                 self._check(fs, name)
                 self.assertTrue(words["label"])
+
+    def test_feature_spec_keys(self):
+        for fs, features in read_basic_settings()["features"].items():
+            for name, spec in features.items():
+                with self.subTest(feature=(fs, name)):
+                    self.assertLessEqual(set(spec), {"label", "values", "top"})
+                    self.assertIsInstance(spec.get("top", False), bool)
 
 
 SETTINGS = """\
