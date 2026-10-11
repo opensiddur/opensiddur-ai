@@ -1078,3 +1078,4 @@
 {"urn": "urn:x-opensiddur:text:prayer:hetivah_virtsonkha_et_tsiyon", "status": "canonical", "label_en": "hetivah virtsonkha et tsiyon"}
 {"urn": "urn:x-opensiddur:text:prayer:shuvah_yisrael_ad_adonai", "status": "canonical", "label_en": "shuvah yisrael ad adonai"}
 {"urn": "urn:x-opensiddur:text:prayer:tashuv_terahamenu_vetikhbosh", "status": "canonical", "label_en": "tashuv terahamenu vetikhbosh"}
+{"urn": "urn:x-opensiddur:text:prayer:selichot/rahamekha_rabbim/al_tavo", "status": "canonical", "label_en": "selichot/rahamekha rabbim/al tavo", "parent": "urn:x-opensiddur:text:prayer:selichot/rahamekha_rabbim"}

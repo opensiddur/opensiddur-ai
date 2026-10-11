@@ -8,6 +8,26 @@ from opensiddur.importer.scan.reverse import streams
 
 
 class LaterPenitentialDaysTests(unittest.TestCase):
+    def test_english_final_cue_repeats_opening_including_refrain(self):
+        f={'en':{'scan':'s275','printed_page':'136','text':'Thou who dwellest. My life at my request.'},'notes':{'en':[]}}
+        g={'en':{'scan':'s277','printed_page':'137','text':'Let my voice. (My life, &c.) (Thou who dwellest, &c.)'},'notes':{'en':[]}}
+        r={'fragments':[f,g],'stanzas':[{'fragments':[f]},{'fragments':[g]}],
+           'refrain':{'en':'My life at my request.'},'refrain_cues':{'en':r'\(My life, &c\.\)'},
+           'opening_cue':{'en':'(Thou who dwellest, &c.)'}}
+        root=etree.Element('{'+TEI+'}body');day.pizmon(root,r,'en','urn:example')
+        expansions=root.findall('.//{'+TEI+'}expan')
+        self.assertEqual([e.text for e in expansions],[r['refrain']['en'],f['en']['text']])
+
+    def test_enter_not_target_excludes_preceding_mercy_verse(self):
+        from opensiddur.importer.asher_selichot.erev_rosh_hashanah import printed, EXTRA
+        r={'id':'adonai_boqer_tishma_qoli','kind':'prose','fragments':[
+            {'en':{'scan':'s107','printed_page':'52','text':'Morning. Thy mercy is great. Enter not into judgment with us.'},'notes':{'en':[]}}]}
+        root=etree.Element('{'+TEI+'}body');printed(root,r,'en','urn:example')
+        markers=root.findall('.//{'+TEI+'}milestone')
+        start=next(m for m in markers if m.get('corresp')==EXTRA+'/al_tavo')
+        self.assertEqual(start.tail,'Enter not into judgment with us.')
+        self.assertNotIn('Thy mercy',start.tail)
+
     def test_hebrew_only_opening_repeat_does_not_create_english_repeat(self):
         f={'he':{'scan':'s250','printed_page':'124','text':'שמע׃ יהוה עזור׃'},
            'en':{'scan':'s251','printed_page':'124','text':'Hear us. Lord, help us!'},'notes':{'he':[],'en':[]}}

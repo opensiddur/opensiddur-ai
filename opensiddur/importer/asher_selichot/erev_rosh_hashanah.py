@@ -140,7 +140,12 @@ def printed(parent, reading, lang, context):
                 prefix='רַחֲמֶיךָ' if lang=='he' else 'Thy mercy is great'
                 before,after=data['text'].split(prefix,1)
                 body_words(node,before,[],lang);element(node,'milestone',unit='prayer',corresp=EXTRA)
-                body_words(node,prefix+after,fragment['notes'][lang],lang)
+                stop='אַל תָּבוֹא' if lang=='he' else 'Enter not into judgment'
+                mercy,judgment=(prefix+after).split(stop,1)
+                body_words(node,mercy,[],lang)
+                element(node,'milestone',unit='prayer',corresp=EXTRA+'/al_tavo')
+                body_words(node,stop+judgment,fragment['notes'][lang],lang)
+                element(node,'milestone',unit='prayer')
                 element(node,'milestone',unit='prayer')
             elif reading.get('range_urn'):
                 prefix = ('כִּי לֹא' if lang=='he' else 'for we do not presume') if reading['id']=='hateh_elohai' else ''

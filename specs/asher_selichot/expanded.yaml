@@ -1,9 +1,9 @@
-description: Asher 1912 expanded services through the third penitential day, n258,
+description: Asher 1912 expanded services through the fourth penitential day, n282,
   with Birnbaum Full Kaddish fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded services through the third penitential day
+  title: Asher Selichoth — expanded services through the fourth penitential day
 priority:
   transclusion:
   - asher_selichot_he_1912

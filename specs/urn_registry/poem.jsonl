@@ -470,3 +470,20 @@
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_4", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 4", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_5", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 5", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_6", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:adonai_elohei_yisrael_atah_tsaddiq", "status": "canonical", "label_en": "adonai elohei yisrael atah tsaddiq"}
+{"urn": "urn:x-opensiddur:text:poem:amarnu_nigzarnu_lanu_veein_doresh", "status": "canonical", "label_en": "amarnu nigzarnu lanu veein doresh"}
+{"urn": "urn:x-opensiddur:text:poem:atah_elohai_malki_miqqedem", "status": "canonical", "label_en": "atah elohai malki miqqedem"}
+{"urn": "urn:x-opensiddur:text:poem:eleikha_adonai_shivaati", "status": "canonical", "label_en": "eleikha adonai shivaati"}
+{"urn": "urn:x-opensiddur:text:poem:elohim_adonai_heli_yotseri_umeholeli", "status": "canonical", "label_en": "elohim adonai heli yotseri umeholeli"}
+{"urn": "urn:x-opensiddur:text:poem:eshet_neurim_haahuvah", "status": "canonical", "label_en": "eshet neurim haahuvah"}
+{"urn": "urn:x-opensiddur:text:poem:ezrahi_meever_hannahar", "status": "canonical", "label_en": "ezrahi meever hannahar"}
+{"urn": "urn:x-opensiddur:text:poem:melekh_melakhim_veram_al_ramim", "status": "canonical", "label_en": "melekh melakhim veram al ramim"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_1", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 1", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_2", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 2", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_3", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 3", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_4", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 4", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_5", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 5", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_6", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 6", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_7", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 7", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
+{"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_8", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 8", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}

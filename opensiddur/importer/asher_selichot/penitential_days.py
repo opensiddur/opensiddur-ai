@@ -65,13 +65,14 @@ def pizmon(parent, reading, lang, context):
                     cue,expansion=cues[int(line.text.split('_')[3])];line.text=None
                     choice(element(line,'seg',type='refrain'),cue,expansion)
         else:
+            pattern='(?:'+cue_pattern+')'+('|'+re.escape(opening_cue) if opening_cue else '')
             for index,fragment in enumerate(fragments):
                 data=fragment[lang]
                 if index:pb(block,data['scan'],data['printed_page'])
-                for piece in re.split('('+cue_pattern+')',data['text']):
+                for piece in re.split('('+pattern+')',data['text']):
                     if not piece:continue
-                    if re.fullmatch(cue_pattern,piece):
-                        choice(element(block,'seg',type='refrain'),piece,reading['refrain'][lang])
+                    if re.fullmatch(pattern,piece):
+                        choice(element(block,'seg',type='refrain'),piece,opening if piece==opening_cue else reading['refrain'][lang])
                     else:words_with_notes(block,piece,fragment['notes'][lang],lang)
                     append_words(block,' ')
         previous=fragments[-1][lang]['scan']

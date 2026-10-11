@@ -19,3 +19,12 @@ direction and service limits with broken controls. Keep per-day inspection PDFs
 and checkpoints under output/asher_selichot; refresh the cumulative PDFs after
 all three services. Run tests serially with builds. Merge latest main/master before
 pushing each day's commits and update the existing workstream PRs.
+
+Fourth-day checkpoint: n257–n282; 36 bilingual units and nine independent poem
+modules. All 286 generated XML files validate and reverse verification passes.
+The eight pizmon starts align on identical baselines in both views. Footnote,
+fulfilled-cue, seven El-melekh pair, refrain and seasonal Kaddish checks pass,
+including deliberately broken controls. Direction checks flag 0/697 documentary
+and 0/1883 expanded Hebrew runs, and reject reversed controls. The focused Asher
+suite passes 76 tests; registry checks report no errors or warnings. Independent
+Hebrew proofreading remains pending.

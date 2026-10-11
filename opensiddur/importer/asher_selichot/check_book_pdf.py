@@ -301,6 +301,11 @@ def main(argv=None):
             portion=slice_day(tree,days[10],days[11] if len(days)>11 else None)
             third_penitential_check(portion,args.expanded)
             if args.control:third_penitential_controls(portion,args.expanded)
+        if len(days)>11:
+            from .check_penitential_fourth_pdf import check as fourth_penitential_check, controls as fourth_penitential_controls
+            portion=slice_day(tree,days[11],days[12] if len(days)>12 else None)
+            fourth_penitential_check(portion,args.expanded)
+            if args.control:fourth_penitential_controls(portion,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')

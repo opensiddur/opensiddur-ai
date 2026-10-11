@@ -426,3 +426,15 @@ while English ends with the full refrain and no repeat cue. Do not invent an
 English opening repeat. Full printed refrains stay ordinary text with refrain
 markup. The scan's English footnote citations can contain mistakes; preserve
 those documentary citations and record suspected errors separately.
+
+The fourth penitential day occupies n257–n282, printed 128–140, between large
+body headings shared with the third and fifth days. Yoshev beseter has eight
+shared stanza groups, six short refrain cues and one opening-stanza repeat in
+each language. Its final printed English refrain includes “given to me”, whereas
+the opening says “given me”; preserve those full occurrences independently.
+The printed-130 petition cue starts at “Enter not into judgment”, excluding the
+already printed mercy verse. Use the nested `selichot/rahamekha_rabbim/al_tavo`
+range, then the printed-52 father/mercy and Daniel ranges. Do not copy another
+cue's broader starting point. The apparent truncated “ardent pass” at the end
+of English printed 133 has no visible continuation on 134; retain and document
+it pending independent review rather than completing an unseen word.
