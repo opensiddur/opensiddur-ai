@@ -157,7 +157,7 @@ def printed(parent, reading, lang, context):
             elif reading['kind']=='rubric' and node.get(XML+'lang')=='en' and lang=='he':mixed_words(node,data['text'])
             elif lang=='en' and reading.get('note_markers',{}).get(data['printed_page']):
                 rest=data['text'];offset=sum(len(v) for k,v in reading['note_markers'].items() if int(k)<int(data['printed_page']))
-                for n,anchor in enumerate(reading['note_markers'][data['printed_page']],offset+1):
+                for n,anchor in enumerate(reading['note_markers'][data['printed_page']],reading.get('note_marker_start',{}).get(data['printed_page'],offset+1)):
                     before,rest=rest.split(anchor,1)
                     body_words(node,before+anchor,[],lang)
                     element(node,'hi',str(n),rend='superscript')

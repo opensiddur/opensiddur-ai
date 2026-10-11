@@ -552,3 +552,13 @@ different page crossings; omit their empty page breaks so facsimile order does
 not rewind. Only two prayer pairs precede the pizmon; none follows it. Retain
 nineteen English notes, exact source anchors and mixed-language apparatus, and
 record the source's inconsistent feet/yards figures rather than correcting them.
+
+Seventeenth of Tammuz occupies printed183 lower–187, n367–n376, with native
+tzom-tammuz gate. Sheeh has four shared stanza units: Hebrew ends with a full-opening
+cue, English prints one short refrain cue. Do not invent a repetition rubric.
+Printed184 appears to interchange note numbers2/3; preserve printed associations
+and document the mismatch. Printed185 has three superscript markers without note
+texts: encode unresolved markers without invented reference targets or notes.
+When a provisional capture guessed apparatus text, retain its immutable evidence,
+remove the guesses from working text, and disclose the correction. Incidental OCR
+exposure from a preceding service's full-page context must also be disclosed.

@@ -13,7 +13,7 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast')
+FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast', 'tammuz-fast')
 SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
@@ -225,7 +225,11 @@ def verify_readings(source,project_directory,day):
             notes=node.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             wanted=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
             if list(map(normalize,(''.join(n.itertext()) for n in notes)))!=list(map(normalize,wanted)):raise ValueError('penitential day footnote changed: '+reading['id'])
-            for n in notes+node.findall(f'{{{TEI}}}head'):
+            markers=node.findall(f'.//{{{TEI}}}hi[@rend="superscript"]') if reading.get('note_markers') and lang=='en' else []
+            wanted_markers=[str(n) for page,anchors in reading.get('note_markers',{}).items() for n in range(reading.get('note_marker_start',{}).get(page,1),reading.get('note_marker_start',{}).get(page,1)+len(anchors))] if lang=='en' else []
+            if markers and [n.text for n in markers]!=wanted_markers:raise ValueError('Printed unresolved note marker changed')
+            if wanted_markers and not markers:raise ValueError('Missing printed unresolved note markers')
+            for n in notes+markers+node.findall(f'{{{TEI}}}head'):
                 parent=n.getparent();prev=n.getprevious()
                 if prev is None:parent.text=(parent.text or '')+(n.tail or '')
                 else:prev.tail=(prev.tail or '')+(n.tail or '')

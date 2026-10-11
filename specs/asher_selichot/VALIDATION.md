@@ -8,11 +8,11 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through the Fast of Esther, Archive
-n367/n368 (printed183 upper), are encoded. There are 356 project XML documents,
-178 per language. The twelve changed/new Esther documents validate after the
-preceding checkpoints. Esther adds fourteen bilingual units and three reusable
-poems, with a native taanit-esther occasion gate. Independent Hebrew proof is pending.
+Both title pages and complete services through Seventeenth of Tammuz, Archive
+n375/n376 (printed187), are encoded. There are364 project XML documents,182 per
+language. The twelve changed/new Tammuz documents validate after preceding
+checkpoints. Fourteen bilingual units and three reusable poems use native
+tzom-tammuz. Independent Hebrew proof remains pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -685,3 +685,28 @@ contents/bookmark hierarchy and phrase dots pass; missing-note and shifted-stanz
 controls are rejected. Hebrew direction:0/239 and0/600; reversal controls flag239
 and593. Documentary and expanded pizmon pages were inspected visually. Independent
 Hebrew proof remains pending, especially pointing and rare vocabulary.
+
+
+## Seventeenth of Tammuz, Archive n367–n376
+
+Four Sheeh stanza units align. One Hebrew full-opening choice and one English
+short refrain choice preserve different repetition scopes and full-refrain variants.
+Thirteen actual notes plus three unresolved printed markers are distinguished;
+source184's apparent interchanged note numbers are preserved by their printed
+associations. The source README and adjudication disclose removed provisional
+apparatus guesses and incidental introductory English OCR exposure.
+
+Documentary/expanded PDFs have10/19 pages, converged in three passes. Four stanza
+deltas are zero;13/27 note occurrences, apparatus direction, prayer/refrain bounds,
+retained instructions, contents/bookmark hierarchy and phrase dots pass. Missing-note
+and shifted-stanza controls fail as intended. Hebrew direction:0/244 and0/613;
+reversal controls flag242 and605. Verse pages inspected visually. The string
+“Say unto Zion, arise” is printed prayer text, not a fulfilled inclusion rubric.
+Independent Hebrew proof remains pending.
+
+All364 XML files validate; full source/evidence reverse checks and both project
+URN checks pass. Registry:3,893 records,zero errors/warnings. All97 Asher tests and
+fourteen subtests pass. Native tzom-tammuz=1/0 compilation includes/excludes the
+service correctly and respects title-page=false. The latest full-suite run remains
+the Monday checkpoint. Tevet/Esther CI is checked separately; coverage target
+failures remain disclosed.

@@ -79,3 +79,20 @@ class MondayFastTests(unittest.TestCase):
         reading={'fragments':[a,b],'stanzas':[{'fragments':[a,b]},{'fragments':[c,d]}],'refrain_cues':{'en':'(?!)'},'refrain':{'en':''}}
         root=etree.Element('{'+TEI+'}body');service.pizmon(root,reading,'en','urn:example')
         self.assertEqual([n.get('facs').split('/page/')[1]for n in root.findall('.//{'+TEI+'}pb')],['n366_medium.jpg','n368_medium.jpg'])
+
+    def test_unresolved_source_markers_start_at_printed_number(self):
+        from opensiddur.importer.asher_selichot.erev_rosh_hashanah import printed
+        reading={'id':'unresolved','kind':'poem','fragments':[{'en':{'scan':'s373','printed_page':'185','text':'seventh heaven, then for Tammuz, and no apparatus.'},'notes':{'en':[]}}],'note_markers':{'185':['seventh heaven,','for Tammuz,']},'note_marker_start':{'185':2}}
+        root=etree.Element('{'+TEI+'}body');printed(root,reading,'en','urn:example')
+        markers=root.findall('.//{'+TEI+'}hi')
+        self.assertEqual([n.text for n in markers],['2','3'])
+        self.assertEqual([n.getprevious().tail if n.getprevious() is not None else n.getparent().text for n in markers],['seventh heaven,',' then for Tammuz,'])
+        self.assertEqual(root.findall('.//{'+TEI+'}note'),[])
+
+    def test_tammuz_uses_native_holiday(self):
+        from opensiddur.importer.asher_selichot.first_day import entry
+        with patch('opensiddur.importer.asher_selichot.first_day.titles'):
+            root=entry('he','example',{},book=True,remaining_services=('tammuz-fast',))
+        gate=root.find('.//{'+service.J+'}conditional[@xml:id="tammuz_fast_occasion"]',namespaces={'xml':XML[1:-1]})
+        fs=gate.find('{'+TEI+'}fs')
+        self.assertEqual((fs.get('type'),fs[0].get('name'),fs[0][0].get('value')),('opensiddur:holiday','tzom-tammuz','1'))
