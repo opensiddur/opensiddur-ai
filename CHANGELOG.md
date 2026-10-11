@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
-- Calendar features that were computed wrongly or not at all:
+- Calendar features that were computed wrongly or not at all (#237):
   - **Holidays never set.** Lag BaOmer and Tu BiShvat were never detected, because hdate
     names them `lag_bomer` and `tu_bshvat`. As a result, Birnbaum's tahanun and burial
     services lost their Lag BaOmer text. Pesah Sheni, Sigd, the fast of the firstborn, Purim
