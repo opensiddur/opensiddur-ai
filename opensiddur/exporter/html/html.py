@@ -248,16 +248,17 @@ def settings_catalogue(
     counted once. The top `BASIC_LIMIT`, if they decide at least `BASIC_THRESHOLD` of the
     book's conditional text, are the basic settings; everything is in the Advanced box anyway.
 
-    A control marked `top`, and a single feature in `always`, is a basic setting whenever the
-    book has a use for it, however little text it decides. These follow the ranked ones and do
-    not count towards the limit.
+    A control marked `top`, or a single feature in `always`, is a basic setting whenever the
+    book has a use for it, however little text it decides; so is a control that sets a feature
+    in `always`, which is then not offered alone. These follow the ranked ones and do not count
+    towards the limit.
     """
     features = {(f.fs, f.name): f for f in book.features}
 
     def chars(cids: set[int]) -> int:
         return sum(book.scope_chars[cid] for cid in cids)
 
-    candidates: list[tuple[int, dict[str, Any]]] = []
+    candidates: list[tuple[int, bool, dict[str, Any]]] = []
     covered: set[tuple[str, str]] = set()
     for control in controls:
         read = [key for key in map(tuple, control["features"]) if key in features]
@@ -268,7 +269,8 @@ def settings_catalogue(
             continue
         covered.update(read)
         cids = {cid for key in read for cid in features[key].cids}
-        candidates.append((chars(cids), bool(control.get("top")), {
+        top = bool(control.get("top")) or any(key in always for key in read)
+        candidates.append((chars(cids), top, {
             "type": "control", "id": control["id"], "label": control["label"],
             **({"note": control["note"]} if control.get("note") else {}),
             "options": options}))

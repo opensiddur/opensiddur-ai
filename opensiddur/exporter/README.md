@@ -69,9 +69,10 @@ week, the kind of day, the service, the reading cycle and the rite. They are def
 what it is sure of. Options that would change nothing in a given book are left out of it.
 
 A control or a single feature marked `top: true` in that file is at the top in every book that
-has a use for it, however little of the text it decides: a reader looks for it there. The
-front-matter settings (`opensiddur:paratext`) are marked so. They follow the ranked settings
-and do not count towards the six.
+has a use for it, however little of the text it decides: a reader looks for it there. A control
+that sets such a feature is at the top in its place. The front-matter settings
+(`opensiddur:paratext`) are marked so. They follow the ranked settings and do not count towards
+the six.
 
 The kinds of day are not written by hand. `html/kinds_of_day.py` defines each kind as a test on
 what the compiler derives for a date ("Pesah, first day" is the dates on which `pesah` is 1). It
