@@ -411,3 +411,18 @@ restore caller settings afterward. Check the Half Kaddish as well as Full Kaddis
 correct selection in the closing prayer does not prove the opening is correct.
 Reverse verification removes only the documented editorial addition before
 comparing the shared module with the printed page-3 reading.
+
+## Later penitential days
+
+The third day runs from n233/n234, printed 116, through the upper part of
+n257/n258, printed 128. The fourth day begins on that same facing pair. Bound
+services by their body headings, retaining prior-service notes below a new
+heading when the apparatus belongs to the earlier text.
+
+Shemaenu selihati has six shared semantic units, six Hebrew abbreviation choices
+and four English choices. Hebrew prints a refrain between the lily and dove
+stanzas; English joins them. Its final Hebrew cue repeats the opening stanza,
+while English ends with the full refrain and no repeat cue. Do not invent an
+English opening repeat. Full printed refrains stay ordinary text with refrain
+markup. The scan's English footnote citations can contain mistakes; preserve
+those documentary citations and record suspected errors separately.

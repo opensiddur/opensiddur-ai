@@ -214,6 +214,10 @@ def build(source_root,project_directory):
     if (readings/'penitential-second-day.json').exists():
         from .penitential_second_day import documents as penitential_documents
         authored.extend(penitential_documents(readings))
+    from .penitential_days import DAYS, documents as later_penitential_documents
+    for day in DAYS:
+        if (readings/('penitential-'+day+'-day.json')).exists():
+            authored.extend(later_penitential_documents(readings,day))
     for project, name, root in authored:
         xml=normalized_xml(root)
         valid,errors=validate(xml)

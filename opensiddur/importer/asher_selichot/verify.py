@@ -69,6 +69,8 @@ def verify(source_root, project_directory):
         if (source/'penitential-second-day.json').exists():
             from .penitential_second_day import PENITENTIAL_SECOND_DAY
             targets.append(PENITENTIAL_SECOND_DAY)
+        from .penitential_days import DAYS,service_urn
+        targets.extend(service_urn(d) for d in DAYS if (source/('penitential-'+d+'-day.json')).exists())
         for name in ['index.xml', 'expanded.xml']:
             entry=etree.parse(str(project/name))
             if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
@@ -93,6 +95,10 @@ def verify(source_root, project_directory):
     if (source/'penitential-second-day.json').exists():
         from .penitential_second_day import verify_readings as verify_penitential
         verify_penitential(source,Path(project_directory))
+    from .penitential_days import DAYS, verify_readings as verify_later_penitential
+    for day in DAYS:
+        if (source/('penitential-'+day+'-day.json')).exists():
+            verify_later_penitential(source,Path(project_directory),day)
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
     print(f'{files} schema-valid files; {len(actual)} documentary page/language streams match; expansion targets and forms checked')

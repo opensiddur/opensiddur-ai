@@ -235,6 +235,8 @@ def main(argv=None):
     if any('DAY BEFORE NEW YEAR' in r[1] for r in rows):captions.append('DAY BEFORE NEW YEAR')
     if any('FAST OF GEDALIAH' in r[1] for r in rows):captions.append('FAST OF GEDALIAH')
     if any('2nd OF THE PENITENTIAL DAYS' in r[1] for r in rows):captions.append('2nd OF THE PENITENTIAL DAYS')
+    for caption in ['3rd OF THE PENITENTIAL DAYS','FOURTH OF THE PENITENTIAL DAYS','FIFTH OF THE PENITENTIAL DAYS']:
+        if any(caption in r[1] for r in rows):captions.append(caption)
     days=day_bookmarks(rows,captions)
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
@@ -291,9 +293,14 @@ def main(argv=None):
             if args.control:gedaliah_controls(gedaliah_portion,args.expanded)
         if len(days)>9:
             from .check_penitential_pdf import check as penitential_check, controls as penitential_controls
-            portion=slice_day(tree,days[9])
+            portion=slice_day(tree,days[9],days[10] if len(days)>10 else None)
             penitential_check(portion,args.expanded)
             if args.control:penitential_controls(portion,args.expanded)
+        if len(days)>10:
+            from .check_penitential_third_pdf import check as third_penitential_check, controls as third_penitential_controls
+            portion=slice_day(tree,days[10],days[11] if len(days)>11 else None)
+            third_penitential_check(portion,args.expanded)
+            if args.control:third_penitential_controls(portion,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')

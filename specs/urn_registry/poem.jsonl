@@ -455,3 +455,18 @@
 {"urn": "urn:x-opensiddur:text:poem:shaarei_shamayim_belulei_esh_umayim", "status": "canonical", "label_en": "shaarei shamayim belulei esh umayim"}
 {"urn": "urn:x-opensiddur:text:poem:shiharnukha_biqshanukha_yotser_harim", "status": "canonical", "label_en": "shiharnukha biqshanukha yotser harim"}
 {"urn": "urn:x-opensiddur:text:poem:tohelet_yisrael_hesed_lo_neezav", "status": "canonical", "label_en": "tohelet yisrael hesed lo neezav"}
+{"urn": "urn:x-opensiddur:text:poem:eleikha_lev_venefesh_nishpokh_kamayim", "status": "canonical", "label_en": "eleikha lev venefesh nishpokh kamayim"}
+{"urn": "urn:x-opensiddur:text:poem:enosh_ad_dakka_tashev", "status": "canonical", "label_en": "enosh ad dakka tashev"}
+{"urn": "urn:x-opensiddur:text:poem:enosh_bammeh_yitsdaq_beyom_din", "status": "canonical", "label_en": "enosh bammeh yitsdaq beyom din"}
+{"urn": "urn:x-opensiddur:text:poem:elekhah_veashuvah_el_ishi_harishon", "status": "canonical", "label_en": "elekhah veashuvah el ishi harishon"}
+{"urn": "urn:x-opensiddur:text:poem:ezaaq_el_elohim_qoli", "status": "canonical", "label_en": "ezaaq el elohim qoli"}
+{"urn": "urn:x-opensiddur:text:poem:taharot_rogez_taniah_vetizkor_rahem", "status": "canonical", "label_en": "taharot rogez taniah vetizkor rahem"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon"}
+{"urn": "urn:x-opensiddur:text:poem:eitan_limed_daat", "status": "canonical", "label_en": "eitan limed daat"}
+{"urn": "urn:x-opensiddur:text:poem:shevat_hakisse", "status": "canonical", "label_en": "shevat hakisse"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_1", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 1", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_2", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 2", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_3", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 3", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_4", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 4", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_5", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 5", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_6", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
