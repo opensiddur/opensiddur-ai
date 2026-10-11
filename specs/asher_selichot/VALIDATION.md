@@ -8,11 +8,12 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through Yom Kippur Katan, Archive
-n407/n408 (printed203 upper), are encoded. There are 394 project XML documents,
-197 per language. All validate and reverse-check against documentary readings;
-both projects resolve all references. The registry has 3997 records with zero
-errors or warnings. Independent Hebrew proofreading remains pending.
+Both title pages and all services through the final circumcision pizmon, Archive
+n410 (printed204), are encoded. There are398 project XML documents,199 per
+language. All validate and reverse-check against documentary readings; both
+projects resolve references. The registry has4008 records, zero errors/warnings.
+Independent Hebrew proofreading and identification of an unplaced final-page
+fragment remain pending; these limitations are documented in source evidence.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -723,3 +724,19 @@ find0/783 and0/1213 reversed runs; reversed controls flag777/1201. Explicit occa
 inclusion/exclusion and title-page suppression pass. All102 Asher unit tests pass.
 The prior full-suite and cumulative-PDF counts below are historical; a final book
 run follows the remaining circumcision section. No independent Hebrew proof is claimed.
+
+## Final circumcision checkpoint
+
+Three source units cover printed203 lower–204, the end of the book. Five paired
+stanza starts align with zero baseline delta in both four-page PDFs. Alternating
+Hebrew cue expansions, absent English cues, retained performance instructions,
+removed fulfilled rubric, final boundary and unresolved superscript marker pass.
+The marker uses explicit superscript markup to survive text normalization. Broken
+marker-deletion and shifted-stanza controls are rejected. Final-section bookmark,
+TOC, phrase dots, explicit occasion inclusion/exclusion and title-page suppression
+pass. Hebrew direction checks found0/31 documentary and0/28 expanded reversed
+runs; reversed controls flag28 in each. The unplaced s408 Hebrew fragment remains
+in reading evidence pending identification, outside the poem body.
+
+All104 Asher unit tests pass. Full-book PDFs and the full suite are being rerun
+serially; older aggregate counts in this document remain historical checkpoints.

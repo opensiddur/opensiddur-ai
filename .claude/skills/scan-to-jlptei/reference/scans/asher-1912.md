@@ -590,3 +590,18 @@ keep Reader/Mourner roles. Aleinu and Mourner Kaddish use secondary defaults.
 Nine source notes must survive exactly once. Enlarged s399 confirms printed
 Jer. iii. 2.; do not silently correct a documentary citation. Record incidental
 English OCR exposure of the next section when its shared opening has been read.
+
+## Final circumcision recension
+
+Printed203 lower–204, n407–n410, is the final section. Preserve its independent
+circumcision recension under the existing Zekhor berit Avraham poem identity.
+Two Hebrew cues alternate different full refrains, והשב and ושוב, verified from
+this same recension; English has no corresponding short cues. Never invent
+English repetitions. The circumcision performance instruction remains in both
+views; the supplied-repeat instruction disappears from the expanded view.
+English superscript1 after flesh has no apparatus text on either final page:
+retain an unresolved marker, without an invented note or reference target.
+Record the unplaced Hebrew fragment beside the small cue at the bottom of203
+in source evidence pending identification; do not silently absorb it into verse.
+The English section display label is editorial, taken from the final running
+heading; document it. There is no Torah/haftarah appendix after this poem.

@@ -143,6 +143,8 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         edition.text='Complete services through Erev Yom Kippur, Archive n319/n320 (printed 159), before the Second Fast. Hebrew pointing awaits independent proofreading; later services await encoding.'
     if remaining_services:
         edition.text='Complete services through '+remaining_services[-1].replace('-', ' ')+'. Hebrew pointing awaits independent proofreading; later services await encoding.'
+    if 'circumcision' in remaining_services:
+        edition.text='All services through the final circumcision pizmon, Archive n410 (printed204). Hebrew pointing and unplaced printed material await independent proofreading.'
     if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     if book:
@@ -199,7 +201,7 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
             # BeHaB is an explicit book occasion until the calendar derives its series.
             weekday = 5 if day == 'thursday-fast' else 2
             condition=holiday({'tenth-tevet':'asara-btevet','esther-fast':'taanit-esther','tammuz-fast':'tzom-tammuz'}[day]) if day in ('tenth-tevet','esther-fast','tammuz-fast') else all_of(Feature('asher:occasion',day.replace('-', '_')),Feature(DAY_OF_WEEK,'hebrew-day',weekday))
-            if day=='yom-kippur-katan':condition=Feature('asher:occasion','yom_kippur_katan')
+            if day in ('yom-kippur-katan','circumcision'):condition=Feature('asher:occasion',day.replace('-','_'))
             opening_markup,closing_markup=gate(day.replace('-','_')+'_occasion',condition)
             for markup in [opening_markup,'<j:transclude target="'+service_urn(day)+'"/>',closing_markup]:
                 fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
@@ -219,8 +221,8 @@ def documents(source):
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
         project = f'asher_selichot_{lang}_1912'
-        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists(), penitential_days=tuple(d for d in ['third','fourth','fifth'] if (source/('penitential-'+d+'-day.json')).exists()), include_erev_yom_kippur=(source/'erev-yom-kippur.json').exists(), remaining_services=tuple(d for d in ['monday-fast','thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast','yom-kippur-katan'] if (source/(d+'.json')).exists()))
-        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists(), penitential_days=tuple(d for d in ['third','fourth','fifth'] if (source/('penitential-'+d+'-day.json')).exists()), include_erev_yom_kippur=(source/'erev-yom-kippur.json').exists(), remaining_services=tuple(d for d in ['monday-fast','thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast','yom-kippur-katan'] if (source/(d+'.json')).exists()))
+        yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists(), penitential_days=tuple(d for d in ['third','fourth','fifth'] if (source/('penitential-'+d+'-day.json')).exists()), include_erev_yom_kippur=(source/'erev-yom-kippur.json').exists(), remaining_services=tuple(d for d in ['monday-fast','thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast','yom-kippur-katan','circumcision'] if (source/(d+'.json')).exists()))
+        yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists(), penitential_days=tuple(d for d in ['third','fourth','fifth'] if (source/('penitential-'+d+'-day.json')).exists()), include_erev_yom_kippur=(source/'erev-yom-kippur.json').exists(), remaining_services=tuple(d for d in ['monday-fast','thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast','yom-kippur-katan','circumcision'] if (source/(d+'.json')).exists()))
         service = entry(lang, project, title_data)
         service_div = service.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         root = opening(lang, project, reading[lang])

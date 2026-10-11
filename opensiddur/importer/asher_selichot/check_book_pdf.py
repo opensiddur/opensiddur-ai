@@ -242,6 +242,10 @@ def main(argv=None):
     for caption in ['3rd OF THE PENITENTIAL DAYS','FOURTH OF THE PENITENTIAL DAYS','FIFTH OF THE PENITENTIAL DAYS','DAY BEFORE THE DAY OF ATONEMENT','SECOND FAST','FIFTH FAST','LAST OF THE THREE FASTS','FAST OF TEBETH','FAST OF ESTHER','FAST OF TAMMUZ','PRAYERS FOR THE DAY BEFORE NEW MOON']:
         if any(caption in r[1] for r in rows):captions.append(caption)
     days=day_bookmarks(rows,captions)
+    final=[r for r in rows if r[0]==0 and 'SAID AT CIRCUMCISIONS' in r[1]]
+    if final:
+        if len(final)!=1:raise ValueError('Final circumcision section requires one bookmark')
+        days.extend(final)
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
         subprocess.run(['mutool','draw','-F','stext','-o',str(path),str(args.pdf)],check=True,capture_output=True)
@@ -363,6 +367,11 @@ def main(argv=None):
             portion=slice_day(tree,days[20],days[21] if len(days)>21 else None)
             monthly_check(portion,args.source_root,args.expanded)
             if args.control:monthly_controls(portion,args.source_root,args.expanded)
+        if len(days)>21:
+            from .check_circumcision_pdf import check as final_check, controls as final_controls
+            portion=slice_day(tree,days[21])
+            final_check(portion,args.expanded)
+            if args.control:final_controls(portion,args.expanded)
         if args.control:
             broken_dot=copy.deepcopy(tree)
             line=etree.SubElement(broken_dot.find('page'),'line')

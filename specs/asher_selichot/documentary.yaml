@@ -1,9 +1,9 @@
-description: Asher 1912 complete services through the Yom Kippur Katan, n408, work
-  in progress. Incomplete book, excluded from releases.
+description: Asher 1912 scan edition through the final circumcision pizmon, n410.
+  Independent Hebrew proofreading pending; excluded from automatic releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — services through the last Monday fast
+  title: Asher Selichoth — documentary
 priority:
   transclusion:
   - asher_selichot_he_1912

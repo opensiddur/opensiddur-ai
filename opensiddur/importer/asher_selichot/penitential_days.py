@@ -14,7 +14,7 @@ from .penitential_second_day import wrap_hebrew
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
 FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast', 'tammuz-fast', 'yom-kippur-katan')
-SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
+SERVICES = DAYS + ('erev-yom-kippur','circumcision') + FAST_SERVICES
 
 def manifest_name(day):
     if day not in SERVICES: raise ValueError('Unsupported selichot service: '+day)
@@ -25,7 +25,7 @@ def service_filename(day):
 
 def service_urn(day):
     if day=='erev-yom-kippur': return 'urn:x-opensiddur:text:siddur:selichot/erev_yom_kippur'
-    if day in FAST_SERVICES: return 'urn:x-opensiddur:text:siddur:selichot/'+day.replace('-', '_')
+    if day in FAST_SERVICES or day=='circumcision': return 'urn:x-opensiddur:text:siddur:selichot/'+day.replace('-', '_')
     if day not in DAYS: raise ValueError('Unsupported penitential day: '+day)
     return SERVICE_PREFIX+day+'_day'
 J = 'http://jewishliturgy.org/ns/jlptei/2'
@@ -34,8 +34,9 @@ J = 'http://jewishliturgy.org/ns/jlptei/2'
 def readings(source,day):
     manifest=json.loads((source/(manifest_name(day)+'.json')).read_text())
     units=[json.loads((source/name).read_text()) for name in manifest['readings']]
-    if (not manifest['complete'] or units[0]['id'] not in ('opening_instruction', 'weekday_amidah')
-            or units[-1]['id'] not in ('conclusion', 'conclusion_repeat')):
+    starts=('performance_instruction',) if day=='circumcision' else ('opening_instruction','weekday_amidah')
+    ends=('zekhor_berit_avraham_circumcision_recension',) if day=='circumcision' else ('conclusion','conclusion_repeat')
+    if not manifest['complete'] or units[0]['id'] not in starts or units[-1]['id'] not in ends:
         raise ValueError(day+' penitential day boundaries are incomplete')
     for unit in units:
         if unit['kind']=='poem':
@@ -69,7 +70,7 @@ def pizmon(parent, reading, lang, context):
             # One call retains an unfinished verse across the printed page break.
             prepared=copy.deepcopy(fragments);cues=[]
             def cue_token(match):
-                cues.append((match.group(0),opening if opening_cue and match.group(0)==opening_cue else reading['refrain'][lang]))
+                cues.append((match.group(0),opening if opening_cue and match.group(0)==opening_cue else reading.get('refrain_expansions',{}).get(lang,{}).get(match.group(0),reading['refrain'][lang])))
                 return '__CUE_'+str(len(cues)-1)+'__|'
             for fragment in prepared:
                 fragment['he']['text']=re.sub('(?:'+cue_pattern+')'+('|'+opening_pattern if opening_pattern else ''),cue_token,fragment['he']['text'])
@@ -87,7 +88,7 @@ def pizmon(parent, reading, lang, context):
                 for piece_index,piece in enumerate(pieces):
                     if not piece:continue
                     if re.fullmatch(pattern,piece):
-                        choice(element(block,'seg',type='refrain'),piece,opening if piece==opening_cue else reading['refrain'][lang])
+                        choice(element(block,'seg',type='refrain'),piece,opening if piece==opening_cue else reading.get('refrain_expansions',{}).get(lang,{}).get(piece,reading['refrain'][lang]))
                     else:
                         full_pattern=reading.get('full_refrain_pattern',{}).get(lang)
                         if full_pattern:
@@ -96,6 +97,17 @@ def pizmon(parent, reading, lang, context):
                                 else:words_with_notes(block,part,[n for n in fragment['notes'][lang] if n['anchor'] in part],lang)
                         else:words_with_notes(block,piece,fragment['notes'][lang],lang)
                 if not data.get('join_next'):append_words(block,' ')
+        if lang=='en' and reading.get('literal_superscript_markers'):
+            for owner in list(block.iter()):
+                for attr in ('text','tail'):
+                    value=getattr(owner,attr)
+                    if not value:continue
+                    for glyph in reading['literal_superscript_markers']:
+                        if glyph not in value:continue
+                        before,after=value.split(glyph,1);setattr(owner,attr,before)
+                        mark=etree.Element('{'+TEI+'}hi',rend='superscript');mark.text=unicodedata.normalize('NFKD',glyph);mark.tail=after
+                        if attr=='text':owner.insert(0,mark)
+                        else:owner.addnext(mark)
         previous=fragments[-1][lang]['scan']
         if lang=='he':
             for line in block.findall(f'{{{TEI}}}l'):
@@ -283,7 +295,7 @@ def verify_readings(source,project_directory,day):
                 opening=' '.join(f[lang]['text'] for f in reading['stanzas'][0]['fragments'])
                 for c in choices:
                     cue=''.join(c.find(f'{{{TEI}}}abbr').itertext())
-                    wanted=opening if cue==reading.get('opening_cue',{}).get(lang) else reading['refrain'][lang]
+                    wanted=opening if cue==reading.get('opening_cue',{}).get(lang) else reading.get('refrain_expansions',{}).get(lang,{}).get(cue,reading['refrain'][lang])
                     if normalize(''.join(c.find(f'{{{TEI}}}expan').itertext()))!=normalize(wanted):raise ValueError('Refrain expansion changed')
                 milestones=node.findall(f'{{{TEI}}}milestone[@corresp]')
                 if len(milestones)!=len(reading['stanzas']):raise ValueError('Stanza alignment changed')
