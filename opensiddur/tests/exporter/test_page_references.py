@@ -1,7 +1,7 @@
 """Dynamic references must follow surviving content and its source edition."""
 import unittest
 from lxml import etree
-from opensiddur.exporter.tex.page_references import resolve_page_references
+from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.tests.exporter.test_reledmac_xslt import _transform
 
 
@@ -82,3 +82,25 @@ class TestPageReferences(unittest.TestCase):
         tex = _transform(etree.tostring(root, encoding='unicode'))
         self.assertLess(tex.index('\\label{os-page-'), tex.index('Target begins'))
         self.assertIn('Target begins ', tex)
+
+    def test_label_follows_an_empty_destination(self):
+        root = self.document('''<tei:p>Page <tei:ref type="page" target="urn:target@he"/></tei:p>
+            <tei:p>Before<tei:pb n="5" corresp="urn:target"/>after</tei:p>''')
+        resolve_page_references(root)
+        pb = root.xpath('//*[local-name()="pb"]')[0]
+        self.assertEqual(len(pb), 0)
+        self.assertEqual(pb.getnext().get('type'), 'page-label')
+        self.assertEqual(pb.getnext().tail, 'after')
+
+    def test_every_occurrence_labels_the_repeats(self):
+        body = '''<tei:p>Page <tei:ref type="page" target="urn:target@he"/></tei:p>
+            <tei:div corresp="urn:target"><tei:p>First</tei:p></tei:div>
+            <tei:div corresp="urn:target"><tei:p>Second</tei:p></tei:div>'''
+        root = self.document(body)
+        resolve_page_references(root)
+        self.assertEqual(len(root.xpath('//*[local-name()="anchor"]')), 1)
+        root = self.document(body)
+        resolve_page_references(root, every_occurrence=True)
+        anchors = root.xpath('//*[local-name()="anchor"]')
+        self.assertEqual([a.get('subtype') for a in anchors], [None, 'repeat'])
+        self.assertEqual(len({a.get('n') for a in anchors}), 1)

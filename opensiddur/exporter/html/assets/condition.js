@@ -217,6 +217,15 @@
                      ".m" + cid + " .cm-br");
       }
     });
+    // An optional page reference goes when every occurrence of one of its destinations does.
+    (book.optionalReferences || []).forEach(function (destinations, number) {
+      var reachable = destinations.every(function (occurrences) {
+        return occurrences.some(function (set) {
+          return set.every(function (cid) { return states[book.scopes[cid]] !== FALSE; });
+        });
+      });
+      if (!reachable) hidden.push(".oref" + number);
+    });
     var css = "";
     if (hidden.length) css += hidden.join(",") + "{display:none}\n";
     if (settled.length) css += settled.join(",") + "{display:none}\n";
