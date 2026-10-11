@@ -59,6 +59,14 @@ class TestPreamble(unittest.TestCase):
         self.assertNotIn(r"\usepackage{reledpar}", out)
         self.assertIn(r"\setotherlanguage{hebrew}", out)
 
+    def test_bibliography_url_breaks_are_enabled_after_biblatex(self):
+        out = _transform('<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">'
+                         '<tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text></tei:TEI>')
+        self.assertLess(out.index(r"\usepackage[backend=bibtex]{biblatex}"),
+                        out.index(r"\usepackage{xurl}"))
+        self.assertLess(out.index(r"\usepackage{xurl}"),
+                        out.index(r"\usepackage{hyperref}"))
+
     def test_preamble_declares_running_head_mark_classes(self):
         """Every heading level, plus book and chapter, needs a mark class for the
         running heads to read; the `Alt` family carries the second parallel

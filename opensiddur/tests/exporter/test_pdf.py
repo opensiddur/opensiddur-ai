@@ -312,6 +312,48 @@ class TestCompileTexToPdfRelativeTexFile(unittest.TestCase):
         self.assertTrue(self.output_pdf.exists())
 
 
+@unittest.skipUnless(
+    shutil.which("lualatex") and shutil.which("bibtex"),
+    "requires a real lualatex/bibtex installation",
+)
+class TestBibliographyLineBreaking(unittest.TestCase):
+    def test_long_archive_url_and_eprint_fit_the_text_block(self):
+        from pypdf import PdfReader
+        from opensiddur.common.xslt import xslt_transform_string
+        from opensiddur.exporter.tex.latex import XSLT_FILE
+        identifier = "PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949"
+        url = "https://archive.org/details/" + identifier
+        bibliography = (
+            r"\geometry{textwidth=240pt}" + "\n"
+            + r"\begin{filecontents*}{job.bib}" + "\n"
+            + "@book{longarchive, title={A book}, author={An Author}, date={1949},"
+            + "url={" + url + "}, eprinttype={archive.org}, eprint={" + identifier + "}}\n"
+            + r"\end{filecontents*}" + "\n" + r"\addbibresource{job.bib}"
+        )
+        xml = ('<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">'
+               '<tei:text><tei:body><tei:p>Bibliography regression.</tei:p>'
+               '</tei:body></tei:text></tei:TEI>')
+        tex = xslt_transform_string(XSLT_FILE, xml, xslt_params={
+            "additional-preamble": bibliography,
+            "additional-postamble": r"\nocite{longarchive}\printbibliography",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "doc.tex"
+            source.write_text(tex)
+            pdf = root / "result.pdf"
+            build = root / "build"
+            self.assertTrue(compile_tex_to_pdf(source, pdf, build_dir=build))
+            self.assertNotIn(r"Overfull \hbox", (build / "doc.log").read_text())
+            reader = PdfReader(pdf)
+            text = "".join("".join(page.extract_text().split()) for page in reader.pages)
+            self.assertIn(identifier, text)
+            self.assertIn("archive.org:" + identifier, text)
+            links = [annotation.get_object().get("/A", {}).get("/URI")
+                     for page in reader.pages for annotation in page.get("/Annots", [])]
+            self.assertIn(url, links)
+
+
 class TestExportToPdf(unittest.TestCase):
     """Test the export_to_pdf function."""
 

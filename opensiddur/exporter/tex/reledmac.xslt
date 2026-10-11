@@ -187,6 +187,9 @@
         <!-- Use BibTeX as backend for portability; biber can be unavailable or
              misconfigured on some systems. -->
         <xsl:text>\usepackage[backend=bibtex]{biblatex}&#10;</xsl:text>
+        <!-- xurl must follow biblatex so its URL/eprint letter and digit break
+             penalties are enabled; Archive identifiers can exceed a full line. -->
+        <xsl:text>\usepackage{xurl}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
         <!-- Headings go four deep (index > section > haftarah > rite), and f:heading-toc-level
              emits the fourth as \addcontentsline{toc}{paragraph}. The book class stops the

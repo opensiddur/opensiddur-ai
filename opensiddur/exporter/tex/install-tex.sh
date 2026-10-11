@@ -3,7 +3,7 @@
 #
 # Required packages:
 #   - texlive-luatex:           lualatex engine + lua* libraries
-#   - texlive-latex-extra:      reledmac, reledpar, fancyhdr, polyglossia helpers
+#   - texlive-latex-extra:      reledmac, reledpar, fancyhdr, xurl, polyglossia helpers
 #   - texlive-bibtex-extra:     biblatex with the biber backend
 #   - texlive-fonts-extra:      fallback font shapes used by polyglossia
 #   - texlive-lang-other:       Hebrew (and other RTL) language support
