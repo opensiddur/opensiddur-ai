@@ -1021,6 +1021,15 @@ Given location, the Israel/diaspora binary can be derived:
 </tei:fs>
 ```
 
+A location is in Israel when its time zone is `Asia/Jerusalem`, `Asia/Hebron` or `Asia/Gaza`.
+A time zone stops at the border, so Amman, Aqaba, Tyre and Quneitra are outside Israel.
+
+Nothing is assumed when there is no location and `is-israel` is not declared, or when it is
+declared undefined. A feature that is the same in Israel and the diaspora on that date is
+still derived. A feature that differs between them is left undefined. For example, the first
+day of Hanukkah is derived anywhere, but the eighth day of Pesah, which is a festival day only
+in the diaspora, is not.
+
 Given dates and times, the following values can then be derived:
 ```xml
 <tei:fs type="opensiddur:day-of-week">
@@ -1094,7 +1103,7 @@ From the dates, times, and locations, the holiday calendar is calculated:
       <tei:numeric value="{0-1}">
    </tei:f>
    <tei:f name="purim-meshulash">
-      <tei:numeric value="{0-1}">
+      <tei:numeric value="{0-3}">
    </tei:f>
    <tei:f name="purim-katan">
       <tei:numeric value="{0-1}">
@@ -1106,7 +1115,7 @@ From the dates, times, and locations, the holiday calendar is calculated:
       <tei:numeric value="{0-2}"/>
    </tei:f>
    <tei:f name="tu-bishvat">
-      <tei:numeric value="{0-2}"/>
+      <tei:numeric value="{0-1}"/>
    </tei:f>
    <tei:f name="taanit-bchorot">
       <tei:numeric value="{0-1}"/>
@@ -1126,13 +1135,28 @@ From the dates, times, and locations, the holiday calendar is calculated:
    <tei:f name="yom-haatzmaut">
       <tei:numeric value="{0-1}"/>
    </tei:f>
-   <tei:f name="yom-yerusahalayim">
+   <tei:f name="yom-yerushalayim">
       <tei:numeric value="{0-1}"/>
    </tei:f>
 </tei:fs>
 ```
 
 A `0` value indicates that it is definitely not that holiday. Any other value indicates that it is exactly that day.
+
+Because the values are day numbers, `<tei:binary value="true"/>` matches only a holiday's first
+day. To match any day of a holiday, use `<tei:numeric value="1" max="8"/>` (with the holiday's
+own last day as the maximum).
+
+Some of these need a note:
+- `taanit-bchorot` is the eve of Pesah, 14 Nisan. When 14 Nisan is Shabbat it moves to
+  Thursday, 12 Nisan.
+- `purim-katan` and `shushan-purim-katan` are 14 and 15 Adar I, which exist only in a leap
+  year.
+- `purim-meshulash` numbers the three days of a year in which Shushan Purim falls on Shabbat:
+  `1` on Friday 14 Adar, `2` on Shabbat 15 Adar, and `3` on Sunday 16 Adar. It is derived
+  everywhere. Whether the three-day Purim applies is for the text to say, since it is kept only
+  in a walled city.
+- `sigd` is 29 Marcheshvan.
 
 For `rosh-hodesh`, `1` is the sole day of a one-day Rosh Hodesh or the first day
 of a two-day Rosh Hodesh; `2` is its second day. A month's 30th is day `1`, and
@@ -1191,6 +1215,25 @@ Further derived values are also available and calculated from the above
    </tei:f>
 </tei:fs>
 ```
+
+These aggregates need definitions:
+- `regalim` is any day of Pesah, Shavuot or Sukkot, including Shemini Atzeret and Simhat Torah,
+  which close Sukkot and share its festival Amidah and Musaf.
+- `minor-fast` is one of the four public fasts other than Yom Kippur and Tish'ah b'Av:
+  `tzom-gedalia`, `asara-btevet`, `taanit-esther` and `tzom-tammuz`, each on its observed
+  date. Tish'ah b'Av has its own service, without Avinu Malkenu or the Torah reading of
+  Va-yehal, so a text for it conditions on `tisha-bav`.
+- `day-before-holiday` is the day before a `yom-tov` day that is not itself one. It is the eve
+  of a festival.
+- `day-after-holiday` is the day after a `yom-tov` day that is not itself one. It is isru hag,
+  which outside Israel comes a day later.
+- `motzaei-shabbat` runs from nightfall at the end of Shabbat until dawn on Sunday.
+- `geshem` (binary) is the season of מַשִּׁיב הָרוּחַ וּמוֹרִיד הַגֶּשֶׁם: from Shemini Atzeret to
+  the first day of Pesah, everywhere.
+- `tal-umatar` (binary) is the season of the petition וְתֵן טַל וּמָטָר. It runs from Ma'ariv of
+  7 Marcheshvan in Israel. In the diaspora it runs from Ma'ariv on the evening of 4 December,
+  or 5 December in the year before a Gregorian leap year. Everywhere it ends at Pesah. A date
+  given without a time is its daytime, so 4 December itself is not yet in the season.
 
 The weekly parsha and special additions can also be calculated:
 ```xml
@@ -1269,6 +1312,14 @@ Every `shabbat-` feature except `shabbat-shira` is defined by the Hebrew date �
 Shabbat on or before a fixed date — not by which parshah falls that week. `shabbat-shira` is
 the exception, since Shirat ha-Yam is in Beshalach. More than one may be true at once: in
 5785, 1 Adar falls on Shabbat and is both `shabbat-shkalim` and `shabbat-rosh-hodesh`.
+
+A Shabbat that is the 30th of a month is both `shabbat-rosh-hodesh` and `shabbat-mahar-hodesh`,
+since it is Rosh Hodesh and so is the following day. The haftarah of Rosh Hodesh is read, and
+some add the first and last verses of Mahar Hodesh to it. A text that does not add them
+conditions the Mahar Hodesh haftarah on `shabbat-mahar-hodesh` being true and
+`shabbat-rosh-hodesh` being false.
+
+After nightfall on Saturday the reading is the one for the coming week, as it is from Sunday.
 
 `shabbat-mevarchim` marks the Sabbath strictly before the first day of the coming
 Rosh Hodesh, excluding Tishrei. For a two-day Rosh Hodesh, day 30 of the old month
@@ -1587,6 +1638,13 @@ The zman tefillah is also able to be calculated (though there may also be other 
    </tei:f>
 </tei:fs>
 ```
+
+`musaf` is true on Shabbat, every day of Pesah, Shavuot and Sukkot (including chol hamoed),
+Shemini Atzeret, Rosh Hashanah, Yom Kippur and Rosh Hodesh.
+
+`slihot` gives the time of day only: from nightfall until the end of the time for Shaharit. The
+season is not tested, because a personal fast has its selichot at any time of year. A text
+says which season it belongs to.
 
 Similarly, a text may be associated with which service it represents. This value is inherent in the text and will not be automatically calculated:
 ```xml

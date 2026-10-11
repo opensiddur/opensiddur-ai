@@ -17,11 +17,11 @@
     "shmini-atzeret": 0,
     "shushan-purim": 0,
     "shushan-purim-katan": 0,
-    "sigd": 0,
     "sukkot": 0,
     "taanit-bchorot": 0,
     "taanit-esther": 0,
     "tisha-bav": 0,
+    "tu-bav": 0,
     "tu-bishvat": 0,
     "tzom-gedalia": 0,
     "tzom-tammuz": 0,
@@ -67,7 +67,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -110,7 +110,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -154,7 +154,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -199,7 +199,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -244,7 +244,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -289,7 +289,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -334,7 +334,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -379,7 +379,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -424,7 +424,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -469,7 +469,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -514,7 +514,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -559,7 +559,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -604,7 +604,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -612,7 +612,7 @@
     "high-holidays": false,
     "hoshana-rabba": false,
     "minor-fast": false,
-    "regalim": false,
+    "regalim": true,
     "yom-tov": true
    }
   }
@@ -649,7 +649,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -657,7 +657,7 @@
     "high-holidays": false,
     "hoshana-rabba": false,
     "minor-fast": false,
-    "regalim": false,
+    "regalim": true,
     "yom-tov": true
    }
   }
@@ -693,7 +693,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": true,
@@ -738,7 +738,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 1,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": true,
@@ -783,7 +783,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": true,
@@ -826,7 +826,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -871,7 +871,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -916,7 +916,52 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
+   },
+   "opensiddur:holiday-aggregate": {
+    "aseret-ymei-tshuva": false,
+    "chol-hamoed": false,
+    "high-holidays": false,
+    "hoshana-rabba": false,
+    "minor-fast": false,
+    "regalim": false,
+    "yom-tov": false
+   }
+  }
+ },
+ {
+  "label": "Lag BaOmer",
+  "set": {
+   "opensiddur:holiday": {
+    "asara-btevet": 0,
+    "hanukkah": 0,
+    "lag-baomer": 1,
+    "omer": 33,
+    "pesah": 0,
+    "pesah-sheini": 0,
+    "purim": 0,
+    "purim-katan": 0,
+    "purim-meshulash": 0,
+    "rosh-hashana": 0,
+    "rosh-hodesh": 0,
+    "shavuot": 0,
+    "shmini-atzeret": 0,
+    "shushan-purim": 0,
+    "shushan-purim-katan": 0,
+    "sigd": 0,
+    "sukkot": 0,
+    "taanit-bchorot": 0,
+    "taanit-esther": 0,
+    "tisha-bav": 0,
+    "tu-bav": 0,
+    "tu-bishvat": 0,
+    "tzom-gedalia": 0,
+    "tzom-tammuz": 0,
+    "yom-haatzmaut": 0,
+    "yom-hashoah": 0,
+    "yom-hazikaron": 0,
+    "yom-kippur": 0,
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
@@ -957,7 +1002,7 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "chol-hamoed": false,
@@ -1001,14 +1046,14 @@
     "yom-hashoah": 0,
     "yom-hazikaron": 0,
     "yom-kippur": 0,
-    "yom-yerusahalayim": 0
+    "yom-yerushalayim": 0
    },
    "opensiddur:holiday-aggregate": {
     "aseret-ymei-tshuva": false,
     "chol-hamoed": false,
     "high-holidays": false,
     "hoshana-rabba": false,
-    "minor-fast": true,
+    "minor-fast": false,
     "regalim": false,
     "yom-tov": false
    }

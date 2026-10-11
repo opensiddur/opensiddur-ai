@@ -15,7 +15,7 @@ from pyluach import dates as pyluach_dates
 from pyluach import hebrewcal
 from pyluach import parshios
 
-from opensiddur.exporter.linear import NumericValue
+from opensiddur.exporter.linear import NumericValue, Undefined
 
 FeatureRef = tuple[str, str]
 
@@ -36,9 +36,10 @@ FS_HOUSEHOLD = "opensiddur:household"
 FS_VARIANT = "opensiddur:variant"
 FS_RECITATION = "opensiddur:recitation"
 
-# Israel approximate bounding box (lat/lon).
-_ISRAEL_LAT = (29.5, 33.5)
-_ISRAEL_LON = (34.2, 36.0)
+# The time zones that cover the Land of Israel. A zone, unlike a bounding box, stops at the
+# border: Amman, Aqaba, Tyre and Quneitra are close enough to fall in any box that holds Eilat,
+# Metula and the Golan, and they keep the diaspora's second festival days.
+_ISRAEL_ZONES = frozenset({"Asia/Jerusalem", "Asia/Hebron", "Asia/Gaza"})
 
 HOLIDAY_FEATURES = (
     "pesah",
@@ -69,11 +70,13 @@ HOLIDAY_FEATURES = (
     "yom-hashoah",
     "yom-hazikaron",
     "yom-haatzmaut",
-    "yom-yerusahalayim",
+    "yom-yerushalayim",
 )
 
 AGGREGATE_FEATURES = (
     "shabbat",
+    "motzaei-shabbat",
+    "eruv-tavshilin",
     "yom-tov",
     "chol-hamoed",
     "regalim",
@@ -209,8 +212,17 @@ class SettingSnapshot:
     def get(self, fs_type: str, feature_name: str) -> Any | None:
         return self.get_setting(fs_type, feature_name)
 
-    def get_int(self, fs_type: str, feature_name: str) -> int | None:
+    def _defined(self, fs_type: str, feature_name: str) -> Any | None:
+        """The value, or None when it is unset *or* declared undefined.
+
+        A volume declares a feature undefined (YAML ``null``, ``<tei:default/>``) to say it is
+        not known. To a computation that is the same as never having been told.
+        """
         value = self.get(fs_type, feature_name)
+        return None if value is Undefined else value
+
+    def get_int(self, fs_type: str, feature_name: str) -> int | None:
+        value = self._defined(fs_type, feature_name)
         if value is None:
             return None
         if isinstance(value, NumericValue):
@@ -223,7 +235,7 @@ class SettingSnapshot:
 
     def get_float(self, fs_type: str, feature_name: str) -> float | None:
         """Coordinates, which reach the stack as a NumericValue when declared in JLPTEI."""
-        value = self.get(fs_type, feature_name)
+        value = self._defined(fs_type, feature_name)
         if value is None:
             return None
         if isinstance(value, NumericValue):
@@ -234,9 +246,19 @@ class SettingSnapshot:
             return None
 
     def get_bool(self, fs_type: str, feature_name: str) -> bool | None:
-        value = self.get(fs_type, feature_name)
+        """A truth value, or None if there is none to be had.
+
+        A string is read as a word, not by Python truthiness, under which the quoted YAML
+        ``"false"`` would be true; a string that is not a truth value counts as unknown.
+        """
+        value = self._defined(fs_type, feature_name)
         if value is None:
             return None
+        if isinstance(value, NumericValue):
+            return bool(value.value)
+        if isinstance(value, str):
+            return {"true": True, "1": True, "false": False, "0": False}.get(
+                value.strip().lower())
         return bool(value)
 
     def gregorian_date(self) -> date | None:
@@ -293,17 +315,49 @@ class SettingSnapshot:
             return None
         return hdate.Location("", lat, lon, self.timezone(), 0)
 
-    def is_diaspora(self) -> bool:
-        is_israel = self.get_bool(FS_ISRAEL, "is-israel")
-        if is_israel is not None:
-            return not is_israel
-        loc = self.location()
-        if loc is None:
-            return True
-        return not (
-            _ISRAEL_LAT[0] <= loc.latitude <= _ISRAEL_LAT[1]
-            and _ISRAEL_LON[0] <= loc.longitude <= _ISRAEL_LON[1]
-        )
+    def in_israel(self) -> bool | None:
+        """Whether the volume is for Israel, or None if that is not known.
+
+        A declared ``is-israel`` wins, and one declared undefined means the volume does not
+        say -- the coordinates are not consulted behind its back. Otherwise the coordinates
+        decide, if there are any. Nothing is assumed: a computation that depends on the answer
+        works out both and keeps only what they agree on (see ``_for_locale``).
+        """
+        declared = self.get(FS_ISRAEL, "is-israel")
+        if declared is Undefined:
+            return None
+        if declared is not None:
+            return self.get_bool(FS_ISRAEL, "is-israel")
+        lat = self.get_float(FS_LOCATION, "latitude")
+        lon = self.get_float(FS_LOCATION, "longitude")
+        if lat is None or lon is None:
+            return None
+        return _is_israel_at(lat, lon)
+
+
+def _is_israel_at(latitude: float, longitude: float) -> bool:
+    return _timezone_name_at(latitude, longitude) in _ISRAEL_ZONES
+
+
+def _for_locale(
+    snapshot: SettingSnapshot,
+    compute: Callable[[bool], dict[str, Any] | None],
+) -> dict[str, Any] | None:
+    """Run a computation that differs between Israel and the diaspora.
+
+    Where the locale is unknown both are worked out and only the features on which they agree
+    are kept. The rest are left out, and an omitted feature evaluates as undefined, which keeps
+    the text it governs: the first of Hanukkah is the first of Hanukkah anywhere, while the
+    eighth of Pesah may or may not be a festival day.
+    """
+    israel = snapshot.in_israel()
+    if israel is not None:
+        return compute(israel)
+    inside, outside = compute(True), compute(False)
+    if inside is None or outside is None:
+        return None
+    return {name: value for name, value in inside.items()
+            if name in outside and outside[name] == value}
 
 
 def _jlptei_weekday(python_weekday: int) -> int:
@@ -388,31 +442,39 @@ def compute_hebrew_date(snapshot: SettingSnapshot) -> dict[str, Any] | None:
             "leap-year": hebrewcal.Year(heb.year).leap}
 
 
+#: The parts (chalakim) of an hour.
+_PARTS_PER_HOUR = 1080
+
+
 def compute_hebrew_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    """The variable hour and the part of it.
+
+    Daytime hours 0-11 divide sunrise to sunset into twelve; night hours 12-23 divide sunset to
+    the next sunrise. Before sunrise it is still the night that began at the previous sunset.
+    The part is a 1080th of the *variable* hour, not of a clock hour.
+    """
     gdate = snapshot.gregorian_date()
     loc = snapshot.location()
     aware_dt = _datetime_from_snapshot(snapshot)
     if gdate is None or loc is None or aware_dt is None:
         return None
-    z = hdate.Zmanim(gdate, location=loc)
-    sunrise = z.netz_hachama.local
-    sunset = z.shkia.local
-    if aware_dt < sunrise:
-        variable_hour = 0
-        elapsed = (aware_dt - (sunrise - timedelta(days=1))).total_seconds()
-    elif aware_dt < sunset:
-        day_length = (sunset - sunrise).total_seconds()
-        elapsed = (aware_dt - sunrise).total_seconds()
-        variable_hour = min(11, int(elapsed / day_length * 12)) if day_length else 0
+    today = hdate.Zmanim(gdate, location=loc)
+    if aware_dt < today.netz_hachama.local:
+        first_hour = 12
+        start = hdate.Zmanim(gdate - timedelta(days=1), location=loc).shkia.local
+        end = today.netz_hachama.local
+    elif aware_dt < today.shkia.local:
+        first_hour = 0
+        start, end = today.netz_hachama.local, today.shkia.local
     else:
-        night_start = sunset
-        next_sunrise = z.netz_hachama.local + timedelta(days=1)
-        night_length = (next_sunrise - night_start).total_seconds()
-        elapsed = (aware_dt - night_start).total_seconds()
-        variable_hour = 12 + min(11, int(elapsed / night_length * 12)) if night_length else 12
-    part = int((elapsed % 3600) / (3600 / 1080)) if elapsed >= 0 else 0
-    part = max(0, min(1079, part))
-    return {"variable-hour": variable_hour, "part": part}
+        first_hour = 12
+        start = today.shkia.local
+        end = hdate.Zmanim(gdate + timedelta(days=1), location=loc).netz_hachama.local
+    length = (end - start).total_seconds()
+    hours = (aware_dt - start).total_seconds() / length * 12 if length > 0 else 0.0
+    hour = min(11, max(0, int(hours)))
+    part = min(_PARTS_PER_HOUR - 1, max(0, int((hours - hour) * _PARTS_PER_HOUR)))
+    return {"variable-hour": first_hour + hour, "part": part}
 
 
 def compute_israel(snapshot: SettingSnapshot) -> dict[str, Any] | None:
@@ -420,11 +482,7 @@ def compute_israel(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     lon = snapshot.get_float(FS_LOCATION, "longitude")
     if lat is None or lon is None:
         return None
-    is_israel = (
-        _ISRAEL_LAT[0] <= lat <= _ISRAEL_LAT[1]
-        and _ISRAEL_LON[0] <= lon <= _ISRAEL_LON[1]
-    )
-    return {"is-israel": is_israel}
+    return {"is-israel": _is_israel_at(lat, lon)}
 
 
 def compute_location(snapshot: SettingSnapshot) -> dict[str, Any] | None:
@@ -544,10 +602,8 @@ def _map_hdate_holidays(
             values["tisha-bav"] = 1
         elif name == "tu_bav":
             values["tu-bav"] = 1
-        elif name == "tu_bishvat":
+        elif name == "tu_bshvat":
             values["tu-bishvat"] = 1
-        elif name == "sigd":
-            values["sigd"] = 1
         elif name == "yom_hashoah":
             values["yom-hashoah"] = 1
         elif name == "yom_hazikaron":
@@ -555,11 +611,11 @@ def _map_hdate_holidays(
         elif name == "yom_haatzmaut":
             values["yom-haatzmaut"] = 1
         elif name == "yom_yerushalayim":
-            values["yom-yerusahalayim"] = 1
-        elif name == "lag_baomer":
+            values["yom-yerushalayim"] = 1
+        elif name == "lag_bomer":
             values["lag-baomer"] = 1
-        elif name == "pesach_sheini":
-            values["pesah-sheini"] = 1
+
+    values.update(_hebrew_date_holidays(heb))
 
     if hi.omer:
         # hdate.day is the remainder within a week (zero on days 7, 14, ...).
@@ -570,14 +626,55 @@ def _map_hdate_holidays(
     return values
 
 
-def compute_holiday(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+#: Pyluach's months, for the days hdate does not know.
+_IYAR = 2
+_MARCHESHVAN = 8
+
+
+def _hebrew_date_holidays(heb: pyluach_dates.HebrewDate) -> dict[str, int]:
+    """The days hdate has no name for, which the Hebrew date settles by itself.
+
+    Only the days that fall on them are returned; every other day is already zero.
+    """
+    found: dict[str, int] = {}
+    leap = hebrewcal.Year(heb.year).leap
+    if heb.month == _IYAR and heb.day == 14:
+        found["pesah-sheini"] = 1
+    if heb.month == _MARCHESHVAN and heb.day == 29:
+        found["sigd"] = 1
+    # The fast of the firstborn is the eve of Pesah, brought forward to Thursday when the eve
+    # is Shabbat, since a fast is not kept on Shabbat (and Friday is taken up with
+    # preparing for it).
+    erev_pesah = pyluach_dates.HebrewDate(heb.year, _NISAN, 14)
+    fast_of_firstborn = erev_pesah.subtract(days=2) if erev_pesah.weekday() == 7 else erev_pesah
+    if heb == fast_of_firstborn:
+        found["taanit-bchorot"] = 1
+    # The Purim of the first Adar, in a leap year only.
+    if leap and heb.month == _ADAR:
+        if heb.day == 14:
+            found["purim-katan"] = 1
+        elif heb.day == 15:
+            found["shushan-purim-katan"] = 1
+    # When Shushan Purim is Shabbat, a walled city spreads its Purim over three days: the
+    # megillah on Friday, Al ha-Nissim and the Purim reading on Shabbat, the feast on Sunday.
+    # Numbered by day, since each of the three has its own observances.
+    adar = _adar_of_purim(heb.year)
+    shushan_purim = pyluach_dates.HebrewDate(heb.year, adar, 15)
+    if shushan_purim.weekday() == 7 and heb.month == adar and 14 <= heb.day <= 16:
+        found["purim-meshulash"] = heb.day - 13
+    return found
+
+
+def _holidays(snapshot: SettingSnapshot, israel: bool) -> dict[str, Any] | None:
     gdate = _effective_gregorian_date(snapshot)
     heb = _hebrew_from_snapshot(snapshot)
     if gdate is None or heb is None:
         return None
-    diaspora = snapshot.is_diaspora()
-    hi = hdate.HDateInfo(gdate, diaspora=diaspora)
-    return _map_hdate_holidays(hi, heb)
+    return _map_hdate_holidays(hdate.HDateInfo(gdate, diaspora=not israel), heb)
+
+
+def compute_holiday(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    return _for_locale(snapshot, lambda israel: _holidays(snapshot, israel))
 
 
 #: Festivals every one of whose days is yom tov.
@@ -610,32 +707,41 @@ def compute_holiday_from_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] 
     return dict.fromkeys(ALWAYS_YOM_TOV, 0)
 
 
+#: The minor fasts: the public fasts other than Yom Kippur and Tish'ah b'Av, which have services
+#: of their own. These are the days of Avinu Malkenu, Anenu in the repetition, and the Torah
+#: reading of Va-yehal.
+MINOR_FASTS = ("tzom-gedalia", "asara-btevet", "taanit-esther", "tzom-tammuz")
+
+#: The three pilgrimage festivals, each with the days that close it: Shemini Atzeret and
+#: Simhat Torah end Sukkot, and share its festival Amidah and Musaf.
+REGALIM = ("pesah", "shavuot", "sukkot", "shmini-atzeret")
+
+
 def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | None:
-    holidays = compute_holiday(snapshot)
+    return _for_locale(snapshot, lambda israel: _holiday_aggregate(snapshot, israel))
+
+
+def _holiday_aggregate(snapshot: SettingSnapshot, israel: bool) -> dict[str, Any] | None:
+    holidays = _holidays(snapshot, israel)
     dow = compute_day_of_week(snapshot)
     heb = _hebrew_from_snapshot(snapshot)
     if holidays is None or dow is None:
         return None
-    # The Hebrew day is authoritative: it has rolled over at sunset, so Friday evening is
+    # The Hebrew day is authoritative: it has rolled over at nightfall, so Friday evening is
     # already Shabbat and Saturday evening is no longer. Where no rollover is possible (no
     # location or no time) hebrew-day equals secular-day, so this is unchanged for callers
     # that supply a bare date.
     is_shabbat = dow.get("hebrew-day") == 7
-    # Saturday night: the civil day is still Saturday but the Hebrew day has moved on. This
-    # is when havdalah is said — in the haggadah, the yaknehaz paragraph of the kiddush.
-    motzaei_shabbat = dow.get("secular-day") == 7 and dow.get("hebrew-day") != 7
     # A festival *day*, meaning one on which work is forbidden -- not the whole festival
     # period. Chol hamoed is not yom tov, and cannot be told from the day number alone:
     # the second of Pesah is yom tov in the diaspora and chol hamoed in Israel, and both
-    # are day 2. hdate knows which, having been given the diaspora setting already.
+    # are day 2. hdate knows which, having been given the locale already.
     gdate = _effective_gregorian_date(snapshot)
-    yom_tov = gdate is not None and hdate.HDateInfo(
-        gdate, diaspora=snapshot.is_diaspora()).is_yom_tov
+    yom_tov = _is_yom_tov(gdate, israel)
     # Israel begins on day 2; Hoshana Rabba (Sukkot day 7) is still chol hamoed.
-    first_intermediate_day = 3 if snapshot.is_diaspora() else 2
+    first_intermediate_day = 2 if israel else 3
     chol_hamoed = (first_intermediate_day <= holidays.get("pesah", 0) <= 6
                    or first_intermediate_day <= holidays.get("sukkot", 0) <= 7)
-    regalim = holidays.get("pesah", 0) > 0 or holidays.get("shavuot", 0) > 0 or holidays.get("sukkot", 0) > 0
     aseret = (
         heb is not None
         and heb.month == 7
@@ -643,36 +749,56 @@ def compute_holiday_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] | Non
     )
     return {
         "shabbat": is_shabbat,
-        "motzaei-shabbat": motzaei_shabbat,
+        "motzaei-shabbat": _is_motzaei_shabbat(snapshot, dow),
         "yom-tov": yom_tov,
         "chol-hamoed": chol_hamoed,
-        "regalim": regalim,
+        "regalim": any(holidays.get(k, 0) > 0 for k in REGALIM),
         "hoshana-rabba": holidays.get("sukkot", 0) == 7,
         "high-holidays": holidays.get("rosh-hashana", 0) > 0 or holidays.get("yom-kippur", 0) > 0,
         "aseret-ymei-tshuva": aseret,
-        "minor-fast": any(holidays.get(k, 0) > 0 for k in ("tzom-gedalia", "asara-btevet", "taanit-esther", "tzom-tammuz", "tisha-bav")),
-        "eruv-tavshilin": _needs_eruv_tavshilin(snapshot),
-        "day-before-holiday": False,
-        "day-after-holiday": False,
-        **_seasons(snapshot, heb),
+        "minor-fast": any(holidays.get(k, 0) > 0 for k in MINOR_FASTS),
+        "eruv-tavshilin": _needs_eruv_tavshilin(snapshot, israel),
+        # The eve of a festival and the day after one (isru hag), neither itself a festival day.
+        "day-before-holiday": not yom_tov and _is_yom_tov(gdate + timedelta(days=1), israel),
+        "day-after-holiday": not yom_tov and _is_yom_tov(gdate - timedelta(days=1), israel),
+        **_seasons(snapshot, heb, israel),
     }
 
 
-def _seasons(snapshot: SettingSnapshot, heb: pyluach_dates.HebrewDate | None
-             ) -> dict[str, Any]:
+def _is_yom_tov(gdate: date, israel: bool) -> bool:
+    return hdate.HDateInfo(gdate, diaspora=not israel).is_yom_tov
+
+
+def _is_motzaei_shabbat(snapshot: SettingSnapshot, dow: dict[str, Any]) -> bool:
+    """Saturday night, when havdalah is said -- in the haggadah, the yaknehaz of the kiddush.
+
+    From nightfall, when the civil day is still Saturday but the Hebrew day has moved on,
+    until dawn on Sunday: a seder that runs past midnight is still on Saturday night.
+    """
+    if dow.get("secular-day") == 7:
+        return dow.get("hebrew-day") != 7
+    if dow.get("secular-day") != 1:
+        return False
+    gdate = snapshot.gregorian_date()
+    loc = snapshot.location()
+    if gdate is None or loc is None or snapshot.time_of_day() is None:
+        return False
+    return _datetime_from_snapshot(snapshot) < hdate.Zmanim(gdate, location=loc).alot_hashachar.local
+
+
+def _seasons(snapshot: SettingSnapshot, heb: pyluach_dates.HebrewDate | None,
+             israel: bool) -> dict[str, Any]:
     """The two rain seasons, which are not the same season.
 
     ``geshem`` is when מַשִּׁיב הָרוּחַ וּמוֹרִיד הַגֶּשֶׁם is said in the second berakhah
     of the Amidah: from Shmini Atzeret to the first day of Pesach, the same everywhere.
 
     ``tal-umatar`` is when וְתֵן טַל וּמָטָר לִבְרָכָה is asked for in the ninth: from
-    7 Marcheshvan **in Israel**, but in the diaspora only from 4 December — 5 December in
-    the year before a Gregorian leap year — because the petition follows the agricultural
-    year of the place asking. Both end at Pesach.
-
-    A feature is **left out** rather than guessed where its inputs are missing: an omitted
-    feature evaluates as undefined, which keeps the text it governs and leaves the marker
-    in the output for a later stage. Guessing would silently print the wrong season.
+    Ma'ariv of 7 Marcheshvan **in Israel**, but in the diaspora only from Ma'ariv on the
+    evening of 4 December — 5 December in the year before a Gregorian leap year — because
+    the petition follows the agricultural year of the place asking. Both end at Pesach.
+    Where the locale is unknown, ``_for_locale`` keeps ``tal-umatar`` only on the dates on
+    which the two rules agree.
     """
     if heb is None:
         return {}
@@ -682,21 +808,18 @@ def _seasons(snapshot: SettingSnapshot, heb: pyluach_dates.HebrewDate | None
     found: dict[str, Any] = {
         "geshem": pyluach_dates.HebrewDate(heb.year, 7, 22) <= heb <= pesach,
     }
-    in_israel = snapshot.get_bool(FS_ISRAEL, "is-israel")
-    if in_israel is None:
-        computed = compute_israel(snapshot)
-        in_israel = computed.get("is-israel") if computed else None
-    if in_israel is None:
-        return found
-    if in_israel:
+    if israel:
         found["tal-umatar"] = pyluach_dates.HebrewDate(heb.year, 8, 7) <= heb <= pesach
         return found
+    # The effective date has already moved to the next day at nightfall, so the evening of
+    # 4 December -- when the petition begins -- is the effective 5th.
     gregorian = _effective_gregorian_date(snapshot)
-    if gregorian is None or heb > pesach:
-        found["tal-umatar"] = False if gregorian is not None else None
-        return {k: v for k, v in found.items() if v is not None}
-    if gregorian.month == 12:
-        found["tal-umatar"] = gregorian.day >= _tal_umatar_december_day(gregorian.year)
+    if gregorian is None:
+        return found
+    if heb > pesach:
+        found["tal-umatar"] = False
+    elif gregorian.month == 12:
+        found["tal-umatar"] = gregorian.day > _tal_umatar_december_day(gregorian.year)
     else:
         # Before Pesach and not December: January to Pesach is still the winter that
         # began last December; October and November are not, since the diaspora waits.
@@ -714,7 +837,7 @@ def _tal_umatar_december_day(year: int) -> int:
     return 5 if calendar.isleap(year + 1) else 4
 
 
-def _needs_eruv_tavshilin(snapshot: SettingSnapshot) -> bool:
+def _needs_eruv_tavshilin(snapshot: SettingSnapshot, israel: bool) -> bool:
     """Whether an eruv tavshilin is called for in the coming days.
 
     Cooking on a festival is permitted only for that festival, so when one runs straight into
@@ -728,12 +851,11 @@ def _needs_eruv_tavshilin(snapshot: SettingSnapshot) -> bool:
     gdate = _effective_gregorian_date(snapshot)
     if gdate is None:
         return False
-    diaspora = snapshot.is_diaspora()
     for offset in range(0, 4):
         day = gdate + timedelta(days=offset)
         if _jlptei_weekday(day.weekday()) != 6:  # a yom tov that is itself Friday
             continue
-        if not hdate.HDateInfo(day, diaspora=diaspora).is_yom_tov:
+        if not _is_yom_tov(day, israel):
             continue
         return True
     return False
@@ -831,7 +953,8 @@ def _is_shabbat_mevarchim(shabbat) -> bool:
 
 
 def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
-    gdate = snapshot.gregorian_date()
+    # The effective date, so that Saturday night already looks ahead to the coming week.
+    gdate = _effective_gregorian_date(snapshot)
     if gdate is None:
         return None
     g = _pyluach_from_gregorian(gdate)
@@ -873,20 +996,28 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         # When 9 Av is Shabbat the fast is deferred, but the haftarah of Hazon is read that day.
         "shabbat-hazon": shabbat == tisha_bav,
         "shabbat-nahamu": shabbat == tisha_bav.add(days=7),
-        # Rosh Hodesh and Mahar Hodesh each carry their own haftarah.
+        # Rosh Hodesh and Mahar Hodesh each carry their own haftarah. A Shabbat that is the
+        # 30th is both, and both are true: the haftarah of Rosh Hodesh is read, and some add
+        # the first and last verses of Mahar Hodesh to it. The text chooses.
         "shabbat-rosh-hodesh": _rosh_hodesh_day(shabbat) > 0,
         "shabbat-mahar-hodesh": _rosh_hodesh_day(tomorrow) > 0,
         "shabbat-mevarchim": _is_shabbat_mevarchim(shabbat),
     }
-    patterns = _triennial_cycle_patterns(
-        year, israel=not snapshot.is_diaspora()
-    )
-    for pair, pattern in patterns.items():
-        result[f"triennial-pattern-{pair}"] = pattern
+    # Patterns not settled for an unknown locale are left out, and so undefined.
+    patterns = _for_locale(snapshot, lambda israel: {
+        f"triennial-pattern-{pair}": pattern
+        for pair, pattern in _triennial_cycle_patterns(year, israel=israel).items()
+    })
+    result.update(patterns or {})
     for feature in TORAH_FEATURES:
-        if feature not in result:
+        if feature not in result and feature not in TRIENNIAL_PATTERN_FEATURES:
             result[feature] = False
     return result
+
+
+#: The days with a Musaf besides Shabbat. Chol hamoed is counted in by pesah and sukkot.
+MUSAF_DAYS = ("pesah", "shavuot", "rosh-hashana", "yom-kippur", "sukkot", "shmini-atzeret",
+              "rosh-hodesh")
 
 
 def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
@@ -903,12 +1034,12 @@ def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "shaharit": z.alot_hashachar.local <= aware_dt < z.sof_zman_tfilla_gra.local,
         "minha": z.mincha_gedola.local <= aware_dt < z.shkia.local,
         "maariv": aware_dt >= z.tset_hakohavim.local,
-        "musaf": is_shabbat or any(
-            holidays.get(k, 0) > 0 for k in ("pesah", "shavuot", "rosh-hashana", "sukkot")
-        ),
+        "musaf": is_shabbat or any(holidays.get(k, 0) > 0 for k in MUSAF_DAYS),
         "neila": holidays.get("yom-kippur", 0) > 0 and aware_dt >= z.plag_hamincha.local,
         # Selichot may be said from nightfall until the end of the time for Shacharit:
         # the first night's at midnight, the rest before dawn or before Shacharit itself.
+        # The time of day only. The season is not tested, since a personal fast has its
+        # selichot at any time of year; a text says which season it belongs to.
         "slihot": aware_dt >= z.tset_hakohavim.local or aware_dt < z.sof_zman_tfilla_gra.local,
     }
 

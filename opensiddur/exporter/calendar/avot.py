@@ -5,7 +5,7 @@ Three complete single-chapter rounds are followed by the final compressed round.
 The computation uses pyluach locally; no network or stored yearly schedule is needed.
 """
 from pyluach.dates import HebrewDate
-from .compute import SettingSnapshot, FS_HEBREW_DATE, FS_ISRAEL
+from .compute import SettingSnapshot, FS_HEBREW_DATE
 
 FS_AVOT = 'opensiddur:pirkei-avot'
 
@@ -38,7 +38,7 @@ def chapters_on(day: HebrewDate, *, israel: bool) -> tuple[int, ...]:
 
 def compute_avot(snapshot: SettingSnapshot):
     values=[snapshot.get_int(FS_HEBREW_DATE,k) for k in ('year','month','day')]
-    israel=snapshot.get_bool(FS_ISRAEL,'is-israel')
+    israel=snapshot.in_israel()
     # Unknown locale must not silently select the Diaspora chapter. All
     # selectors remain MAYBE until their inputs are known or explicitly set.
     if None in values or israel is None:return None

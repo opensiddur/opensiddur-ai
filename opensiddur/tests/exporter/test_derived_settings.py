@@ -213,6 +213,52 @@ class TestDerivedSettingsFramework(unittest.TestCase):
         self.assertEqual(entry.source, "derived")
         self.assertEqual(entry.value, 5)  # Thursday
 
+    def test_the_pirkei_avot_default_outlives_a_missing_date(self):
+        """The volume's fixed choice is the one that matters when there is no date."""
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
+        entry = get_active_setting_entry(self.linear_data, "opensiddur:pirkei-avot", "complete")
+        self.assertIsNotNone(entry)
+        self.assertFalse(entry.value)
+
+    def test_a_date_declared_undefined_is_not_a_date(self):
+        for declarations in (
+            {"opensiddur:gregorian-date": {"year": None, "month": 4, "day": 20},
+             "opensiddur:location": {"latitude": 40.71, "longitude": -74.01}},
+            {"opensiddur:hebrew-date": {"year": None, "month": 1, "day": 22},
+             "opensiddur:israel": {"is-israel": False}},
+        ):
+            with self.subTest(declarations=declarations):
+                reset_linear_data()
+                linear_data = get_linear_data()
+                CompilerProcessor.load_init_settings(
+                    linear_data, yaml_to_declaration_entries(declarations))
+                self.assertIsNone(
+                    get_active_setting_entry(linear_data, "opensiddur:holiday", "pesah"))
+
+    def test_israel_declared_undefined_is_not_israel(self):
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 20},
+                "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+                "opensiddur:israel": {"is-israel": None},
+            }),
+        )
+        # 22 Nisan: the eighth of Pesah outside Israel, not a day of Pesah in it.
+        self.assertIsNone(get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah"))
+        self.assertEqual(
+            get_active_setting_entry(self.linear_data, "opensiddur:holiday", "hanukkah").value, 0)
+
+    def test_a_date_without_a_place_warns(self):
+        with self.assertLogs("opensiddur.exporter.derived_settings", level="WARNING") as logs:
+            CompilerProcessor.load_init_settings(
+                self.linear_data,
+                yaml_to_declaration_entries({
+                    "opensiddur:gregorian-date": {"year": 2024, "month": 10, "day": 3},
+                }),
+            )
+        self.assertIn("opensiddur:location", logs.output[0])
+
     def test_hebrew_date_requires_location(self):
         CompilerProcessor.load_init_settings(
             self.linear_data,
