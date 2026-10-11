@@ -813,5 +813,57 @@ class TestConditionalIsClosed(unittest.TestCase):
         self.assertFalse(is_valid)
 
 
+
+class TestDeclarationsAndConditionsAreWellFormed(TestConditionalIsClosed):
+    """What the compiler relies on in a declaration or a condition, checked before it runs."""
+
+    FS = ('<tei:fs type="opensiddur:holiday">'
+          '<tei:f name="pesah"><tei:numeric value="1"/></tei:f></tei:fs>')
+
+    def declaration(self, body=None, closed=True):
+        declare = f'<j:declare xml:id="d1">{self.FS if body is None else body}</j:declare>'
+        return declare + '<tei:p>x</tei:p>' + ('<j:endDeclare target="#d1"/>' if closed else '')
+
+    def assertReported(self, inner, message):
+        is_valid, errors = validate(self.document(inner))
+        self.assertFalse(is_valid)
+        self.assertTrue(any(message in error for error in errors), errors)
+
+    def test_a_closed_declaration_is_valid(self):
+        is_valid, errors = validate(self.document(self.declaration()))
+        self.assertTrue(is_valid, f"Expected valid but got errors: {errors}")
+
+    def test_an_unclosed_declaration_is_reported(self):
+        self.assertReported(self.declaration(closed=False), "must be closed")
+
+    def test_a_declaration_holds_only_feature_structures(self):
+        self.assertReported(self.declaration(f'<j:all>{self.FS}</j:all>'), "holds only feature structures")
+
+    def test_a_declaration_gives_no_alternatives(self):
+        self.assertReported(self.declaration(
+            '<tei:fs type="opensiddur:holiday"><tei:f name="pesah"><tei:vAlt>'
+            '<tei:numeric value="1"/><tei:numeric value="2"/></tei:vAlt></tei:f></tei:fs>'),
+            "not alternatives")
+
+    def test_a_declaration_ends_inside_the_element_it_began_in(self):
+        self.assertReported(
+            '<j:declare xml:id="d1">' + self.FS + '</j:declare>'
+            '<tei:p>x<j:endDeclare target="#d1"/></tei:p>', "fully contain")
+
+    def test_a_feature_structure_names_its_type_and_a_feature(self):
+        self.assertReported(self.declaration('<tei:fs><tei:f name="pesah">'
+                                             '<tei:numeric value="1"/></tei:f></tei:fs>'),
+                            "must have a type attribute")
+        self.assertReported(
+            '<j:conditional xml:id="c1"><tei:fs type="opensiddur:holiday"/></j:conditional>'
+            '<tei:p>x</tei:p><j:endConditional target="#c1"/>', "at least one feature")
+
+    def test_the_note_of_a_conditional_is_an_instruction(self):
+        self.assertReported(
+            '<j:conditional xml:id="c1"><tei:note type="comment">On Pesah:</tei:note>'
+            + self.FS + '</j:conditional><tei:p>x</tei:p><j:endConditional target="#c1"/>',
+            "the rubric that sets off")
+
+
 if __name__ == '__main__':
     unittest.main()

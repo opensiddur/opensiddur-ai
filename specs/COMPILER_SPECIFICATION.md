@@ -154,7 +154,11 @@ To ensure uniqueness after transclusion, IDs are rewritten using a hash of the p
 
 Feature-structure settings are pushed onto `linear_data.conditional_settings` by YAML `declarations` at compile init and by `j:declare` / `j:endDeclare` in source XML. The active value for a feature is the latest matching entry on the stack. `j:declare` markers are always stripped from output.
 
-Each `process()` call runs inside a checkpoint that truncates both `conditional_settings` and `conditional_scope_stack` on exit, so transcluded file compilations cannot leak scopes into the parent.
+Each `process()` call runs inside a checkpoint that saves `conditional_settings` and `conditional_scope_stack` on entry and restores both on exit, so transcluded file compilations cannot leak declarations or scopes into the parent. The stack is restored whole, not cut back to its old length: recalculating derived settings removes entries from anywhere in the stack and appends their new values, so the old length does not mark where the file's own entries begin.
+
+When a value that was derived no longer holds, it is withdrawn: when the derivation cannot run, or when one of its inputs is declared undefined. A static default (such as `opensiddur:reading-cycle/annual`) then takes its place again.
+
+A `j:declare` holds one or more `tei:fs`, each with `@type` and at least one `tei:f`, and declares values only (`tei:vAlt` and `tei:vNot` belong in conditions). The compiler rejects one that declares nothing where it stands, rather than at its `j:endDeclare`. `tei:binary/@value` takes the xsd:boolean forms `true`, `false`, `1` and `0`; `tei:numeric/@value` may be an integer, a decimal or a fraction such as `1/2`.
 
 ### Conditional text (`j:conditional`)
 
@@ -432,7 +436,7 @@ note's `@type` (as stored in the reference database) selects which flag applies;
 notes of other types, including instructions and citations, are set at every
 occurrence. `LinearData.printed_annotations` records each printed print-once note
 by (project, file name, element path). The record is book-global and is not
-truncated by settings checkpoints.
+restored by settings checkpoints.
 
 - A note is recorded only when it is set. An occurrence whose condition is false
   does not use up the note, which is then set at the first occurrence where its

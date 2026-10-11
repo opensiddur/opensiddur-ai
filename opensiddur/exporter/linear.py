@@ -4,6 +4,7 @@ Linear processing treats the entire hierarchy as a single pass,
 so the data are the same independent of depth.
 """
 from enum import StrEnum
+from fractions import Fraction
 from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -32,11 +33,21 @@ Undefined = UndefinedType()
 
 
 def parse_numeric_literal(raw: str) -> int | float:
-    """Parse a tei:numeric @value / @max literal (teidata.numeric allows decimals)."""
+    """Parse a tei:numeric @value / @max literal.
+
+    teidata.numeric allows an integer, a decimal (with an exponent) or a fraction such as
+    ``1/2``. A fraction that comes out whole is an integer.
+    """
+    text = raw.strip()
     try:
-        return int(raw)
+        return int(text)
     except ValueError:
-        return float(raw)
+        pass
+    if "/" in text:
+        numerator, _, denominator = text.partition("/")
+        quotient = Fraction(int(numerator), int(denominator))
+        return int(quotient) if quotient.denominator == 1 else float(quotient)
+    return float(text)
 
 
 class NumericValue(BaseModel):
@@ -84,7 +95,6 @@ class LinearData(BaseModel):
     # open j:conditional scopes (innermost last)
     conditional_scope_stack: list[ConditionalScope] = Field(default_factory=list)
     # contributor declare_id -> stack indices of derived entries that depend on it
-    derived_dependency_index: dict[str, set[int]] = Field(default_factory=dict)
     # project priority for URN resolution of texts
     project_priority: list[str] = Field(default_factory=list)
     # project priority for URN resolution of instructions

@@ -38,7 +38,12 @@ from opensiddur.exporter.constants import (
 TEI_NOTE = f"{{{TEI_NS}}}note"
 from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, is_reader_supplied
 from opensiddur.exporter.derivation_graph import DERIVATION_SPECS
-from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
+from opensiddur.exporter.derived_settings import (
+    SettingChangeTrigger,
+    get_active_setting_entry,
+    recalculate_derived_settings,
+    remove_derived_for_contributor,
+)
 from opensiddur.exporter.linear import (
     ConditionalScope,
     ConditionalSettingEntry,
@@ -734,40 +739,6 @@ class CompilerProcessor:
         else:
             append_to.text = (append_to.text or "") + child.tail
 
-    def _rebuild_derived_dependency_index(self) -> None:
-        """Rebuild reverse index after conditional_settings stack mutation."""
-        self.linear_data.derived_dependency_index = {}
-        for i, entry in enumerate(self.linear_data.conditional_settings):
-            if entry.source == "derived":
-                for contributor in entry.contributors:
-                    self.linear_data.derived_dependency_index.setdefault(
-                        contributor, set()
-                    ).add(i)
-
-    def _register_derived_entry(self, entry: ConditionalSettingEntry) -> None:
-        """Push a derived entry and update the dependency index."""
-        self.linear_data.conditional_settings.append(entry)
-        idx = len(self.linear_data.conditional_settings) - 1
-        for contributor in entry.contributors:
-            self.linear_data.derived_dependency_index.setdefault(contributor, set()).add(idx)
-
-    def _remove_derived_entries_for_contributor(self, declare_id: str) -> list[int]:
-        """Remove derived entries that depend on declare_id."""
-        removed_indices = [
-            i
-            for i, entry in enumerate(self.linear_data.conditional_settings)
-            if entry.source == "derived" and declare_id in entry.contributors
-        ]
-        if not removed_indices:
-            return removed_indices
-        self.linear_data.conditional_settings = [
-            entry
-            for entry in self.linear_data.conditional_settings
-            if not (entry.source == "derived" and declare_id in entry.contributors)
-        ]
-        self._rebuild_derived_dependency_index()
-        return removed_indices
-
     def _push_declare(self, declare_id: str, entries: list[ConditionalSettingEntry]) -> None:
         """Push declared entries and trigger derived-settings recalculation."""
         self.linear_data.conditional_settings.extend(entries)
@@ -792,7 +763,7 @@ class CompilerProcessor:
             for e in self.linear_data.conditional_settings
             if not (e.source == "declared" and e.declare_id == declare_id)
         ]
-        self._remove_derived_entries_for_contributor(declare_id)
+        remove_derived_for_contributor(self.linear_data, declare_id)
         recalculate_derived_settings(
             self.linear_data,
             trigger=SettingChangeTrigger.END_DECLARE,
@@ -814,10 +785,7 @@ class CompilerProcessor:
         feature_name: str,
     ) -> ConditionalSettingEntry | None:
         """Return the winning stack entry for a feature (latest on stack)."""
-        for entry in reversed(self.linear_data.conditional_settings):
-            if entry.fs_type == fs_type and entry.feature_name == feature_name:
-                return entry
-        return None
+        return get_active_setting_entry(self.linear_data, fs_type, feature_name)
 
     def get_active_setting(self, fs_type: str, feature_name: str) -> Any | None:
         """Return the active value for a feature, or None if not set."""
@@ -862,15 +830,21 @@ class CompilerProcessor:
 
     @contextmanager
     def _conditional_settings_checkpoint(self):
-        """Truncate conditional_settings and scope stack to pre-process depth on exit."""
-        settings_depth = len(self.linear_data.conditional_settings)
-        scope_depth = len(self.linear_data.conditional_scope_stack)
+        """Restore the settings and the scope stack as they were before processing a file.
+
+        Nothing a transcluded file declares outlives it, even a j:declare whose j:endDeclare
+        falls outside the range transcluded. The whole stack is restored rather than cut back to
+        its old length: recalculating derived settings removes entries from anywhere in the
+        stack and appends their new values, so the old length no longer marks where the file's
+        own entries begin.
+        """
+        saved_settings = list(self.linear_data.conditional_settings)
+        saved_scopes = list(self.linear_data.conditional_scope_stack)
         try:
             yield
         finally:
-            del self.linear_data.conditional_settings[settings_depth:]
-            del self.linear_data.conditional_scope_stack[scope_depth:]
-            self._rebuild_derived_dependency_index()
+            self.linear_data.conditional_settings = saved_settings
+            self.linear_data.conditional_scope_stack = saved_scopes
 
     def _handle_settings_element(self, element: ElementBase) -> bool:
         """Process j:declare / j:endDeclare. Returns True if handled (strip from output)."""

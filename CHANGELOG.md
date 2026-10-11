@@ -55,6 +55,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
+- Settings declared in a transcluded file no longer leak into the file that transcludes it.
+  Each file's checkpoint cut the settings stack back to its old length. A recalculation of
+  derived settings moves entries around inside the stack, so the cut could keep the inner
+  file's `j:declare` and drop one of the outer file's derived values. The checkpoint now
+  restores the whole stack.
+- Other settings-stack fixes:
+  - A derived value is withdrawn when one of its inputs is declared undefined, instead of
+    staying in force. A static default takes its place again.
+  - A `j:declare` that declares nothing is now reported where it stands. It used to crash at
+    its `j:endDeclare` with "No declared settings found".
+  - `tei:binary value="1"` was read as false. `tei:binary` now accepts every xsd:boolean
+    form, and rejects a value that is not one.
+  - A fraction `tei:numeric` (`1/2`) crashed; it now parses.
+  - A `tei:f` with two values silently used the first; it is now an error.
+- The schema now checks what the compiler relies on:
+  - every `j:declare` is closed by a `j:endDeclare` that follows it, within the same element;
+  - a `j:declare` holds only `tei:fs`, and no `tei:vAlt` or `tei:vNot`;
+  - every `tei:fs` in a condition or declaration has a `@type` and at least one `tei:f`;
+  - the note of a `j:conditional` is an instruction.
+
+  The corpus already satisfies all of these.
 - Calendar features that were computed wrongly or not at all (#237):
   - **Holidays never set.** Lag BaOmer and Tu BiShvat were never detected, because hdate
     names them `lag_bomer` and `tu_bshvat`. As a result, Birnbaum's tahanun and burial

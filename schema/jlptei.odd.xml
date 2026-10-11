@@ -336,8 +336,10 @@
     <elementSpec ident="declare" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
       <desc>
         Associates a set of conditional attribute declarations with a range of text. 
-        Used to specify that the following content is to be processed with the given declarations in effect, until the corresponding 
-        <gi>endDeclare</gi> element or the end of the text. Contains one or more feature structures representing the declarations.
+        Used to specify that the following content is to be processed with the given declarations in effect, until the corresponding
+        <gi>endDeclare</gi> element, which is required. Contains one or more feature structures representing the declarations,
+        each with a <att>type</att> and at least one feature, and nothing else. A declaration gives values, never
+        alternatives: <gi>vAlt</gi> and <gi>vNot</gi> belong in conditions.
       </desc>
       <classes>
         <memberOf key="att.global"/>
@@ -379,6 +381,18 @@
             <sch:assert test="@xml:id">
               Every <gi>declare</gi> element must have an xml:id attribute.
             </sch:assert>
+            <sch:assert test="following::j:endDeclare[substring(@target, 2) = current()/@xml:id]">
+              Every <gi>declare</gi> element must be closed by an <gi>endDeclare</gi> element
+              that follows it and names it in its target attribute. A declaration that is never
+              closed governs the rest of the file, and leaks into whatever transcludes it.
+            </sch:assert>
+            <sch:assert test="every $child in * satisfies $child/self::tei:fs">
+              A <gi>declare</gi> element holds only feature structures (<gi>tei:fs</gi>).
+            </sch:assert>
+            <sch:assert test="not(.//tei:vAlt or .//tei:vNot)">
+              A declaration gives values, not alternatives: <gi>tei:vAlt</gi> and
+              <gi>tei:vNot</gi> belong in conditions.
+            </sch:assert>
           </sch:rule>
           <sch:rule context="j:endDeclare" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
             <sch:assert test="@target">
@@ -392,6 +406,13 @@
             </sch:assert>
             <sch:assert test="preceding::j:declare[@xml:id = substring(current()/@target, 2)]">
               The targeted <gi>declare</gi> element must precede the <gi>endDeclare</gi> element in document order.
+            </sch:assert>
+            <sch:let name="opener" value="preceding::j:declare[@xml:id = substring(current()/@target, 2)][1]"/>
+            <sch:assert test="empty(ancestor::*[. &gt;&gt; $opener])">
+              A declaration's scope must fully contain every element that begins inside it. An
+              element that begins after the <gi>declare</gi> and still holds the
+              <gi>endDeclare</gi> may be left out -- by a false condition or a transcluded range
+              -- and the marker that ends the declaration goes with it.
             </sch:assert>
           </sch:rule>
         </constraint>
@@ -453,6 +474,28 @@
               element that follows it and names it in its target attribute. A conditional
               that is never closed governs the rest of the file, which is almost never what
               was meant and is otherwise not reported.
+            </sch:assert>
+            <sch:assert test="every $note in tei:note satisfies $note/@type = 'instruction'">
+              The note of a <gi>conditional</gi> is the rubric that sets off its passage, an
+              instruction (<att>type</att>="instruction").
+            </sch:assert>
+          </sch:rule>
+        </constraint>
+      </constraintSpec>
+      <constraintSpec ident="condition-fs-constraints" scheme="schematron">
+        <desc>
+          A feature structure in a condition or a declaration names its type and holds at least
+          one feature: the type is what the features are features of, and a structure with
+          none says nothing.
+        </desc>
+        <constraint>
+          <sch:rule context="tei:fs[ancestor::j:conditional or ancestor::j:condition or ancestor::j:declare]"
+                    xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+            <sch:assert test="@type">
+              A feature structure in a condition or a declaration must have a type attribute.
+            </sch:assert>
+            <sch:assert test="tei:f">
+              A feature structure in a condition or a declaration must hold at least one feature.
             </sch:assert>
           </sch:rule>
         </constraint>

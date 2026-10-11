@@ -14,19 +14,13 @@ from opensiddur.exporter.conditional_settings import (
     J_ANY,
     J_NONE,
     J_ONE,
-    TEI_BINARY,
-    TEI_DEFAULT,
-    TEI_F,
     TEI_FS,
     TEI_NOTE,
-    TEI_NUMERIC,
-    TEI_STRING,
-    TEI_SYMBOL,
-    TEI_VALT,
-    TEI_VNOT,
+    fs_features,
+    parse_f_value,
 )
 from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
-from opensiddur.exporter.linear import NumericValue, Undefined, parse_numeric_literal
+from opensiddur.exporter.linear import NumericValue, Undefined
 
 
 class TriState(StrEnum):
@@ -69,92 +63,16 @@ _COMBINATOR_TAGS = {
 }
 
 
-def _parse_condition_f_value(f_element: ElementBase) -> Any:
-    """Parse tei:f value for conditions (supports vAlt / vNot)."""
-    for child in f_element:
-        if child.tag == TEI_NUMERIC:
-            raw = child.get("value")
-            if raw is None:
-                raise ValueError(f"tei:numeric missing @value in {f_element.get('name')!r}")
-            numeric = NumericValue(value=parse_numeric_literal(raw))
-            if child.get("max") is not None:
-                numeric = NumericValue(
-                    value=parse_numeric_literal(raw),
-                    max_value=parse_numeric_literal(child.get("max")),
-                )
-            return numeric
-        if child.tag == TEI_BINARY:
-            raw = child.get("value", "")
-            return raw == "true"
-        if child.tag == TEI_STRING:
-            return child.text or ""
-        if child.tag == TEI_SYMBOL:
-            sym = child.get("value", "")
-            if sym == "undefined":
-                return Undefined
-            return sym
-        if child.tag == TEI_DEFAULT:
-            return Undefined
-        if child.tag == TEI_VALT:
-            return tuple(_parse_condition_value_element(alt) for alt in child)
-        if child.tag == TEI_VNOT:
-            inner_children = list(child)
-            if len(inner_children) != 1:
-                raise ValueError("tei:vNot must contain exactly one value element")
-            return ("vNot", _parse_condition_value_element(inner_children[0]))
-    raise ValueError(f"No value element found in tei:f[@name={f_element.get('name')!r}]")
-
-
-def _parse_condition_value_element(el: ElementBase) -> Any:
-    """Parse a standalone value element (used inside tei:vNot)."""
-    if el.tag == TEI_NUMERIC:
-        raw = el.get("value")
-        if raw is None:
-            raise ValueError("tei:numeric missing @value")
-        numeric = NumericValue(value=parse_numeric_literal(raw))
-        if el.get("max") is not None:
-            numeric = NumericValue(
-                value=parse_numeric_literal(raw),
-                max_value=parse_numeric_literal(el.get("max")),
-            )
-        return numeric
-    if el.tag == TEI_BINARY:
-        return el.get("value", "") == "true"
-    if el.tag == TEI_STRING:
-        return el.text or ""
-    if el.tag == TEI_SYMBOL:
-        sym = el.get("value", "")
-        if sym == "undefined":
-            return Undefined
-        return sym
-    if el.tag == TEI_DEFAULT:
-        return Undefined
-    if el.tag == TEI_VALT:
-        return tuple(_parse_condition_value_element(alt) for alt in el)
-    raise ValueError(f"Unsupported value element {el.tag!r}")
-
-
 def _parse_fs_condition(fs_element: ElementBase) -> FsCondition:
-    fs_type = fs_element.get("type")
-    if not fs_type:
-        raise ValueError("tei:fs missing required @type attribute")
-    features: list[FeatureCondition] = []
-    for f_el in fs_element:
-        if f_el.tag != TEI_F:
-            continue
-        feature_name = f_el.get("name")
-        if not feature_name:
-            raise ValueError("tei:f missing required @name attribute")
-        features.append(
-            FeatureCondition(
-                fs_type=fs_type,
-                feature_name=feature_name,
-                value=_parse_condition_f_value(f_el),
-            )
+    fs_type, features = fs_features(fs_element)
+    return FsCondition(fs_type=fs_type, features=tuple(
+        FeatureCondition(
+            fs_type=fs_type,
+            feature_name=f_el.get("name"),
+            value=parse_f_value(f_el, in_condition=True),
         )
-    if not features:
-        raise ValueError(f"tei:fs[@type={fs_type!r}] has no tei:f children")
-    return FsCondition(fs_type=fs_type, features=tuple(features))
+        for f_el in features
+    ))
 
 
 def _parse_condition_node(element: ElementBase) -> ConditionNode:

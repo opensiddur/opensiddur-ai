@@ -330,7 +330,7 @@ class TestParseErrors(unittest.TestCase):
             '<tei:fs type="t:fs"><tei:f name="x">'
             '<tei:vNot><tei:p>bad</tei:p></tei:vNot></tei:f></tei:fs>'
         )
-        with self.assertRaisesRegex(ValueError, "Unsupported value element"):
+        with self.assertRaisesRegex(ValueError, "exactly one value element"):
             parse_condition_element(el)
 
     def test_vnot_with_string_value(self):

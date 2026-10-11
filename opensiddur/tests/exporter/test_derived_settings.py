@@ -274,6 +274,28 @@ class TestDerivedSettingsFramework(unittest.TestCase):
                 self.assertIs(
                     get_active_setting_entry(self.linear_data, fs_type, feature).value, Undefined)
 
+    def test_a_value_derived_from_an_input_now_undefined_is_withdrawn(self):
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+                "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+            }),
+        )
+        self.assertEqual(
+            get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah").value, 1)
+        # The holidays could still be worked out from the civil date, but the volume has said
+        # it does not know the Hebrew date they are reckoned by.
+        self.linear_data.conditional_settings.append(ConditionalSettingEntry(
+            declare_id="inner", fs_type="opensiddur:hebrew-date", feature_name="day",
+            value=Undefined, source="declared"))
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.DECLARE,
+                                     declare_id="inner")
+        self.assertIsNone(get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah"))
+        # A static default is not withdrawn with the values derived beside it.
+        self.assertTrue(
+            get_active_setting_entry(self.linear_data, "opensiddur:reading-cycle", "annual").value)
+
     def test_a_declared_hebrew_date_does_not_warn(self):
         with self.assertNoLogs("opensiddur.exporter.derived_settings", level="WARNING"):
             CompilerProcessor.load_init_settings(
@@ -370,7 +392,6 @@ class TestDerivedSettingsFramework(unittest.TestCase):
             contributors={"A"},
         )
         register_derived_entry(self.linear_data, derived)
-        self.assertIn("A", self.linear_data.derived_dependency_index)
         self.linear_data.conditional_settings = [
             e for e in self.linear_data.conditional_settings
             if not (e.source == "derived" and "A" in e.contributors)

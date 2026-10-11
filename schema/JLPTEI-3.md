@@ -1016,7 +1016,7 @@ Given location, the Israel/diaspora binary can be derived:
 ```xml
 <tei:fs type="opensiddur:israel">
    <tei:f name="is-israel">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
 </tei:fs>
 ```
@@ -1168,17 +1168,17 @@ Further derived values are also available and calculated from the above
 ```xml
 <tei:fs type="opensiddur:holiday-aggregate">
    <tei:f name="shabbat">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="motzaei-shabbat">
       <!-- Saturday evening: the civil day is still Saturday, but the Hebrew day has
       already moved on. This is when havdalah is said. -->
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="eruv-tavshilin">
       <!-- true when a festival within the next few days runs straight into Shabbat,
       so that an eruv tavshilin must be prepared -->
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="yom-tov">
       <!-- A festival *day*, on which work is forbidden. Chol hamoed is not yom tov, and
@@ -1187,31 +1187,31 @@ Further derived values are also available and calculated from the above
       and shmini-atzeret to 0, every day of each of those being yom tov -- which is how a
       volume says what kind of day it is without saying which day. Pesah and sukkot are
       not derived, having chol hamoed days that are not yom tov. -->
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="chol-hamoed">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="regalim">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="hoshana-rabba">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="high-holidays">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="aseret-ymei-tshuva">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="minor-fast">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="day-before-holiday">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
    <tei:f name="day-after-holiday">
-      <tei:binary value=""/>
+      <tei:binary/>
    </tei:f>
 </tei:fs>
 ```
@@ -1711,7 +1711,7 @@ Settings are declared in XML using the `j:declare` element. The part of the text
 ```
 The `j:declare` element declares a set of `tei:fs` settings as in-scope.
 It must have an `xml:id` attribute that is referenced by 
-the `j:endDeclare` element. Every `j:declare` element must be matched with a `j:endDeclare` element within the same text block.
+the `j:endDeclare` element. Every `j:declare` element must be matched with a `j:endDeclare` element that follows it, and every element that begins between the two must also end between them, as for `j:conditional`. The `j:declare` holds only `tei:fs` elements, each with a `@type` and at least one `tei:f`. It gives values, not alternatives: `tei:vAlt` and `tei:vNot` are for conditions. The schema enforces all of these.
 
 Declaration blocks may be nested and declaration blocks may also cross each other's boundaries.
 
