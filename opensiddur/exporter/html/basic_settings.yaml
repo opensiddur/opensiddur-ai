@@ -7,7 +7,9 @@
 #
 # A control appears in a book only when the book's conditions read one of the features it sets.
 # Which controls -- and which single features -- reach the top of the panel is decided for each
-# book when it is built, by how much of its text they decide (html.py, settings_catalogue).
+# book when it is built, by how much of its text they decide (html.py, settings_catalogue). A
+# control or a single feature marked `top: true` is at the top of the panel in every book that
+# has a use for it, however little text it decides: the reader looks for it there.
 #
 # Choosing an option clears every feature the control sets, then sets the ones the option lists.
 # So an option lists only what it is sure of, and leaves the rest unset: every passage that
@@ -18,8 +20,8 @@
 # its options from a generated file instead (`options_from`), as "Kind of day" does.
 #
 # `features` gives single features words of their own, wherever they appear in the panel:
-# {fs type: {feature: {label, values: {value: label}}}}. A feature not named here is shown by its
-# own name.
+# {fs type: {feature: {label, values: {value: label}, top}}}. A feature not named here is shown by
+# its own name.
 
 controls:
 
@@ -138,8 +140,10 @@ features:
   opensiddur:paratext:
     include:
       label: Prefaces, introductions and other front and back matter
+      top: true
     title-page:
       label: Title pages
+      top: true
   opensiddur:recitation:
     repetition:
       label: The Reader's repetition

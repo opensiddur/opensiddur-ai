@@ -235,7 +235,11 @@ def _useful_options(book: BookConditions, control: dict[str, Any]) -> list[dict[
     return [option for option in control["options"] if states(option["set"]) != unset]
 
 
-def settings_catalogue(book: BookConditions, controls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def settings_catalogue(
+    book: BookConditions,
+    controls: list[dict[str, Any]],
+    always: frozenset[tuple[str, str]] = frozenset(),
+) -> list[dict[str, Any]]:
     """What goes at the top of this book's settings panel, best first.
 
     The candidates are the composite controls the book has a use for -- those setting a
@@ -243,6 +247,10 @@ def settings_catalogue(book: BookConditions, controls: list[dict[str, Any]]) -> 
     text it decides: the characters of the scopes that read any of its features, each scope
     counted once. The top `BASIC_LIMIT`, if they decide at least `BASIC_THRESHOLD` of the
     book's conditional text, are the basic settings; everything is in the Advanced box anyway.
+
+    A control marked `top`, and a single feature in `always`, is a basic setting whenever the
+    book has a use for it, however little text it decides. These follow the ranked ones and do
+    not count towards the limit.
     """
     features = {(f.fs, f.name): f for f in book.features}
 
@@ -260,18 +268,26 @@ def settings_catalogue(book: BookConditions, controls: list[dict[str, Any]]) -> 
             continue
         covered.update(read)
         cids = {cid for key in read for cid in features[key].cids}
-        candidates.append((chars(cids), {
+        candidates.append((chars(cids), bool(control.get("top")), {
             "type": "control", "id": control["id"], "label": control["label"],
             **({"note": control["note"]} if control.get("note") else {}),
             "options": options}))
     for key, feature in features.items():
         if key not in covered:
-            candidates.append((chars(set(feature.cids)),
+            candidates.append((chars(set(feature.cids)), key in always,
                                {"type": "feature", "fs": feature.fs, "name": feature.name}))
 
     candidates.sort(key=lambda candidate: -candidate[0])
     floor = BASIC_THRESHOLD * book.conditional_chars
-    return [entry for score, entry in candidates[:BASIC_LIMIT] if score and score >= floor]
+    ranked = [entry for score, _, entry in candidates[:BASIC_LIMIT] if score and score >= floor]
+    return ranked + [entry for _, top, entry in candidates if top and entry not in ranked]
+
+
+def always_basic(spec_file: Path = BASIC_SETTINGS_FILE) -> frozenset[tuple[str, str]]:
+    """The single features basic_settings.yaml marks `top`."""
+    words = read_basic_settings(spec_file).get("features") or {}
+    return frozenset((fs, name) for fs, features in words.items()
+                     for name, spec in features.items() if spec.get("top"))
 
 
 def feature_words(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[tuple[str, str], dict[str, Any]]:
@@ -305,7 +321,7 @@ def book_json(
                 if (f.fs, f.name) in words else {})}
             for f in book.features
         ],
-        "basic": settings_catalogue(book, controls),
+        "basic": settings_catalogue(book, controls, always_basic(basic_settings)),
         "sections": book.sections,
         "optionalReferences": book.optional_references,
         "calendarScopes": calendar_scopes(book),

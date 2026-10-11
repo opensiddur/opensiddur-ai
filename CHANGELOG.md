@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       every such day over five years, in Israel and outside it (`html/kinds_of_day.py`). The
       first and second days of a festival are separate choices.
     - **An Advanced box** sets any feature one by one.
+    - **Some settings are always at the top**, however little text they decide: those marked
+      `top: true` in `basic_settings.yaml`. The front matter and the title pages
+      (`opensiddur:paratext`) are, so the reader can find them.
     - The reading cycle is now the reader's, so an electronic humash carries both cycles.
     - The device also derives the recitation from the service, and the festivals a day that
       is not yom tov cannot be.

@@ -423,6 +423,31 @@ class TestSettingsCatalogue(unittest.TestCase):
         book = self._book({"c": 1000, "d": 9})
         self.assertEqual(self._names(settings_catalogue(book, [])), ["c"])
 
+    def test_a_top_feature_is_at_the_top_however_little_it_decides(self):
+        book = self._book({"c": 1000, "d": 9})
+        self.assertEqual(self._names(settings_catalogue(book, [], frozenset({("t:x", "d")}))),
+                         ["c", "d"])
+
+    def test_a_top_feature_does_not_count_towards_the_limit(self):
+        book = self._book({**{name: 100 for name in "cdefgh"}, "i": 1})
+        names = self._names(settings_catalogue(book, [], frozenset({("t:x", "i")})))
+        self.assertEqual(names, list("cdefgh") + ["i"])
+
+    def test_a_top_feature_that_ranks_is_listed_once(self):
+        book = self._book({"c": 1000, "d": 9})
+        self.assertEqual(self._names(settings_catalogue(book, [], frozenset({("t:x", "c")}))),
+                         ["c"])
+
+    def test_a_top_feature_the_book_does_not_read_is_left_out(self):
+        book = self._book({"c": 1000})
+        self.assertEqual(self._names(settings_catalogue(book, [], frozenset({("t:x", "z")}))),
+                         ["c"])
+
+    def test_a_top_control(self):
+        controls = [{**self.CONTROLS[0], "top": True}]
+        book = self._book({"a": 1, "c": 1000})
+        self.assertEqual(self._names(settings_catalogue(book, controls)), ["c", "Both"])
+
 
 class TestBasicSettingsSpec(unittest.TestCase):
     """basic_settings.yaml names features the compiler really produces."""
