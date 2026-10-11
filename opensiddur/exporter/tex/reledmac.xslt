@@ -1289,12 +1289,32 @@
         <xsl:variable name="in-left-column" as="xs:boolean"
                       select="(f:single-item($first)/@role = 'primary')
                               = not($first/@column-order = 'primary_last')"/>
+        <xsl:choose>
+            <!-- A title-only primary block belongs above the following columns.
+                 A numbered stream would finish its section (and write language/line
+                 records) between the title and those columns, introducing another
+                 page-break opportunity after the title's keep penalty. Reuse the
+                 spanning-title path, which closes its language before requesting the
+                 keep. Restrict this to a single bare title: apparatus, page labels,
+                 extra headings and body text retain the complete stream path. -->
+            <xsl:when test="count($usable) = 1
+                            and f:spanning-title($first, $headings-from) != ''
+                            and count($nodes[self::f:head]) = 1
+                            and empty($nodes[not(self::f:head or self::f:para-break
+                                               or self::text()[not(normalize-space(.))])])">
+                <xsl:call-template name="spanning-heading">
+                    <xsl:with-param name="block" select="$first"/>
+                </xsl:call-template>
+            </xsl:when>
+            <xsl:otherwise>
         <xsl:call-template name="numbered-stream">
             <xsl:with-param name="nodes" select="$nodes"/>
             <xsl:with-param name="lang" select="$lang"/>
             <xsl:with-param name="align-verses" select="false()"/>
             <xsl:with-param name="stream" select="if ($in-left-column) then 'primary' else 'alt'"/>
         </xsl:call-template>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <!-- One \Pages (or \Columns) block, optionally preceded by a heading set across the

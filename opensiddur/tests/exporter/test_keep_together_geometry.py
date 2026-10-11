@@ -134,11 +134,11 @@ _HEAD_BOTTOM = 85.0
 
 
 def _typeset(parallel: bool, typography: dict, protected: bool = True,
-             primary: str = "en") -> tuple[dict[str, tuple[int, int]], str]:
+             primary: str = "en", document: str | None = None) -> tuple[dict[str, tuple[int, int]], str]:
     """Each word's (page, rounded yMin), and the ``.tex`` it was set from."""
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
-        (work / "in.xml").write_text(_document(parallel, primary))
+        (work / "in.xml").write_text(document if document is not None else _document(parallel, primary))
         transform_xml_to_tex(
             work / "in.xml", output_file=str(work / "t.tex"),
             typography=TypographyConfig.model_validate(typography),
