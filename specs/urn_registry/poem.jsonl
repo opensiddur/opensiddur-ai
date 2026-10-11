@@ -512,3 +512,14 @@
 {"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_5", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 5", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
 {"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_6", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 6", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
 {"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_7", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:elohim_beyisrael_gadol_nodata", "status": "canonical", "label_en": "elohim beyisrael gadol nodata"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_ammekha_tehinnah_orkhim", "status": "canonical", "label_en": "yisrael ammekha tehinnah orkhim"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_1", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 1", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_2", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 2", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_3", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 3", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_4", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 4", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_5", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 5", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_6", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_7", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 7", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_8", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 8", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}

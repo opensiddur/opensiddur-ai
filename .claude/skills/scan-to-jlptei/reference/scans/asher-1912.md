@@ -493,3 +493,25 @@ The English Ezek. xxxvi. 25. footnote at the bottom of printed 159 belongs to
 Erev’s closing purification passage, although the Second Fast body intervenes
 above the apparatus. Retain that source-owned note with Erev; when adding the
 Second Fast later, do not assign it by vertical position alone.
+
+## Monday–Thursday–Monday fast series and final boundaries
+
+The contents call the first two services “Second Fast” and “Fifth Fast”; Hebrew
+לשני / לחמישי identifies weekdays, not penitential-day ordinals. The first
+Monday fast runs from n319/n320 (printed159) to n335/n336 (printed167), ending
+above Thursday's large body heading. Its final Ezekiel footnote sits below that
+heading and stays with Monday. Keep native weekday gates plus an explicit edition
+occasion selector while the calendar has no derived feature for this fast series.
+
+Malakhei rahamim has eight shared stanza units, six short אולי יחום / “Perchance”
+cues, and a Hebrew-only final full refrain plus opening-repeat cue. Its stanza
+openings אולי ירחם are full text, distinct from the short refrain cues. Never add
+an English closing repetition where the translation prints none. Retain unsupplied
+weekday Amidah, usual-service, and Torah performance instructions when expanding
+prayer-pair and refrain cues. Do not inherit another service's Full Kaddish ending.
+
+The scan ends at s411/n410, printed204, with the circumcision pizmon. Monday's
+English concluding rubric claims Torah/haftarah readings at volume end, whereas
+Hebrew leaves page fields blank. The final scans contain no such readings: retain
+the printed statement as evidence and record an absent target, without inventing
+a URN or resolving it to unrelated text.

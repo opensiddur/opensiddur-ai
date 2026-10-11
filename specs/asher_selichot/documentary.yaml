@@ -1,9 +1,9 @@
-description: Asher 1912 complete services through the Erev Yom Kippur, n320, work
+description: Asher 1912 complete services through the Monday fast, n336, work
   in progress. Incomplete book, excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: index.xml
-  title: Asher Selichoth — services through the Erev Yom Kippur
+  title: Asher Selichoth — services through the Monday fast
 priority:
   transclusion:
   - asher_selichot_he_1912

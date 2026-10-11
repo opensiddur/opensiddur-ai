@@ -8,13 +8,12 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through Erev Yom Kippur, Archive n319/n320
-(printed 159 upper), are encoded. The Second Fast body heading is excluded.
-There are 316 schema-valid project XML documents, 158 per language. The new
-service has 22 bilingual units, three independent poems, seven paired pizmon
-stanzas and seven English notes. Its native occasion is 9 Tishrei. See
-[the Erev Yom Kippur specification](erev-yom-kippur.md) and the source evidence.
-Independent Hebrew proofreading remains pending.
+Both title pages and complete services through the Monday fast, Archive n335/n336
+(printed 167 upper), are encoded. The Thursday/Fifth Fast body heading is excluded.
+There are 324 schema-valid project XML documents, 162 per language. Monday adds
+26 bilingual units, three independent poems, eight paired pizmon stanzas and
+15 English notes. Its occasion combines an explicit Monday-fast selector with
+the native Monday weekday. Independent Hebrew proofreading remains pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -513,3 +512,60 @@ XML files and their source readings verify again. All four complete compiled XML
 views are identical under canonical XML comparison before and after the merges,
 so the verified PDFs remain current. The two final Hebrew corrections and all
 316 project hashes remain intact. Independent Hebrew proofreading remains pending.
+
+
+## Monday fast, Archive n319–n336
+
+The large body headings delimit the first Monday of the Monday–Thursday–Monday
+fast series. English “Second Fast” translates the Hebrew weekday לשני; it is
+not a second penitential day. Its closing Ezekiel note remains with Monday even
+though it is below Thursday's heading. The unsupplied weekday Amidah, usual
+service, Torah and haftarah instructions remain in both views. No Full Kaddish
+is inserted into this interrupted weekday-service sequence. Inspection of the
+final leaves confirms the claimed Torah/haftarah appendix is absent from this
+scan; Hebrew page fields are blank. This remains an unresolved printed claim.
+
+Malakhei rahamim has eight shared stanza units, six short cues per language,
+and a Hebrew-only final full refrain and opening-repeat cue. Expanded English
+does not acquire that unprinted repeat. Three El melekh/Vayaavor pairs expand,
+along with independently bounded Hebrew/English petition lists. The initial
+Vayaavor is reprinted across two leaves. Immutable initial and complete pre-OCR
+snapshots, frozen English OCR inputs, hashes and image adjudications accompany
+all 26 readings. Independent Hebrew proof remains pending.
+
+Standalone PDFs contain 16 documentary and 18 expanded pages. All eight stanza
+starts align exactly; both outputs pass apparatus direction, 15-note occurrence,
+prayer/refrain boundary and performance-instruction checks. Missing text, missing
+or duplicated notes, and shifted-stanza controls are rejected. Hebrew direction:
+0/465 documentary and 0/581 expanded; reversal controls flag 460 and 573 runs.
+Both pizmon pages were inspected visually. All 324 XML files validate and reverse
+match their source readings; both projects resolve URNs/transclusions. Registry:
+3,742 records, zero errors and warnings.
+
+The full suite passes 3,433 tests and 5,128 subtests, with 21 skips (614.62s).
+After the numeric-marker security correction, all 89 Asher tests and 14 subtests
+pass. A subprocess fixture reproduces catastrophic backtracking on the former
+nested marker regex and passes with the shared single-repeat pattern. This
+addresses the two CodeQL alerts in the Asher PDF audit helpers. Compiled occasion
+checks additionally exposed missing title-page gates; the authoring code now
+wraps each title leaf in the native paratext condition, keeping its page break
+outside. Ordinary output retains the two title pages.
+
+The cumulative documentary PDF has 254 pages and 31 contents/bookmark
+destinations, converged after three LaTeX passes. All book checks and broken
+controls pass. Hebrew direction is 0/9,990 reversed runs; the reversal control
+flags 8,974. The second contents page and Monday pizmon page were inspected
+visually; the day heading remains above its subordinate pizmon bookmark.
+All three workstream branches were refreshed against upstream main/master,
+with no additional changes to merge.
+
+The final occasion checks compile Monday included, excluded, and on the wrong
+weekday; all three pass. Declaring paratext/title-page false removes both source
+title pages. The ordinary documentary TeX is byte-identical after introducing
+these gates, so its verified cumulative PDF remains current. All 324 project
+hashes are unchanged; schema/source/reference verification and the 89 Asher tests
+pass again after the final gate edits. The cumulative expanded rebuild was
+interrupted during its third pass; its damaged auxiliary files were retained
+for diagnosis and are being regenerated. The independently verified 18-page
+expanded Monday PDF is the expanded rendering evidence for this checkpoint;
+no successful cumulative expanded check is claimed for the interrupted build.

@@ -1,4 +1,4 @@
-"""Manifest-driven authoring and reverse verification of later penitential days."""
+"""Manifest-driven authoring and reverse verification of later selichot services."""
 import copy
 import hashlib
 import json
@@ -13,17 +13,19 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-SERVICES = DAYS + ('erev-yom-kippur',)
+FAST_SERVICES = ('monday-fast',)
+SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
     if day not in SERVICES: raise ValueError('Unsupported selichot service: '+day)
-    return 'erev-yom-kippur' if day=='erev-yom-kippur' else 'penitential-'+day+'-day'
+    return 'penitential-'+day+'-day' if day in DAYS else day
 
 def service_filename(day):
     return manifest_name(day).replace('-', '_')+'.xml'
 
 def service_urn(day):
     if day=='erev-yom-kippur': return 'urn:x-opensiddur:text:siddur:selichot/erev_yom_kippur'
+    if day in FAST_SERVICES: return 'urn:x-opensiddur:text:siddur:selichot/'+day.replace('-', '_')
     if day not in DAYS: raise ValueError('Unsupported penitential day: '+day)
     return SERVICE_PREFIX+day+'_day'
 J = 'http://jewishliturgy.org/ns/jlptei/2'
@@ -108,12 +110,17 @@ def printed(parent,reading,lang,context):
     if reading['kind']=='poem':reading['line_stops']='·׃'
     unit=ordinary_printed(parent,reading,lang,context)
     if lang=='en':wrap_hebrew(unit)
+    elif reading.get('reader_label'):
+        block=unit.find(f'{{{TEI}}}p')
+        if block is None or not (block.text or '').startswith('Reader '):raise ValueError('Printed Reader label absent')
+        words=block.text[len('Reader '):];block.text=None
+        label=element(block,'foreign','Reader');label.set(XML+'lang','en');label.tail=' '+words
     return unit
 
 
 def full_kaddish(parent,day):
     declaration=element(parent,'j:declare');declaration.set(XML+'id','penitential_'+day+'_day_kaddish')
-    for typ,name,value in [('asher:selichot','first_day','false'),('opensiddur:holiday-aggregate','aseret-ymei-tshuva','true')]:
+    for typ,name,value in [('asher:selichot','first_day','false'),('opensiddur:holiday-aggregate','aseret-ymei-tshuva','false' if day in FAST_SERVICES else 'true')]:
         fs=element(declaration,'fs',type=typ);f=element(fs,'f');f.set('name',name);element(f,'binary',value=value)
     element(parent,'j:transclude',target=PRAYER+'kaddish/shalem')
     element(parent,'j:endDeclare',target='#penitential_'+day+'_day_kaddish')
@@ -134,7 +141,7 @@ def expanded_rubric(parent,reading,lang,day):
         if opening:
             declaration=element(parent,'j:declare');declaration.set(XML+'id','penitential_'+day+'_day_opening_ten_days')
             fs=element(declaration,'fs',type='opensiddur:holiday-aggregate')
-            feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva');element(feature,'binary',value='true')
+            feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva');element(feature,'binary',value='false' if day in FAST_SERVICES else 'true')
         for target in targets(reading,lang):
             if reading.get('supply_kaddish') and target==PRAYER+'kaddish/shalem':full_kaddish(parent,day)
             else:element(parent,'j:transclude',target=target)

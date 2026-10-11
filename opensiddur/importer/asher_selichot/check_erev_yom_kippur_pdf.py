@@ -2,7 +2,7 @@
 import copy
 import re
 from lxml import etree
-from .check_pdf import plain
+from .check_pdf import plain, strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
@@ -57,7 +57,7 @@ def check(tree, expanded=False):
         if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Erev Yom Kippur stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     body=' '.join(r[2] for r in en)
-    body=re.sub(r'(?<=[A-Za-z,.;:!?])(?:\s*\d+)+(?=[,.;!?]|\s)','',body)
+    body=strip_numeric_markers(body)
     if body.count('Our God, and the God of our fathers, may our prayers')!=1:
         raise ValueError('Missing or duplicated printed confession introduction')
     if body.count('Thy righteous anointed declared')!=1 or body.count('appertaineth mercy and pardon.')!=1:

@@ -66,7 +66,7 @@ class GedaliahTests(unittest.TestCase):
         title.update(scan='s1',titles=['Test'])
         root=entry('en','asher_selichot_en_1912',{'he':title,'en':title},book=True,include_gedaliah=True)
         ns={'t':TEI,'j':'http://jewishliturgy.org/ns/jlptei/2'}
-        gate=root.find('.//j:conditional',ns)
+        gate=root.find('.//j:conditional[@xml:id="tzom_gedaliah_occasion"]',dict(ns,xml=XML[1:-1]))
         self.assertIsNone(gate.get('type'))
         self.assertEqual(gate.find('t:fs/t:f',ns).get('name'),'tzom-gedalia')
         self.assertEqual(gate.find('t:fs/t:f/t:numeric',ns).get('value'),'1')
@@ -75,7 +75,7 @@ class GedaliahTests(unittest.TestCase):
         self.assertEqual(refs[-1].get('target'),gedaliah.GEDALIAH)
         children=list(gate.getparent())
         self.assertLess(children.index(gate),children.index(refs[-1]))
-        end=root.find('.//j:endConditional',ns)
+        end=gate.getparent().find('j:endConditional[@target="#tzom_gedaliah_occasion"]',ns)
         self.assertGreater(children.index(end),children.index(refs[-1]))
 
     def test_evidence_rejects_a_changed_working_reading(self):
