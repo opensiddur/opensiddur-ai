@@ -1,6 +1,6 @@
 """The full and abridged Hallel occasions printed in Birnbaum."""
 from pyluach.dates import HebrewDate
-from .compute import SettingSnapshot, FS_HEBREW_DATE, FS_ISRAEL
+from .compute import SettingSnapshot, FS_HEBREW_DATE
 
 FS_HALLEL = 'opensiddur:hallel'
 
@@ -23,7 +23,7 @@ def hallel_on(day: HebrewDate, *, israel: bool) -> str:
 
 def compute_hallel(snapshot: SettingSnapshot):
     values = [snapshot.get_int(FS_HEBREW_DATE, key) for key in ('year', 'month', 'day')]
-    israel = snapshot.get_bool(FS_ISRAEL, 'is-israel')
+    israel = snapshot.in_israel()
     if None in values or israel is None:
         return None
     try:

@@ -18,6 +18,9 @@ BIBLE = 'urn:x-opensiddur:text:bible:'
 SIGIL = '1949 chol/minchah'
 FAST = feature(AGG, 'minor-fast')
 TISHA = holiday('tisha-bav')
+# Minchah of Tish'ah b'Av is a fast-day Minchah, which minor-fast does not cover: Anenu, the
+# priestly blessing and Sim Shalom are said at it. Avinu Malkenu is not.
+FAST_DAY = '<j:any>' + FAST + TISHA + '</j:any>'
 REPETITION = feature(RECITATION, 'repetition')
 MINYAN = feature(QUORUM, 'minyan')
 NACHEM = PRAYER + 'amidah/nachaym_hashem_elohaynu'
@@ -104,7 +107,7 @@ def amidah(lang, by_name):
     for name in ORDER:
         if name == 'amidah_geulah':
             parts += [passage('geulah/reeh_na'), conditional('reader_aneinu', 'On fast days the Reader adds here:',
-                '<j:all>'+FAST+REPETITION+MINYAN+'</j:all>', passage('aneinu'))]
+                '<j:all>'+FAST_DAY+REPETITION+MINYAN+'</j:all>', passage('aneinu'))]
         elif name == 'amidah_yerushalayim':
             parts += [passage('yerushalayim/opening'),
                 conditional('jerusalem_seal', 'Except on Tish‘ah b’Av:', TISHA, passage('yerushalayim/seal'), negate=True),
@@ -113,7 +116,7 @@ def amidah(lang, by_name):
             # Anenu is inserted before the common conclusion, which prints once.
             parts += [passage('tefilah/opening'),
                 conditional('silent_aneinu', 'On fast days, the Congregation recites here:',
-                    '<j:all>'+FAST+feature(RECITATION, 'repetition', '<tei:binary value="false"/>')+'</j:all>',
+                    '<j:all>'+FAST_DAY+feature(RECITATION, 'repetition', '<tei:binary value="false"/>')+'</j:all>',
                     passage('aneinu/opening')), passage('tefilah/seal')]
         elif name == 'amidah_birkat_kohanim':
             # The surrounding rubric is English even in the Hebrew project.
@@ -125,10 +128,10 @@ def amidah(lang, by_name):
                 f'(page {93+int(lang=="en")}) and instead of the following paragraph, '
                 + peace_title + f' is said (page {95+int(lang=="en")}).</tei:note>'),
                 conditional('priestly_blessing', 'On fast days, in the Reader’s repetition:',
-                    '<j:all>'+FAST+REPETITION+MINYAN+'</j:all>', passage('birkat_kohanim'))]
+                    '<j:all>'+FAST_DAY+REPETITION+MINYAN+'</j:all>', passage('birkat_kohanim'))]
         elif name == 'amidah_shalom':
-            parts += [conditional('sim_shalom', 'On fast days:', FAST, passage('shalom/sim_shalom')),
-                conditional('shalom_rav', 'Except on fast days:', FAST, transclude(SHALOM), negate=True),
+            parts += [conditional('sim_shalom', 'On fast days:', FAST_DAY, passage('shalom/sim_shalom')),
+                conditional('shalom_rav', 'Except on fast days:', FAST_DAY, transclude(SHALOM), negate=True),
                 conditional('peace_seal', 'Except during the Ten Days of Repentance:', TEN_DAYS, passage('shalom/hamevarekh'), negate=True),
                 conditional('peace_ten_days', 'Between Rosh Hashanah and Yom Kippur say:', TEN_DAYS, passage('shalom/besefer_chayim'))]
         else:

@@ -55,6 +55,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
+- Calendar features that were computed wrongly or not at all (#237):
+  - **Holidays never set.** Lag BaOmer and Tu BiShvat were never detected, because hdate
+    names them `lag_bomer` and `tu_bshvat`. As a result, Birnbaum's tahanun and burial
+    services lost their Lag BaOmer text. Pesah Sheni, Sigd, the fast of the firstborn, Purim
+    Katan, Shushan Purim Katan and the three-day Purim were never computed; they are now
+    worked out from the Hebrew date. `purim-meshulash` numbers its days `1`–`3`.
+  - **Renamed feature.** `yom-yerusahalayim` is now spelled `yom-yerushalayim`.
+  - **`minor-fast` included Tish'ah b'Av**, so Avinu Malkenu and the morning reading of
+    Va-yehal were printed on it. It no longer does. Birnbaum's weekday Minhah Amidah now
+    conditions Anenu, the priestly blessing and Sim Shalom on a minor fast *or* Tish'ah b'Av,
+    since those are said at Minhah of Tish'ah b'Av.
+  - **`regalim`** now includes Shemini Atzeret and Simhat Torah.
+  - **`musaf`** is now true on Yom Kippur, Rosh Hodesh and Shemini Atzeret.
+  - **`day-before-holiday` and `day-after-holiday`** were always false. They are now the eve
+    of a festival and isru hag (the day after Pesah, Shavuot or Sukkot).
+  - **Undefined settings.** A date declared undefined (`null`, `<tei:default/>`) crashed the
+    compiler. An `is-israel` declared undefined, or given as the string `"false"`, counted as
+    Israel. Now undefined is not known, and nothing is assumed. Where Israel and the diaspora
+    could both apply, a feature on which they disagree is undefined, instead of defaulting to
+    the diaspora.
+  - **Israel's border.** Israel is now recognised by its time zone rather than a bounding box
+    that took in Amman, Aqaba, Tyre and Quneitra.
+  - **Tal u-matar outside Israel** began a day early. It now begins at Ma'ariv on 4 (or 5)
+    December.
+  - **Times of day.**
+    - Before sunrise, `hebrew-time` gave the first daytime hour; it now counts the night that
+      began at the previous sunset.
+    - `part` is now a 1080th of the variable hour rather than of a clock hour.
+    - `motzaei-shabbat` now lasts until dawn on Sunday, not civil midnight.
+    - The Torah reading on Saturday night is now the coming week's.
+  - **Omitting Vi-hi No'am.** For a Hebrew date that is itself Shabbat, the decision now looks
+    at the week that follows it.
+  - **Pirkei Avot.** The default `complete: false` was discarded whenever no date was given.
+  - **Warning.** A Gregorian date with no location now warns that nothing is derived from it.
 - Undecided conditional scopes keep both of their markers through compilation (#219). In a
   compiled Birnbaum, 652 of 1459 scopes had lost their `j:endConditional` and 12 their
   `j:conditional`. In the PDF, each of those opened a bracket or rule that never closed.

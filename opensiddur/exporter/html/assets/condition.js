@@ -108,9 +108,20 @@
     return { present: true, value: features[feature] };
   }
 
-  // Python's truthiness, which SettingSnapshot.get_bool applies.
-  function truthy(value) {
-    return !(value === false || value === 0 || value === "");
+  // SettingSnapshot.get_bool: true, false, or null when there is no truth value to be had. A
+  // string is read as a word rather than by truthiness, so "false" is false and "yes" unknown.
+  var BOOLEAN_WORDS = { "true": true, "1": true, "false": false, "0": false };
+
+  function asBool(value) {
+    if (value === null) return null;
+    if (typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "num")) {
+      return value.num !== 0;
+    }
+    if (typeof value === "string") {
+      var word = value.trim().toLowerCase();
+      return Object.prototype.hasOwnProperty.call(BOOLEAN_WORDS, word) ? BOOLEAN_WORDS[word] : null;
+    }
+    return Boolean(value);
   }
 
   // Derivations whose every input is the reader's, as client_settings.CLIENT_DERIVATIONS.
@@ -123,20 +134,20 @@
     // calendar/compute.compute_quorum: ten adults are also three.
     "opensiddur:quorum": function (get) {
       var minyan = get("opensiddur:quorum", "minyan");
-      if (minyan === null || !truthy(minyan)) return null;
+      if (asBool(minyan) !== true) return null;
       return { zimmun: true };
     },
     // calendar/compute.compute_recitation: Ma'ariv has no repetition.
     "opensiddur:recitation": function (get) {
       var maariv = get("opensiddur:service-time", "maariv");
-      if (maariv === null || !truthy(maariv)) return null;
+      if (asBool(maariv) !== true) return null;
       return { silent: true, repetition: false };
     },
     // calendar/compute.compute_holiday_from_aggregate: a day that is not yom tov is none of
     // the festivals that are yom tov throughout.
     "opensiddur:holiday": function (get) {
       var yomTov = get("opensiddur:holiday-aggregate", "yom-tov");
-      if (yomTov === null || truthy(yomTov)) return null;
+      if (asBool(yomTov) !== false) return null;
       var derived = {};
       ALWAYS_YOM_TOV.forEach(function (festival) { derived[festival] = 0; });
       return derived;

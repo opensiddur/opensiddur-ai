@@ -36,6 +36,13 @@ class TestMotzaeiShabbat(unittest.TestCase):
         self.assertFalse(omit_vihi_noam(day, israel=True))
         self.assertTrue(omit_vihi_noam(day, israel=False))
 
+    def test_a_shabbat_date_looks_to_the_week_that_follows(self):
+        # 12 Nisan 5784 is Shabbat, and Pesah begins on the Tuesday after it.
+        day = HebrewDate(5784, 1, 12)
+        self.assertEqual(day.weekday(), 7)
+        for israel in (True, False):
+            self.assertTrue(omit_vihi_noam(day, israel=israel))
+
     def test_unknown_date_or_locale_stays_maybe(self):
         self.assertIsNone(compute_motzaei_shabbat(SettingSnapshot(lambda f, k: None)))
         values = {'year': 5784, 'month': 2, 'day': 4}

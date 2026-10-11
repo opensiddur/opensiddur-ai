@@ -7,7 +7,11 @@ from unittest.mock import MagicMock, patch
 from pyluach import dates as pyluach_dates
 from pyluach import parshios
 
+import hdate
+
 from opensiddur.exporter.calendar.compute import (
+    AGGREGATE_FEATURES,
+    HOLIDAY_FEATURES,
     FS_GREGORIAN,
     FS_HEBREW_DATE,
     FS_ISRAEL,
@@ -40,7 +44,7 @@ from opensiddur.exporter.derivation_graph import (
     DerivationSpec,
     topological_derivation_order,
 )
-from opensiddur.exporter.linear import NumericValue, get_linear_data, reset_linear_data
+from opensiddur.exporter.linear import NumericValue, Undefined, get_linear_data, reset_linear_data
 
 
 def _date_only(found: dict) -> dict:
@@ -201,16 +205,53 @@ class TestSettingSnapshot(unittest.TestCase):
             (FS_LOCATION, "latitude"): 31.78,
             (FS_LOCATION, "longitude"): 35.22,
         })
-        self.assertFalse(jerusalem.is_diaspora())
+        self.assertTrue(jerusalem.in_israel())
         nyc = _snapshot({
             (FS_LOCATION, "latitude"): 40.71,
             (FS_LOCATION, "longitude"): -74.01,
         })
-        self.assertTrue(nyc.is_diaspora())
+        self.assertFalse(nyc.in_israel())
         explicit = _snapshot({(FS_ISRAEL, "is-israel"): True})
-        self.assertFalse(explicit.is_diaspora())
-        no_loc = _snapshot({})
-        self.assertTrue(no_loc.is_diaspora())
+        self.assertTrue(explicit.in_israel())
+        # Nothing is assumed where nothing is said.
+        self.assertIsNone(_snapshot({}).in_israel())
+
+    def test_israel_stops_at_the_border(self):
+        for name, lat, lon, israel in (
+            ("Eilat", 29.56, 34.95, True),
+            ("Metula", 33.28, 35.58, True),
+            ("Katzrin", 32.99, 35.69, True),
+            ("Hebron", 31.53, 35.10, True),
+            ("Amman", 31.95, 35.93, False),
+            ("Aqaba", 29.53, 35.00, False),
+            ("Tyre", 33.27, 35.20, False),
+            ("Quneitra", 33.13, 35.82, False),
+        ):
+            with self.subTest(place=name):
+                snap = _snapshot({(FS_LOCATION, "latitude"): lat, (FS_LOCATION, "longitude"): lon})
+                self.assertEqual(snap.in_israel(), israel)
+                self.assertEqual(compute_israel(snap), {"is-israel": israel})
+
+    def test_declared_undefined_is_unknown_not_true(self):
+        snap = _snapshot({
+            (FS_ISRAEL, "is-israel"): Undefined,
+            (FS_LOCATION, "latitude"): 31.78,
+            (FS_LOCATION, "longitude"): 35.22,
+            (FS_GREGORIAN, "year"): Undefined,
+        })
+        # Declared unknown: the coordinates are not consulted behind the volume's back.
+        self.assertIsNone(snap.in_israel())
+        self.assertIsNone(snap.get_bool(FS_ISRAEL, "is-israel"))
+        self.assertIsNone(snap.get_int(FS_GREGORIAN, "year"))
+        self.assertIsNone(snap.get_float(FS_GREGORIAN, "year"))
+
+    def test_get_bool_reads_strings_as_words(self):
+        for raw, expected in (("false", False), ("False", False), ("0", False),
+                              ("true", True), (" TRUE ", True), ("1", True), ("maybe", None),
+                              (NumericValue(value=0), False), (NumericValue(value=1), True)):
+            with self.subTest(raw=raw):
+                snap = _snapshot({(FS_ISRAEL, "is-israel"): raw})
+                self.assertEqual(snap.get_bool(FS_ISRAEL, "is-israel"), expected)
 
 
 class TestComputeFunctions(unittest.TestCase):
@@ -487,14 +528,12 @@ class TestComputeFunctions(unittest.TestCase):
             ("taanit_esther", "taanit-esther", 1),
             ("tisha_bav", "tisha-bav", 1),
             ("tu_bav", "tu-bav", 1),
-            ("tu_bishvat", "tu-bishvat", 1),
-            ("sigd", "sigd", 1),
+            ("tu_bshvat", "tu-bishvat", 1),
             ("yom_hashoah", "yom-hashoah", 1),
             ("yom_hazikaron", "yom-hazikaron", 1),
             ("yom_haatzmaut", "yom-haatzmaut", 1),
-            ("yom_yerushalayim", "yom-yerusahalayim", 1),
-            ("lag_baomer", "lag-baomer", 1),
-            ("pesach_sheini", "pesah-sheini", 1),
+            ("yom_yerushalayim", "yom-yerushalayim", 1),
+            ("lag_bomer", "lag-baomer", 1),
             ("hol_hamoed_pesach", "pesah", 3),
             ("hol_hamoed_sukkot", "sukkot", 3),
         ):
@@ -937,11 +976,24 @@ class TestRainSeasons(unittest.TestCase):
 
     def test_the_year_before_a_leap_year_slips_a_day(self):
         # 2024 is a Gregorian leap year, so the winter opening in December 2023 begins on
-        # the fifth rather than the fourth.
-        self.assertFalse(self.seasons(2023, 12, 4, self.NEW_YORK)[1])
-        self.assertTrue(self.seasons(2023, 12, 5, self.NEW_YORK)[1])
+        # the evening of the fifth rather than of the fourth.
+        self.assertFalse(self.seasons(2023, 12, 5, self.NEW_YORK)[1])
+        self.assertTrue(self.seasons(2023, 12, 6, self.NEW_YORK)[1])
         # December 2024 looks ahead to 2025, which is not a leap year.
-        self.assertTrue(self.seasons(2024, 12, 4, self.NEW_YORK)[1])
+        self.assertTrue(self.seasons(2024, 12, 5, self.NEW_YORK)[1])
+
+    def test_the_diaspora_begins_at_maariv_on_the_fourth(self):
+        """A date with no time is its daytime; the petition begins that evening."""
+        def at(day, hour):
+            return compute_holiday_aggregate(_snapshot({
+                (FS_GREGORIAN, "year"): 2025, (FS_GREGORIAN, "month"): 12,
+                (FS_GREGORIAN, "day"): day, (FS_TIME, "hour"): hour, (FS_TIME, "minute"): 0,
+                **self.NEW_YORK,
+            }))["tal-umatar"]
+        self.assertFalse(at(3, 21))   # the evening of the third: not yet
+        self.assertFalse(at(4, 12))   # Minhah on the fourth: not yet
+        self.assertTrue(at(4, 21))    # Ma'ariv on the fourth: from now
+        self.assertFalse(self.seasons(2025, 12, 4, self.NEW_YORK)[1])
 
     def test_both_seasons_end_at_pesach(self):
         for place, name in ((self.JERUSALEM, "Israel"), (self.NEW_YORK, "diaspora")):
@@ -963,7 +1015,7 @@ class TestRainSeasons(unittest.TestCase):
         })
         found = compute_holiday_aggregate(snapshot)
         self.assertTrue(found["geshem"])          # needs no location
-        self.assertNotIn("tal-umatar", found)     # does
+        self.assertIs(found["tal-umatar"], Undefined)  # does
 
 
 
@@ -994,3 +1046,223 @@ class TestTorahServiceCalendar(unittest.TestCase):
                 snap = TestRoshHodesh._snap(year, month, day)
                 self.assertEqual(compute_holiday(snap)["tzom-gedalia"], int(fast))
                 self.assertEqual(compute_holiday_aggregate(snap)["minor-fast"], fast)
+
+
+def _civil(hebrew_year, month, day, *, israel=True, hour=None, minute=0):
+    """A snapshot for a Hebrew date, given as its civil date at Jerusalem or New York."""
+    civil = pyluach_dates.HebrewDate(hebrew_year, month, day).to_greg()
+    snap = TestRoshHodesh._snap(civil.year, civil.month, civil.day, israel=israel, hour=hour)
+    if hour is not None and minute:
+        data = {key: snap.get(*key) for key in (
+            (FS_GREGORIAN, "year"), (FS_GREGORIAN, "month"), (FS_GREGORIAN, "day"),
+            (FS_LOCATION, "latitude"), (FS_LOCATION, "longitude"), (FS_LOCATION, "timezone"),
+            (FS_TIME, "hour"))}
+        data[(FS_TIME, "minute")] = minute
+        snap = _snapshot(data)
+    return snap
+
+
+class TestHolidayCoverage(unittest.TestCase):
+    """Every holiday feature is computed on some day, under the name the spec gives it."""
+
+    def test_every_holiday_feature_occurs(self):
+        seen = set()
+        day = pyluach_dates.HebrewDate(5784, 7, 1).to_greg().to_pydate()
+        last = pyluach_dates.HebrewDate(5787, 7, 1).to_greg().to_pydate()
+        while day < last:
+            for israel in (True, False):
+                found = compute_holiday(TestRoshHodesh._snap(day.year, day.month, day.day,
+                                                             israel=israel))
+                seen.update(name for name, value in found.items() if value)
+            day += timedelta(days=1)
+        self.assertEqual(set(HOLIDAY_FEATURES) - seen, set())
+
+    def test_days_hdate_names_differently(self):
+        self.assertEqual(compute_holiday(_civil(5785, 2, 18))["lag-baomer"], 1)
+        self.assertEqual(compute_holiday(_civil(5785, 11, 15))["tu-bishvat"], 1)
+        self.assertEqual(compute_holiday(_civil(5785, 2, 28))["yom-yerushalayim"], 1)
+
+    def test_days_hdate_does_not_know(self):
+        self.assertEqual(compute_holiday(_civil(5785, 2, 14))["pesah-sheini"], 1)
+        self.assertEqual(compute_holiday(_civil(5785, 8, 29))["sigd"], 1)
+        # A leap year's first Adar, and only a leap year's.
+        self.assertEqual(compute_holiday(_civil(5784, 12, 14))["purim-katan"], 1)
+        self.assertEqual(compute_holiday(_civil(5784, 12, 15))["shushan-purim-katan"], 1)
+        self.assertEqual(compute_holiday(_civil(5785, 12, 14))["purim-katan"], 0)
+
+    def test_fast_of_the_firstborn_moves_to_thursday_from_shabbat(self):
+        self.assertEqual(compute_holiday(_civil(5786, 1, 14))["taanit-bchorot"], 1)
+        # 14 Nisan 5785 is Shabbat.
+        self.assertEqual(pyluach_dates.HebrewDate(5785, 1, 14).weekday(), 7)
+        self.assertEqual(compute_holiday(_civil(5785, 1, 14))["taanit-bchorot"], 0)
+        self.assertEqual(compute_holiday(_civil(5785, 1, 12))["taanit-bchorot"], 1)
+
+    def test_purim_meshulash_numbers_its_three_days(self):
+        # Shushan Purim 5785 is Shabbat.
+        for day, expected in ((13, 0), (14, 1), (15, 2), (16, 3), (17, 0)):
+            with self.subTest(day=day):
+                self.assertEqual(compute_holiday(_civil(5785, 12, day))["purim-meshulash"],
+                                 expected)
+        self.assertEqual(compute_holiday(_civil(5786, 12, 15))["purim-meshulash"], 0)
+
+
+class TestAggregateDefinitions(unittest.TestCase):
+    def test_tisha_bav_is_not_a_minor_fast(self):
+        self.assertFalse(compute_holiday_aggregate(_civil(5785, 5, 9))["minor-fast"])
+        self.assertTrue(compute_holiday_aggregate(_civil(5785, 4, 17))["minor-fast"])
+
+    def test_regalim_include_shemini_atzeret_and_simhat_torah(self):
+        for israel, days in ((True, (22,)), (False, (22, 23))):
+            for day in days:
+                with self.subTest(israel=israel, day=day):
+                    self.assertTrue(compute_holiday_aggregate(
+                        _civil(5786, 7, day, israel=israel))["regalim"])
+
+    def test_the_day_before_and_after_a_festival(self):
+        erev_pesah = compute_holiday_aggregate(_civil(5786, 1, 14, israel=False))
+        self.assertTrue(erev_pesah["day-before-holiday"])
+        self.assertFalse(erev_pesah["day-after-holiday"])
+        # Isru hag follows the last festival day, which is a day later outside Israel.
+        self.assertTrue(compute_holiday_aggregate(_civil(5786, 1, 22))["day-after-holiday"])
+        self.assertFalse(compute_holiday_aggregate(
+            _civil(5786, 1, 22, israel=False))["day-after-holiday"])
+        self.assertTrue(compute_holiday_aggregate(
+            _civil(5786, 1, 23, israel=False))["day-after-holiday"])
+        # A festival day is neither, even between two of them.
+        second_day = compute_holiday_aggregate(_civil(5786, 1, 16, israel=False))
+        self.assertFalse(second_day["day-before-holiday"])
+        self.assertFalse(second_day["day-after-holiday"])
+        ordinary = compute_holiday_aggregate(_civil(5786, 2, 4))
+        self.assertFalse(ordinary["day-before-holiday"])
+        self.assertFalse(ordinary["day-after-holiday"])
+
+    def test_isru_hag_follows_only_a_pilgrimage_festival(self):
+        for label, args, israel in (
+            ("after Yom Kippur", (5786, 7, 11), True),
+            ("first day of chol hamoed, Israel", (5786, 1, 16), True),
+            ("first day of chol hamoed, diaspora", (5786, 1, 17), False),
+        ):
+            with self.subTest(day=label):
+                self.assertFalse(compute_holiday_aggregate(
+                    _civil(*args, israel=israel))["day-after-holiday"])
+        for label, args, israel in (
+            ("after Shavuot, Israel", (5786, 3, 7), True),
+            ("after Simhat Torah, diaspora", (5786, 7, 24), False),
+        ):
+            with self.subTest(day=label):
+                self.assertTrue(compute_holiday_aggregate(
+                    _civil(*args, israel=israel))["day-after-holiday"])
+
+    def test_aggregate_features_are_the_listed_ones(self):
+        found = compute_holiday_aggregate(_civil(5786, 2, 4))
+        self.assertEqual(set(found), set(AGGREGATE_FEATURES))
+
+    def test_musaf_days(self):
+        def musaf(snap):
+            return compute_service_time(snap)["musaf"]
+        for label, args in (("Yom Kippur", (5786, 7, 10)), ("Rosh Hodesh", (5786, 8, 1)),
+                            ("Shemini Atzeret", (5786, 7, 22)), ("Hol ha-Moed", (5786, 7, 17))):
+            with self.subTest(day=label):
+                self.assertTrue(musaf(_civil(*args, hour=10)))
+        # A weekday that is none of them.
+        self.assertFalse(musaf(_civil(5786, 8, 4, hour=10)))
+
+
+class TestUnknownLocale(unittest.TestCase):
+    """Without a locale only what Israel and the diaspora agree on is derived."""
+
+    @staticmethod
+    def _undated_place(hebrew_year, month, day):
+        civil = pyluach_dates.HebrewDate(hebrew_year, month, day).to_greg()
+        return _snapshot({
+            (FS_GREGORIAN, "year"): civil.year,
+            (FS_GREGORIAN, "month"): civil.month,
+            (FS_GREGORIAN, "day"): civil.day,
+            (FS_HEBREW_DATE, "year"): hebrew_year,
+            (FS_HEBREW_DATE, "month"): month,
+            (FS_HEBREW_DATE, "day"): day,
+        })
+
+    def test_holidays_that_agree_are_kept(self):
+        found = compute_holiday(self._undated_place(5786, 9, 25))
+        self.assertEqual(found["hanukkah"], 1)
+        self.assertEqual(found["pesah"], 0)
+
+    def test_holidays_that_differ_are_undefined(self):
+        # The eighth of Pesah is a festival day only outside Israel.
+        found = compute_holiday(self._undated_place(5786, 1, 22))
+        self.assertIs(found["pesah"], Undefined)
+        aggregate = compute_holiday_aggregate(self._undated_place(5786, 1, 22))
+        self.assertIs(aggregate["yom-tov"], Undefined)
+        self.assertIs(aggregate["regalim"], Undefined)  # true in the diaspora, false in Israel
+        self.assertFalse(aggregate["shabbat"])
+
+    def test_musaf_on_a_diaspora_second_day_is_undefined(self):
+        civil = pyluach_dates.HebrewDate(5785, 1, 22).to_greg()
+        found = compute_service_time(_snapshot({
+            (FS_GREGORIAN, "year"): civil.year,
+            (FS_GREGORIAN, "month"): civil.month,
+            (FS_GREGORIAN, "day"): civil.day,
+            (FS_TIME, "hour"): 10,
+            (FS_TIME, "minute"): 0,
+            (FS_LOCATION, "latitude"): 40.71,
+            (FS_LOCATION, "longitude"): -74.01,
+            (FS_ISRAEL, "is-israel"): Undefined,
+        }))
+        self.assertIs(found["musaf"], Undefined)
+        self.assertTrue(found["shaharit"])
+
+    def test_declared_undefined_israel_is_not_israel(self):
+        civil = pyluach_dates.HebrewDate(5785, 1, 22).to_greg()
+        found = compute_holiday(_snapshot({
+            (FS_GREGORIAN, "year"): civil.year,
+            (FS_GREGORIAN, "month"): civil.month,
+            (FS_GREGORIAN, "day"): civil.day,
+            (FS_LOCATION, "latitude"): 40.71,
+            (FS_LOCATION, "longitude"): -74.01,
+            (FS_ISRAEL, "is-israel"): Undefined,
+        }))
+        self.assertIs(found["pesah"], Undefined)
+
+
+class TestTimeOfDayEdges(unittest.TestCase):
+    def test_before_sunrise_is_a_night_hour(self):
+        evening = compute_hebrew_time(_civil(5786, 2, 4, hour=23))
+        small_hours = compute_hebrew_time(_civil(5786, 2, 5, hour=3))
+        self.assertGreaterEqual(small_hours["variable-hour"], 12)
+        self.assertGreater(small_hours["variable-hour"], evening["variable-hour"])
+
+    def test_part_is_of_the_variable_hour(self):
+        """Halfway through a variable hour is 540 parts, however long the hour is."""
+        civil = pyluach_dates.HebrewDate(5786, 3, 20).to_greg().to_pydate()  # a long summer day
+        snap = TestRoshHodesh._snap(civil.year, civil.month, civil.day)
+        zmanim = hdate.Zmanim(civil, location=snap.location())
+        sunrise, sunset = zmanim.netz_hachama.local, zmanim.shkia.local
+        middle_of_fourth = sunrise + (sunset - sunrise) * (3.5 / 12)
+        found = compute_hebrew_time(_snapshot({
+            (FS_GREGORIAN, "year"): civil.year,
+            (FS_GREGORIAN, "month"): civil.month,
+            (FS_GREGORIAN, "day"): civil.day,
+            (FS_LOCATION, "latitude"): 31.78,
+            (FS_LOCATION, "longitude"): 35.22,
+            (FS_LOCATION, "timezone"): "Asia/Jerusalem",
+            (FS_TIME, "hour"): middle_of_fourth.hour,
+            (FS_TIME, "minute"): middle_of_fourth.minute,
+            (FS_TIME, "second"): middle_of_fourth.second,
+        }))
+        self.assertEqual(found["variable-hour"], 3)
+        self.assertAlmostEqual(found["part"], 540, delta=3)
+
+    def test_motzaei_shabbat_lasts_until_dawn(self):
+        # 8 Iyar 5786 is Shabbat; the small hours after it are civil Sunday.
+        self.assertEqual(pyluach_dates.HebrewDate(5786, 2, 8).weekday(), 7)
+        self.assertTrue(compute_holiday_aggregate(_civil(5786, 2, 8, hour=21))["motzaei-shabbat"])
+        self.assertTrue(compute_holiday_aggregate(_civil(5786, 2, 9, hour=1))["motzaei-shabbat"])
+        self.assertFalse(compute_holiday_aggregate(_civil(5786, 2, 9, hour=10))["motzaei-shabbat"])
+
+    def test_saturday_night_reads_the_coming_week(self):
+        saturday = compute_torah_reading(_civil(5786, 2, 8, hour=12))
+        saturday_night = compute_torah_reading(_civil(5786, 2, 8, hour=22))
+        sunday = compute_torah_reading(_civil(5786, 2, 9, hour=12))
+        self.assertNotEqual(saturday["israel-parsha"], saturday_night["israel-parsha"])
+        self.assertEqual(saturday_night["israel-parsha"], sunday["israel-parsha"])

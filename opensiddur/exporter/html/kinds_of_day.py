@@ -63,10 +63,12 @@ def aggregate(day: Day, name: str) -> bool:
 
 
 #: The holidays an ordinary day is none of. The omer is not here: it is counted on ordinary days.
+#: The minor days on which tahanun is not said are, so that an ordinary day says tahanun.
 NOT_ORDINARY = (
     "rosh-hodesh", "pesah", "shavuot", "sukkot", "shmini-atzeret", "rosh-hashana", "yom-kippur",
     "hanukkah", "purim", "shushan-purim", "tzom-gedalia", "asara-btevet", "taanit-esther",
-    "tzom-tammuz", "tisha-bav",
+    "tzom-tammuz", "tisha-bav", "lag-baomer", "tu-bishvat", "tu-bav", "pesah-sheini",
+    "purim-katan", "shushan-purim-katan", "taanit-bchorot",
 )
 
 
@@ -110,7 +112,8 @@ KINDS: tuple[Kind, ...] = (
     Kind("Hanukkah", lambda d: holiday(d, "hanukkah") > 0),
     Kind("Purim", lambda d: holiday(d, "purim") > 0),
     Kind("Shushan Purim", lambda d: holiday(d, "shushan-purim") > 0),
-    Kind("A fast day", lambda d: aggregate(d, "minor-fast") and not holiday(d, "tisha-bav")),
+    Kind("Lag BaOmer", lambda d: holiday(d, "lag-baomer") > 0),
+    Kind("A fast day", lambda d: aggregate(d, "minor-fast")),
     Kind("Tisha b'Av", lambda d: holiday(d, "tisha-bav") > 0),
 )
 

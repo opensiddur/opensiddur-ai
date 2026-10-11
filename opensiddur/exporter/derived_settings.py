@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from enum import StrEnum
 from typing import Any
 
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.calendar.compute import (
+    FS_HEBREW_DATE,
     FS_READING_CYCLE,
     READING_CYCLE_DEFAULTS,
     SettingSnapshot,
@@ -14,6 +16,8 @@ from opensiddur.exporter.calendar.compute import (
 from opensiddur.exporter.conditional_settings import INIT_DECLARE_ID
 from opensiddur.exporter.derivation_graph import DerivationSpec, topological_derivation_order
 from opensiddur.exporter.linear import ConditionalSettingEntry, LinearData, Undefined
+
+logger = logging.getLogger(__name__)
 
 FS_OVERRIDE = "opensiddur:override"
 FS_PARATEXT = "opensiddur:paratext"
@@ -143,7 +147,10 @@ def _apply_derivation_spec(
 
     computed = spec.compute(snapshot)
     if computed is None:
-        for feature_name in existing_features:
+        # A static default is not derived from these inputs, and outlives their absence: the
+        # absence of a date is exactly when a volume's fixed choice matters.
+        static = STATIC_DEFAULTS.get(fs_type, {})
+        for feature_name in existing_features - static.keys():
             entry = get_active_setting_entry(linear_data, fs_type, feature_name)
             if entry is not None and entry.source == "derived":
                 _remove_derived_for_feature(linear_data, fs_type, feature_name)
@@ -204,3 +211,21 @@ def recalculate_derived_settings(
         _apply_derivation_spec(linear_data, spec, snapshot)
 
     _rebuild_derived_dependency_index(linear_data)
+
+    if trigger == SettingChangeTrigger.INIT:
+        _warn_on_a_date_without_a_place(snapshot)
+
+
+def _warn_on_a_date_without_a_place(snapshot: SettingSnapshot) -> None:
+    """A civil date says which Hebrew date it is only at a place, the day turning at nightfall.
+
+    Without one, and without a declared Hebrew date to fall back on, nothing that follows from
+    the Hebrew date is derived -- not the holidays, not Shabbat -- and a volume that meant to be
+    dated would come out undated without a word.
+    """
+    hebrew_date = [snapshot.get_int(FS_HEBREW_DATE, key) for key in ("year", "month", "day")]
+    if (snapshot.gregorian_date() is not None and snapshot.location() is None
+            and None in hebrew_date):
+        logger.warning(
+            "opensiddur:gregorian-date is set without an opensiddur:location, so no Hebrew "
+            "date, holiday or Shabbat is derived from it")
