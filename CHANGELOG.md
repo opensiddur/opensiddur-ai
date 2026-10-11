@@ -62,16 +62,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Katan, Shushan Purim Katan and the three-day Purim were never computed; they are now
     worked out from the Hebrew date. `purim-meshulash` numbers its days `1`–`3`.
   - **Renamed feature.** `yom-yerusahalayim` is now spelled `yom-yerushalayim`.
-  - **`minor-fast` included Tish'ah b'Av**, so Avinu Malkenu and the fast-day reading were
-    printed on it. It no longer does.
+  - **`minor-fast` included Tish'ah b'Av**, so Avinu Malkenu and the morning reading of
+    Va-yehal were printed on it. It no longer does. Birnbaum's weekday Minhah Amidah now
+    conditions Anenu, the priestly blessing and Sim Shalom on a minor fast *or* Tish'ah b'Av,
+    since those are said at Minhah of Tish'ah b'Av.
   - **`regalim`** now includes Shemini Atzeret and Simhat Torah.
   - **`musaf`** is now true on Yom Kippur, Rosh Hodesh and Shemini Atzeret.
   - **`day-before-holiday` and `day-after-holiday`** were always false. They are now the eve
-    of a festival and isru hag.
+    of a festival and isru hag (the day after Pesah, Shavuot or Sukkot).
   - **Undefined settings.** A date declared undefined (`null`, `<tei:default/>`) crashed the
     compiler. An `is-israel` declared undefined, or given as the string `"false"`, counted as
     Israel. Now undefined is not known, and nothing is assumed. Where Israel and the diaspora
-    could both apply, only the features they agree on are derived, instead of defaulting to
+    could both apply, a feature on which they disagree is undefined, instead of defaulting to
     the diaspora.
   - **Israel's border.** Israel is now recognised by its time zone rather than a bounding box
     that took in Amman, Aqaba, Tyre and Quneitra.

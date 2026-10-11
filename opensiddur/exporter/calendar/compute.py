@@ -345,10 +345,11 @@ def _for_locale(
 ) -> dict[str, Any] | None:
     """Run a computation that differs between Israel and the diaspora.
 
-    Where the locale is unknown both are worked out and only the features on which they agree
-    are kept. The rest are left out, and an omitted feature evaluates as undefined, which keeps
-    the text it governs: the first of Hanukkah is the first of Hanukkah anywhere, while the
-    eighth of Pesah may or may not be a festival day.
+    Where the locale is unknown both are worked out. A feature on which they agree keeps its
+    value; one on which they differ is ``Undefined``, which keeps the text it governs: the
+    first of Hanukkah is the first of Hanukkah anywhere, while the eighth of Pesah may or may
+    not be a festival day. Undefined is stated rather than left out, so that it replaces
+    whatever a known locale derived for the feature before.
     """
     israel = snapshot.in_israel()
     if israel is not None:
@@ -356,8 +357,8 @@ def _for_locale(
     inside, outside = compute(True), compute(False)
     if inside is None or outside is None:
         return None
-    return {name: value for name, value in inside.items()
-            if name in outside and outside[name] == value}
+    return {name: value if outside.get(name, Undefined) == value else Undefined
+            for name, value in {**outside, **inside}.items()}
 
 
 def _jlptei_weekday(python_weekday: int) -> int:
@@ -707,9 +708,10 @@ def compute_holiday_from_aggregate(snapshot: SettingSnapshot) -> dict[str, Any] 
     return dict.fromkeys(ALWAYS_YOM_TOV, 0)
 
 
-#: The minor fasts: the public fasts other than Yom Kippur and Tish'ah b'Av, which have services
-#: of their own. These are the days of Avinu Malkenu, Anenu in the repetition, and the Torah
-#: reading of Va-yehal.
+#: The minor fasts: the public fasts other than Yom Kippur and Tish'ah b'Av. Avinu Malkenu and
+#: the morning reading of Va-yehal belong to these alone. Tish'ah b'Av shares some fast-day
+#: prayers -- Anenu, and at Minhah Va-yehal and the priestly blessing -- so a text for those
+#: conditions on ``tisha-bav`` as well.
 MINOR_FASTS = ("tzom-gedalia", "asara-btevet", "taanit-esther", "tzom-tammuz")
 
 #: The three pilgrimage festivals, each with the days that close it: Shemini Atzeret and
@@ -758,15 +760,33 @@ def _holiday_aggregate(snapshot: SettingSnapshot, israel: bool) -> dict[str, Any
         "aseret-ymei-tshuva": aseret,
         "minor-fast": any(holidays.get(k, 0) > 0 for k in MINOR_FASTS),
         "eruv-tavshilin": _needs_eruv_tavshilin(snapshot, israel),
-        # The eve of a festival and the day after one (isru hag), neither itself a festival day.
+        # The eve of a festival, which is not itself a festival day.
         "day-before-holiday": not yom_tov and _is_yom_tov(gdate + timedelta(days=1), israel),
-        "day-after-holiday": not yom_tov and _is_yom_tov(gdate - timedelta(days=1), israel),
+        "day-after-holiday": not yom_tov and _ends_a_pilgrimage_festival(
+            gdate - timedelta(days=1), israel),
         **_seasons(snapshot, heb, israel),
     }
 
 
 def _is_yom_tov(gdate: date, israel: bool) -> bool:
     return hdate.HDateInfo(gdate, diaspora=not israel).is_yom_tov
+
+
+#: hdate's names for the last festival day of each pilgrimage festival, in Israel or outside it.
+_LAST_FESTIVAL_DAYS = frozenset({
+    "pesach_vii", "pesach_viii", "shavuot", "shavuot_ii", "shmini_atzeret", "simchat_torah",
+})
+
+
+def _ends_a_pilgrimage_festival(gdate: date, israel: bool) -> bool:
+    """Whether the day is a festival day of Pesah, Shavuot or Sukkot that is followed by isru hag.
+
+    Isru hag is the day after a pilgrimage festival, not after Yom Kippur or Rosh Hashanah and
+    not the first day of chol hamoed: the caller has already checked that the following day is
+    not itself a festival day, which leaves only the festival's last day.
+    """
+    info = hdate.HDateInfo(gdate, diaspora=not israel)
+    return info.is_yom_tov and any(h.name in _LAST_FESTIVAL_DAYS for h in info.holidays)
 
 
 def _is_motzaei_shabbat(snapshot: SettingSnapshot, dow: dict[str, Any]) -> bool:
@@ -1003,7 +1023,7 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
         "shabbat-mahar-hodesh": _rosh_hodesh_day(tomorrow) > 0,
         "shabbat-mevarchim": _is_shabbat_mevarchim(shabbat),
     }
-    # Patterns not settled for an unknown locale are left out, and so undefined.
+    # Patterns that differ by locale are undefined where the locale is unknown.
     patterns = _for_locale(snapshot, lambda israel: {
         f"triennial-pattern-{pair}": pattern
         for pair, pattern in _triennial_cycle_patterns(year, israel=israel).items()
@@ -1021,13 +1041,17 @@ MUSAF_DAYS = ("pesah", "shavuot", "rosh-hashana", "yom-kippur", "sukkot", "shmin
 
 
 def compute_service_time(snapshot: SettingSnapshot) -> dict[str, Any] | None:
+    return _for_locale(snapshot, lambda israel: _service_time(snapshot, israel))
+
+
+def _service_time(snapshot: SettingSnapshot, israel: bool) -> dict[str, Any] | None:
     gdate = snapshot.gregorian_date()
     loc = snapshot.location()
     aware_dt = _datetime_from_snapshot(snapshot)
     if gdate is None or loc is None or aware_dt is None or snapshot.time_of_day() is None:
         return None
     z = hdate.Zmanim(gdate, location=loc)
-    holidays = compute_holiday(snapshot) or {}
+    holidays = _holidays(snapshot, israel) or {}
     dow = compute_day_of_week(snapshot) or {}
     is_shabbat = dow.get("hebrew-day") == 7
     return {

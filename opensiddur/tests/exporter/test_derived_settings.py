@@ -25,7 +25,8 @@ from opensiddur.exporter.derived_settings import (
     register_derived_entry,
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
-from opensiddur.exporter.linear import ConditionalSettingEntry, get_linear_data, reset_linear_data
+from opensiddur.exporter.linear import (
+    ConditionalSettingEntry, Undefined, get_linear_data, reset_linear_data)
 from opensiddur.exporter.settings import load_settings
 
 TEI = TEI_NS
@@ -245,9 +246,43 @@ class TestDerivedSettingsFramework(unittest.TestCase):
             }),
         )
         # 22 Nisan: the eighth of Pesah outside Israel, not a day of Pesah in it.
-        self.assertIsNone(get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah"))
+        self.assertIs(
+            get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah").value,
+            Undefined)
         self.assertEqual(
             get_active_setting_entry(self.linear_data, "opensiddur:holiday", "hanukkah").value, 0)
+
+    def test_an_unknown_locale_replaces_values_derived_for_a_known_one(self):
+        """A scope that makes the locale unknown leaves no festival of the outer one behind."""
+        CompilerProcessor.load_init_settings(
+            self.linear_data,
+            yaml_to_declaration_entries({
+                "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 20},
+                "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+            }),
+        )
+        self.assertEqual(
+            get_active_setting_entry(self.linear_data, "opensiddur:holiday", "pesah").value, 8)
+        self.linear_data.conditional_settings.append(ConditionalSettingEntry(
+            declare_id="inner", fs_type="opensiddur:israel", feature_name="is-israel",
+            value=Undefined, source="declared"))
+        recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.DECLARE,
+                                     declare_id="inner")
+        for fs_type, feature in (("opensiddur:holiday", "pesah"),
+                                 ("opensiddur:holiday-aggregate", "yom-tov")):
+            with self.subTest(feature=feature):
+                self.assertIs(
+                    get_active_setting_entry(self.linear_data, fs_type, feature).value, Undefined)
+
+    def test_a_declared_hebrew_date_does_not_warn(self):
+        with self.assertNoLogs("opensiddur.exporter.derived_settings", level="WARNING"):
+            CompilerProcessor.load_init_settings(
+                self.linear_data,
+                yaml_to_declaration_entries({
+                    "opensiddur:gregorian-date": {"year": 2024, "month": 10, "day": 3},
+                    "opensiddur:hebrew-date": {"year": 5785, "month": 7, "day": 1},
+                }),
+            )
 
     def test_a_date_without_a_place_warns(self):
         with self.assertLogs("opensiddur.exporter.derived_settings", level="WARNING") as logs:

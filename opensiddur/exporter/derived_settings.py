@@ -8,6 +8,7 @@ from typing import Any
 
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.calendar.compute import (
+    FS_HEBREW_DATE,
     FS_READING_CYCLE,
     READING_CYCLE_DEFAULTS,
     SettingSnapshot,
@@ -218,10 +219,13 @@ def recalculate_derived_settings(
 def _warn_on_a_date_without_a_place(snapshot: SettingSnapshot) -> None:
     """A civil date says which Hebrew date it is only at a place, the day turning at nightfall.
 
-    Without one, nothing that follows from the Hebrew date is derived -- not the holidays, not
-    Shabbat -- and a volume that meant to be dated would come out undated without a word.
+    Without one, and without a declared Hebrew date to fall back on, nothing that follows from
+    the Hebrew date is derived -- not the holidays, not Shabbat -- and a volume that meant to be
+    dated would come out undated without a word.
     """
-    if snapshot.gregorian_date() is not None and snapshot.location() is None:
+    hebrew_date = [snapshot.get_int(FS_HEBREW_DATE, key) for key in ("year", "month", "day")]
+    if (snapshot.gregorian_date() is not None and snapshot.location() is None
+            and None in hebrew_date):
         logger.warning(
             "opensiddur:gregorian-date is set without an opensiddur:location, so no Hebrew "
             "date, holiday or Shabbat is derived from it")

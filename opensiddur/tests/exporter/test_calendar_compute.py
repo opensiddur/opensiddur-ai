@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 from pyluach import dates as pyluach_dates
 from pyluach import parshios
 
+import hdate
+
 from opensiddur.exporter.calendar.compute import (
     AGGREGATE_FEATURES,
     HOLIDAY_FEATURES,
@@ -1013,7 +1015,7 @@ class TestRainSeasons(unittest.TestCase):
         })
         found = compute_holiday_aggregate(snapshot)
         self.assertTrue(found["geshem"])          # needs no location
-        self.assertNotIn("tal-umatar", found)     # does
+        self.assertIs(found["tal-umatar"], Undefined)  # does
 
 
 
@@ -1134,6 +1136,23 @@ class TestAggregateDefinitions(unittest.TestCase):
         self.assertFalse(ordinary["day-before-holiday"])
         self.assertFalse(ordinary["day-after-holiday"])
 
+    def test_isru_hag_follows_only_a_pilgrimage_festival(self):
+        for label, args, israel in (
+            ("after Yom Kippur", (5786, 7, 11), True),
+            ("first day of chol hamoed, Israel", (5786, 1, 16), True),
+            ("first day of chol hamoed, diaspora", (5786, 1, 17), False),
+        ):
+            with self.subTest(day=label):
+                self.assertFalse(compute_holiday_aggregate(
+                    _civil(*args, israel=israel))["day-after-holiday"])
+        for label, args, israel in (
+            ("after Shavuot, Israel", (5786, 3, 7), True),
+            ("after Simhat Torah, diaspora", (5786, 7, 24), False),
+        ):
+            with self.subTest(day=label):
+                self.assertTrue(compute_holiday_aggregate(
+                    _civil(*args, israel=israel))["day-after-holiday"])
+
     def test_aggregate_features_are_the_listed_ones(self):
         found = compute_holiday_aggregate(_civil(5786, 2, 4))
         self.assertEqual(set(found), set(AGGREGATE_FEATURES))
@@ -1169,13 +1188,29 @@ class TestUnknownLocale(unittest.TestCase):
         self.assertEqual(found["hanukkah"], 1)
         self.assertEqual(found["pesah"], 0)
 
-    def test_holidays_that_differ_are_left_out(self):
+    def test_holidays_that_differ_are_undefined(self):
         # The eighth of Pesah is a festival day only outside Israel.
         found = compute_holiday(self._undated_place(5786, 1, 22))
-        self.assertNotIn("pesah", found)
+        self.assertIs(found["pesah"], Undefined)
         aggregate = compute_holiday_aggregate(self._undated_place(5786, 1, 22))
-        self.assertNotIn("yom-tov", aggregate)
-        self.assertNotIn("regalim", aggregate)  # true in the diaspora, false in Israel
+        self.assertIs(aggregate["yom-tov"], Undefined)
+        self.assertIs(aggregate["regalim"], Undefined)  # true in the diaspora, false in Israel
+        self.assertFalse(aggregate["shabbat"])
+
+    def test_musaf_on_a_diaspora_second_day_is_undefined(self):
+        civil = pyluach_dates.HebrewDate(5785, 1, 22).to_greg()
+        found = compute_service_time(_snapshot({
+            (FS_GREGORIAN, "year"): civil.year,
+            (FS_GREGORIAN, "month"): civil.month,
+            (FS_GREGORIAN, "day"): civil.day,
+            (FS_TIME, "hour"): 10,
+            (FS_TIME, "minute"): 0,
+            (FS_LOCATION, "latitude"): 40.71,
+            (FS_LOCATION, "longitude"): -74.01,
+            (FS_ISRAEL, "is-israel"): Undefined,
+        }))
+        self.assertIs(found["musaf"], Undefined)
+        self.assertTrue(found["shaharit"])
 
     def test_declared_undefined_israel_is_not_israel(self):
         civil = pyluach_dates.HebrewDate(5785, 1, 22).to_greg()
@@ -1187,7 +1222,7 @@ class TestUnknownLocale(unittest.TestCase):
             (FS_LOCATION, "longitude"): -74.01,
             (FS_ISRAEL, "is-israel"): Undefined,
         }))
-        self.assertNotIn("pesah", found)
+        self.assertIs(found["pesah"], Undefined)
 
 
 class TestTimeOfDayEdges(unittest.TestCase):
@@ -1198,14 +1233,25 @@ class TestTimeOfDayEdges(unittest.TestCase):
         self.assertGreater(small_hours["variable-hour"], evening["variable-hour"])
 
     def test_part_is_of_the_variable_hour(self):
-        at_noon = compute_hebrew_time(_civil(5786, 2, 4, hour=12))
-        self.assertGreaterEqual(at_noon["part"], 0)
-        self.assertLess(at_noon["part"], 1080)
-        # Successive minutes within one variable hour advance the part by about 1080/hour-length.
-        a = compute_hebrew_time(_civil(5786, 2, 4, hour=12, minute=10))
-        b = compute_hebrew_time(_civil(5786, 2, 4, hour=12, minute=11))
-        if a["variable-hour"] == b["variable-hour"]:
-            self.assertGreater(b["part"], a["part"])
+        """Halfway through a variable hour is 540 parts, however long the hour is."""
+        civil = pyluach_dates.HebrewDate(5786, 3, 20).to_greg().to_pydate()  # a long summer day
+        snap = TestRoshHodesh._snap(civil.year, civil.month, civil.day)
+        zmanim = hdate.Zmanim(civil, location=snap.location())
+        sunrise, sunset = zmanim.netz_hachama.local, zmanim.shkia.local
+        middle_of_fourth = sunrise + (sunset - sunrise) * (3.5 / 12)
+        found = compute_hebrew_time(_snapshot({
+            (FS_GREGORIAN, "year"): civil.year,
+            (FS_GREGORIAN, "month"): civil.month,
+            (FS_GREGORIAN, "day"): civil.day,
+            (FS_LOCATION, "latitude"): 31.78,
+            (FS_LOCATION, "longitude"): 35.22,
+            (FS_LOCATION, "timezone"): "Asia/Jerusalem",
+            (FS_TIME, "hour"): middle_of_fourth.hour,
+            (FS_TIME, "minute"): middle_of_fourth.minute,
+            (FS_TIME, "second"): middle_of_fourth.second,
+        }))
+        self.assertEqual(found["variable-hour"], 3)
+        self.assertAlmostEqual(found["part"], 540, delta=3)
 
     def test_motzaei_shabbat_lasts_until_dawn(self):
         # 8 Iyar 5786 is Shabbat; the small hours after it are civil Sunday.

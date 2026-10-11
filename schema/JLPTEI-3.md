@@ -1026,7 +1026,7 @@ A time zone stops at the border, so Amman, Aqaba, Tyre and Quneitra are outside 
 
 Nothing is assumed when there is no location and `is-israel` is not declared, or when it is
 declared undefined. A feature that is the same in Israel and the diaspora on that date is
-still derived. A feature that differs between them is left undefined. For example, the first
+still derived. A feature that differs between them is set to undefined. For example, the first
 day of Hanukkah is derived anywhere, but the eighth day of Pesah, which is a festival day only
 in the diaspora, is not.
 
@@ -1221,12 +1221,16 @@ These aggregates need definitions:
   which close Sukkot and share its festival Amidah and Musaf.
 - `minor-fast` is one of the four public fasts other than Yom Kippur and Tish'ah b'Av:
   `tzom-gedalia`, `asara-btevet`, `taanit-esther` and `tzom-tammuz`, each on its observed
-  date. Tish'ah b'Av has its own service, without Avinu Malkenu or the Torah reading of
-  Va-yehal, so a text for it conditions on `tisha-bav`.
+  date. Avinu Malkenu and the morning reading of Va-yehal are said on these days and not on
+  Tish'ah b'Av. Some fast-day prayers are also said on Tish'ah b'Av: Anenu, and at Minhah
+  Va-yehal and the priestly blessing. A text for those conditions on
+  `<j:any>` of `minor-fast` and `tisha-bav`.
 - `day-before-holiday` is the day before a `yom-tov` day that is not itself one. It is the eve
   of a festival.
-- `day-after-holiday` is the day after a `yom-tov` day that is not itself one. It is isru hag,
-  which outside Israel comes a day later.
+- `day-after-holiday` is isru hag, the day after the last festival day of Pesah, Shavuot or
+  Sukkot (Shemini Atzeret, or Simhat Torah outside Israel). Outside Israel it comes a day
+  later. The day after Rosh Hashanah or Yom Kippur is not isru hag, and neither is the first
+  day of chol hamoed.
 - `motzaei-shabbat` runs from nightfall at the end of Shabbat until dawn on Sunday.
 - `geshem` (binary) is the season of מַשִּׁיב הָרוּחַ וּמוֹרִיד הַגֶּשֶׁם: from Shemini Atzeret to
   the first day of Pesah, everywhere.
