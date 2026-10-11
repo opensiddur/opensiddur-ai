@@ -543,3 +543,12 @@ The final English stanza has no cue. Distinguish stanza-opening קמי פיהם 
 כל־קמי within the preceding stanza; preserve maqqef words when segmenting.
 English to-/wards spans a facsimile break and renders as one word. Keep all ten
 source notes and the fourteen notes inherited from Monday's expanded conclusion.
+
+Fast of Esther covers printed178 lower–183 upper, n357–n368, and uses native
+taanit-esther. Bematei's eight shared stanza units contain seven Hebrew short
+cues and zero English body cues, despite the English repetition rubric. Never
+invent English refrains from that rubric. Empty counterpart fragments reflect
+different page crossings; omit their empty page breaks so facsimile order does
+not rewind. Only two prayer pairs precede the pizmon; none follows it. Retain
+nineteen English notes, exact source anchors and mixed-language apparatus, and
+record the source's inconsistent feet/yards figures rather than correcting them.

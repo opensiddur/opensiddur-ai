@@ -72,3 +72,10 @@ class MondayFastTests(unittest.TestCase):
         gate=root.find('.//{'+service.J+'}conditional[@xml:id="tenth_tevet_occasion"]',namespaces={'xml':XML[1:-1]})
         fs=gate.find('{'+TEI+'}fs')
         self.assertEqual((fs.get('type'),fs[0].get('name'),fs[0][0].get('value')),('opensiddur:holiday','asara-btevet','1'))
+
+    def test_different_page_crossings_do_not_rewind_english_facsimiles(self):
+        def fragment(scan,words):return {'en':{'scan':scan,'printed_page':'182','text':words},'notes':{'en':[]}}
+        a=fragment('s367','The adversary');b=fragment('s369','Haman sharpened his eyes.');c=fragment('s367','');d=fragment('s369','But thou takest vengeance.')
+        reading={'fragments':[a,b],'stanzas':[{'fragments':[a,b]},{'fragments':[c,d]}],'refrain_cues':{'en':'(?!)'},'refrain':{'en':''}}
+        root=etree.Element('{'+TEI+'}body');service.pizmon(root,reading,'en','urn:example')
+        self.assertEqual([n.get('facs').split('/page/')[1]for n in root.findall('.//{'+TEI+'}pb')],['n366_medium.jpg','n368_medium.jpg'])

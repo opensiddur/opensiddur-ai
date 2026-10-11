@@ -13,7 +13,7 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet')
+FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast')
 SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
@@ -61,7 +61,7 @@ def pizmon(parent, reading, lang, context):
     opening_pattern=re.escape(opening_cue)+r'(?=\s*$)' if opening_cue else None
     opening=' '.join(f[lang]['text'] for f in reading['stanzas'][0]['fragments'])
     for number,stanza in enumerate(reading['stanzas'],1):
-        fragments=stanza['fragments'];first=fragments[0][lang]
+        fragments=[f for f in stanza['fragments'] if f[lang]['text']];first=fragments[0][lang]
         if first['scan']!=previous:pb(unit,first['scan'],first['printed_page'])
         marker(unit,context+'/stanza_'+str(number))
         block=element(unit,'lg' if lang=='he' and not stanza.get('prose') else 'p')
@@ -231,6 +231,9 @@ def verify_readings(source,project_directory,day):
                 else:prev.tail=(prev.tail or '')+(n.tail or '')
                 parent.remove(n)
             if reading['kind']=='pizmon':
+                source_pages=[f[lang]['scan'] for f in reading['fragments'] if f[lang]['text']]
+                actual_pages=['s'+str(int(re.search(r'/n(\d+)',n.get('facs')).group(1))+1) for n in node.findall(f'.//{{{TEI}}}pb')]
+                if actual_pages!=source_pages:raise ValueError('Pizmon facsimile source order changed')
                 choices=node.findall(f'.//{{{TEI}}}choice')
                 if len(choices)!=reading['choice_counts'][lang]:raise ValueError(day+' penitential day refrain count changed')
                 opening=' '.join(f[lang]['text'] for f in reading['stanzas'][0]['fragments'])

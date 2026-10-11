@@ -8,11 +8,11 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through Tenth of Tevet, Archive
-n357/n358 (printed 178 upper), are encoded. There are 348 project XML documents, 174 per language. Twelve changed/new documents
-validate at this checkpoint, following the full 340-document validation. Tevet
-adds fifteen bilingual units and three independent poems, with a native
-asara-btevet occasion gate. Independent Hebrew proofreading remains pending.
+Both title pages and complete services through the Fast of Esther, Archive
+n367/n368 (printed183 upper), are encoded. There are 356 project XML documents,
+178 per language. The twelve changed/new Esther documents validate after the
+preceding checkpoints. Esther adds fourteen bilingual units and three reusable
+poems, with a native taanit-esther occasion gate. Independent Hebrew proof is pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -659,3 +659,29 @@ bookmark hierarchy pass. Missing-note and shifted-stanza controls are rejected.
 Hebrew direction: 0/288 and 0/751; reversal controls flag 288 and 745. Documentary
 and expanded pizmon pages were inspected visually. Independent Hebrew proof
 remains pending, especially rare vocabulary and pointing.
+
+
+## Fast of Esther, Archive n357–n368
+
+Eight Bematei stanza units align across different Hebrew/English page crossings.
+Seven Hebrew refrain choices expand; English has none despite its repeat rubric.
+The authoring code now omits empty-language facsimile fragments; a regression
+rejects backward English page jumps. Reverse verification additionally checks
+actual pizmon page order. Two prayer pairs and Monday opening/conclusion ranges
+expand; no pair follows the final pizmon and no Full Kaddish is added. All nineteen
+English notes retain their source anchors, including two mixed-language notes.
+
+The twelve changed/new XML files validate; all later-service source/evidence
+checks, both project URN checks and registry check pass. Registry:3,867 records,
+zero errors/warnings. All 95 Asher tests and fourteen subtests pass. Actual
+compilation includes taanit-esther=1 and excludes 0, with title-page gates honored.
+The latest full suite remains the Monday checkpoint run; coverage targets are
+still unmet, while final Monday GitHub tests, CodeQL and projects validation pass.
+
+Documentary/expanded PDFs have 12/20 pages, converged in three passes. All eight
+stanza start deltas are zero. Nineteen/thirty-three note occurrences, apparatus
+direction, refrain counts, prayer boundaries, retained performance rubrics,
+contents/bookmark hierarchy and phrase dots pass; missing-note and shifted-stanza
+controls are rejected. Hebrew direction:0/239 and0/600; reversal controls flag239
+and593. Documentary and expanded pizmon pages were inspected visually. Independent
+Hebrew proof remains pending, especially pointing and rare vocabulary.

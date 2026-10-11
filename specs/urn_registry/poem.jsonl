@@ -557,3 +557,14 @@
 {"urn": "urn:x-opensiddur:text:poem:avotai_ki_vatehu_beshem_elohei_tsuri/stanza_7", "status": "canonical", "label_en": "avotai ki vatehu beshem elohei tsuri/stanza 7", "parent": "urn:x-opensiddur:text:poem:avotai_ki_vatehu_beshem_elohei_tsuri"}
 {"urn": "urn:x-opensiddur:text:poem:avotai_ki_vatehu_beshem_elohei_tsuri/stanza_8", "status": "canonical", "label_en": "avotai ki vatehu beshem elohei tsuri/stanza 8", "parent": "urn:x-opensiddur:text:poem:avotai_ki_vatehu_beshem_elohei_tsuri"}
 {"urn": "urn:x-opensiddur:text:poem:avotai_ki_vatehu_beshem_elohei_tsuri/stanza_9", "status": "canonical", "label_en": "avotai ki vatehu beshem elohei tsuri/stanza 9", "parent": "urn:x-opensiddur:text:poem:avotai_ki_vatehu_beshem_elohei_tsuri"}
+{"urn": "urn:x-opensiddur:text:poem:adam_bequm_aleinu_hil_ahazatnu", "status": "canonical", "label_en": "adam bequm aleinu hil ahazatnu"}
+{"urn": "urn:x-opensiddur:text:poem:attah_hael_oseh_felaot", "status": "canonical", "label_en": "attah hael oseh felaot"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha", "status": "canonical", "label_en": "bematei mispar hillinu fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_1", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 1", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_2", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 2", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_3", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 3", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_4", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 4", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_5", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 5", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_6", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 6", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_7", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
+{"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_8", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 8", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
