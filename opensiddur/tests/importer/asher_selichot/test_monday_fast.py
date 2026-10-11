@@ -35,3 +35,23 @@ class MondayFastTests(unittest.TestCase):
         root=etree.Element('{'+TEI+'}body');service.pizmon(root,reading,'en','urn:example')
         self.assertEqual(len(root.findall('.//{'+TEI+'}choice')),0)
         self.assertEqual(' '.join(''.join(root.itertext()).split()),'The time of his redemption.')
+
+    def test_hebrew_only_repeat_retains_paired_expanded_boundary(self):
+        fragment={'he':{'scan':'s346','printed_page':'172','text':'כרחם אב׃'},'en':{'scan':'s347','printed_page':'172','text':''},'notes':{'he':[],'en':[]}}
+        reading={'id':'verses_after_haazinah','kind':'rubric','fragments':[fragment],'expansion_targets':{'he':['urn:x-opensiddur:text:prayer:keraham_av'],'en':[]}}
+        manifest={'heading':{'he':'לשני','en':'Monday'}}
+        with patch.object(service,'readings',return_value=(manifest,[reading])):
+            authored=list(service.documents(None,'last-monday-fast'))
+        for project,name,root in authored:
+            milestones=root.findall('.//{'+TEI+'}milestone[@corresp]')
+            self.assertEqual([n.get('corresp')for n in milestones],['urn:x-opensiddur:text:siddur:selichot/last_monday_fast/verses_after_haazinah/expanded'])
+            self.assertEqual(len(root.findall('.//{'+service.J+'}transclude')),1 if '_he_'in project else 0)
+            self.assertEqual(len(root.findall('.//{'+service.J+'}conditional')),2)
+
+    def test_attributes_before_poem_remain_prose(self):
+        fragment={'he':{'scan':'s348','printed_page':'173','text':'יי · אל · רחום׃'},'notes':{'he':[]}}
+        reading={'fragments':[fragment],'stanzas':[{'fragments':[fragment],'prose':True}],'refrain_cues':{'he':'(?!)'},'refrain':{'he':''}}
+        root=etree.Element('{'+TEI+'}body');service.pizmon(root,reading,'he','urn:example')
+        self.assertEqual(len(root.findall('.//{'+TEI+'}p')),1)
+        self.assertEqual(len(root.findall('.//{'+TEI+'}lg')),0)
+        self.assertEqual(''.join(root.itertext()).strip(),'יי · אל · רחום׃')

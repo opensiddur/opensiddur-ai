@@ -526,3 +526,12 @@ ranges; the expanded conclusion inherits fourteen Monday notes alongside two
 Thursday notes, but no Full Kaddish. Gate it on native weekday five plus the
 explicit Thursday-fast occasion. When measuring stanza starts, scope the actual
 pizmon after its heading: earlier scripture also contains Israel is saved.
+
+The final Monday (Last of the Three Fasts) covers n343/n344 through n349/n350
+upper, printed171–174. Gate on native weekday two and its own explicit occasion.
+Its Hebrew petition-repeat cue on printed172 has no English counterpart: retain
+an empty paired expansion boundary rather than inventing English text. Ezkerah's
+Thirteen Attributes opening is prose followed by four verse stanza units; its
+only abbreviated cue repeats that opening at the end. Preserve the maqqef join
+across printed173/174. Opening and conclusion use Monday ranges without importing
+a Full Kaddish or discarding unsupplied weekday-service instructions.

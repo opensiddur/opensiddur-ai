@@ -62,23 +62,27 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
     normalize=lambda words:strip_numeric_markers(plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(words.split()))))
     text=plain(' '.join(n.get('text','')for n in tree.findall('.//line')))
     body=normalize(' '.join(r[2]for r in en))
-    notes=[('In rewarding the good',1),('Viz., Ishmael.',1)]
+    notes=([('In rewarding the good',1),('Viz., Ishmael.',1)] if day=='thursday-fast' else [('Ps. cii. 28.',1)])
     if expanded:notes += [('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah vi. 7.',1),('Ezek. xxxvi. 25.',2)]
     for fingerprint,count in notes:
         if text.count(fingerprint)!=count:raise ValueError('Fast footnote occurrence: '+fingerprint)
     if 'May the prayers and supplications' in body:raise ValueError('Unrequested Full Kaddish supplied')
-    if 'LAST OF THE THREE FASTS' in body:raise ValueError('Following fast entered Thursday')
+    following='LAST OF THE THREE FASTS' if day=='thursday-fast' else 'TENTH OF TEBETH'
+    if following in body:raise ValueError('Following fast entered current service')
     if body.count('Prayers are said as on other week days')!=1:raise ValueError('Weekday Amidah performance rubric lost')
     if expanded:
         for cue in ['Say ', 'Continue from', 'Wherever the words', '(For thou art great, &c.)','(Israel is saved, &c.)']:
             if cue in body:raise ValueError('Fulfilled fast cue remains: '+cue)
         for phrase in ['The Reader continues the Ameedah','Conclude the service as on other week-days.']:
             if body.count(phrase)!=1:raise ValueError('Unsupplied performance instruction lost: '+phrase)
-        if body.count('Omnipotent King, who')!=3 or body.count('take us for thy heritage.')!=4:raise ValueError('Fast prayer pair bounds changed')
+        if body.count('Omnipotent King, who')!=3 or body.count('take us for thy heritage.')!=(4 if day=='thursday-fast' else 6):raise ValueError('Fast prayer pair bounds changed')
+    if day=='thursday-fast':
+        if not expanded and (body.count('(For thou art great, &c.)')!=5 or body.count('(Israel is saved, &c.)')!=1):raise ValueError('Documentary fast cues changed')
+        if body.count('Israel is saved by the Lord')!=(2 if expanded else 1):raise ValueError('Fast opening repeat count')
+        if body.count('for thou art great in pardoning and full of compassion.')!=(7 if expanded else 2):raise ValueError('Fast full refrain count')
     else:
-        if body.count('(For thou art great, &c.)')!=5 or body.count('(Israel is saved, &c.)')!=1:raise ValueError('Documentary fast cues changed')
-    if body.count('Israel is saved by the Lord')!=(2 if expanded else 1):raise ValueError('Fast opening repeat count')
-    if body.count('for thou art great in pardoning and full of compassion.')!=(7 if expanded else 2):raise ValueError('Fast full refrain count')
+        if body.count('(The Eternal, &c.)')!=(0 if expanded else 1):raise ValueError('Final Monday opening cue changed')
+        if body.count('an Omnipotent God, merciful and gracious')!=(2 if expanded else 1):raise ValueError('Final Monday attributes count')
     print(day+': '+str(len(notes))+' apparatus fingerprints; stanza start deltas '+str(deltas))
     return he,en
 
@@ -86,17 +90,22 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
 def controls(tree,day,source_root,expanded):
     he,en=check(tree,day,source_root,expanded)
     broken=copy.deepcopy(tree)
-    note=next(n for n in broken.findall('.//line')if 'In rewarding the good'in n.get('text',''));note.getparent().remove(note)
+    fingerprint='In rewarding the good' if day=='thursday-fast' else 'Ps. cii. 28.'
+    note=next(n for n in broken.findall('.//line')if fingerprint in n.get('text',''));note.getparent().remove(note)
     try:check(broken,day,source_root,expanded)
     except ValueError:pass
     else:raise AssertionError('Missing fast footnote escaped detection')
     broken=copy.deepcopy(tree);shifted=0
+    manifest=json.loads((Path(source_root)/'asher_selichot/scan_reading'/(day+'.json')).read_text())
+    poem=next(u for name in manifest['readings'] if (u:=json.loads((Path(source_root)/'asher_selichot/scan_reading'/name).read_text()))['kind']=='pizmon')
+    needle=plain(' '.join(poem['stanzas'][1]['fragments'][0]['en']['text'].split()[:4]))
+    _,rows,heads=glyph_rows(tree)
+    target=next((page,y)for page,y,words in rows if needle in words and (page,y)>heads[-1])
     for number,page in enumerate(broken.findall('page'),1):
         gutter=288 if number%2 else 324
-        for line in page.findall('.//line'):
-            if 'They are intimidated'in plain(line.get('text','')):
-                for c in line.findall('.//char'):
-                    if float(c.get('x'))>gutter:c.set('y',str(float(c.get('y'))+50));shifted+=1
+        for c in page.findall('.//char'):
+            if number==target[0] and round(float(c.get('y')),2)==target[1] and float(c.get('x'))>gutter:
+                c.set('y',str(float(c.get('y'))+50));shifted+=1
     if not shifted:raise AssertionError('Fast control shifted no glyphs')
     try:check(broken,day,source_root,expanded)
     except ValueError:pass
@@ -105,7 +114,7 @@ def controls(tree,day,source_root,expanded):
 
 
 def main(argv=None):
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--day',required=True,choices=['thursday-fast']);p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');p.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT);a=p.parse_args(argv)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--day',required=True,choices=['thursday-fast','last-monday-fast']);p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');p.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT);a=p.parse_args(argv)
     with tempfile.TemporaryDirectory()as tmp:
         xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.day,a.source_root,a.expanded)
         if a.control:controls(tree,a.day,a.source_root,a.expanded)

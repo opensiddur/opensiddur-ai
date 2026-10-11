@@ -13,7 +13,7 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-FAST_SERVICES = ('monday-fast', 'thursday-fast')
+FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast')
 SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
@@ -64,8 +64,8 @@ def pizmon(parent, reading, lang, context):
         fragments=stanza['fragments'];first=fragments[0][lang]
         if first['scan']!=previous:pb(unit,first['scan'],first['printed_page'])
         marker(unit,context+'/stanza_'+str(number))
-        block=element(unit,'lg' if lang=='he' else 'p')
-        if lang=='he':
+        block=element(unit,'lg' if lang=='he' and not stanza.get('prose') else 'p')
+        if lang=='he' and not stanza.get('prose'):
             # One call retains an unfinished verse across the printed page break.
             prepared=copy.deepcopy(fragments);cues=[]
             def cue_token(match):
@@ -169,7 +169,7 @@ def documents(source,day):
                 printed(element(body,'body'),reading,lang,context)
                 yield project,reading['filename']+'.xml',module
                 element(service,'j:transclude',target=context)
-            elif reading['kind']=='rubric' and (targets(reading,lang) or reading.get('refrain_instruction')):
+            elif reading['kind']=='rubric' and (any(targets(reading,language) for language in ('he','en')) or reading.get('refrain_instruction')):
                 unit=element(service,'div',corresp=context)
                 if reading.get('heading_before',{}).get(lang):element(unit,'head',reading['heading_before'][lang])
                 feature='refrains_present' if reading.get('refrain_instruction') else 'prayers_present'

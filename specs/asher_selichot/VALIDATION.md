@@ -8,11 +8,11 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through the Thursday fast, Archive
-n341/n342 (printed 170), are encoded. There are 332 schema-valid project XML
-documents, 166 per language. Thursday adds 15 bilingual units and three
-independent poems. Its occasion combines an explicit Thursday-fast selector
-with the native Thursday weekday. Independent Hebrew proofreading remains pending.
+Both title pages and complete services through the final Monday fast, Archive
+n349/n350 (printed 174 upper), are encoded. There are 340 schema-valid project XML
+documents, 170 per language. The final Monday adds fourteen bilingual units and
+three independent poems. Its occasion combines an explicit selector with
+the native Monday weekday. Independent Hebrew proofreading remains pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -597,3 +597,40 @@ expanded pizmon pages were inspected visually. Day bookmarks are above their
 subordinate pizmon bookmarks in both outputs. These standalone PDFs provide the
 rendering evidence for this checkpoint; cumulative expanded rendering remains
 underway using the fixed Monday input.
+
+
+## Final Monday fast, Archive n343–n350
+
+The final Monday ends above the Tenth of Tevet body heading. Its three reusable
+poems retain incipit identities, with Ezkerah's fast-day recension under the
+existing poem identity. Ezkerah contains one prose Thirteen Attributes unit and
+four verse units; its one concluding cue per language expands the complete
+opening. The Hebrew verse crosses printed173/174 within one line. A Hebrew-only
+petition-repeat instruction has an empty paired English expansion boundary,
+rather than acquiring an invented English repeat. Opening and conclusion use
+Monday ranges, keeping unsupplied performance instructions and omitting Full
+Kaddish. One English note is printed here; the expanded conclusion inherits
+fourteen more. All fourteen units retain immutable first captures, assembled
+pre-OCR snapshots, frozen English comparison inputs and image adjudications.
+
+All 340 XML documents validate and reverse-match their readings; both projects
+resolve URNs/transclusions. The registry has 3,799 records, no errors or warnings.
+All 92 Asher tests and fourteen subtests pass, including regressions for the
+asymmetric repeat boundary and prose attribute unit. Actual occasion compilation
+includes the selected service on Monday and excludes it when unselected or on
+Thursday; paratext/title-page false is honored.
+
+Standalone documentary/expanded PDFs have 8/17 pages. All five paired-unit start
+deltas are zero; footnote occurrences, apparatus direction, prayer bounds,
+opening-repeat counts and deliberately missing-note/shifted-stanza controls
+pass. Contents destinations, day-over-pizmon hierarchy and attached phrase dots
+pass. Hebrew direction: 0/187 and 0/554 reversed runs; reversal controls flag
+185 and 548. Both revised pizmon pages were inspected visually. Independent
+Hebrew proofreading remains pending, especially pointing and rare vocabulary.
+
+The recovered cumulative expanded Monday PDF has 569 pages and 31 contents/
+bookmark destinations. The fixed input converged on the third recovery pass;
+all book checks and broken controls pass. Hebrew direction reports 0/23,871
+reversed runs; the reversal control flags 21,547. Its second contents page was
+inspected visually. This resolves the interrupted Monday rebuild recorded above;
+it does not claim cumulative coverage of Thursday or the final Monday.
