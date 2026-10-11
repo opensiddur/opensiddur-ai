@@ -6,6 +6,14 @@ from opensiddur.importer.asher_selichot import penitential_days as service
 from opensiddur.importer.asher_selichot.build import TEI, XML
 
 class MondayFastTests(unittest.TestCase):
+    def test_thursday_uses_weekday_five(self):
+        from opensiddur.importer.asher_selichot.first_day import entry
+        with patch('opensiddur.importer.asher_selichot.first_day.titles'):
+            root=entry('he','example',{},book=True,remaining_services=('thursday-fast',))
+        node=root.find('.//{'+service.J+'}conditional[@xml:id="thursday_fast_occasion"]',namespaces={'xml':XML[1:-1]})
+        self.assertEqual([(fs.get('type'),fs[0].get('name'),fs[0][0].get('value')) for fs in node.findall('.//{'+TEI+'}fs')], [('asher:occasion','thursday_fast','true'),('opensiddur:day-of-week','hebrew-day','5')])
+        self.assertIsNone(node.find('.//{'+TEI+'}note'))
+
     def test_identity_and_occasion_are_distinct_from_penitential_ordinals(self):
         from opensiddur.importer.asher_selichot.first_day import entry
         self.assertEqual(service.service_urn('monday-fast'),'urn:x-opensiddur:text:siddur:selichot/monday_fast')

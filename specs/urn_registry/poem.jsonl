@@ -523,3 +523,12 @@
 {"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_6", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_7", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 7", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_8", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 8", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:anshei_amanah_avadu", "status": "canonical", "label_en": "anshei amanah avadu"}
+{"urn": "urn:x-opensiddur:text:poem:taanit_tsibbur_qaveu", "status": "canonical", "label_en": "taanit tsibbur qaveu"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension", "status": "canonical", "label_en": "yisrael nosha/fast day recension", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension/stanza_1", "status": "canonical", "label_en": "yisrael nosha/fast day recension/stanza 1", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension/stanza_2", "status": "canonical", "label_en": "yisrael nosha/fast day recension/stanza 2", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension/stanza_3", "status": "canonical", "label_en": "yisrael nosha/fast day recension/stanza 3", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension/stanza_4", "status": "canonical", "label_en": "yisrael nosha/fast day recension/stanza 4", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension/stanza_5", "status": "canonical", "label_en": "yisrael nosha/fast day recension/stanza 5", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension"}
+{"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension/stanza_6", "status": "canonical", "label_en": "yisrael nosha/fast day recension/stanza 6", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension"}

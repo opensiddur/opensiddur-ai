@@ -8,12 +8,11 @@ TeX and PDFs remain untracked under `output/asher_selichot`.
 
 ## Current coverage
 
-Both title pages and complete services through the Monday fast, Archive n335/n336
-(printed 167 upper), are encoded. The Thursday/Fifth Fast body heading is excluded.
-There are 324 schema-valid project XML documents, 162 per language. Monday adds
-26 bilingual units, three independent poems, eight paired pizmon stanzas and
-15 English notes. Its occasion combines an explicit Monday-fast selector with
-the native Monday weekday. Independent Hebrew proofreading remains pending.
+Both title pages and complete services through the Thursday fast, Archive
+n341/n342 (printed 170), are encoded. There are 332 schema-valid project XML
+documents, 166 per language. Thursday adds 15 bilingual units and three
+independent poems. Its occasion combines an explicit Thursday-fast selector
+with the native Thursday weekday. Independent Hebrew proofreading remains pending.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -569,3 +568,32 @@ interrupted during its third pass; its damaged auxiliary files were retained
 for diagnosis and are being regenerated. The independently verified 18-page
 expanded Monday PDF is the expanded rendering evidence for this checkpoint;
 no successful cumulative expanded check is claimed for the interrupted build.
+
+
+## Thursday fast, Archive n335–n342
+
+The Thursday/Fifth Fast begins beneath Monday's closing passage and ends before
+the last Monday's body heading. Three independent poems include the fast-day
+recension of Israel nosha, with six shared stanza units. Five choices per
+language expand four short refrain cues and the final opening repeat. Printed
+full refrains remain ordinary text. Source instructions resolve to three
+El melekh/Vayaavor pairs and the Monday closing passages; weekday Amidah and
+usual-service performance instructions remain. No Full Kaddish is inserted.
+
+All 332 XML files validate, reverse-match the readings, and resolve their URNs
+and transclusions. The registry contains 3,772 records with no errors or warnings.
+All 90 Asher tests and 14 subtests pass. Actual compilation includes Thursday
+when selected on weekday 5, excludes it when unselected or on weekday 2, and
+honors the title-page paratext gates. The most recent full-suite run remains
+the Monday checkpoint's 3,433 passing tests.
+
+Standalone documentary and expanded PDFs contain 8 and 17 pages. All six stanza
+start deltas are zero. The two Thursday notes occur once each; expanded output
+also retains fourteen notes from the transcluded conclusion. Apparatus direction,
+prayer boundaries, refrain counts, retained performance instructions, and
+missing-note and shifted-stanza controls pass. Hebrew direction reports 0/158
+and 0/521 reversed runs; reversal controls flag 157 and 516. Documentary and
+expanded pizmon pages were inspected visually. Day bookmarks are above their
+subordinate pizmon bookmarks in both outputs. These standalone PDFs provide the
+rendering evidence for this checkpoint; cumulative expanded rendering remains
+underway using the fixed Monday input.

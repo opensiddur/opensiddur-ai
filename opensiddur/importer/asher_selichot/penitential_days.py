@@ -13,7 +13,7 @@ from .penitential_second_day import wrap_hebrew
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
-FAST_SERVICES = ('monday-fast',)
+FAST_SERVICES = ('monday-fast', 'thursday-fast')
 SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES
 
 def manifest_name(day):
@@ -34,7 +34,8 @@ J = 'http://jewishliturgy.org/ns/jlptei/2'
 def readings(source,day):
     manifest=json.loads((source/(manifest_name(day)+'.json')).read_text())
     units=[json.loads((source/name).read_text()) for name in manifest['readings']]
-    if not manifest['complete'] or units[0]['id']!='opening_instruction' or units[-1]['id']!='conclusion':
+    if (not manifest['complete'] or units[0]['id'] not in ('opening_instruction', 'weekday_amidah')
+            or units[-1]['id'] not in ('conclusion', 'conclusion_repeat')):
         raise ValueError(day+' penitential day boundaries are incomplete')
     for unit in units:
         if unit['kind']=='poem':

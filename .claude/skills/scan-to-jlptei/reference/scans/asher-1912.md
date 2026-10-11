@@ -515,3 +515,14 @@ English concluding rubric claims Torah/haftarah readings at volume end, whereas
 Hebrew leaves page fields blank. The final scans contain no such readings: retain
 the printed statement as evidence and record an absent target, without inventing
 a URN or resolving it to unrelated text.
+
+Thursday/Fifth Fast runs from n335/n336 (printed167 lower) through n341/n342
+(printed170), before the final Monday on printed171. Its Yisrael nosha is a
+reprint variant under the existing common poem identity, with six shared stanza
+units, four short cues and a concluding full-opening cue in each language.
+Preserve its full refrain hyphenation variants and the apparent English final
+pair citation “pp. 1, 12.”. Its opening and conclusion repeat bounded Monday
+ranges; the expanded conclusion inherits fourteen Monday notes alongside two
+Thursday notes, but no Full Kaddish. Gate it on native weekday five plus the
+explicit Thursday-fast occasion. When measuring stanza starts, scope the actual
+pizmon after its heading: earlier scripture also contains Israel is saved.

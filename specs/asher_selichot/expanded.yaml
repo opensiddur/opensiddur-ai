@@ -1,9 +1,9 @@
-description: Asher 1912 expanded services through the Monday fast, n336, with
+description: Asher 1912 expanded services through the Thursday fast, n342, with
   Birnbaum Full Kaddish fallback. Work in progress; excluded from releases.
 book:
   project: asher_selichot_he_1912
   file_name: expanded.xml
-  title: Asher Selichoth — expanded services through the Monday fast
+  title: Asher Selichoth — expanded services through the Thursday fast
 priority:
   transclusion:
   - asher_selichot_he_1912
