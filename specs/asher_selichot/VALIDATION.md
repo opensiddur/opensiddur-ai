@@ -382,3 +382,31 @@ below their 85% targets: project 84.45%, patch 37.88%; the previous fourth-day
 checkpoint also failed both coverage gates. PDF measurements run separately from
 CI coverage and are retained in the untracked output directory. Skill frontmatter
 and reference paths validate; both scan-specific subsections remain routed.
+
+
+Final cumulative expanded: 536 pages and 27 contents/bookmark destinations.
+All whole-book checks and broken controls pass. The third, fourth and fifth
+pizmons have identical paired baselines throughout; the compiled services verify
+4, 4 and 5 paired petition ranges respectively, plus both seasonal Kaddishes.
+Hebrew direction: 0/22,491 reversed runs; the reversed control flags 20,322.
+The fifth pizmon and final source-credit page were inspected visually.
+
+Final local full suite: 3,391 tests and 5,060 subtests passed, with 21 skips,
+in 619.78s. The standalone reference database is restored; all URNs/transclusions
+resolve, and the registry retains zero errors and warnings. All 308 validated
+project hashes remain unchanged after the suite. GitHub tests and code analysis
+also pass at cf7549e; the companion projects PR passes validation.
+
+Visual inspection found a separate generic bibliography issue: Birnbaum's long
+Archive URL and eprint identifier overflow the source-credit page. Separate compiler PR [#236](https://github.com/opensiddur/opensiddur-ai/pull/236)
+enables xurl's letter/digit breakpoints after biblatex, preserving
+identifiers and hyperlink destinations. Its real rendering fixture fails without
+the fix and passes with it. The cumulative PDFs above precede that separately
+reviewed bibliography correction; their service text checks remain valid.
+
+The separate bibliography PR passes 401 related exporter tests and 126 subtests.
+Its real fixture reproduces an 85.18pt overflow without the fix and passes with
+it, retaining the full identifier and hyperlink target.
+
+The later coverage report at cf7549e remains below target: project 84.42%,
+patch 37.82%. Functional tests and code analysis pass.
