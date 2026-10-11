@@ -13,16 +13,16 @@ from opensiddur.importer.scan.pdf_direction import base
 from opensiddur.common.constants import SOURCETEXTS_ROOT
 
 
-def glyph_rows(tree):
+def glyph_rows(tree, minimum_font_size=None):
     he,en,headings=[],[],[]
     for number,page in enumerate(tree.findall('page'),1):
         gutter=288 if number%2 else 324
         hrows,erows={},{}
         for line in page.findall('.//line'):
-            chars=line.findall('.//char')
+            chars=line.findall('.//char') if minimum_font_size is None else [c for font in line.findall('font') if float(font.get('size','100'))>minimum_font_size for c in font.findall('char')]
             hebrew=''.join(base(c.get('c',' ')) or '' for c in sorted(chars,key=lambda c:float(c.get('x')),reverse=True))
             if hebrew=='פזמון' and not any(c.get('c','').isdigit() for c in chars):headings.append((number,min(float(c.get('y')) for c in chars)))
-            for c in line.findall('.//char'):
+            for c in chars:
                 x=float(c.get('x'));y=round(float(c.get('y')),2)
                 if x<gutter and base(c.get('c',' ')):hrows.setdefault(y,[]).append(c)
                 elif x>gutter:erows.setdefault(y,[]).append(c)
@@ -34,6 +34,13 @@ def glyph_rows(tree):
                 words+=c.get('c','');quad=list(map(float,c.get('quad').split()));right=max(quad[0::2])
             en.append((number,y,plain(words)))
     return he,en,headings
+
+
+def body_text(tree):
+    # Remove page/header counters before joining a word across a PDF page break.
+    rows=glyph_rows(tree,minimum_font_size=10)[1]
+    text=strip_numeric_markers(plain(' '.join(text for _,y,text in rows if not(y<100 and text.strip().isdigit()))))
+    return plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(text.split())))
 
 
 def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
@@ -59,9 +66,8 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
     for chars in latin_note_runs(tree).values():
         xs=[float(c.get('x'))for c in chars]
         if any(b<a-.05 for a,b in zip(xs,xs[1:])):raise ValueError('Reversed fast Latin apparatus')
-    normalize=lambda words:strip_numeric_markers(plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(words.split()))))
     text=plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(''.join(c.get('c','')for font in line.findall('font')if float(font.get('size','100'))<=10 for c in font.findall('char')) for line in tree.findall('.//line'))))
-    body=normalize(' '.join(r[2]for r in en))
+    body=body_text(tree)
     notes=[(phrase,1) for phrase in ({'thursday-fast':['In rewarding the good','Viz., Ishmael.'],'last-monday-fast':['Ps. cii. 28.'],'tenth-tevet':['viz., The 8th, 9th, and 10th','Ptolomæus Philadelphus','The 9th of Tebeth','Ezekiel.','Ezek. xxiv. 1.','Tebeth is the tenth month','The daughter of Zion','Abi Sonoach','Nebusaradon.','Ezek. xxiv. 3.'],'esther-fast':['Haman.','See Deut. xxxi. 18.','Exod. xxx. 23.','Josh. v. 12.','Gen. iii. 11.','See Talmud Megillah, x.','Ezra iv. 6.','Megillah, xi. 2.','The following is an allegory','After his conference with Moses.','And might, therefore, be revoked','Thus far the legend taken from','In allusion to the gallows','i.e., the celebration of the festival','At the time of Manasseh','By Deut. xxv.','Mordecai and Esther.'],'tammuz-fast':['By a certain Appostemus','According to some this was done','In the time of the second temple.','See Taanith vi. 4.','According to a tradition','In allusion to Deut. i. 44.','See the preceding prayer.','The city being besieged','The King of Babylon.','Nebuchadnezzar and Sannacherib.','David.','Palestine.','Esau’s descendants.']}[day])]
     if day=='esther-fast':notes.append(('Ahasuerus.',2))
     if expanded:notes += [('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah vi. 7.',1),('Ezek. xxxvi. 25.',2)]

@@ -6,12 +6,20 @@ code submodules, install dependencies and build the schema before validation.
 Archive requests use efraim@opensiddur.org. Scan images, OCR cache, compiled XML,
 TeX and PDFs remain untracked under `output/asher_selichot`.
 
+LuaLaTeX needs a writable font cache in this sandbox, including when invoked by
+PDF geometry tests. Set it before either rendering or the full test suite:
+
+```bash
+export TEXMFVAR=/tmp/asher-tex-cache TEXMFCACHE=/tmp/asher-tex-cache
+.venv/bin/python -m pytest
+```
+
 ## Current coverage
 
 Both title pages and all services through the final circumcision pizmon, Archive
-n410 (printed204), are encoded. There are398 project XML documents,199 per
+n410 (printed204), are encoded. There are 398 project XML documents, 199 per
 language. All validate and reverse-check against documentary readings; both
-projects resolve references. The registry has4008 records, zero errors/warnings.
+projects resolve references. The registry has 4008 records, zero errors/warnings.
 Independent Hebrew proofreading and identification of an unplaced final-page
 fragment remain pending; these limitations are documented in source evidence.
 
@@ -714,29 +722,59 @@ failures remain disclosed.
 
 ## Yom Kippur Katan checkpoint
 
-Sixty-one bilingual source units cover printed188–203 upper. Documentary and
-expanded PDFs contain26/36 pages. All21 paired stanza starts align with zero
+Sixty-one bilingual source units cover printed 188–203 upper. Documentary and
+expanded PDFs contain 26/36 pages. All 21 paired stanza starts align with zero
 baseline delta. Nine source notes occur exactly once; mixed-language direction,
 fulfilled-cue removal, independent refrain positions, performance instructions,
 interleaved Samar petitions, supplied Kaddishes, TOC/hierarchy and phrase dots pass.
 Missing-note and shifted-stanza controls fail as intended. Hebrew direction checks
-find0/783 and0/1213 reversed runs; reversed controls flag777/1201. Explicit occasion
-inclusion/exclusion and title-page suppression pass. All102 Asher unit tests pass.
-The prior full-suite and cumulative-PDF counts below are historical; a final book
+find 0/783 and 0/1213 reversed runs; reversed controls flag 777/1201. Explicit occasion
+inclusion/exclusion and title-page suppression pass. All 102 Asher unit tests pass.
+The prior full-suite and cumulative-PDF counts above are historical; a final book
 run follows the remaining circumcision section. No independent Hebrew proof is claimed.
 
 ## Final circumcision checkpoint
 
-Three source units cover printed203 lower–204, the end of the book. Five paired
+Three source units cover printed 203 lower–204, the end of the book. Five paired
 stanza starts align with zero baseline delta in both four-page PDFs. Alternating
 Hebrew cue expansions, absent English cues, retained performance instructions,
 removed fulfilled rubric, final boundary and unresolved superscript marker pass.
 The marker uses explicit superscript markup to survive text normalization. Broken
 marker-deletion and shifted-stanza controls are rejected. Final-section bookmark,
 TOC, phrase dots, explicit occasion inclusion/exclusion and title-page suppression
-pass. Hebrew direction checks found0/31 documentary and0/28 expanded reversed
-runs; reversed controls flag28 in each. The unplaced s408 Hebrew fragment remains
+pass. Hebrew direction checks found 0/31 documentary and 0/28 expanded reversed
+runs; reversed controls flag 28 in each. The unplaced s408 Hebrew fragment remains
 in reading evidence pending identification, outside the poem body.
 
-All104 Asher unit tests pass. Full-book PDFs and the full suite are being rerun
-serially; older aggregate counts in this document remain historical checkpoints.
+All 106 Asher unit tests pass, including final service-order and PDF body-word
+regressions. The full local suite passes: 3,449 tests, 21 skipped, in 657.59
+seconds, using the writable TeX cache above. This includes Birnbaum regressions
+and PDF geometry tests. Subsequent changes concern verification and standalone
+entrypoint metadata; the focused suite was rerun after those changes.
+
+## Complete-book verification
+
+The final documentary and expanded PDFs contain 311 and 680 pages respectively,
+with 44 bookmarks each. Both converged in three rendering passes. The contents,
+monthly verse pages and final expanded service were inspected visually. Hebrew
+direction checks report 0/11,909 and 0/28,182 reversed runs; deliberately reversed
+controls flag 10,590 and 25,110.
+
+A fresh registry/project reference check and source verification pass: 4,008
+registry records with zero errors/warnings, all 398 schema-valid XML documents,
+documentary readings, source-page order and expansion targets/forms. The service
+iteration order places circumcision after the monthly service, matching the book.
+
+PDF verification assigns Thursday’s final note to its source anchor even when
+typesetting places it below the following heading. Both whole-book checks pass with broken controls enabled: contents,
+bookmark hierarchy, stanza alignment, apparatus occurrences/direction, fulfilled
+cues, prayer/refrain ranges, phrase dots and final boundaries. One documentary
+first-day stanza starts 13.55 points apart, within the 16-point bound; all other
+measured pizmon starts align exactly. Body matching filters small
+apparatus/line counters and removes numeric headers before joining words split
+across pages. Synthetic regression coverage preserves the distinction between
+body text and apparatus.
+
+Independent Hebrew proofreading remains pending. The unplaced s408 fragment and
+unresolved final English superscript remain explicitly recorded in source evidence.
+These PDFs are inspection artifacts, outside automatic publication/release builds.

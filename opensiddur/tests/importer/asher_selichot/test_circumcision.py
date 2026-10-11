@@ -21,3 +21,11 @@ class CircumcisionTests(unittest.TestCase):
         hi=result.find('.//{'+TEI+'}hi')
         self.assertEqual(hi.get('rend'),'superscript');self.assertEqual(hi.text,'1')
         self.assertEqual(hi.tail,' No note follows. ')
+
+    def test_final_book_order_places_circumcision_after_monthly_service(self):
+        from unittest.mock import patch
+        from opensiddur.importer.asher_selichot.first_day import entry
+        with patch('opensiddur.importer.asher_selichot.first_day.titles'):
+            root=entry('he','example',{},book=True,remaining_services=tuple(d for d in service.SERVICES if d in service.FAST_SERVICES or d=='circumcision'))
+        targets=[n.get('target')for n in root.findall('.//{'+service.J+'}transclude')]
+        self.assertLess(targets.index('urn:x-opensiddur:text:siddur:selichot/yom_kippur_katan'),targets.index('urn:x-opensiddur:text:siddur:selichot/circumcision'))

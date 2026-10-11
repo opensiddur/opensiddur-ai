@@ -4,7 +4,7 @@ from pathlib import Path
 from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT
 from opensiddur.importer.scan.pdf_direction import base
-from .check_fast_pdf import glyph_rows
+from .check_fast_pdf import glyph_rows,body_text
 from .check_pdf import plain, strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 
@@ -12,7 +12,8 @@ from .check_first_day_pdf import latin_note_runs
 def check(tree,source_root=SOURCETEXTS_ROOT,expanded=False):
     source=Path(source_root)/'asher_selichot/scan_reading';manifest=json.loads((source/'yom-kippur-katan.json').read_text())
     units=[json.loads((source/name).read_text()) for name in manifest['readings']]
-    he,en,headings=glyph_rows(tree);deltas=[]
+    he,_,headings=glyph_rows(tree)
+    en=glyph_rows(tree,minimum_font_size=10)[1];deltas=[]
     for poem in [u for u in units if u['kind']=='pizmon']:
         previous=(0,0)
         for stanza in poem['stanzas']:
@@ -44,11 +45,7 @@ def check(tree,source_root=SOURCETEXTS_ROOT,expanded=False):
     notes=[n['text'] for u in units for f in u['fragments'] for n in f['notes']['en']]
     for note in notes:
         if apparatus.count(normalize(note))!=1:raise ValueError('Monthly-service note occurrence: '+note)
-    body_tree=copy.deepcopy(tree)
-    for font in body_tree.findall('.//font'):
-        if float(font.get('size','100'))<=10:font.getparent().remove(font)
-    _,body_rows,_=glyph_rows(body_tree)
-    body=normalize(' '.join(r[2] for r in body_rows))
+    body=body_text(tree)
     for phrase in ['Say once','Say twice','Say seven times','The Ark is opened.','The Ark is closed.','After the repetition thereof']:
         if phrase not in body:raise ValueError('Monthly performance instruction lost: '+phrase)
     for cue,count in [('(Let, &c.)',4),('(Let the weight, &c.)',1),('(So let it be, &c.)',5),('for his sake, &c.',8)]:

@@ -340,12 +340,14 @@ def main(argv=None):
         if len(days)>15:
             from .check_fast_pdf import check as fast_check, controls as fast_controls
             portion=slice_day(tree,days[15],days[16] if len(days)>16 else None,
-                              prior_note_texts=('Ezek. xxxvi. 25.',))
+                              prior_note_texts=('Ezek. xxxvi. 25.',),
+                              trailing_note_texts=('Viz., Ishmael. See Gen. xxviii. 9.',))
             fast_check(portion,'thursday-fast',args.source_root,args.expanded)
             if args.control:fast_controls(portion,'thursday-fast',args.source_root,args.expanded)
         if len(days)>16:
             from .check_fast_pdf import check as fast_check, controls as fast_controls
-            portion=slice_day(tree,days[16],days[17] if len(days)>17 else None)
+            portion=slice_day(tree,days[16],days[17] if len(days)>17 else None,
+                              prior_note_texts=('Viz., Ishmael. See Gen. xxviii. 9.',))
             fast_check(portion,'last-monday-fast',args.source_root,args.expanded)
             if args.control:fast_controls(portion,'last-monday-fast',args.source_root,args.expanded)
         if len(days)>17:

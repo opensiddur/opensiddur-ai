@@ -124,7 +124,7 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         title += ' — expanded edition'
     root, text = document(lang, project, title, urn, index=book)
     edition = root.find(f'.//{{{TEI}}}edition')
-    edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading; remaining book sections await encoding.'
+    edition.text = 'Complete first-day coverage through Archive leaves n51–52, ending before the second-day heading. Hebrew pointing awaits independent proofreading.'
     if book and include_second_day:
         edition.text = 'First and second days through Archive leaves n59–60, ending before the third-day heading. Hebrew pointing awaits independent proofreading; remaining days await encoding.'
     if book and include_third_day:

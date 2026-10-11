@@ -14,7 +14,7 @@ from .penitential_second_day import wrap_hebrew
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
 FAST_SERVICES = ('monday-fast', 'thursday-fast', 'last-monday-fast', 'tenth-tevet', 'esther-fast', 'tammuz-fast', 'yom-kippur-katan')
-SERVICES = DAYS + ('erev-yom-kippur','circumcision') + FAST_SERVICES
+SERVICES = DAYS + ('erev-yom-kippur',) + FAST_SERVICES + ('circumcision',)
 
 def manifest_name(day):
     if day not in SERVICES: raise ValueError('Unsupported selichot service: '+day)
