@@ -1342,3 +1342,15 @@ One XML file validates; three source-ordered bilingual units pass. Both eight-pa
 - Expanded: Circumcision: five stanza baseline deltas [0.0, 0.0, 0.0, 0.0, 0.0]; alternating Hebrew refrains, English omission, unresolved marker and final boundary checked; Circumcision: five stanza baseline deltas [0.0, 0.0, 0.0, 0.0, 0.0]; alternating Hebrew refrains, English omission, unresolved marker and final boundary checked; Circumcision: missing-marker, shifted-stanza and missing-restored-verse controls rejected; 8 pages; contents and final top-level section bookmark checked; controls=True Direction: 0 of 39 Hebrew runs are set left to right; control: 39 of 39 flagged when every run is reversed. Visually inspected PDF pages: [7, 8].
 
 Artifacts: `output/asher_selichot/proofreading/batch-028/`. These PDFs isolate the final circumcision poem; whole-book PDFs remain earlier snapshots. Rare word uncertainties and corrections to the fresh capture remain in the per-page ledgers.
+
+
+## English proofreading checkpoint 001
+
+English title s3/n2 and complete first day s7/n6–s53/n52 upper were reread from images before opening the same-service existing readings/XML/OCR. The ledger records 29 distinct corrections across working readings and assembled data; 12 English XML modules changed. Printed archaic forms and apparent printing errors remain. This is a same-model second pass with prior exposure, not independent-person proofreading. Exhaustive emphasis and the exact s23 Reader-alone note anchor remain pending. Frozen captures, comparison snapshots and adjudications are under `sources/asher_selichot/proofreading/english-pass-01/`.
+
+All 398 book XML files validate and all service documentary streams and expansion checks pass. Current first-day-only documentary and expanded PDFs pass prayer alignment, footnote occurrence, Kaddish context, fulfilled-instruction and boundary checks, including deliberately broken controls. All six measured prayer starts align at 0.0 pt. Contents and bookmark checks pass. The initial expanded inspection dropped pre-Rosh-Hashanah entrypoint declarations; the Kaddish check detected the error. Corrected inspection exports preserve those declarations.
+
+- Documentary: 37 pages; 0 of 1283 Hebrew runs are set left to right; control: 1253 of 1283 flagged when every run is reversed; PDF SHA-256 `648edb103d61c8614b388325b181763a0fa084045ee4477cee8733d3665b4a35`.
+- Expanded: 42 pages; 0 of 1509 Hebrew runs are set left to right; control: 1471 of 1509 flagged when every run is reversed; PDF SHA-256 `9a3f9fc30a23d881f125c65814437c5cb04ba1e9f55d4c92ebdba225bdb81cca`.
+
+Artifacts: `output/asher_selichot/proofreading/english-001/`. Whole-book PDFs remain earlier snapshots. No executable logic changed; the previous full suite result was 3,557 passed with 12 skips.
