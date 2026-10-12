@@ -1186,3 +1186,20 @@ Penitential PDF controls rejected missing notes, shifted stanza and fulfilled cu
   Direction: 0 of 1992 Hebrew runs are set left to right; control: 1941 of 1992 flagged when every run is reversed. Visual PDF pages: 34,36,48,51,53.
 
 Artifacts: `output/asher_selichot/proofreading/batch-016/`. These PDFs contain the second penitential day alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.
+
+
+## Proofreading checkpoint017
+
+The committed Hebrew proofreading checkpoint reaches the end of the third penitential day, printed128 upper (s258/n257). Batch017 covers13 Hebrew pages from s234/n233:191 text replacement rules across10 Hebrew XML modules, plus synchronization of the concluding opening-repeat cue. Two English XML files have regeneration-only whitespace/declaration-ID changes. Frozen readings, comparisons, native-band adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-17/. This is a same-model second image pass with prior exposure, primarily consonant-first. Uncertain rare words remain recorded; independent-person Hebrew, facing-English and comprehensive fine-pointing review remain pending.
+
+
+Validation:
+
+- All 12 changed XML modules validate; 36 bilingual units, refrain choices, notes, source order and expansion targets pass reverse verification.
+- Expanded compilation verifies four bilingual petition ranges and seasonal Half/Full Kaddish.
+- Documentary PDF: 26 pages; expanded PDF: 54 pages. All six stanza-start deltas are 0.0pt in each view. Contents, bookmark hierarchy, note occurrences and reference boundaries pass.
+- Direction: 0/762 reversed Hebrew runs in documentary; 0/2014 in expanded. Reversed controls flag 749 and 1963 respectively. Missing-note, shifted-stanza and fulfilled-cue controls are rejected.
+- Visual inspection: documentary pages 18, 19, 21, 24; expanded pages 34, 35, 48, 54.
+- Shared scan tests (48) and Asher service tests (106) pass. Changes to the PDF checker are declarative text anchors; no generic executable logic changed.
+
+Artifacts: `output/asher_selichot/proofreading/batch-017/`. These PDFs contain the third penitential day alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.

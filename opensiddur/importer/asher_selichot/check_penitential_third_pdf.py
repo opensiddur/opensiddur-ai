@@ -6,8 +6,8 @@ from .check_pdf import plain
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
-ANCHORS = [('שמענוסליחתי','O, announce to us thy pardon'),
-           ('שויתיעזרתי','I seek my help'),
+ANCHORS = [('ישמיענוסלחתי','O, announce to us thy pardon'),
+           ('שויתיעוזרתי','I seek my help'),
            ('בבאכגלהגלגל','When misfortune cometh'),
            ('שואל חסד'.replace(' ',''),'When the repentant'),
            ('לחבצלת','Open the door to the lily'),
