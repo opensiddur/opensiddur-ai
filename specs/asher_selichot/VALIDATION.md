@@ -1364,3 +1364,13 @@ Second-day English s53/n52 lower–s61/n60 upper was image-reread and frozen bef
 - Expanded: 36 pages; 0 of 1242 Hebrew runs are set left to right; control: 1218 of 1242 flagged when every run is reversed; SHA-256 `bea4021af12fc4c98d32a35b704d7032eec804ab85378d15a53d55157ceb37f5`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-02/`. Artifacts: `output/asher_selichot/proofreading/english-002/`. Whole-book PDFs remain earlier snapshots; no executable logic changed.
+
+
+## English proofreading checkpoint003
+
+Third-day English s61/n60 lower–s69/n68 upper was reread from images before comparison, following image-verified printed31/32 despite swapped Archive leaves. Four corrections preserve the printed wording and punctuation, including “oppessors.” Ten XML files validate and reverse verification checks source order, footnotes, choice branches and expansions. Both service PDFs pass all six stanza alignment checks at0.0pt, eight printed footnotes, direction, contents, bookmarks and section boundaries; deliberately duplicated notes, shifted stanzas and boundary leakage are rejected. Visual inspection covers the opening poem, pizmon, apparatus and expanded conclusion. Same-model second pass; independent-person and exhaustive typography review remain pending. The numeral-inclusive audit of batches001–002 found no further corrections.
+
+- Documentary: 14 pages; 0 of 263 Hebrew runs are set left to right; control: 262 of 263 flagged when every run is reversed; SHA-256 `59c195e0495762836ed75ff8f2b1e4907c0a3b88f0b5acc706e219491a90a00e`.
+- Expanded: 37 pages; 0 of 1302 Hebrew runs are set left to right; control: 1278 of 1302 flagged when every run is reversed; SHA-256 `b945b709d078ac90b0504069caf7ea90021c46ea71cc76fdce81e2d0137c4509`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-03/`. Artifacts: `output/asher_selichot/proofreading/english-003/`. Whole-book PDFs remain earlier snapshots. No executable logic changed.
