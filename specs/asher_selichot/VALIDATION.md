@@ -1354,3 +1354,13 @@ All 398 book XML files validate and all service documentary streams and expansio
 - Expanded: 42 pages; 0 of 1509 Hebrew runs are set left to right; control: 1471 of 1509 flagged when every run is reversed; PDF SHA-256 `9a3f9fc30a23d881f125c65814437c5cb04ba1e9f55d4c92ebdba225bdb81cca`.
 
 Artifacts: `output/asher_selichot/proofreading/english-001/`. Whole-book PDFs remain earlier snapshots. No executable logic changed; the previous full suite result was 3,557 passed with 12 skips.
+
+
+## English proofreading checkpoint 002
+
+Second-day English s53/n52 lower–s61/n60 upper was image-reread and frozen before comparison. Ten corrections cover the printed wording and punctuation; the seven English footnotes match the fresh readings. Ten second-day XML files validate, and documentary page streams, refrain choices, notes, ordering and expansion boundaries pass. Both service-only PDFs pass six pizmon alignment checks at 0.0 pt, footnote counts, fulfilled-instruction/third-day boundaries, contents and bookmark hierarchy. Duplicate-note, shifted-stanza and boundary controls are rejected. Same-model second pass; exhaustive typography and independent-person proofreading remain pending.
+
+- Documentary: 13 pages; 0 of 194 Hebrew runs are set left to right; control: 194 of 194 flagged when every run is reversed; SHA-256 `c5f54550b9684490753ca72bf15f3a499bdda919d7f33aadf851bef432fa4de1`.
+- Expanded: 36 pages; 0 of 1242 Hebrew runs are set left to right; control: 1218 of 1242 flagged when every run is reversed; SHA-256 `bea4021af12fc4c98d32a35b704d7032eec804ab85378d15a53d55157ceb37f5`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-02/`. Artifacts: `output/asher_selichot/proofreading/english-002/`. Whole-book PDFs remain earlier snapshots; no executable logic changed.
