@@ -958,3 +958,20 @@ The whole excerpt intentionally exceeds the opening-only checker boundary.
 Rendered pages15,17,18 were inspected. Full-book PDFs are earlier snapshots;
 facing English and independent-person Hebrew review remain pending. The
 previously recorded mixed-language note paragraph separation remains pending.
+
+
+## Proofreading checkpoint 005
+
+Hebrew printed 12–15 (s26/n25–s32/n31) adjudicated from fresh image captures;
+71 source edits update four XML modules. This remains a same-model second pass,
+with independent-person review pending. Four changed files validate; six opening
+streams, title metadata and 96 continuation units match the readings.
+
+The isolated 24-page documentary inspection PDF passes eight poem alignment
+checks (maximum 13.55pt), single footnote occurrence, abbreviation and prayer
+boundaries, and broken controls. Opening-prefix checks pass on 17 pages with
+four zero-delta anchors and six broken controls rejected. Hebrew direction:
+0/698 reversed; reversed control flags 683/698. Rendered pages 20,22,24 inspected.
+This excerpt is not a whole-book rebuild; facing English and unresolved fine
+pointing still need independent review. The previously recorded mixed-note
+paragraph-separation issue remains open. Evidence: source proofreading/image-pass-05.
