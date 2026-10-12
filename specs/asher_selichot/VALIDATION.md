@@ -1058,7 +1058,7 @@ printed 29–33. Read in verified printed order: s60,s62,s66,s64,s68; preserve t
 Archive's swapped openings in facsimile identities. Frozen captures, comparison,
 rejected blind readings and native-crop adjudication are in image-pass-09.
 Four changed XML files validate and third-day source/expansion checks pass.
-No executable code changes. Last full suite: 3557 tests,12 skips,no failures;
+No executable code changes. Last full suite: 3557 tests, 12 skips, no failures;
 all 398 XML files passed at checkpoint 007.
 
 Actual assemblies through day three render 49 documentary and 100 expanded pages
@@ -1083,7 +1083,7 @@ printed 33–37. Restore the omitted final-stanza phrase and remove its duplicat
 retain the small unpointed refrain cues. Frozen captures, comparison,
 rejected blind readings and native-crop adjudication are in image-pass-10.
 Four changed XML files validate and fourth-day source/expansion checks pass.
-No executable code changes. Last full suite: 3557 tests,12 skips,no failures;
+No executable code changes. Last full suite: 3557 tests, 12 skips, no failures;
 all 398 XML files passed at checkpoint 007.
 
 Actual assemblies through day four render 56 documentary and 130 expanded pages
@@ -1109,7 +1109,7 @@ Four changed XML files validate and fifth-day source/expansion checks pass.
 - Expanded: 158 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
   Direction: 0 of 6579 Hebrew runs are set left to right; control: 6368 of 6579 flagged when every run is reversed. Visual pages: 138,139,141,142,143,144,156,157.
 
-Artifacts: `output/asher_selichot/proofreading/batch-011/`. Last full post-merge suite: 3557 tests,12 skips,no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: sixth day.
+Artifacts: `output/asher_selichot/proofreading/batch-011/`. Last full post-merge suite: 3557 tests, 12 skips, no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: sixth day.
 
 
 ## Proofreading checkpoint 012
@@ -1122,7 +1122,7 @@ Four changed XML files validate and sixth-day source/expansion checks pass.
 - Expanded: 188 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
   Direction: 0 of 7872 Hebrew runs are set left to right; control: 7592 of 7872 flagged when every run is reversed. Visual pages: 166,167,168,171,172,173,186,187,188.
 
-Artifacts: `output/asher_selichot/proofreading/batch-012/`. Last full post-merge suite: 3557 tests,12 skips,no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: seventh day.
+Artifacts: `output/asher_selichot/proofreading/batch-012/`. Last full post-merge suite: 3557 tests, 12 skips, no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: seventh day.
 
 
 ## Proofreading checkpoint 013
@@ -1135,4 +1135,19 @@ Four changed XML files validate and seventh-day source/expansion checks pass.
 - Expanded: 218 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0], 'seventh': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
   Direction: 0 of 9186 Hebrew runs are set left to right; control: 8571 of 9186 flagged when every run is reversed. Visual pages: 193,194,195,196,197,198,199,200,201,202,215,216,217.
 
-Artifacts: `output/asher_selichot/proofreading/batch-013/`. Last full post-merge suite: 3557 tests,12 skips,no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: Erev Rosh Hashanah.
+Artifacts: `output/asher_selichot/proofreading/batch-013/`. Last full post-merge suite: 3557 tests, 12 skips, no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: Erev Rosh Hashanah.
+
+
+## Proofreading checkpoint 014
+
+The committed Hebrew proofreading checkpoint reaches the Erev Rosh Hashanah closing rubric, printed 91 upper (s184/n183 upper). Batch 014 covers 43 Hebrew pages from s100/n99 lower: 393 replacement rules across 22 XML modules, one additional native correction, and a boundary repair moving דנפישין to the next source page without duplicating it. Frozen readings, comparison records, adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-14/. This is a same-model second image pass with prior exposure; later pages are primarily consonant-first. Independent-person Hebrew, facing-English and comprehensive fine-pointing review remain pending.
+
+22 modules validate; 113 source-ordered units, documentary branches, notes and bilingual expansion targets checked. The PDF anchor now follows the corrected אדון כתקח opening rather than the obsolete אדון במועד reading.
+- Documentary: Erev PDF: service boundaries, closing cue, retained Ark instructions and apparatus checked; start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+140 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [13.55, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0], 'seventh': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  Direction: 0 of 5658 Hebrew runs are set left to right; control: 5280 of 5658 flagged when every run is reversed. Visual PDF pages: 80,104,133,137,139,140.
+- Expanded: Erev PDF: service boundaries, closing cue, retained Ark instructions and apparatus checked; start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+303 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0], 'seventh': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  Direction: 0 of 13150 Hebrew runs are set left to right; control: 12061 of 13150 flagged when every run is reversed. Visual PDF pages: 222,295,301.
+
+48 shared scan tests and 22 assembly tests pass. Artifacts: `output/asher_selichot/proofreading/batch-014/`. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.

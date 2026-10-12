@@ -39,7 +39,7 @@ def check(tree, expanded=False):
             words=re.sub(r'\s+([,.;!?])',r'\1',words)
             en.append((number,y,words))
     deltas=[]
-    for h_anchor,e_anchor in [('אדוןבמועד','O Lord, when on the appointed'),('אדוןבשפטך','O Lord! when thou judgest'),('מלךאחד','One King shall'),('שפטכלהארץ','O Supreme Judge'),('זכורברית','Remember the covenant'),('תפלהתקח','Accept, O Lord')]:
+    for h_anchor,e_anchor in [('אדוןכתקח','O Lord, when on the appointed'),('אדוןבשפטך','O Lord! when thou judgest'),('מלךאחד','One King shall'),('שפטכלהארץ','O Supreme Judge'),('זכורברית','Remember the covenant'),('תפלהתקח','Accept, O Lord')]:
         e=next((r for r in en if e_anchor in r[2]),None)
         matches=[r for r in he if h_anchor in r[2]]
         h=min(matches,key=lambda r:abs(r[0]-e[0])*1000+abs(r[1]-e[1])) if matches and e else None
