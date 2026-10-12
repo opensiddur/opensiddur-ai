@@ -418,12 +418,9 @@ class CompilerProcessor:
                     and self.linear_data.parallel_projects
                     and not self._in_parallel_compilation
                     and hasattr(self, '_transclude_parallel')):
-                with self._transclusion_guard(
-                        transclude_range.start.project, transclude_range.start.file_name,
-                        transclude_range.start.element_path,
-                        transclude_range.end.end_element_path or transclude_range.end.element_path,
-                        target):
-                    result = self._transclude_parallel(element, transclude_range, transclusion_type)
+                # The primary column is guarded inside; a parallel column is another
+                # project's text and may well transclude the very range it stands beside.
+                result = self._transclude_parallel(element, transclude_range, transclusion_type)
                 if result is not None:
                     return result
                 # result is None → no parallel found, fall through to normal transclusion

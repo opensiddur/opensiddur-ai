@@ -135,9 +135,16 @@ _VERSE_DEPTH = 3
 
 
 def _below_the_verse(urn: str) -> bool:
+    """Whether ``urn`` names a point inside a numbered verse: book/chapter/verse/part.
+
+    Other Bible URNs run deeper too -- a parashah's aliyot, a reading's haftarah -- but their
+    parents are not verses, and do not contain them the way a verse contains its half.
+    """
     if not urn.startswith(_SUB_VERSE_NAMESPACE):
         return False
-    return len(urn[len(_SUB_VERSE_NAMESPACE):].split("/")) > _VERSE_DEPTH
+    components = urn[len(_SUB_VERSE_NAMESPACE):].split("/")
+    return (len(components) > _VERSE_DEPTH
+            and components[1].isdigit() and components[2].isdigit())
 
 
 def coarsen(urn: str, resolves: Optional[Callable[[str], bool]] = None) -> Optional[str]:

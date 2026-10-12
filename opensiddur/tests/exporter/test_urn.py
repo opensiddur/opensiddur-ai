@@ -855,9 +855,6 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
         self.assertEqual(results[0].project, "wlc")
 
 
-if __name__ == '__main__':
-    unittest.main()
-
 
 class TestCoarsen(unittest.TestCase):
     """A sub-verse reference falls back on its verse, and nothing else falls back at all."""
@@ -888,5 +885,12 @@ class TestCoarsen(unittest.TestCase):
     def test_a_whole_verse_is_not_widened(self):
         self.assertIsNone(coarsen(f"{self.NAHUM}/2/2"))
 
+    def test_a_part_of_a_reading_is_not_a_part_of_a_verse(self):
+        self.assertIsNone(coarsen("urn:x-opensiddur:text:bible:reading/shavuot_ii/haftarah/1"))
+
     def test_a_part_of_a_prayer_is_not_the_whole_prayer(self):
         self.assertIsNone(coarsen("urn:x-opensiddur:text:prayer:amidah/avot"))
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1014,6 +1014,24 @@ class TestIncrementalSync(unittest.TestCase):
         self.assertEqual(second['action'], 'added')
         self.assertIsNone(self.db._get_indexed_hash("broken.xml", "proj"))
 
+    def test_a_dropped_repeat_takes_over_when_its_holder_lets_go(self):
+        """An incremental sync ends where a fresh build does after the holder gives a URN up."""
+        for name in ("a.xml", "b.xml"):
+            self._write("proj", name, urns=["urn:x-opensiddur:text:t/u"])
+        with self.assertLogs("opensiddur.exporter.refdb", level="WARNING"):
+            self.db.sync_projects(self.project_dir)
+        held_by = self.db.get_urn_mappings("urn:x-opensiddur:text:t/u", "proj")[0].file_name
+        self._write("proj", held_by, urns=["urn:x-opensiddur:text:t/other"])
+        self.db.sync_projects(self.project_dir)
+
+        fresh = self._open("fresh.db")
+        fresh.sync_projects(self.project_dir)
+        self.assertEqual(self._dump(self.db), self._dump(fresh))
+        other = ({"a.xml", "b.xml"} - {held_by}).pop()
+        self.assertEqual(
+            [m.file_name for m in self.db.get_urn_mappings("urn:x-opensiddur:text:t/u", "proj")],
+            [other])
+
     def test_a_file_that_fails_partway_leaves_nothing_behind(self):
         """A file is indexed whole or not at all, and the failure is recorded for the sync.
 
@@ -1746,8 +1764,50 @@ class TestFindEndOfMapping(unittest.TestCase):
     </tei:div></tei:body><tei:back><tei:p>not the chapter</tei:p></tei:back></tei:text>
 </tei:TEI>'''
         end_path, include_tail = self._end_of(xml, "urn:book/9")
-        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:p[2]/tei:hi")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:p[2]")
         self.assertTrue(include_tail)
+
+    def _end_of_body(self, body: str, urn: str) -> str:
+        xml = (f'<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"><tei:text><tei:body>{body}'
+               '</tei:body></tei:text></tei:TEI>')
+        return self._end_of(xml, urn)[0]
+
+    def test_the_end_is_never_cut_into(self):
+        """The end is a whole subtree: text after an inner element's close is not lost."""
+        end = self._end_of_body(
+            '<tei:div><tei:p><tei:milestone unit="verse" corresp="urn:x/1"/>one</tei:p>'
+            '<tei:p><tei:seg>two <tei:hi>three</tei:hi></tei:seg> four</tei:p></tei:div>',
+            "urn:x/1")
+        self.assertEqual(end, "/tei:TEI/tei:text/tei:body/tei:div/tei:p[2]")
+
+    def test_the_end_is_not_inside_a_note(self):
+        end = self._end_of_body(
+            '<tei:div><tei:p><tei:milestone unit="verse" corresp="urn:x/1"/>one</tei:p>'
+            '<tei:p>two<tei:note>n <tei:hi>h</tei:hi></tei:note> four.</tei:p></tei:div>',
+            "urn:x/1")
+        self.assertEqual(end, "/tei:TEI/tei:text/tei:body/tei:div/tei:p[2]")
+
+    def test_the_scope_stays_in_its_division(self):
+        """What follows the division in the body -- a colophon, an empty paragraph -- is not in it."""
+        end = self._end_of_body(
+            '<tei:div><tei:p><tei:milestone unit="verse" corresp="urn:x/1"/>one</tei:p>'
+            '<tei:p>two</tei:p></tei:div><tei:div type="colophon">COLOPHON</tei:div><tei:p/>',
+            "urn:x/1")
+        self.assertEqual(end, "/tei:TEI/tei:text/tei:body/tei:div[1]/tei:p[2]")
+
+    def test_the_milestone_closing_its_own_parent_ends_at_itself(self):
+        end = self._end_of_body(
+            '<tei:div><tei:p>one<tei:milestone unit="verse" corresp="urn:x/1"/></tei:p></tei:div>',
+            "urn:x/1")
+        self.assertEqual(end, "/tei:TEI/tei:text/tei:body/tei:div/tei:p/tei:milestone")
+
+    def test_a_terminator_beyond_the_division_does_not_end_the_scope(self):
+        end = self._end_of_body(
+            '<tei:div><tei:p><tei:milestone unit="verse" corresp="urn:x/1"/>one</tei:p>'
+            '<tei:p>two</tei:p></tei:div>'
+            '<tei:div><tei:p><tei:milestone unit="verse"/>other</tei:p></tei:div>',
+            "urn:x/1")
+        self.assertEqual(end, "/tei:TEI/tei:text/tei:body/tei:div[1]/tei:p[2]")
 
 
 if __name__ == '__main__':

@@ -498,9 +498,11 @@ When end URN is a milestone, the actual end is exclusive:
   last text before the milestone, so `include_tail_after_end` picks that text up. Ending
   at the deepest preceding element instead would land inside a subtree and drop the text
   between that subtree's close and the milestone.
-- If not found: run to the end of the section of the text (`tei:body`, `tei:front`, `tei:back`): the end
-  element is that section's last element in document order, with its tail. See JLPTEI-3.md, "URN scope",
-  for the full rule.
+- If not found: run to the end of the milestone's outermost `tei:div`, or of its section of the text
+  (`tei:body`, `tei:front`, `tei:back`) if it is in no division. The end element is that container's last
+  child, unless that child holds the milestone, in which case it is that child's last child, and so on down.
+  The end is therefore never an ancestor of the milestone, and is taken whole with its tail. A terminating
+  milestone outside the container does not end the scope. See JLPTEI-3.md, "URN scope", for the full rule.
 
 ### Tail Text Handling
 

@@ -65,6 +65,17 @@ class TestTransclusionCycles(CompilerGuardTestCase):
                    f'<j:transclude target="{URN}a"/><j:transclude target="{URN}a"/>')
         self.assertEqual(self.compile("p", "index.xml").count("once"), 2)
 
+    def test_a_parallel_column_may_transclude_the_range_it_stands_beside(self):
+        """Only the primary column is the range itself; a column of another project is not."""
+        self.linear_data.parallel_projects = ["q"]
+        self.write("p", "a.xml", f'<tei:div corresp="{URN}a"><tei:p>primary</tei:p></tei:div>')
+        self.write("q", "a.xml", f'<tei:div corresp="{URN}a"><tei:p>column '
+                                 f'<j:transclude type="inline" target="{URN}a@p"/></tei:p></tei:div>')
+        self.write("p", "index.xml", f'<j:transclude target="{URN}a"/>')
+        compiled = self.compile("p", "index.xml")
+        self.assertIn("column", compiled)
+        self.assertIn("parallel", compiled)
+
     def test_state_is_restored_after_a_failure(self):
         self.write("p", "a.xml",
                    f'<tei:div corresp="{URN}a"><j:transclude target="{URN}a"/></tei:div>')
@@ -77,12 +88,17 @@ class TestTransclusionCycles(CompilerGuardTestCase):
 
 class TestRanges(CompilerGuardTestCase):
     def test_a_range_that_ends_before_it_starts_is_an_error(self):
-        self.write("p", "a.xml", f'<tei:div corresp="{URN}x/1"><tei:p>one</tei:p></tei:div>'
-                                 f'<tei:div corresp="{URN}x/2"><tei:p>two</tei:p></tei:div>')
-        self.write("p", "index.xml",
-                   f'<j:transclude target="{URN}x/2" targetEnd="{URN}x/1"/>')
-        with self.assertRaisesRegex(ValueError, "ends before it starts"):
-            self.compile("p", "index.xml")
+        # On one line and on two: the order is read from source lines where they differ.
+        for separator in ("", "\n"):
+            with self.subTest(separator=repr(separator)):
+                self.write("p", "a.xml",
+                           f'<tei:div corresp="{URN}x/1"><tei:p>one</tei:p></tei:div>{separator}'
+                           f'<tei:div corresp="{URN}x/2"><tei:p>two</tei:p></tei:div>')
+                self.write("p", "index.xml",
+                           f'<j:transclude target="{URN}x/2" targetEnd="{URN}x/1"/>')
+                self.linear_data.xml_cache.cache.clear()
+                with self.assertRaisesRegex(ValueError, "ends before it starts"):
+                    self.compile("p", "index.xml")
 
     def test_a_range_across_files_says_so(self):
         self.write("p", "a.xml", f'<tei:div corresp="{URN}x/1"><tei:p>one</tei:p></tei:div>')
@@ -114,6 +130,19 @@ class TestInlineText(CompilerGuardTestCase):
         self.assertEqual(
             self._inline("a <tei:choice><j:written>K</j:written><j:read>Q</j:read></tei:choice> b"),
             "a Q b")
+
+    def test_words_either_side_of_a_line_break_stay_apart(self):
+        self.assertEqual(self._inline("alpha<tei:lb/>beta<tei:lb/> gamma"), "alpha beta gamma")
+
+    def test_a_range_starting_inside_an_unread_reading_is_still_read(self):
+        self.write("p", "a.xml", f'<tei:p>a <tei:choice><j:written>K'
+                                 f'<tei:anchor corresp="{URN}x"/>2</j:written><j:read>Q</j:read>'
+                                 f'</tei:choice> b</tei:p>')
+        self.write("p", "index.xml",
+                   f'<tei:p>[<j:transclude type="inline" target="{URN}x"/>]</tei:p>')
+        compiled = etree.fromstring(f"<r>{self.compile('p', 'index.xml')}</r>")
+        inline = compiled.find(".//{http://jewishliturgy.org/ns/processing}transclude")
+        self.assertNotEqual("".join(inline.itertext()).strip(), "")
 
     def test_the_first_of_several_wordings_stands_in(self):
         self.assertEqual(

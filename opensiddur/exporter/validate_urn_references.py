@@ -326,7 +326,14 @@ def find_coarsened_urn_references(
                         continue
                 except ValueError:
                     continue  # malformed, which the resolvability check already reports
-                coarser = coarsen(urn)
+                # The same fallback the compiler takes: an end that resolves is kept.
+                def resolves(one: str) -> bool:
+                    try:
+                        return bool(resolver.resolve_range(one))
+                    except ValueError:
+                        return False
+
+                coarser = coarsen(urn, resolves=resolves)
                 if not coarser:
                     continue
                 try:

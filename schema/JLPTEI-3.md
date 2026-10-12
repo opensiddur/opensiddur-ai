@@ -143,7 +143,7 @@ All URIs reference the following scopes:
    - the next milestone of the same unit;
    - the next milestone of a unit that *contains* it. A verse ends at the next chapter, but a chapter does not end at the next verse. The containment table is `UNIT_CONTAINED_BY` in `opensiddur/exporter/refdb.py`. Units it does not name end at the next milestone with as many or fewer `/`-separated components in its URN;
    - a terminator (rule 3);
-   - otherwise, the end of the section of the text it is in (`tei:body`, `tei:front` or `tei:back`), past the end of its own paragraph or division. The last chapter of a book runs to the end of the book, not to the end of its first paragraph.
+   - otherwise, the end of its outermost `tei:div`, or of the section of the text it is in (`tei:body`, `tei:front` or `tei:back`) when it is in no division. This runs past the end of its own paragraph, so the last chapter of a book runs to the end of the book, not to the end of its first paragraph. It does not run past the division: material after the book's division, such as a colophon, is not in the scope, and a milestone after it does not end the scope.
 
    This is the one statement of a milestone's scope. The other specifications refer to it.
 3. A `milestone` that carries a `unit` but **no** `corresp` is a *terminator*: it ends the scope opened by the nearest preceding milestone of that same unit, and opens nothing itself.

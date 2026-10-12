@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Last milestone in a file** (#240). When nothing ended a milestone's scope, it stopped at the end
-  of its own paragraph or division. It now runs to the end of the text. The last chapter of 42
+  of its own paragraph. It now runs to the end of its outermost division. The last chapter of 42
   JPS 1917 books, and of 30 WLC and 31 MAM files, had resolved to its first paragraph alone;
   so had Ecclesiastes 12:14 and two Birnbaum English prayers.
 - **Inline transclusion** put a space before every child's tail, which split words divided by

@@ -26,7 +26,8 @@ INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 REFDB_VERSION = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 #: Every table the database holds, dropped together when the version stamp does not match.
-_TABLES = ('urn_mappings', 'element_references', 'indexed_files', 'refdb_meta')
+_TABLES = ('urn_mappings', 'element_references', 'indexed_files', 'dropped_urn_mappings',
+           'refdb_meta')
 
 #: URNs under this prefix identify a stretch of text, so they must be unique within a
 #: project. Other URN types (condition, notes) are names and are meant to be shared.
@@ -151,13 +152,43 @@ def milestone_terminates(element: ElementBase, following: ElementBase) -> bool:
     return following_dividers <= num_dividers
 
 
+def _scope_container(element: ElementBase) -> Optional[ElementBase]:
+    """The element a milestone's scope cannot outrun: its outermost tei:div, or else the
+    section of the text it is in (tei:body, tei:front or tei:back)."""
+    ns_map = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    containers = (element.xpath('(ancestor::tei:div)[1]', namespaces=ns_map)
+                  or element.xpath('(ancestor::tei:body|ancestor::tei:front|ancestor::tei:back)[last()]',
+                                   namespaces=ns_map))
+    return containers[0] if containers else None
+
+
+def _last_element_after(element: ElementBase, container: ElementBase) -> ElementBase:
+    """The element whose subtree and tail end ``container``'s text, seen from ``element``.
+
+    The container's last child, unless that child holds ``element``; then that child's last
+    child, and so on down. What comes back is never an ancestor of ``element``, so its
+    subtree and its tail are the last of the text, and every ancestor of ``element`` is closed
+    around it rather than cut into.
+    """
+    ancestors = set(element.iterancestors())
+    node = container
+    while True:
+        children = [child for child in node if isinstance(child.tag, str)]
+        if not children:
+            return node
+        node = children[-1]
+        if node is element or node not in ancestors:
+            return node
+
+
 def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
     """Find the end element path and tail-inclusion flag for a URN mapping.
 
     For milestone elements, finds the element just before the next milestone that ends
-    this one's scope, or -- when nothing ends it -- the last element of the section of the
-    text it is in (`tei:body`, `tei:front` or `tei:back`). For non-milestones, the element
-    itself is the end.
+    this one's scope. When nothing ends it, the scope runs to the end of the milestone's
+    outermost tei:div, or of its section of the text if it is in no division. Either way the
+    scope does not leave that container, and a terminating milestone outside it does not count.
+    For non-milestones, the element itself is the end.
 
     "Just before" is the nearest preceding sibling of the next milestone, or -- when the
     next milestone is the first element in its parent -- the nearest preceding sibling of
@@ -174,12 +205,15 @@ def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
 
     is_milestone = element.tag == '{http://www.tei-c.org/ns/1.0}milestone'
     if is_milestone:
+        container = _scope_container(element)
         # Corresp-less milestones are included so an explicit terminator can close a
         # scope; `milestone_terminates` decides which of them actually do.
         following_milestones = element.xpath(
             './following::tei:milestone[ancestor::tei:text]', namespaces=ns_map)
         actual_end = None
         for milestone in following_milestones:
+            if container is not None and container not in milestone.iterancestors():
+                break  # past the end of the container; nothing beyond it ends this scope
             if milestone_terminates(element, milestone):
                 node = milestone
                 while node is not None:
@@ -191,14 +225,10 @@ def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
                 include_tail = True
                 break
         if actual_end is None:
-            # Nothing of its unit follows, so the scope runs to the end of the text it is in,
-            # not of its own parent: the last chapter of a book runs on past its first
-            # paragraph. The end is the last element in document order, whose tail is the
-            # last text; it is never an ancestor of the milestone.
-            sections = element.xpath(
-                'ancestor::tei:body|ancestor::tei:front|ancestor::tei:back', namespaces=ns_map)
-            if sections:
-                actual_end = sections[-1].xpath('(.//*)[last()]')[0]
+            # Nothing of its unit follows, so the scope runs to the end of its container, not
+            # of its own parent: the last chapter of a book runs on past its first paragraph.
+            if container is not None:
+                actual_end = _last_element_after(element, container)
             else:
                 actual_end = element.xpath('./following-sibling::*[last()]|self::*')[-1]
             include_tail = True
@@ -341,6 +371,18 @@ class ReferenceDatabase:
                 file_name TEXT NOT NULL,
                 content_hash TEXT NOT NULL,
                 PRIMARY KEY (project, file_name)
+            )
+        ''')
+
+        # The repeats of a text URN that were left out because another file in the project
+        # already holds it. When that holder goes, the files listed here are indexed again, so
+        # that an incremental sync ends where a fresh build would.
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS dropped_urn_mappings (
+                urn TEXT NOT NULL,
+                project TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                PRIMARY KEY (urn, project, file_name)
             )
         ''')
 
@@ -527,6 +569,11 @@ class ReferenceDatabase:
                 urn, project, existing['file_name'], existing['element_path'],
                 file_name, element_path,
             )
+            cursor.execute(
+                'INSERT OR IGNORE INTO dropped_urn_mappings (urn, project, file_name) '
+                'VALUES (?, ?, ?)', (urn, project, file_name))
+            if commit:
+                self.conn.commit()
             return False
 
         self._warn_on_instruction_collision(urn, project, file_name, element_path, element_text)
@@ -752,6 +799,18 @@ class ReferenceDatabase:
             Number of URNs removed
         """
         cursor = self.conn.cursor()
+        # The files whose copies of this file's URNs were dropped must be indexed again: with
+        # this file gone, one of them holds the URN now.
+        cursor.execute('''
+            DELETE FROM indexed_files WHERE project = ? AND file_name IN (
+                SELECT dropped.file_name FROM dropped_urn_mappings AS dropped
+                JOIN urn_mappings AS held
+                  ON held.urn = dropped.urn AND held.project = dropped.project
+                WHERE held.project = ? AND held.file_name = ? AND dropped.file_name != ?)
+        ''', (project, project, file_name, file_name))
+        cursor.execute(
+            'DELETE FROM dropped_urn_mappings WHERE file_name = ? AND project = ?',
+            (file_name, project))
         cursor.execute(
             'DELETE FROM urn_mappings WHERE file_name = ? AND project = ?',
             (file_name, project)
@@ -794,6 +853,7 @@ class ReferenceDatabase:
         deleted_count += cursor.rowcount
 
         cursor.execute('DELETE FROM indexed_files WHERE project = ?', (project,))
+        cursor.execute('DELETE FROM dropped_urn_mappings WHERE project = ?', (project,))
         self.conn.commit()
         return deleted_count
     
@@ -889,17 +949,29 @@ class ReferenceDatabase:
         files_added = 0
         files_updated = 0
         
-        for file_name in sorted(disk_files):
-            result = self.sync_file(file_name, project, project_directory)
-            if result['action'] == 'added':
-                added_count += result['references']
-                files_added += 1
-            elif result['action'] == 'updated':
-                updated_count += result['references']
-                files_updated += 1
-            elif result['action'] == 'skipped':
-                skipped_count += 1
-        
+        # A file is synced again if a later file in the pass gave up a URN it had a dropped
+        # copy of (see remove_file); the second pass picks it up. A file that failed to index
+        # is not retried in the same sync.
+        pending = sorted(disk_files)
+        failed: set[str] = set()
+        for pass_number in range(2):
+            for file_name in pending:
+                result = self.sync_file(file_name, project, project_directory)
+                if self._get_indexed_hash(file_name, project) is None:
+                    failed.add(file_name)
+                if result['action'] == 'added':
+                    added_count += result['references']
+                    files_added += 1
+                elif result['action'] == 'updated':
+                    updated_count += result['references']
+                    files_updated += 1
+                elif result['action'] == 'skipped' and pass_number == 0:
+                    skipped_count += 1
+            pending = [name for name in sorted(disk_files)
+                       if name not in failed and self._get_indexed_hash(name, project) is None]
+            if not pending:
+                break
+
         return {
             'action': 'project_synced',
             'added': added_count,

@@ -803,7 +803,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         linear_data=self.linear_data,
                         reference_database=self._refdb)
                     primary_proc.marker_stack = []
-                    primary_result = primary_proc.process()
+                    with self._transclusion_guard(primary_project, primary_file, primary_start,
+                                                  primary_end, target):
+                        primary_result = primary_proc.process()
 
         if parallel_result is None:
             return None
