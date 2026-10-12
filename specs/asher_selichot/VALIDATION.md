@@ -1394,3 +1394,13 @@ Fifth-day English s77/n76 lower–s85/n84 upper was reread from images before co
 - Expanded: 36 pages; 0 of 1270 Hebrew runs are set left to right; control: 1249 of 1270 flagged when every run is reversed; SHA-256 `4d861dac614ae1a9c8d6c75881e5931555dc156089e583beae0f8fef28a5e236`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-05/`. Artifacts: `output/asher_selichot/proofreading/english-005/`. Whole-book PDFs remain earlier snapshots. No executable logic changed.
+
+
+## English proofreading checkpoint006
+
+Sixth-day English s85/n84 lower–s93/n92 upper was read from images and frozen before comparison. Seven corrections restore printed wording/punctuation and remove the unprinted English cue after “O God of the faithful.” Its empty Hebrew cue already represented no print; replacing that cue pair with empty full-text segments also removes unsupported expansion in both languages. Ten XML files validate; documentary reverse comparison, source order, notes, choice branches and expansion boundaries pass. Both service PDFs pass all stanza alignment checks at0.0pt, 6 printed footnotes, direction, contents, bookmarks and boundary checks. Duplicate-note, shifted-stanza and boundary controls fail as intended. Representative source body, pizmon, apparatus and expanded conclusion inspected visually. Same-model second pass; independent-person and exhaustive typography review remain pending.
+
+- Documentary: 13 pages; 0 of 259 Hebrew runs are set left to right; control: 259 of 259 flagged when every run is reversed; SHA-256 `1bb03703944d27ac29377e2860c5d8945213641126c684d15c8d69dbf1018666`.
+- Expanded: 37 pages; 0 of 1303 Hebrew runs are set left to right; control: 1276 of 1303 flagged when every run is reversed; SHA-256 `c85f8be2c96b27772f2a1536afc2afe31a938e4eee64b42685e38cff48ebabe9`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-06/`. Artifacts: `output/asher_selichot/proofreading/english-006/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed.
