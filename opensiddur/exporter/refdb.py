@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 import re
 import sqlite3
+import sys
 from typing import Optional
 
 from lxml import etree
@@ -38,10 +39,6 @@ TEXT_URN_PREFIX = "urn:x-opensiddur:text:"
 #: one instruction URN are two claims on one identity, and the compiler substitutes
 #: whichever won the index for both. See `_warn_on_instruction_collision`.
 INSTRUCTION_URN_PREFIX = "urn:x-opensiddur:instruction:"
-
-
-class DuplicateUrnError(ValueError):
-    """A text URN is mapped to more than one place within a single project."""
 
 
 def _file_hash(file_path: Path | str) -> str:
@@ -158,7 +155,9 @@ def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
     """Find the end element path and tail-inclusion flag for a URN mapping.
 
     For milestone elements, finds the element just before the next milestone that ends
-    this one's scope. For non-milestones, the element itself is the end.
+    this one's scope, or -- when nothing ends it -- the last element of the section of the
+    text it is in (`tei:body`, `tei:front` or `tei:back`). For non-milestones, the element
+    itself is the end.
 
     "Just before" is the nearest preceding sibling of the next milestone, or -- when the
     next milestone is the first element in its parent -- the nearest preceding sibling of
@@ -192,8 +191,16 @@ def find_end_of_mapping(element: ElementBase) -> tuple[str, bool]:
                 include_tail = True
                 break
         if actual_end is None:
-            siblings = element.xpath('./following-sibling::*[last()]|self::*')
-            actual_end = siblings[-1]
+            # Nothing of its unit follows, so the scope runs to the end of the text it is in,
+            # not of its own parent: the last chapter of a book runs on past its first
+            # paragraph. The end is the last element in document order, whose tail is the
+            # last text; it is never an ancestor of the milestone.
+            sections = element.xpath(
+                'ancestor::tei:body|ancestor::tei:front|ancestor::tei:back', namespaces=ns_map)
+            if sections:
+                actual_end = sections[-1].xpath('(.//*)[last()]')[0]
+            else:
+                actual_end = element.xpath('./following-sibling::*[last()]|self::*')[-1]
             include_tail = True
         return actual_end.getroottree().getpath(actual_end), include_tail
     else:
@@ -232,6 +239,8 @@ class ReferenceDatabase:
             database_path: Path to the SQLite database file
         """
         self.database_path = Path(database_path)
+        #: The files that failed to index in this session, which makes a sync fail.
+        self.errors: list[str] = []
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.database_path))
         self.conn.row_factory = sqlite3.Row  # Return rows as dictionaries
@@ -395,8 +404,11 @@ class ReferenceDatabase:
         """
         cursor = self.conn.cursor()
         if urn:
+            # In document order, file by file: a re-indexed file's rows are new, so the order
+            # they were inserted in is not the order of the text.
             cursor.execute('''
-                SELECT * FROM element_references WHERE target_start = ?''', (urn,))
+                SELECT * FROM element_references WHERE target_start = ?
+                ORDER BY project, file_name, rowid''', (urn,))
             by_urn = cursor.fetchall()
         else:
             by_urn = []
@@ -404,7 +416,8 @@ class ReferenceDatabase:
             # Ensure ID has # prefix for query
             id_with_hash = id if id.startswith('#') else f"#{id}"
             cursor.execute('''
-                SELECT * FROM element_references WHERE target_start = ? AND target_is_id = true AND project = ? AND file_name = ?''', (id_with_hash, project, file_name))
+                SELECT * FROM element_references WHERE target_start = ? AND target_is_id = true AND project = ? AND file_name = ?
+                ORDER BY rowid''', (id_with_hash, project, file_name))
             by_id = cursor.fetchall()
         else:
             by_id = []
@@ -436,9 +449,8 @@ class ReferenceDatabase:
         Only occurrences that carry text are compared. An empty occurrence is a reference,
         not a competing definition, and says nothing about what the URN means.
 
-        This warns rather than raises: `index_file` wraps indexing in a bare `except
-        Exception` that prints and returns 0, so a raise would be swallowed and the run
-        would still report success.
+        This warns rather than raises: repeating an instruction is normal, and only the
+        differing wording is a problem, which a person has to judge.
         """
         if not element_text or not urn.startswith(INSTRUCTION_URN_PREFIX):
             return
@@ -462,17 +474,19 @@ class ReferenceDatabase:
             file_name, element_path, element_text,
         )
 
-    def add_urn_mapping(self, project: str, file_name: str, element: ElementBase):
+    def add_urn_mapping(self, project: str, file_name: str, element: ElementBase,
+                        *, commit: bool = True) -> bool:
         """Add or update a URN mapping.
 
         Args:
             project: The project/directory name
             file_name: The file name containing the element
             element: The element that has the URN mapping
+            commit: Whether to commit now; `index_file` commits a whole file at once.
 
-        Raises:
-            DuplicateUrnError: if the same URN is already mapped to a different place in the
-                same project.
+        Returns:
+            False if the mapping was dropped as a repeat of a text URN already mapped
+            elsewhere in the project, else True.
         """
         cursor = self.conn.cursor()
         urn = element.get('corresp')
@@ -490,10 +504,11 @@ class ReferenceDatabase:
             if urn.startswith(INSTRUCTION_URN_PREFIX) else None
         )
 
-        # A text URN names one stretch of text, so a second, different mapping for it within
-        # one project is a data error rather than an update. Letting the conflict resolve
-        # silently is how MAM's repeated Decalogue milestones went unnoticed: the row kept
-        # the first element_path and every later segment became unreachable by URN.
+        # A text URN names one stretch of text. A source may still declare the same text twice
+        # -- a refrain, a passage repeated in the print -- and the copies need not even be
+        # identical, so a second mapping is kept out rather than refused: the first stands,
+        # and the repeat is reported. Letting it pass silently is how MAM's repeated Decalogue
+        # milestones went unnoticed.
         #
         # Only text URNs are identities. A condition URN is a feature name and is meant to
         # repeat — one setting selects the ta'am elyon reading everywhere it occurs — and a
@@ -507,11 +522,12 @@ class ReferenceDatabase:
         if existing is not None and (
             existing['file_name'] != file_name or existing['element_path'] != element_path
         ):
-            raise DuplicateUrnError(
-                f"{urn} is mapped twice in project {project!r}: "
-                f"{existing['file_name']}:{existing['element_path']} and "
-                f"{file_name}:{element_path}"
+            logger.warning(
+                "%s is mapped twice in project %r; keeping %s:%s and dropping %s:%s",
+                urn, project, existing['file_name'], existing['element_path'],
+                file_name, element_path,
             )
+            return False
 
         self._warn_on_instruction_collision(urn, project, file_name, element_path, element_text)
 
@@ -521,18 +537,24 @@ class ReferenceDatabase:
             ON CONFLICT(urn, project) DO UPDATE SET
                 file_name = excluded.file_name,
                 element_path = excluded.element_path,
+                element_tag = excluded.element_tag,
+                element_type = excluded.element_type,
                 end_element_path = excluded.end_element_path,
                 end_includes_tail = excluded.end_includes_tail,
                 element_text = excluded.element_text,
                 updated_at = CURRENT_TIMESTAMP
         ''', (urn, project, file_name, element_path, element_tag, element_type, end_element_path, end_includes_tail, element_text))
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
+        return True
 
-    def add_reference(self, project: str, file_name: str, element: ElementBase):
+    def add_reference(self, project: str, file_name: str, element: ElementBase,
+                      *, commit: bool = True):
         """ Add a reference to the database.
         
         Args:
             element: The element that has the reference
+            commit: Whether to commit now; `index_file` commits a whole file at once.
         """
         cursor = self.conn.cursor()
 
@@ -551,7 +573,8 @@ class ReferenceDatabase:
                 INSERT INTO element_references (element_path, element_tag, element_type, target_start, target_end, target_is_id, corresponding_urn, project, file_name)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (element_path, tag, element_type, target_start, target_end, target_is_id, corresponding_urn, project, file_name))
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
     
     def get_urns_by_project(self, project: str) -> list[UrnMapping]:
         """Get all URN mappings for a specific project.
@@ -662,16 +685,20 @@ class ReferenceDatabase:
             for element in elements_with_corresp:
                 corresp = element.get('corresp')
                 if corresp and corresp.startswith('urn:x-opensiddur:'):
-                    self.add_urn_mapping(project, file_name, element)
-                    count += 1
+                    if self.add_urn_mapping(project, file_name, element, commit=False):
+                        count += 1
             
             elements_with_reference = root.xpath('//*[@target]', namespaces=namespaces)
 
             for element in elements_with_reference:
-                self.add_reference(project, file_name, element)
+                self.add_reference(project, file_name, element, commit=False)
                 count += 1
         except Exception as e:
-            print(f"Error indexing {file_path}: {e}")
+            # A file is indexed whole or not at all: half of it would resolve the URNs before
+            # the failure and not the ones after, and the sync would still look successful.
+            self.conn.rollback()
+            logger.error("Error indexing %s: %s", file_path, e)
+            self.errors.append(f"{file_path}: {e}")
             return 0
 
         # Only a file that indexed cleanly is recorded as indexed. One that failed partway
@@ -704,7 +731,7 @@ class ReferenceDatabase:
             raise ValueError(f"Project path is not a directory: {project_path}")
         
         total_urns = 0
-        xml_files = list(project_path.glob('*.xml'))
+        xml_files = sorted(project_path.glob('*.xml'))
         
         for xml_file in xml_files:
             file_name = xml_file.name
@@ -1038,6 +1065,12 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
         except Exception as e:
             print(f"Error during synchronization: {e}")
             raise
+
+        if refdb.errors:
+            print(f"{len(refdb.errors)} file(s) could not be indexed:")
+            for error in refdb.errors:
+                print(f"  {error}")
+            sys.exit(1)
 
 
 if __name__ == '__main__':  # pragma: no cover

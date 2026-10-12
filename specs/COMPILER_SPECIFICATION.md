@@ -141,7 +141,11 @@ For each element, the processor:
 
 To ensure uniqueness after transclusion, IDs are rewritten using a hash of the processing path:
 
-- Path includes: `project/file_name:element_path` for each context level
+- Path includes `project/file_name:element_path` for each *outer* context level (the element through which
+  the range was entered). The *current* level contributes `project/file_name@from_start-to_end` instead, the
+  bounds of the range being compiled. These are fixed for the whole range, so an `xml:id` and a pointer to it
+  hash alike wherever they sit in it. The element's own path is added only for ids that must differ per element
+  (the parallel compiler's marker ids).
 - Hash: SHA256 of full path, truncated to 8 characters
 - Rewritten IDs: `{original_id}_{hash}`
 - Target references: `#ref` becomes `#ref_{hash}`
@@ -247,10 +251,22 @@ Note: `tei:default` in **conditions** means undefined/any-value for tristate eva
    - Uses `ExternalCompilerProcessor` to extract range
    - Children are appended to wrapper
 
-2. **Inline** (`type="inline"` or default): Extracts text content
-   - Creates `p:transcludeInline` wrapper element
-   - Uses `InlineCompilerProcessor` to extract text
-   - Text content concatenated into wrapper
+2. **Inline** (`type="inline"`): Extracts text content
+   - Creates a `p:transclude[@type='inline']` wrapper; the `InlineCompilerProcessor`'s own result is a
+     `p:transcludeInline`, whose text and children are moved into that wrapper
+   - Text is concatenated exactly as in the source, so a word divided by markup stays one word
+   - Of a `tei:choice`, only the `j:read` (or the first `j:option`) is read
+
+`type` defaults to `external`.
+
+Before compiling a range, the compiler checks:
+- **Cycles.** The range is not already being transcluded (`LinearData.transclusion_chain`). A cycle raises
+  and names the chain.
+- **Order.** The end does not precede the start.
+- **One file.** Both ends are in one file. A range whose ends are in different files raises, saying so,
+  rather than reporting a URN as not found.
+
+A target with an `@project` suffix is taken from that project, whatever the priority list says.
 
 ### Range Resolution
 
@@ -482,7 +498,9 @@ When end URN is a milestone, the actual end is exclusive:
   last text before the milestone, so `include_tail_after_end` picks that text up. Ending
   at the deepest preceding element instead would land inside a subtree and drop the text
   between that subtree's close and the milestone.
-- If not found: include all siblings up to last sibling
+- If not found: run to the end of the section of the text (`tei:body`, `tei:front`, `tei:back`): the end
+  element is that section's last element in document order, with its tail. See JLPTEI-3.md, "URN scope",
+  for the full rule.
 
 ### Tail Text Handling
 
@@ -747,7 +765,7 @@ The compiler raises `ValueError` for:
 **Processing:**
 1. Resolve URN to start element
 2. Use InlineCompilerProcessor to extract text
-3. Create `p:transcludeInline` with text content
+3. Create `p:transclude[@type='inline']` with the text content
 4. Look up annotations for `xml:id="verse1"`
 5. Insert annotations before the first words of `p`
 

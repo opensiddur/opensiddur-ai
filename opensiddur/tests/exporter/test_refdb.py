@@ -11,7 +11,6 @@ from lxml import etree
 from lxml.etree import ElementBase
 from opensiddur.exporter import refdb
 from opensiddur.exporter.refdb import (
-    DuplicateUrnError,
     ReferenceDatabase,
     UrnMapping,
     Reference,
@@ -88,22 +87,23 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
                       ("urn:x-opensiddur:text:doc1", project))
         self.assertEqual(cursor.fetchone()['n'], 1)
 
-    def test_the_same_urn_twice_in_one_project_is_an_error(self):
-        """A URN names one stretch of text, so a second mapping for it is a data error.
+    def test_the_same_urn_twice_in_one_project_keeps_the_first_and_warns(self):
+        """A source may declare the same text twice; the repeat is reported, not mapped.
 
-        Resolving the conflict silently is how MAM's repeated Decalogue milestones went
-        unnoticed: the row kept the first location and the rest became unreachable by URN.
+        Letting it pass silently is how MAM's repeated Decalogue milestones went unnoticed.
         """
         project = "test_project"
         elem1 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
-        self.db.add_urn_mapping(project, "file1.xml", elem1)
+        self.assertTrue(self.db.add_urn_mapping(project, "file1.xml", elem1))
 
         elem2 = self._create_element_with_corresp("urn:x-opensiddur:text:doc1", "chapter")
-        with self.assertRaises(DuplicateUrnError) as caught:
-            self.db.add_urn_mapping(project, "file2.xml", elem2)
-        self.assertIn("urn:x-opensiddur:text:doc1", str(caught.exception))
+        with self.assertLogs("opensiddur.exporter.refdb", level="WARNING") as logs:
+            self.assertFalse(self.db.add_urn_mapping(project, "file2.xml", elem2))
+        self.assertIn("urn:x-opensiddur:text:doc1", "".join(logs.output))
+        mappings = self.db.get_urn_mappings("urn:x-opensiddur:text:doc1", project)
+        self.assertEqual([m.file_name for m in mappings], ["file1.xml"])
 
-    def test_a_second_location_in_the_same_file_is_an_error(self):
+    def test_a_second_location_in_the_same_file_keeps_the_first(self):
         root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
         first = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
         first.set("corresp", "urn:x-opensiddur:text:doc1")
@@ -111,8 +111,25 @@ class TestReferenceDatabaseBasics(unittest.TestCase):
         second.set("corresp", "urn:x-opensiddur:text:doc1")
 
         self.db.add_urn_mapping("test_project", "file1.xml", first)
-        with self.assertRaises(DuplicateUrnError):
+        with self.assertLogs("opensiddur.exporter.refdb", level="WARNING"):
             self.db.add_urn_mapping("test_project", "file1.xml", second)
+        mappings = self.db.get_urn_mappings("urn:x-opensiddur:text:doc1", "test_project")
+        self.assertEqual(len(mappings), 1)
+        self.assertTrue(mappings[0].element_path.endswith("div[1]"), mappings[0].element_path)
+
+    def test_an_update_rewrites_every_column(self):
+        """Re-mapping a URN at the same place replaces its tag and type as well."""
+        root = etree.Element("{http://www.tei-c.org/ns/1.0}TEI")
+        div = etree.SubElement(root, "{http://www.tei-c.org/ns/1.0}div")
+        div.set("corresp", "urn:x-opensiddur:text:doc1")
+        div.set("type", "chapter")
+        self.db.add_urn_mapping("test_project", "file1.xml", div)
+        div.set("type", "section")
+        self.db.add_urn_mapping("test_project", "file1.xml", div)
+        row = self.db.conn.execute(
+            "SELECT element_type FROM urn_mappings WHERE urn = ?",
+            ("urn:x-opensiddur:text:doc1",)).fetchone()
+        self.assertEqual(row["element_type"], "section")
 
     def test_add_urn_mapping_multiple_projects(self):
         """Test that same URN can exist in multiple projects."""
@@ -989,7 +1006,7 @@ class TestIncrementalSync(unittest.TestCase):
         project_path.mkdir()
         (project_path / "broken.xml").write_text("<TEI><unclosed></TEI>")
 
-        with mock.patch('builtins.print'):
+        with self.assertLogs("opensiddur.exporter.refdb", level="ERROR"):
             first = self.db.sync_file("broken.xml", "proj", self.project_dir)
             second = self.db.sync_file("broken.xml", "proj", self.project_dir)
 
@@ -997,22 +1014,26 @@ class TestIncrementalSync(unittest.TestCase):
         self.assertEqual(second['action'], 'added')
         self.assertIsNone(self.db._get_indexed_hash("broken.xml", "proj"))
 
-    def test_a_partial_index_is_cleared_before_the_retry(self):
-        # b.xml maps the same text URN as a.xml: indexing it writes t/stale, then stops at
-        # the duplicate, and it is left unrecorded.
+    def test_a_file_that_fails_partway_leaves_nothing_behind(self):
+        """A file is indexed whole or not at all, and the failure is recorded for the sync.
+
+        Indexed row by row, a failure partway left the URNs before it resolvable and the ones
+        after it not, while the sync still reported success.
+        """
         self._write("proj", "a.xml", urns=["urn:x-opensiddur:text:t/a"])
-        self._write("proj", "b.xml", targets=["#x"])
-        self.db.sync_projects(self.project_dir)
-        self._write("proj", "b.xml", urns=["urn:x-opensiddur:text:t/stale",
-                                           "urn:x-opensiddur:text:t/a"])
-        with mock.patch('builtins.print'):
+        self._write("proj", "b.xml", urns=["urn:x-opensiddur:text:t/stale"], targets=["#x"])
+        with mock.patch.object(self.db, "add_reference", side_effect=RuntimeError("boom")), \
+                self.assertLogs("opensiddur.exporter.refdb", level="ERROR"):
             self.db.sync_projects(self.project_dir)
         self.assertIsNone(self.db._get_indexed_hash("b.xml", "proj"))
-        self.assertIn("urn:x-opensiddur:text:t/stale",
+        self.assertNotIn("urn:x-opensiddur:text:t/stale",
+                         [m.urn for m in self.db.get_urns_by_project("proj")])
+        self.assertIn("urn:x-opensiddur:text:t/a",
                       [m.urn for m in self.db.get_urns_by_project("proj")])
+        self.assertEqual(len(self.db.errors), 1)
+        self.assertIn("b.xml", self.db.errors[0])
 
-        # Once the conflict is gone the retry leaves exactly what a fresh build does.
-        self._write("proj", "b.xml", urns=["urn:x-opensiddur:text:t/b"])
+        # Once the failure is gone the retry leaves exactly what a fresh build does.
         self.db.sync_projects(self.project_dir)
         fresh = self._open('fresh.db')
         fresh.sync_projects(self.project_dir)
@@ -1704,7 +1725,7 @@ class TestFindEndOfMapping(unittest.TestCase):
         self.assertTrue(include_tail)
 
     def test_no_following_milestone_ends_at_the_last_sibling(self):
-        """The last milestone in a file scopes to the end of its parent."""
+        """The last milestone in a file scopes to the end of its text, here its parent's end."""
         xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
     <tei:text><tei:body><tei:div>
         <tei:milestone unit="verse" corresp="urn:book/1/1"/> one
@@ -1714,6 +1735,18 @@ class TestFindEndOfMapping(unittest.TestCase):
 </tei:TEI>'''
         end_path, include_tail = self._end_of(xml, "urn:book/1/1")
         self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:p")
+        self.assertTrue(include_tail)
+
+    def test_no_following_milestone_runs_past_its_parent(self):
+        """The last chapter of a book does not stop at the end of its first paragraph."""
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <tei:text><tei:body><tei:div>
+        <tei:p><tei:milestone unit="chapter" corresp="urn:book/9"/> first paragraph</tei:p>
+        <tei:p>second paragraph <tei:hi>with</tei:hi> its end</tei:p>
+    </tei:div></tei:body><tei:back><tei:p>not the chapter</tei:p></tei:back></tei:text>
+</tei:TEI>'''
+        end_path, include_tail = self._end_of(xml, "urn:book/9")
+        self.assertEqual(end_path, "/tei:TEI/tei:text/tei:body/tei:div/tei:p[2]/tei:hi")
         self.assertTrue(include_tail)
 
 

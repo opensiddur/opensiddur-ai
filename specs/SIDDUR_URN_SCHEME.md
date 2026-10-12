@@ -471,7 +471,7 @@ which does not exist.
 ## Ending a scope: the unit-terminating milestone
 
 A `@corresp` on a milestone scopes to the next milestone of the same unit *or the end of
-the file*. That over-claims whenever a division ends partway through a file with nothing
+the text* (see JLPTEI-3.md, "URN scope", for the full rule). That over-claims whenever a division ends partway through a file with nothing
 of its kind after it — which a siddur hits constantly, because a page of shared text ends
 with material belonging to no named prayer.
 

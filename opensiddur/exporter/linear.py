@@ -99,6 +99,8 @@ class LinearData(BaseModel):
     conditional_settings: list[ConditionalSettingEntry] = Field(default_factory=list)
     # open j:conditional scopes (innermost last)
     conditional_scope_stack: list[ConditionalScope] = Field(default_factory=list)
+    # the ranges being transcluded, outermost first: (project, file, start path, end path)
+    transclusion_chain: list[tuple[str, str, str, str]] = Field(default_factory=list)
     # project priority for URN resolution of texts
     project_priority: list[str] = Field(default_factory=list)
     # project priority for URN resolution of instructions

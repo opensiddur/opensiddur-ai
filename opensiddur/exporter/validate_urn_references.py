@@ -35,6 +35,7 @@ class UnresolvableUrnReference:
     element_path: str
     attribute_name: str
     urn: str
+    reason: Optional[str] = None
 
 
 def _iter_project_xml_files(project_path: Path) -> Iterable[Path]:
@@ -54,7 +55,12 @@ def _resolvable(
     a standoff note's anchor), and any ``urn:`` value when ``check_urns`` is false.
     """
     if value.startswith("urn:x-opensiddur:"):
-        return not check_urns or bool(resolver.resolve_range(value))
+        if not check_urns:
+            return True
+        try:
+            return bool(resolver.resolve_range(value))
+        except ValueError:
+            return False  # a malformed range does not resolve
     if value.startswith("http://") or value.startswith("https://"):
         return True
     file_ref = parse_file_fragment_ref(value)
@@ -117,7 +123,11 @@ def validate_project_urn_references(
 
                 if target:
                     if check_urns and target.startswith("urn:x-opensiddur:"):
-                        start_candidates = resolver.resolve_range(target)
+                        try:
+                            start_candidates, reason = resolver.resolve_range(target), None
+                        except ValueError as malformed:
+                            # A malformed range, or one whose ends are in different files.
+                            start_candidates, reason = [], str(malformed)
                         if not start_candidates:
                             failures.append(
                                 UnresolvableUrnReference(
@@ -126,6 +136,7 @@ def validate_project_urn_references(
                                     element_path=tree.getpath(el),
                                     attribute_name="target",
                                     urn=target,
+                                    reason=reason,
                                 )
                             )
                         else:
@@ -154,7 +165,10 @@ def validate_project_urn_references(
 
                 if target_end:
                     if start_project is not None and target_end.startswith("urn:x-opensiddur:"):
-                        end_candidates = resolver.resolve_range(target_end)
+                        try:
+                            end_candidates = resolver.resolve_range(target_end)
+                        except ValueError:
+                            end_candidates = []
                         prioritized_end = end_candidates and UrnResolver.prioritize_range(
                             end_candidates, [start_project]
                         )
@@ -337,7 +351,8 @@ def find_coarsened_urn_references(
 
 
 def _format_failure(f: UnresolvableUrnReference) -> str:
-    return f"{f.project}/{f.file_name}: {f.element_path} @{f.attribute_name}={f.urn}"
+    message = f"{f.project}/{f.file_name}: {f.element_path} @{f.attribute_name}={f.urn}"
+    return f"{message} ({f.reason})" if f.reason else message
 
 
 def _format_contributor(c: InvalidContributorReference) -> str:

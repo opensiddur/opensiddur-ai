@@ -10,11 +10,38 @@ from opensiddur.exporter.compiler import (
     _AnnotationCommand,
 )
 from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
+from opensiddur.exporter.constants import (
+    JLPTEI_NAMESPACE,
+    PROCESSING_NAMESPACE,
+    TEI_NS,
+    is_element_node,
+)
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import ReferenceDatabase
 from lxml import etree
+
+
+TEI_CHOICE = f"{{{TEI_NS}}}choice"
+J_READ = f"{{{JLPTEI_NAMESPACE}}}read"
+J_OPTION = f"{{{JLPTEI_NAMESPACE}}}option"
+
+
+def _unread_choices(element: ElementBase) -> set[ElementBase]:
+    """The children of a tei:choice that inline text leaves out.
+
+    Inline text has room for one reading of a word. A ketiv and a qere are two readings of one
+    word, and the qere (j:read) is what is read; set side by side they would double the word.
+    A choice of wordings (j:option) has no one reading, and the first stands in, as it does
+    where sub-verse boundaries are measured (opensiddur/common/subverse.py).
+    """
+    if element.tag != TEI_CHOICE:
+        return set()
+    readings = [child for child in element if child.tag == J_READ] or [
+        child for child in element if child.tag == J_OPTION][:1]
+    if not readings:
+        return set()
+    return {child for child in element if is_element_node(child) and child not in readings}
 
 
 class InlineCompilerProcessor(CompilerProcessor):
@@ -209,7 +236,10 @@ class InlineCompilerProcessor(CompilerProcessor):
         # the command is some kind of recursion now, COPY_TEXT_AND_RECURSE or RECURSE
         context_lang = self._get_in_scope_language(element)
         previous_child = None
+        unread = _unread_choices(element)
         for child in element:
+            if child in unread:
+                continue
             processed = self._process_element(child, root)
             # Check if this child has a language different from the root
             child_lang = self._get_in_scope_language(child)
@@ -246,9 +276,9 @@ class InlineCompilerProcessor(CompilerProcessor):
                 # tail is conditional text. See _carry_dropped_tail.
                 if child.tail and not self._should_skip_conditional_content():
                     if previous_child is not None:
-                        previous_child.tail = (previous_child.tail or "") + " " + child.tail
+                        previous_child.tail = (previous_child.tail or "") + child.tail
                     else:
-                        text_element.text += " " + child.tail
+                        text_element.text += child.tail
             if self._closers_due:
                 # The range ended at this child: close the scopes it ends inside, after the
                 # end and its tail.
@@ -268,8 +298,7 @@ class InlineCompilerProcessor(CompilerProcessor):
 
         self.root_language = self._get_in_scope_language(root)
 
-        with self._conditional_settings_checkpoint():
-            self.linear_data.processing_context.append(_ProcessingContext(
+        with self._conditional_settings_checkpoint(), self._processing_frame(_ProcessingContext(
                 project=self.project,
                 file_name=self.file_name,
                 from_start=self.from_start,
@@ -279,14 +308,10 @@ class InlineCompilerProcessor(CompilerProcessor):
                 include_tail_after_end=False,
                 command=_ProcessingCommand.RECURSE,
                 inside_deepest_common_ancestor=False,
-            ))
-
+        )):
             element = self._process_element(root, root)
             # Owed only when the range ended on the root itself, with no parent loop
             # to place them in.
             self._flush_closers_due(element)
-
-            # pop the processing context
-            self.linear_data.processing_context.pop()
 
         return element
