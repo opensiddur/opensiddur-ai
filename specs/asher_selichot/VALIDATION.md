@@ -1404,3 +1404,13 @@ Sixth-day English s85/n84 lower–s93/n92 upper was read from images and frozen 
 - Expanded: 37 pages; 0 of 1303 Hebrew runs are set left to right; control: 1276 of 1303 flagged when every run is reversed; SHA-256 `c85f8be2c96b27772f2a1536afc2afe31a938e4eee64b42685e38cff48ebabe9`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-06/`. Artifacts: `output/asher_selichot/proofreading/english-006/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed.
+
+
+## English proofreading checkpoint007
+
+Seventh-day English s93/n92 lower–s101/n100 upper was read from images and frozen before comparison. Two missing commas are restored in printed rubrics; the body, eight footnotes and printed refrain occurrences match the fresh reading. The fresh s97 label47 is only a candidate, since no numeral is visible. Ten XML files validate; documentary reverse comparison, source order, notes, choice branches and expansion boundaries pass. Both service PDFs pass all stanza alignment checks at0.0pt, 8 printed footnotes, direction, contents, bookmarks and boundary checks. Duplicate-note, shifted-stanza and boundary controls fail as intended. Representative source body, pizmon, apparatus and expanded conclusion inspected visually. Same-model second pass; independent-person and exhaustive typography review remain pending.
+
+- Documentary: 14 pages; 0 of 282 Hebrew runs are set left to right; control: 282 of 282 flagged when every run is reversed; SHA-256 `405780300babf2e56ef81a60a14da13bb039e22f8fd5e30a0bcc3f477c63b700`.
+- Expanded: 38 pages; 0 of 1326 Hebrew runs are set left to right; control: 1266 of 1326 flagged when every run is reversed; SHA-256 `025451ac86a11b192c794f8151d727015b170b741ac0cee014e0224394659cb8`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-07/`. Artifacts: `output/asher_selichot/proofreading/english-007/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed.
