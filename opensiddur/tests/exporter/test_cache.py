@@ -242,9 +242,6 @@ class TestXMLCache(unittest.TestCase):
         self.assertEqual(keys[0], (self.base_path, "wlc", "genesis.xml"))
 
 
-if __name__ == '__main__':
-    unittest.main()
-
 
 
 class TestXMLCacheBasePath(unittest.TestCase):
@@ -259,3 +256,7 @@ class TestXMLCacheBasePath(unittest.TestCase):
             self.assertEqual(cache.parse_xml("p", "a.xml").getroot().text, "first")
             cache.base_path = Path(second)
             self.assertEqual(cache.parse_xml("p", "a.xml").getroot().text, "second")
+
+
+if __name__ == '__main__':
+    unittest.main()

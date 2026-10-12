@@ -2,12 +2,14 @@
 
 import argparse
 import ast
+import io
 import hashlib
 import logging
 from pathlib import Path
 import re
 import sqlite3
 import sys
+import tokenize
 from typing import Optional
 
 from lxml import etree
@@ -20,19 +22,32 @@ logger = logging.getLogger(__name__)
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 
 def _code_version(source: str) -> str:
-    """A hash of what ``source`` does: its syntax tree, without comments or docstrings.
+    """A hash of what ``source`` does: its lines, without comments, docstrings or blank lines.
 
     Rewording a comment does not change how anything is indexed, and must not throw away a
-    database that takes minutes to rebuild.
+    database that takes minutes to rebuild. The text is hashed rather than the syntax tree,
+    whose printed form changes from one Python version to the next.
     """
-    tree = ast.parse(source)
-    for node in ast.walk(tree):
+    lines = source.splitlines()
+    dropped: set[int] = set()
+    for node in ast.walk(ast.parse(source)):
         body = getattr(node, "body", None)
         if (isinstance(body, list) and body and isinstance(body[0], ast.Expr)
                 and isinstance(body[0].value, ast.Constant)
                 and isinstance(body[0].value.value, str)):
-            node.body = body[1:] or [ast.Pass()]
-    return hashlib.sha256(ast.dump(tree).encode("utf-8")).hexdigest()
+            dropped.update(range(body[0].lineno, body[0].end_lineno + 1))
+    comments: dict[int, int] = {}
+    for token in tokenize.generate_tokens(io.StringIO(source).readline):
+        if token.type == tokenize.COMMENT:
+            comments[token.start[0]] = token.start[1]
+    kept = []
+    for number, line in enumerate(lines, start=1):
+        if number in dropped:
+            continue
+        line = line[:comments.get(number, len(line))].rstrip()
+        if line:
+            kept.append(line)
+    return hashlib.sha256("\n".join(kept).encode("utf-8")).hexdigest()
 
 
 #: Identifies the indexing code that built a database. A database is only valid for the code

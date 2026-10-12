@@ -488,7 +488,9 @@ Annotations may have different languages than their context:
 Elements are marked with their source file when processing context changes:
 
 - Attributes: `p:file_name` and `p:project` (in processing namespace)
-- Only added when: previous context differs from current, or this is first context
+- Only added when the element's source differs from the file it is set in (the enclosing file), or
+  when it is set in no file at all (the compiled root). A range transcluded from the same file
+  is not marked; consumers take the source from the nearest marked ancestor.
 - Applied to: transcluded elements, annotations, and root elements
 
 ## Special Cases

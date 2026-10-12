@@ -152,6 +152,25 @@ class TestIndexAndNamespaces(CompilerGuardTestCase):
         self.assertIn("plain", self.compile("p", "index.xml"))
 
 
+class TestRubricIds(CompilerGuardTestCase):
+    def test_a_replaced_rubric_in_a_holding_condition_is_rewritten_once(self):
+        rubric = "urn:x-opensiddur:instruction:test/say"
+        fs = '<tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>'
+        self.write("p", "notes.xml",
+                   f'<tei:p><tei:note type="instruction" corresp="{rubric}" xml:id="rub">'
+                   f'Say this:</tei:note></tei:p>')
+        self.write("p", "index.xml",
+                   f'<j:declare xml:id="d">{fs}</j:declare>'
+                   f'<j:conditional xml:id="c"><tei:note type="instruction" corresp="{rubric}"/>'
+                   f'{fs}</j:conditional><tei:p>the passage</tei:p>'
+                   f'<j:endConditional target="#c"/><j:endDeclare target="#d"/>')
+        compiled = self.compile("p", "index.xml")
+        self.assertNotIn("ids-rewritten", compiled)
+        note = etree.fromstring(f"<r>{compiled}</r>").find(f".//{{{TEI}}}note")
+        self.assertEqual("".join(note.itertext()), "Say this:")
+        self.assertRegex(note.get("{http://www.w3.org/XML/1998/namespace}id"), r"^rub_[0-9a-f]{8}$")
+
+
 class TestFileSources(CompilerGuardTestCase):
     def test_text_taken_back_from_the_first_file_is_credited_to_it(self):
         """a.xml -> b.xml -> a.xml: the innermost text comes from a.xml, not from b.xml."""

@@ -1,5 +1,6 @@
 """External compiler processor for processing specific ranges of XML files."""
 
+import difflib
 import logging
 from contextlib import contextmanager
 from typing import Any, Optional
@@ -10,6 +11,7 @@ from opensiddur.exporter.compiler import (
     _ProcessingCommand,
     _ProcessingContext,
     _AnnotationCommand,
+    UnresolvedTarget,
     transclusion_type_of,
 )
 from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
@@ -629,21 +631,29 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     split_project(transclude_el.get('targetEnd') or '')[0])
 
         def pair_transcludes(prim_ts, par_ts):
-            """(i, j) for each primary transclusion matched in order to a parallel one.
+            """(i, j) for each primary transclusion paired, in order, with a parallel one.
 
-            Matched by what they transclude, not by position: a column that transcludes
-            one file more than the other must not set the next file's translation beside
-            the wrong text.
+            Paired first by what they transclude, as many as can be kept in order (the
+            longest common subsequence of the two key sequences), not by position: a column
+            that transcludes one file more than the other must not set the next file's
+            translation beside the wrong text. Between two such pairs, what is left on each
+            side is paired by position, as everything once was -- the two sides may take the
+            same text at different granularity (a chapter beside its verses). Only what is
+            left over then is set alone.
             """
+            prim_keys = [transclude_key(t) for t in prim_ts]
+            par_keys = [transclude_key(t) for t in par_ts]
+            matcher = difflib.SequenceMatcher(None, prim_keys, par_keys, autojunk=False)
+            anchors = [(block.a + k, block.b + k)
+                       for block in matcher.get_matching_blocks() for k in range(block.size)]
             pairs = []
-            next_j = 0
-            for i, prim_t in enumerate(prim_ts):
-                key = transclude_key(prim_t)
-                for j in range(next_j, len(par_ts)):
-                    if transclude_key(par_ts[j]) == key:
-                        pairs.append((i, j))
-                        next_j = j + 1
-                        break
+            i0 = j0 = 0
+            for i, j in anchors + [(len(prim_ts), len(par_ts))]:
+                gap = min(i - i0, j - j0)
+                pairs.extend((i0 + k, j0 + k) for k in range(gap))
+                if i < len(prim_ts):
+                    pairs.append((i, j))
+                i0, j0 = i + 1, j + 1
             return pairs
 
         def combine(prim_t, par_t, prim_src, par_src, prim_lang, par_lang):
@@ -694,9 +704,19 @@ class ExternalCompilerProcessor(CompilerProcessor):
             for i, j in pairs:
                 output.extend(rows(primary_segments[i0], parallel_segments[j0]))
                 for k in range(i0, i):
+                    logger.warning(
+                        "parallel: %s/%s transcludes %s, which %s/%s has no counterpart of; "
+                        "it is set without a parallel column",
+                        prim_src[0], prim_src[1], primary_transcludes[k].get('target'),
+                        par_src[0], par_src[1])
                     output.append(joined(primary_transcludes[k], None))
                     output.extend(rows(primary_segments[k + 1], []))
                 for k in range(j0, j):
+                    logger.warning(
+                        "parallel: %s/%s transcludes %s, which %s/%s has no counterpart of; "
+                        "it is set without a primary column",
+                        par_src[0], par_src[1], parallel_transcludes[k].get('target'),
+                        prim_src[0], prim_src[1])
                     output.append(joined(None, parallel_transcludes[k]))
                     output.extend(rows([], parallel_segments[k + 1]))
                 if i < len(primary_transcludes):
@@ -726,9 +746,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
         try:
             resolved = self._get_start_and_end_from_ranges(
                 parallel_target, parallel_end, project_priority=[parallel_project])
-        except ValueError as unresolvable:
+        except UnresolvedTarget as unresolved:
+            # The usual case: this project does not carry the text at all.
             logger.debug("parallel: %s has no column for %s: %s",
-                         parallel_project, parallel_target, unresolvable)
+                         parallel_project, parallel_target, unresolved)
             return None
         except Exception:
             logger.warning(

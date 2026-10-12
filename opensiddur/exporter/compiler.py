@@ -136,6 +136,15 @@ def transclusion_type_of(element: ElementBase) -> str:
     return element.get('type') or 'external'
 
 
+#: Marks an element whose ids its own processor has already rewritten, for the one
+#: `_rewrite_ids` call that would otherwise rewrite them again; that call removes it.
+_ALREADY_REWRITTEN = f"{{{PROCESSING_NAMESPACE}}}ids-rewritten"
+
+
+class UnresolvedTarget(ValueError):
+    """A transclusion target that no project in the priority list carries."""
+
+
 class CompilerProcessor:
     def __init__(
         self, 
@@ -295,6 +304,9 @@ class CompilerProcessor:
 
     def _rewrite_single_element_ids(self, element: ElementBase) -> ElementBase:
         """ Rewrite the ids of a single element """
+        if _ALREADY_REWRITTEN in element.attrib:
+            del element.attrib[_ALREADY_REWRITTEN]
+            return element
         xml_id = element.attrib.get('{http://www.w3.org/XML/1998/namespace}id')
         target = element.attrib.get('target')
         target_end = element.attrib.get('targetEnd')
@@ -696,8 +708,8 @@ class CompilerProcessor:
             )
             return coarsened, coarser
         if not resolved:
-            raise ValueError(f"Target URN {urn!r} not found")
-        raise ValueError(f"No prioritized URNs found: {urn!r} {project_priority=}")
+            raise UnresolvedTarget(f"Target URN {urn!r} not found")
+        raise UnresolvedTarget(f"No prioritized URNs found: {urn!r} {project_priority=}")
 
     def _get_start_and_end_from_ranges(
         self,
@@ -1119,7 +1131,12 @@ class CompilerProcessor:
                     selected, command = self._annotate(kept)
                     if command == _AnnotationCommand.REPLACE:
                         note = selected[0]
-                        return True, note if "".join(note.itertext()).strip() else None
+                        if not "".join(note.itertext()).strip():
+                            return True, None
+                        # Compiled, and its ids rewritten, by its own processor; the caller
+                        # rewrites what it is handed, which would do it twice.
+                        note.set(_ALREADY_REWRITTEN, "")
+                        return True, note
                     return True, self._copy_element_subtree(kept)
             return True, None
 

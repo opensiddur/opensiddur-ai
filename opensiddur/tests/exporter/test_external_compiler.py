@@ -1939,6 +1939,35 @@ class TestExternalCompilerParallelTransclude(unittest.TestCase):
 
         self.assertEqual(got, ("parallel", "p.xml", "/tei:TEI", "/tei:TEI/tei:text", True))
 
+    BIBLE = "urn:x-opensiddur:text:bible:genesis"
+
+    def _resolving(self, files):
+        """resolve_range for URNs (without @project) carried in `files`: urn -> file name."""
+        def resolve(urn):
+            bare = urn.rsplit("@", 1)[0]
+            if bare not in files:
+                return []
+            return [ResolvedUrn(project="parallel", file_name=files[bare], urn=bare,
+                                element_path=f"/{bare.rsplit('/', 1)[1]}")]
+        return resolve
+
+    def test_a_parallel_end_the_column_lacks_falls_back_on_its_verse(self):
+        proc = self._make_processor()
+        files = {f"{self.BIBLE}/1/1": "g.xml", f"{self.BIBLE}/1/2": "g.xml"}
+        with patch.object(proc._urn_resolver, "resolve_range", side_effect=self._resolving(files)):
+            got = proc._resolve_parallel_range(
+                f"{self.BIBLE}/1/1", target_end=f"{self.BIBLE}/1/2/b", parallel_project="parallel")
+        self.assertEqual(got[:4], ("parallel", "g.xml", "/1", "/2"))
+
+    def test_a_parallel_range_across_files_is_refused_and_said_to_be(self):
+        proc = self._make_processor()
+        files = {f"{self.BIBLE}/1/1": "g.xml", f"{self.BIBLE}/1/2": "other.xml"}
+        with (patch.object(proc._urn_resolver, "resolve_range", side_effect=self._resolving(files)),
+              self.assertLogs("opensiddur.exporter.external_compiler", level="WARNING")):
+            got = proc._resolve_parallel_range(
+                f"{self.BIBLE}/1/1", target_end=f"{self.BIBLE}/1/2", parallel_project="parallel")
+        self.assertIsNone(got)
+
     def test_resolve_parallel_range_returns_none_when_unresolved(self):
         proc = self._make_processor()
 

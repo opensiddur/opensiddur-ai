@@ -58,8 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More compiler fixes from the review (#241):
   - **Parallel transclusions are paired by what they transclude**, not by position. When one
     column transcluded a file the other did not, that content was dropped, and the next
-    file's translation was set beside the wrong text. Unmatched transclusions are now set
-    alone.
+    file's translation was set beside the wrong text. As many as keep their order now pair
+    by target. What is left between two pairs pairs by position, as before, which covers a
+    chapter set beside its verses. Anything still unmatched is set alone, with a warning.
   - **Repeated alignment keys.** An alignment key repeated in one column keeps its first
     segment, as before, but now warns.
   - **One resolver for transclusion targets.** The primary text and parallel columns now
@@ -79,7 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Credits and failed parallel columns.** The credits of a failed parallel column are
     rolled back with it.
   - **Reference database.**
-    - Editing a comment or docstring in `refdb.py` no longer discards it.
+    - Editing a comment or docstring in `refdb.py` no longer discards it. Neither does
+      changing the Python version.
     - `urn_registry --check` fails against an empty database instead of passing without
       looking.
     - The compiler warns when a file has changed since it was indexed.
@@ -93,6 +95,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     external everywhere.
   - **Empty output.** A compile that produces nothing now reports it, instead of raising
     `IndexError`.
+  - **Rubrics in a holding condition.** A rubric that replaces the one in a condition that
+    holds no longer has its ids rewritten twice.
+  - **Parallel column failures.** A column the project does not carry is skipped quietly,
+    but any other failure to resolve it now warns.
 - **Last milestone in a file** (#240). When nothing ended a milestone's scope, it stopped at the end
   of its own paragraph. It now runs to the end of its outermost division. The last chapter of 42
   JPS 1917 books, and of 30 WLC and 31 MAM files, had resolved to its first paragraph alone;

@@ -186,6 +186,35 @@ class TestAssembleParallelStreams(unittest.TestCase):
         transcludes = [el for el in result if el.tag == f"{{{P_NS}}}transclude"]
         self.assertEqual([self._texts(t) for t in transcludes], ["X-he", "Y-heY-en"])
 
+    def _transcluded_texts(self, result):
+        return [self._texts(el) for el in result if el.tag == f"{{{P_NS}}}transclude"]
+
+    def test_crossed_transclusions_pair_as_many_as_keep_their_order(self):
+        """[X, A, B] beside [A, B, X]: A and B pair; X is set alone on each side."""
+        prim = [self._transclude(f"urn:{k}@orig", self._div(f"{k}-he")) for k in "XAB"]
+        par = [self._transclude(f"urn:{k}@trans", self._div(f"{k}-en")) for k in "ABX"]
+        with self.assertLogs("opensiddur.exporter.external_compiler", level="WARNING") as logs:
+            result = self._assemble(prim, par)
+        self.assertEqual(self._transcluded_texts(result), ["X-he", "A-heA-en", "B-heB-en", "X-en"])
+        self.assertEqual(sum("no counterpart" in line for line in logs.output), 2)
+
+    def test_the_same_text_at_different_granularity_still_pairs(self):
+        """A chapter beside its first verse: nothing else to pair with, so they pair by place."""
+        prim = [self._transclude("urn:x/1/1@orig", self._div("verse-he"))]
+        par = [self._transclude("urn:x/1@trans", self._div("chapter-en"))]
+        result = self._assemble(prim, par)
+        self.assertEqual(self._transcluded_texts(result), ["verse-hechapter-en"])
+
+    def test_an_empty_type_ends_a_parallel_block(self):
+        """type="" is external, so the transclusion is a block boundary like any other."""
+        prim = [self._div("before"), self._transclude("urn:t@orig"), self._div("after")]
+        par = [self._div("vor"), self._transclude("urn:t@trans"), self._div("nach")]
+        for transclusion in (prim[1], par[1]):
+            transclusion.set("type", "")
+        result = self._assemble(prim, par)
+        self.assertEqual([el.tag for el in result],
+                         [f"{{{P_NS}}}parallel", f"{{{P_NS}}}transclude", f"{{{P_NS}}}parallel"])
+
     def test_a_repeated_alignment_key_is_reported(self):
         def verse(urn):
             milestone = etree.Element(f"{{{TEI_NS}}}milestone", nsmap=self.ns)
