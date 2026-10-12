@@ -16,7 +16,7 @@ _BACKSLASH_SENTINEL = "\x00"
 def escape_tex(s: str) -> str:
     """Escape characters that have special meaning in LaTeX.
 
-    Covers the same characters as ``f:escape-tex`` in ``reledmac.xslt``.
+    Covers the same characters, the same way, as ``f:escape-tex`` in ``tex/common.xsl``.
     """
     t = s.replace("\\", _BACKSLASH_SENTINEL)
     t = re.sub(r"([&%$#_{}])", r"\\\1", t)

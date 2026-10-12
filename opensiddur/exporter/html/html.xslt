@@ -475,6 +475,8 @@
             </xsl:call-template>
             <xsl:if test="$opens">
                 <xsl:apply-templates select="tei:note[@type = 'instruction']" mode="rubric"/>
+                <!-- Notes the compiler set on the rubric: numbered with the others, so shown. -->
+                <xsl:apply-templates select="tei:note[not(@type = 'instruction')]"/>
             </xsl:if>
             <span class="cm-br" aria-hidden="true">
                 <xsl:if test="$in-text or $block = 'brackets'">
@@ -486,7 +488,7 @@
 
     <!-- An unpaired marker governs nothing that can be found; its rubric is still said. -->
     <xsl:template match="j:conditional">
-        <xsl:apply-templates select="tei:note[@type = 'instruction']"/>
+        <xsl:apply-templates select="tei:note"/>
     </xsl:template>
 
     <xsl:template match="j:endConditional"/>

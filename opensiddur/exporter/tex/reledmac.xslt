@@ -789,9 +789,9 @@
             <xsl:text>\mainmatter&#10;</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="tei:body"/>
-        <!-- Back matter (an afterword, an index) is set after the body as the front matter
-             is before it, in streams of its own language. -->
-        <xsl:if test="tei:back[normalize-space() or descendant::*]">
+        <!-- Back matter (an afterword, an index, or a parallel appendix) is set after the
+             body, and as the body is. -->
+        <xsl:if test="tei:back[normalize-space()]">
             <xsl:text>\backmatter&#10;</xsl:text>
             <xsl:apply-templates select="tei:back"/>
         </xsl:if>
@@ -803,7 +803,7 @@
          numbered stream the body uses.
          ==================================================================== -->
 
-    <xsl:template match="tei:front | tei:back">
+    <xsl:template match="tei:front">
         <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
 
         <!-- Prose is grouped by its own language, not the root's. A book's front matter is
@@ -862,7 +862,7 @@
          Each parallel block becomes its own \begin{pages}/\Pages.
          ==================================================================== -->
 
-    <xsl:template match="tei:body">
+    <xsl:template match="tei:body | tei:back">
         <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
         <!-- Expand p:transclude wrapper elements emitted by the compiler: the TeX stage
              should group and typeset the transcluded content, not the wrapper itself.
@@ -3047,6 +3047,20 @@
         </xsl:copy>
     </xsl:template>
 
+    <!-- A note copied with its leaf keeps the serial of the note it was copied from: the copy
+         has no ancestors, and f:editorial-note-emissions-before counts from where a note
+         stands in the document. -->
+    <xsl:template match="tei:note[not(@type='instruction')]" mode="stamp-rubric stamp-serial">
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <xsl:attribute name="f:serial" select="f:note-serial(.)"/>
+            <xsl:apply-templates mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+
+    <!-- Copies that carry no rubrics, only notes to keep the serials of. -->
+    <xsl:mode name="stamp-serial" on-no-match="shallow-copy"/>
+
     <xsl:template match="tei:note[@type='instruction']" mode="stamp-rubric">
         <xsl:param name="echoed" as="xs:boolean" tunnel="yes"/>
         <xsl:param name="note-lang" as="xs:string" tunnel="yes"/>
@@ -3082,8 +3096,12 @@
         <xsl:sequence select="."/>
     </xsl:template>
 
+    <!-- A milestone is set by the stream itself (a verse number, a chapter, a rule), which
+         looks only at its attributes. Notes the compiler set inside it follow it as leaves of
+         their own, so that they are set where the milestone is. -->
     <xsl:template match="tei:milestone" mode="leaves">
         <xsl:sequence select="."/>
+        <xsl:apply-templates select="tei:note" mode="leaves"/>
     </xsl:template>
 
     <xsl:template match="tei:hi | tei:emph | tei:foreign | tei:choice | tei:note | tei:ref | tei:lb | tei:anchor"
@@ -3190,13 +3208,14 @@
                  Notes inside the head are dropped: these are copies, and a note's serial is
                  counted from where the note stands in the document. A note on the whole
                  division is set with the heading from its own place; see f:is-head-note. -->
-            <xsl:copy-of select="$head/node()[not(self::tei:note)]"/>
+            <xsl:apply-templates select="$head/node()[not(self::tei:note)]" mode="stamp-serial"/>
             <!-- The counterpart's content, kept in a child element so that the primary
                  head's nodes stay direct children and mode="emit" renders them exactly as
                  before. The heading template picks this out and excludes it. -->
             <xsl:if test="exists($alt-head)">
                 <xsl:element name="f:alt-head" namespace="urn:opensiddur:reledmac">
-                    <xsl:copy-of select="$alt-head/node()[not(self::tei:note)]"/>
+                    <xsl:apply-templates select="$alt-head/node()[not(self::tei:note)]"
+                                         mode="stamp-serial"/>
                 </xsl:element>
             </xsl:if>
         </xsl:element>
@@ -3242,7 +3261,7 @@
              a standoff note (see JLPTEI-3.md), which is not text on the page. -->
         <xsl:element name="f:list-label" namespace="urn:opensiddur:reledmac">
             <xsl:attribute name="xml:lang" select="f:in-scope-lang(.)"/>
-            <xsl:copy-of select="node()[not(self::tei:note)]"/>
+            <xsl:apply-templates select="node()[not(self::tei:note)]" mode="stamp-serial"/>
         </xsl:element>
     </xsl:template>
 
@@ -3290,9 +3309,16 @@
          Pass 2 (mode="emit"): render leaves as TeX text inside a \pstart.
          ==================================================================== -->
 
+    <!-- Text is set by f:emit-bidi-text, which wraps Latin runs left to right, when it is in
+         Hebrew script, or in a Latin-script form of a Hebrew-script language (he-Latn): a
+         transliteration stands in Hebrew-script surroundings, which would otherwise lay it out
+         right to left. -->
     <xsl:template match="text()" mode="emit">
+        <xsl:variable name="lang" select="f:in-scope-lang(.)"/>
         <xsl:choose>
-            <xsl:when test="f:is-hebrew-lang(f:in-scope-lang(.))">
+            <xsl:when test="f:is-hebrew-lang($lang)
+                            or (tokenize(lower-case($lang), '-')[1] = ('he', 'yi', 'arc')
+                                and tokenize(lower-case($lang), '-') = 'latn')">
                 <xsl:value-of select="f:emit-bidi-text(string(.))"/>
             </xsl:when>
             <xsl:otherwise>
@@ -3341,7 +3367,7 @@
         'raised': ('\textsuperscript{', '}'),
         'large': ('{\Large ', '}'),
         'small': ('{\small ', '}'),
-        'align-right': ('{\raggedleft ', '\par}')
+        'align-right': ('\hspace*{\fill}', '')
     }"/>
     <xsl:variable name="hi-rend-plain" as="xs:string*"
                   select="('centered', 'centred', 'center', 'ketiv-only', 'qeri-only')"/>
@@ -3573,6 +3599,7 @@
 
     <xsl:template match="tei:anchor[@type='page-label']" mode="emit" priority="10">
         <xsl:text>\label{</xsl:text><xsl:value-of select="@n"/><xsl:text>}</xsl:text>
+        <xsl:apply-templates select="node()" mode="emit"/>
     </xsl:template>
 
     <xsl:template match="tei:ref[@type='page']" mode="emit" priority="10">
@@ -3713,8 +3740,7 @@
     </xsl:template>
 
     <xsl:template match="tei:note[not(ancestor::tei:standOff)][not(@type='instruction')]" mode="emit">
-        <xsl:variable name="serial" as="xs:integer"
-                      select="f:editorial-note-emissions-before(.) + 1"/>
+        <xsl:variable name="serial" as="xs:integer" select="f:note-serial(.)"/>
         <xsl:call-template name="os-b-footnote">
             <xsl:with-param name="serial" select="$serial"/>
         </xsl:call-template>
@@ -3853,6 +3879,13 @@
          (html.xslt, note-number): editorial and commentary notes in the text — not a
          header's notes, not standoff ones, not instructions. A note that holds this one comes
          before it, though the preceding axis leaves it out. -->
+    <!-- A note's serial: the one stamped on it when it was copied, else counted where it stands. -->
+    <xsl:function name="f:note-serial" as="xs:integer">
+        <xsl:param name="note" as="element(tei:note)"/>
+        <xsl:sequence select="if ($note/@f:serial) then xs:integer($note/@f:serial)
+                              else f:editorial-note-emissions-before($note) + 1"/>
+    </xsl:function>
+
     <xsl:function name="f:editorial-note-emissions-before" as="xs:integer">
         <xsl:param name="ctx" as="element()"/>
         <xsl:sequence select="count(($ctx/preceding::tei:note | $ctx/ancestor::tei:note)

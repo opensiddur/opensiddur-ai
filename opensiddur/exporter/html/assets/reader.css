@@ -76,6 +76,7 @@ h4.head, h5.head, h6.head { font-size: 1.05em; font-variant: small-caps; }
 .rend-small { font-size: 0.85em; }
 .rend-large { font-size: 1.2em; }
 .rend-centered, .rend-centred, .rend-center { text-align: center; }
+.rend-align-right { display: block; text-align: right; }
 .divineName { white-space: nowrap; }
 
 .v {

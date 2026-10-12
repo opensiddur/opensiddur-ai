@@ -1821,9 +1821,9 @@ class TestOptionRendering(unittest.TestCase):
             <tei:choice><j:written>כשה<tei:anchor xml:id="r"><tei:note>a remark</tei:note></tei:anchor>סכל</j:written><j:read>כשהסכל</j:read></tei:choice>
           </tei:p></tei:body></tei:text>
         </tei:TEI>"""
-        out = _transform(xml)
+        out = _transform(xml).split("\\begin{document}")[1]
         self.assertNotIn("כשהa remark", out)
-        self.assertRegex(out, r"Bfootnote|OSFootnotemark|edtext")
+        self.assertIn("\\OSInterlinearNotemark{1}", out)
 
     def test_markup_inside_a_reading_is_kept(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -4738,6 +4738,42 @@ class TestRendAndEscaping(unittest.TestCase):
         self.assertIn("\\texthebrew{", out)
         self.assertNotIn("\\texthebrew{Kaddish", out)
         self.assertNotIn("\\texthebrew{{\\textdir TLT", out)
+
+    def test_a_transliteration_in_hebrew_reads_left_to_right(self):
+        """Inside a Hebrew paragraph, a he-Latn run is wrapped left to right, not set bare."""
+        out = self._p('שמע <tei:foreign xml:lang="he-Latn">Shema Yisrael</tei:foreign>', lang="he")
+        self.assertIn("\\textdir TLT", out.split("\\begin{document}")[1])
+        self.assertNotIn("\\textit{Shema Yisrael}", out)
+
+    def test_align_right_nests_inside_other_styles(self):
+        """A paragraph break inside \\textbf{} is a fatal TeX error; align-right has none."""
+        out = self._p('<tei:hi rend="bold align-right">ימין</tei:hi>').split("\\begin{document}")[1]
+        self.assertIn("\\textbf{\\hspace*{\\fill}", out)
+        self.assertNotIn("\\par}", out)
+
+    def test_a_note_inside_a_verse_milestone_is_set(self):
+        out = self._p('<tei:milestone unit="verse" n="1"><tei:note>on the verse</tei:note>'
+                      '</tei:milestone>text')
+        self.assertIn("on the verse", out.split("\\begin{document}")[1])
+
+    def test_notes_copied_with_a_rubric_keep_their_numbers(self):
+        """In a parallel column a leaf holding a rubric is copied; its notes keep their serials."""
+        import re
+        par = ('<p:parallel><p:parallelItem role="primary" xml:lang="he"><tei:div><tei:p>עברית'
+               '<tei:note>N-ONE</tei:note> עוד</tei:p></tei:div></p:parallelItem>'
+               '<p:parallelItem role="parallel" xml:lang="en"><tei:div><tei:p>English'
+               '<tei:note>N-TWO</tei:note> <j:conditional xml:id="c1"><tei:note>N-THREE</tei:note>'
+               '<tei:note type="instruction">Say quietly:</tei:note></j:conditional> more'
+               '<tei:note>N-FOUR</tei:note></tei:p></tei:div></p:parallelItem></p:parallel>')
+        out = _transform(f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+          <tei:text><tei:body>{par}</tei:body></tei:text></tei:TEI>""").split("\\begin{document}")[1]
+        for serial, name in enumerate(("N-ONE", "N-TWO", "N-THREE", "N-FOUR"), start=1):
+            with self.subTest(note=name):
+                before = re.findall(r"OSFootnotemark\{(\d+)\}", out[:out.index(name)])
+                self.assertEqual(before[-1], str(serial))
 
     def test_a_header_note_does_not_take_a_number(self):
         out = _transform("""<?xml version="1.0" encoding="UTF-8"?>

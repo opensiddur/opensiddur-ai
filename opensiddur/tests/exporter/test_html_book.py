@@ -756,6 +756,16 @@ class TestNotesAndDirection(unittest.TestCase):
         transliteration = main.xpath("//*[@lang='he-Latn']")[0]
         self.assertNotEqual(transliteration.get("dir"), "rtl")
 
+    def test_a_note_beside_a_rubric_is_shown_and_numbered(self):
+        main = _render('<tei:p>a<tei:note>n-one</tei:note></tei:p>'
+                       + _cond("c", "x", rubric="Say:").replace(
+                           '</tei:note>', '</tei:note><tei:note>n-two</tei:note>', 1)
+                       + '<tei:p>said</tei:p><j:endConditional target="#c"/>'
+                         '<tei:p>b<tei:note>n-three</tei:note></tei:p>')
+        text = "".join(main.itertext())
+        self.assertIn("n-two", text)
+        self.assertEqual(main.xpath("//*[@class='note-ref']/text()"), ["1", "2", "3"])
+
     def test_hebrew_is_right_to_left(self):
         main = _render('<tei:p><tei:foreign xml:lang="he">שמע</tei:foreign></tei:p>')
         self.assertEqual(main.xpath("//*[@lang='he']")[0].get("dir"), "rtl")
