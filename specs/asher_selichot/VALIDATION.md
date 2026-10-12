@@ -1384,3 +1384,13 @@ Fourth-day English s69/n68 lower–s77/n76 upper was reread from images before c
 - Expanded: 37 pages; 0 of 1302 Hebrew runs are set left to right; control: 1277 of 1302 flagged when every run is reversed; SHA-256 `82d09ca4b90ac5604ef21996375a3e9b1ac65cbfc2e4e93e0830408718b753c3`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-04/`. Artifacts: `output/asher_selichot/proofreading/english-004/`. Whole-book PDFs remain earlier snapshots. No executable logic changed.
+
+
+## English proofreading checkpoint005
+
+Fifth-day English s77/n76 lower–s85/n84 upper was reread from images before comparison. Five corrections restore printed wording/punctuation, including “by a law.” Damaged final letter of “Noachic” remains uncertain; existing spelling retained. Ten XML files validate and reverse verification checks source order, footnotes, choice branches and expansions. Both service PDFs pass all eight stanza alignment checks at0.0pt, eight printed footnotes, direction, contents, bookmarks and section boundaries; deliberately duplicated notes, shifted stanzas and boundary leakage are rejected. Visual inspection covers the opening poem, pizmon, apparatus and expanded conclusion. Same-model second pass; independent-person and exhaustive typography review remain pending.
+
+- Documentary: 14 pages; 0 of 263 Hebrew runs are set left to right; control: 263 of 263 flagged when every run is reversed; SHA-256 `f9f145c37539ba55116e02b98ec365ea775be6132819b890b17aa22f98279e06`.
+- Expanded: 36 pages; 0 of 1270 Hebrew runs are set left to right; control: 1249 of 1270 flagged when every run is reversed; SHA-256 `4d861dac614ae1a9c8d6c75881e5931555dc156089e583beae0f8fef28a5e236`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-05/`. Artifacts: `output/asher_selichot/proofreading/english-005/`. Whole-book PDFs remain earlier snapshots. No executable logic changed.
