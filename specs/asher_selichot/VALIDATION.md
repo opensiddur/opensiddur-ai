@@ -900,3 +900,39 @@ controls are rejected. No new full-book render or proofreading is claimed.
 
 Logs and local coverage reports are untracked under
 output/asher_selichot/coverage-refactor/.
+
+
+## Transcription proofreading batch 003; Asher PR consolidation
+
+GitHub currently has only Asher code215, source49 and projects69 open; no
+secondary draft PR targeting these branches exists to merge or close. Recent
+compiler PR240 is already merged into main. Main74981d8 is merged into the
+Asher code branch; the inline-choice conflict retains both abbreviation
+selection and main's guarded qere/alternate-reading selection. All303 focused
+compiler/inline/range/reference tests pass, including abbreviation and new
+compiler-core regressions. Source/project main branches were already included.
+Further proofreading checkpoints stay on the three existing Asher PRs.
+
+The frozen image-only reading of s14/n13, Hebrew printed6, identifies two
+scan-confirmed corrections: defective יֹשֵׁב הַכְּרוּבִים and plene בִּזְמִירוֹת.
+Native crops confirm both and resolve the blind capture's מושל/ויבשת questions
+without further changes. Frozen reading, image/source hashes, comparison and
+adjudication are in sources/asher_selichot/proofreading/image-pass-03.
+The working continuation reading and one Hebrew XML module are corrected;
+initial scan-first captures remain unchanged. Same-model second pass,
+not independent-person review. Next Hebrew page:s16/n15.
+
+The changed module validates; all96 continuation units, six opening streams
+and both titles match documentary evidence. All106 focused Asher tests pass.
+The separate13-page excerpt PDF converges in three passes using an isolated
+reference database. Four anchor offsets are zero; Hebrew direction0/252,
+reversed control250/252. Both corrected consonantal forms occur once; six
+existing direction/alignment/boundary/punctuation controls are rejected.
+Page11 body was inspected visually. The existing mixed-language footnote
+shares an English continuation line with the Hebrew paragraph; paragraph
+separation remains to review despite passing glyph-direction controls.
+Facing English is not independently proofread; whole-book PDFs remain older.
+
+Remote CI for previous code9887154 passed tests, CodeQL and both Codecov gates:
+99.86% patch and93.93% project. One defensive compare.py line is uncovered;
+both targets remain85%. New checkpoint CI will run after push.
