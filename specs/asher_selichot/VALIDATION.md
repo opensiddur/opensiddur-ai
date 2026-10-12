@@ -1414,3 +1414,13 @@ Seventh-day English s93/n92 lower–s101/n100 upper was read from images and fro
 - Expanded: 38 pages; 0 of 1326 Hebrew runs are set left to right; control: 1266 of 1326 flagged when every run is reversed; SHA-256 `025451ac86a11b192c794f8151d727015b170b741ac0cee014e0224394659cb8`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-07/`. Artifacts: `output/asher_selichot/proofreading/english-007/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed.
+
+
+## English proofreading checkpoint008
+
+Erev Rosh Hashanah English s101/n100 lower–s185/n184 upper (printed 49–91) was image-reread and all 43 captures frozen before comparison. Fifty image-adjudicated token corrections restore printed wording, punctuation and citations. Forty-four XML files validate; all 113 service units reverse-compare including documentary branches, notes and bilingual expansion targets. All 12 compiled bilingual petition expansions and page 52 wording pass. Both service PDFs pass the six start-alignment anchors, all 59 printed English notes, apparatus direction, contents, bookmark hierarchy, fulfilled instructions and service boundaries. Duplicate-note, shifted-alignment, boundary and direction controls fail as intended. Representative source body, pizmon, apparatus and expanded conclusion inspected visually. Same-model second pass with prior exposure; independent-person and exhaustive typography review remain pending. Tamid 1–26 are unresolved printed markers without accompanying apparatus on these source pages; no references are invented.
+
+- Documentary: 70 pages; 0 of 2933 Hebrew runs are set left to right; control: 2815 of 2933 flagged when every run is reversed; SHA-256 `05ad5f559e95f65630a188bafefca8d7fbdc93f418e7c5909b85839e33e5e532`.
+- Expanded: 93 pages; 0 of 3975 Hebrew runs are set left to right; control: 3779 of 3975 flagged when every run is reversed; SHA-256 `5305cce55e5ccb057978c01aee80dbb450755d8972bc383b089f797c8699fc35`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-08/`. Artifacts: `output/asher_selichot/proofreading/english-008/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed.
