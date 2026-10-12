@@ -55,6 +55,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
+- More compiler fixes from the review:
+  - **Parallel transclusions are paired by what they transclude**, not by position. When one
+    column transcluded a file the other did not, that content was dropped, and the next
+    file's translation was set beside the wrong text. Unmatched transclusions are now set
+    alone.
+  - **Repeated alignment keys.** An alignment key repeated in one column keeps its first
+    segment, as before, but now warns.
+  - **One resolver for transclusion targets.** The primary text and parallel columns now
+    share it. A `targetEnd` the project lacks now falls back on its verse in the primary
+    text too, and a parallel column now checks that a range lies in one file.
+  - **A standoff note now points at its anchor.**
+    - Its ids were rewritten twice, once by its own processor and again where it was
+      inserted, so its `@target` carried two hashes and never matched the anchor's
+      rewritten id.
+    - Its pointers are now set from the source, in the context of the text it annotates.
+  - **Longer parallel marker ids.** They take 64 bits rather than 32, which would collide in
+    a book the size of a parallel Humash.
+  - **Text taken back into the file it came from.** In a chain of transclusions such as
+    a.xml → b.xml → a.xml, the innermost text is now credited to a.xml rather than to b.xml.
+  - **Contributors without a URN** are told apart by name, rather than collapsed to one per
+    role.
+  - **Credits and failed parallel columns.** The credits of a failed parallel column are
+    rolled back with it.
+  - **Reference database.**
+    - Editing a comment or docstring in `refdb.py` no longer discards it.
+    - `urn_registry --check` fails against an empty database instead of passing without
+      looking.
+    - The compiler warns when a file has changed since it was indexed.
+  - **XML cache.** It is keyed by the project directory too, so changing directory no
+    longer serves files from the old one.
+  - **Default namespace.** A document in the default TEI namespace no longer crashes the
+    compiler.
+  - **Hidden chapter milestone.** A comment between a chapter milestone and the verse
+    milestone after it no longer hides the chapter milestone.
+  - **Empty transclusion type.** A `j:transclude` with an empty `@type` is treated as
+    external everywhere.
+  - **Empty output.** A compile that produces nothing now reports it, instead of raising
+    `IndexError`.
 - **Last milestone in a file** (#240). When nothing ended a milestone's scope, it stopped at the end
   of its own paragraph. It now runs to the end of its outermost division. The last chapter of 42
   JPS 1917 books, and of 30 WLC and 31 MAM files, had resolved to its first paragraph alone;

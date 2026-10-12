@@ -161,6 +161,44 @@ class TestAssembleParallelStreams(unittest.TestCase):
         self.assertEqual(inner_items[0].get("role"), "primary")
         self.assertEqual(inner_items[1].get("role"), "parallel")
 
+    @staticmethod
+    def _texts(element):
+        return "".join(element.itertext())
+
+    def test_transclusions_pair_by_what_they_transclude(self):
+        """The parallel side transcludes one file more; nothing is dropped or mispaired."""
+        prim = [self._transclude("urn:y@orig", self._div("Y-he"))]
+        par = [self._transclude("urn:x@trans", self._div("X-en")),
+               self._transclude("urn:y@trans", self._div("Y-en"))]
+        result = self._assemble(prim, par)
+        transcludes = [el for el in result if el.tag == f"{{{P_NS}}}transclude"]
+        self.assertEqual([t.get("target") for t in transcludes], ["urn:x@trans", "urn:y@orig"])
+        self.assertEqual(self._texts(transcludes[0]), "X-en")
+        # Y's translation is beside Y, not beside nothing.
+        y_items = list(transcludes[1].find(f"{{{P_NS}}}parallel"))
+        self.assertEqual([self._texts(item) for item in y_items], ["Y-he", "Y-en"])
+
+    def test_a_primary_transclusion_without_a_counterpart_is_set_alone(self):
+        prim = [self._transclude("urn:x@orig", self._div("X-he")),
+                self._transclude("urn:y@orig", self._div("Y-he"))]
+        par = [self._transclude("urn:y@trans", self._div("Y-en"))]
+        result = self._assemble(prim, par)
+        transcludes = [el for el in result if el.tag == f"{{{P_NS}}}transclude"]
+        self.assertEqual([self._texts(t) for t in transcludes], ["X-he", "Y-heY-en"])
+
+    def test_a_repeated_alignment_key_is_reported(self):
+        def verse(urn):
+            milestone = etree.Element(f"{{{TEI_NS}}}milestone", nsmap=self.ns)
+            milestone.set("unit", "verse")
+            milestone.set("corresp", urn)
+            return milestone
+        one = "urn:x-opensiddur:text:t/1"
+        prim = [verse(one), self._div("one"), verse(one), self._div("again")]
+        par = [verse(one), self._div("eins")]
+        with self.assertLogs("opensiddur.exporter.external_compiler", level="WARNING") as logs:
+            self._assemble(prim, par)
+        self.assertIn("more than once", "".join(logs.output))
+
     def test_nested_transclude_is_hoisted_not_embedded(self):
         """A transclude inside a transclude ends the inner block too, at every depth.
 

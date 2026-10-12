@@ -146,9 +146,15 @@ To ensure uniqueness after transclusion, IDs are rewritten using a hash of the p
   bounds of the range being compiled. These are fixed for the whole range, so an `xml:id` and a pointer to it
   hash alike wherever they sit in it. The element's own path is added only for ids that must differ per element
   (the parallel compiler's marker ids).
-- Hash: SHA256 of full path, truncated to 8 characters
+- Hash: SHA256 of full path, truncated to 8 hex characters for ids. A parallel marker id is
+  unique across the whole book rather than one range, and takes 16.
 - Rewritten IDs: `{original_id}_{hash}`
 - Target references: `#ref` becomes `#ref_{hash}`
+- A standoff note is compiled by a processor of its own, which rewrites its ids. Its pointers
+  (`@target`, `@targetEnd`) point into the text it annotates, so they are then set again from
+  the source note, rewritten with the hash of the context the note is inserted in: the hash
+  its anchor's id gets. The note is not rewritten again where it is inserted, so a note and
+  its anchor pair.
 - Within one processing context the hash does not depend on the element, so an id and a
   pointer to it pair at any depth. An id carries exactly one hash per context it was compiled in.
 

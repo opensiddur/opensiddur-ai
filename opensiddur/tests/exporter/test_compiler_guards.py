@@ -39,10 +39,11 @@ class CompilerGuardTestCase(unittest.TestCase):
         (self.base / project).mkdir(exist_ok=True)
         (self.base / project / file_name).write_bytes(_document(body))
 
-    def compile(self, project: str, file_name: str) -> str:
-        for project_dir in self.base.iterdir():
-            if project_dir.is_dir():
-                self.refdb.sync_project(project_dir.name, self.base)
+    def compile(self, project: str, file_name: str, *, sync: bool = True) -> str:
+        if sync:
+            for project_dir in self.base.iterdir():
+                if project_dir.is_dir():
+                    self.refdb.sync_project(project_dir.name, self.base)
         processor = ExternalCompilerProcessor(
             project, file_name, linear_data=self.linear_data, reference_database=self.refdb)
         return "".join(etree.tostring(element, encoding="unicode")
@@ -112,6 +113,86 @@ class TestRanges(CompilerGuardTestCase):
         self.write("q", "a.xml", f'<tei:div corresp="{URN}a"><tei:p>from q</tei:p></tei:div>')
         self.write("p", "index.xml", f'<j:transclude target="{URN}a@q"/>')
         self.assertIn("from q", self.compile("p", "index.xml"))
+
+
+class TestIds(CompilerGuardTestCase):
+    def test_a_standoff_note_points_at_its_anchor(self):
+        """A note's pointer and its anchor's id are rewritten alike, once each."""
+        self.write("p", "a.xml",
+                   f'<tei:div corresp="{URN}a"><tei:p>one<tei:anchor xml:id="r1"/> two</tei:p>'
+                   f'</tei:div></tei:body><tei:back/></tei:text>'
+                   f'<tei:standOff type="notes"><tei:note target="#r1">n</tei:note></tei:standOff>'
+                   f'<tei:text><tei:body>')
+        self.write("p", "index.xml", f'<j:transclude target="{URN}a"/>')
+        compiled = etree.fromstring(f"<r>{self.compile('p', 'index.xml')}</r>")
+        note = compiled.find(f".//{{{TEI}}}note")
+        anchor = compiled.find(f".//{{{TEI}}}anchor")
+        self.assertIsNotNone(note)
+        self.assertEqual(note.get("target"), "#" + anchor.get("{http://www.w3.org/XML/1998/namespace}id"))
+
+
+class TestIndexAndNamespaces(CompilerGuardTestCase):
+    def test_a_file_changed_since_it_was_indexed_is_reported(self):
+        self.write("p", "a.xml", f'<tei:div corresp="{URN}a"><tei:p>one</tei:p></tei:div>')
+        self.write("p", "index.xml", f'<j:transclude target="{URN}a"/>')
+        self.compile("p", "index.xml")
+        self.write("p", "a.xml", f'<tei:div corresp="{URN}a"><tei:p>edited</tei:p></tei:div>')
+        self.linear_data.xml_cache.cache.clear()
+        self.linear_data.index_checked.clear()
+        with self.assertLogs("opensiddur.exporter.compiler", level="WARNING") as logs:
+            self.compile("p", "index.xml", sync=False)
+        self.assertIn("p/a.xml has changed since it was indexed", "".join(logs.output))
+
+    def test_a_document_in_the_default_namespace_compiles(self):
+        (self.base / "p").mkdir(exist_ok=True)
+        (self.base / "p" / "a.xml").write_bytes(
+            f'<TEI xmlns="{TEI}" xmlns:j="{J}" xml:lang="en"><text><body>'
+            f'<div corresp="{URN}a"><p>plain</p></div></body></text></TEI>'.encode())
+        self.write("p", "index.xml", f'<j:transclude target="{URN}a"/>')
+        self.assertIn("plain", self.compile("p", "index.xml"))
+
+
+class TestFileSources(CompilerGuardTestCase):
+    def test_text_taken_back_from_the_first_file_is_credited_to_it(self):
+        """a.xml -> b.xml -> a.xml: the innermost text comes from a.xml, not from b.xml."""
+        self.write("p", "a.xml",
+                   f'<tei:div corresp="{URN}a1"><j:transclude target="{URN}b"/></tei:div>'
+                   f'<tei:div corresp="{URN}a2"><tei:p>back in a</tei:p></tei:div>')
+        self.write("p", "b.xml",
+                   f'<tei:div corresp="{URN}b"><j:transclude target="{URN}a2"/></tei:div>')
+        self.write("p", "index.xml", f'<j:transclude target="{URN}a1"/>')
+        compiled = etree.fromstring(f"<r>{self.compile('p', 'index.xml')}</r>")
+        inner = compiled.find(
+            f".//{{http://jewishliturgy.org/ns/processing}}transclude[@target='{URN}a2']")
+        self.assertEqual(inner.get("{http://jewishliturgy.org/ns/processing}file_name"), "a.xml")
+
+
+class TestSmallerCases(CompilerGuardTestCase):
+    def test_a_comment_does_not_hide_the_chapter_a_range_opens_into(self):
+        self.write("p", "a.xml",
+                   f'<tei:div><tei:p><tei:milestone unit="chapter" n="2" corresp="{URN}c/2"/>'
+                   f'<!-- the second chapter --><tei:milestone unit="verse" n="1" '
+                   f'corresp="{URN}c/2/1"/>first verse</tei:p></tei:div>')
+        self.write("p", "index.xml", f'<j:transclude target="{URN}c/2/1"/>')
+        compiled = etree.fromstring(f"<r>{self.compile('p', 'index.xml')}</r>")
+        self.assertIsNotNone(compiled.find(f".//{{{TEI}}}milestone[@unit='chapter']"))
+
+    def test_an_empty_type_is_external(self):
+        from opensiddur.exporter.compiler import transclusion_type_of
+        self.assertEqual(transclusion_type_of(etree.fromstring(f'<j:transclude xmlns:j="{J}" type=""/>')),
+                         "external")
+
+    def test_a_failed_compilation_takes_its_credits_with_it(self):
+        from opensiddur.exporter.compiler import CompilerProcessor
+        self.write("p", "a.xml", "<tei:p>x</tei:p>")
+        processor = CompilerProcessor("p", "a.xml", linear_data=self.linear_data,
+                                      reference_database=self.refdb)
+        self.linear_data.credits.append(("trc", "", "Kept", "Transcribed by"))
+        with self.assertRaises(RuntimeError):
+            with processor._printed_annotations_rollback():
+                self.linear_data.credits.append(("trc", "", "Discarded", "Transcribed by"))
+                raise RuntimeError("the column failed")
+        self.assertEqual([credit[2] for credit in self.linear_data.credits], ["Kept"])
 
 
 class TestInlineText(CompilerGuardTestCase):

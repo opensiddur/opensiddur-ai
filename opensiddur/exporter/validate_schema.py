@@ -45,6 +45,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from opensiddur.exporter.refdb import file_hash
+
 from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
@@ -93,13 +95,10 @@ class SchemaReport:
         return sum(1 for r in self.results if r.cached)
 
 
-def _file_hash(file_path: Path | str) -> str:
-    """The sha256 of a file's contents -- what decides whether it must be revalidated.
-
-    Not the mtime: a fresh checkout gives every file an mtime of "now" (as in
-    ``refdb._file_hash``).
-    """
-    return hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
+#: The sha256 of a file's contents -- what decides whether it must be revalidated, as it
+#: decides whether it must be re-indexed. Not the mtime: a fresh checkout gives every file an
+#: mtime of "now".
+_file_hash = file_hash
 
 
 def _canonical_xml(path: Path) -> bytes:

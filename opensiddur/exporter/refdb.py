@@ -1,6 +1,7 @@
 """ Reference Database """
 
 import argparse
+import ast
 import hashlib
 import logging
 from pathlib import Path
@@ -18,12 +19,28 @@ logger = logging.getLogger(__name__)
 
 INDEX_DB_FILE = INDEX_DB_DIRECTORY / "reference.db"
 
+def _code_version(source: str) -> str:
+    """A hash of what ``source`` does: its syntax tree, without comments or docstrings.
+
+    Rewording a comment does not change how anything is indexed, and must not throw away a
+    database that takes minutes to rebuild.
+    """
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if (isinstance(body, list) and body and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)):
+            node.body = body[1:] or [ast.Pass()]
+    return hashlib.sha256(ast.dump(tree).encode("utf-8")).hexdigest()
+
+
 #: Identifies the indexing code that built a database. A database is only valid for the code
 #: that wrote it: a change to how elements are indexed, or to the tables, makes every stored
-#: row suspect. Hashing this module's own source means no one has to remember to bump a
-#: number, and the validation workflow keys its cached database on the same file
-#: (opensiddur-ai#165). All of the indexing logic lives in this module.
-REFDB_VERSION = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+#: row suspect. Hashing this module's own code means no one has to remember to bump a number
+#: (opensiddur-ai#165); comments and docstrings are left out of the hash. All of the indexing
+#: logic lives in this module.
+REFDB_VERSION = _code_version(Path(__file__).read_text(encoding="utf-8"))
 
 #: Every table the database holds, dropped together when the version stamp does not match.
 _TABLES = ('urn_mappings', 'element_references', 'indexed_files', 'dropped_urn_mappings',
@@ -42,7 +59,7 @@ TEXT_URN_PREFIX = "urn:x-opensiddur:text:"
 INSTRUCTION_URN_PREFIX = "urn:x-opensiddur:instruction:"
 
 
-def _file_hash(file_path: Path | str) -> str:
+def file_hash(file_path: Path | str) -> str:
     """The sha256 of a file's contents, which is what decides whether it needs re-indexing.
 
     Not the mtime: a fresh checkout gives every file an mtime of "now", which would make a
@@ -754,7 +771,7 @@ class ReferenceDatabase:
         self.conn.execute(
             '''INSERT INTO indexed_files (project, file_name, content_hash) VALUES (?, ?, ?)
             ON CONFLICT(project, file_name) DO UPDATE SET content_hash = excluded.content_hash''',
-            (project, file_name, _file_hash(file_path)))
+            (project, file_name, file_hash(file_path)))
         self.conn.commit()
         return count
     
@@ -857,6 +874,10 @@ class ReferenceDatabase:
         self.conn.commit()
         return deleted_count
     
+    def indexed_hash(self, file_name: str, project: str) -> str | None:
+        """The content hash a file was last indexed from, or None if it is not indexed."""
+        return self._get_indexed_hash(file_name, project)
+
     def _get_indexed_hash(self, file_name: str, project: str) -> str | None:
         """The content hash a file was last indexed from, or None if it is not indexed."""
         row = self.conn.execute(
@@ -897,7 +918,7 @@ class ReferenceDatabase:
             self.remove_file(file_name, project)
             count = self.index_file(file_path, project, file_name)
             return {'action': 'added', 'references': count}
-        elif indexed_hash != _file_hash(file_path):
+        elif indexed_hash != file_hash(file_path):
             # Contents changed since last index, re-index
             self.remove_file(file_name, project)
             count = self.index_file(file_path, project, file_name)

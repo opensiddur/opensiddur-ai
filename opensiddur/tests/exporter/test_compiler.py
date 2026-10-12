@@ -356,7 +356,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_elem.text = "transcluded content"
             mock_instance.process.return_value = [mock_elem]
             # Mock _mark_file_source to act like a passthrough
-            def mock_mark_file_source(elem):
+            def mock_mark_file_source(elem, **_):
                 return elem
             mock_instance._mark_file_source.side_effect = mock_mark_file_source
             mock_instance.project = "transcluded_project"
@@ -414,7 +414,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
             mock_elem.text = "transcluded content"
             mock_instance.process.return_value = [mock_elem]
-            mock_instance._mark_file_source.side_effect = lambda e: e
+            mock_instance._mark_file_source.side_effect = lambda e, **_: e
             mock_instance.project = "transcluded_project"
             mock_instance.file_name = "transcluded.xml"
             mock_instance.root_language = "xx"
@@ -462,7 +462,7 @@ class TestCompilerProcessorWithFiles(unittest.TestCase):
             mock_elem = etree.Element("{http://www.tei-c.org/ns/1.0}p")
             mock_instance.process.return_value = [mock_elem]
             # Mock _mark_file_source to act like a passthrough
-            def mock_mark_file_source(elem):
+            def mock_mark_file_source(elem, **_):
                 return elem
             mock_instance._mark_file_source.side_effect = mock_mark_file_source
             mock_instance.project = "external_project"
@@ -1986,6 +1986,8 @@ def _linear_data_with_root(root: etree._Element):
         project_priority = ["p"]
         instruction_priority = ["p"]
         transclusion_chain = []
+        index_checked = set()
+        credits = []
 
     return _LD()
 
@@ -2026,7 +2028,7 @@ class TestCompilerTranscludeTextOnly(unittest.TestCase):
             def process(self):
                 return [tei]
 
-            def _mark_file_source(self, element):
+            def _mark_file_source(self, element, **_):
                 return element
 
         with (
@@ -2057,7 +2059,7 @@ class TestCompilerTranscludeTextOnly(unittest.TestCase):
             def process(self):
                 return [tei]
 
-            def _mark_file_source(self, element):
+            def _mark_file_source(self, element, **_):
                 return element
 
         with (
@@ -2251,6 +2253,25 @@ class TestGatherCredits(unittest.TestCase):
         self.assertEqual(added.find(f"{{{self.TEI}}}resp").get("key"), "trc")
         self.assertEqual(added.find(f"{{{self.TEI}}}name").get("ref"),
                          "urn:x-opensiddur:contributor:he.wikisource.org/Neriah")
+
+    def test_contributors_without_a_urn_are_told_apart_by_name(self):
+        from lxml import etree as _etree
+
+        from opensiddur.exporter.compiler import gather_credits, merge_credits
+
+        def unreferenced(*names):
+            stmts = "".join(
+                f'<tei:respStmt><tei:resp key="trc">Transcribed by</tei:resp>'
+                f"<tei:name>{name}</tei:name></tei:respStmt>" for name in names)
+            return _etree.fromstring(
+                f'<tei:TEI xmlns:tei="{self.TEI}"><tei:teiHeader><tei:fileDesc>'
+                f"<tei:titleStmt><tei:title>t</tei:title>{stmts}</tei:titleStmt>"
+                "</tei:fileDesc></tei:teiHeader><tei:text><tei:body/></tei:text></tei:TEI>")
+
+        root = unreferenced("Avigail")
+        gather_credits(unreferenced("Batya", "Avigail"), self.linear_data)
+        merge_credits(root, self.linear_data)
+        self.assertEqual(self.credited(root), ["Avigail", "Batya"])
 
     def test_a_document_with_no_title_statement_is_left_alone(self):
         from lxml import etree as _etree

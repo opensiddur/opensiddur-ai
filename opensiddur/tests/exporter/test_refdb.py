@@ -18,6 +18,20 @@ from opensiddur.exporter.refdb import (
 )
 
 
+class TestCodeVersion(unittest.TestCase):
+    """The database's version stamp follows the indexing code, not its comments."""
+
+    CODE = 'def f(x):\n    """Doc."""\n    return x + 1  # one\n'
+
+    def test_comments_and_docstrings_do_not_change_it(self):
+        reworded = 'def f(x):\n    """Other words."""\n    return x + 1  # two\n'
+        self.assertEqual(refdb._code_version(self.CODE), refdb._code_version(reworded))
+
+    def test_code_does(self):
+        changed = 'def f(x):\n    """Doc."""\n    return x + 2  # one\n'
+        self.assertNotEqual(refdb._code_version(self.CODE), refdb._code_version(changed))
+
+
 class TestReferenceDatabaseBasics(unittest.TestCase):
     """Test basic Reference Database functionality."""
 

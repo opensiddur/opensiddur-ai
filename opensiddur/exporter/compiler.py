@@ -69,7 +69,7 @@ from opensiddur.exporter.condition_eval import (
     parse_condition_element,
     value_to_json,
 )
-from opensiddur.exporter.refdb import ReferenceDatabase
+from opensiddur.exporter.refdb import ReferenceDatabase, file_hash
 from opensiddur.exporter.annotation_placement import place_structural_annotations_in_tree
 from opensiddur.exporter.milestone_annotations import place_milestone_annotations
 from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen, split_project
@@ -131,6 +131,11 @@ def _precedes(first: ElementBase, second: ElementBase) -> bool:
     return False
 
 
+def transclusion_type_of(element: ElementBase) -> str:
+    """A transclusion's type: its @type, or 'external' when that is absent or empty."""
+    return element.get('type') or 'external'
+
+
 class CompilerProcessor:
     def __init__(
         self, 
@@ -162,16 +167,18 @@ class CompilerProcessor:
         self.project = project
         self.file_name = file_name
 
-        # Extract namespaces from root_tree and save to self.ns_map
-        # lxml stores nsmap at the Element level, not the whole tree for parsed objects
-        if hasattr(self.root_tree, 'nsmap'):
-            self.ns_map = dict(self.root_tree.nsmap) if self.root_tree.nsmap else {}
-        else:
-            self.ns_map = {}
+        # The document's own prefixes, which the element paths stored for it use, plus the
+        # three the compiler's own queries use. A default namespace has no prefix to use in
+        # XPath, and lxml refuses a namespace map that carries one.
+        document_prefixes = getattr(self.root_tree, 'nsmap', None) or {}
+        self.ns_map = {prefix: uri for prefix, uri in document_prefixes.items() if prefix}
+        self.ns_map.setdefault("tei", TEI_NS)
+        self.ns_map.setdefault("j", JLPTEI_NAMESPACE)
         self.ns_map["p"] = PROCESSING_NAMESPACE
 
         self._refdb = reference_database or ReferenceDatabase()
         self._urn_resolver = UrnResolver(self._refdb)
+        self._warn_if_index_is_stale()
 
         self.root_language = None
 
@@ -181,6 +188,26 @@ class CompilerProcessor:
         self._markers_at_start: list[ElementBase] = []
         self._scopes_open_in_range: list[str] = []
         self._closers_due: list[ElementBase] = []
+
+    def _warn_if_index_is_stale(self) -> None:
+        """Warn, once per file, when the reference database was built from other contents.
+
+        Element paths come from the database. A file edited since it was indexed resolves to
+        whatever now stands at the old paths, which is wrong text rather than an error.
+        """
+        key = (self.project, self.file_name)
+        if key in self.linear_data.index_checked:
+            return
+        self.linear_data.index_checked.add(key)
+        indexed = self._refdb.indexed_hash(self.file_name, self.project)
+        if not isinstance(indexed, str):
+            return  # not indexed at all, which the resolver will report if it matters
+        path = self.linear_data.xml_cache._path_of_file(self.project, self.file_name)
+        if path.exists() and indexed != file_hash(path):
+            logger.warning(
+                "%s/%s has changed since it was indexed; references into it may resolve to "
+                "the wrong text. Sync the reference database (python -m opensiddur.exporter.refdb).",
+                self.project, self.file_name)
 
     @property
     def _in_parallel_compilation(self) -> bool:
@@ -202,8 +229,12 @@ class CompilerProcessor:
                 return lang
         return None
 
-    def _get_path_hash(self, element: Optional[ElementBase] = None) -> str:
-        """ Get a hash of the path taken to get to the current processing context and element if available """
+    def _get_path_hash(self, element: Optional[ElementBase] = None, length: int = 8) -> str:
+        """ Get a hash of the path taken to get to the current processing context and element if available
+
+        ``length`` hex digits: 8 suffice for an id, which need only differ from the other
+        ids of one range; a parallel marker id is drawn from the whole book.
+        """
         context_path_elements = []
         num_contexts = len(self.linear_data.processing_context)
         for i, context in enumerate(self.linear_data.processing_context):
@@ -234,7 +265,7 @@ class CompilerProcessor:
             element_path = element.getroottree().getpath(element)
             context_path_elements.append(':' + element_path)
         full_context_path ='+'.join(context_path_elements)
-        path_hash = hashlib.sha256(full_context_path.encode('utf-8')).hexdigest()[:8]
+        path_hash = hashlib.sha256(full_context_path.encode('utf-8')).hexdigest()[:length]
         return path_hash
 
     def _rewrite_ids(self, element_or_list) -> ElementBase | list[ElementBase]:
@@ -248,6 +279,20 @@ class CompilerProcessor:
             # Handle single element (CompilerProcessor case)
             return self._rewrite_single_element_ids(element_or_list)
     
+    def _rewrite_local_pointers(self, value: str, path_hash: str) -> str:
+        """Each same-document pointer (``#id``) in ``value`` given ``path_hash``."""
+        return ' '.join(
+            part if not part.startswith('#') else f"{part}_{path_hash}"
+            for part in re.split(r'\s+', value))
+
+    def _repoint_targets(self, compiled: ElementBase, source: ElementBase) -> None:
+        """Set ``compiled``'s pointers from ``source``'s, rewritten in the current context."""
+        path_hash = self._get_path_hash()
+        for attribute in ('target', 'targetEnd'):
+            value = source.get(attribute)
+            if value:
+                compiled.set(attribute, self._rewrite_local_pointers(value, path_hash))
+
     def _rewrite_single_element_ids(self, element: ElementBase) -> ElementBase:
         """ Rewrite the ids of a single element """
         xml_id = element.attrib.get('{http://www.w3.org/XML/1998/namespace}id')
@@ -260,12 +305,8 @@ class CompilerProcessor:
             new_xml_id = f"{xml_id}_{path_hash}"
             element.set('{http://www.w3.org/XML/1998/namespace}id', new_xml_id)
         
-        rewrite_target = lambda target: ' '.join([
-                (target_part 
-                if not target_part.startswith('#') 
-                else target_part.replace(f"#{target_part[1:]}", f"#{target_part[1:]}_{path_hash}"))
-                for target_part in re.split(r'\s+', target)
-            ])
+        def rewrite_target(value: str) -> str:
+            return self._rewrite_local_pointers(value, path_hash)
 
         if target:
             new_target = rewrite_target(target)
@@ -402,7 +443,7 @@ class CompilerProcessor:
             target = element.get('target')
             target_end = element.get('targetEnd')
             # Default transclusion type is external (schema default)
-            transclusion_type = type_override or element.get('type') or 'external'
+            transclusion_type = type_override or transclusion_type_of(element)
 
             processing_element = etree.Element(f"{{{PROCESSING_NAMESPACE}}}transclude", nsmap=self.ns_map)
             
@@ -436,7 +477,8 @@ class CompilerProcessor:
                     transclusion_type, transclude_range, end_element_path, processing_element)
 
             # Mark the file source using the transcluded file's project and file_name
-            processing_element = processor._mark_file_source(processing_element)
+            processing_element = processor._mark_file_source(
+                processing_element, enclosing=(self.project, self.file_name))
 
             # Check if language differs and add xml:lang if needed
             # Get language of transcluded start element
@@ -516,7 +558,7 @@ class CompilerProcessor:
                     replacement_element = replacement_element[0]
                     processed_replacement_element = replacement_processor.process(replacement_element)
                     if not(replacement_instruction.project == self.project and replacement_instruction.file_name == self.file_name):
-                        self._mark_file_source(processed_replacement_element, project=replacement_instruction.project, file_name=replacement_instruction.file_name)
+                        self._mark_file_source(processed_replacement_element, project=replacement_instruction.project, file_name=replacement_instruction.file_name, enclosing=(self.project, self.file_name))
                     
                     # Check if language differs and add xml:lang if needed
                     annotation_lang = replacement_processor.root_language
@@ -564,8 +606,12 @@ class CompilerProcessor:
                         # Out of context here. It has not been printed, so it keeps its print-once slot.
                         continue
                     processed_element = processor.process(reference_element)
+                    # The note's own processor rewrote its pointers in the note's context, but
+                    # what they point at is compiled here, in this one: point them at the ids
+                    # this context gives, once, so that a note and its anchor still pair.
+                    self._repoint_targets(processed_element, reference_element)
                     if not(reference.project == self.project and reference.file_name == self.file_name):
-                        self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name)
+                        self._mark_file_source(processed_element, project=reference.project, file_name=reference.file_name, enclosing=(self.project, self.file_name))
 
                     annotation_lang = processor.root_language
                     insertion_context_lang = self._get_in_scope_language(element)
@@ -597,89 +643,96 @@ class CompilerProcessor:
         
         return element
 
-    def _mark_file_source(self, element: ElementBase, 
+    def _mark_file_source(self, element: ElementBase,
         project: Optional[str] = None,
-        file_name: Optional[str] = None, 
+        file_name: Optional[str] = None,
+        *,
+        enclosing: Optional[tuple[str, str]] = None,
         ) -> ElementBase:
+        """Mark where ``element`` comes from, if that is not the file that encloses it.
+
+        ``enclosing`` is the (project, file name) of the file it is set in; None means it is
+        set in no file (the compiled document's root), and is always marked. The source is
+        ``project``/``file_name``, defaulting to this processor's file.
         """
-        Mark the file source of the given element if the processing context has changed
-        """
-        mark_source = False
-        if len(self.linear_data.processing_context) > 1:
-            previous_context = self.linear_data.processing_context[-2]
-            mark_source = not(previous_context['project'] == self.project and previous_context['file_name'] == self.file_name)
-        else:
-            mark_source = True   # first context
-        
-        if mark_source:
-            element.set(f"{{{PROCESSING_NAMESPACE}}}file_name", file_name or self.file_name)
-            element.set(f"{{{PROCESSING_NAMESPACE}}}project", project or self.project)
+        source = (project or self.project, file_name or self.file_name)
+        if enclosing is None or enclosing != source:
+            element.set(f"{{{PROCESSING_NAMESPACE}}}file_name", source[1])
+            element.set(f"{{{PROCESSING_NAMESPACE}}}project", source[0])
         return element
 
-    def _get_start_and_end_from_ranges(
-        self, 
-        target: str, 
-        target_end: Optional[str] = None,
-        ) -> ResolvedUrnRange:
-        """ Return start and end, inclusive """
-        start, end = None, None
+    def _enclosing_source(self, *, own_frame_on_stack: bool) -> Optional[tuple[str, str]]:
+        """The (project, file) of the context enclosing this processor's, if any."""
+        stack = self.linear_data.processing_context
+        depth = len(stack) - (2 if own_frame_on_stack else 1)
+        if depth < 0:
+            return None
+        return stack[depth]['project'], stack[depth]['file_name']
+
+    def _resolve_or_coarsen(self, urn: str, project_priority: list[str]):
+        """``urn`` resolved in the first project of ``project_priority`` that carries it.
+
+        If none does, but a project carries the verse that contains a sub-verse point the URN
+        names (see `coarsen`), that verse is taken instead, with a warning: the compiled text
+        then covers more than was asked for, which is what happened before sub-verse URNs
+        existed, and validate_urn_references reports the same thing ahead of a build.
+
+        Returns (resolved, the URN it resolved as); raises ValueError if neither resolves.
+        """
         resolver = self._urn_resolver
-        
-        project_priority = self.linear_data.project_priority
+        resolved = resolver.resolve_range(urn)
+        chosen = UrnResolver.prioritize_range(resolved, project_priority)
+        if chosen:
+            return chosen, urn
+        coarser = coarsen(urn, resolves=lambda one: bool(UrnResolver.prioritize_range(
+            resolver.resolve_range(one), project_priority)))
+        coarsened = (UrnResolver.prioritize_range(resolver.resolve_range(coarser), project_priority)
+                     if coarser else None)
+        if coarsened:
+            logger.warning(
+                "%s/%s: no project in %s carries %s; falling back to %s, which covers "
+                "more text than the reference asks for",
+                self.project, self.file_name, project_priority, urn, coarser,
+            )
+            return coarsened, coarser
+        if not resolved:
+            raise ValueError(f"Target URN {urn!r} not found")
+        raise ValueError(f"No prioritized URNs found: {urn!r} {project_priority=}")
+
+    def _get_start_and_end_from_ranges(
+        self,
+        target: str,
+        target_end: Optional[str] = None,
+        project_priority: Optional[list[str]] = None,
+        ) -> ResolvedUrnRange:
+        """The start and end, inclusive, of what ``target`` (through ``target_end``) names.
+
+        The one resolver of transclusion targets, for the primary text and for each parallel
+        column alike (``project_priority`` is then the column's project).
+        """
+        if project_priority is None:
+            project_priority = self.linear_data.project_priority
         named_project = split_project(target)[1]
         if named_project:
             # A target that names its project has chosen it; the priority list is for
             # targets that leave the choice open.
             project_priority = [named_project]
 
-        resolved = resolver.resolve_range(target)
-        range_start = UrnResolver.prioritize_range(resolved, project_priority)
-        if not range_start:
-            # No prioritized project carries this reference. If it names a point below a
-            # division they all do carry — a half-verse, a named part of a verse — take the
-            # division that contains it instead. The compiled text then covers more than was
-            # asked for, which is what happened before sub-verse URNs existed; the warning
-            # is what is new, and validate_urn_references reports the same thing ahead of a
-            # build.
-            coarser = coarsen(target, resolves=lambda urn: bool(UrnResolver.prioritize_range(
-                resolver.resolve_range(urn), project_priority)))
-            coarsened = (
-                UrnResolver.prioritize_range(resolver.resolve_range(coarser), project_priority)
-                if coarser else None
-            )
-            if coarsened:
-                logger.warning(
-                    "%s/%s: no project in %s carries %s; falling back to %s, which covers "
-                    "more text than the reference asks for",
-                    self.project, self.file_name, project_priority, target, coarser,
-                )
-                range_start, target = coarsened, coarser
-            elif not resolved:
-                raise ValueError(f"Target URN {target=} not found")
-            else:
-                raise ValueError(f"No prioritized URNs found: {target=} {project_priority=}")
+        range_start, target = self._resolve_or_coarsen(target, project_priority)
 
         if isinstance(range_start, ResolvedUrnRange):
             if target_end is not None:
                 raise ValueError(f"If target {target=} is a range, target_end {target_end=} cannot be provided")
-            start = range_start.start
-            end = range_start.end
-        else:   # target is ResolvedUrn
-            start = range_start
-            if target_end is not None:
-                range_end = resolver.resolve_range(target_end)
-                if not range_end:
-                    raise ValueError(f"Target URN {target_end=} not found")
-                range_end = UrnResolver.prioritize_range(range_end, [start.project])
-                if not range_end:
-                    raise ValueError(f"No prioritized URNs found: {target_end=} in project {range_start.project}")
-                
-                end = range_end
-                if start.file_name != end.file_name:
-                    raise ValueError(f"In a range, the start and end of a range must be in the same file: {start.file_name=} != {end.file_name=}")
-            else:
-                end = range_start
-            
+            return range_start
+        start = range_start
+        if target_end is None:
+            return ResolvedUrnRange(start=start, end=start)
+        # The end may name a division the start's project lacks just as the start may.
+        end, _ = self._resolve_or_coarsen(target_end, [start.project])
+        if isinstance(end, ResolvedUrnRange):
+            raise ValueError(f"targetEnd {target_end!r} names a range; it must name one point")
+        if start.file_name != end.file_name:
+            raise ValueError(f"In a range, the start and end of a range must be in the same file: {start.file_name=} != {end.file_name=}")
         return ResolvedUrnRange(start=start, end=end)
 
 
@@ -877,16 +930,19 @@ class CompilerProcessor:
 
     @contextmanager
     def _printed_annotations_rollback(self):
-        """Forget print-once annotations registered by a compilation that fails.
+        """Forget what a compilation that fails registered: print-once notes and credits.
 
         A failed parallel counterpart is discarded, and the fallback that replaces it must
-        still print the notes the counterpart had claimed.
+        still print the notes the counterpart had claimed -- and must not credit the people
+        whose text it did not, after all, use.
         """
         saved = set(self.linear_data.printed_annotations)
+        saved_credits = list(self.linear_data.credits)
         try:
             yield
         except BaseException:
             self.linear_data.printed_annotations = saved
+            self.linear_data.credits = saved_credits
             raise
 
     @contextmanager
@@ -1179,7 +1235,8 @@ class CompilerProcessor:
         )):
             copied = self._process_element(root, root)
             place_milestone_annotations([copied])
-            copied = self._mark_file_source(copied)
+            copied = self._mark_file_source(
+                copied, enclosing=self._enclosing_source(own_frame_on_stack=True))
 
         return copied
 
@@ -1327,16 +1384,23 @@ def merge_credits(root, linear_data) -> None:
     if title_stmt is None:
         return
     gather_credits(root, linear_data)
+
+    def identity(role: str, reference: str, name_text: str) -> tuple[str, str]:
+        # A contributor is known by their URN. One without a URN is known only by name, or
+        # every unnamed contributor of a role would be taken for the first.
+        return role, reference or f"name:{name_text}"
+
     present = {
-        (r.get("key") or "", n.get("ref") or "")
+        identity(r.get("key") or "", n.get("ref") or "", "".join(n.itertext()).strip())
         for stmt in title_stmt.findall(f"{{{TEI_NS}}}respStmt")
         for r in [stmt.find(f"{{{TEI_NS}}}resp")] for n in [stmt.find(f"{{{TEI_NS}}}name")]
         if r is not None and n is not None
     }
     for role, reference, name_text, resp_text in linear_data.credits:
-        if (role, reference) in present:
+        key = identity(role, reference, name_text)
+        if key in present:
             continue
-        present.add((role, reference))
+        present.add(key)
         stmt = etree.SubElement(title_stmt, f"{{{TEI_NS}}}respStmt")
         resp = etree.SubElement(stmt, f"{{{TEI_NS}}}resp")
         resp.set("key", role)
@@ -1402,7 +1466,10 @@ def main(argv: list[str] | None = None):  # pragma: no cover
 
     from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
     compiler = ExternalCompilerProcessor(args.project, args.file_name, linear_data=linear_data)
-    result = compiler.process()[0]
+    compiled = compiler.process()
+    if not compiled:
+        raise ValueError(f"{args.project}/{args.file_name} compiled to nothing")
+    result = compiled[0]
     drop_empty_scopes(result)
     close_up_whitespace(result)
     join_split_paragraphs(result)
