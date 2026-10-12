@@ -936,3 +936,25 @@ Facing English is not independently proofread; whole-book PDFs remain older.
 Remote CI for previous code9887154 passed tests, CodeQL and both Codecov gates:
 99.86% patch and93.93% project. One defensive compare.py line is uncovered;
 both targets remain85%. New checkpoint CI will run after push.
+
+
+## Transcription proofreading batch004
+
+Hebrew s16/n15 through s24/n23 (printed7–11) received a fresh frozen image
+reading followed by comparison and native-crop adjudication. The source evidence
+records96 accepted comparison hunks, including plural petitions in Adonai boqer,
+misread words in Eikh niftah and Ein mi yiqra, and El Melekh/Vayaavor pointing
+and punctuation. Blind mistakes are retained and explicitly rejected; final
+פקדת retains its printed tav. Fine pointing uncertainties remain recorded.
+The printed stops change mercy_invocation to15 lines and el_erekh_apayim to16.
+
+All398 XML files passed schema validation. After correcting the stale verse
+counts, all96 continuation units, six opening streams and title comparisons
+pass. All106 existing Asher tests pass. The19-page bilingual inspection PDF
+converged in three LuaLaTeX passes, using an isolated reference database.
+Hebrew direction:0/508; reversing runs flags499/508. The17-page opening
+prefix has four zero alignment deltas and rejects six broken controls.
+The whole excerpt intentionally exceeds the opening-only checker boundary.
+Rendered pages15,17,18 were inspected. Full-book PDFs are earlier snapshots;
+facing English and independent-person Hebrew review remain pending. The
+previously recorded mixed-language note paragraph separation remains pending.
