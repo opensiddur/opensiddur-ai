@@ -822,3 +822,45 @@ limited scope is recorded explicitly. Full-book PDFs remain earlier snapshots.
 
 The coverage ledger records s10/n9 as the next Hebrew page; facing English
 pages, contents and later Hebrew pages are outside this proofreading batch.
+
+
+## Transcription proofreading batch 002
+
+Frozen fresh image readings cover Hebrew s10/n9 and s12/n11, printed 4/5,
+including the mixed-language footnote. Eight scan-adjudicated corrections remove
+the extra vav in ומה־נאמר, remove dagesh from the second כל, restore defective
+חצרתיו and ידעי, restore bet dagesh in הנה ברכו, remove an invented phrase dot
+after קדש, restore מלפניו, and add the printed phrase dot before ישמיע.
+A maqqef added by the blind reading in בבית יי was rejected against the image.
+Frozen captures, image hashes, pre-correction comparison and adjudication are
+in sources/asher_selichot/proofreading/image-pass-02. Initial scan-first fragment
+captures remain unchanged; the canonical continuation reading and XML are corrected.
+This is a same-model second pass, not independent-person proofreading. Next: s14/n13.
+
+Both changed Hebrew XML modules validate. All 96 bilingual continuation units,
+six opening streams and title comparisons pass. All 106 focused Asher tests pass.
+The separate inspection PDF through printed5 has 12 pages, converged in three
+passes, and was compiled with its own reference database. Four opening anchor
+deltas are zero. Hebrew direction: 0/199; reversal control flags 197. Five Latin
+apparatus runs read left to right. Both footnotes and corrected consonantal
+forms appear once. Nine broken controls are rejected: reversed citation/note,
+shifted English, wrong service boundary, stranded stop, colon substitution,
+deleted corrected line, deleted note and duplicate note. Page 11's body and
+apparatus were inspected visually. Facing English has not been independently
+proofread; whole-book PDFs remain earlier snapshots.
+
+## CI coverage diagnosis at code 61ea0af
+
+Tests and CodeQL pass; projects 037dca5 validation passes. Codecov reports
+37.42% patch coverage and 83.03% project coverage against 85% for both gates
+(codecov.yml). Overall coverage falls from 93.70% on base 56c1151.
+The patch contains 2,822 uncovered changed lines. The largest gaps include
+check_book_pdf.py (21.10%, 299 missing) and verify.py (8.66%, 295 missing);
+check_erev_yom_kippur_pdf.py and check_penitential_fourth_pdf.py have 0% coverage.
+CI's tests.yml instruments only unittest discovery. Separately run local
+source-verification and PDF-check commands do not contribute to its coverage.xml.
+Meaningful automated tests or coverage-instrumented CI checks are needed for
+these paths; passing local checks alone cannot satisfy the coverage gates.
+Thresholds and exclusions have not been changed.
+
+Report: https://app.codecov.io/gh/opensiddur/opensiddur-ai/pull/215
