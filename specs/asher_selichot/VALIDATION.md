@@ -1258,3 +1258,15 @@ Five XML files validate; 26 source-ordered bilingual units, eight shared pizmon 
 - Expanded: Monday fast PDF: 15 notes, asymmetric refrains, performance rubrics and boundaries checked; 8 stanza deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; Monday fast broken controls rejected; 22 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 604 Hebrew runs are set left to right; control: 597 of 604 flagged when every run is reversed. Visually inspected PDF pages: [14, 15, 16, 21].
 
 Artifacts: `output/asher_selichot/proofreading/batch-021/`. These PDFs isolate Monday; whole-book PDFs remain earlier snapshots. Rare word uncertainties and corrections to the fresh capture remain in the per-page ledgers.
+
+
+## Proofreading checkpoint 022
+
+The committed Hebrew proofreading checkpoint reaches the end of Thursday / Fifth Fast, printed 170 (s342/n341). Batch 022 covers four Hebrew pages from s336/n335 lower: 38 replacement operations and 19 unchanged confirmations. Five XML files validate. Frozen captures, pre-edit comparisons, enlarged-image adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-22/. This is a same-model second image pass with prior exposure, primarily consonant-first. Independent-person Hebrew, facing-English and comprehensive pointing review remain pending.
+
+Five XML files validate; 15 source-ordered bilingual units, six shared pizmon units, five abbreviation choices per language and expansion targets pass. Both PDFs preserve weekday performance instructions and omit unrequested Full Kaddish. Documentary output has two source footnotes; expanded output also carries 14 Monday notes. Six stanza starts align at 0.0 pt, direction and broken controls pass. All 154 shared scan and service assembly tests pass. No generic executable logic changed.
+
+- Documentary: thursday-fast: 2 apparatus fingerprints; stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; thursday-fast: 2 apparatus fingerprints; stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; thursday-fast: missing-note and shifted-stanza controls rejected; 12 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 168 Hebrew runs are set left to right; control: 167 of 168 flagged when every run is reversed. Visually inspected PDF pages: [7, 8, 9, 10, 11].
+- Expanded: thursday-fast: 10 apparatus fingerprints; stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; thursday-fast: 10 apparatus fingerprints; stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; thursday-fast: missing-note and shifted-stanza controls rejected; 21 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 545 Hebrew runs are set left to right; control: 540 of 545 flagged when every run is reversed. Visually inspected PDF pages: [9, 13, 14, 20].
+
+Artifacts: `output/asher_selichot/proofreading/batch-022/`. These PDFs isolate Thursday; whole-book PDFs remain earlier snapshots. Rare word uncertainties and corrections to the fresh capture remain in the per-page ledgers.
