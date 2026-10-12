@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
-- More compiler fixes from the review:
+- More compiler fixes from the review (#241):
   - **Parallel transclusions are paired by what they transclude**, not by position. When one
     column transcluded a file the other did not, that content was dropped, and the next
     file's translation was set beside the wrong text. Unmatched transclusions are now set
