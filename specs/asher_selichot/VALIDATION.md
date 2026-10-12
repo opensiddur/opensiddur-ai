@@ -1073,3 +1073,27 @@ Independent-person Hebrew and facing-English proofreading, uncertain fine marks,
 and the recorded mixed-note paragraph issue remain pending. Whole-book PDFs are
 older snapshots. Fourth-day image captures and comparison are complete;
 adjudication is underway and is not included in this checkpoint.
+
+
+## Proofreading checkpoint 010
+
+The Hebrew second image pass reaches the fourth-day closing rubric on s76/n75,
+printed 37 upper. Ninety-two replacement rules correct four modules across
+printed 33–37. Restore the omitted final-stanza phrase and remove its duplicated מלכי;
+retain the small unpointed refrain cues. Frozen captures, comparison,
+rejected blind readings and native-crop adjudication are in image-pass-10.
+Four changed XML files validate and fourth-day source/expansion checks pass.
+No executable code changes. Last full suite: 3557 tests,12 skips,no failures;
+all 398 XML files passed at checkpoint 007.
+
+Actual assemblies through day four render 56 documentary and 130 expanded pages
+under output/asher_selichot/proofreading/batch-010. Contents, day bookmarks above
+pizmons, notes, expansions, service boundaries and deliberately broken controls
+pass. Five fourth-day stanza anchors align exactly in both views. All other checked
+anchors align exactly except the documentary first-pizmon maximum of 13.55pt.
+Direction: 0/1964 documentary and 0/5321 expanded; reversed controls flag 1912/1964
+and 5158/5321. Documentary 52,54,55 and expanded 112,113,128 inspected visually.
+
+Independent-person Hebrew and facing-English proofreading, uncertain fine marks,
+and the recorded mixed-note paragraph issue remain pending. Whole-book PDFs are
+older snapshots. Fifth-day corrections and source checks are complete; PDF verification is pending.
