@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
-from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange, split_range
+from opensiddur.exporter.urn import UrnResolver, ResolvedUrn, ResolvedUrnRange, coarsen, split_range
 from opensiddur.exporter.refdb import UrnMapping
 
 
@@ -853,6 +853,43 @@ class TestUrnResolverPrioritizeRange(unittest.TestCase):
         self.assertIsInstance(results, list)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].project, "wlc")
+
+
+
+class TestCoarsen(unittest.TestCase):
+    """A sub-verse reference falls back on its verse, and nothing else falls back at all."""
+
+    NAHUM = "urn:x-opensiddur:text:bible:nahum"
+
+    def test_a_half_verse_falls_back_on_its_verse(self):
+        self.assertEqual(coarsen(f"{self.NAHUM}/2/2/b"), f"{self.NAHUM}/2/2")
+
+    def test_the_project_is_kept(self):
+        self.assertEqual(coarsen(f"{self.NAHUM}/2/2/b@jps1917"), f"{self.NAHUM}/2/2@jps1917")
+
+    def test_an_end_that_is_a_whole_verse_stays(self):
+        """2:2b-2:5 is 2:2-2:5, not 2:2 to the end of chapter 2."""
+        self.assertEqual(coarsen(f"{self.NAHUM}/2/2/b-/2/5"), f"{self.NAHUM}/2/2-/2/5")
+
+    def test_both_sub_verse_ends_fall_back(self):
+        self.assertEqual(coarsen(f"{self.NAHUM}/2/2/b-2/3/a"), f"{self.NAHUM}/2/2-/2/3")
+
+    def test_an_end_that_resolves_is_kept(self):
+        resolves = {f"{self.NAHUM}/2/3/a"}.__contains__
+        self.assertEqual(coarsen(f"{self.NAHUM}/2/2/b-2/3/a", resolves=resolves),
+                         f"{self.NAHUM}/2/2-/2/3/a")
+
+    def test_a_reference_that_resolves_is_not_coarsened(self):
+        self.assertIsNone(coarsen(f"{self.NAHUM}/2/2/b", resolves=lambda urn: True))
+
+    def test_a_whole_verse_is_not_widened(self):
+        self.assertIsNone(coarsen(f"{self.NAHUM}/2/2"))
+
+    def test_a_part_of_a_reading_is_not_a_part_of_a_verse(self):
+        self.assertIsNone(coarsen("urn:x-opensiddur:text:bible:reading/shavuot_ii/haftarah/1"))
+
+    def test_a_part_of_a_prayer_is_not_the_whole_prayer(self):
+        self.assertIsNone(coarsen("urn:x-opensiddur:text:prayer:amidah/avot"))
 
 
 if __name__ == '__main__':

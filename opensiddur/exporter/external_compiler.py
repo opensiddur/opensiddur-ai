@@ -1,7 +1,6 @@
 """External compiler processor for processing specific ranges of XML files."""
 
 import logging
-import re
 from contextlib import contextmanager
 from typing import Any, Optional
 from lxml.etree import ElementBase
@@ -23,7 +22,13 @@ from opensiddur.exporter.constants import (
 )
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import UNIT_CONTAINED_BY, ReferenceDatabase
-from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
+from opensiddur.exporter.urn import (
+    ResolvedUrnRange,
+    UrnResolver,
+    coarsen,
+    split_project,
+    with_project,
+)
 from lxml import etree
 
 from opensiddur.exporter.marker_reconstruct import (
@@ -395,9 +400,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
     @staticmethod
     def _build_parallel_urn(target: str, parallel_project: str) -> str:
         """Replace or append @project suffix to point at parallel_project."""
-        if re.search(r'@[\w-]+$', target):
-            return re.sub(r'@[\w-]+$', f'@{parallel_project}', target)
-        return f"{target}@{parallel_project}"
+        return with_project(target, parallel_project)
 
     @staticmethod
     def _split_at_milestones(
@@ -675,7 +678,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 # accents and so carries no half-verses. Set the containing division beside
                 # the primary rather than leaving the column empty; make_rows pairs the two
                 # up at whatever division they have in common.
-                coarser = coarsen(parallel_target)
+                coarser = coarsen(parallel_target, resolves=lambda urn: bool(
+                    UrnResolver.prioritize_range(
+                        self._urn_resolver.resolve_range(urn), [parallel_project])))
                 p_resolved = UrnResolver.prioritize_range(
                     self._urn_resolver.resolve_range(coarser), [parallel_project]
                 ) if coarser else None
@@ -798,7 +803,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         linear_data=self.linear_data,
                         reference_database=self._refdb)
                     primary_proc.marker_stack = []
-                    primary_result = primary_proc.process()
+                    with self._transclusion_guard(primary_project, primary_file, primary_start,
+                                                  primary_end, target):
+                        primary_result = primary_proc.process()
 
         if parallel_result is None:
             return None
@@ -887,7 +894,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         idno = self.root_tree.find(
             f"{{{TEI_NS}}}teiHeader//{{{TEI_NS}}}idno[@type='urn']")
         if idno is not None and idno.text:
-            return re.sub(r'@[\w-]+$', '', idno.text.strip())
+            return split_project(idno.text.strip())[0]
 
         return None
 
@@ -1323,8 +1330,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         self.root_language = self._get_in_scope_language(
             self.deepest_common_ancestor if self.deepest_common_ancestor is not None else root)
 
-        with self._conditional_settings_checkpoint():
-            self.linear_data.processing_context.append(_ProcessingContext(
+        with self._conditional_settings_checkpoint(), self._processing_frame(_ProcessingContext(
                 project=self.project,
                 file_name=self.file_name,
                 from_start=self.from_start,
@@ -1334,16 +1340,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 include_tail_after_end=False,
                 command=_ProcessingCommand.RECURSE,
                 inside_deepest_common_ancestor=False,
-            ))
-
-            try:
-                processed = self._process_element(root, root)
-                # Owed only when the range ended on the root itself, with no parent loop
-                # to place them in.
-                self._flush_closers_due(processed)
-            finally:
-                # A failed counterpart must not leave its context in the fallback.
-                self.linear_data.processing_context.pop()
+        )):
+            processed = self._process_element(root, root)
+            # Owed only when the range ended on the root itself, with no parent loop
+            # to place them in.
+            self._flush_closers_due(processed)
 
         place_milestone_annotations(processed)
 

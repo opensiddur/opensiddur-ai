@@ -1,7 +1,7 @@
 """ Resolver for urn:x-opensiddur: URIs.
 """
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 from pydantic import BaseModel
 
@@ -24,6 +24,24 @@ class ResolvedUrnRange(BaseModel):
     @property
     def project(self) -> str:
         return self.start.project
+
+
+def split_project(urn: str) -> tuple[str, Optional[str]]:
+    """``urn`` without its ``@project`` suffix, and the project it names (None if none).
+
+    The suffix is everything after the last ``@``, so a project name may hold any character
+    but ``@`` itself.
+    """
+    if '@' not in urn:
+        return urn, None
+    bare, project = urn.rsplit('@', 1)
+    return bare, project
+
+
+def with_project(urn: str, project: Optional[str]) -> str:
+    """``urn`` with an ``@project`` suffix, replacing any it already has."""
+    bare, _ = split_project(urn)
+    return f"{bare}@{project}" if project else bare
 
 
 def split_range(ranged_urn: str) -> Optional[tuple[str, str]]:
@@ -107,8 +125,30 @@ def split_range(ranged_urn: str) -> Optional[tuple[str, str]]:
     return start_urn, '/'.join(end_parts)
 
 
-def coarsen(urn: str) -> Optional[str]:
-    """`urn` with its last path component dropped, or None if it has only one.
+#: The namespace whose URNs reach below a whole division: a Bible verse can be divided into
+#: half-verses and named parts. Only there does a coarser URN stand for "the same text, less
+#: finely divided"; elsewhere the parent of a URN is a different, larger text.
+_SUB_VERSE_NAMESPACE = "urn:x-opensiddur:text:bible:"
+
+#: book/chapter/verse: the components of a whole verse below the namespace.
+_VERSE_DEPTH = 3
+
+
+def _below_the_verse(urn: str) -> bool:
+    """Whether ``urn`` names a point inside a numbered verse: book/chapter/verse/part.
+
+    Other Bible URNs run deeper too -- a parashah's aliyot, a reading's haftarah -- but their
+    parents are not verses, and do not contain them the way a verse contains its half.
+    """
+    if not urn.startswith(_SUB_VERSE_NAMESPACE):
+        return False
+    components = urn[len(_SUB_VERSE_NAMESPACE):].split("/")
+    return (len(components) > _VERSE_DEPTH
+            and components[1].isdigit() and components[2].isdigit())
+
+
+def coarsen(urn: str, resolves: Optional[Callable[[str], bool]] = None) -> Optional[str]:
+    """The verse that contains a sub-verse reference, or None if there is no such fallback.
 
     A project need not carry every division another project does: a translation has no
     accents, so it can place no half-verses, and a reference to one has to fall back on the
@@ -116,35 +156,46 @@ def coarsen(urn: str) -> Optional[str]:
     whole verse where half was asked for is the behaviour that was there before sub-verse
     URNs existed; what is new is that the caller knows it happened and can say so.
 
-    Ranges are coarsened at both ends, and the result is stated absolutely so that ends
-    which no longer sit at the same depth still resolve.
+    Only a point below a Bible verse is coarsened. A whole verse is not widened to its
+    chapter, and the parent of any other URN is a different text, not a coarser division of
+    the same one: falling back from a part of the Amidah to the whole Amidah would print the
+    wrong thing.
+
+    In a range each end is coarsened by itself, and only if it is below the verse and does
+    not resolve (``resolves`` says which do; without it, every end below the verse is taken
+    not to). An end that is already a verse stays where it is, so ``2:2b-2:5`` falls back to
+    ``2:2-2:5`` rather than to the rest of chapter 2. The result is stated absolutely, since
+    the two ends may no longer be at the same depth.
     """
-    project_specifier = None
-    if '@' in urn:
-        urn, project_specifier = urn.rsplit('@', 1)
+    urn, project_specifier = split_project(urn)
 
     try:
         split = split_range(urn)
     except ValueError:
         return None
 
-    def drop(one: str) -> Optional[str]:
-        head, _, tail = one.rpartition('/')
-        return head if head and tail else None
+    def coarser(one: str) -> Optional[str]:
+        """``one`` less its sub-verse component, or None if it is to be kept."""
+        if not _below_the_verse(one):
+            return None
+        if resolves is not None and resolves(with_project(one, project_specifier)):
+            return None
+        return one.rpartition('/')[0]
 
     if split is None:
-        coarsened = drop(urn)
+        coarsened = coarser(urn)
     else:
-        start, end = (drop(part) for part in split)
-        if start is None or end is None:
+        start, end = split
+        new_start, new_end = coarser(start), coarser(end)
+        if new_start is None and new_end is None:
             return None
-        # The absolute form, since the two ends may no longer be at the same depth.
+        start, end = new_start or start, new_end or end
         _work, _, below = end.partition('/')
-        coarsened = f"{start}-/{below}" if below else None
+        coarsened = f"{start}-/{below}"
 
     if coarsened is None:
         return None
-    return f"{coarsened}@{project_specifier}" if project_specifier else coarsened
+    return with_project(coarsened, project_specifier)
 
 
 class UrnResolver:
@@ -171,12 +222,11 @@ class UrnResolver:
             (when no project specifier is provided).
         """
         # Handle URNs with '@' sign: 'urn@project'
-        if '@' in urn:
-            actual_urn, project = urn.rsplit('@', 1)
+        actual_urn, project = split_project(urn)
+        if project:
             mappings = self.database.get_urn_mappings(actual_urn, project)
         else:
-            actual_urn = urn
-            mappings = self.database.get_urn_mappings(urn)
+            mappings = self.database.get_urn_mappings(actual_urn)
         
         return [
             ResolvedUrn(
@@ -214,9 +264,7 @@ class UrnResolver:
             ValueError: if the URN names a range but not a well-formed one.
         """
         # Handle @project notation
-        project_specifier = None
-        if '@' in ranged_urn:
-            ranged_urn, project_specifier = ranged_urn.rsplit('@', 1)
+        ranged_urn, project_specifier = split_project(ranged_urn)
 
         split = split_range(ranged_urn)
 
@@ -249,7 +297,17 @@ class UrnResolver:
         ranges = [ResolvedUrnRange(start=start_resolved, end=end_dict.get((start_resolved.project, start_resolved.file_name)))
                   for start_resolved in start_resolved_list
                   if (start_resolved.project, start_resolved.file_name) in end_dict]
-        
+
+        if not ranges:
+            # Both ends exist, but no project has them in one file. That is not a missing
+            # URN, and "not found" would send the author looking for the wrong thing.
+            both = ({r.project for r in start_resolved_list}
+                    & {r.project for r in end_resolved_list})
+            if both:
+                raise ValueError(
+                    f"The start and end of {ranged_urn} are in different files in "
+                    f"{sorted(both)}; a range must lie within one file")
+
         return ranges
     
     def get_urns_by_project(self, project: str) -> list[ResolvedUrn]:

@@ -139,7 +139,13 @@ To add URNs to reference parts of poems and prayers that don't have natural line
 
 All URIs reference the following scopes:
 1. If the URI is on an element with non-empty content, it references that content.
-2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the next milestone of the same unit *or* the end of the file if no subsequent milestone of the same unit exists.
+2. If the URI is on an empty milestone like element (`milestone`, `pb`, `lb`, etc.) it references that milestone unit until the first of these that follows it:
+   - the next milestone of the same unit;
+   - the next milestone of a unit that *contains* it. A verse ends at the next chapter, but a chapter does not end at the next verse. The containment table is `UNIT_CONTAINED_BY` in `opensiddur/exporter/refdb.py`. Units it does not name end at the next milestone with as many or fewer `/`-separated components in its URN;
+   - a terminator (rule 3);
+   - otherwise, the end of its outermost `tei:div`, or of the section of the text it is in (`tei:body`, `tei:front` or `tei:back`) when it is in no division. This runs past the end of its own paragraph, so the last chapter of a book runs to the end of the book, not to the end of its first paragraph. It does not run past the division: material after the book's division, such as a colophon, is not in the scope, and a milestone after it does not end the scope.
+
+   This is the one statement of a milestone's scope. The other specifications refer to it.
 3. A `milestone` that carries a `unit` but **no** `corresp` is a *terminator*: it ends the scope opened by the nearest preceding milestone of that same unit, and opens nothing itself.
 
 4. If the URI is on an empty anchor (`anchor`), it references that specific point in the document.
@@ -258,8 +264,9 @@ only at `@corresp` — ignore it entirely. Which numbering a reader sees is a re
 - **One milestone per canonical verse, exactly once per project.** A verse split across paragraphs by a
   parashah break in the middle of it is still one verse and keeps one milestone; its scope runs to the next
   verse milestone regardless of paragraph boundaries. Repeating the milestone gives the verse two identical
-  `@corresp` values, and both the reference database and the parallel compiler keep only the first and silently
-  drop the rest.
+  `@corresp` values. Both the reference database and the parallel compiler keep only the first, drop the rest,
+  and warn. A source may legitimately print the same text twice, even with different wording, so this is not an
+  error; but only the first copy can be reached by its URN.
 - **Never renumber to paper over a disagreement.** If an edition's verse count does not match the canonical
   one and the reason is not in the versification table, that is a defect in the importer or an unrecorded
   divergence, not something to be shifted into alignment.
@@ -301,7 +308,8 @@ Hebrew Tanakh project carries it on every verse that has one.
 the transliterated first word of the part, exactly as a division of a poem is
 (`yonah_matzah/hayom` above), and the name **may not contain `-`**, which marks a range. Parts
 cannot be derived, so they are declared in `opensiddur/common/subverse.py` and every Tanakh
-importer places them. Because a part's scope runs to the next sub-verse milestone, a passage
+importer places them. Because a part's scope runs to the next verse-part, verse or chapter milestone (a
+half-verse milestone does not end it), a passage
 that stops in the middle of a verse needs a part declared where the *remainder* begins too:
 `exodus/34/7/lo_yenakeh` exists so that `exodus/34/7/venakeh` ends where the recitation does.
 
@@ -778,12 +786,15 @@ The following rules apply to anchors:
 To include one text inside another, use the `j:transclude` tag inline in the text. Preferentially, use the URN reference of the text to be included, using the `target` attribute for the pointer target.
 
 Two types of inclusions are supported. The intended type is indicated by the `type` attribute on the `j:transclude` element:
-* `inline`: The text is to be included in place. Any XML hierarchy (including paragraphs, line groups, etc) 
-  within the included text are excluded.
-* `external`: The text and its XML hierarchy are to be included in place.
+* `external` (the default, when `type` is absent): The text and its XML hierarchy are to be included in place.
+* `inline`: The text is to be included in place. Any XML hierarchy (including paragraphs, line groups, etc)
+  within the included text are excluded. Where the included text gives two readings of a word in a `tei:choice`,
+  only one is included: the `j:read` (qere), or the first `j:option`.
 
-`target` attributes may reference ranges, such as `urn:x-opensiddur:text:bible:genesis/1/1-1/3`, as long as the reference
-does not cross hierarchical boundaries or files. The refererence may entirely contain XML hierarchy or other files.
+`target` attributes may reference ranges, such as `urn:x-opensiddur:text:bible:genesis/1/1-1/3`, as long as both ends are
+in one file and the end does not come before the start; the compiler reports either error. A range may start and end
+in different parts of the hierarchy, and may contain XML hierarchy or transclusions of other files. A transclusion may
+not include itself, directly or through other files; the compiler reports the cycle.
 
 A range is written `START-END`, and the end has two forms.
 
@@ -1845,12 +1856,12 @@ With no operands, `all` and `none` are true and `any` and `one` are false.
 
 ### Alignment
 
-Translation (or other alternate text) alignment can be performed if both texts declare their correspondence to common URNs using the `corresp` attribute. For example, if two Bibles declare that a verse corresponds to `urn:x-opensiddur:text:bible:song_of_songs/1/5`, then that segment of text can be aligned with each other. The alignment starts from the declared milestone and runs until the next verse-level unit.
+Translation (or other alternate text) alignment can be performed if both texts declare their correspondence to common URNs using the `corresp` attribute. For example, if two Bibles declare that a verse corresponds to `urn:x-opensiddur:text:bible:song_of_songs/1/5`, then that segment of text can be aligned with each other. The alignment starts from the declared milestone and runs until the next URN that both texts mark.
 
 The join is on exact URN equality and nothing else: the compiler has no notion of one edition's verse
 corresponding to several of another's. Two texts therefore align correctly only if both number their verses
-canonically — see [Versification](#versification) — and a `@corresp` repeated within a document breaks the join
-silently, because only the first segment carrying a given URN is kept.
+canonically — see [Versification](#versification) — and a `@corresp` repeated within a document breaks the join,
+because only the first segment carrying a given URN is kept (with a warning).
 
 Where the two texts divide differently, only the URNs *both* mark become alignment boundaries: a division one
 side does not carry is set within the nearest preceding division both carry. So a Hebrew divided at its accents

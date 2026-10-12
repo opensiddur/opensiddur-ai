@@ -55,6 +55,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
+- **Last milestone in a file** (#240). When nothing ended a milestone's scope, it stopped at the end
+  of its own paragraph. It now runs to the end of its outermost division. The last chapter of 42
+  JPS 1917 books, and of 30 WLC and 31 MAM files, had resolved to its first paragraph alone;
+  so had Ecclesiastes 12:14 and two Birnbaum English prayers.
+- **Inline transclusion** put a space before every child's tail, which split words divided by
+  markup (`<hi>נֹ</hi>צֵר` came out `נֹ צֵר`). It also printed both the ketiv and the qere of
+  a `tei:choice`. It now keeps the text exactly as it is, and reads only the `j:read`, or the
+  first `j:option`.
+- **Fallback for a missing sub-verse URN.** When a project lacks a sub-verse URN, the compiler
+  falls back on the containing verse. That fallback widened both ends of a range, so
+  `2:2b–2:5` became 2:2 to the end of chapter 2. It also applied to any URN, so a part of a
+  prayer could fall back on the whole prayer. Now only an end that does not resolve and is
+  below a Bible verse falls back, on its verse.
+- **Reference database indexing.**
+  - A `corresp` repeated within a project is kept the first time and dropped, with a warning,
+    after that. It used to raise an error, which was then swallowed.
+  - Each file is indexed in one transaction, so a failure leaves nothing of the file behind.
+    It used to leave the file half indexed.
+  - `python -m opensiddur.exporter.refdb` exits non-zero if any file failed.
+  - Notes on a target come back in document order, however the files were re-synced.
+- **New errors in place of crashes or wrong output.**
+  - A transclusion cycle used to end in a `RecursionError`; it is now an error naming the
+    chain.
+  - A range whose end comes before its start silently copied to the end of the file; it is now
+    an error.
+  - A range across two files reported "not found"; it now says the ends are in different
+    files.
+- **Smaller fixes.**
+  - An explicit `urn…@project` target is no longer refused when that project is not in the
+    priority list.
+  - A settings file without a transclusion priority uses the compiled file's project, as the
+    README says.
+  - Writing the compiled file to standard output no longer fails.
+  - After a failed parallel column, the processing-context stack is restored.
 - Settings declared in a transcluded file no longer leak into the file that transcludes it (#239).
   Each file's checkpoint cut the settings stack back to its old length. A recalculation of
   derived settings moves entries around inside the stack, so the cut could keep the inner

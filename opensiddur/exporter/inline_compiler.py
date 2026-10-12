@@ -10,11 +10,59 @@ from opensiddur.exporter.compiler import (
     _AnnotationCommand,
 )
 from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
+from opensiddur.exporter.constants import (
+    JLPTEI_NAMESPACE,
+    PROCESSING_NAMESPACE,
+    TEI_NS,
+    is_element_node,
+)
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import LinearData
 from opensiddur.exporter.refdb import ReferenceDatabase
 from lxml import etree
+
+
+TEI_CHOICE = f"{{{TEI_NS}}}choice"
+J_READ = f"{{{JLPTEI_NAMESPACE}}}read"
+J_OPTION = f"{{{JLPTEI_NAMESPACE}}}option"
+
+
+#: Elements that end a line or a block. Inline text has no lines or blocks, so words on either
+#: side of one need a space between them if the source puts none; inline markup (a highlighted
+#: letter, a divine name) joins exactly, since it can fall inside a word.
+_LINE_OR_BLOCK_TAGS = frozenset(f"{{{TEI_NS}}}{name}" for name in (
+    "lb", "pb", "cb", "l", "lg", "p", "ab", "head", "item", "list", "div"))
+
+
+def _join(text: str, addition: str, boundary: bool) -> str:
+    """``text`` + ``addition``, with a space between them across a line or block boundary."""
+    if (boundary and text and addition
+            and not text[-1].isspace() and not addition[0].isspace()):
+        return text + " " + addition
+    return text + addition
+
+
+def _unread_choices(element: ElementBase, keep: tuple = ()) -> set[ElementBase]:
+    """The children of a tei:choice that inline text leaves out.
+
+    Inline text has room for one reading of a word. A ketiv and a qere are two readings of one
+    word, and the qere (j:read) is what is read; set side by side they would double the word.
+    A choice of wordings (j:option) has no one reading, and the first stands in, as it does
+    where sub-verse boundaries are measured (opensiddur/common/subverse.py).
+    """
+    if element.tag != TEI_CHOICE:
+        return set()
+    readings = [child for child in element if child.tag == J_READ] or [
+        child for child in element if child.tag == J_OPTION][:1]
+    if not readings:
+        return set()
+    # A reading that holds where the range starts or ends is read regardless: skipping it
+    # would skip the start or the end itself.
+    holds = {child for child in element
+             if any(kept is not None and (kept is child or child in kept.iterancestors())
+                    for kept in keep)}
+    return {child for child in element
+            if is_element_node(child) and child not in readings and child not in holds}
 
 
 class InlineCompilerProcessor(CompilerProcessor):
@@ -209,7 +257,10 @@ class InlineCompilerProcessor(CompilerProcessor):
         # the command is some kind of recursion now, COPY_TEXT_AND_RECURSE or RECURSE
         context_lang = self._get_in_scope_language(element)
         previous_child = None
+        unread = _unread_choices(element, (self.start_element, self.end_element))
         for child in element:
+            if child in unread:
+                continue
             processed = self._process_element(child, root)
             # Check if this child has a language different from the root
             child_lang = self._get_in_scope_language(child)
@@ -222,10 +273,13 @@ class InlineCompilerProcessor(CompilerProcessor):
                     # Extract text from nested p:transcludeInline elements. It follows
                     # whatever is already here, so it goes on the last child's tail if any:
                     # appended to the text, it would jump ahead of an earlier marker.
+                    boundary = child.tag in _LINE_OR_BLOCK_TAGS
                     if previous_child is not None:
-                        previous_child.tail = (previous_child.tail or "") + (processed.text or "")
+                        previous_child.tail = _join(
+                            previous_child.tail or "", processed.text or "", boundary)
                     else:
-                        text_element.text += processed.text or ""
+                        text_element.text = _join(text_element.text, processed.text or "",
+                                                  boundary)
                     # Also extract any p:transclude children (nested transclusions)
                     for nested_child in processed:
                         text_element.append(nested_child)
@@ -245,10 +299,11 @@ class InlineCompilerProcessor(CompilerProcessor):
                 # A child skipped by a false conditional scope takes its tail with it: that
                 # tail is conditional text. See _carry_dropped_tail.
                 if child.tail and not self._should_skip_conditional_content():
+                    boundary = child.tag in _LINE_OR_BLOCK_TAGS
                     if previous_child is not None:
-                        previous_child.tail = (previous_child.tail or "") + " " + child.tail
+                        previous_child.tail = _join(previous_child.tail or "", child.tail, boundary)
                     else:
-                        text_element.text += " " + child.tail
+                        text_element.text = _join(text_element.text, child.tail, boundary)
             if self._closers_due:
                 # The range ended at this child: close the scopes it ends inside, after the
                 # end and its tail.
@@ -268,8 +323,7 @@ class InlineCompilerProcessor(CompilerProcessor):
 
         self.root_language = self._get_in_scope_language(root)
 
-        with self._conditional_settings_checkpoint():
-            self.linear_data.processing_context.append(_ProcessingContext(
+        with self._conditional_settings_checkpoint(), self._processing_frame(_ProcessingContext(
                 project=self.project,
                 file_name=self.file_name,
                 from_start=self.from_start,
@@ -279,14 +333,10 @@ class InlineCompilerProcessor(CompilerProcessor):
                 include_tail_after_end=False,
                 command=_ProcessingCommand.RECURSE,
                 inside_deepest_common_ancestor=False,
-            ))
-
+        )):
             element = self._process_element(root, root)
             # Owed only when the range ended on the root itself, with no parent loop
             # to place them in.
             self._flush_closers_due(element)
-
-            # pop the processing context
-            self.linear_data.processing_context.pop()
 
         return element

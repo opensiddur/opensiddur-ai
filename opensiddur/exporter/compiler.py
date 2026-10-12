@@ -72,7 +72,7 @@ from opensiddur.exporter.condition_eval import (
 from opensiddur.exporter.refdb import ReferenceDatabase
 from opensiddur.exporter.annotation_placement import place_structural_annotations_in_tree
 from opensiddur.exporter.milestone_annotations import place_milestone_annotations
-from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen
+from opensiddur.exporter.urn import ResolvedUrnRange, UrnResolver, coarsen, split_project
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 logger = logging.getLogger(__name__)
@@ -114,6 +114,23 @@ class _ProcessingContext(TypedDict):
     inside_deepest_common_ancestor: bool
     command: _ProcessingCommand
     
+def _precedes(first: ElementBase, second: ElementBase) -> bool:
+    """Whether ``first`` begins before ``second`` in document order, without containing it."""
+    if first is second or any(ancestor is first for ancestor in second.iterancestors()):
+        return False
+    if any(ancestor is second for ancestor in first.iterancestors()):
+        return False
+    first_line, second_line = first.sourceline, second.sourceline
+    if first_line is not None and second_line is not None and first_line != second_line:
+        return first_line < second_line
+    for element in first.getroottree().iter():
+        if element is first:
+            return True
+        if element is second:
+            return False
+    return False
+
+
 class CompilerProcessor:
     def __init__(
         self, 
@@ -285,7 +302,93 @@ class CompilerProcessor:
         else:
             end_element = None
 
+        if (start_element is not None and end_element is not None
+                and _precedes(end_element, start_element)):
+            raise ValueError(
+                f"Range in {self.project}/{self.file_name} ends before it starts: "
+                f"{from_start} … {to_end}")
+
         return start_element, end_element
+
+    @contextmanager
+    def _transclusion_guard(self, project: str, file_name: str, start: str, end: str,
+                            target: str):
+        """Refuse a transclusion of a range that is already being transcluded.
+
+        A range that transcludes itself, directly or through other files, would recurse until
+        Python gave up with a RecursionError that says nothing of where the cycle is.
+        """
+        key = (project, file_name, start, end)
+        chain = self.linear_data.transclusion_chain
+        if key in chain:
+            cycle = " -> ".join(f"{p}/{f}" for p, f, _s, _e in chain[chain.index(key):])
+            raise ValueError(f"Transclusion cycle at {target}: {cycle} -> {project}/{file_name}")
+        chain.append(key)
+        try:
+            yield
+        finally:
+            chain.pop()
+
+    def _compile_transclusion(self, transclusion_type: str, transclude_range: ResolvedUrnRange,
+                              end_element_path: str, processing_element: ElementBase):
+        """Compile a transcluded range into ``processing_element``; return the processor."""
+        if transclusion_type == 'external':
+            from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
+            processor = ExternalCompilerProcessor(
+                transclude_range.start.project,
+                transclude_range.start.file_name,
+                from_start=transclude_range.start.element_path,
+                to_end=end_element_path,
+                include_tail_after_end=transclude_range.end.end_includes_tail,
+                linear_data=self.linear_data,
+                reference_database=self._refdb)
+            # Propagate marker mode to nested processor
+            if hasattr(self, 'marker_stack') and self.marker_stack is not None:
+                processor.marker_stack = []
+            processed_list = processor.process()
+            # External transclusions should contribute textual content only (tei:text),
+            # never teiHeader/sourceDesc metadata.
+            tei_ns = self.ns_map.get("tei", "http://www.tei-c.org/ns/1.0")
+            tei_root_tag = f"{{{tei_ns}}}TEI"
+            for processed in processed_list:
+                # ...with one exception. Whoever digitised the words being taken is
+                # owed a credit for them, and this is the moment their header is
+                # about to be dropped. Gathering the credits here is what makes the
+                # compiled document self-describing: it can be printed, or turned
+                # into HTML, without reopening the sources it was built from.
+                gather_credits(processed, self.linear_data)
+                if processed.tag == tei_root_tag:
+                    text_el = processed.find(f"{{{tei_ns}}}text")
+                    if text_el is None:
+                        text_el = processed.find(f".//{{{tei_ns}}}text")
+                    if text_el is not None:
+                        for child in list(text_el):
+                            processing_element.append(child)
+                        continue
+                    # fallback: older/invalid trees
+                    body = processed.find(f"{{{tei_ns}}}text/{{{tei_ns}}}body")
+                    if body is None:
+                        body = processed.find(f".//{{{tei_ns}}}body")
+                    if body is not None:
+                        for child in list(body):
+                            processing_element.append(child)
+                    continue
+                processing_element.append(processed)
+        else:
+            from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
+            processor = InlineCompilerProcessor(
+                transclude_range.start.project,
+                transclude_range.start.file_name,
+                from_start=transclude_range.start.element_path,
+                to_end=end_element_path,
+                include_tail_after_end=transclude_range.end.end_includes_tail,
+                linear_data=self.linear_data,
+                reference_database=self._refdb)
+            processed = processor.process()
+            processing_element.text = processed.text
+            for child in processed:
+                processing_element.append(child)
+        return processor
 
     def _transclude(self, 
         element: ElementBase, 
@@ -315,6 +418,8 @@ class CompilerProcessor:
                     and self.linear_data.parallel_projects
                     and not self._in_parallel_compilation
                     and hasattr(self, '_transclude_parallel')):
+                # The primary column is guarded inside; a parallel column is another
+                # project's text and may well transclude the very range it stands beside.
                 result = self._transclude_parallel(element, transclude_range, transclusion_type)
                 if result is not None:
                     return result
@@ -323,66 +428,16 @@ class CompilerProcessor:
             context_lang = self._get_in_scope_language(element)
 
             end_element_path = transclude_range.end.end_element_path or transclude_range.end.element_path
-            if transclusion_type == 'external':
-                from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
-                processor = ExternalCompilerProcessor(
-                    transclude_range.start.project,
-                    transclude_range.start.file_name,
-                    from_start=transclude_range.start.element_path,
-                    to_end=end_element_path,
-                    include_tail_after_end=transclude_range.end.end_includes_tail,
-                    linear_data=self.linear_data,
-                    reference_database=self._refdb)
-                # Propagate marker mode to nested processor
-                if hasattr(self, 'marker_stack') and self.marker_stack is not None:
-                    processor.marker_stack = []
-                processed_list = processor.process()
-                # External transclusions should contribute textual content only (tei:text),
-                # never teiHeader/sourceDesc metadata.
-                tei_ns = self.ns_map.get("tei", "http://www.tei-c.org/ns/1.0")
-                tei_root_tag = f"{{{tei_ns}}}TEI"
-                for processed in processed_list:
-                    # ...with one exception. Whoever digitised the words being taken is
-                    # owed a credit for them, and this is the moment their header is
-                    # about to be dropped. Gathering the credits here is what makes the
-                    # compiled document self-describing: it can be printed, or turned
-                    # into HTML, without reopening the sources it was built from.
-                    gather_credits(processed, self.linear_data)
-                    if processed.tag == tei_root_tag:
-                        text_el = processed.find(f"{{{tei_ns}}}text")
-                        if text_el is None:
-                            text_el = processed.find(f".//{{{tei_ns}}}text")
-                        if text_el is not None:
-                            for child in list(text_el):
-                                processing_element.append(child)
-                            continue
-                        # fallback: older/invalid trees
-                        body = processed.find(f"{{{tei_ns}}}text/{{{tei_ns}}}body")
-                        if body is None:
-                            body = processed.find(f".//{{{tei_ns}}}body")
-                        if body is not None:
-                            for child in list(body):
-                                processing_element.append(child)
-                        continue
-                    processing_element.append(processed)
-            else:
-                from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
-                processor = InlineCompilerProcessor(
-                    transclude_range.start.project,
-                    transclude_range.start.file_name,
-                    from_start=transclude_range.start.element_path,
-                    to_end=end_element_path,
-                    include_tail_after_end=transclude_range.end.end_includes_tail,
-                    linear_data=self.linear_data,
-                    reference_database=self._refdb)
-                processed = processor.process()
-                processing_element.text = processed.text
-                for child in processed:
-                    processing_element.append(child)
-            
+            with self._transclusion_guard(transclude_range.start.project,
+                                          transclude_range.start.file_name,
+                                          transclude_range.start.element_path,
+                                          end_element_path, target):
+                processor = self._compile_transclusion(
+                    transclusion_type, transclude_range, end_element_path, processing_element)
+
             # Mark the file source using the transcluded file's project and file_name
             processing_element = processor._mark_file_source(processing_element)
-            
+
             # Check if language differs and add xml:lang if needed
             # Get language of transcluded start element
             if processor.root_language and context_lang != processor.root_language:
@@ -571,6 +626,11 @@ class CompilerProcessor:
         resolver = self._urn_resolver
         
         project_priority = self.linear_data.project_priority
+        named_project = split_project(target)[1]
+        if named_project:
+            # A target that names its project has chosen it; the priority list is for
+            # targets that leave the choice open.
+            project_priority = [named_project]
 
         resolved = resolver.resolve_range(target)
         range_start = UrnResolver.prioritize_range(resolved, project_priority)
@@ -581,7 +641,8 @@ class CompilerProcessor:
             # asked for, which is what happened before sub-verse URNs existed; the warning
             # is what is new, and validate_urn_references reports the same thing ahead of a
             # build.
-            coarser = coarsen(target)
+            coarser = coarsen(target, resolves=lambda urn: bool(UrnResolver.prioritize_range(
+                resolver.resolve_range(urn), project_priority)))
             coarsened = (
                 UrnResolver.prioritize_range(resolver.resolve_range(coarser), project_priority)
                 if coarser else None
@@ -827,6 +888,22 @@ class CompilerProcessor:
         except BaseException:
             self.linear_data.printed_annotations = saved
             raise
+
+    @contextmanager
+    def _processing_frame(self, context: _ProcessingContext):
+        """Push a processing context for the duration of a ``process()`` call.
+
+        The stack is cut back to where it was however the call ends. A parallel column that
+        fails is caught and replaced by a fallback, which must not find the failed column's
+        context still on top of the stack, tracking its own range on the wrong record.
+        """
+        stack = self.linear_data.processing_context
+        depth = len(stack)
+        stack.append(context)
+        try:
+            yield
+        finally:
+            del stack[depth:]
 
     @contextmanager
     def _conditional_settings_checkpoint(self):
@@ -1089,9 +1166,7 @@ class CompilerProcessor:
 
         self.root_language = self._get_in_scope_language(root)
 
-        with self._conditional_settings_checkpoint():
-            # set up the processing context
-            self.linear_data.processing_context.append(_ProcessingContext(
+        with self._conditional_settings_checkpoint(), self._processing_frame(_ProcessingContext(
                 project=self.project,
                 file_name=self.file_name,
                 from_start=None,
@@ -1101,13 +1176,10 @@ class CompilerProcessor:
                 command=_ProcessingCommand.COPY_AND_RECURSE,
                 inside_deepest_common_ancestor=False,
                 include_tail_after_end=False,
-            ))
-
+        )):
             copied = self._process_element(root, root)
             place_milestone_annotations([copied])
             copied = self._mark_file_source(copied)
-            # pop the processing context
-            self.linear_data.processing_context.pop()
 
         return copied
 
@@ -1317,6 +1389,9 @@ def main(argv: list[str] | None = None):  # pragma: no cover
             linear_data=linear_data,
             project_directory=project_directory,
         )
+        if not linear_data.project_priority:
+            # README: with no transclusion priority, the project of the file compiled is used.
+            linear_data.project_priority = [args.project]
     else:
         linear_data = load_default_settings(
             args.project,
@@ -1337,7 +1412,7 @@ def main(argv: list[str] | None = None):  # pragma: no cover
     for problem in check_pairing(result):
         logger.warning("conditional markers do not pair: %s", problem)
     etree.ElementTree(result).write(
-        args.output_file if args.output_file else sys.stdout,
+        args.output_file if args.output_file else sys.stdout.buffer,
         pretty_print=True,
         encoding='utf-8')
 

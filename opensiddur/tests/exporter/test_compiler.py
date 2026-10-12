@@ -1985,6 +1985,7 @@ def _linear_data_with_root(root: etree._Element):
         parallel_projects = []
         project_priority = ["p"]
         instruction_priority = ["p"]
+        transclusion_chain = []
 
     return _LD()
 
