@@ -574,8 +574,9 @@ class TestRunBibtex(unittest.TestCase):
     def test_runs_bibtex_when_aux_indicates_bibliography(self):
         (self.output_dir / "doc.aux").write_text("\\bibdata{job}")
         result = MagicMock(returncode=0, stdout="")
-        with patch("subprocess.run", return_value=result) as mock_run:
-            self.assertTrue(_run_bibtex("doc", self.output_dir))
+        with patch("opensiddur.exporter.pdf.pdf._have_command", return_value=True):
+            with patch("subprocess.run", return_value=result) as mock_run:
+                self.assertTrue(_run_bibtex("doc", self.output_dir))
         self.assertEqual(mock_run.call_args.args[0][0], "bibtex")
 
     def test_error_exit_status_fails(self):
@@ -602,8 +603,10 @@ class TestRunBibtex(unittest.TestCase):
     def test_reports_bibtex_errors(self):
         (self.output_dir / "doc.aux").write_text("\\citation{ref}")
         result = MagicMock(returncode=0, stdout="error message in output")
-        with patch("subprocess.run", return_value=result):
-            self.assertFalse(_run_bibtex("doc", self.output_dir))
+        with patch("opensiddur.exporter.pdf.pdf._have_command", return_value=True):
+            with patch("subprocess.run", return_value=result) as mock_run:
+                self.assertFalse(_run_bibtex("doc", self.output_dir))
+        mock_run.assert_called_once()
 
 
 class TestRunManualLoop(unittest.TestCase):
