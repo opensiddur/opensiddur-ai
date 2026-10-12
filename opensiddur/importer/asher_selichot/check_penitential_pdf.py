@@ -8,11 +8,11 @@ from opensiddur.importer.scan.pdf_direction import base
 
 ANCHORS = [('ביןכסהלעשור','Between the new year’s day'),
            ('אדוןעמךסליחה','O Lord, with thee is pardon'),
-           ('ערבהלטובתערוב','Be surety for thy servants'),
+           ('עבדיךלטובתערוב','Be surety for thy servants'),
            ('שוחריךהמצא','May those who rise early'),
            ('הןרוחולב','Lo, the spirit and the heart'),
            ('לאלפיראויים','Do not judge thy people'),
-           ('לפתותךבתחנן','Thy servants unanimously')]
+           ('לפתוחךבתחנן','Thy servants unanimously')]
 
 
 def check(tree, expanded=False):

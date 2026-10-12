@@ -1168,3 +1168,21 @@ Gedaliah PDF: apparatus, fulfilled cues and reference boundaries checked; 8 stan
   Direction: 0 of 2041 Hebrew runs are set left to right; control: 1981 of 2041 flagged when every run is reversed. Visual PDF pages: 37,49,51.
 
 Artifacts: `output/asher_selichot/proofreading/batch-015/`. These PDFs contain Tzom Gedaliah alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.
+
+
+## Proofreading checkpoint016
+
+The committed Hebrew proofreading checkpoint reaches the end of the second penitential day, printed115 (s232/n231). Batch016 covers12 Hebrew pages from s210/n209:92 text replacement rules across10 XML modules, plus synchronization of the printed opening and its refrain expansion. Frozen readings, comparisons, native-band adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-16/. This is a same-model second image pass with prior exposure, primarily consonant-first. Uncertain rare words remain recorded; independent-person Hebrew, facing-English and comprehensive fine-pointing review remain pending.
+
+10 modules validate;40 source-ordered bilingual units, seven pizmon units and bilingual expansion targets checked. Expanded compiled verification passes all four petition ranges and Ten Days Kaddish. Two PDF anchors follow corrected words עבדיך and לפתוחך. No generic executable logic changed.
+- Documentary: warning: ICC support is not available
+second penitential day PDF: apparatus, fulfilled cues and reference boundaries checked; 7 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Penitential PDF controls rejected missing notes, shifted stanza and fulfilled cue
+25 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True
+  Direction: 0 of 683 Hebrew runs are set left to right; control: 681 of 683 flagged when every run is reversed. Visual PDF pages: 18,22,24,25.
+- Expanded: second penitential day PDF: apparatus, fulfilled cues and reference boundaries checked; 7 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Penitential PDF controls rejected missing notes, shifted stanza and fulfilled cue
+54 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True
+  Direction: 0 of 1992 Hebrew runs are set left to right; control: 1941 of 1992 flagged when every run is reversed. Visual PDF pages: 34,36,48,51,53.
+
+Artifacts: `output/asher_selichot/proofreading/batch-016/`. These PDFs contain the second penitential day alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.
