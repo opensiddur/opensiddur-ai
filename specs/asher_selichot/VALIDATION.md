@@ -1123,3 +1123,16 @@ Four changed XML files validate and sixth-day source/expansion checks pass.
   Direction: 0 of 7872 Hebrew runs are set left to right; control: 7592 of 7872 flagged when every run is reversed. Visual pages: 166,167,168,171,172,173,186,187,188.
 
 Artifacts: `output/asher_selichot/proofreading/batch-012/`. Last full post-merge suite: 3557 tests,12 skips,no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: seventh day.
+
+
+## Proofreading checkpoint 013
+
+The committed Hebrew proofreading checkpoint reaches the seventh-day closing rubric, printed page 49 upper (s100/n99), including title and opening pages. Frozen captures, comparison records, crop adjudication and hashes are under `sources/asher_selichot/proofreading/`. Latest batch: 114 replacement rules across four modules on printed 45–49. Corrected poem and pizmon readings; preserved unpointed invocations and the service boundary. This is a same-model second image pass with prior exposure, not independent-person proofreading. Facing English review remains pending.
+
+Four changed XML files validate and seventh-day source/expansion checks pass.
+- Documentary: 77 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [13.55, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0], 'seventh': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  Direction: 0 of 2736 Hebrew runs are set left to right; control: 2625 of 2736 flagged when every run is reversed. Visual pages: 71,72,73,74,75,76.
+- Expanded: 218 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'sixth': [0.0, 0.0, 0.0, 0.0, 0.0], 'seventh': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  Direction: 0 of 9186 Hebrew runs are set left to right; control: 8571 of 9186 flagged when every run is reversed. Visual pages: 193,194,195,196,197,198,199,200,201,202,215,216,217.
+
+Artifacts: `output/asher_selichot/proofreading/batch-013/`. Last full post-merge suite: 3557 tests,12 skips,no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: Erev Rosh Hashanah.
