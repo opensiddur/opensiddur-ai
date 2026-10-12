@@ -242,6 +242,12 @@ class RefdbCrossCheckTestCase(unittest.TestCase):
         self.assertEqual(len(severities(problems, ERROR)), 1)
         self.assertIn("gevurot", problems[0].message)
 
+    def test_an_empty_database_is_not_agreement(self):
+        """A check against nothing must not pass as if it had found nothing wrong."""
+        problems = list(check_against_refdb(self.registry(canonical("avot")), self.database()))
+        self.assertEqual(len(severities(problems, ERROR)), 1)
+        self.assertIn("no projects", problems[0].message)
+
     def test_a_registered_urn_passes(self):
         problems = list(check_against_refdb(
             self.registry(canonical("avot")),

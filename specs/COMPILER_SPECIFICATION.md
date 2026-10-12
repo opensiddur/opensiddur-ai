@@ -146,9 +146,15 @@ To ensure uniqueness after transclusion, IDs are rewritten using a hash of the p
   bounds of the range being compiled. These are fixed for the whole range, so an `xml:id` and a pointer to it
   hash alike wherever they sit in it. The element's own path is added only for ids that must differ per element
   (the parallel compiler's marker ids).
-- Hash: SHA256 of full path, truncated to 8 characters
+- Hash: SHA256 of full path, truncated to 8 hex characters for ids. A parallel marker id is
+  unique across the whole book rather than one range, and takes 16.
 - Rewritten IDs: `{original_id}_{hash}`
 - Target references: `#ref` becomes `#ref_{hash}`
+- A standoff note is compiled by a processor of its own, which rewrites its ids. Its pointers
+  (`@target`, `@targetEnd`) point into the text it annotates, so they are then set again from
+  the source note, rewritten with the hash of the context the note is inserted in: the hash
+  its anchor's id gets. The note is not rewritten again where it is inserted, so a note and
+  its anchor pair.
 - Within one processing context the hash does not depend on the element, so an id and a
   pointer to it pair at any depth. An id carries exactly one hash per context it was compiled in.
 
@@ -482,7 +488,9 @@ Annotations may have different languages than their context:
 Elements are marked with their source file when processing context changes:
 
 - Attributes: `p:file_name` and `p:project` (in processing namespace)
-- Only added when: previous context differs from current, or this is first context
+- Only added when the element's source differs from the file it is set in (the enclosing file), or
+  when it is set in no file at all (the compiled root). A range transcluded from the same file
+  is not marked; consumers take the source from the nearest marked ancestor.
 - Applied to: transcluded elements, annotations, and root elements
 
 ## Special Cases

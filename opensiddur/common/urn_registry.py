@@ -448,7 +448,18 @@ def check_against_refdb(registry: Registry, database=None) -> Iterator[Problem]:
 
     aliases = {r.urn for r in registry.of_status(STATUS_ALIAS)}
 
-    for project, urns in sorted(_urns_in_projects(database).items()):
+    emitted = _urns_in_projects(database)
+    if not emitted:
+        # Nothing to compare is not agreement: a database built by other code is emptied on
+        # open, and a check against it would pass without having looked at anything.
+        yield Problem(
+            ERROR,
+            "the reference database holds no projects, so nothing was cross-checked; "
+            "sync it first (python -m opensiddur.exporter.refdb) or pass --no-refdb",
+        )
+        return
+
+    for project, urns in sorted(emitted.items()):
         unregistered, pending = set(), set()
         for text in sorted(urns):
             try:

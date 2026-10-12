@@ -70,8 +70,8 @@ class TestXMLCache(unittest.TestCase):
         self.assertEqual(root[0].text, "text")
         
         # Verify it was added to cache
-        self.assertIn(("wlc", "genesis.xml"), self.cache.cache)
-        self.assertEqual(self.cache.cache[("wlc", "genesis.xml")], result)
+        self.assertIn((self.base_path, "wlc", "genesis.xml"), self.cache.cache)
+        self.assertEqual(self.cache.cache[(self.base_path, "wlc", "genesis.xml")], result)
 
     @patch('lxml.etree.parse')
     @patch.object(Path, 'exists', return_value=True)
@@ -119,8 +119,8 @@ class TestXMLCache(unittest.TestCase):
         self.assertEqual(mock_parse.call_count, 2)
         
         # Verify both are in cache
-        self.assertIn(("wlc", "genesis.xml"), self.cache.cache)
-        self.assertIn(("wlc", "exodus.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "wlc", "genesis.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "wlc", "exodus.xml"), self.cache.cache)
         
         # Verify they are different objects
         self.assertIsNot(result1, result2)
@@ -152,8 +152,8 @@ class TestXMLCache(unittest.TestCase):
         self.assertEqual(mock_parse.call_count, 2)
         
         # Verify both are in cache with different keys
-        self.assertIn(("wlc", "genesis.xml"), self.cache.cache)
-        self.assertIn(("jps1917", "genesis.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "wlc", "genesis.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "jps1917", "genesis.xml"), self.cache.cache)
         
         # Verify they are different objects
         self.assertIsNot(result1, result2)
@@ -177,16 +177,16 @@ class TestXMLCache(unittest.TestCase):
         
         # Manually add another entry to cache
         mock_doc = MagicMock()
-        self.cache.cache[("jps1917", "exodus.xml")] = mock_doc
+        self.cache.cache[(self.base_path, "jps1917", "exodus.xml")] = mock_doc
         
         # Parse another file
         self.cache.parse_xml("wlc", "leviticus.xml")
         
         # Verify all cache entries still exist
         self.assertEqual(len(self.cache.cache), 3)
-        self.assertIn(("wlc", "genesis.xml"), self.cache.cache)
-        self.assertIn(("jps1917", "exodus.xml"), self.cache.cache)
-        self.assertIn(("wlc", "leviticus.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "wlc", "genesis.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "jps1917", "exodus.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "wlc", "leviticus.xml"), self.cache.cache)
 
     def test_cache_empty_initially(self):
         """Test that cache is empty when XMLCache is initialized."""
@@ -210,7 +210,7 @@ class TestXMLCache(unittest.TestCase):
         self.assertEqual(root.tag, "{http://example.com/ns}root")
         
         # Verify it's cached
-        self.assertIn(("wlc", "genesis.xml"), self.cache.cache)
+        self.assertIn((self.base_path, "wlc", "genesis.xml"), self.cache.cache)
 
     @patch('lxml.etree.parse')
     @patch.object(Path, 'exists', return_value=True)
@@ -223,12 +223,12 @@ class TestXMLCache(unittest.TestCase):
             self.cache.parse_xml("wlc", "invalid.xml")
         
         # Verify nothing was added to cache
-        self.assertNotIn(("wlc", "invalid.xml"), self.cache.cache)
+        self.assertNotIn((self.base_path, "wlc", "invalid.xml"), self.cache.cache)
 
     @patch('lxml.etree.parse')
     @patch.object(Path, 'exists', return_value=True)
     def test_cache_key_is_tuple(self, mock_exists, mock_parse):
-        """Test that cache key is a tuple of (project, file_name)."""
+        """Test that cache key is a tuple of (base path, project, file_name)."""
         # Mock parse to return a tree
         mock_tree = etree.ElementTree(etree.fromstring(b'<root><child>first</child></root>'))
         mock_parse.return_value = mock_tree
@@ -239,9 +239,24 @@ class TestXMLCache(unittest.TestCase):
         keys = list(self.cache.cache.keys())
         self.assertEqual(len(keys), 1)
         self.assertIsInstance(keys[0], tuple)
-        self.assertEqual(keys[0], ("wlc", "genesis.xml"))
+        self.assertEqual(keys[0], (self.base_path, "wlc", "genesis.xml"))
+
+
+
+
+class TestXMLCacheBasePath(unittest.TestCase):
+    def test_a_new_base_path_reads_the_new_file(self):
+        """The same project and file name under another base path is another file."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            for base, text in ((first, "first"), (second, "second")):
+                (Path(base) / "p").mkdir()
+                (Path(base) / "p" / "a.xml").write_text(f"<r>{text}</r>")
+            cache = XMLCache(base_path=Path(first))
+            self.assertEqual(cache.parse_xml("p", "a.xml").getroot().text, "first")
+            cache.base_path = Path(second)
+            self.assertEqual(cache.parse_xml("p", "a.xml").getroot().text, "second")
 
 
 if __name__ == '__main__':
     unittest.main()
-

@@ -1,5 +1,6 @@
 """External compiler processor for processing specific ranges of XML files."""
 
+import difflib
 import logging
 from contextlib import contextmanager
 from typing import Any, Optional
@@ -10,6 +11,8 @@ from opensiddur.exporter.compiler import (
     _ProcessingCommand,
     _ProcessingContext,
     _AnnotationCommand,
+    UnresolvedTarget,
+    transclusion_type_of,
 )
 from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
 from opensiddur.exporter.constants import (
@@ -25,7 +28,6 @@ from opensiddur.exporter.refdb import UNIT_CONTAINED_BY, ReferenceDatabase
 from opensiddur.exporter.urn import (
     ResolvedUrnRange,
     UrnResolver,
-    coarsen,
     split_project,
     with_project,
 )
@@ -200,7 +202,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         super().__init__(project, file_name, linear_data=linear_data, reference_database=reference_database)
 
         if (from_start is None and to_end is not None) or (from_start is not None and to_end is None):
-            raise ValueError("Either from_start or to_end must be None, but not both")
+            raise ValueError("from_start and to_end must be given together, or both be None")
         self.from_start = from_start
         self.to_end = to_end
 
@@ -233,7 +235,10 @@ class ExternalCompilerProcessor(CompilerProcessor):
             return False
         start_unit = self.start_element.get("unit")
         containers = UNIT_CONTAINED_BY.get(start_unit, frozenset())
-        return element.get("unit") in containers and element.getnext() is self.start_element
+        following = element.getnext()
+        while following is not None and not isinstance(following.tag, str):
+            following = following.getnext()  # a comment between the two hides nothing
+        return element.get("unit") in containers and following is self.start_element
 
     # ── Marker-mode helpers ─────────────────────────────────────────────────
 
@@ -270,7 +275,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         Emits empty start/end tags with p:start/p:end attributes.
         At external transclusion boundaries, emits p:suspend before and p:resume after.
         """
-        p_id = self._get_path_hash(element=element)
+        # A marker id is unique across the whole compiled book, where 32 bits would collide
+        # by the birthday bound at about 77,000 structural elements -- a parallel Humash.
+        p_id = self._get_path_hash(element=element, length=16)
         p_ns = PROCESSING_NAMESPACE
 
         xml_id_key = f"{{{XML_NS}}}id"
@@ -288,11 +295,11 @@ class ExternalCompilerProcessor(CompilerProcessor):
         # Resolved once at the source opening, not at its later resumed fragments. A
         # rubric is a block in its own right and stays there; the rest of the apparatus
         # is anchored on the element's first words once its content is compiled, below.
-        # Ids are rewritten here, while the processing context _get_path_hash reads is
-        # still the one the notes were resolved in.
+        # The notes' ids were rewritten once already, by their own processors, and their
+        # pointers repointed at this context's ids (CompilerProcessor._annotate).
         movable, opening = [], []
         if annotations:
-            for note in self._rewrite_ids(annotations):
+            for note in annotations:
                 (opening if note.get('type') == 'instruction' else movable).append(note)
         if opening:
             # Original leading text must follow the apparatus, just as child insertion
@@ -304,7 +311,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         for child in element:
             is_external_transclude = (
                 child.tag == f"{{{JLPTEI_NAMESPACE}}}transclude"
-                and child.get('type', 'external') == 'external'
+                and transclusion_type_of(child) == 'external'
             )
             if is_external_transclude:
                 child_context = self._update_processing_context_before(child)
@@ -492,7 +499,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             transcludes = []
             for el in elements:
                 if (el.tag == f"{{{p_ns}}}transclude"
-                        and el.get('type', 'external') == 'external'):
+                        and transclusion_type_of(el) == 'external'):
                     transcludes.append(el)
                     segments.append([])
                 else:
@@ -562,15 +569,23 @@ class ExternalCompilerProcessor(CompilerProcessor):
             par_sub = ExternalCompilerProcessor._split_at_milestones(
                 par_flat, ns_map, split_at)
 
-            prim_by_c: dict[Optional[AlignmentKey], list] = {}
-            for c, els in prim_sub:
-                if c not in prim_by_c:
-                    prim_by_c[c] = els
+            def by_key(segments, source):
+                """The segments by alignment key. A key repeated in one stream (a refrain
+                carrying the same corresp twice) keeps its first segment: the join is on the
+                URN, and two segments cannot both sit beside the other side's one. The rest
+                are dropped, and said to be."""
+                found: dict[Optional[AlignmentKey], list] = {}
+                for c, els in segments:
+                    if c not in found:
+                        found[c] = els
+                    elif c is not None and els:
+                        logger.warning(
+                            "parallel: %s/%s carries the alignment key %s more than once; "
+                            "only its first segment is set in parallel", source[0], source[1], c)
+                return found
 
-            par_by_c: dict[Optional[AlignmentKey], list] = {}
-            for c, els in par_sub:
-                if c not in par_by_c:
-                    par_by_c[c] = els
+            prim_by_c = by_key(prim_sub, prim_src)
+            par_by_c = by_key(par_sub, par_src)
 
             # The preamble — content before the first shared division — is the first row
             # whichever side carries it. _split_at_milestones drops an empty one, so a
@@ -610,53 +625,103 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 ))
             return rows
 
+        def transclude_key(transclude_el):
+            """What a transclusion takes, whichever project it takes it from."""
+            return (split_project(transclude_el.get('target') or '')[0],
+                    split_project(transclude_el.get('targetEnd') or '')[0])
+
+        def pair_transcludes(prim_ts, par_ts):
+            """(i, j) for each primary transclusion paired, in order, with a parallel one.
+
+            Paired first by what they transclude, as many as can be kept in order (the
+            longest common subsequence of the two key sequences), not by position: a column
+            that transcludes one file more than the other must not set the next file's
+            translation beside the wrong text. Between two such pairs, what is left on each
+            side is paired by position, as everything once was -- the two sides may take the
+            same text at different granularity (a chapter beside its verses). Only what is
+            left over then is set alone.
+            """
+            prim_keys = [transclude_key(t) for t in prim_ts]
+            par_keys = [transclude_key(t) for t in par_ts]
+            matcher = difflib.SequenceMatcher(None, prim_keys, par_keys, autojunk=False)
+            anchors = [(block.a + k, block.b + k)
+                       for block in matcher.get_matching_blocks() for k in range(block.size)]
+            pairs = []
+            i0 = j0 = 0
+            for i, j in anchors + [(len(prim_ts), len(par_ts))]:
+                gap = min(i - i0, j - j0)
+                pairs.extend((i0 + k, j0 + k) for k in range(gap))
+                if i < len(prim_ts):
+                    pairs.append((i, j))
+                i0, j0 = i + 1, j + 1
+            return pairs
+
+        def combine(prim_t, par_t, prim_src, par_src, prim_lang, par_lang):
+            """One p:transclude from a primary and a parallel transclusion, either possibly absent.
+
+            Recurses: the parallel block ends at *every* external transclusion, at every depth.
+            Going through assemble() rather than make_rows() means any transclude among these
+            children is hoisted out too, so a p:parallelItem never contains a p:transclude and
+            parallels never nest. The p:transclude wrapper itself is a display no-op, so the
+            hierarchy it holds is independent of the enclosing one rather than nested inside it.
+            Items built from a transcluded document must be attributed to that document, not to
+            the enclosing one: latex.py::get_file_references reads these attributes to build the
+            licence, credits and bibliography, and numbered-stream in reledmac.xslt reads
+            @xml:lang to pick the stream's typesetting direction, so a stale language here
+            mislabels a translation as the host document's language and gets it mirrored under
+            RTL (#p856).
+            """
+            combined = etree.Element(f"{{{p_ns}}}transclude", nsmap=ns_map)
+            for key, val in (prim_t if prim_t is not None else par_t).attrib.items():
+                combined.set(key, val)
+            inner = assemble(
+                list(prim_t) if prim_t is not None else [],
+                list(par_t) if par_t is not None else [],
+                source_of(prim_t, *prim_src), source_of(par_t, *par_src),
+                lang_of(prim_t, prim_lang), lang_of(par_t, par_lang))
+            for child in inner:
+                combined.append(child)
+            return combined
+
         def assemble(prim_flat, par_flat, prim_src, par_src, prim_lang, par_lang):
             primary_segments, primary_transcludes = split_at_transcludes(prim_flat)
             parallel_segments, parallel_transcludes = split_at_transcludes(par_flat)
 
-            max_segments = max(len(primary_segments), len(parallel_segments))
-            while len(primary_segments) < max_segments:
-                primary_segments.append([])
-            while len(parallel_segments) < max_segments:
-                parallel_segments.append([])
+            def rows(prim_elements, par_elements):
+                return make_rows(prim_elements, par_elements, prim_src, par_src,
+                                 prim_lang, par_lang)
 
-            max_transcludes = max(len(primary_transcludes), len(parallel_transcludes))
+            def joined(prim_t, par_t):
+                return combine(prim_t, par_t, prim_src, par_src, prim_lang, par_lang)
 
+            # Segment k precedes transclusion k. Between two matched transclusions, each
+            # side's unmatched ones are set alone, each followed by its own segment; the
+            # sentinel pair carries the segments after the last match.
+            pairs = pair_transcludes(primary_transcludes, parallel_transcludes)
+            pairs.append((len(primary_transcludes), len(parallel_transcludes)))
             output = []
-            for i in range(max_segments):
-                output.extend(make_rows(
-                    primary_segments[i], parallel_segments[i], prim_src, par_src, prim_lang, par_lang))
-
-                if i < max_transcludes:
-                    prim_t = primary_transcludes[i] if i < len(primary_transcludes) else None
-                    par_t = parallel_transcludes[i] if i < len(parallel_transcludes) else None
-
-                    if prim_t is not None:
-                        combined = etree.Element(f"{{{p_ns}}}transclude", nsmap=ns_map)
-                        for key, val in prim_t.attrib.items():
-                            combined.set(key, val)
-
-                        # Recurse: the parallel block ends at *every* external transclusion, at
-                        # every depth. Going through assemble() rather than make_rows() means any
-                        # transclude among these children is hoisted out too, so a p:parallelItem
-                        # never contains a p:transclude and parallels never nest. The p:transclude
-                        # wrapper itself is a display no-op, so the hierarchy it holds is
-                        # independent of the enclosing one rather than nested inside it.
-                        # Items built from a transcluded document must be attributed to that
-                        # document, not to the enclosing one: latex.py::get_file_references reads
-                        # these attributes to build the licence, credits and bibliography, and
-                        # numbered-stream in reledmac.xslt reads @xml:lang to pick the stream's
-                        # typesetting direction, so a stale language here mislabels a translation
-                        # as the host document's language and gets it mirrored under RTL (#p856).
-                        inner = assemble(
-                            list(prim_t), list(par_t) if par_t is not None else [],
-                            source_of(prim_t, *prim_src), source_of(par_t, *par_src),
-                            lang_of(prim_t, prim_lang), lang_of(par_t, par_lang))
-                        for child in inner:
-                            combined.append(child)
-
-                        output.append(combined)
-
+            i0 = j0 = 0
+            for i, j in pairs:
+                output.extend(rows(primary_segments[i0], parallel_segments[j0]))
+                for k in range(i0, i):
+                    logger.warning(
+                        "parallel: %s/%s transcludes %s, which %s/%s has no counterpart of; "
+                        "it is set without a parallel column",
+                        prim_src[0], prim_src[1], primary_transcludes[k].get('target'),
+                        par_src[0], par_src[1])
+                    output.append(joined(primary_transcludes[k], None))
+                    output.extend(rows(primary_segments[k + 1], []))
+                for k in range(j0, j):
+                    logger.warning(
+                        "parallel: %s/%s transcludes %s, which %s/%s has no counterpart of; "
+                        "it is set without a primary column",
+                        par_src[0], par_src[1], parallel_transcludes[k].get('target'),
+                        prim_src[0], prim_src[1])
+                    output.append(joined(None, parallel_transcludes[k]))
+                    output.extend(rows([], parallel_segments[k + 1]))
+                if i < len(primary_transcludes):
+                    output.append(joined(primary_transcludes[i], parallel_transcludes[j]))
+                i0, j0 = i + 1, j + 1
             return output
 
         return assemble(
@@ -667,79 +732,33 @@ class ExternalCompilerProcessor(CompilerProcessor):
     def _resolve_parallel_range(self, target: str, target_end: Optional[str], parallel_project: str):
         """Resolve a parallel URN to (project, file_name, from_start, to_end, include_tail).
 
+        Resolved as the primary is (`_get_start_and_end_from_ranges`), within
+        parallel_project. A project that does not divide the text this finely -- a translation
+        has no accents and so carries no half-verses -- sets the containing verse beside the
+        primary rather than leaving the column empty; make_rows pairs the two up at whatever
+        division they have in common.
+
         Returns None if the URN cannot be resolved in parallel_project.
         """
         parallel_target = self._build_parallel_urn(target, parallel_project)
+        parallel_end = (self._build_parallel_urn(target_end, parallel_project)
+                        if target_end is not None else None)
         try:
-            p_resolved = UrnResolver.prioritize_range(
-                self._urn_resolver.resolve_range(parallel_target), [parallel_project])
-            if not p_resolved:
-                # This project does not divide the text this finely — a translation has no
-                # accents and so carries no half-verses. Set the containing division beside
-                # the primary rather than leaving the column empty; make_rows pairs the two
-                # up at whatever division they have in common.
-                coarser = coarsen(parallel_target, resolves=lambda urn: bool(
-                    UrnResolver.prioritize_range(
-                        self._urn_resolver.resolve_range(urn), [parallel_project])))
-                p_resolved = UrnResolver.prioritize_range(
-                    self._urn_resolver.resolve_range(coarser), [parallel_project]
-                ) if coarser else None
-                if not p_resolved:
-                    return None
-                logger.warning(
-                    "parallel: %s does not carry %s; setting %s beside it, which covers "
-                    "more text than the reference asks for",
-                    parallel_project, parallel_target, coarser,
-                )
-                parallel_target = coarser
-
-            if isinstance(p_resolved, ResolvedUrnRange):
-                if target_end is not None:
-                    return None  # ambiguous; skip
-                p_project = p_resolved.start.project
-                p_file = p_resolved.start.file_name
-                p_start = p_resolved.start.element_path
-                p_end = p_resolved.end.end_element_path or p_resolved.end.element_path
-                p_tail = p_resolved.end.end_includes_tail
-            else:
-                p_project = p_resolved.project
-                p_file = p_resolved.file_name
-                p_start = p_resolved.element_path
-                if target_end is not None:
-                    parallel_target_end = self._build_parallel_urn(target_end, parallel_project)
-                    pe_resolved = UrnResolver.prioritize_range(
-                        self._urn_resolver.resolve_range(parallel_target_end),
-                        [parallel_project])
-                    if not pe_resolved:
-                        # The end of the range may name a division this project lacks just
-                        # as the start may; close on the division that contains it.
-                        coarser_end = coarsen(parallel_target_end)
-                        pe_resolved = UrnResolver.prioritize_range(
-                            self._urn_resolver.resolve_range(coarser_end), [parallel_project]
-                        ) if coarser_end else None
-                        if not pe_resolved:
-                            return None
-                        logger.warning(
-                            "parallel: %s does not carry %s; ending at %s instead, which "
-                            "covers more text than the reference asks for",
-                            parallel_project, parallel_target_end, coarser_end,
-                        )
-                    p_end = (pe_resolved.end_element_path or pe_resolved.element_path
-                             if not isinstance(pe_resolved, ResolvedUrnRange)
-                             else pe_resolved.end.end_element_path or pe_resolved.end.element_path)
-                    p_tail = (pe_resolved.end_includes_tail
-                              if not isinstance(pe_resolved, ResolvedUrnRange)
-                              else pe_resolved.end.end_includes_tail)
-                else:
-                    p_end = p_resolved.end_element_path or p_resolved.element_path
-                    p_tail = p_resolved.end_includes_tail
-
-            return p_project, p_file, p_start, p_end, p_tail
+            resolved = self._get_start_and_end_from_ranges(
+                parallel_target, parallel_end, project_priority=[parallel_project])
+        except UnresolvedTarget as unresolved:
+            # The usual case: this project does not carry the text at all.
+            logger.debug("parallel: %s has no column for %s: %s",
+                         parallel_project, parallel_target, unresolved)
+            return None
         except Exception:
             logger.warning(
                 "parallel: could not resolve %s in project %s; that project contributes no "
                 "parallel column here", parallel_target, parallel_project, exc_info=True)
             return None
+        end = resolved.end
+        return (resolved.start.project, resolved.start.file_name, resolved.start.element_path,
+                end.end_element_path or end.element_path, end.end_includes_tail)
 
     def _transclude_parallel(self, element: ElementBase, transclude_range: ResolvedUrnRange, transclusion_type: str) -> Optional[ElementBase]:
         """Compile a transclusion in parallel mode, returning p:transclude(p:parallel(...)).
@@ -1025,7 +1044,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
                     tei_body.append(child)
 
         if primary_result:
-            self._mark_file_source(primary_result[0])
+            self._mark_file_source(
+                primary_result[0], enclosing=self._enclosing_source(own_frame_on_stack=False))
         return primary_result
 
     # ── Standard compiler overrides ─────────────────────────────────────────
@@ -1256,6 +1276,14 @@ class ExternalCompilerProcessor(CompilerProcessor):
                         self._carry_dropped_tail(append_to, child)
             self._flush_closers_due(append_to)
 
+        if command != _ProcessingCommand.RECURSE:
+            # Under RECURSE, processed holds only the children's output, whose ids each
+            # child has already rewritten; rewriting them again appended the same hash once
+            # per level between the file's root and the range. Done before the notes go in:
+            # theirs were rewritten by their own processors, and their pointers already point
+            # at this context's ids.
+            processed = self._rewrite_ids(processed)
+
         if annotation_command == _AnnotationCommand.INSERT and element.tag == f"{{{TEI_NS}}}milestone":
             # Keep apparatus with its opening milestone until the entire source
             # span is compiled, then place it at the end before parallel splitting.
@@ -1267,12 +1295,6 @@ class ExternalCompilerProcessor(CompilerProcessor):
                 # ExternalCompilerProcessor returns a list[Element]; insertion is at the
                 # sequence level, not as a child of an element.
                 processed.insert(0, annotation)
-
-        if command != _ProcessingCommand.RECURSE:
-            # Under RECURSE, processed holds only the children's output, whose ids each
-            # child has already rewritten; rewriting them again appended the same hash once
-            # per level between the file's root and the range.
-            processed = self._rewrite_ids(processed)
 
         if annotation_command == _AnnotationCommand.INSERT and element.tag != f"{{{TEI_NS}}}milestone":
             # The notes went in at the head of the sequence, ahead of the element's
@@ -1351,7 +1373,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
         # When processing the full file (not a range transclusion), mark the file source on the root element
         # so that get_file_references() can find source files for metadata extraction
         if self.from_start is None and processed:
-            self._mark_file_source(processed[0])
+            self._mark_file_source(
+                processed[0], enclosing=self._enclosing_source(own_frame_on_stack=False))
 
         # Only the outermost compilation reconstructs. A parallel sub-compilation also sees an
         # empty processing context, so `is_root` alone would reconstruct its raw marker stream

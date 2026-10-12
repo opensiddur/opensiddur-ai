@@ -237,7 +237,11 @@ class InlineCompilerProcessor(CompilerProcessor):
                 linear_data=self.linear_data,
                 reference_database=self._refdb
             )
-            processed_element = processor.process(element)[0]
+            processed = processor.process(element)
+            if not processed:
+                raise ValueError(f"The instruction at {element.getroottree().getpath(element)} "
+                                 f"in {self.project}/{self.file_name} compiled to nothing")
+            processed_element = processed[0]
             context_lang = self._get_in_scope_language(element)
             if (processor.root_language
                 and processor.root_language != context_lang
