@@ -1024,3 +1024,27 @@ Documentary pages31,33,35 and expanded40–42 inspected visually.
 Independent-person Hebrew review, facing English proofreading, uncertain fine
 marks and the previously recorded mixed-note paragraph issue remain pending.
 Whole-book PDFs remain earlier snapshots. Second-day image captures are underway.
+
+
+## Proofreading checkpoint 008
+
+The Hebrew second image pass reaches the second-day closing rubric on s60/n59,
+printed29 upper. Seventy-five replacement rules correct four modules across
+printed25–29. Frozen captures and native-crop adjudication preserve rejected
+blind readings and uncertain fine marks in source proofreading/image-pass-08.
+Four changed XML files validate and second-day source/expansion checks pass.
+Only two declarative PDF anchor strings change in code; the last full suite
+passed3557 tests with12 skips. All398 XML files passed at checkpoint007.
+
+Actual first-and-second-day assemblies render43 documentary and70 expanded pages
+under output/asher_selichot/proofreading/batch-008. Contents, day bookmarks above
+pizmons, notes, service boundaries and deliberately broken controls pass. Six
+second-day stanza anchors align exactly in both views. First-day prayer anchors
+also align exactly; first-day poem maximum is13.55pt documentary and0pt expanded.
+Direction:0/1466 documentary and0/2739 expanded; reversed controls flag1431/1466
+and2663/2739. Documentary pages37,39,41,42 and expanded53,54,68 inspected visually.
+
+Independent-person Hebrew and facing-English proofreading, uncertain fine marks,
+and the recorded mixed-note paragraph issue remain pending. Whole-book PDFs are
+older snapshots. Third-day image captures are underway, preserving the verified
+swap of printed31/32 in Archive scan order.

@@ -49,8 +49,8 @@ def second_day_check(tree, expanded):
             e=[c for c in chars if float(c.get('x'))>gutter]
             if h:he.append((number,float(h[0].get('y')),''.join(base(c.get('c')) for c in sorted(h,key=lambda c:float(c.get('x')),reverse=True))))
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
-    anchors=[('ישראלנושע','Israel is saved'),('שעריך','They knock'),('פוחדים','They are intimidated'),
-             ('מטובך','Anticipate them'),('יושעו','Let them be saved'),('הקשיבה','Attend, O Lord')]
+    anchors=[('ישראלנושע','Israel is saved'),('שעריך','They knock'),('פחודים','They are intimidated'),
+             ('טובותיך','Anticipate them'),('יושעו','Let them be saved'),('הקשיבה','Attend, O Lord')]
     deltas=[];previous=(0,0)
     for ha,ea in anchors:
         h=next((r for r in he if ha in r[2] and r[:2]>=previous),None)
