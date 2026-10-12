@@ -975,3 +975,23 @@ four zero-delta anchors and six broken controls rejected. Hebrew direction:
 This excerpt is not a whole-book rebuild; facing English and unresolved fine
 pointing still need independent review. The previously recorded mixed-note
 paragraph-separation issue remains open. Evidence: source proofreading/image-pass-05.
+
+
+## Proofreading checkpoint 006
+
+Hebrew printed16–19 (s34/n33–s40/n39) adjudicated from frozen image captures.
+Thirty-four replacement rules update eight modules, including קבץ נדחנו, תביאנו,
+printed punctuation and the restored verse boundary after לזרים. Eight changed
+XML modules validate; six opening streams/titles and96 continuation units match.
+
+Merged current main as7ef5d93. The full post-merge suite runs3557 tests with12
+skips and no failures. The corrected isolated documentary excerpt compiles with
+that merged compiler and renders29 pages. Eight poem anchors align within13.55pt;
+its footnote occurs once and three broken controls are rejected. Opening checks
+on17 prefix pages give four zero-delta anchors and reject six controls. Hebrew
+direction0/946; reversed control929/946. Pages25,27,28 inspected visually.
+
+This selected-module excerpt omits some service-order repetition rubrics and is
+not a whole-book rebuild. Independent-person review, facing English proofreading,
+fine-mark uncertainties and the prior mixed-note paragraph issue remain open.
+Evidence: source proofreading/image-pass-06.
