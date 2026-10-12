@@ -1048,3 +1048,28 @@ Independent-person Hebrew and facing-English proofreading, uncertain fine marks,
 and the recorded mixed-note paragraph issue remain pending. Whole-book PDFs are
 older snapshots. Third-day image captures are underway, preserving the verified
 swap of printed31/32 in Archive scan order.
+
+
+## Proofreading checkpoint 009
+
+The Hebrew second image pass reaches the third-day closing rubric on s68/n67,
+printed 33 upper. Eighty-eight replacement rules correct four modules across
+printed 29–33. Read in verified printed order: s60,s62,s66,s64,s68; preserve the
+Archive's swapped openings in facsimile identities. Frozen captures, comparison,
+rejected blind readings and native-crop adjudication are in image-pass-09.
+Four changed XML files validate and third-day source/expansion checks pass.
+No executable code changes. Last full suite: 3557 tests,12 skips,no failures;
+all 398 XML files passed at checkpoint 007.
+
+Actual assemblies through day three render 49 documentary and 100 expanded pages
+under output/asher_selichot/proofreading/batch-009. Contents, day bookmarks above
+pizmons, notes, expansions, service boundaries and deliberately broken controls
+pass. Six third-day stanza anchors align exactly in both views. All other checked
+anchors align exactly except the documentary first-pizmon maximum of 13.55pt.
+Direction: 0/1717 documentary and 0/4030 expanded; reversed controls flag 1676/1717
+and 3915/4030. Documentary 45,47,48 and expanded 82,83,84,86,98 inspected visually.
+
+Independent-person Hebrew and facing-English proofreading, uncertain fine marks,
+and the recorded mixed-note paragraph issue remain pending. Whole-book PDFs are
+older snapshots. Fourth-day image captures and comparison are complete;
+adjudication is underway and is not included in this checkpoint.
