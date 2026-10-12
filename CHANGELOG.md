@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
-- Output fixes, PDF and electronic book:
+- Output fixes, PDF and electronic book (#242):
   - **The electronic book dropped any note set inside an anchor or a milestone.** It kept
     neither the anchor's children nor a numbered milestone's, while still numbering the
     notes. They are shown now. No current book has a note there: the compiler's annotation
