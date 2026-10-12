@@ -9,7 +9,7 @@ from lxml import etree
 from .check_pdf import plain, strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
-ANCHORS=[('מלאכירחמים','Angels of mercy!'),('אוליירחםשארית','Perchance he will have mercy on the remnant'),('אוליירחםמעני','Perchance he will have mercy on those who are afflicted'),('אוליירחםוירא','Perchance he will have mercy and look'),('אוליירחםאומרי','Perchance he will have mercy upon those who pray'),('אוליירחםלוקתה','Perchance he will have mercy on those who are doubly'),('אוליירחםכבושי','Perchance he will have mercy on those who are ashamed'),('אוליירחםיחלץ','Perchance he will have mercy who delivereth')]
+ANCHORS=[('מלאכירחמים','Angels of mercy!'),('אוליירחםשארית','Perchance he will have mercy on the remnant'),('אוליירחםמעני','Perchance he will have mercy on those who are afflicted'),('אוליירחםוירא','Perchance he will have mercy and look'),('אוליירחםאומרי','Perchance he will have mercy upon those who pray'),('אוליירחםלקתה','Perchance he will have mercy on those who are doubly'),('אוליירחםכבושי','Perchance he will have mercy on those who are ashamed'),('אוליירחםיחלץ','Perchance he will have mercy who delivereth')]
 
 def check(tree, expanded=False):
     text=plain(' '.join(n.get('text','') for n in tree.findall('.//line')))

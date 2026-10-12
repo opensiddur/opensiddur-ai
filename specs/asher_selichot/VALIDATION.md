@@ -1246,3 +1246,15 @@ Seven XML files validate; 22 source-ordered bilingual units, seven pizmon units 
 - Expanded: Erev Yom Kippur PDF: seven notes, fulfilled cues and closing boundaries checked; 7 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; Erev Yom Kippur PDF controls rejected missing notes, shifted stanza and fulfilled cue; 26 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 821 Hebrew runs are set left to right; control: 806 of 821 flagged when every run is reversed. Visually inspected PDF pages: [15, 19, 20, 21, 24, 25].
 
 Artifacts: `output/asher_selichot/proofreading/batch-020/`. These PDFs isolate Erev Yom Kippur. Whole-book PDFs remain earlier snapshots. Enlarged crops corrected several fresh-reading errors; the frozen captures and tentative adjudication reversals remain available.
+
+
+## Proofreading checkpoint 021
+
+The committed Hebrew proofreading checkpoint reaches the end of Monday / Second Fast, printed 167 upper (s336/n335). Batch 021 covers nine Hebrew pages from s320/n319 lower: 81 replacement operations and 41 unchanged confirmations. Five XML files validate. Frozen captures, pre-edit comparisons, enlarged-image adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-21/. This is a same-model second image pass with prior exposure, primarily consonant-first. Independent-person Hebrew, facing-English and comprehensive pointing review remain pending.
+
+Five XML files validate; 26 source-ordered bilingual units, eight shared pizmon units, seven Hebrew / six English abbreviation choices, 15 source notes and expansion targets pass. Both PDFs preserve weekday performance instructions and omit unrequested Full Kaddish; documentary cues and expanded asymmetric refrains pass. The PDF stanza anchor was corrected from לוקתה to the image reading לקתה; no generic executable logic changed. All 154 shared scan and service assembly tests pass.
+
+- Documentary: Monday fast PDF: 15 notes, asymmetric refrains, performance rubrics and boundaries checked; 8 stanza deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; Monday fast broken controls rejected; 20 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 482 Hebrew runs are set left to right; control: 478 of 482 flagged when every run is reversed. Visually inspected PDF pages: [7, 9, 11, 13, 14, 18].
+- Expanded: Monday fast PDF: 15 notes, asymmetric refrains, performance rubrics and boundaries checked; 8 stanza deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; Monday fast broken controls rejected; 22 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 604 Hebrew runs are set left to right; control: 597 of 604 flagged when every run is reversed. Visually inspected PDF pages: [14, 15, 16, 21].
+
+Artifacts: `output/asher_selichot/proofreading/batch-021/`. These PDFs isolate Monday; whole-book PDFs remain earlier snapshots. Rare word uncertainties and corrections to the fresh capture remain in the per-page ledgers.
