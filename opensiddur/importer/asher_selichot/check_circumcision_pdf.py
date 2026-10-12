@@ -6,7 +6,7 @@ from .check_fast_pdf import glyph_rows
 from .check_pdf import plain, strip_numeric_markers
 from opensiddur.importer.scan.pdf_direction import base
 
-ANCHORS=[('זכורברית','Remember the covenant'),('אותברית','It is a sign'),('רחמיךזכור','Remember thy mercy'),('דםידידיך','The blood of thy'),('דורשדמים','O thou, who avengest')]
+ANCHORS=[('זכורברית','Remember the covenant'),('אותברית','It is a sign'),('רחמיךזכור','Remember thy mercy'),('מפיאוהביך','The blood of thy'),('דורשדמים','O thou, who avengest')]
 
 def marker_chars(tree):
     result=[]
@@ -34,6 +34,9 @@ def check(tree,expanded=False):
     if words.count('and bring back the captives of the tents of Jacob, and save us for the sake of thy name.')!=2:raise ValueError('Final English refrain missing or repeated')
     if len(marker_chars(tree))!=1:raise ValueError('Unresolved final note marker missing or duplicated')
     hebrew=''.join(r[2] for r in he)
+    if hebrew.count('מפיאוהביךעדבינךוביןידידיך')!=1:
+        raise ValueError('Restored cross-page verse missing or repeated')
+    if 'דםידידיך' in hebrew:raise ValueError('Invented blood wording remains in Hebrew')
     def consonants(s):return ''.join(base(c)or'' for c in s)
     for text,count in [('והשב שבות אהלי יעקב והושיענו למען שמך',3 if expanded else 2),('ושוב ברחמים על שארית ישראל והושיענו למען שמך',2 if expanded else 1)]:
         if hebrew.count(consonants(text))!=count:raise ValueError('Final Hebrew refrain selection changed: '+text)
@@ -58,7 +61,15 @@ def controls(tree,expanded=False):
     try:check(broken,expanded)
     except ValueError:pass
     else:raise AssertionError('Shifted final stanza escaped detection')
-    print('Circumcision: missing-marker and shifted-stanza controls rejected')
+    broken=copy.deepcopy(tree)
+    page,y=next((p,y) for p,y,t in glyph_rows(tree)[0] if t.startswith('מפיאוהביך'))
+    for n,p in enumerate(broken.findall('page'),1):
+        for c in list(p.findall('.//char')):
+            if n==page and round(float(c.get('y')),2)==y and float(c.get('x'))<(288 if n%2 else 324):c.getparent().remove(c)
+    try:check(broken,expanded)
+    except ValueError:pass
+    else:raise AssertionError('Deleted restored verse escaped detection')
+    print('Circumcision: missing-marker, shifted-stanza and missing-restored-verse controls rejected')
 
 
 def main(argv=None):

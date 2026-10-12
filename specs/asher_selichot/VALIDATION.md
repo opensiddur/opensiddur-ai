@@ -20,8 +20,8 @@ Both title pages and all services through the final circumcision pizmon, Archive
 n410 (printed204), are encoded. There are 398 project XML documents, 199 per
 language. All validate and reverse-check against documentary readings; both
 projects resolve references. The registry has 4008 records, zero errors/warnings.
-Independent Hebrew proofreading and identification of an unplaced final-page
-fragment remain pending; these limitations are documented in source evidence.
+Independent Hebrew proofreading remains pending. A previously omitted final-page
+verse is restored by image proofreading; see the correction checkpoint below.
 
 The checkpoints below record earlier scopes and results; the final section records
 the current rendering and test run.
@@ -775,6 +775,26 @@ apparatus/line counters and removes numeric headers before joining words split
 across pages. Synthetic regression coverage preserves the distinction between
 body text and apparatus.
 
-Independent Hebrew proofreading remains pending. The unplaced s408 fragment and
-unresolved final English superscript remain explicitly recorded in source evidence.
+Independent Hebrew proofreading remains pending. The final English superscript
+remains unresolved and explicitly recorded in source evidence. The previously
+unplaced s408 words are restored in the correction checkpoint below.
 These PDFs are inspection artifacts, outside automatic publication/release builds.
+
+
+## Circumcision verse correction
+
+User review identified the omitted s408 words as the beginning of stanza four,
+after the והשב abbreviation. Image proofreading restores
+מִפִּי אוֹהֲבֶיךָ עֵד בֵּינְךָ וּבֵין יְדִידֶיךָ across s408→s410 in one verse.
+The former דם at the start of s410 was not printed and is removed. Working
+readings, hashes, adjudication and the scan subsection are corrected; immutable
+initial/pre-OCR captures retain their original errors. English remains as printed.
+
+Corrected section PDFs each contain four pages, converged in two passes. All five
+stanza baselines align exactly. Text presence, two refrain expansions, English
+marker, performance rubrics and final boundaries pass; deleted-restored-verse,
+deleted-marker and shifted-stanza controls are rejected. Hebrew direction is
+0/32 documentary and 0/29 expanded; reversal controls flag 29 in each. The
+expanded body was inspected visually. All 106 focused tests pass. Earlier
+whole-book PDF results above refer to the pre-correction snapshot; those
+aggregate artifacts have not been rerendered for this small text correction.

@@ -601,7 +601,10 @@ English repetitions. The circumcision performance instruction remains in both
 views; the supplied-repeat instruction disappears from the expanded view.
 English superscript1 after flesh has no apparatus text on either final page:
 retain an unresolved marker, without an invented note or reference target.
-Record the unplaced Hebrew fragment beside the small cue at the bottom of203
-in source evidence pending identification; do not silently absorb it into verse.
+The words after the small והשב cue at the bottom of203 begin stanza four:
+מִפִּי אוֹהֲבֶיךָ עֵד בֵּינְךָ וּבֵין, continuing with יְדִידֶיךָ on204.
+Keep this in one verse across the page break. The small refrain cue does not
+turn the following body words into apparatus. Do not insert דם before ידידיך
+from the English translation’s “blood”; it is absent from the Hebrew scan.
 The English section display label is editorial, taken from the final running
 heading; document it. There is no Torah/haftarah appendix after this poem.
