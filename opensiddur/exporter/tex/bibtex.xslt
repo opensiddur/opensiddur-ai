@@ -4,7 +4,10 @@
     xmlns:tei="http://www.tei-c.org/ns/1.0"
     xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    exclude-result-prefixes="tei j">
+    xmlns:f="urn:opensiddur:reledmac"
+    exclude-result-prefixes="tei j f">
+
+  <xsl:include href="common.xsl"/>
 
   <xsl:output method="text" encoding="UTF-8" indent="no"/>
   
@@ -29,32 +32,20 @@
     <xsl:sequence select="j:directional-text(normalize-space(string($node)))"/>
   </xsl:function>
 
-  <!-- Escape characters LaTeX reads as markup. Bibliographic fields carry project
-       slugs (heidenheim_haggadah_1822), percentages and ampersands as ordinary text;
-       an unescaped "_" is read as a math subscript and aborts the run with
-       "Missing $ inserted" at \printbibliography.
-
-       A sentinel stands in for the backslash while the other substitutions run, so the
-       braces this function itself introduces are not escaped a second time. -->
-  <xsl:function name="j:escape-tex" as="xs:string">
-    <xsl:param name="s" as="xs:string"/>
-    <xsl:variable name="t1" select="replace($s, '\\', '&#xE000;')"/>
-    <xsl:variable name="t2" select="replace($t1, '([&amp;%$#_{}])', '\\$1')"/>
-    <xsl:variable name="t3" select="replace($t2, '~', '\\textasciitilde{}')"/>
-    <xsl:variable name="t4" select="replace($t3, '\^', '\\textasciicircum{}')"/>
-    <xsl:sequence select="replace($t4, '&#xE000;', '\\textbackslash{}')"/>
-  </xsl:function>
-
+  <!-- Escape characters LaTeX reads as markup with f:escape-tex (common.xsl). Bibliographic
+       fields carry project slugs (heidenheim_haggadah_1822), percentages and ampersands as
+       ordinary text; an unescaped "_" is read as a math subscript and aborts the run with
+       "Missing $ inserted" at \printbibliography. -->
   <xsl:function name="j:directional-text" as="xs:string">
     <xsl:param name="text" as="xs:string"/>
     <xsl:variable name="parts" as="xs:string*">
       <xsl:analyze-string select="$text"
                           regex="[&#x5D0;-&#x5EA;&#x591;-&#x5C7;&#xFB1D;-&#xFB4F;]+([\s\p{{P}}]*[&#x5D0;-&#x5EA;&#x591;-&#x5C7;&#xFB1D;-&#xFB4F;]+)*">
         <xsl:matching-substring>
-          <xsl:sequence select="concat('\texthebrew{', j:escape-tex(.), '}')"/>
+          <xsl:sequence select="concat('\texthebrew{', f:escape-tex(.), '}')"/>
         </xsl:matching-substring>
         <xsl:non-matching-substring>
-          <xsl:sequence select="j:escape-tex(.)"/>
+          <xsl:sequence select="f:escape-tex(.)"/>
         </xsl:non-matching-substring>
       </xsl:analyze-string>
     </xsl:variable>

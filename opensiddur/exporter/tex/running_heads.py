@@ -183,14 +183,20 @@ def expand_template(template: str) -> str:
 
 
 def is_hebrew_language(language: Optional[str]) -> bool:
-    """Whether a declared language is Hebrew.
+    """Whether a declared language is written in the Hebrew script.
 
-    Matches ``f:is-hebrew-lang`` in ``reledmac.xslt``: only Hebrew vs
-    non-Hebrew matters, because that is all the direction wrapper needs.
+    The rule of ``f:is-hebrew-lang`` in ``tex/common.xsl``: a script subtag decides
+    (``he-Latn`` is a transliteration, ``arc-Hebr`` Aramaic in Hebrew letters); without
+    one, Hebrew, Yiddish and Aramaic are. Only Hebrew script vs not matters, because that
+    is all the direction wrapper needs.
     """
     if not language:
         return False
-    return language == "he" or language.startswith("he-")
+    subtags = language.lower().split("-")
+    script = next((tag for tag in subtags[1:] if len(tag) == 4), None)
+    if script:
+        return script == "hebr"
+    return subtags[0] in ("he", "yi", "arc")
 
 
 # ---------------------------------------------------------------------------

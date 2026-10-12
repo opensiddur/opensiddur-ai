@@ -55,6 +55,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     below the toolbar rather than under it.
 
 ### Fixed
+- Output fixes, PDF and electronic book (#242):
+  - **Notes set inside an anchor or a milestone were dropped.** The electronic book kept
+    neither an anchor's children nor a numbered milestone's. The PDF dropped those inside
+    verse, chapter and citation milestones and page-label anchors. Both still numbered the
+    notes. They are shown now. The electronic book also shows notes the compiler set beside
+    a conditional's rubric. No current book has a note inside an anchor or milestone: the
+    compiler's annotation placement moves notes out first.
+  - **The PDF flattened a `tei:choice` to plain text.** It took the `string()` of each
+    reading, so a note anchored inside a ketiv was spliced into the word as text (WLC
+    Ecclesiastes 10:3), and markup inside a reading was lost. The readings are now set like
+    any other text.
+  - **The PDF printed every `tei:hi/@rend` it did not recognise in bold**, including the 3288
+    `rend="sup"` marks of Miqra al pi ha-Masorah. `@rend` is now a list of tokens, each
+    styled in turn (`small superscript` is both). Layout and reading marks (`centered`,
+    `ketiv-only`, `qeri-only`) set their text plain. An unknown token sets it plain with a
+    warning. The electronic book styles `centered`, `raised` and `suspended` too.
+  - **A backslash in the text printed as `\{}`.** The PDF's escaping escaped the braces of
+    its own `\textbackslash{}`. One escaping function, in `tex/common.xsl`, now serves both
+    the book and its bibliography.
+  - **The PDF left out `tei:back`.** It is now set after the body, under `\backmatter`, as
+    the body is (parallel blocks included).
+  - **Note numbers counted notes in the TEI header**, so a book's first note could be
+    numbered 2. The PDF and the electronic book also disagreed about nested and standoff
+    notes. Both now number the same notes: those in the text, standoff notes and
+    instructions excluded.
+  - **Direction.**
+    - A transliteration (`he-Latn`) was set right to left, in the Hebrew font.
+    - Text in `arc` or `yi` (Aramaic or Yiddish in Hebrew letters) was set left to right in
+      some places of the PDF.
+    - A script subtag now decides, the same way in the PDF, the electronic book and the
+      running heads. The PDF's three inline Hebrew tests now use the shared function.
 - More compiler fixes from the review (#241):
   - **Parallel transclusions are paired by what they transclude**, not by position. When one
     column transcluded a file the other did not, that content was dropped, and the next

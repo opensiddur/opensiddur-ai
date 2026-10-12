@@ -1809,7 +1809,31 @@ class TestOptionRendering(unittest.TestCase):
         </tei:TEI>"""
         out = _transform(xml)
         self.assertIn("first", out)
-        self.assertIn("(second)", out)
+        # The later wordings are bracketed; each is set as text, in its own direction.
+        self.assertRegex(out, r"first.*\(.*second.*\)")
+
+    def test_a_note_anchored_inside_a_reading_is_a_note_not_text(self):
+        """A note on an anchor inside j:written is set as a note, not spliced into the word."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="he">
+          <tei:text><tei:body><tei:p>
+            <tei:choice><j:written>כשה<tei:anchor xml:id="r"><tei:note>a remark</tei:note></tei:anchor>סכל</j:written><j:read>כשהסכל</j:read></tei:choice>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml).split("\\begin{document}")[1]
+        self.assertNotIn("כשהa remark", out)
+        self.assertIn("\\OSInterlinearNotemark{1}", out)
+
+    def test_markup_inside_a_reading_is_kept(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="en">
+          <tei:text><tei:body><tei:p>
+            <tei:choice><j:read>a <tei:hi rend="small-caps">Lord</tei:hi></j:read><j:written>b</j:written></tei:choice>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        self.assertIn("\\textsc{", _transform(xml))
 
 
 class TestStructuralElements(unittest.TestCase):
@@ -4671,3 +4695,92 @@ class TestNoteParagraphDirection(unittest.TestCase):
         out = self.render_note('en', '<tei:p>English explanation.</tei:p><tei:p xml:lang="he">אשרי העם</tei:p>')
         self.assertIn(r'{{\textdir TRT\foreignlanguage{hebrew}{אשרי העם}}}', out)
         self.assertIn('English explanation.', out)
+
+
+class TestRendAndEscaping(unittest.TestCase):
+    """tei:hi/@rend tokens, the escaping of TeX specials, and back matter."""
+
+    @staticmethod
+    def _p(body: str, lang: str = "en", back: str = "") -> str:
+        return _transform(f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="{lang}">
+          <tei:text><tei:body><tei:p>{body}</tei:p></tei:body>{back}</tei:text>
+        </tei:TEI>""")
+
+    def test_sup_is_superscript_not_bold(self):
+        out = self._p('a<tei:hi rend="sup">*</tei:hi>')
+        self.assertIn("\\textsuperscript{*}", out)
+        self.assertNotIn("\\textbf{*}", out)
+
+    def test_every_token_of_a_rend_is_applied(self):
+        out = self._p('<tei:hi rend="small superscript">x</tei:hi>')
+        self.assertIn("{\\small \\textsuperscript{x}}", out)
+
+    def test_a_layout_mark_sets_its_text_plain(self):
+        out = self._p('<tei:hi rend="ketiv-only">(((x)))</tei:hi>')
+        self.assertIn("(((x)))", out)
+        self.assertNotIn("\\textbf", out.split("\\begin{document}")[1])
+
+    def test_a_backslash_is_escaped_once(self):
+        out = self._p("a\\b")
+        self.assertIn("a\\textbackslash{}b", out)
+        self.assertNotIn("\\textbackslash\\{\\}", out)
+
+    def test_back_matter_is_set_after_the_body(self):
+        out = self._p("body text", back="<tei:back><tei:p>an afterword</tei:p></tei:back>")
+        self.assertIn("\\backmatter", out)
+        self.assertLess(out.index("body text"), out.index("an afterword"))
+
+    def test_aramaic_is_set_in_hebrew_and_a_transliteration_is_not(self):
+        out = self._p('<tei:foreign xml:lang="arc">קדיש</tei:foreign> and '
+                      '<tei:foreign xml:lang="he-Latn">Kaddish</tei:foreign>')
+        self.assertIn("\\texthebrew{", out)
+        self.assertNotIn("\\texthebrew{Kaddish", out)
+        self.assertNotIn("\\texthebrew{{\\textdir TLT", out)
+
+    def test_a_transliteration_in_hebrew_reads_left_to_right(self):
+        """Inside a Hebrew paragraph, a he-Latn run is wrapped left to right, not set bare."""
+        out = self._p('שמע <tei:foreign xml:lang="he-Latn">Shema Yisrael</tei:foreign>', lang="he")
+        self.assertIn("\\textdir TLT", out.split("\\begin{document}")[1])
+        self.assertNotIn("\\textit{Shema Yisrael}", out)
+
+    def test_align_right_nests_inside_other_styles(self):
+        """A paragraph break inside \\textbf{} is a fatal TeX error; align-right has none."""
+        out = self._p('<tei:hi rend="bold align-right">ימין</tei:hi>').split("\\begin{document}")[1]
+        self.assertIn("\\textbf{\\hspace*{\\fill}", out)
+        self.assertNotIn("\\par}", out)
+
+    def test_a_note_inside_a_verse_milestone_is_set(self):
+        out = self._p('<tei:milestone unit="verse" n="1"><tei:note>on the verse</tei:note>'
+                      '</tei:milestone>text')
+        self.assertIn("on the verse", out.split("\\begin{document}")[1])
+
+    def test_notes_copied_with_a_rubric_keep_their_numbers(self):
+        """In a parallel column a leaf holding a rubric is copied; its notes keep their serials."""
+        import re
+        par = ('<p:parallel><p:parallelItem role="primary" xml:lang="he"><tei:div><tei:p>עברית'
+               '<tei:note>N-ONE</tei:note> עוד</tei:p></tei:div></p:parallelItem>'
+               '<p:parallelItem role="parallel" xml:lang="en"><tei:div><tei:p>English'
+               '<tei:note>N-TWO</tei:note> <j:conditional xml:id="c1"><tei:note>N-THREE</tei:note>'
+               '<tei:note type="instruction">Say quietly:</tei:note></j:conditional> more'
+               '<tei:note>N-FOUR</tei:note></tei:p></tei:div></p:parallelItem></p:parallel>')
+        out = _transform(f"""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+                 xmlns:j="http://jewishliturgy.org/ns/jlptei/2"
+                 xmlns:p="http://jewishliturgy.org/ns/processing" xml:lang="he">
+          <tei:text><tei:body>{par}</tei:body></tei:text></tei:TEI>""").split("\\begin{document}")[1]
+        for serial, name in enumerate(("N-ONE", "N-TWO", "N-THREE", "N-FOUR"), start=1):
+            with self.subTest(note=name):
+                before = re.findall(r"OSFootnotemark\{(\d+)\}", out[:out.index(name)])
+                self.assertEqual(before[-1], str(serial))
+
+    def test_a_header_note_does_not_take_a_number(self):
+        out = _transform("""<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+          <tei:teiHeader><tei:fileDesc><tei:sourceDesc><tei:bibl>b<tei:note>header</tei:note>
+          </tei:bibl></tei:sourceDesc></tei:fileDesc></tei:teiHeader>
+          <tei:text><tei:body><tei:p>word<tei:note>the first note</tei:note></tei:p></tei:body></tei:text>
+        </tei:TEI>""")
+        self.assertIn("\\OSInterlinearNotemark{1}", out)
+        self.assertNotIn("\\OSInterlinearNotemark{2}", out)

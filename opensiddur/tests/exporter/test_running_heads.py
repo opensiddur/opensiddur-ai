@@ -395,5 +395,18 @@ class TestBuildPageStyleTex(unittest.TestCase):
         self.assertIn(r"\textdir TRT", out)
 
 
+
+class TestHebrewScript(unittest.TestCase):
+    """The running heads decide the Hebrew script by the rule the stylesheets use."""
+
+    def test_the_script_subtag_decides(self):
+        from opensiddur.exporter.tex.running_heads import is_hebrew_language
+        for language, hebrew in (("he", True), ("he-IL", True), ("he-Latn", False),
+                                 ("arc", True), ("arc-Hebr", True), ("yi", True),
+                                 ("en", False), ("en-Hebr", True), (None, False), ("", False)):
+            with self.subTest(language=language):
+                self.assertIs(is_hebrew_language(language), hebrew)
+
+
 if __name__ == "__main__":
     unittest.main()
