@@ -16,7 +16,7 @@ from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
-from opensiddur.exporter.typography import TypographyConfig
+from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 
@@ -148,14 +148,19 @@ class SettingsYaml(BaseModel):
 def read_settings(
     settings_file: Path,
     project_directory: Optional[Path] = None,
+    resolve_fonts: bool = True,
 ) -> SettingsYaml:
-    """ Read and validate a settings file, without loading it into linear data. """
+    """ Read and validate a settings file, without loading it into linear data.
+
+    ``resolve_fonts=False`` skips checking that the font chains it names are installed
+    here — for a reader that never selects a font, such as the compiler.
+    """
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
     with open(settings_file, 'r') as f:
         data = yaml.safe_load(f)
     return SettingsYaml.model_validate(
         data,
-        context={"project_directory": project_directory},
+        context={"project_directory": project_directory, RESOLVE_FONTS: resolve_fonts},
     )
 
 
@@ -166,7 +171,11 @@ def load_settings(
 ) -> LinearData:
     """ Load settings into linear data from a YAML file. """
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
-    settings = read_settings(settings_file, project_directory=project_directory)
+    # The compiler typesets nothing, so whether this machine has a font is the output
+    # stage's question, asked there (an electronic book never asks it at all).
+    settings = read_settings(
+        settings_file, project_directory=project_directory, resolve_fonts=False
+    )
     linear_data = linear_data or get_linear_data()
     _apply_project_directory(linear_data, project_directory)
     linear_data.project_priority = settings.priority.transclusion

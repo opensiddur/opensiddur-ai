@@ -100,6 +100,23 @@ def _emit_bidi_literal(s: str) -> str:
     return "".join(parts)
 
 
+def escape_with_hebrew_runs(s: str) -> str:
+    """Escape text for a left-to-right context, setting each Hebrew run as Hebrew.
+
+    The Python counterpart of ``j:directional-text`` in ``bibtex.xslt``: the
+    surrounding text is already left to right, so only the Hebrew needs a wrapper —
+    for its direction and for the font a Latin face has no glyphs in.
+    """
+    parts: list[str] = []
+    position = 0
+    for match in _HEBREW_RUN.finditer(s):
+        parts.append(escape_tex(s[position:match.start()]))
+        parts.append(r"\texthebrew{" + escape_tex(match.group()) + "}")
+        position = match.end()
+    parts.append(escape_tex(s[position:]))
+    return "".join(parts)
+
+
 def _append_ltr(parts: list[str], text: str) -> None:
     if not text:
         return
@@ -215,8 +232,11 @@ class RunningHeadPosition(BaseModel):
 
     text: str = ""
     # Direction and font are chosen from this. Defaults to the document's own
-    # language when unset.
-    language: Optional[str] = None
+    # language when unset. A BCP 47 tag, as in xml:lang: a misspelt one would
+    # quietly set the slot left to right.
+    language: Optional[str] = Field(
+        default=None, pattern=r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{1,8})*$"
+    )
     # When set, the slot renders only if this template expands to something
     # non-empty. Literal text in `text` is suppressed along with the codes, so
     # "Chapter {chapter-number}" leaves no orphaned "Chapter" on a page before

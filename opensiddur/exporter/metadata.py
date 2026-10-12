@@ -70,14 +70,17 @@ def extract_licenses(
 
 
 def group_licenses(licenses: dict[Path, LicenseRecord]) -> list[LicenseRecord]:
-    """Group licenses by URL (deduplicated)."""
-    seen: set[str] = set()
-    grouped: list[LicenseRecord] = []
-    for license_record in licenses.values():
-        if license_record.url not in seen:
-            seen.add(license_record.url)
-            grouped.append(license_record)
-    return grouped
+    """Group licenses by URL (deduplicated), in a stable order.
+
+    The files arrive in whatever order the document transcludes them, which says
+    nothing about the licences; sorting keeps a rebuild of the same document from
+    reshuffling its Legal section. Where two files name one URL differently, the name
+    from the first file in path order is used.
+    """
+    by_url: dict[str, LicenseRecord] = {}
+    for path in sorted(licenses):
+        by_url.setdefault(licenses[path].url, licenses[path])
+    return sorted(by_url.values(), key=lambda record: (record.name.casefold(), record.url))
 
 
 

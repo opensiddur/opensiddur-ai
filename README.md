@@ -135,7 +135,7 @@ uv run python -m opensiddur.exporter.tex.latex \
 
 ## PDF export (compiled XML → PDF)
 
-Export directly to PDF (generates TeX internally, then runs LuaLaTeX/latexmk):
+Export directly to PDF (generates TeX internally, then runs LuaLaTeX and BibTeX):
 
 ```bash
 uv run python -m opensiddur.exporter.pdf.pdf \

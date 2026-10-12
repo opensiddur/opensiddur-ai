@@ -121,5 +121,33 @@ class TestCompilerTargetFromBook(_BookSettingsCase):
         self.assertEqual(cm.exception.code, 2)
 
 
+
+class TestFontsAreNotTheCompilersQuestion(_BookSettingsCase):
+    """The compiler typesets nothing, so a face missing here must not stop a compile."""
+
+    SETTINGS = {"priority": {}, "typography": {"fonts": {"latin": "No Such Face"}}}
+
+    def _no_fonts_installed(self):
+        from opensiddur.exporter import typography
+        return patch.object(typography, "_installed_font_families", return_value=frozenset())
+
+    def test_read_settings_resolves_fonts_by_default(self):
+        with self._no_fonts_installed():
+            with self.assertRaises(ValidationError):
+                self._read(self.SETTINGS)
+
+    def test_read_settings_can_skip_font_resolution(self):
+        with self._no_fonts_installed():
+            settings = read_settings(
+                self._write_yaml(self.SETTINGS), project_directory=self.project_dir,
+                resolve_fonts=False,
+            )
+        self.assertEqual(["No Such Face"], settings.typography.fonts["latin"].names)
+
+    def test_load_settings_does_not_resolve_fonts(self):
+        with self._no_fonts_installed():
+            load_settings(self._write_yaml(self.SETTINGS), project_directory=self.project_dir)
+
+
 if __name__ == "__main__":
     unittest.main()

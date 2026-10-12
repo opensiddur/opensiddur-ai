@@ -18,8 +18,9 @@ See
 ## Export to PDF
 
 For TeX and PDF export, you'll need a TeX Live install with the LuaLaTeX
-pipeline (`lualatex`, `latexmk`, `biber`, `reledmac`, `reledpar`, `polyglossia`,
-`biblatex`). On Debian/Ubuntu the installer script `install-tex.sh` covers it:
+pipeline (`lualatex`, `bibtex`, `reledmac`, `reledpar`, `polyglossia`,
+`biblatex`). The PDF stage runs `lualatex` and `bibtex` itself, as many passes
+as reledmac needs; `latexmk` and `biber` are not used. On Debian/Ubuntu the installer script `install-tex.sh` covers it:
 
 ```bash
 sudo bash opensiddur/exporter/tex/install-tex.sh
@@ -284,8 +285,10 @@ produced — a settings file need only say what it wants changed.
 
 Every key is also *checked*. An unknown key, a value outside a closed list, a malformed length
 or a font chain with nothing installed is an error naming the offending path, raised before
-anything is rendered. Nothing is silently ignored: a setting that was quietly dropped would
-leave a document missing what was asked for with nothing to say why.
+anything is rendered, as is a setting the PDF stage would accept and do nothing with (an
+`align` on a role set mid-line, say). A setting that was quietly dropped would leave a document
+missing what was asked for with nothing to say why. The electronic book reflows and honours
+only a few settings; `doc/typography.md` lists them.
 
 Note that which text goes on which side of a parallel layout is `parallel.column_order` in the
 compiler section above, not in `typography` — the compiler is what decides the order the

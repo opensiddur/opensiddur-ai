@@ -225,9 +225,13 @@
         </div>
     </xsl:template>
 
+    <!-- An epigraph holds paragraphs of its own, and a <p> cannot hold a <p>: the
+         parser would close the outer one, leaving the epigraph's class on an empty
+         paragraph and its text unstyled after it. -->
     <xsl:template match="tei:titlePart | tei:byline | tei:docEdition | tei:docImprint
                          | tei:epigraph | tei:imprimatur">
-        <xsl:element name="{if (f:in-text(.)) then 'span' else 'p'}">
+        <xsl:element name="{if (f:in-text(.)) then 'span'
+                            else if (self::tei:epigraph) then 'div' else 'p'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class"
                                 select="(local-name(), @type ! concat(local-name(..), '-', .))"/>

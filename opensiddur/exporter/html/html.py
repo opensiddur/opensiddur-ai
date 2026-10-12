@@ -50,7 +50,7 @@ from opensiddur.exporter.metadata import (
     role_order,
 )
 from opensiddur.exporter.page_references import resolve_page_references
-from opensiddur.exporter.typography import TypographyConfig
+from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +342,10 @@ def build_book(
     """The electronic book, as one HTML document."""
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
     settings = read_settings_data(settings_file)
-    typography = TypographyConfig.model_validate(settings.get("typography") or {})
+    # The reader's device chooses the faces, so whether this machine has them is moot.
+    typography = TypographyConfig.model_validate(
+        settings.get("typography") or {}, context={RESOLVE_FONTS: False}
+    )
 
     root = etree.parse(str(compiled_file)).getroot()
     if root.get(P_DESTINATION) != "electronic":

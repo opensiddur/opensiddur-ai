@@ -5,19 +5,17 @@ JLPTEI to PDF Exporter (LuaLaTeX + reledmac/reledpar pipeline).
 Compilation strategy
 ====================
 The reledmac/reledpar packages produce auxiliary files (``.<n>.aux`` files,
-``.lineenum``, etc.) that need multiple LaTeX passes to converge. ``latexmk``
-already understands these patterns and is the canonical tool for getting the
-right number of passes in the right order, so we use it whenever it's
-available::
+``.lineenum``, etc.) that need multiple LaTeX passes to converge. The build
+runs ``lualatex`` up to ``max_runs`` times, until the log stops asking for a
+rerun and the table of contents stops changing, invoking ``bibtex`` once after
+the first pass when the ``.aux`` shows the document cites anything.
 
-    latexmk -lualatex -interaction=nonstopmode <file>.tex
-
-When ``latexmk`` is not installed we fall back to a manual loop that runs
-``lualatex`` up to ``max_runs`` times, invoking ``bibtex`` once between passes
-when the ``.aux`` indicates a bibliography is needed.
+latexmk is not used: it detects a ``.bcf`` and tries biber even when biblatex is
+configured for BibTeX, and biber is often missing or broken on a minimal system.
 """
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -66,38 +64,27 @@ def generate_tex(
         return False
 
 
+# A pass over a whole Humash takes minutes; one that has run for an hour is waiting
+# for something that will not come (a font, a file, a terminal).
+LUALATEX_TIMEOUT_SECONDS = 3600
+BIBTEX_TIMEOUT_SECONDS = 300
+
+# How much of a failed pass's log to print. The error is at the end, and a whole
+# log runs to tens of thousands of lines.
+LOG_TAIL_LINES = 60
+
+
+class BuildError(Exception):
+    """A step of the TeX build failed; the message says which and why."""
+
+
+def _log_tail(output: str, lines: int = LOG_TAIL_LINES) -> str:
+    return "\n".join(output.splitlines()[-lines:])
+
+
 def _have_command(name: str) -> bool:
     """Return True iff ``name`` resolves on $PATH."""
     return shutil.which(name) is not None
-
-
-def _run_latexmk(tex_file: Path, output_dir: Path) -> bool:
-    """Drive the LaTeX build with latexmk -lualatex.
-
-    latexmk reruns lualatex/biber as many times as needed for reledmac's
-    ``.<n>.aux`` files and the bibliography to converge. We disable
-    interaction so a malformed source can't hang the build.
-    """
-    cmd = [
-        "latexmk",
-        "-lualatex",
-        "-bibtex",
-        "-nobiber",
-        "-interaction=nonstopmode",
-        "-halt-on-error",
-        f"-output-directory={output_dir}",
-        tex_file.name,
-    ]
-    print(f"Running: {' '.join(cmd)}", file=sys.stderr)
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=tex_file.parent)
-    if result.returncode != 0:
-        print("latexmk reported errors:", file=sys.stderr)
-        print(result.stdout, file=sys.stderr)
-        print(result.stderr, file=sys.stderr)
-        # Don't bail unconditionally: we still want to keep going if the PDF
-        # was produced (over-strict reledpar warnings can mask successful runs).
-        return False
-    return True
 
 
 def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
@@ -122,7 +109,14 @@ def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
     # file for rerun markers (more reliable than stdout).
     toc_path = output_dir / f"{tex_file.stem}.toc"
     previous_toc = toc_path.read_bytes() if toc_path.exists() else None
-    result = subprocess.run(cmd, text=True, cwd=tex_file.parent)
+    try:
+        result = subprocess.run(
+            cmd, text=True, cwd=tex_file.parent, timeout=LUALATEX_TIMEOUT_SECONDS
+        )
+    except subprocess.TimeoutExpired as e:
+        raise BuildError(
+            f"lualatex did not finish within {LUALATEX_TIMEOUT_SECONDS} seconds; see {log_path}"
+        ) from e
     output = ""
     if log_path.exists():
         try:
@@ -147,47 +141,92 @@ def _run_lualatex(tex_file: Path, output_dir: Path) -> tuple[bool, str, bool]:
     return result.returncode == 0, output, needs_rerun
 
 
-def _run_bibtex(tex_stem: str, output_dir: Path) -> bool:
-    """Run bibtex if the .aux indicates a bibliography is needed."""
+# biblatex writes its own control database (``<job>-blx``) and a ``biblatex-control``
+# citation into every .aux, sources or none, so neither says the document cites anything.
+_BIBDATA = re.compile(r"\\bibdata\{([^}]*)\}")
+_CITATION = re.compile(r"\\citation\{([^}]*)\}")
+
+
+def _needs_bibliography(tex_stem: str, output_dir: Path) -> bool:
+    """Whether the first pass's .aux names a database or a citation of the document's own."""
     aux = output_dir / f"{tex_stem}.aux"
     if not aux.exists():
-        return True
+        return False
     aux_content = aux.read_text(encoding="utf-8", errors="ignore")
-    if "\\bibdata" not in aux_content and "\\citation" not in aux_content:
+    databases = [
+        name.strip()
+        for names in _BIBDATA.findall(aux_content)
+        for name in names.split(",")
+    ]
+    citations = [
+        key.strip()
+        for keys in _CITATION.findall(aux_content)
+        for key in keys.split(",")
+    ]
+    return any(name and not name.endswith("-blx") for name in databases) or any(
+        key and key != "biblatex-control" for key in citations
+    )
+
+
+def _run_bibtex(tex_stem: str, output_dir: Path) -> bool:
+    """Run bibtex if the .aux indicates a bibliography is needed.
+
+    Returns False when bibtex is needed and failed. Its exit status is 1 for a
+    warning, which leaves a usable .bbl, and 2 or more for an error, which does not.
+    """
+    if not _needs_bibliography(tex_stem, output_dir):
         return True
+    if not _have_command("bibtex"):
+        print(
+            "Error: the document has a bibliography but bibtex was not found. "
+            "Install texlive-binaries.",
+            file=sys.stderr,
+        )
+        return False
 
     cmd = ["bibtex", tex_stem]
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=output_dir)
-    if "error message" in (result.stdout or "").lower():
-        print(f"BibTeX errors: {result.stdout}", file=sys.stderr)
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, cwd=output_dir, timeout=BIBTEX_TIMEOUT_SECONDS
+        )
+    except subprocess.TimeoutExpired:
+        print(f"Error: bibtex did not finish within {BIBTEX_TIMEOUT_SECONDS} seconds", file=sys.stderr)
+        return False
+    if result.returncode >= 2 or "error message" in (result.stdout or "").lower():
+        print(f"BibTeX errors:\n{result.stdout}", file=sys.stderr)
         return False
     return True
 
 
 def _run_manual_loop(tex_file: Path, output_dir: Path, max_runs: int) -> bool:
-    """Fallback build loop when latexmk isn't available.
+    """The build loop: lualatex, bibtex if needed, then lualatex until it settles.
 
-    Runs lualatex once, then biber if a ``.bcf`` shows up, then keeps running
-    lualatex until the rerun markers stop appearing or ``max_runs`` is hit.
+    Runs lualatex once, then bibtex if the ``.aux`` cites anything, then keeps
+    running lualatex until the rerun markers stop appearing or ``max_runs`` is hit.
     """
     tex_stem = tex_file.stem
+    log_path = output_dir / f"{tex_stem}.log"
+
+    def failed(pass_number: int, output: str) -> bool:
+        print(
+            f"lualatex reported errors (pass {pass_number}); the end of {log_path}:",
+            file=sys.stderr,
+        )
+        print(_log_tail(output), file=sys.stderr)
+        return False
 
     print("Running lualatex (pass 1)...", file=sys.stderr)
     success, output, needs_rerun = _run_lualatex(tex_file, output_dir)
     if not success:
-        print("lualatex reported errors (pass 1):", file=sys.stderr)
-        print(output, file=sys.stderr)
-        return False
+        return failed(1, output)
 
     # Run bibtex once after the first pass when needed; force a rerun afterwards
     # because bibtex updates the .bbl that lualatex needs to read.
-    aux = output_dir / f"{tex_stem}.aux"
-    if aux.exists():
-        aux_content = aux.read_text(encoding="utf-8", errors="ignore")
-        if "\\bibdata" in aux_content or "\\citation" in aux_content:
-            print("Running bibtex...", file=sys.stderr)
-            _run_bibtex(tex_stem, output_dir)
-            needs_rerun = True
+    if _needs_bibliography(tex_stem, output_dir):
+        print("Running bibtex...", file=sys.stderr)
+        if not _run_bibtex(tex_stem, output_dir):
+            return False
+        needs_rerun = True
 
     run_count = 1
     while needs_rerun and run_count < max_runs:
@@ -195,11 +234,9 @@ def _run_manual_loop(tex_file: Path, output_dir: Path, max_runs: int) -> bool:
         print(f"Running lualatex (pass {run_count})...", file=sys.stderr)
         success, output, needs_rerun = _run_lualatex(tex_file, output_dir)
         if not success:
-            print(f"lualatex reported errors (pass {run_count}):", file=sys.stderr)
-            print(output, file=sys.stderr)
-            return False
+            return failed(run_count, output)
 
-    if run_count >= max_runs:
+    if needs_rerun:
         print(
             f"Warning: reached max_runs ({max_runs}); reledmac/reledpar may not be settled",
             file=sys.stderr,
@@ -217,12 +254,9 @@ def compile_tex_to_pdf(
 ) -> bool:
     """Compile a LuaLaTeX .tex file to PDF.
 
-    Uses ``latexmk -lualatex`` when available (recommended), otherwise falls
-    back to a manual lualatex/biber loop. Either way, the output PDF is
-    copied from a temp build directory to ``output_pdf``.
-
-    ``max_runs`` only applies to the manual fallback; latexmk handles its
-    own loop.
+    Runs the lualatex/bibtex loop (see the module docstring) in a temporary
+    build directory, or ``build_dir`` when given, and copies the PDF to
+    ``output_pdf``. ``max_runs`` caps the number of lualatex passes.
     """
     try:
         if not _have_command("lualatex"):
@@ -232,7 +266,7 @@ def compile_tex_to_pdf(
             )
             return False
 
-        # Resolve to absolute paths: _run_lualatex/_run_latexmk set the
+        # Resolve to absolute paths: _run_lualatex sets the
         # subprocess cwd to tex_file.parent and pass only tex_file.name, so a
         # relative tex_file/build_dir must be pinned down before that split
         # happens (otherwise a directory component gets applied twice).
@@ -251,15 +285,6 @@ def compile_tex_to_pdf(
 
         with tempfile.TemporaryDirectory() if temp_dir is None else nullcontext(str(temp_dir)) as temp_dir_str:
             temp_dir = Path(temp_dir_str)
-            # latexmk can attempt to invoke biber based on .bcf detection even when
-            # biblatex is configured for BibTeX. Since biber is frequently broken or
-            # unavailable on minimal systems, prefer a deterministic manual loop.
-            if not _have_command("bibtex"):
-                print(
-                    "Error: bibtex not found. Install texlive-bibtex-extra.",
-                    file=sys.stderr,
-                )
-                return False
             if not _run_manual_loop(tex_file, temp_dir, max_runs):
                 return False
 
@@ -277,8 +302,11 @@ def compile_tex_to_pdf(
         return True
 
     except FileNotFoundError as e:
-        # Either lualatex/latexmk/biber went missing mid-build.
+        # lualatex or bibtex went missing mid-build.
         print(f"Error: command not found: {e}", file=sys.stderr)
+        return False
+    except BuildError as e:
+        print(f"Error: {e}", file=sys.stderr)
         return False
     except Exception as e:
         print(f"Error compiling TeX to PDF: {e}", file=sys.stderr)

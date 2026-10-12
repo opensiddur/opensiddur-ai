@@ -4,13 +4,14 @@
 # Required packages:
 #   - texlive-luatex:           lualatex engine + lua* libraries
 #   - texlive-latex-extra:      reledmac, reledpar, fancyhdr, xurl, polyglossia helpers
-#   - texlive-bibtex-extra:     biblatex with the biber backend
+#   - texlive-bibtex-extra:     biblatex (run with backend=bibtex)
 #   - texlive-fonts-extra:      fallback font shapes used by polyglossia
 #   - texlive-lang-other:       Hebrew (and other RTL) language support
 #   - texlive-lang-european:    Latin-script babel support
 #   - texlive-lang-arabic:      luabidi, which polyglossia's Hebrew module loads under LuaLaTeX
-#   - latexmk:                  drives multi-pass lualatex/biber loop
-#   - biber:                    biblatex's bibliography backend
+#
+# The exporter runs lualatex and bibtex itself (pdf.py), so neither latexmk nor
+# biber is needed; bibtex comes with texlive-binaries, which texlive-luatex pulls in.
 set -euo pipefail
 
 apt-get update -y
@@ -22,9 +23,7 @@ apt-get install -y \
   texlive-humanities \
   texlive-lang-other \
   texlive-lang-european \
-  texlive-lang-arabic \
-  latexmk \
-  biber
+  texlive-lang-arabic
 
 # Refresh TeX filename database (usually handled by postinst, but cheap/safe).
 mktexlsr

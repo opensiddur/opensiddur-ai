@@ -18,6 +18,7 @@ from opensiddur.exporter.tex.running_heads import (
     default_page_header,
     expand_template,
     parse_template,
+    escape_with_hebrew_runs,
     render_position,
 )
 
@@ -222,6 +223,14 @@ class TestRunningHeadModels(unittest.TestCase):
         self.assertEqual(side.center.language, "he")
         self.assertEqual(side.center.if_, "{head2}")
 
+    def test_language_must_be_a_language_tag(self):
+        """A misspelt tag would quietly set the slot left to right."""
+        for tag in ("he", "en-US", "he-Latn", "arc"):
+            RunningHeadPosition(text="{page}", language=tag)
+        for tag in ("hebrew", "he_IL", "", "h", "he-"):
+            with self.assertRaises(ValidationError, msg=repr(tag)):
+                RunningHeadPosition(text="{page}", language=tag)
+
     def test_unknown_code_in_text_fails_validation(self):
         with self.assertRaises(ValidationError) as ctx:
             RunningHeadSide.model_validate({"left": "{bogus}"})
@@ -406,6 +415,17 @@ class TestHebrewScript(unittest.TestCase):
                                  ("en", False), ("en-Hebr", True), (None, False), ("", False)):
             with self.subTest(language=language):
                 self.assertIs(is_hebrew_language(language), hebrew)
+
+
+
+class TestEscapeWithHebrewRuns(unittest.TestCase):
+    def test_only_the_hebrew_is_wrapped(self):
+        self.assertEqual(
+            r"From \texthebrew{ויקיטקסט} 100\%", escape_with_hebrew_runs("From ויקיטקסט 100%")
+        )
+
+    def test_latin_text_is_only_escaped(self):
+        self.assertEqual(r"A \& B\_C", escape_with_hebrew_runs("A & B_C"))
 
 
 if __name__ == "__main__":

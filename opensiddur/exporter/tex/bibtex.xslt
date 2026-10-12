@@ -305,12 +305,16 @@
     <xsl:variable name="year" as="xs:string"
                   select="if ($published) then j:date-value($published) else 'nd'"/>
 
-    <!-- Clean up author/editor name - take first word -->
+    <!-- The first word of the name, and the date, reduced to letters and digits. A key
+         is read up to its first comma, so a display date ("March 3, 1822") or a
+         name with a brace in it would otherwise end the key early and corrupt the
+         entry. -->
     <xsl:variable name="clean-author"
-                  select="translate(substring-before(concat(normalize-space($author-or-editor), ' '), ' '), ' .,;:()', '')"/>
-    <xsl:variable name="clean-year" select="translate(normalize-space($year), ' -', '')"/>
+                  select="replace(substring-before(concat(normalize-space($author-or-editor), ' '), ' '), '[^\p{L}\p{N}]', '')"/>
+    <xsl:variable name="clean-year" select="replace($year, '[^\p{L}\p{N}]', '')"/>
 
-    <xsl:sequence select="concat(lower-case($clean-author), $clean-year)"/>
+    <xsl:sequence select="lower-case(concat(if ($clean-author) then $clean-author else 'unknown',
+                                            $clean-year))"/>
   </xsl:function>
 
   <!-- Template for determining BibTeX entry type -->
