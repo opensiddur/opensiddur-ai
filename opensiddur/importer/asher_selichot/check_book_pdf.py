@@ -1,4 +1,8 @@
 """Verify encoded days, the contents page and the bookmark hierarchy."""
+
+from opensiddur.importer.scan import pdf as measurements
+from opensiddur.importer.scan.pdf import outline_rows
+
 import argparse
 import copy
 import json
@@ -15,82 +19,19 @@ from .check_first_day_pdf import check as check_first, controls as first_control
 from opensiddur.importer.scan.pdf_direction import base
 
 
-def outline_rows(reader):
-    rows=[]
-    def walk(items, depth):
-        for item in items:
-            if isinstance(item,list):walk(item,depth+1)
-            else:rows.append((depth, str(item.title), reader.get_destination_page_number(item)+1,
-                              float(item.top) if item.top is not None else None))
-    walk(reader.outline,0)
-    return rows
-
-
 def day_bookmarks(rows, captions=("FIRST DAY", "SECOND DAY")):
-    days=[]
-    for caption in captions:
-        hits=[r for r in rows if caption in r[1] and r[0]==0]
-        if len(hits)!=1:raise ValueError('Each day requires one top-level bookmark: '+caption)
-        days.append(hits[0])
-    for day in days:
-        index=rows.index(day)
-        descendants=[]
-        for row in rows[index+1:]:
-            if row[0]<=day[0]:break
-            descendants.append(row)
-        if not any(row[0]>day[0] and 'פזמון' in row[1] for row in descendants):
-            raise ValueError('Day bookmark must be above its pizmon')
-    return days
+    return measurements.day_bookmarks(rows, captions, child_caption='פזמון')
 
 
 def check_contents(tree, rows, page_labels):
-    """Compare rendered TOC numbers with the current bookmark destinations."""
-    numbers=[];in_contents=False
-    first_body_page=min(row[2] for row in rows)
-    for number,page in enumerate(tree.findall('page'),1):
-        if any('Contents' in line.get('text','') for line in page.findall('.//line')):
-            in_contents=True
-        elif in_contents and number>=first_body_page:
-            break
-        if not in_contents:continue
-        baselines={}
-        for line in page.findall('.//line'):
-            # The mirrored 36pt margin shift also moves the TOC number column.
-            # Ordinals in wrapped titles can reach the odd-page column on even pages.
-            number_column=475+(36 if number%2==0 else 0)
-            digits=[c for c in line.findall('.//char') if c.get('c','').isdigit() and float(c.get('x'))>=number_column]
-            xs=[float(c.get('x')) for c in digits]
-            if xs!=sorted(xs):raise ValueError('Reversed TOC page number')
-            for char in digits:
-                baseline=round(float(char.get('y')),2)
-                baselines.setdefault(baseline,[]).append(char)
-        numbers.extend(''.join(c.get('c') for c in sorted(chars,key=lambda c:float(c.get('x'))))
-                       for _,chars in sorted(baselines.items()))
-    expected=[page_labels[row[2]-1] for row in rows]
-    if numbers!=expected:raise ValueError(f'TOC pages differ from bookmark destinations: {numbers} != {expected}')
+    return measurements.check_contents(tree, rows, page_labels,
+                                       number_columns=(475, 511), caption='Contents')
 
 
 def slice_day(tree, start, end=None, keep_titles=False, trailing_note_texts=(), prior_note_texts=()):
-    """Retain original page slots, so parity-dependent column gutters remain valid."""
-    result=copy.deepcopy(tree)
-    pages=result.findall('page')
-    start_page,start_top=start[2],start[3]
-    end_page,end_top=(end[2],end[3]) if end else (len(pages)+1,None)
-    for number,page in enumerate(pages,1):
-        height=float(page.get('height'))
-        for line in list(page.findall('.//line')):
-            chars=line.findall('.//char')
-            y=float(chars[0].get('y')) if chars else float('inf')
-            after_start=number>start_page or (number==start_page and y>=height-start_top-2)
-            before_end=number<end_page or (number==end_page and y<height-end_top-2)
-            title=keep_titles and number<=4
-            # An earlier service's apparatus can sit below the next body heading.
-            trailing_note=(number==end_page and any(phrase in line.get('text','') for phrase in trailing_note_texts)
-                           and any(float(font.get('size','100'))<=10 for font in line.findall('.//font')))
-            prior_note=(number==start_page and any(phrase in line.get('text','') for phrase in prior_note_texts)
-                        and any(float(font.get('size','100'))<=10 for font in line.findall('.//font')))
-            if prior_note or not(title or (after_start and before_end) or trailing_note):line.getparent().remove(line)
-    return result
+    return measurements.slice_day(tree, start, end, keep_titles, trailing_note_texts,
+                                  prior_note_texts, title_pages=4, maximum_note_size=10,
+                                  boundary_tolerance=2)
 
 
 def second_day_check(tree, expanded):

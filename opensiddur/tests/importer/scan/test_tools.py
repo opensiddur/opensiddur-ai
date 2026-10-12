@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock
 from lxml import etree
 from opensiddur.importer.scan import pages, reverse, compare
-from opensiddur.importer.asher_selichot.download import derive_pages
+from opensiddur.importer.scan.metadata import derive_pages
 
 class ToolsTest(unittest.TestCase):
     def setUp(self):
@@ -49,7 +49,7 @@ class ToolsTest(unittest.TestCase):
         with self.assertRaises(ValueError):reverse.check({},actual)
 
     def test_expansion_instructions_follow_supplied_text_independently(self):
-        from opensiddur.importer.asher_selichot.build import expansion_instruction, TEI, J
+        from opensiddur.importer.scan.authoring import conditional_scope, element, TEI, J
         from opensiddur.exporter.compiler import CompilerProcessor
         from opensiddur.exporter.linear import LinearData
         from opensiddur.exporter.settings import load_settings
@@ -57,15 +57,18 @@ class ToolsTest(unittest.TestCase):
         project.mkdir()
         root = etree.Element(f'{{{TEI}}}text', nsmap={'tei':TEI, 'j':J})
         body = etree.SubElement(root, f'{{{TEI}}}body')
-        expansion_instruction(body, 'refrain', 'refrains_present').text = 'Repeat the refrain'
-        expansion_instruction(body, 'prayers', 'prayers_present').text = 'Say the referenced prayers'
+        for identity, feature, text in [('refrain', 'refrains_present', 'Repeat the refrain'),
+                                        ('prayers', 'prayers_present', 'Say the referenced prayers')]:
+            conditional_scope(body, identity, False, fs_type='test:expansions', feature=feature)
+            element(body, 'note', text, type='instruction')
+            element(body, 'j:endConditional', target='#'+identity)
         etree.SubElement(body, f'{{{TEI}}}note', type='instruction').text = 'Unrelated rubric'
         etree.SubElement(body, f'{{{TEI}}}p').text = 'Supplied text'
         (project/'text.xml').write_bytes(etree.tostring(root))
         for refrains, prayers in [(False,False), (True,True), (True,False), (False,True)]:
             with self.subTest(refrains=refrains, prayers=prayers):
                 settings = self.root/'settings.yaml'
-                settings.write_text('priority: {}\ndeclarations:\n  asher:expansions:\n'
+                settings.write_text('priority: {}\ndeclarations:\n  test:expansions:\n'
                     f'    refrains_present: {str(refrains).lower()}\n'
                     f'    prayers_present: {str(prayers).lower()}\n')
                 data = load_settings(settings, LinearData(), project_directory=self.root)

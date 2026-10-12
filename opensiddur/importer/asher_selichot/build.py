@@ -3,6 +3,9 @@
 Reads the committed scan reading, not OCR. Dependency ranges are authored from
 this edition, never substituted from another project's prayer text.
 """
+
+from opensiddur.importer.scan.authoring import element, marker, choice, italicize, normalized_xml, conditional_scope, write_documents
+
 import argparse
 import json
 from pathlib import Path
@@ -17,13 +20,6 @@ XML='{http://www.w3.org/XML/1998/namespace}'
 POEM='urn:x-opensiddur:text:poem:bemotzaei_menuhah'
 PRAYER='urn:x-opensiddur:text:prayer:'
 IA='https://archive.org/details/selichothdavidasher1912'
-
-
-def element(parent, name, text=None, **attributes):
-    tag=f'{{{J if name.startswith("j:") else TEI}}}{name.split(":")[-1]}'
-    node=etree.SubElement(parent,tag,attributes)
-    node.text=text
-    return node
 
 
 def document(lang, project, title, urn, *, index=False):
@@ -53,22 +49,9 @@ def pb(parent, scan, printed):
     return element(parent,'pb',n=printed,ed='1912',facs=f'https://archive.org/download/selichothdavidasher1912/page/n{int(scan[1:])-1}_medium.jpg')
 
 
-def marker(parent, urn):
-    element(parent,'milestone',unit='stanza',corresp=urn)
-
-
-def choice(parent, abbr, expan):
-    node=element(parent,'choice');element(node,'abbr',abbr);element(node,'expan',expan)
-    return node
-
-
 def expansion_instruction(parent, identity, feature):
     """Keep the printed rubric unless this view supplies the requested text."""
-    conditional = element(parent, 'j:conditional')
-    conditional.set(XML+'id', identity)
-    fs = element(conditional, 'fs', type='asher:expansions')
-    value = element(fs, 'f'); value.set('name', feature)
-    element(value, 'binary', value='false')
+    conditional_scope(parent, identity, False, fs_type='asher:expansions', feature=feature)
     note = element(parent, 'note', type='instruction')
     element(parent, 'j:endConditional', target='#'+identity)
     return note
@@ -137,25 +120,6 @@ def poem(lang,project,data):
     return root
 
 
-def italicize(parent, phrases):
-    """Retain this edition's emphasis without changing the documentary words."""
-    original = parent.text or ''
-    locations = []
-    for phrase in phrases:
-        position = original.find(phrase)
-        if position < 0:
-            raise ValueError(f'Missing printed emphasis phrase: {phrase}')
-        locations.append((position, phrase))
-    locations.sort()
-    if not locations:
-        return
-    parent.text = original[:locations[0][0]]
-    for i, (position, phrase) in enumerate(locations):
-        hi = element(parent, 'hi', phrase, rend='italic')
-        end = locations[i + 1][0] if i + 1 < len(locations) else len(original)
-        hi.tail = original[position + len(phrase):end]
-
-
 def dependency(lang,project,name,pages):
     urn=PRAYER+name
     root,text=document(lang,project,name.replace('_',' '),urn)
@@ -171,13 +135,6 @@ def dependency(lang,project,name,pages):
     return root
 
 
-def normalized_xml(root):
-    """Normalize source glyphs while preserving binding spaces before phrase dots."""
-    xml=etree.tostring(root,encoding='unicode',pretty_print=True)
-    xml='\u00a0'.join(unicodedata.normalize('NFKD',part) for part in xml.split('\u00a0'))
-    return xml.replace(' ·','\u00a0·')
-
-
 def build(source_root,project_directory):
     data=json.loads((Path(source_root)/'asher_selichot/scan_reading/refrain-and-prayers.json').read_text())
     documents=[]
@@ -187,11 +144,7 @@ def build(source_root,project_directory):
         for name,pages in data[lang]['prayers'].items():
             docs[name+'.xml']=dependency(lang,project,name,pages)
         for name,root in docs.items():
-            xml=normalized_xml(root)
-            valid,errors=validate(xml)
-            if not valid:
-                raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
-            documents.append((out/name,xml))
+            documents.append((out/name, root))
     from .first_day import documents as first_day_documents, OBSOLETE_ASSEMBLIES
     readings = Path(source_root)/'asher_selichot/scan_reading'
     authored = list(first_day_documents(readings))
@@ -218,21 +171,11 @@ def build(source_root,project_directory):
     for day in SERVICES:
         if (readings/(manifest_name(day)+'.json')).exists():
             authored.extend(later_penitential_documents(readings,day))
-    for project, name, root in authored:
-        xml=normalized_xml(root)
-        valid,errors=validate(xml)
-        if not valid:
-            raise ValueError(f'{project}/{name}: '+ '\n'.join(errors))
-        documents.append((Path(project_directory)/project/name,xml))
-    for path,xml in documents:
-        path.parent.mkdir(parents=True,exist_ok=True)
-        path.write_text(xml,encoding='utf-8')
-    # Remove only known generated scaffolding, after all replacements validate.
-    for lang in ['he', 'en']:
-        out = Path(project_directory)/f'asher_selichot_{lang}_1912'
-        for name in OBSOLETE_ASSEMBLIES:
-            (out/(name+'.xml')).unlink(missing_ok=True)
-    return [path for path,_ in documents]
+    documents.extend((Path(project_directory)/project/name, root)
+                     for project, name, root in authored)
+    obsolete = [Path(project_directory)/f'asher_selichot_{lang}_1912'/(name+'.xml')
+                for lang in ['he', 'en'] for name in OBSOLETE_ASSEMBLIES]
+    return write_documents(documents, validator=validate, obsolete_paths=obsolete)
 
 
 def main(argv=None):

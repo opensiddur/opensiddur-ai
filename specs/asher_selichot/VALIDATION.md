@@ -864,3 +864,39 @@ these paths; passing local checks alone cannot satisfy the coverage gates.
 Thresholds and exclusions have not been changed.
 
 Report: https://app.codecov.io/gh/opensiddur/opensiddur-ai/pull/215
+
+
+## Generic scan code and coverage boundary
+
+Reusable XML authoring, metadata derivation and PDF measurement now live under
+importer/scan with caller-supplied edition conventions. Asher assembly recipes,
+identity tables, fixed download selection and disposable fixed-text inspection
+commands remain compatible wrappers/recipes. Explicit Codecov ignore entries
+match local coverage omissions; compiler/exporter and shared scan logic remain
+measured. Both coverage targets remain 85%. The classification and extension
+rules are documented in opensiddur/importer/scan/README.md.
+
+Forty-two new synthetic unittest cases exercise reusable behavior, including
+cache isolation and failure cleanup, unknown/duplicate labels, reciprocal
+pairings, mixed languages, verse/refrain structure, validation before writes,
+source-ordered reverse comparisons, stale adjudications, PDF geometry, bookmark
+ancestry, contents destinations and deliberately reversed glyphs. They do not
+assert edition words or inventories. The focused shared scan run has 48 tests;
+all 106 existing Asher tests pass.
+
+Merged main604344b and rebuilt RelaxNG/Schematron. Full merged-state coverage run:
+3,507 tests run in 736 seconds, 12 skipped, no failures. Local overall statement
+coverage is 94.43% (18,838/19,950); shared scan coverage is 99.85% (685/686).
+Local changed-statement estimate against main604344b is 99.86% (720/721);
+Codecov's remote calculation may differ. No thresholds were lowered.
+
+All 398 generated XML files are byte-identical before/after the refactor.
+All 398 companion-worktree XML files validate against the rebuilt schema;
+documentary, title/opening/continuation, expansion and later-service verification
+passes through the final service. The cached 12-page batch002 PDF passes the
+refactored checks: four zero alignment offsets, Hebrew direction 0/199 and the
+reversed control flags 197/199. Direction/alignment/boundary/verse-stop broken
+controls are rejected. No new full-book render or proofreading is claimed.
+
+Logs and local coverage reports are untracked under
+output/asher_selichot/coverage-refactor/.

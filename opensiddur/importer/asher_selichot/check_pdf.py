@@ -1,4 +1,7 @@
 """Check Asher poem PDF content, bilingual stanza geometry, and broken controls."""
+
+from opensiddur.importer.scan.pdf import strip_numeric_markers
+
 import argparse
 import copy
 import re
@@ -20,11 +23,6 @@ MAX_BASELINE_DIFFERENCE = 16
 def plain(text):
     text = text.replace('\ue049', 'Th').replace('\ue04a', 'Th')
     return unicodedata.normalize('NFKC', text)
-
-
-def strip_numeric_markers(text):
-    """Normalize Asher PDF body fingerprints, never the source or rendered text."""
-    return re.sub(r'(?<=[A-Za-z,.;:!?])[\s\d]*\d(?=[,.;!?]|\s)','',text)
 
 
 def check(tree, expanded, complete=False):

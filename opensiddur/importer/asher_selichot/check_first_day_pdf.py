@@ -1,4 +1,7 @@
 """Check the first-day PDF, including the Latin citation direction."""
+
+from opensiddur.importer.scan.pdf import latin_note_runs as _latin_note_runs
+
 import argparse
 import copy
 import re
@@ -18,18 +21,7 @@ ANCHORS = [('אשרייושביביתך', 'Happy are they who dwell'),
 
 
 def latin_note_runs(tree):
-    """Group small Latin glyphs by font and baseline, including fragmented PDF lines."""
-    runs = {}
-    for page_no, page in enumerate(tree.findall('page'), 1):
-        for font in page.findall('.//font'):
-            if float(font.get('size', '100')) > 10:
-                continue  # Asher first-day apparatus measures 9.826pt.
-            for char in font.findall('char'):
-                value = char.get('c', '')
-                if value.isascii() and value.isalpha():
-                    key = (page_no, round(float(char.get('y')), 2), font.get('name'))
-                    runs.setdefault(key, []).append(char)
-    return {key: chars for key, chars in runs.items() if len(chars) >= 4}
+    return _latin_note_runs(tree, maximum_font_size=10)
 
 
 def check_mi_sheanah(rows):

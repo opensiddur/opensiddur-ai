@@ -67,5 +67,5 @@ class SecondDayTest(unittest.TestCase):
         self.assertEqual([rows[0],rows[2]],day_bookmarks(rows))
         with self.assertRaisesRegex(ValueError,'top-level bookmark'):
             day_bookmarks(rows[:2]+[(1,*rows[2][1:]),rows[3]])
-        with self.assertRaisesRegex(ValueError,'above its pizmon'):
+        with self.assertRaisesRegex(ValueError,'expected child heading'):
             day_bookmarks(rows[:3])

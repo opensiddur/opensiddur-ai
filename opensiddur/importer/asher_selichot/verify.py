@@ -1,4 +1,7 @@
 """Verify the edition against independent documentary streams and its expansion policy."""
+
+from opensiddur.importer.scan.authoring import check_poetry
+
 import argparse
 import json
 import unicodedata
@@ -230,22 +233,6 @@ def verify_opening(source, project_directory):
     differences=check(actual,expected)
     if differences:raise ValueError(differences)
     print(f'{len(actual)} opening page/language streams match; both title pages and first-day entry boundaries checked')
-
-
-def check_poetry(unit, rule):
-    """Audit structure separately: identical prose words must not pass as poetry."""
-    lines = unit.findall(f'{{{TEI}}}lg/{{{TEI}}}l')
-    if unit.findall(f'{{{TEI}}}p') or len(lines) != rule['line_count']:
-        raise ValueError('Poetry verse structure differs from scan adjudication')
-    refrains = unit.findall(f'.//{{{TEI}}}seg[@type="refrain"]')
-    if len(refrains) != rule.get('refrain_count', 0):
-        raise ValueError('Poetry refrain count differs from scan adjudication')
-    for refrain in refrains:
-        words = ''.join(refrain.itertext())
-        if (words.rstrip('·׃ ').strip() != rule['refrain']
-                or refrain.getparent().tag != f'{{{TEI}}}l'
-                or refrain.getnext() is not None or (refrain.tail or '').strip()):
-            raise ValueError('Poetry refrain must end its verse exactly once')
 
 
 def verify_continuation(source, project_directory):

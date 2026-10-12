@@ -1,4 +1,8 @@
 """Encode the complete first day from scan-first documentary readings."""
+
+from opensiddur.importer.scan.authoring import append_words, mixed_words, words_with_notes, conditional_scope
+from opensiddur.importer.scan.authoring import poetic_lines as _poetic_lines
+
 import json
 import re
 import unicodedata
@@ -283,85 +287,7 @@ EXPANSION_TARGETS = {
 
 
 def expansion_scope(parent, identity, present, *, feature='repetitions_present'):
-    conditional = element(parent, 'j:conditional')
-    conditional.set(XML+'id', identity)
-    fs = element(conditional, 'fs', type='asher:expansions')
-    f = element(fs, 'f'); f.set('name', feature)
-    element(f, 'binary', value='true' if present else 'false')
-
-
-def append_words(parent, words):
-    if len(parent):
-        parent[-1].tail = (parent[-1].tail or '') + words
-    else:
-        parent.text = (parent.text or '') + words
-
-
-def mixed_words(parent, words):
-    """Keep the edition's English rubrics and Hebrew reference cues explicit."""
-    for part in re.split(r'([\u0590-\u05ff](?:[\u0590-\u05ff ·\s]*[\u0590-\u05ff])?)', words):
-        if re.search(r'[\u05d0-\u05ea]', part):
-            element(parent, 'foreign', part).set(XML+'lang', 'he')
-        else:
-            append_words(parent, part)
-
-
-def words_with_notes(parent, words, notes, lang):
-    """Place each printed footnote at its recorded anchor, exactly once."""
-    rest = words
-    for note in notes:
-        anchor = unicodedata.normalize('NFKD', note['anchor'])
-        if anchor not in rest:
-            raise ValueError(f'Footnote anchor absent: {anchor!r}')
-        before, rest = rest.split(anchor, 1)
-        append_words(parent, before+anchor)
-        node = element(parent, 'note', type='commentary')
-        if lang == 'he' and re.search('[A-Za-z]',note['text']):
-            first, following = note['text'].split('\n',1)
-            p = element(node,'p');p.set(XML+'lang','en');mixed_words(p,first)
-            element(node,'p',following)
-        elif lang == 'en' and re.search(r'[\u05d0-\u05ea]', note['text']):
-            node.set(XML+'lang', 'en')
-            mixed_words(node, note['text'])
-        else:
-            node.text = note['text']
-    append_words(parent, rest)
-
-
-def poetic_lines(node, fragments, rule):
-    """Keep semantic verse lines across scan boundaries and mark terminal refrains."""
-    stops = rule['line_stops']
-    line = None
-    for i, fragment in enumerate(fragments):
-        data = fragment['he']
-        if i:
-            pb(line if line is not None else node, data['scan'], data['printed_page'])
-        remaining_notes = list(fragment['notes']['he'])
-        for words in re.findall(r'[^'+re.escape(stops)+r']+['+re.escape(stops)+r'][\]\)]?|[^'+re.escape(stops)+r']+$', data['text']):
-            words = words.strip()
-            # A phrase dot is printed apart from the word, but must not wrap alone.
-            words = re.sub(r' +(?=·$)', '\u00a0', words)
-            if not words:
-                continue
-            if line is None:
-                line = element(node, 'l')
-                line.tail = ' '
-            notes = [note for note in remaining_notes if note['anchor'] in words]
-            for note in notes:
-                remaining_notes.remove(note)
-            refrain = rule.get('refrain')
-            match = re.search(re.escape(refrain)+r'\s*['+re.escape(stops)+r']$', words) if refrain else None
-            if match:
-                words_with_notes(line, words[:match.start()], notes, 'he')
-                element(line, 'seg', words[match.start():], type='refrain')
-            else:
-                words_with_notes(line, words, notes, 'he')
-            if words.rstrip('])')[-1] in stops:
-                line = None
-            elif not data.get('join_next'):
-                append_words(line, ' ')
-        if remaining_notes:
-            raise ValueError('Poetry footnote anchor crosses a verse boundary')
+    conditional_scope(parent, identity, present, fs_type='asher:expansions', feature=feature)
 
 
 def section(lang, project, name, groups, poetry=None):
@@ -438,3 +364,8 @@ def section(lang, project, name, groups, poetry=None):
                 element(unit, 'j:endDeclare', target='#first_day_selichot_kaddish')
             element(unit, 'j:endConditional', target='#'+group['id']+'_expanded')
     return root
+
+
+def poetic_lines(node, fragments, rule):
+    """Apply this edition's facsimile convention to shared verse authoring."""
+    return _poetic_lines(node, fragments, rule, page_break=pb)

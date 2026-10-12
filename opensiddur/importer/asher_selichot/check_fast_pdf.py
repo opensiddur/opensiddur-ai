@@ -1,4 +1,7 @@
 """Measure the bilingual fast services against their independently recorded scan readings."""
+
+from opensiddur.importer.scan import pdf as measurements
+
 import argparse
 import copy
 import json
@@ -11,36 +14,6 @@ from .check_pdf import plain, strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 from opensiddur.common.constants import SOURCETEXTS_ROOT
-
-
-def glyph_rows(tree, minimum_font_size=None):
-    he,en,headings=[],[],[]
-    for number,page in enumerate(tree.findall('page'),1):
-        gutter=288 if number%2 else 324
-        hrows,erows={},{}
-        for line in page.findall('.//line'):
-            chars=line.findall('.//char') if minimum_font_size is None else [c for font in line.findall('font') if float(font.get('size','100'))>minimum_font_size for c in font.findall('char')]
-            hebrew=''.join(base(c.get('c',' ')) or '' for c in sorted(chars,key=lambda c:float(c.get('x')),reverse=True))
-            if hebrew=='פזמון' and not any(c.get('c','').isdigit() for c in chars):headings.append((number,min(float(c.get('y')) for c in chars)))
-            for c in chars:
-                x=float(c.get('x'));y=round(float(c.get('y')),2)
-                if x<gutter and base(c.get('c',' ')):hrows.setdefault(y,[]).append(c)
-                elif x>gutter:erows.setdefault(y,[]).append(c)
-        he.extend((number,y,''.join(base(c.get('c')) for c in sorted(chars,key=lambda c:float(c.get('x')),reverse=True))) for y,chars in hrows.items())
-        for y,chars in erows.items():
-            words='';right=None
-            for c in sorted(chars,key=lambda c:float(c.get('x'))):
-                if right is not None and float(c.get('x'))-right>2 and words and not words[-1].isspace():words+=' '
-                words+=c.get('c','');quad=list(map(float,c.get('quad').split()));right=max(quad[0::2])
-            en.append((number,y,plain(words)))
-    return he,en,headings
-
-
-def body_text(tree):
-    # Remove page/header counters before joining a word across a PDF page break.
-    rows=glyph_rows(tree,minimum_font_size=10)[1]
-    text=strip_numeric_markers(plain(' '.join(text for _,y,text in rows if not(y<100 and text.strip().isdigit()))))
-    return plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(text.split())))
 
 
 def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
@@ -137,4 +110,19 @@ def main(argv=None):
         xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.day,a.source_root,a.expanded)
         if a.control:controls(tree,a.day,a.source_root,a.expanded)
     return 0
+
+
+def _normalize(_form, text):
+    return plain(text)
+
+
+def glyph_rows(tree, minimum_font_size=None):
+    return measurements.glyph_rows(tree, minimum_font_size, gutters=(288, 324),
+                                   heading='פזמון', normalize=_normalize)
+
+
+def body_text(tree):
+    return measurements.body_text(tree, gutters=(288, 324), minimum_font_size=10,
+                                  header_bottom=100, normalize=_normalize)
+
 if __name__=='__main__':raise SystemExit(main())

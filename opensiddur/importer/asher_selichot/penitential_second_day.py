@@ -1,4 +1,7 @@
 """The complete image-read second penitential day service, printed 104–115 (n209–n232)."""
+
+from opensiddur.importer.scan.authoring import wrap_hebrew
+
 import copy
 import hashlib
 import json
@@ -54,23 +57,6 @@ def readings(source):
         if pages != sorted(pages) or set(pages) != set(range(start,234,2)):
             raise ValueError('second penitential day must cover every source page in verified order')
     return manifest,units
-
-
-def wrap_hebrew(node):
-    """Wrap Hebrew in English body text as well as its apparatus."""
-    for parent in list(node.iter()):
-        if parent.get(XML+'lang')=='he' or parent.tag==f'{{{TEI}}}foreign':continue
-        if parent.text and re.search('[\u05d0-\u05ea]',parent.text):
-            words=parent.text;parent.text=None
-            temporary=etree.Element('temporary');mixed_words(temporary,words)
-            parent.text=temporary.text
-            for index,child in enumerate(list(temporary)):parent.insert(index,child)
-        for child in list(parent):
-            if child.tail and re.search('[\u05d0-\u05ea]',child.tail):
-                words=child.tail;child.tail=None
-                temporary=etree.Element('temporary');mixed_words(temporary,words)
-                child.tail=temporary.text
-                for index,following in enumerate(list(temporary),parent.index(child)+1):parent.insert(index,following)
 
 
 def pizmon(parent, reading, lang, context):
