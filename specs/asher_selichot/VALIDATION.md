@@ -1222,3 +1222,15 @@ Penitential PDF controls rejected missing notes, shifted stanza and fulfilled cu
   Direction: 0 of 1958 Hebrew runs are set left to right; control: 1909 of 1958 flagged when every run is reversed. Visual PDF pages: 31,32,34,35,48,52,53.
 
 Artifacts: `output/asher_selichot/proofreading/batch-018/`. These PDFs contain the fourth penitential day alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.
+
+
+## Proofreading checkpoint019
+
+The committed Hebrew proofreading checkpoint reaches the end of the fifth penitential day, printed153 upper (s308/n307). Batch019 covers14 Hebrew pages from s282/n281 lower:177 replacement rules across11 Hebrew XML modules, with39 unchanged confirmations. Two English XML files have regeneration-only whitespace/declaration-ID changes. Frozen readings, comparisons, native-band adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-19/. This is a same-model second image pass with prior exposure, primarily consonant-first. Uncertain rare words remain recorded; independent-person Hebrew, facing-English and comprehensive fine-pointing review remain pending.
+
+13 modules validate;39 source-ordered bilingual units, five pizmon units and bilingual expansion targets checked. Expanded compiled verification passes all five petition ranges and seasonal Half/Full Kaddish. Shared scan and Asher service assembly tests:154 pass. No generic executable logic changed.
+
+- Documentary: fifth penitential day PDF: apparatus, fulfilled cues and reference boundaries checked; 5 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0]; Penitential PDF controls rejected missing notes, shifted stanza and fulfilled cue; 26 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 706 Hebrew runs are set left to right; control: 701 of 706 flagged when every run is reversed. Visually inspected PDF pages: [12, 20, 21, 22, 25, 26].
+- Expanded: fifth penitential day PDF: apparatus, fulfilled cues and reference boundaries checked; 5 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0]; Penitential PDF controls rejected missing notes, shifted stanza and fulfilled cue; 55 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True Direction: 0 of 2012 Hebrew runs are set left to right; control: 1951 of 2012 flagged when every run is reversed. Visually inspected PDF pages: [20, 21, 34, 35, 36, 54].
+
+Artifacts: `output/asher_selichot/proofreading/batch-019/`. These PDFs contain the fifth penitential day alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains. Counts describe adjudication operations; fine pointing and rare words remain provisional.
