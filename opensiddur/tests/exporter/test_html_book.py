@@ -720,3 +720,42 @@ class TestBuildBook(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNotesAndDirection(unittest.TestCase):
+    """Notes the compiler sets inside anchors and milestones, numbering, and direction."""
+
+    def test_a_note_inside_an_anchor_is_shown(self):
+        main = _render('<tei:p>word<tei:anchor xml:id="a"><tei:note>a remark</tei:note>'
+                       '</tei:anchor> more</tei:p>')
+        self.assertIn("a remark", "".join(main.itertext()))
+        self.assertEqual(main.xpath("string((//*[@class='note-ref'])[1])"), "1")
+
+    def test_a_note_inside_a_verse_milestone_is_shown(self):
+        main = _render('<tei:p><tei:milestone unit="verse" n="1"><tei:note>on the verse</tei:note>'
+                       '</tei:milestone>text</tei:p>')
+        self.assertIn("on the verse", "".join(main.itertext()))
+
+    def test_a_notes_number_counts_only_notes_in_the_text(self):
+        document = f'''<tei:TEI xmlns:tei="{TEI_NS}" xmlns:j="{J}" xmlns:p="{P}" xml:lang="en"
+            p:project="proj" p:file_name="index.xml" p:destination="electronic">
+          <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>T</tei:title></tei:titleStmt>
+          <tei:sourceDesc><tei:bibl>b<tei:note>a header note</tei:note></tei:bibl></tei:sourceDesc>
+          </tei:fileDesc></tei:teiHeader>
+          <tei:text><tei:body><tei:p>word<tei:note>the first note</tei:note></tei:p></tei:body></tei:text>
+        </tei:TEI>'''
+        root = etree.fromstring(document.encode())
+        prepare(root)
+        main = etree.fromstring(xslt_transform_string(
+            XSLT_FILE, etree.tostring(root, encoding="unicode"),
+            xslt_params=xslt_parameters(TypographyConfig())))
+        self.assertEqual(main.xpath("string((//*[@class='note-ref'])[1])"), "1")
+
+    def test_a_transliteration_is_left_to_right(self):
+        main = _render('<tei:p><tei:foreign xml:lang="he-Latn">Shema</tei:foreign></tei:p>')
+        transliteration = main.xpath("//*[@lang='he-Latn']")[0]
+        self.assertNotEqual(transliteration.get("dir"), "rtl")
+
+    def test_hebrew_is_right_to_left(self):
+        main = _render('<tei:p><tei:foreign xml:lang="he">שמע</tei:foreign></tei:p>')
+        self.assertEqual(main.xpath("//*[@lang='he']")[0].get("dir"), "rtl")

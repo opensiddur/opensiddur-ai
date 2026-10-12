@@ -44,9 +44,11 @@ body {
 }
 
 :lang(he), :lang(arc), :lang(yi) { font-family: var(--font-hebrew); }
+/* A transliteration (he-Latn) is in Latin letters, whatever its language. */
+:lang(he-Latn), :lang(arc-Latn), :lang(yi-Latn) { font-family: var(--font-latin); }
 /* Pointed Hebrew wants a size more than the Latin beside it. Set on the column, once: :lang()
    follows inheritance, so a rule on it would compound at every level. */
-.col:is([lang|="he"], [lang|="arc"], [lang|="yi"]) { font-size: 1.12em; }
+.col:is([lang|="he"], [lang|="arc"], [lang|="yi"]):not([lang$="-Latn"]) { font-size: 1.12em; }
 
 .os-book { max-width: 72rem; margin: 0 auto; }
 
@@ -70,10 +72,10 @@ h4.head, h5.head, h6.head { font-size: 1.05em; font-variant: small-caps; }
 .rend-italic { font-style: italic; }
 .rend-bold { font-weight: bold; }
 .rend-small-caps, .rend-smallcaps { font-variant: small-caps; }
-.rend-sup, .rend-superscript { vertical-align: super; font-size: 0.75em; }
+.rend-sup, .rend-superscript, .rend-suspended, .rend-raised { vertical-align: super; font-size: 0.75em; }
 .rend-small { font-size: 0.85em; }
 .rend-large { font-size: 1.2em; }
-.rend-centred, .rend-center { text-align: center; }
+.rend-centered, .rend-centred, .rend-center { text-align: center; }
 .divineName { white-space: nowrap; }
 
 .v {

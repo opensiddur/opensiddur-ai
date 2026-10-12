@@ -36,6 +36,8 @@
 
     <xsl:output method="text" encoding="UTF-8" omit-xml-declaration="yes" indent="no"/>
 
+    <xsl:include href="common.xsl"/>
+
     <!-- Optional pre-built additions to the preamble/postamble (license/bib/credits) -->
     <xsl:param name="additional-preamble" as="xs:string?"/>
     <xsl:param name="additional-postamble" as="xs:string?"/>
@@ -787,6 +789,12 @@
             <xsl:text>\mainmatter&#10;</xsl:text>
         </xsl:if>
         <xsl:apply-templates select="tei:body"/>
+        <!-- Back matter (an afterword, an index) is set after the body as the front matter
+             is before it, in streams of its own language. -->
+        <xsl:if test="tei:back[normalize-space() or descendant::*]">
+            <xsl:text>\backmatter&#10;</xsl:text>
+            <xsl:apply-templates select="tei:back"/>
+        </xsl:if>
     </xsl:template>
 
     <!-- ====================================================================
@@ -795,7 +803,7 @@
          numbered stream the body uses.
          ==================================================================== -->
 
-    <xsl:template match="tei:front">
+    <xsl:template match="tei:front | tei:back">
         <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
 
         <!-- Prose is grouped by its own language, not the root's. A book's front matter is
@@ -999,7 +1007,7 @@
                                   then $alt-head else ()"/>
             <xsl:variable name="lang" select="string($shown/@xml:lang)"/>
             <xsl:variable name="is-hebrew"
-                          select="$lang = 'he' or starts-with($lang, 'he-')"/>
+                          select="f:is-hebrew-lang($lang)"/>
             <xsl:variable name="mark" select="f:emit-bidi-mark(string($shown/@title))"/>
             <!-- A title that is not set lends its notes to the one that is. -->
             <xsl:variable name="second-notes" as="element()*"
@@ -1041,7 +1049,7 @@
                      marks nothing. -->
                 <xsl:variable name="second-lang" select="string($second/@xml:lang)"/>
                 <xsl:variable name="second-is-hebrew"
-                              select="$second-lang = 'he' or starts-with($second-lang, 'he-')"/>
+                              select="f:is-hebrew-lang($second-lang)"/>
                 <xsl:text>\OSheadTranslation{</xsl:text>
                 <xsl:choose>
                     <xsl:when test="$second-is-hebrew">
@@ -2709,7 +2717,7 @@
         <!-- Notes on the division this heads, set after its title. See emit-leaves. -->
         <xsl:param name="notes" as="element()*" select="()"/>
         <xsl:variable name="lang" select="string(@xml:lang)"/>
-        <xsl:variable name="is-hebrew" select="$lang = 'he' or starts-with($lang, 'he-')"/>
+        <xsl:variable name="is-hebrew" select="f:is-hebrew-lang($lang)"/>
 
         <!-- Record the heading for the running heads before setting it, so a
              head at the very top of a page is already in force there. The
@@ -3317,46 +3325,52 @@
         <xsl:apply-templates mode="emit"/>
     </xsl:template>
 
-    <xsl:template match="tei:hi[@rend='small-caps']" mode="emit" priority="10">
-        <xsl:text>\textsc{</xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>}</xsl:text>
-    </xsl:template>
-
-    <xsl:template match="tei:hi[@rend='italic']" mode="emit" priority="10">
-        <xsl:text>\textit{</xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>}</xsl:text>
-    </xsl:template>
-
-    <xsl:template match="tei:hi[@rend='superscript' or @rend='suspended']" mode="emit" priority="10">
-        <xsl:text>\textsuperscript{</xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>}</xsl:text>
-    </xsl:template>
-
-    <xsl:template match="tei:hi[@rend='large']" mode="emit" priority="10">
-        <xsl:text>{\Large </xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>}</xsl:text>
-    </xsl:template>
-
-    <xsl:template match="tei:hi[@rend='small']" mode="emit" priority="10">
-        <xsl:text>{\small </xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>}</xsl:text>
-    </xsl:template>
-
-    <xsl:template match="tei:hi[@rend='align-right']" mode="emit" priority="10">
-        <xsl:text>{\raggedleft </xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>\par}</xsl:text>
-    </xsl:template>
+    <!-- tei:hi/@rend is a list of tokens, each wrapped around the content in order: "small
+         superscript" is small and raised. A token with no styling of its own (a layout or
+         reading mark such as centered, ketiv-only) sets the text plain; an unknown one does
+         too, with a warning, rather than in bold as everything unrecognised once was. The
+         electronic book styles the same tokens as rend-* classes (reader.css). -->
+    <xsl:variable name="hi-rend-tex" as="map(xs:string, xs:string+)" select="map {
+        'small-caps': ('\textsc{', '}'),
+        'smallcaps': ('\textsc{', '}'),
+        'italic': ('\textit{', '}'),
+        'bold': ('\textbf{', '}'),
+        'sup': ('\textsuperscript{', '}'),
+        'superscript': ('\textsuperscript{', '}'),
+        'suspended': ('\textsuperscript{', '}'),
+        'raised': ('\textsuperscript{', '}'),
+        'large': ('{\Large ', '}'),
+        'small': ('{\small ', '}'),
+        'align-right': ('{\raggedleft ', '\par}')
+    }"/>
+    <xsl:variable name="hi-rend-plain" as="xs:string*"
+                  select="('centered', 'centred', 'center', 'ketiv-only', 'qeri-only')"/>
 
     <xsl:template match="tei:hi" mode="emit">
-        <xsl:text>\textbf{</xsl:text>
-        <xsl:apply-templates mode="emit"/>
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="hi-wrap">
+            <xsl:with-param name="tokens" select="tokenize(normalize-space(@rend))"/>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="hi-wrap">
+        <xsl:param name="tokens" as="xs:string*"/>
+        <xsl:choose>
+            <xsl:when test="empty($tokens)">
+                <xsl:apply-templates mode="emit"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:variable name="wrap" select="$hi-rend-tex($tokens[1])"/>
+                <xsl:if test="empty($wrap) and not($tokens[1] = $hi-rend-plain)">
+                    <xsl:message select="concat('reledmac.xslt: tei:hi/@rend token &quot;',
+                                                $tokens[1], '&quot; has no styling; set plain')"/>
+                </xsl:if>
+                <xsl:value-of select="$wrap[1]"/>
+                <xsl:call-template name="hi-wrap">
+                    <xsl:with-param name="tokens" select="subsequence($tokens, 2)"/>
+                </xsl:call-template>
+                <xsl:value-of select="$wrap[2]"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="tei:emph" mode="emit">
@@ -3365,7 +3379,8 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
-    <xsl:template match="tei:foreign[@xml:lang='he']" mode="emit" priority="10">
+    <xsl:template match="tei:foreign[@xml:lang][f:is-hebrew-lang(string(@xml:lang))]"
+                  mode="emit" priority="10">
         <xsl:text>\texthebrew{</xsl:text>
         <xsl:apply-templates mode="emit"/>
         <xsl:text>}</xsl:text>
@@ -3626,6 +3641,9 @@
         </xsl:choose>
     </xsl:template>
 
+    <!-- Each reading is emitted, not flattened to a string: it can hold markup (a divine
+         name, a highlighted letter) and the anchor of a note, whose mark belongs where the
+         anchor is. string() spliced the note's text into the middle of the word. -->
     <xsl:template match="tei:choice" mode="emit">
         <xsl:choose>
             <xsl:when test="j:option">
@@ -3633,32 +3651,29 @@
                      between them, so all are shown, the first plain and the rest bracketed
                      as the 1822 print does. -->
                 <xsl:for-each select="j:option">
-                    <xsl:choose>
-                        <xsl:when test="position() = 1">
-                            <xsl:value-of select="f:escape-tex(string(.))"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:text> (</xsl:text>
-                            <xsl:value-of select="f:escape-tex(string(.))"/>
-                            <xsl:text>)</xsl:text>
-                        </xsl:otherwise>
-                    </xsl:choose>
+                    <xsl:if test="position() gt 1">
+                        <xsl:text> (</xsl:text>
+                    </xsl:if>
+                    <xsl:apply-templates select="node()" mode="emit"/>
+                    <xsl:if test="position() gt 1">
+                        <xsl:text>)</xsl:text>
+                    </xsl:if>
                 </xsl:for-each>
             </xsl:when>
             <xsl:when test="j:read and j:written">
                 <xsl:text>\textit{</xsl:text>
-                <xsl:value-of select="f:escape-tex(string(j:read))"/>
+                <xsl:apply-templates select="j:read/node()" mode="emit"/>
                 <xsl:text>} (</xsl:text>
-                <xsl:value-of select="f:escape-tex(string(j:written))"/>
+                <xsl:apply-templates select="j:written/node()" mode="emit"/>
                 <xsl:text>)</xsl:text>
             </xsl:when>
             <xsl:when test="j:read">
                 <xsl:text>\textit{</xsl:text>
-                <xsl:value-of select="f:escape-tex(string(j:read))"/>
+                <xsl:apply-templates select="j:read/node()" mode="emit"/>
                 <xsl:text>}</xsl:text>
             </xsl:when>
             <xsl:when test="j:written">
-                <xsl:value-of select="f:escape-tex(string(j:written))"/>
+                <xsl:apply-templates select="j:written/node()" mode="emit"/>
             </xsl:when>
         </xsl:choose>
     </xsl:template>
@@ -3696,15 +3711,6 @@
         <xsl:text>}</xsl:text>
         </xsl:if>
     </xsl:template>
-
-    <!-- Which scripts are written right to left, for deciding whether two runs can share
-         a line. Compared by direction rather than by language, so English beside Yiddish
-         is one line and Hebrew beside Yiddish is another. -->
-    <xsl:function name="f:is-rtl-lang" as="xs:boolean">
-        <xsl:param name="lang" as="xs:string"/>
-        <xsl:sequence select="tokenize($lang, '-')[1]
-                              = ('he', 'yi', 'arc', 'ar', 'fa', 'jrb', 'lad', 'ji')"/>
-    </xsl:function>
 
     <xsl:template match="tei:note[not(ancestor::tei:standOff)][not(@type='instruction')]" mode="emit">
         <xsl:variable name="serial" as="xs:integer"
@@ -3843,9 +3849,14 @@
          TeX escaping helpers
          ==================================================================== -->
 
+    <!-- The notes the book numbers before this one, the same ones the electronic book numbers
+         (html.xslt, note-number): editorial and commentary notes in the text — not a
+         header's notes, not standoff ones, not instructions. A note that holds this one comes
+         before it, though the preceding axis leaves it out. -->
     <xsl:function name="f:editorial-note-emissions-before" as="xs:integer">
         <xsl:param name="ctx" as="element()"/>
-        <xsl:sequence select="count($ctx/preceding::tei:note[not(@type='instruction') and not(ancestor::tei:standOff)])"/>
+        <xsl:sequence select="count(($ctx/preceding::tei:note | $ctx/ancestor::tei:note)
+            [not(@type='instruction')][ancestor::tei:text][not(ancestor::tei:standOff)])"/>
     </xsl:function>
 
     <!-- Heading level (1-4) to the \OSheadA/B/C/D macro suffix. -->
@@ -4132,13 +4143,6 @@
             and not($imprint/text()[normalize-space(.)])"/>
     </xsl:function>
 
-    <xsl:function name="f:is-hebrew-lang" as="xs:boolean">
-        <xsl:param name="lang" as="xs:string"/>
-        <!-- An explicit Hebrew script subtag also covers Aramaic (arc-Hebr).
-             The Polyglossia Hebrew environment supplies its script and direction. -->
-        <xsl:sequence select="$lang = 'he' or starts-with($lang, 'he-')
-                              or tokenize(lower-case($lang), '-')[2] = 'hebr'"/>
-    </xsl:function>
 
     <!-- Language for the tei:head used in \OSheadA/B/C titles. -->
     <!-- The nearest declaration of any kind, rather than the head's own, then a tei:div,
@@ -4181,16 +4185,6 @@
                                      else $n"/>
     </xsl:function>
 
-    <xsl:function name="f:escape-tex" as="xs:string">
-        <xsl:param name="s" as="xs:string"/>
-        <!-- Escape characters that have special meaning in LaTeX. Order matters:
-             backslash must run first so we don't double-escape later substitutions. -->
-        <xsl:variable name="t1" select="replace($s, '\\', '\\textbackslash{}')"/>
-        <xsl:variable name="t2" select="replace($t1, '([&amp;%$#_{}])', '\\$1')"/>
-        <xsl:variable name="t3" select="replace($t2, '~', '\\textasciitilde{}')"/>
-        <xsl:variable name="t4" select="replace($t3, '\^', '\\textasciicircum{}')"/>
-        <xsl:sequence select="$t4"/>
-    </xsl:function>
 
     <!-- Sources like the MAM apparatus notes are Hebrew prose that embeds short Latin
          tokens (manuscript sigla such as "EVR-II-B-8", "BHS") and citation ranges (build.

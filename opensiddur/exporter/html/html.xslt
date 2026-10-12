@@ -39,15 +39,25 @@
     <xsl:key name="corresp" match="*[@corresp]" use="tokenize(@corresp)[1]"/>
     <xsl:key name="opener" match="j:conditional[@p:cid]" use="@p:cid"/>
 
+    <!-- The notes the book numbers, the same ones the PDF numbers (reledmac.xslt,
+         f:editorial-note-emissions-before): editorial and commentary notes in the text —
+         not a header's notes, not standoff ones, not instructions. -->
     <xsl:accumulator name="note-number" as="xs:integer" initial-value="0">
-        <xsl:accumulator-rule match="tei:note[not(@type = 'instruction')]" select="$value + 1"/>
+        <xsl:accumulator-rule
+            match="tei:note[not(@type = 'instruction')][ancestor::tei:text][not(ancestor::tei:standOff)]"
+            select="$value + 1"/>
     </xsl:accumulator>
     <xsl:mode use-accumulators="note-number" on-no-match="shallow-skip"/>
 
+    <!-- Whether a language is written right to left. A script subtag decides: he-Latn is a
+         transliteration, set left to right. The PDF follows the same rule
+         (tex/common.xsl, f:is-rtl-lang). -->
     <xsl:function name="f:is-rtl" as="xs:boolean">
         <xsl:param name="lang" as="xs:string"/>
-        <xsl:sequence select="tokenize($lang, '-')[1]
-                              = ('he', 'yi', 'arc', 'ar', 'fa', 'jrb', 'lad', 'ji')"/>
+        <xsl:variable name="subtags" select="tokenize(lower-case($lang), '-')"/>
+        <xsl:variable name="script" select="$subtags[position() gt 1][string-length(.) = 4][1]"/>
+        <xsl:sequence select="if ($script) then $script = ('hebr', 'arab', 'syrc')
+                              else $subtags[1] = ('he', 'yi', 'arc', 'ar', 'fa', 'jrb', 'lad', 'ji')"/>
     </xsl:function>
 
     <!-- Whether a node sits in running text, where only phrasing content is allowed. -->
@@ -268,6 +278,8 @@
                 <xsl:attribute name="id" select="@n"/>
             </xsl:if>
         </span>
+        <!-- Notes the compiler set inside it follow it. -->
+        <xsl:apply-templates/>
     </xsl:template>
 
     <xsl:template match="tei:ref">
@@ -287,12 +299,19 @@
         </span>
     </xsl:template>
 
+    <!-- The compiler sets a note whose target has no words of its own inside the anchor or
+         milestone it targets, so their children are the notes, and are kept. -->
     <xsl:template match="tei:anchor[@corresp] | tei:milestone[@corresp]" priority="-1">
         <span>
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'anchor'"/>
             </xsl:call-template>
+            <xsl:apply-templates/>
         </span>
+    </xsl:template>
+
+    <xsl:template match="tei:anchor | tei:milestone" priority="-1.5">
+        <xsl:apply-templates/>
     </xsl:template>
 
     <!-- Alternate wordings: all are shown, the first plain and the rest in parentheses, as
@@ -352,6 +371,8 @@
             </xsl:call-template>
             <xsl:value-of select="@n"/>
         </span>
+        <!-- Notes the compiler set inside it follow it. -->
+        <xsl:apply-templates/>
     </xsl:template>
 
     <!-- A chapter number is set only in a book of the Bible; a psalm quoted in the liturgy
@@ -363,6 +384,8 @@
             </xsl:call-template>
             <xsl:value-of select="@n"/>
         </span>
+        <!-- Notes the compiler set inside it follow it. -->
+        <xsl:apply-templates/>
     </xsl:template>
 
     <xsl:template match="tei:milestone[starts-with(@unit, 'aliyah') or starts-with(@unit, 'maftir')][@n]
@@ -373,6 +396,8 @@
             </xsl:call-template>
             <xsl:value-of select="@n"/>
         </span>
+        <!-- Notes the compiler set inside it follow it. -->
+        <xsl:apply-templates/>
     </xsl:template>
 
     <xsl:template match="tei:milestone[@unit = 'citation'][@n]">
@@ -382,6 +407,8 @@
             </xsl:call-template>
             <xsl:value-of select="@n"/>
         </span>
+        <!-- Notes the compiler set inside it follow it. -->
+        <xsl:apply-templates/>
     </xsl:template>
 
     <xsl:template match="tei:milestone[@rend = '****']">
@@ -390,6 +417,8 @@
                 <xsl:with-param name="class" select="'section-separator'"/>
             </xsl:call-template>
         </span>
+        <!-- Notes the compiler set inside it follow it. -->
+        <xsl:apply-templates/>
     </xsl:template>
 
     <!-- ── Notes ──────────────────────────────────────────────────────────── -->
@@ -514,6 +543,6 @@
     </xsl:template>
 
     <xsl:template match="tei:fs | tei:f | j:all | j:any | j:none | j:one | j:condition
-                         | tei:anchor | tei:ptr | tei:milestone" priority="-1.5"/>
+                         | tei:ptr" priority="-1.5"/>
 
 </xsl:stylesheet>
