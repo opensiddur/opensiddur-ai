@@ -995,3 +995,32 @@ This selected-module excerpt omits some service-order repetition rubrics and is
 not a whole-book rebuild. Independent-person review, facing English proofreading,
 fine-mark uncertainties and the prior mixed-note paragraph issue remain open.
 Evidence: source proofreading/image-pass-06.
+
+
+## Proofreading checkpoint 007
+
+The Hebrew second image pass reaches the first-day closing rubric on s52/n51,
+printed25 upper. Forty-six replacement rules correct nine modules across
+printed20–25, including Anenu phrase stops, Mi Sheanah pointing and Aramaic
+wording. Maran captive has three verse units, following the restored printed
+sof pasuq. Frozen captures, rejected readings and uncertain fine marks remain
+in source proofreading/image-pass-07; this is not independent-person review.
+
+All398 XML files validate. Seven core documentary streams, six opening streams
+and title metadata,96 first-day continuation units and all later-service source
+and expansion checks pass. No executable code changed; the last full code suite
+passed3557 tests with12 skips after the main merge.
+
+Actual first-day assemblies render37 documentary and42 expanded pages under
+output/asher_selichot/proofreading/batch-007. Both have six zero-delta prayer
+anchors and correct20-line/20-refrain Mi Sheanah, notes and service boundaries.
+Eight poem anchors are within13.55pt documentary and exactly aligned expanded.
+Nine documentary/thirteen expanded first-day broken controls and three poem
+controls per view are rejected. Direction:0/1283 documentary and0/1509 expanded;
+reversed controls flag1253/1283 and1471/1509. Expanded checks confirm supplied
+prayers, omitted fulfilled instructions, and one Full Kaddish in first-day context.
+Documentary pages31,33,35 and expanded40–42 inspected visually.
+
+Independent-person Hebrew review, facing English proofreading, uncertain fine
+marks and the previously recorded mixed-note paragraph issue remain pending.
+Whole-book PDFs remain earlier snapshots. Second-day image captures are underway.
