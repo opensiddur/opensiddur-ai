@@ -15,6 +15,7 @@ from opensiddur.exporter.conditional_settings import (
     parse_declare_element,
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
+from opensiddur.exporter.derived_settings import register_derived_entry, remove_derived_for_contributor
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.linear import (
     ConditionalSettingEntry,
@@ -56,6 +57,59 @@ class TestParseConditionalSettings(unittest.TestCase):
         self.assertIsInstance(entries[0].value, NumericValue)
         self.assertEqual(entries[0].value.value, 8)
         self.assertEqual(entries[1].value, True)
+
+    def test_binary_takes_every_xsd_boolean_form(self):
+        for raw, expected in (("true", True), ("false", False), ("1", True), ("0", False),
+                              (" true ", True)):
+            with self.subTest(raw=raw):
+                entries = self._parse_fs(f'<tei:f name="b"><tei:binary value="{raw}"/></tei:f>')
+                self.assertIs(entries[0].value, expected)
+
+    def test_binary_without_a_truth_value_is_an_error(self):
+        for raw in ("", "yes"):
+            with self.subTest(raw=raw), self.assertRaisesRegex(ValueError, "tei:binary"):
+                self._parse_fs(f'<tei:f name="b"><tei:binary value="{raw}"/></tei:f>')
+
+    def test_a_malformed_numeric_is_an_error(self):
+        for raw in ("1/0", "1 / 2", "a/2"):
+            with self.subTest(raw=raw), self.assertRaisesRegex(ValueError, "teidata.numeric"):
+                self._parse_fs(f'<tei:f name="n"><tei:numeric value="{raw}"/></tei:f>')
+
+    def test_numeric_fraction(self):
+        entries = self._parse_fs(
+            '<tei:f name="half"><tei:numeric value="1/2"/></tei:f>'
+            '<tei:f name="whole"><tei:numeric value="4/2"/></tei:f>'
+        )
+        self.assertEqual(entries[0].value.value, 0.5)
+        self.assertEqual(entries[1].value.value, 2)
+
+    def test_a_feature_holds_one_value(self):
+        with self.assertRaisesRegex(ValueError, "more than one value"):
+            self._parse_fs('<tei:f name="b"><tei:binary value="true"/>'
+                           '<tei:binary value="false"/></tei:f>')
+
+    def test_a_declaration_gives_no_alternatives(self):
+        for value in ('<tei:vAlt><tei:binary value="true"/><tei:binary value="false"/></tei:vAlt>',
+                      '<tei:vNot><tei:binary value="true"/></tei:vNot>'):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "not in j:declare"):
+                self._parse_fs(f'<tei:f name="b">{value}</tei:f>')
+
+    def _declare(self, inner: str) -> list[ConditionalSettingEntry]:
+        xml = f'<j:declare xmlns:tei="{TEI}" xmlns:j="{J}" xml:id="x">{inner}</j:declare>'
+        return parse_declare_element(etree.fromstring(xml.encode()), "d1")
+
+    def test_a_declaration_that_declares_nothing_is_an_error(self):
+        """Reported where it stands, rather than at its j:endDeclare."""
+        for inner in ("", "<!-- nothing -->"):
+            with self.subTest(inner=inner), self.assertRaisesRegex(ValueError, "declares nothing"):
+                self._declare(inner)
+        with self.assertRaisesRegex(ValueError, "no tei:f"):
+            self._declare('<tei:fs type="t"/>')
+
+    def test_a_declaration_holds_only_feature_structures(self):
+        with self.assertRaisesRegex(ValueError, "holds only tei:fs"):
+            self._declare('<j:all><tei:fs type="t"><tei:f name="b">'
+                          '<tei:binary value="true"/></tei:f></tei:fs></j:all>')
 
     def test_numeric_with_max(self):
         entries = self._parse_fs('<tei:f name="n"><tei:numeric value="1" max="5"/></tei:f>')
@@ -172,7 +226,7 @@ class TestStackOperations(unittest.TestCase):
             self.proc.linear_data, trigger=SettingChangeTrigger.END_DECLARE, declare_id="A"
         )
 
-    def test_derived_contributor_removal_and_index(self):
+    def test_derived_contributor_removal(self):
         derived = ConditionalSettingEntry(
             declare_id="__derived__1",
             fs_type="opensiddur:holiday",
@@ -181,15 +235,14 @@ class TestStackOperations(unittest.TestCase):
             source="derived",
             contributors={"A", INIT_DECLARE_ID},
         )
-        self.proc._register_derived_entry(derived)
-        self.assertIn(0, self.proc.linear_data.derived_dependency_index["A"])
-        self.proc._remove_derived_entries_for_contributor("A")
+        register_derived_entry(self.proc.linear_data, derived)
+        remove_derived_for_contributor(self.proc.linear_data, "A")
         self.assertEqual(len(self.proc.linear_data.conditional_settings), 0)
-        self.assertEqual(self.proc.linear_data.derived_dependency_index, {})
 
-    def test_checkpoint_truncation_rebuilds_index(self):
+    def test_checkpoint_restores_the_stack(self):
         with self.proc._conditional_settings_checkpoint():
-            self.proc._register_derived_entry(
+            register_derived_entry(
+                self.proc.linear_data,
                 ConditionalSettingEntry(
                     declare_id="__derived__1",
                     fs_type="t",
@@ -201,7 +254,29 @@ class TestStackOperations(unittest.TestCase):
             )
             self.proc._push_declare("file", [self._entry("file", "t", "f", 2)])
         self.assertEqual(len(self.proc.linear_data.conditional_settings), 0)
-        self.assertEqual(self.proc.linear_data.derived_dependency_index, {})
+
+    def test_checkpoint_restores_entries_a_recalculation_moved(self):
+        """An unclosed declaration in a file does not outlive the file.
+
+        Recalculation removes derived entries from anywhere in the stack and appends their new
+        values, so cutting the stack back to its old length kept the file's declaration and
+        lost one of the parent's derived values.
+        """
+        outer = [
+            ConditionalSettingEntry(declare_id="d1", fs_type="t", feature_name="a", value=1,
+                                    source="derived", contributors={"X"}),
+            ConditionalSettingEntry(declare_id="d2", fs_type="t", feature_name="b", value=2,
+                                    source="derived", contributors={"X"}),
+        ]
+        self.proc.linear_data.conditional_settings.extend(outer)
+        before = list(self.proc.linear_data.conditional_settings)
+        with self.proc._conditional_settings_checkpoint():
+            settings = self.proc.linear_data.conditional_settings
+            settings.append(self._entry("inner", "t", "c", 3))
+            # What a recalculation does to an outer derived value: remove it, append it anew.
+            moved = settings.pop(0)
+            settings.append(moved)
+        self.assertEqual(self.proc.linear_data.conditional_settings, before)
 
 
 class TestYamlDeclarations(unittest.TestCase):
@@ -350,6 +425,31 @@ class TestExternalCompilerDeclareIntegration(unittest.TestCase):
         proc = ExternalCompilerProcessor("test_project", "e.xml")
         proc.process()
         self.assertIsNone(proc.get_active_setting("t:fs", "x"))
+
+    def test_an_unclosed_declaration_leaves_a_dated_stack_as_it_was(self):
+        """With derived values on the stack, an unclosed declaration still does not leak.
+
+        A dated volume has derived settings, which the declaration's recalculation moves within
+        the stack. Cutting the stack back to its old length kept the declaration and lost one
+        of the derived values.
+        """
+        CompilerProcessor.load_init_settings(get_linear_data(), yaml_to_declaration_entries({
+            "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+            "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+        }))
+        before = list(get_linear_data().conditional_settings)
+        body = (
+            '<j:declare xml:id="s">'
+            '<tei:fs type="t:fs"><tei:f name="x"><tei:numeric value="1"/></tei:f></tei:fs>'
+            '</j:declare>'
+            '<tei:p>text</tei:p>'
+        )
+        self._write("e.xml", _declare_xml(body).decode())
+        proc = ExternalCompilerProcessor("test_project", "e.xml")
+        proc.process()
+        self.assertIsNone(proc.get_active_setting("t:fs", "x"))
+        self.assertEqual(get_linear_data().conditional_settings, before)
+        self.assertEqual(proc.get_active_setting("opensiddur:holiday", "pesah"), 1)
 
 
 if __name__ == "__main__":

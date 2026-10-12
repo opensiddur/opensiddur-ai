@@ -333,6 +333,33 @@ class TestParseErrors(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsupported value element"):
             parse_condition_element(el)
 
+    def test_vnot_holds_one_value(self):
+        el = _conditional_xml(
+            '<tei:fs type="t:fs"><tei:f name="x"><tei:vNot>'
+            '<tei:numeric value="1"/><tei:numeric value="2"/></tei:vNot></tei:f></tei:fs>'
+        )
+        with self.assertRaisesRegex(ValueError, "exactly one value element"):
+            parse_condition_element(el)
+
+    def test_an_unsupported_element_among_alternatives_is_an_error(self):
+        """Not dropped: an empty alternation would make the condition false without a word."""
+        for inner in ('<tei:p/>', '<tei:p/><tei:numeric value="1"/>'):
+            with self.subTest(inner=inner), self.assertRaisesRegex(ValueError, "Unsupported value"):
+                parse_condition_element(_conditional_xml(
+                    f'<tei:fs type="t:fs"><tei:f name="x"><tei:vAlt>{inner}</tei:vAlt></tei:f></tei:fs>'))
+
+    def test_comments_among_alternatives_are_ignored(self):
+        node = parse_condition_element(_conditional_xml(
+            '<tei:fs type="t:fs"><tei:f name="x"><tei:vAlt><!-- either -->'
+            '<tei:numeric value="1"/><tei:numeric value="2"/></tei:vAlt></tei:f></tei:fs>'))
+        self.assertEqual(len(node.features[0].value), 2)
+
+    def test_a_negation_is_not_negated_again(self):
+        with self.assertRaisesRegex(ValueError, "negated again"):
+            parse_condition_element(_conditional_xml(
+                '<tei:fs type="t:fs"><tei:f name="x"><tei:vNot><tei:vNot>'
+                '<tei:numeric value="1"/></tei:vNot></tei:vNot></tei:f></tei:fs>'))
+
     def test_vnot_with_string_value(self):
         el = _conditional_xml(
             '<tei:fs type="t:fs"><tei:f name="x">'

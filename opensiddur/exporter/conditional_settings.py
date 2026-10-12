@@ -41,73 +41,128 @@ CONDITIONAL_CONTROL_TAGS = frozenset(
 )
 
 
-def _parse_te_f_value(f_element: ElementBase) -> Any:
-    """Parse the value child of a tei:f element."""
-    for child in f_element:
-        if child.tag == TEI_NUMERIC:
-            raw = child.get("value")
-            if raw is None:
-                raise ValueError(f"tei:numeric missing @value in {f_element.get('name')!r}")
-            numeric = NumericValue(value=parse_numeric_literal(raw))
-            if child.get("max") is not None:
-                numeric = NumericValue(
-                    value=parse_numeric_literal(raw),
-                    max_value=parse_numeric_literal(child.get("max")),
-                )
-            return numeric
-        if child.tag == TEI_BINARY:
-            raw = child.get("value", "")
-            if raw == "true":
-                return True
-            return False
-        if child.tag == TEI_STRING:
-            return child.text or ""
-        if child.tag == TEI_SYMBOL:
-            sym = child.get("value", "")
-            if sym == "undefined":
-                return Undefined
-            return sym
-        if child.tag == TEI_DEFAULT:
-            return Undefined
-        if child.tag in (TEI_VALT, TEI_VNOT):
-            raise ValueError(
-                f"tei:vAlt/tei:vNot not supported in j:declare for feature {f_element.get('name')!r}"
-            )
-    raise ValueError(f"No value element found in tei:f[@name={f_element.get('name')!r}]")
+#: The lexical forms of xsd:boolean, which tei:binary/@value takes.
+_BINARY_WORDS = {"true": True, "1": True, "false": False, "0": False}
+
+_SIMPLE_VALUE_TAGS = frozenset({TEI_NUMERIC, TEI_BINARY, TEI_STRING, TEI_SYMBOL, TEI_DEFAULT})
+_VALUE_TAGS = _SIMPLE_VALUE_TAGS | {TEI_VALT, TEI_VNOT}
 
 
-def _parse_te_fs(fs_element: ElementBase, declare_id: str, source: str) -> list[ConditionalSettingEntry]:
+def _parse_numeric(element: ElementBase) -> NumericValue:
+    raw = element.get("value")
+    if raw is None:
+        raise ValueError("tei:numeric missing @value")
+    upper = element.get("max")
+    return NumericValue(
+        value=parse_numeric_literal(raw),
+        max_value=parse_numeric_literal(upper) if upper is not None else None,
+    )
+
+
+def parse_value_element(element: ElementBase, *, in_condition: bool,
+                        inside: str | None = None) -> Any:
+    """The value one feature-value element stands for.
+
+    Declarations and conditions read values alike, except that only a condition may give
+    alternatives (``tei:vAlt``, a tuple) or a negation (``tei:vNot``, ``("vNot", value)``). A
+    negation stands alone: it is neither one of a set of alternatives nor itself negated.
+    ``inside`` names the alternation or negation the element is in, if any.
+    """
+    tag = element.tag
+    if tag == TEI_NUMERIC:
+        return _parse_numeric(element)
+    if tag == TEI_BINARY:
+        raw = (element.get("value") or "").strip()
+        if raw not in _BINARY_WORDS:
+            raise ValueError(f"tei:binary @value must be true or false (or 1 or 0), not {raw!r}")
+        return _BINARY_WORDS[raw]
+    if tag == TEI_STRING:
+        return element.text or ""
+    if tag == TEI_SYMBOL:
+        symbol = element.get("value", "")
+        return Undefined if symbol == "undefined" else symbol
+    if tag == TEI_DEFAULT:
+        return Undefined
+    if tag in (TEI_VALT, TEI_VNOT) and not in_condition:
+        raise ValueError("tei:vAlt and tei:vNot belong in conditions, not in j:declare")
+    if tag == TEI_VALT:
+        return tuple(parse_value_element(alternative, in_condition=True, inside="vAlt")
+                     for alternative in _element_children(element))
+    if tag == TEI_VNOT:
+        if inside == "vAlt":
+            raise ValueError("tei:vNot cannot be one of the alternatives of a tei:vAlt")
+        if inside == "vNot":
+            raise ValueError("tei:vNot cannot be negated again")
+        inner = _element_children(element)
+        if len(inner) != 1:
+            raise ValueError("tei:vNot must contain exactly one value element")
+        return ("vNot", parse_value_element(inner[0], in_condition=True, inside="vNot"))
+    raise ValueError(f"Unsupported value element {tag!r}")
+
+
+def _element_children(element: ElementBase) -> list[ElementBase]:
+    """The children that are elements, leaving out comments and processing instructions."""
+    return [child for child in element if isinstance(child.tag, str)]
+
+
+def _value_children(element: ElementBase) -> list[ElementBase]:
+    return [child for child in element if child.tag in _VALUE_TAGS]
+
+
+def parse_f_value(f_element: ElementBase, *, in_condition: bool) -> Any:
+    """The value of a tei:f, which holds exactly one value element."""
+    values = _value_children(f_element)
+    name = f_element.get("name")
+    if not values:
+        raise ValueError(f"No value element found in tei:f[@name={name!r}]")
+    if len(values) > 1:
+        raise ValueError(f"tei:f[@name={name!r}] has more than one value element")
+    return parse_value_element(values[0], in_condition=in_condition)
+
+
+def fs_features(fs_element: ElementBase) -> tuple[str, list[ElementBase]]:
+    """A tei:fs's type and its tei:f children, which must be named and at least one."""
     fs_type = fs_element.get("type")
     if not fs_type:
         raise ValueError("tei:fs missing required @type attribute")
-    entries: list[ConditionalSettingEntry] = []
-    for f_el in fs_element:
-        if f_el.tag != TEI_F:
-            continue
-        feature_name = f_el.get("name")
-        if not feature_name:
+    features = [child for child in fs_element if child.tag == TEI_F]
+    if not features:
+        raise ValueError(f"tei:fs[@type={fs_type!r}] has no tei:f children")
+    for f_el in features:
+        if not f_el.get("name"):
             raise ValueError("tei:f missing required @name attribute")
-        entries.append(
-            ConditionalSettingEntry(
-                declare_id=declare_id,
-                fs_type=fs_type,
-                feature_name=feature_name,
-                value=_parse_te_f_value(f_el),
-                source=source,  # type: ignore[arg-type]
-            )
-        )
-    return entries
+    return fs_type, features
 
 
 def parse_declare_element(
     declare_el: ElementBase,
     declare_id: str,
 ) -> list[ConditionalSettingEntry]:
-    """Parse tei:fs children of a j:declare element into stack entries."""
+    """Parse the tei:fs children of a j:declare element into stack entries.
+
+    A j:declare holds feature structures and nothing else, and declares at least one feature:
+    one that declares nothing would have nothing for its j:endDeclare to end.
+    """
     entries: list[ConditionalSettingEntry] = []
     for child in declare_el:
-        if child.tag == TEI_FS:
-            entries.extend(_parse_te_fs(child, declare_id, "declared"))
+        if not isinstance(child.tag, str):
+            continue  # a comment or processing instruction
+        if child.tag != TEI_FS:
+            raise ValueError(
+                f"j:declare holds only tei:fs, not {child.tag!r} (in {declare_id!r})")
+        fs_type, features = fs_features(child)
+        entries.extend(
+            ConditionalSettingEntry(
+                declare_id=declare_id,
+                fs_type=fs_type,
+                feature_name=f_el.get("name"),
+                value=parse_f_value(f_el, in_condition=False),
+                source="declared",
+            )
+            for f_el in features
+        )
+    if not entries:
+        raise ValueError(f"j:declare {declare_id!r} declares nothing")
     return entries
 
 

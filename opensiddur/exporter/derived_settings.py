@@ -68,14 +68,6 @@ def _is_explicit(entry: ConditionalSettingEntry) -> bool:
     return entry.source in ("init", "declared")
 
 
-def _rebuild_derived_dependency_index(linear_data: LinearData) -> None:
-    linear_data.derived_dependency_index = {}
-    for i, entry in enumerate(linear_data.conditional_settings):
-        if entry.source == "derived":
-            for contributor in entry.contributors:
-                linear_data.derived_dependency_index.setdefault(contributor, set()).add(i)
-
-
 def _remove_derived_for_feature(
     linear_data: LinearData,
     fs_type: str,
@@ -91,9 +83,15 @@ def _remove_derived_for_feature(
 
 def register_derived_entry(linear_data: LinearData, entry: ConditionalSettingEntry) -> None:
     linear_data.conditional_settings.append(entry)
-    idx = len(linear_data.conditional_settings) - 1
-    for contributor in entry.contributors:
-        linear_data.derived_dependency_index.setdefault(contributor, set()).add(idx)
+
+
+def remove_derived_for_contributor(linear_data: LinearData, declare_id: str) -> None:
+    """Remove the derived entries that were computed from a declaration."""
+    linear_data.conditional_settings = [
+        entry
+        for entry in linear_data.conditional_settings
+        if not (entry.source == "derived" and declare_id in entry.contributors)
+    ]
 
 
 def _collect_contributors(
@@ -112,25 +110,45 @@ def _collect_contributors(
 
 def _push_static_defaults(linear_data: LinearData) -> None:
     for fs_type, features in STATIC_DEFAULTS.items():
-        if linear_data.defer_reader_settings and is_reader_supplied(fs_type):
-            # The book's default for its reader to change, not a value to compile in.
-            continue
-        for feature_name, value in features.items():
+        for feature_name in features:
             if get_active_setting_entry(linear_data, fs_type, feature_name) is not None:
                 continue
-            declare_id = derived_declare_id(fs_type, feature_name)
-            _remove_derived_for_feature(linear_data, fs_type, feature_name)
-            register_derived_entry(
-                linear_data,
-                ConditionalSettingEntry(
-                    declare_id=declare_id,
-                    fs_type=fs_type,
-                    feature_name=feature_name,
-                    value=value,
-                    source="derived",
-                    contributors={INIT_DECLARE_ID},
-                ),
-            )
+            _push_static_default(linear_data, fs_type, feature_name)
+
+
+def _push_static_default(linear_data: LinearData, fs_type: str, feature_name: str) -> None:
+    """Put a feature's fixed default on the stack, if it has one."""
+    features = STATIC_DEFAULTS.get(fs_type, {})
+    if feature_name not in features:
+        return
+    if linear_data.defer_reader_settings and is_reader_supplied(fs_type):
+        # The book's default for its reader to change, not a value to compile in.
+        return
+    _remove_derived_for_feature(linear_data, fs_type, feature_name)
+    register_derived_entry(
+        linear_data,
+        ConditionalSettingEntry(
+            declare_id=derived_declare_id(fs_type, feature_name),
+            fs_type=fs_type,
+            feature_name=feature_name,
+            value=features[feature_name],
+            source="derived",
+            contributors={INIT_DECLARE_ID},
+        ),
+    )
+
+
+def _clear_derived(linear_data: LinearData, fs_type: str, feature_name: str) -> None:
+    """Withdraw a derived value that no longer holds, falling back to the static default.
+
+    Nothing but the static default stands behind the feature then: the absence of a date is
+    exactly when a volume's fixed choice matters.
+    """
+    entry = get_active_setting_entry(linear_data, fs_type, feature_name)
+    if entry is None or entry.source != "derived":
+        return
+    _remove_derived_for_feature(linear_data, fs_type, feature_name)
+    _push_static_default(linear_data, fs_type, feature_name)
 
 
 def _apply_derivation_spec(
@@ -147,18 +165,16 @@ def _apply_derivation_spec(
 
     computed = spec.compute(snapshot)
     if computed is None:
-        # A static default is not derived from these inputs, and outlives their absence: the
-        # absence of a date is exactly when a volume's fixed choice matters.
-        static = STATIC_DEFAULTS.get(fs_type, {})
-        for feature_name in existing_features - static.keys():
-            entry = get_active_setting_entry(linear_data, fs_type, feature_name)
-            if entry is not None and entry.source == "derived":
-                _remove_derived_for_feature(linear_data, fs_type, feature_name)
-        _rebuild_derived_dependency_index(linear_data)
+        for feature_name in existing_features:
+            _clear_derived(linear_data, fs_type, feature_name)
         return
 
     contributors, inputs_ok = _collect_contributors(linear_data, spec.required_inputs)
     if not inputs_ok:
+        # An input is declared undefined. What was derived from it before no longer holds,
+        # so it goes rather than standing in for a value nothing now supports.
+        for feature_name in computed:
+            _clear_derived(linear_data, fs_type, feature_name)
         return
 
     for feature_name, value in computed.items():
@@ -209,8 +225,6 @@ def recalculate_derived_settings(
     )
     for spec in topological_derivation_order():
         _apply_derivation_spec(linear_data, spec, snapshot)
-
-    _rebuild_derived_dependency_index(linear_data)
 
     if trigger == SettingChangeTrigger.INIT:
         _warn_on_a_date_without_a_place(snapshot)
