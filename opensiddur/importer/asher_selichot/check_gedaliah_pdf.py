@@ -9,7 +9,7 @@ from opensiddur.importer.scan.pdf_direction import base
 ANCHORS = [('הוריתדרך', 'Thou didst teach the way'),
            ('אזמאזמקדם', 'From the earliest times'),
            ('הןראשעפרות', 'Lo, the first who was formed'),
-           ('טעהונע', 'His son committed a crime'),
+           ('דמיאחיו', 'His son committed a crime'),
            ('מחלליצועי', 'He who unstable as water'),
            ('פרץגדרות', 'King Ahab, the son of Omri'),
            ('שננולשונם', 'The inhabitants of that great city'),

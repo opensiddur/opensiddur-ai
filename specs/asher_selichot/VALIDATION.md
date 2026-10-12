@@ -1151,3 +1151,20 @@ The committed Hebrew proofreading checkpoint reaches the Erev Rosh Hashanah clos
   Direction: 0 of 13150 Hebrew runs are set left to right; control: 12061 of 13150 flagged when every run is reversed. Visual PDF pages: 222,295,301.
 
 48 shared scan tests and 22 assembly tests pass. Artifacts: `output/asher_selichot/proofreading/batch-014/`. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.
+
+
+## Proofreading checkpoint015
+
+The committed Hebrew proofreading checkpoint reaches the end of Tzom Gedaliah, printed103 (s208/n207). Batch015 covers13 Hebrew pages from s184/n183 lower:107 replacement rules across16 XML modules. Frozen readings, comparisons, native-image adjudication and hashes are under sources/asher_selichot/proofreading/image-pass-15/. This is a same-model second image pass with prior exposure, primarily consonant-first. Uncertain rare words remain recorded; independent-person Hebrew, facing-English and comprehensive fine-pointing review remain pending.
+
+16 modules validate;38 source-ordered units, documentary branches, notes and bilingual expansion targets checked. Expanded compiled verification passes all four petition ranges and Ten Days Kaddish. The PDF checker uses the unchanged stanza words דמי אחיו after correcting the opening טעה גועו. No generic executable logic changed.
+- Documentary: warning: ICC support is not available
+Gedaliah PDF: apparatus, fulfilled cues and reference boundaries checked; 8 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+26 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True
+  Direction: 0 of 763 Hebrew runs are set left to right; control: 755 of 763 flagged when every run is reversed. Visual PDF pages: 5,17,18,21,23,24,25.
+- Expanded: warning: ICC support is not available
+Gedaliah PDF: apparatus, fulfilled cues and reference boundaries checked; 8 stanza start deltas [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+53 pages; contents and top-level day/subordinate pizmon bookmarks checked; controls=True
+  Direction: 0 of 2041 Hebrew runs are set left to right; control: 1981 of 2041 flagged when every run is reversed. Visual PDF pages: 37,49,51.
+
+Artifacts: `output/asher_selichot/proofreading/batch-015/`. These PDFs contain Tzom Gedaliah alone. Whole-book PDFs remain earlier snapshots; the known mixed-note paragraph separation issue remains.
