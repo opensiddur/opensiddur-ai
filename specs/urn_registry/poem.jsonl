@@ -568,8 +568,8 @@
 {"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_6", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 6", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
 {"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_7", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
 {"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_8", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 8", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
-{"urn": "urn:x-opensiddur:text:poem:amar_bekhi_mippenei_yad_sheluhah", "status": "canonical", "label_en": "amar bekhi mippenei yad sheluhah"}
-{"urn": "urn:x-opensiddur:text:poem:atanu_lekhah_yotser_ruhot", "status": "canonical", "label_en": "atanu lekhah yotser ruhot"}
+{"urn": "urn:x-opensiddur:text:poem:amerer_bivekhi_mippenei_yad_shalehah", "status": "canonical", "label_en": "amerer bivekhi mippenei yad shalehah"}
+{"urn": "urn:x-opensiddur:text:poem:etonen_lekha_yotser_ruhot", "status": "canonical", "label_en": "etonen lekha yotser ruhot"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar", "status": "canonical", "label_en": "sheeh neessar"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_1", "status": "canonical", "label_en": "sheeh neessar/stanza 1", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_2", "status": "canonical", "label_en": "sheeh neessar/stanza 2", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
