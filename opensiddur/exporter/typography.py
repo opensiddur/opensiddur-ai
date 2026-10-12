@@ -37,6 +37,8 @@ from pydantic import (
     Field,
     PrivateAttr,
     StringConstraints,
+    ValidationInfo,
+    field_validator,
     model_validator,
 )
 
@@ -75,6 +77,19 @@ AbsoluteLength = Annotated[
         description=(
             "A positive length in an absolute unit: pt, bp, mm, cm, in or pc. "
             "Relative units are not allowed where the length defines a font size."
+        ),
+    ),
+]
+
+# A length that cannot sensibly be negative: a margin, a page size, a rule's thickness.
+_NON_NEGATIVE_LENGTH_PATTERN = r"^(?:\d+(?:\.\d+)?|\.\d+)(?:pt|bp|mm|cm|in|pc|em|ex)$"
+
+NonNegativeLength = Annotated[
+    str,
+    StringConstraints(pattern=_NON_NEGATIVE_LENGTH_PATTERN),
+    Field(
+        description=(
+            "A length of zero or more, with a unit: pt, bp, mm, cm, in, pc, em or ex."
         ),
     ),
 ]
@@ -318,7 +333,9 @@ class ForbidExtra(BaseModel):
 class FontFace(ForbidExtra):
     """One fallback face and its optional normal size, in points."""
 
-    name: str = Field(min_length=1)
+    # The name goes into \setmainfont{…} and \newfontfamily as written, so it may not hold a
+    # character TeX gives a meaning to.
+    name: str = Field(min_length=1, pattern=r"^[^{}\\%#&$^_~]+$")
     normal_size: Optional[float] = Field(default=None, gt=0, allow_inf_nan=False, strict=True)
 
     @model_validator(mode="before")
@@ -451,13 +468,18 @@ class TextStyle(ForbidExtra):
     )
     align: Optional[Alignment] = Field(
         default=None,
-        description="left | right | center | justify. Only meaningful for block-level roles.",
+        description=(
+            "left | right | center | justify. Only on headings, citations, list "
+            "labels, the title page and the section separator; an error elsewhere."
+        ),
     )
     space_before: Optional[Length] = Field(
-        default=None, description="Vertical space above. Block-level roles only."
+        default=None,
+        description="Vertical space above. Title-page roles and the section separator only.",
     )
     space_after: Optional[Length] = Field(
-        default=None, description="Vertical space below. Block-level roles only."
+        default=None,
+        description="Vertical space below. Title-page roles and the section separator only.",
     )
 
     def is_empty(self) -> bool:
@@ -621,6 +643,61 @@ class Styles(ForbidExtra):
         ),
     )
 
+    @model_validator(mode="after")
+    def validate_block_properties(self) -> "Styles":
+        """ Refuse an alignment or vertical space on a role that cannot honour it.
+
+        Most roles are set in the middle of a line — a verse number, a note — where
+        neither has a meaning, and the renderer would accept the setting and do
+        nothing with it.
+        """
+        for role in type(self).model_fields:
+            style: TextStyle = getattr(self, role)
+            # Written and not null: `align: null` asks for nothing, so it has no effect to
+            # complain about.
+            written = {name for name in style.model_fields_set if getattr(style, name) is not None}
+            if "align" in written and role not in ALIGNABLE_ROLES:
+                raise ValueError(
+                    f"styles.{role}.align has no effect: {role} is not set as a line "
+                    f"of its own. Roles that take `align`: {', '.join(ALIGNABLE_ROLES)}"
+                )
+            for name in ("space_before", "space_after"):
+                if name in written and role not in SPACED_ROLES:
+                    raise ValueError(
+                        f"styles.{role}.{name} has no effect: {role} is not set as a "
+                        f"paragraph of its own. Roles that take `{name}`: "
+                        f"{', '.join(SPACED_ROLES)}"
+                    )
+        return self
+
+
+# The roles set as paragraphs of their own, outside reledmac's numbering, which take
+# vertical space as well as an alignment.
+SPACED_ROLES: tuple[str, ...] = (
+    "title_main",
+    "title_sub",
+    "title_alt",
+    "byline",
+    "edition",
+    "imprint",
+    "epigraph",
+    "imprimatur",
+    "title_page_block",
+    "section_separator",
+)
+
+# Every role with a line of its own. Those not in SPACED_ROLES sit inside a numbered
+# paragraph, where the alignment is set by fills on the line rather than by a block.
+ALIGNABLE_ROLES: tuple[str, ...] = (
+    "heading1",
+    "heading2",
+    "heading3",
+    "heading4",
+    "heading_translation",
+    "citation",
+    "list_label",
+) + SPACED_ROLES
+
 
 # ---------------------------------------------------------------------------
 # Page, paragraphs, and the rest
@@ -640,19 +717,19 @@ class Margins(ForbidExtra):
     and outer is right, and the renderer maps them.
     """
 
-    top: Optional[Length] = Field(default=None, description="Space above the text block.")
-    bottom: Optional[Length] = Field(
+    top: Optional[NonNegativeLength] = Field(default=None, description="Space above the text block.")
+    bottom: Optional[NonNegativeLength] = Field(
         default=None, description="Space below the text block."
     )
-    inner: Optional[Length] = Field(
+    inner: Optional[NonNegativeLength] = Field(
         default=None,
         description="Margin at the binding edge (the left margin when `sides: one`).",
     )
-    outer: Optional[Length] = Field(
+    outer: Optional[NonNegativeLength] = Field(
         default=None,
         description="Margin at the fore edge (the right margin when `sides: one`).",
     )
-    binding_offset: Optional[Length] = Field(
+    binding_offset: Optional[NonNegativeLength] = Field(
         default=None,
         description=(
             "Extra space added at the binding edge and taken off the fore edge, "
@@ -674,10 +751,10 @@ class PageConfig(ForbidExtra):
             "executivepaper | custom. `custom` requires `width` and `height`."
         ),
     )
-    width: Optional[Length] = Field(
+    width: Optional[NonNegativeLength] = Field(
         default=None, description="Sheet width. Only with `paper: custom`."
     )
-    height: Optional[Length] = Field(
+    height: Optional[NonNegativeLength] = Field(
         default=None, description="Sheet height. Only with `paper: custom`."
     )
     orientation: Orientation = Field(
@@ -732,12 +809,11 @@ class ParagraphConfig(ForbidExtra):
     indent: Length = Field(
         default="0pt", description="First-line indent. `0pt` for unindented paragraphs."
     )
-    spacing: Length = Field(
-        default="0.75em",
+    spacing: NonNegativeLength = Field(
+        default="0.5em",
         description=(
             "Vertical space between paragraphs, in addition to normal line "
-            "spacing. Defaults to at least half a line so a new paragraph "
-            "reads as distinct from an ordinary wrapped line."
+            "spacing."
         ),
     )
     line_spacing: float = Field(
@@ -787,7 +863,7 @@ class LineNumberConfig(ForbidExtra):
             "whichever direction each runs in."
         ),
     )
-    separation: Length = Field(
+    separation: NonNegativeLength = Field(
         default="1em",
         description="Space between the number and the text block.",
     )
@@ -847,7 +923,7 @@ class ConditionalMarkerConfig(ForbidExtra):
     rule_width: Percent = Field(
         default="25%", description="Width of the rule, as a percentage of the measure."
     )
-    rule_thickness: Length = Field(default="0.4pt", description="Thickness of the rule.")
+    rule_thickness: NonNegativeLength = Field(default="0.4pt", description="Thickness of the rule.")
 
 
 class MarkerConfig(ForbidExtra):
@@ -887,14 +963,14 @@ class InterleavedConfig(ForbidExtra):
             "absolute length."
         ),
     )
-    translation_indent: Length = Field(
+    translation_indent: NonNegativeLength = Field(
         default="1em",
         description=(
             "Indent applied to both margins of the translation's paragraphs. `0pt` "
             "to set the translation to the full measure."
         ),
     )
-    spacing: Length = Field(
+    spacing: NonNegativeLength = Field(
         default="0.25em",
         description=(
             "Vertical space between a block and its translation. The space between "
@@ -963,6 +1039,13 @@ class ParallelTypographyConfig(ForbidExtra):
                         f"`{name}` applies only to `layout: pairs`, "
                         f"not `layout: {self.layout.value}`"
                     )
+        # Two columns and the gap between them share the text block, so a column of
+        # half of it or more leaves the other column nowhere to go.
+        if float(self.column_width.rstrip("%")) >= 50:
+            raise ValueError(
+                f"`column_width` is {self.column_width}, but two columns of it would not "
+                "fit beside each other; it must be under 50%"
+            )
         return self
 
 
@@ -1087,7 +1170,7 @@ class TableOfContentsConfig(ForbidExtra):
 class ListConfig(ForbidExtra):
     """ How the items of a labelled list are set off from the prose around them. """
 
-    item_indent: Length = Field(
+    item_indent: NonNegativeLength = Field(
         default="2em",
         description=(
             "Indent applied to both margins of an item's paragraphs, so an item "
@@ -1095,6 +1178,12 @@ class ListConfig(ForbidExtra):
             "surrounding text and let the label alone distinguish them."
         ),
     )
+
+
+# Validation-context key: False skips checking that declared font chains resolve here.
+RESOLVE_FONTS = "resolve_fonts"
+
+_FONT_KEY_PATTERN = re.compile(r"[a-z]+(?:-[a-z]+)*")
 
 
 class TypographyConfig(ForbidExtra):
@@ -1183,14 +1272,35 @@ class TypographyConfig(ForbidExtra):
         """ The font families the settings file named itself. """
         return self._declared_fonts
 
+    @field_validator("fonts")
+    @classmethod
+    def validate_font_keys(cls, fonts: dict[str, FontFamily]) -> dict[str, FontFamily]:
+        """ A family key becomes the name of a TeX command, so it is spelled to fit one.
+
+        TeX control sequences are letters only. Lower-case words joined by single
+        hyphens map one to one onto ``OSfont`` plus the capitalised words, so two keys
+        can never declare the same command.
+        """
+        for key in fonts:
+            if not _FONT_KEY_PATTERN.fullmatch(key):
+                raise ValueError(
+                    f"font family `{key}` must be lower-case letters, with single "
+                    "hyphens between words (e.g. `note-sans`)"
+                )
+        return fonts
+
     @model_validator(mode="after")
-    def apply_font_defaults(self) -> "TypographyConfig":
+    def apply_font_defaults(self, info: ValidationInfo) -> "TypographyConfig":
         """ Fill in `latin` and `hebrew` and check every chain resolves.
 
         A user-declared `latin` or `hebrew` replaces the default outright rather
         than extending it: someone who names a Hebrew face and gets Frank Ruehl
         anyway, because their name was misspelled and the old chain was still
         underneath, has been told nothing.
+
+        A renderer that does not select fonts itself (the electronic book leaves that
+        to the reader's device) validates with ``context={RESOLVE_FONTS: False}``,
+        since whether this machine has a face says nothing about the reader's.
         """
         self._declared_fonts = frozenset(self.fonts)
         for family, names in _DEFAULT_FONTS.items():
@@ -1201,6 +1311,8 @@ class TypographyConfig(ForbidExtra):
         # the stylesheet's own \IfFontExistsTF chain — and refusing to build at
         # all would mean nobody could export anything without first installing
         # this project's house fonts.
+        if not (info.context or {}).get(RESOLVE_FONTS, True):
+            return self
         for family in self._declared_fonts:
             try:
                 resolve_font(self.fonts[family].names)

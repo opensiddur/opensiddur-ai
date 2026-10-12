@@ -308,6 +308,14 @@ class TestBlocksInText(unittest.TestCase):
         main = _render("<tei:p>a<tei:note><tei:lg><tei:l>line</tei:l></tei:lg></tei:note>b</tei:p>")
         self._no_block_inside_p(main)
 
+    def test_an_epigraph_of_paragraphs(self):
+        """tei:epigraph holds tei:p, and a <p> cannot hold one."""
+        main = _render("<tei:epigraph><tei:p>One.</tei:p><tei:p>Two.</tei:p></tei:epigraph>")
+        self._no_block_inside_p(main)
+        epigraph = main.xpath("//h:div[contains(@class, 'epigraph')]", namespaces=NS)
+        self.assertEqual(1, len(epigraph))
+        self.assertEqual(2, len(epigraph[0].xpath("h:p", namespaces=NS)))
+
 
 class TestLabelsReachEveryElement(unittest.TestCase):
 

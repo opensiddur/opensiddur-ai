@@ -167,6 +167,19 @@ class TestPreamble(unittest.TestCase):
         self.assertLess(out.index(r"\OSTYPOGRAPHY"), out.index(r"\OSBIBLIOGRAPHY"))
         self.assertLess(out.index(r"\OSTYPOGRAPHY"), out.index(r"\begin{document}"))
 
+    def test_built_in_paragraph_spacing_is_the_settings_default(self):
+        """The preamble writes \\parskip only when a settings file sets it, so the
+        stylesheet's own value is what every other document gets, and the documented
+        default must be it."""
+        from opensiddur.exporter.typography import ParagraphConfig
+
+        xml = """<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        default = ParagraphConfig().spacing
+        self.assertIn(rf"\setlength{{\parskip}}{{{default}}}", _transform(xml))
+
     def test_empty_typography_preamble_leaves_the_defaults_alone(self):
         """A document that configures nothing must be the document this
         exporter has always produced."""
@@ -2182,6 +2195,45 @@ class TestFrontMatter(unittest.TestCase):
         front = out.split(r"\end{titlepage}", 1)[1].split(r"\mainmatter", 1)[0]
         self.assertIn(r"\beginnumbering", front)
         self.assertIn(r"\OSheadA{", front)
+
+    def test_a_note_on_the_title_page_is_a_latex_footnote(self):
+        r"""The title page is outside \beginnumbering, where \edtext ends the run."""
+        xml = self.TITLE_PAGE_XML.replace(
+            "<tei:docEdition>Third Impression</tei:docEdition>",
+            "<tei:docEdition>Third Impression<tei:note>A later printing.</tei:note>"
+            "</tei:docEdition>",
+        ).replace(
+            "<tei:p>The sacred task of translating.</tei:p>",
+            "<tei:p>The sacred task<tei:note>Second note.</tei:note> of translating.</tei:p>",
+        )
+        out = _transform(xml)
+        page = out.split(r"\begin{titlepage}", 1)[1].split(r"\end{titlepage}", 1)[0]
+        self.assertNotIn(r"\edtext", page)
+        self.assertIn(r"\begingroup\renewcommand{\thefootnote}{1}\footnote{\notenote{", page)
+        self.assertIn("A later printing.", page)
+        # The serial counts the title-page note, so the next note is the second.
+        front = out.split(r"\end{titlepage}", 1)[1]
+        self.assertIn(r"\OSInterlinearNotemark{2}", front)
+
+    def test_a_title_page_note_is_not_part_of_the_document_title(self):
+        xml = self.TITLE_PAGE_XML.replace(
+            '<tei:titlePart type="main">THE HOLY SCRIPTURES</tei:titlePart>',
+            '<tei:titlePart type="main">THE HOLY SCRIPTURES<tei:note>A remark.</tei:note>'
+            "</tei:titlePart>",
+        )
+        out = _transform(xml)
+        title = out.split(r"\newcommand{\OSDocumentTitle}{", 1)[1].split("\n", 1)[0]
+        self.assertIn("THE HOLY SCRIPTURES", title)
+        self.assertNotIn("A remark.", title)
+
+    def test_a_title_page_note_is_dropped_when_notes_are_off(self):
+        xml = self.TITLE_PAGE_XML.replace(
+            "<tei:docEdition>Third Impression</tei:docEdition>",
+            "<tei:docEdition>Third Impression<tei:note>A later printing.</tei:note>"
+            "</tei:docEdition>",
+        )
+        out = _transform(xml, **{"notes-placement": "none"})
+        self.assertNotIn("A later printing.", out)
 
     def test_hebrew_title_page_is_wrapped_for_direction(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>

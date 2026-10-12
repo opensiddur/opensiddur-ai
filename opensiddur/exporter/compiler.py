@@ -1455,7 +1455,10 @@ def main(argv: list[str] | None = None):  # pragma: no cover
 
     project_directory = args.project_directory.resolve()
     if args.project is None or args.file_name is None:
-        book = read_settings(args.settings, project_directory=project_directory).book if args.settings else None
+        book = (
+            read_settings(args.settings, project_directory=project_directory, resolve_fonts=False).book
+            if args.settings else None
+        )
         if book is None:
             parser.error("--project and --file_name are required unless the settings file names a book")
         args.project = args.project or book.project

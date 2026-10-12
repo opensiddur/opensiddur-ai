@@ -129,9 +129,10 @@ def _font_command(family: Optional[str]) -> str:
 def _family_macro_name(family: str) -> str:
     """A TeX control-sequence name for a user-declared family key.
 
-    Control sequences are letters only, so digits, hyphens and underscores in
-    the key are dropped and each word is capitalised: ``note-sans`` becomes
-    ``OSfontNoteSans``.
+    Control sequences are letters only, so the hyphens in the key are dropped
+    and each word is capitalised: ``note-sans`` becomes ``OSfontNoteSans``.
+    The key's spelling is validated (``TypographyConfig.validate_font_keys``) so
+    that this is one to one.
     """
     words = "".join(character if character.isalnum() else " " for character in family)
     return "OSfont" + "".join(word.capitalize() for word in words.split())

@@ -256,7 +256,7 @@
         <xsl:text>\newcommand{\OSDocumentTitle}{</xsl:text>
         <xsl:value-of select="f:emit-bidi-mark(normalize-space(string-join((
             /tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title[@type='main'][1],
-            //tei:titlePage//tei:titlePart[@type='main'][1])[1]//text(), '')))"/>
+            //tei:titlePage//tei:titlePart[@type='main'][1])[1]//text()[not(ancestor::tei:note)], '')))"/>
         <xsl:text>}&#10;</xsl:text>
 
         <xsl:text>\makeatletter&#10;</xsl:text>
@@ -637,6 +637,9 @@
         <xsl:text>\makeatother&#10;</xsl:text>
 
         <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
+        <!-- The default of typography.paragraphs.spacing (ParagraphConfig), which the
+             typography preamble writes only when a settings file sets it; the two must
+             agree, and a test holds them to it. -->
         <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
 
         <!-- Let a line be loose rather than long. A parallel column is around half the
@@ -3744,6 +3747,23 @@
         <xsl:call-template name="os-b-footnote">
             <xsl:with-param name="serial" select="$serial"/>
         </xsl:call-template>
+    </xsl:template>
+
+    <!-- A note on the title page. The title page is set outside \beginnumbering, where
+         reledmac's \edtext is an error that ends the run, so the note is LaTeX's own
+         footnote, which the titlepage environment prints at the foot of that page. It
+         keeps its serial and mark, so the numbering of the notes after it is unchanged;
+         under endnote placement it is still a footnote, since the endnotes are printed
+         from reledmac's apparatus, which the title page is not part of. -->
+    <xsl:template match="tei:note[ancestor::tei:titlePage][not(ancestor::tei:standOff)]
+                                 [not(@type='instruction')]" mode="emit" priority="5">
+        <xsl:if test="$notes-placement != 'none'">
+            <xsl:text>\begingroup\renewcommand{\thefootnote}{</xsl:text>
+            <xsl:value-of select="f:note-mark(f:note-serial(.))"/>
+            <xsl:text>}\footnote{\notenote{</xsl:text>
+            <xsl:call-template name="note-content"/>
+            <xsl:text>}}\endgroup{}</xsl:text>
+        </xsl:if>
     </xsl:template>
 
     <!-- The mark that anchors a note, in the series $notes-mark asks for.

@@ -107,6 +107,18 @@ class TestGroupLicenses(unittest.TestCase):
         self.assertEqual(len(grouped), 2)
         self.assertEqual({lr.url for lr in grouped}, {"http://x", "http://y"})
 
+    def test_order_does_not_depend_on_file_order(self):
+        """A rebuild must not reshuffle the Legal section."""
+        records = [
+            (Path("b"), LicenseRecord(url="http://z", name="Zed")),
+            (Path("a"), LicenseRecord(url="http://y", name="alpha")),
+            (Path("c"), LicenseRecord(url="http://x", name="Mid")),
+        ]
+        forward = group_licenses(dict(records))
+        backward = group_licenses(dict(reversed(records)))
+        self.assertEqual(["alpha", "Mid", "Zed"], [lr.name for lr in forward])
+        self.assertEqual(forward, backward)
+
 
 class TestLicensesToTex(unittest.TestCase):
 
@@ -117,6 +129,13 @@ class TestLicensesToTex(unittest.TestCase):
         self.assertIn(r"\section*{Legal}", out)
         self.assertIn("CC", out)
         self.assertIn(r"\url{http://creativecommons.org/cc}", out)
+
+    def test_escapes_the_name_but_not_the_url(self):
+        out = licenses_to_tex(
+            [LicenseRecord(url="http://example.org/a_b%20c", name="Free & Open_Licence")]
+        )
+        self.assertIn(r"\item Free \& Open\_Licence (", out)
+        self.assertIn(r"\url{http://example.org/a_b%20c}", out)
 
     def test_no_licences_emits_nothing(self):
         """An itemize with no items is a LaTeX error and kills the run before any PDF.
@@ -256,6 +275,23 @@ class TestCreditsToTex(unittest.TestCase):
         self.assertIn(r"\subsection*{Author}", out)
         self.assertNotIn(r"\subsection*{Authors}", out)
 
+    def test_escapes_names_and_sets_hebrew_as_hebrew(self):
+        """Names are the sources' own text: a TeX special in one must not end the run."""
+        credits = [
+            CreditRecord(
+                role="trl", resp_text="Translator", ref="urn:x:ns_one/a",
+                name_text="A. & B. Smith_Jones", namespace="ns_one", contributor="a",
+            ),
+            CreditRecord(
+                role="trl", resp_text="Translator", ref="urn:x:ns_one/b",
+                name_text="משה בן 100%", namespace="ns_one", contributor="b",
+            ),
+        ]
+        out = credits_to_tex({"trl": {"ns_one": credits}})
+        self.assertIn(r"\subsubsection*{From ns\_one}", out)
+        self.assertIn(r"\item A. \& B. Smith\_Jones", out)
+        self.assertIn(r"\item \texthebrew{משה בן} 100\%", out)
+
 
 class TestExtractSources(unittest.TestCase):
 
@@ -281,8 +317,8 @@ class TestExtractSources(unittest.TestCase):
         doc = self._create("p", "doc.xml", b"<root/>")
         self._create("p", "index.xml", index)
         preamble, postamble = extract_sources([doc])
-        self.assertIn(r"\begin{filecontents*}{job.bib}", preamble)
-        self.assertIn(r"\addbibresource{job.bib}", preamble)
+        self.assertIn(r"\begin{filecontents*}[overwrite]{\jobname.bib}", preamble)
+        self.assertIn(r"\addbibresource{\jobname.bib}", preamble)
         self.assertIn(r"\printbibliography", postamble)
 
     def test_returns_empty_strings_when_no_bibl(self):
@@ -549,6 +585,69 @@ class TestExtractSources(unittest.TestCase):
         self.assertIn("@misc{unknownnd-facsimilebibl,", preamble)
         self.assertIn("@misc{unknownnd-2,", preamble)
 
+    def test_different_works_sharing_a_key_across_indexes_are_both_kept(self):
+        """BibTeX keeps one entry per key, so the second work is given its own key."""
+
+        def index(title: str) -> bytes:
+            return f"""<?xml version="1.0"?>
+            <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+              <tei:listBibl>
+                <tei:bibl>
+                  <tei:title>{title}</tei:title>
+                  <tei:author>Example Author</tei:author>
+                  <tei:date>1949</tei:date>
+                </tei:bibl>
+              </tei:listBibl>
+            </root>""".encode("utf-8")
+
+        one = self._create("one", "doc.xml", b"<root/>")
+        self._create("one", "index.xml", index("First Book"))
+        two = self._create("two", "doc.xml", b"<root/>")
+        self._create("two", "index.xml", index("Second Book"))
+        preamble, _ = extract_sources([one, two])
+        self.assertIn("{example1949,", preamble)
+        self.assertIn("{example1949-2,", preamble)
+        self.assertIn("First Book", preamble)
+        self.assertIn("Second Book", preamble)
+
+    def test_a_renamed_work_arriving_again_is_listed_once(self):
+        """Work Y, renamed away from work X's key, must not be renamed a second time."""
+
+        def index(title: str) -> bytes:
+            return f"""<?xml version="1.0"?>
+            <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+              <tei:listBibl>
+                <tei:bibl>
+                  <tei:title>{title}</tei:title>
+                  <tei:author>Example Author</tei:author>
+                  <tei:date>1949</tei:date>
+                </tei:bibl>
+              </tei:listBibl>
+            </root>""".encode("utf-8")
+
+        files = []
+        for project, title in (("a", "Work X"), ("b", "Work Y"), ("c", "Work Y")):
+            files.append(self._create(project, "doc.xml", b"<root/>"))
+            self._create(project, "index.xml", index(title))
+        preamble, _ = extract_sources(files)
+        self.assertEqual(1, preamble.count("Work Y"))
+        self.assertIn("{example1949-2,", preamble)
+        self.assertNotIn("{example1949-3,", preamble)
+
+    def test_cite_key_has_no_punctuation_from_a_display_date(self):
+        """A key ends at its first comma, so one from "March 3, 1822" corrupted the entry."""
+        index = b"""<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:listBibl>
+            <tei:bibl><tei:title>T</tei:title><tei:author>O'Brien{x}</tei:author>
+              <tei:date>March 3, 1822</tei:date></tei:bibl>
+          </tei:listBibl>
+        </root>"""
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertIn("@misc{obrienxmarch31822,", preamble)
+
     def test_dedupes_entries_that_share_a_cite_key_across_indexes(self):
         """Two projects of one book cite it alike but for a note."""
 
@@ -785,6 +884,14 @@ class TestTransformXmlToTex(unittest.TestCase):
         self.assertIn(r"\usepackage{reledmac}", out)
         # Hebrew font must be declared via fontspec for Hebrew script support.
         self.assertIn(r"\newfontfamily\hebrewfont", out)
+
+    def test_a_failed_transformation_raises_rather_than_exiting(self):
+        """A library function that calls sys.exit takes its caller down with it."""
+        f = self._create("p", "input.xml", b"<tei:TEI xmlns:tei='http://www.tei-c.org/ns/1.0'>")
+        with patch.object(latex_module, "projects_source_root", self.test_dir):
+            with self.assertRaises(Exception) as caught:
+                transform_xml_to_tex(f)
+        self.assertNotIsInstance(caught.exception, SystemExit)
 
     def test_typography_object_is_threaded_into_preamble(self):
         xml = b"""<?xml version="1.0"?>

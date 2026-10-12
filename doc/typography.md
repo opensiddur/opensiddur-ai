@@ -9,9 +9,11 @@ the same document it always got in every other respect.
 
 **Invalid settings fail before anything is rendered.** Unknown keys, values outside a closed
 list, malformed lengths and font chains with nothing installed are all errors naming the
-offending key and its path. Nothing is silently ignored and nothing silently falls back —
-a setting that was quietly dropped would leave a document missing what was asked for, with
-nothing to say why.
+offending key and its path, and so is a setting the PDF stage would accept and do nothing
+with — an `align` on a role set mid-line, a column too wide to have a neighbour. Nothing
+silently falls back: a setting that was quietly dropped would leave a document missing what
+was asked for, with nothing to say why. The electronic book reflows, and honours only the few
+settings [listed at the end](#how-this-reaches-the-renderer); it ignores the rest.
 
 Settings are renderer-agnostic: they describe the document, not the commands that typeset it.
 There is no TeX in a settings file, and there is no place to put any.
@@ -34,7 +36,7 @@ typography:
 
 | Type | Written as | Notes |
 | --- | --- | --- |
-| length | `12pt`, `1.5em`, `25mm`, `0.75in` | Units: `pt`, `bp`, `mm`, `cm`, `in`, `pc`, `em`, `ex`. `em` and `ex` are relative to the font in force where the length is used. |
+| length | `12pt`, `1.5em`, `25mm`, `0.75in` | Units: `pt`, `bp`, `mm`, `cm`, `in`, `pc`, `em`, `ex`. `em` and `ex` are relative to the font in force where the length is used. Only `paragraphs.indent` (a hanging indent) and a style's `space_before`/`space_after` may be negative; a negative margin, page, rule, spacing or indent is an error. |
 | absolute length | `12pt`, `25mm` | The same without `em`/`ex`. Required where the length is itself defining a font size. |
 | percentage | `43%` | Of the enclosing measure. |
 | size | `x-large` or `10pt` | See the ladder below. |
@@ -65,7 +67,9 @@ cantillation. A bare string is shorthand for a one-name chain.
 Two families always exist, because the exporter refers to them by role rather than by name:
 `latin` for Latin-script text and `hebrew` for Hebrew-script text. Declaring one **replaces**
 its default chain rather than extending it. You may declare families of your own and point a
-style at them by name.
+style at them by name. A family's name is lower-case words joined by single hyphens
+(`note-sans`), because it becomes the name of a TeX command, which is letters only. A font's
+own name may not contain any of `{ } \ % # & $ ^ _ ~`.
 
 ```yaml
 typography:
@@ -109,7 +113,11 @@ fails the build rather than quietly substituting another. Give the chain a widel
 resort, as the default `hebrew` chain ends in `FreeSerif`, if you would rather it degrade.
 
 The check needs `fontconfig` (`fc-list`). On a machine without it the check is skipped and the
-chain is handed to the renderer to resolve at build time instead.
+chain is handed to the renderer to resolve at build time instead. The check belongs to the PDF
+stage. The compiler, which typesets nothing, does not make it, and neither does the electronic
+book: the reader's device chooses the face, so what the building machine has installed is beside
+the point. `books --check` asks the stricter question of whether a PDF could be built here, and
+checks every chain, defaults included.
 
 ## `page`
 
@@ -143,7 +151,7 @@ margins were configurable. Margins are named for the **binding**, not for the pa
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `paragraphs.indent` | length | `0pt` | First-line indent. |
-| `paragraphs.spacing` | length | `0.75em` | Vertical space between paragraphs, in addition to normal line spacing. Defaults to at least half a line so a new paragraph reads as distinct from an ordinary wrapped line. |
+| `paragraphs.spacing` | length | `0.5em` | Vertical space between paragraphs, in addition to normal line spacing. |
 | `paragraphs.line_spacing` | number, 0.5–3.0 | `1.0` | Multiple of single spacing. Hebrew with vowels and cantillation needs more leading than unpointed text. |
 | `paragraphs.alignment` | `justify` \| `left` \| `right` \| `center` | `justify` | |
 
@@ -159,7 +167,9 @@ column, so its paragraphs take the configured spacing throughout.
 ## `styles`
 
 The appearance of each kind of text the exporter distinguishes. Setting one changes only that
-role; the rest keep their defaults.
+role; the rest keep their defaults. A role you write **replaces** its default whole rather
+than amending it: `heading1: {size: large}` gives a heading that is large and nothing else —
+not bold, not centred — so restate whatever of the default you want to keep.
 
 ### Style attributes
 
@@ -173,9 +183,9 @@ as the surrounding text has it.
 | `weight` | `normal` \| `bold` | |
 | `style` | `normal` \| `italic` | |
 | `variant` | `normal` \| `small-caps` | |
-| `align` | `left` \| `right` \| `center` \| `justify` | Physical positions on the page, so they mean the same in a Hebrew and an English stream. Block-level roles only. |
-| `space_before` | length | Vertical space above. Block-level roles only. |
-| `space_after` | length | Vertical space below. Block-level roles only. |
+| `align` | `left` \| `right` \| `center` \| `justify` | Physical positions on the page, so they mean the same in a Hebrew and an English stream. Only on the roles set on a line of their own — the headings, `heading_translation`, `citation`, `list_label`, the title-page roles and `section_separator`; an error on any other. |
+| `space_before` | length | Vertical space above. Only on the title-page roles (`title_main` through `title_page_block`) and `section_separator`, which are paragraphs of their own; an error on any other. |
+| `space_after` | length | Vertical space below. The same roles as `space_before`. |
 
 ### Roles
 
@@ -280,7 +290,7 @@ The geometry of a parallel-text layout.
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `parallel.layout` | `pairs` \| `pages` \| `interleaved` | `pairs` | `pairs` puts two columns on the same page; `pages` sets the texts on facing pages, which gives each a full measure and suits a long work; `interleaved` sets one column, each block followed by its translation, for a measure too narrow to split. |
-| `parallel.column_width` | percentage | `43%` | Width of each column as a percentage of the text block. Only in `pairs` layout; naming it under another is an error. The two columns and the gap share 100%, so well under 50% each — the remainder leaves the outer margins room for line numbers. |
+| `parallel.column_width` | percentage | `43%` | Width of each column as a percentage of the text block. Only in `pairs` layout; naming it under another is an error. The two columns and the gap share 100%, so it must be under 50%, and well under — the remainder leaves the outer margins room for line numbers. |
 | `parallel.column_position` | `left` \| `center` \| `right` | `center` | Where the pair of columns sits in the text block. Only in `pairs` layout; naming it under another is an error. |
 | `parallel.interleaved` | table | | How the translation is set apart, in `interleaved` layout. See [below](#interleaved). |
 | `parallel.interleaved.translation_size` | size | `small` | Font size of the translation. |
@@ -473,7 +483,8 @@ the left edge whichever way the text runs. Each is either a bare string or a map
 
 - `text` — the template.
 - `language` — the slot's base direction, which decides the order its runs are laid out in,
-  and the font for content that declares nothing else. Defaults to the document's own
+  and the font for content that declares nothing else. A language tag, as in `xml:lang`
+  (`he`, `en-US`, `he-Latn`); anything else is an error. Defaults to the document's own
   `xml:lang`; only the Hebrew script versus everything else is distinguished. A script subtag
   decides (`he-Latn` is a transliteration, `arc-Hebr` Aramaic in Hebrew letters); without one,
   `he`, `yi` and `arc` are Hebrew script. Every run

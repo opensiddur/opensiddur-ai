@@ -29,6 +29,7 @@ from opensiddur.exporter.typography import (
     NotePlacement,
     PaperType,
     ParallelLayout,
+    RESOLVE_FONTS,
     Sides,
     TextStyle,
     TypographyConfig,
@@ -49,6 +50,13 @@ def _validate(data: dict) -> TypographyConfig:
         return TypographyConfig.model_validate(data)
 
 
+def _refused(test: unittest.TestCase, data: dict, *fragments: str) -> None:
+    with test.assertRaises(ValidationError, msg=repr(data)) as caught:
+        _validate(data)
+    for fragment in fragments:
+        test.assertIn(fragment, str(caught.exception))
+
+
 class TestDefaults(unittest.TestCase):
     """An empty settings section has to mean "what it has always looked like"."""
 
@@ -63,7 +71,7 @@ class TestDefaults(unittest.TestCase):
 
     def test_paragraph_defaults_match_the_stylesheet(self):
         self.assertEqual(self.config.paragraphs.indent, "0pt")
-        self.assertEqual(self.config.paragraphs.spacing, "0.75em")
+        self.assertEqual(self.config.paragraphs.spacing, "0.5em")
         self.assertEqual(self.config.paragraphs.line_spacing, 1.0)
 
     def test_heading_defaults_step_down_by_one_rung_each(self):
@@ -413,6 +421,94 @@ class TestTextStyle(unittest.TestCase):
     def test_a_font_family_accepts_a_list_or_a_string(self):
         self.assertEqual(FontFamily.model_validate("One").names, ["One"])
         self.assertEqual(FontFamily.model_validate(["One", "Two"]).names, ["One", "Two"])
+
+
+
+class TestNonNegativeLengths(unittest.TestCase):
+    """A margin, a page or a rule cannot be negative; TeX would accept one and
+    produce a page that makes no sense."""
+
+    def test_negative_geometry_is_refused(self):
+        for data in (
+            {"page": {"margins": {"top": "-1cm"}}},
+            {"page": {"paper": "custom", "width": "-6in", "height": "9in"}},
+            {"paragraphs": {"spacing": "-1ex"}},
+            {"notes": {"separation": "-2pt"}},
+        ):
+            with self.assertRaises(ValidationError, msg=repr(data)):
+                _validate(data)
+
+    def test_zero_and_positive_geometry_are_accepted(self):
+        _validate({"page": {"margins": {"top": "0pt", "inner": "2.5cm"}}})
+
+    def test_a_paragraph_indent_may_still_hang(self):
+        _validate({"paragraphs": {"indent": "-1em"}})
+
+
+class TestColumnWidth(unittest.TestCase):
+    def test_a_column_of_half_the_block_or_more_is_refused(self):
+        _validate({"parallel": {"column_width": "49.5%"}})
+        for width in ("50%", "75%", "100%"):
+            _refused(self, {"parallel": {"column_width": width}}, "under 50%")
+
+
+class TestFontKeys(unittest.TestCase):
+    """A family key names a TeX command, which is letters only."""
+
+    def test_lower_case_words_joined_by_hyphens(self):
+        _validate({"fonts": {"note-sans": "DejaVu Sans", "sans": "DejaVu Sans"}})
+
+    def test_keys_that_would_not_make_a_distinct_command_are_refused(self):
+        for key in ("sans2", "note_sans", "Note", "note--sans", "-sans", "sans-"):
+            _refused(self, {"fonts": {key: "DejaVu Sans"}}, key)
+
+
+class TestFontFaceNames(unittest.TestCase):
+    def test_tex_specials_in_a_face_name_are_refused(self):
+        for name in ("Bad}Font", "Font\\x", "50% Serif", "A_B"):
+            with self.assertRaises(ValidationError, msg=name):
+                _validate({"fonts": {"latin": [name]}})
+
+    def test_ordinary_face_names_are_accepted(self):
+        _validate({"fonts": {"latin": ["TeX Gyre Pagella", "Linux Libertine O"]}})
+
+
+class TestBlockOnlyStyleProperties(unittest.TestCase):
+    """`align` and `space_*` were accepted on every role and honoured on few."""
+
+    def test_align_on_an_inline_role_is_refused(self):
+        _refused(self, {"styles": {"note": {"align": "center"}}}, "styles.note.align")
+
+    def test_space_on_a_role_set_inside_a_paragraph_is_refused(self):
+        _refused(
+            self, {"styles": {"heading1": {"space_before": "1ex"}}}, "styles.heading1.space_before"
+        )
+
+    def test_an_explicit_null_asks_for_nothing(self):
+        _validate({"styles": {"note": {"align": None, "space_before": None}}})
+
+    def test_the_roles_that_honour_them_accept_them(self):
+        _validate({
+            "styles": {
+                "heading2": {"align": "left"},
+                "list_label": {"align": "right"},
+                "title_main": {"align": "left", "space_after": "2ex"},
+                "section_separator": {"space_before": "1ex"},
+            }
+        })
+
+
+class TestHtmlDoesNotResolveFonts(unittest.TestCase):
+    def test_a_missing_font_is_not_an_error_when_fonts_are_not_resolved(self):
+        with patch.object(
+            typography_module, "_installed_font_families", return_value=frozenset()
+        ):
+            with self.assertRaises(ValidationError):
+                TypographyConfig.model_validate({"fonts": {"latin": "No Such Face"}})
+            config = TypographyConfig.model_validate(
+                {"fonts": {"latin": "No Such Face"}}, context={RESOLVE_FONTS: False}
+            )
+        self.assertEqual(["No Such Face"], config.fonts["latin"].names)
 
 
 if __name__ == "__main__":
