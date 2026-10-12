@@ -1097,3 +1097,16 @@ and 5158/5321. Documentary 52,54,55 and expanded 112,113,128 inspected visually.
 Independent-person Hebrew and facing-English proofreading, uncertain fine marks,
 and the recorded mixed-note paragraph issue remain pending. Whole-book PDFs are
 older snapshots. Fifth-day corrections and source checks are complete; PDF verification is pending.
+
+
+## Proofreading checkpoint 011
+
+The committed Hebrew proofreading checkpoint reaches the fifth-day closing rubric, printed page 41 upper (s84/n83), including title and opening pages. Frozen captures, comparison records, crop adjudication and hashes are under `sources/asher_selichot/proofreading/`. Latest batch: 82 replacement rules across four modules on printed 37–41. Restored omitted stanza openings and corrected the printed לישועתנו refrain. This is a same-model second image pass with prior exposure, not independent-person proofreading. Facing English review remains pending.
+
+Four changed XML files validate and fifth-day source/expansion checks pass.
+- Documentary: 63 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [13.55, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  Direction: 0 of 2216 Hebrew runs are set left to right; control: 2158 of 2216 flagged when every run is reversed. Visual pages: 59,61,62.
+- Expanded: 158 pages; contents generated; day bookmarks above pizmons; first-day prayers [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; first pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; second pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; third pizmon [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]; later pizmons {'fourth': [0.0, 0.0, 0.0, 0.0, 0.0], 'fifth': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}; footnotes and expansion boundaries checked; controls=True
+  Direction: 0 of 6579 Hebrew runs are set left to right; control: 6368 of 6579 flagged when every run is reversed. Visual pages: 138,139,141,142,143,144,156,157.
+
+Artifacts: `output/asher_selichot/proofreading/batch-011/`. Last full post-merge suite: 3557 tests,12 skips,no failures. No executable code changes. Independent-person Hebrew, facing English and uncertain marks remain pending. Previously recorded mixed-note paragraph issue remains. Next service: sixth day.
