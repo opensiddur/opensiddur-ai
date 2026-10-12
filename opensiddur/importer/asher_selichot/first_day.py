@@ -144,7 +144,7 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
     if remaining_services:
         edition.text='Complete services through '+remaining_services[-1].replace('-', ' ')+'. Hebrew pointing awaits independent proofreading; later services await encoding.'
     if 'circumcision' in remaining_services:
-        edition.text='All services through the final circumcision pizmon, Archive n410 (printed204). Hebrew pointing and unplaced printed material await independent proofreading.'
+        edition.text='All services through the final circumcision pizmon, Archive n410 (printed204). Hebrew pointing awaits independent proofreading.'
     if expanded:
         edition.text += ' Repeated passages are supplied by transclusion; the unprinted Full Kaddish uses the secondary edition selected in export settings.'
     if book:

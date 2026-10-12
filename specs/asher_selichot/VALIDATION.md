@@ -798,3 +798,27 @@ deleted-marker and shifted-stanza controls are rejected. Hebrew direction is
 expanded body was inspected visually. All 106 focused tests pass. Earlier
 whole-book PDF results above refer to the pre-correction snapshot; those
 aggregate artifacts have not been rerendered for this small text correction.
+
+
+## Transcription proofreading batch 001
+
+Fresh image-only captures for Hebrew title s2/n1 and opening s6/n5, s8/n7
+(printed3) were frozen before comparison with working readings/XML. Crops
+adjudicate six corrections: וואללענטין, אֱלוֹהַי, נִפְלְאֹתֶיךָ, word spaces
+in יְדַבֶּר פִּי and זְכֹר רַחֲמֶיךָ, and maqqef in דִּי־בְרָא. Two
+differences were rejected as blind-reading/wrapping errors; a possible title
+ink mark remains undecided. Full provenance and frozen/pre/post hashes are in
+`proofreading/image-pass-01` in the sources repository. This is a same-model
+second image pass; independent-person proofreading remains pending.
+
+Seven changed XML files validate; all six opening page/language streams and
+both title-page comparisons pass. The separate title/opening inspection PDF
+has10 pages and converged in three passes. Four measured anchor deltas are zero.
+Hebrew direction:0/86; reversal control flags85. Reversed citation, shifted
+English, stranded punctuation, substituted colon and deleted-corrected-line
+controls are rejected. The opening body was inspected visually. The generic
+full-day footnote control cannot run on this excerpt without apparatus; this
+limited scope is recorded explicitly. Full-book PDFs remain earlier snapshots.
+
+The coverage ledger records s10/n9 as the next Hebrew page; facing English
+pages, contents and later Hebrew pages are outside this proofreading batch.
