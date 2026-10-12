@@ -184,6 +184,14 @@ The compiler uses a **processing context state machine** — see `specs/COMPILER
 - `j:condition` — first child of a standoff note (not an instruction); a condition deciding whether the whole note is set, evaluated where it would be set. Not a scope (no end marker); conditional words *inside* a note still use `j:conditional`
 - `j:all` / `j:any` / `j:none` / `j:one` — boolean operators for conditions
 
+**Settings registry.** Every `opensiddur:*` feature structure type, its features and the kind
+of value each takes are listed in `opensiddur/exporter/features.yaml`. An unregistered type or
+feature, or a value of the wrong kind, is an error in a `j:declare`, `j:conditional`,
+`j:condition` or a settings file's `declarations`. A new setting is added to the registry first
+(and, for a common type the exporter reasons about, to `schema/JLPTEI-3.md`). Check a project with
+`uv run python -m opensiddur.exporter.validate_features [project ...]`. Tests whose feature names
+are made up switch the check off with `registry_helpers.unchecked_registry()`.
+
 Contributor credits are **not** a `j:` element. They belong in the TEI header as `tei:respStmt` entries with contributor URNs on `tei:name/@ref` (see `schema/JLPTEI-3.md`).
 The shape `urn:x-opensiddur:contributor:<namespace>/<identifier>` is enforced by Schematron, and
 every `opensiddur.org` identifier must have a line in `specs/urn_registry/contributor.jsonl` —

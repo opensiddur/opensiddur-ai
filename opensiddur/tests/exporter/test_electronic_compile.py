@@ -18,6 +18,7 @@ from opensiddur.exporter.client_settings import is_reader_supplied, resolve
 from opensiddur.exporter.condition_eval import parse_condition_element
 from opensiddur.exporter.linear import Undefined, get_linear_data, reset_linear_data
 from opensiddur.exporter.settings import load_settings
+from opensiddur.tests.exporter.registry_helpers import unchecked_registry
 
 J = JLPTEI_NAMESPACE
 P = PROCESSING_NAMESPACE
@@ -146,6 +147,8 @@ class TestPinnedValues(_Compiling):
         self.assertIsNone(root.find(f".//{{{P}}}pinned"))
 
 
+# Its feature names are made up for the test.
+@unchecked_registry()
 class TestSettingsFile(_Compiling):
 
     def _load(self, electronic: bool):

@@ -242,6 +242,19 @@ jobs:
           uv run python -m opensiddur.exporter.validate_versification \
             --project-directory "$GITHUB_WORKSPACE/projects/project"
 
+      # Every j:declare, j:conditional and j:condition against the settings registry
+      # (opensiddur/exporter/features.yaml): an unregistered opensiddur: type or feature, or a
+      # value of the wrong kind. Repo-wide, because it is cheap: it reads each file once and
+      # needs neither the schema nor the reference database.
+      - name: Validate settings against the registry (repo-wide)
+        id: features
+        if: always()
+        continue-on-error: true
+        working-directory: opensiddur-ai
+        run: |
+          uv run python -m opensiddur.exporter.validate_features \
+            --project-directory "$GITHUB_WORKSPACE/projects/project"
+
       # Settings files (opensiddur-projects/settings/<book>/<variant>.yaml) are built into printed
       # books at release (release-books.yml); a broken one should fail here, not at release.
       # --check verifies each is in place, parses, matches the schema, names a project and file
@@ -273,6 +286,7 @@ jobs:
             "urn_references:${{ steps.urn_references.outcome }}" \
             "urn_registry:${{ steps.urn_registry.outcome }}" \
             "versification:${{ steps.versification.outcome }}" \
+            "features:${{ steps.features.outcome }}" \
             "settings:${{ steps.settings.outcome }}"; do
             name="${outcome%%:*}"
             result="${outcome#*:}"

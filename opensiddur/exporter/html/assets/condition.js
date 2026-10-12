@@ -63,8 +63,8 @@
 
   // ── Matching one value (condition_eval._single_value_match) ──────────────
 
-  // Python equality between an active setting and a binary or string condition: True == 1,
-  // and a tei:numeric setting equals neither.
+  // Python equality for what match() leaves to it: a string condition, or a binary one
+  // against a setting that is neither a boolean nor a number.
   function pyEqual(active, wanted) {
     if (isObject(active)) return false;
     if (typeof wanted === "boolean") {
@@ -94,6 +94,14 @@
         return wanted.num <= number && number <= wanted.max ? TRUE : FALSE;
       }
       return number === wanted.num ? TRUE : FALSE;
+    }
+    if (typeof wanted === "boolean") {
+      // condition_eval._single_value_match: a binary condition asks whether a value is
+      // true — 0 and false are false, any other number true.
+      var value = isObject(active) && "num" in active ? active.num : active;
+      if (typeof value === "boolean" || typeof value === "number") {
+        return (value !== 0 && value !== false) === wanted ? TRUE : FALSE;
+      }
     }
     return pyEqual(active, wanted) ? TRUE : FALSE;
   }

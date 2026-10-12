@@ -1,0 +1,345 @@
+# The settings registry: every built-in `opensiddur:*` feature structure, its features, and the
+# kind of value each feature takes. A `tei:fs/@type` in the `opensiddur:` namespace, and a
+# `tei:f/@name` within it, are valid only if they are listed here, and a value must be of the
+# listed kind. This is checked wherever a setting is written or tested: a settings file's
+# `declarations`, a `j:declare`, and a `j:conditional` or `j:condition` (`feature_registry.py`).
+# Types outside the `opensiddur:` namespace belong to whoever named them and are not checked.
+#
+# Each type has:
+#   common     true for the types the exporter itself defines and reasons about — the ones a
+#              derivation, a default or a cascade of logic in the code depends on. They are
+#              documented in schema/JLPTEI-3.md, and a test holds that document to this file.
+#              The others are settings a text asks its reader about and that nothing in the
+#              code computes; they are listed only here.
+#   supplied   who mainly gives the value. input: the volume declares it, and other types are
+#              derived from it (a location's time zone is derived from its coordinates).
+#              derived: the exporter computes it from inputs, though a volume may still
+#              declare it. declared: a volume (or its reader) says; some of these derive one
+#              feature from another of their own, as a minyan implies a zimmun.
+#   features   name: value kind. A kind is one of
+#                binary                         true or false
+#                numeric  {min, max, integer}   a number; integer unless `integer: false`
+#                symbol   {values}              one of `values`, or any token if none are listed
+#                string   {pattern}             text, matching `pattern` if one is given
+#   open       for a type whose feature names are not a fixed list: the pattern a name must
+#              match and the kind of value every such feature takes. `features`, if also
+#              present, lists the names known so far, for documentation.
+#
+# Any feature may also be declared or tested as undefined (`<tei:default/>`,
+# `<tei:symbol value="undefined"/>`, or `null` in YAML), whatever its kind.
+#
+# A binary condition may test a numeric feature. The number is read as programming languages
+# convert one: 0 is false and any other number true, so `<tei:binary value="true"/>` on a
+# day-numbered holiday means "on any day of it".
+
+opensiddur:gregorian-date:
+  common: true
+  supplied: input
+  features:
+    year: {numeric: {min: 1}}
+    month: {numeric: {min: 1, max: 12}}
+    day: {numeric: {min: 1, max: 31}}
+
+opensiddur:time:
+  common: true
+  supplied: input
+  features:
+    hour: {numeric: {min: 0, max: 23}}
+    minute: {numeric: {min: 0, max: 59}}
+    second: {numeric: {min: 0, max: 59}}
+
+opensiddur:location:
+  common: true
+  supplied: input
+  features:
+    latitude: {numeric: {min: -90, max: 90, integer: false}}
+    longitude: {numeric: {min: -180, max: 180, integer: false}}
+    # An IANA zone name. Derived from the coordinates unless declared.
+    timezone: {symbol: {}}
+
+opensiddur:israel:
+  common: true
+  supplied: derived
+  features:
+    is-israel: binary
+
+opensiddur:hebrew-date:
+  common: true
+  supplied: derived
+  features:
+    year: {numeric: {min: 1}}
+    month: {numeric: {min: 1, max: 13}}
+    day: {numeric: {min: 1, max: 30}}
+    leap-year: binary
+
+opensiddur:hebrew-time:
+  common: true
+  supplied: derived
+  features:
+    variable-hour: {numeric: {min: 0, max: 23}}
+    part: {numeric: {min: 0, max: 1079}}
+
+opensiddur:day-of-week:
+  common: true
+  supplied: derived
+  features:
+    secular-day: {numeric: {min: 1, max: 7}}
+    hebrew-day: {numeric: {min: 1, max: 7}}
+    bayn-hashmashot: binary
+
+# The day number within each holiday, 0 when it is not that holiday.
+opensiddur:holiday:
+  common: true
+  supplied: derived
+  features:
+    pesah: {numeric: {min: 0, max: 8}}
+    omer: {numeric: {min: 0, max: 49}}
+    pesah-sheini: {numeric: {min: 0, max: 1}}
+    lag-baomer: {numeric: {min: 0, max: 1}}
+    shavuot: {numeric: {min: 0, max: 2}}
+    tisha-bav: {numeric: {min: 0, max: 1}}
+    tu-bav: {numeric: {min: 0, max: 1}}
+    rosh-hashana: {numeric: {min: 0, max: 2}}
+    tzom-gedalia: {numeric: {min: 0, max: 1}}
+    yom-kippur: {numeric: {min: 0, max: 1}}
+    sukkot: {numeric: {min: 0, max: 7}}
+    shmini-atzeret: {numeric: {min: 0, max: 2}}
+    hanukkah: {numeric: {min: 0, max: 8}}
+    asara-btevet: {numeric: {min: 0, max: 1}}
+    taanit-esther: {numeric: {min: 0, max: 1}}
+    purim: {numeric: {min: 0, max: 1}}
+    shushan-purim: {numeric: {min: 0, max: 1}}
+    purim-meshulash: {numeric: {min: 0, max: 3}}
+    purim-katan: {numeric: {min: 0, max: 1}}
+    shushan-purim-katan: {numeric: {min: 0, max: 1}}
+    rosh-hodesh: {numeric: {min: 0, max: 2}}
+    tu-bishvat: {numeric: {min: 0, max: 1}}
+    taanit-bchorot: {numeric: {min: 0, max: 1}}
+    tzom-tammuz: {numeric: {min: 0, max: 1}}
+    sigd: {numeric: {min: 0, max: 1}}
+    yom-hashoah: {numeric: {min: 0, max: 1}}
+    yom-hazikaron: {numeric: {min: 0, max: 1}}
+    yom-haatzmaut: {numeric: {min: 0, max: 1}}
+    yom-yerushalayim: {numeric: {min: 0, max: 1}}
+
+opensiddur:holiday-aggregate:
+  common: true
+  supplied: derived
+  features:
+    shabbat: binary
+    motzaei-shabbat: binary
+    eruv-tavshilin: binary
+    yom-tov: binary
+    chol-hamoed: binary
+    regalim: binary
+    hoshana-rabba: binary
+    high-holidays: binary
+    aseret-ymei-tshuva: binary
+    minor-fast: binary
+    day-before-holiday: binary
+    day-after-holiday: binary
+    geshem: binary
+    tal-umatar: binary
+
+opensiddur:torah-reading:
+  common: true
+  supplied: derived
+  features:
+    diaspora-parsha: {string: {}}
+    israel-parsha: {string: {}}
+    triennial-year: {numeric: {min: 1, max: 3}}
+    # One character per year of the cycle: T where the pair was read together, S apart.
+    triennial-pattern-vayakhel-pekudei: {string: {pattern: "[TS]{3}"}}
+    triennial-pattern-tazria-metzora: {string: {pattern: "[TS]{3}"}}
+    triennial-pattern-achrei-mot-kedoshim: {string: {pattern: "[TS]{3}"}}
+    triennial-pattern-behar-bechukotai: {string: {pattern: "[TS]{3}"}}
+    triennial-pattern-chukat-balak: {string: {pattern: "[TS]{3}"}}
+    triennial-pattern-matot-masei: {string: {pattern: "[TS]{3}"}}
+    shabbat-shuva: binary
+    shabbat-shira: binary
+    shabbat-shkalim: binary
+    shabbat-zachor: binary
+    shabbat-parah: binary
+    shabbat-hahodesh: binary
+    shabbat-hagadol: binary
+    shabbat-hazon: binary
+    shabbat-nahamu: binary
+    shabbat-rosh-hodesh: binary
+    shabbat-mahar-hodesh: binary
+    shabbat-mevarchim: binary
+
+opensiddur:reading-cycle:
+  common: true
+  supplied: declared
+  features:
+    annual: binary
+    triennial: binary
+    triennial-year-1: binary
+    triennial-year-2: binary
+    triennial-year-3: binary
+
+opensiddur:service-time:
+  common: true
+  supplied: derived
+  features:
+    shaharit: binary
+    minha: binary
+    maariv: binary
+    musaf: binary
+    neila: binary
+    slihot: binary
+
+opensiddur:recitation:
+  common: true
+  supplied: declared
+  features:
+    silent: binary
+    repetition: binary
+
+opensiddur:quorum:
+  common: true
+  supplied: declared
+  features:
+    zimmun: binary
+    minyan: binary
+    present-not-eaten: binary
+
+opensiddur:override:
+  common: true
+  supplied: declared
+  features:
+    omit-tahanun: binary
+    house-of-mourning: binary
+    brit-milah: binary
+    wedding: binary
+    sheva-brachot: binary
+
+opensiddur:paratext:
+  common: true
+  supplied: declared
+  features:
+    include: binary
+    title-page: binary
+
+opensiddur:hallel:
+  common: true
+  supplied: derived
+  features:
+    recite: binary
+    full: binary
+
+opensiddur:motzaei-shabbat:
+  common: true
+  supplied: derived
+  features:
+    omit-vihi-noam: binary
+
+opensiddur:pirkei-avot:
+  common: true
+  supplied: derived
+  features:
+    complete: binary
+    season: binary
+    chapter-1: binary
+    chapter-2: binary
+    chapter-3: binary
+    chapter-4: binary
+    chapter-5: binary
+    chapter-6: binary
+
+# A feature's name is the URN of the variant it selects.
+opensiddur:variant:
+  common: true
+  supplied: declared
+  open:
+    name: "urn:x-opensiddur:condition:[^\\s]+"
+    value: binary
+
+# One binary per rite, any number of which may be true at once.
+opensiddur:rite:
+  common: true
+  supplied: declared
+  open:
+    name: "[a-z][a-z_]*"
+    value: binary
+  features:
+    ashkenaz: binary
+    sepharad: binary
+    edot_hamizrach: binary
+    teimani_baladi: binary
+    teimani_shami: binary
+    italiani: binary
+    romaniote: binary
+    nusach_ari: binary
+
+# ── Asked of the reader; nothing in the code computes or depends on these. ─────────────────
+
+opensiddur:person:
+  common: false
+  supplied: declared
+  features:
+    # The gender the book addresses its rubric to.
+    gender: {symbol: {values: [male, female]}}
+    birkat-hagomel: binary
+    bar-mitzvah-father: binary
+    naming-daughter: binary
+    prayer-for-sick-man: binary
+    prayer-for-sick-woman: binary
+
+opensiddur:household:
+  common: false
+  supplied: declared
+  features:
+    at-fathers-home: binary
+    at-mothers-home: binary
+
+opensiddur:blessing-recipient:
+  common: false
+  supplied: declared
+  features:
+    gender: {symbol: {values: [male, female]}}
+
+opensiddur:meal-context:
+  common: false
+  supplied: declared
+  features:
+    meein-shalosh-food: {symbol: {values: [cake, cake_wine, fruit, wine]}}
+    guest: binary
+    father-is-host: binary
+    mother-is-host: binary
+    wife-and-children: binary
+    zimmun: binary
+
+opensiddur:practice:
+  common: false
+  supplied: declared
+  features:
+    birkat-kohanim: binary
+    kapparot-object: {symbol: {values: [hen, money, rooster]}}
+    uminchatam-after-each-day: binary
+    in-sukkah: binary
+    lulav-first-use: binary
+
+opensiddur:service-context:
+  common: false
+  supplied: declared
+  features:
+    immediately-after-minha: binary
+    mourners-present: binary
+
+opensiddur:observance:
+  common: false
+  supplied: declared
+  features:
+    synagogue-havdalah: binary
+
+opensiddur:yizkor:
+  common: false
+  supplied: declared
+  features:
+    el-male-man: binary
+    el-male-woman: binary
+    father: binary
+    husband: binary
+    mother: binary
+    wife: binary

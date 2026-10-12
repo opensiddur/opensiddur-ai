@@ -5,6 +5,7 @@ from typing import Any
 from lxml.etree import ElementBase
 
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS, XML_NS
+from opensiddur.exporter.feature_registry import require_valid_fs
 from opensiddur.exporter.linear import (
     ConditionalSettingEntry,
     DeclarationFeatureValue,
@@ -161,6 +162,8 @@ def parse_declare_element(
             )
             for f_el in features
         )
+        # After parsing, so that a malformed value is reported as one.
+        require_valid_fs(child, in_condition=False)
     if not entries:
         raise ValueError(f"j:declare {declare_id!r} declares nothing")
     return entries

@@ -20,6 +20,7 @@ from opensiddur.exporter.conditional_settings import (
     parse_f_value,
 )
 from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
+from opensiddur.exporter.feature_registry import require_valid_fs
 from opensiddur.exporter.linear import NumericValue, Undefined
 
 
@@ -65,7 +66,7 @@ _COMBINATOR_TAGS = {
 
 def _parse_fs_condition(fs_element: ElementBase) -> FsCondition:
     fs_type, features = fs_features(fs_element)
-    return FsCondition(fs_type=fs_type, features=tuple(
+    condition = FsCondition(fs_type=fs_type, features=tuple(
         FeatureCondition(
             fs_type=fs_type,
             feature_name=f_el.get("name"),
@@ -73,6 +74,9 @@ def _parse_fs_condition(fs_element: ElementBase) -> FsCondition:
         )
         for f_el in features
     ))
+    # After parsing, so that a malformed value is reported as one.
+    require_valid_fs(fs_element, in_condition=True)
+    return condition
 
 
 def _parse_condition_node(element: ElementBase) -> ConditionNode:
@@ -142,6 +146,14 @@ def _single_value_match(active: Any, condition: Any) -> TriState:
                 return TriState.TRUE
             return TriState.FALSE
         return TriState.TRUE if active_number == condition.value else TriState.FALSE
+    if isinstance(condition, bool):
+        # A binary condition asks whether a value is true, by the conversion programming
+        # languages make: 0 and False are false, any other number true. So `binary true` on
+        # a day-numbered holiday means "on any day of it", not "on its first day". (An unset
+        # value never reaches here: it is undefined, above.)
+        active_value = active.value if isinstance(active, NumericValue) else active
+        if isinstance(active_value, (int, float)):
+            return TriState.TRUE if bool(active_value) == condition else TriState.FALSE
     return TriState.TRUE if active == condition else TriState.FALSE
 
 
@@ -241,9 +253,8 @@ def evaluate_condition(node: ConditionNode, processor: _SettingLookup) -> TriSta
 #
 # A *setting* -- an active value, rather than one a condition asks for -- is true, false, a
 # string, a plain number (as YAML gives it), {"num": n} (as a tei:numeric declaration gives
-# it), or null for undefined. The distinction between a plain number and {"num": n} is kept
-# because the evaluator keeps it: a binary condition matches an active 1, but not an active
-# tei:numeric 1.
+# it), or null for undefined. A binary condition reads either kind of number by its truth:
+# zero is false, anything else true.
 
 
 def _condition_value_to_json(value: Any) -> Any:

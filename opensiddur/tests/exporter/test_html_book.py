@@ -31,6 +31,7 @@ from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.typography import TypographyConfig
 from opensiddur.tests.exporter.js_engine import require_node, run_js
+from opensiddur.tests.exporter.registry_helpers import unchecked_registry
 
 J = JLPTEI_NAMESPACE
 P = PROCESSING_NAMESPACE
@@ -198,6 +199,8 @@ URN = "urn:x-opensiddur:text:prayer:grace"
 PAGE_REF = f'<tei:ref type="page" target="{URN}@proj"/>'
 
 
+# Its feature names are made up for the test.
+@unchecked_registry()
 class TestPageReferences(unittest.TestCase):
     """Where print gives a page number, the electronic book links to the passage."""
 
@@ -730,6 +733,8 @@ if __name__ == "__main__":
     unittest.main()
 
 
+# Its feature names are made up for the test.
+@unchecked_registry()
 class TestNotesAndDirection(unittest.TestCase):
     """Notes the compiler sets inside anchors and milestones, numbering, and direction."""
 

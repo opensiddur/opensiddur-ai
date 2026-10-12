@@ -319,7 +319,7 @@ prayer("amidah_hodaah", "Blessing of thanksgiving", "amidah/hodaah", 92, 94, "\n
     f'        <j:transclude type="external" target="{U}al_hanissim/chanukah"/>',
     endcond("cond_hodaah_chanukah"),
     cond("cond_hodaah_purim", note="On Purim add:",
-         fs=feature(HOL, "purim", '<tei:numeric value="1" max="2"/>')),
+         fs=feature(HOL, "purim", '<tei:numeric value="1"/>')),
     f'        <j:transclude type="external" target="{U}al_hanissim/purim"/>',
     endcond("cond_hodaah_purim"),
     d(U + "amidah/hodaah/veal_kulam", "For all these acts may thy name, our King, be blessed and exalted forever and ever."),

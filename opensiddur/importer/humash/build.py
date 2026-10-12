@@ -23,9 +23,10 @@ volume narrows them.
     heading naming whose custom it is.
 
 ``opensiddur:holiday`` (binary, `_conditional`)
-    A megillah, on the festival it is read. Exclusive per occasion — one date makes at most
-    one true — but nothing stops a volume declaring several, and one that declares none
-    carries all five.
+    A megillah, on the festival it is read. The feature is a day number, and a binary
+    condition reads it as true on any day of the festival. Exclusive per occasion — one
+    date makes at most one true — but nothing stops a volume declaring several, and one
+    that declares none carries all five.
 
 ``opensiddur:reading-cycle`` (binary, `_cycle_condition`)
     ``annual`` and ``triennial-year-{1,2,3}``, guarding haftarot. **Alternatives, not

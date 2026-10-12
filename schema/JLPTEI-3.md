@@ -917,6 +917,26 @@ The listings that follow name each structure's features and the kind of value ea
 are not declarations. A value element shown without `@value` stands for its kind. A declaration
 or a condition always gives the value, for example `<tei:binary value="true"/>`.
 
+**The settings registry.** Every feature structure type in the `opensiddur:` namespace, each of
+its features, and the kind of value each takes (binary, a number in a range, a symbol from a
+set, a string of a given form) are listed in the registry,
+[`opensiddur/exporter/features.yaml`](../opensiddur/exporter/features.yaml). A type or feature in
+that namespace that the registry does not list is an error, and so is a value of the wrong kind
+or out of its range, wherever it appears: in a `j:declare`, in a `j:conditional` or `j:condition`,
+or in a settings file's `declarations`. A misspelt feature would otherwise be a setting nothing
+ever sets, and a condition on it silently undecided. Types in any other namespace are not
+checked.
+
+This document describes the *common* types: those the exporter itself defines and reasons
+about, which a derivation, a default or other logic in the code depends on. The registry also
+lists settings that only a text asks about — who is reciting, what was eaten, which
+observances a household keeps — which nothing computes, and which are documented there alone.
+Adding one is a matter of adding it to the registry.
+
+**A binary test of a number.** A `tei:binary` condition may test a numeric feature. The number
+is read as programming languages convert one to true or false: `0` is false and any other number
+true. A declaration gives a numeric feature a number.
+
 Absolute time, if defined, is processed first. 
 
 The current Gregorian date and time are defined in the following feature structures:
@@ -972,10 +992,14 @@ Given the secular date/time, the processing model calculates the Hebrew date and
    <tei:f name="day">
       <tei:numeric value="{day on Hebrew calendar}"/>
    </tei:f>
+   <tei:f name="leap-year">
+      <tei:binary/>
+   </tei:f>
 </tei:fs>
 ```
 
-The Hebrew month may have values between `1` (ניסן) and `13` (אדר ב).
+The Hebrew month may have values between `1` (ניסן) and `13` (אדר ב). `leap-year` is true in a
+year with two months of Adar.
 
 They day may have any value for a valid day for the given month in the given year.
 
@@ -1157,9 +1181,11 @@ From the dates, times, and locations, the holiday calendar is calculated:
 
 A `0` value indicates that it is definitely not that holiday. Any other value indicates that it is exactly that day.
 
-Because the values are day numbers, `<tei:binary value="true"/>` matches only a holiday's first
-day. To match any day of a holiday, use `<tei:numeric value="1" max="8"/>` (with the holiday's
-own last day as the maximum).
+A binary condition reads a number the way programming languages convert one to true or false:
+`0` (and `false`) is false, and any other number is true. So `<tei:binary value="true"/>`
+matches **any** day of a holiday, and `<tei:binary value="false"/>` matches a day that is not
+part of it. To match particular days, use a number or a range:
+`<tei:numeric value="1" max="2"/>` for the first two days.
 
 Some of these need a note:
 - `taanit-bchorot` is the eve of Pesah, 14 Nisan. When 14 Nisan is Shabbat it moves to
@@ -1227,6 +1253,12 @@ Further derived values are also available and calculated from the above
    <tei:f name="day-after-holiday">
       <tei:binary/>
    </tei:f>
+   <tei:f name="geshem">
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="tal-umatar">
+      <tei:binary/>
+   </tei:f>
 </tei:fs>
 ```
 
@@ -1252,6 +1284,51 @@ These aggregates need definitions:
   7 Marcheshvan in Israel. In the diaspora it runs from Ma'ariv on the evening of 4 December,
   or 5 December in the year before a Gregorian leap year. Everywhere it ends at Pesah. A date
   given without a time is its daytime, so 4 December itself is not yet in the season.
+
+Three more structures are derived from the Hebrew date and `opensiddur:israel`, each for a
+passage whose occasion is easier to compute than to write as a condition:
+```xml
+<tei:fs type="opensiddur:hallel">
+   <tei:f name="recite">
+      <!-- Hallel is said today, whole or abridged -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="full">
+      <!-- it is the whole Hallel: Hanukkah, the first day(s) of Pesah, Shavuot and
+      Sukkot through Shemini Atzeret. Rosh Hodesh and the rest of Pesah have the
+      abridged Hallel. -->
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+<tei:fs type="opensiddur:motzaei-shabbat">
+   <tei:f name="omit-vihi-noam">
+      <!-- the coming Sunday to Friday has a festival day in it, so וִיהִי נֹעַם is not
+      said on Saturday night -->
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+<tei:fs type="opensiddur:pirkei-avot">
+   <tei:f name="season">
+      <!-- a Shabbat between Pesah and Rosh Hashanah, when Pirkei Avot is read -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="chapter-1">
+      <!-- chapter 1 is read this Shabbat. One feature per chapter, chapter-1 to chapter-6:
+      at the end of the season two chapters are read together. -->
+      <tei:binary/>
+   </tei:f>
+   <tei:f name="chapter-2"><tei:binary/></tei:f>
+   <tei:f name="chapter-3"><tei:binary/></tei:f>
+   <tei:f name="chapter-4"><tei:binary/></tei:f>
+   <tei:f name="chapter-5"><tei:binary/></tei:f>
+   <tei:f name="chapter-6"><tei:binary/></tei:f>
+   <tei:f name="complete">
+      <!-- declared, not derived: the volume prints all of Pirkei Avot whatever the
+      date. Defaults to false. -->
+      <tei:binary/>
+   </tei:f>
+</tei:fs>
+```
 
 The weekly parsha and special additions can also be calculated:
 ```xml
@@ -1663,30 +1740,6 @@ Shemini Atzeret, Rosh Hashanah, Yom Kippur and Rosh Hodesh.
 `slihot` gives the time of day only: from nightfall until the end of the time for Shaharit. The
 season is not tested, because a personal fast has its selichot at any time of year. A text
 says which season it belongs to.
-
-Similarly, a text may be associated with which service it represents. This value is inherent in the text and will not be automatically calculated:
-```xml
-<tei:fs type="opensiddur:service">
-   <tei:f name="shaharit">
-      <tei:binary/>
-   </tei:f>
-   <tei:f name="minha">
-      <tei:binary/>
-   </tei:f>
-   <tei:f name="maariv">
-      <tei:binary/>
-   </tei:f>
-   <tei:f name="musaf">
-      <tei:binary/>
-   </tei:f>
-   <tei:f name="neila">
-      <tei:binary/>
-   </tei:f>
-   <tei:f name="slihot">
-      <tei:binary/>
-   </tei:f>
-</tei:fs>
-```
 
 Any of the date, time or holiday features may also contain a special value, the equivalent of
 `<tei:symbol value="undefined"/>`. Having this value means that the attribute may have any
