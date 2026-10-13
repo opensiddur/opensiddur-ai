@@ -16,17 +16,18 @@ URN='urn:x-opensiddur:instruction:aseret_yemei_teshuvah/add'
 
 
 class ConditionalInstructionSelectionTests(unittest.TestCase):
-    def compile(self, selected, processor_class):
+    def compile(self, selected, processor_class, note_type='instruction', inside=False):
         temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup)
         base=Path(temp.name)
         for project in ['book','instructions']:(base/project).mkdir()
+        rubric=f'<tei:note type="{note_type}" corresp="{URN}">Original rubric</tei:note>'
         body=f'''<tei:p>Before <j:declare xml:id="d"><tei:fs type="test"><tei:f name="include"><tei:binary value="true"/></tei:f></tei:fs></j:declare>
-          <j:conditional xml:id="c"><tei:note type="instruction" corresp="{URN}">Original rubric</tei:note>
-          <tei:fs type="test"><tei:f name="include"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>Included
+          <j:conditional xml:id="c">{'' if inside else rubric}
+          <tei:fs type="test"><tei:f name="include"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>{rubric if inside else ''}Included
           <j:endConditional target="#c"/> After<j:endDeclare target="#d"/></tei:p>'''
         wrapper=lambda content:f'<tei:TEI xmlns:tei="{TEI}" xmlns:j="{J}" xml:lang="en"><tei:text><tei:body>{content}</tei:body></tei:text></tei:TEI>'
         (base/'book'/'text.xml').write_text(wrapper(body))
-        replacement=etree.fromstring(wrapper(f'<tei:note type="instruction" corresp="{URN}">{selected}</tei:note>').encode())
+        replacement=etree.fromstring(wrapper(f'<tei:note type="{note_type}" corresp="{URN}">{selected}</tei:note>').encode())
         (base/'instructions'/'text.xml').write_bytes(etree.tostring(replacement))
         note=replacement.find('.//{'+TEI+'}note')
         refdb=MagicMock(spec=ReferenceDatabase)
@@ -38,13 +39,21 @@ class ConditionalInstructionSelectionTests(unittest.TestCase):
         roots=result if isinstance(result,list) else [result]
         return ' '.join(' '.join(''.join(n.itertext()).split()) for n in roots),roots
 
-    def test_true_conditional_uses_selected_instruction(self):
+    def test_true_conditional_prints_no_instruction_in_any_wording(self):
         for cls in [CompilerProcessor,ExternalCompilerProcessor,InlineCompilerProcessor]:
             with self.subTest(processor=cls.__name__):
                 text,_=self.compile('Selected rubric',cls)
-                self.assertIn('Selected rubric',text)
+                self.assertNotIn('Selected rubric',text)
                 self.assertNotIn('Original rubric',text)
                 self.assertIn('Included',text);self.assertIn('After',text)
+
+    def test_a_description_inside_a_true_scope_uses_the_selected_wording(self):
+        for cls in [CompilerProcessor,ExternalCompilerProcessor,InlineCompilerProcessor]:
+            with self.subTest(processor=cls.__name__):
+                text,_=self.compile('Selected description',cls,note_type='description',inside=True)
+                self.assertIn('Selected description',text)
+                self.assertNotIn('Original rubric',text)
+                self.assertIn('Included',text)
 
     def test_selected_empty_instruction_omits_fulfilled_rubric_and_keeps_tail(self):
         for cls in [CompilerProcessor,ExternalCompilerProcessor,InlineCompilerProcessor]:

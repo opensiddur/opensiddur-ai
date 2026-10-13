@@ -215,14 +215,14 @@ class TestRangeCutsConditionalScope(unittest.TestCase):
             "urn:s", "urn:s")
         self.assertEqual(_events(holder), ["inside"])
 
-    def test_true_rubric_of_a_scope_open_at_the_start_is_emitted_once(self):
+    def test_the_rubric_of_a_true_scope_open_at_the_start_is_not_emitted(self):
         CompilerProcessor.load_init_settings(
             get_linear_data(), yaml_to_declaration_entries({"t:x": {"a": True}}))
         holder = self._compile(
             _scope("a", "Say:") + '<tei:p>excluded</tei:p>'
             '<tei:p corresp="urn:s">inside</tei:p><j:endConditional target="#a"/>',
             "urn:s", "urn:s")
-        self.assertEqual(_events(holder), ["rubric Say:", "inside"])
+        self.assertEqual(_events(holder), ["inside"])
 
     def test_scope_open_at_the_start_opens_there(self):
         holder = self._compile(
@@ -428,7 +428,7 @@ class TestInlineRangeCutsConditionalScope(unittest.TestCase):
             "s", "e")
         self.assertEqual(self._events(holder), ["inside"])
 
-    def test_true_rubric_of_a_scope_open_at_the_start_is_emitted_once(self):
+    def test_the_rubric_of_a_true_scope_open_at_the_start_is_not_emitted(self):
         CompilerProcessor.load_init_settings(
             get_linear_data(), yaml_to_declaration_entries({"t:x": {"a": True}}))
         holder = self._compile(
@@ -436,7 +436,7 @@ class TestInlineRangeCutsConditionalScope(unittest.TestCase):
             '<tei:seg xml:id="s"/>inside <tei:seg xml:id="e"/><j:endConditional target="#a"/>'
             '</tei:p>',
             "s", "e")
-        self.assertEqual(self._events(holder), ["rubric Say:", "inside"])
+        self.assertEqual(self._events(holder), ["inside"])
 
     def test_scope_open_at_the_start_opens_before_its_text(self):
         """The start's own text, and nested text after it, follow the opener."""

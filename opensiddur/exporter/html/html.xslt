@@ -44,7 +44,7 @@
          not a header's notes, not standoff ones, not instructions. -->
     <xsl:accumulator name="note-number" as="xs:integer" initial-value="0">
         <xsl:accumulator-rule
-            match="tei:note[not(@type = 'instruction')][ancestor::tei:text][not(ancestor::tei:standOff)]"
+            match="tei:note[not(@type = ('instruction', 'description'))][ancestor::tei:text][not(ancestor::tei:standOff)]"
             select="$value + 1"/>
     </xsl:accumulator>
     <xsl:mode use-accumulators="note-number" on-no-match="shallow-skip"/>
@@ -58,6 +58,19 @@
         <xsl:variable name="script" select="$subtags[position() gt 1][string-length(.) = 4][1]"/>
         <xsl:sequence select="if ($script) then $script = ('hebr', 'arab', 'syrc')
                               else $subtags[1] = ('he', 'yi', 'arc', 'ar', 'fa', 'jrb', 'lad', 'ji')"/>
+    </xsl:function>
+
+    <!-- True when the first thing a scope governs is a rubric: an instruction, or the
+         description of the passage (JLPTEI-3, *Kinds of rubric*). It announces the scope
+         as the scope's own note would. An annotation anchored at the scope's start is
+         passed over, as a milestone is: it is the apparatus, not the text. reledmac.xslt
+         asks the same question. -->
+    <xsl:function name="f:opens-with-rubric" as="xs:boolean">
+        <xsl:param name="start" as="element()"/>
+        <xsl:sequence select="exists($start/following-sibling::node()[
+            not(self::text()[normalize-space() = '']) and not(self::tei:milestone or self::tei:pb)
+            and not(self::tei:note[not(@type = ('instruction', 'description'))])][1]
+            [self::tei:note[@type = ('instruction', 'description')]])"/>
     </xsl:function>
 
     <!-- Whether a node sits in running text, where only phrasing content is allowed. -->
@@ -427,7 +440,7 @@
 
     <!-- ── Notes ──────────────────────────────────────────────────────────── -->
 
-    <xsl:template match="tei:note[@type = 'instruction']">
+    <xsl:template match="tei:note[@type = ('instruction', 'description')]">
         <xsl:element name="{if (f:in-text(.)) then 'span' else 'p'}">
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'rubric'"/>
@@ -472,15 +485,16 @@
                                 select="('cm', if ($opens) then 'cm-open' else 'cm-close',
                                          concat('m', @p:cid),
                                          if ($in-text) then 'cm-inline' else 'cm-block',
-                                         if ($opens and not(tei:note[1][@type = 'instruction']))
+                                         if ($opens and not(tei:note[@type = ('instruction', 'description')])
+                                             and not(f:opens-with-rubric(.)))
                                          then 'cm-norubric' else (),
                                          if (@p:silent = 'true') then 'cm-silent' else (),
                                          if ($opener/@type = 'marked') then 'cm-marked' else ())"/>
             </xsl:call-template>
             <xsl:if test="$opens">
-                <xsl:apply-templates select="tei:note[@type = 'instruction']" mode="rubric"/>
+                <xsl:apply-templates select="tei:note[@type = ('instruction', 'description')]" mode="rubric"/>
                 <!-- Notes the compiler set on the rubric: numbered with the others, so shown. -->
-                <xsl:apply-templates select="tei:note[not(@type = 'instruction')]"/>
+                <xsl:apply-templates select="tei:note[not(@type = ('instruction', 'description'))]"/>
             </xsl:if>
             <span class="cm-br" aria-hidden="true">
                 <xsl:if test="$in-text or $block = 'brackets'">

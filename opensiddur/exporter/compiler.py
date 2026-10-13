@@ -28,14 +28,13 @@ from lxml.etree import ElementBase
 from lxml import etree
 
 from opensiddur.exporter.constants import (
+    RUBRIC_NOTE_TYPES,
     JLPTEI_NAMESPACE,
     PROCESSING_NAMESPACE,
     TEI_NS,
     is_element_node,
 )
 
-#: The instruction a conditional carries, which outlives a condition that holds.
-TEI_NOTE = f"{{{TEI_NS}}}note"
 from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, is_reader_supplied
 from opensiddur.exporter.derivation_graph import DERIVATION_SPECS
 from opensiddur.exporter.derived_settings import (
@@ -135,10 +134,6 @@ def transclusion_type_of(element: ElementBase) -> str:
     """A transclusion's type: its @type, or 'external' when that is absent or empty."""
     return element.get('type') or 'external'
 
-
-#: Marks an element whose ids its own processor has already rewritten, for the one
-#: `_rewrite_ids` call that would otherwise rewrite them again; that call removes it.
-_ALREADY_REWRITTEN = f"{{{PROCESSING_NAMESPACE}}}ids-rewritten"
 
 
 class UnresolvedTarget(ValueError):
@@ -304,9 +299,6 @@ class CompilerProcessor:
 
     def _rewrite_single_element_ids(self, element: ElementBase) -> ElementBase:
         """ Rewrite the ids of a single element """
-        if _ALREADY_REWRITTEN in element.attrib:
-            del element.attrib[_ALREADY_REWRITTEN]
-            return element
         xml_id = element.attrib.get('{http://www.w3.org/XML/1998/namespace}id')
         target = element.attrib.get('target')
         target_end = element.attrib.get('targetEnd')
@@ -544,7 +536,7 @@ class CompilerProcessor:
 
         is_instruction_note = (
             is_note
-            and element.get("type", "") == "instruction"
+            and element.get("type") in RUBRIC_NOTE_TYPES
         )
 
         if is_instruction_note:
@@ -1024,7 +1016,7 @@ class CompilerProcessor:
     def _place_conditional_marker(
         self, element: ElementBase, marker: Optional[ElementBase], before_start: bool,
     ) -> list[ElementBase]:
-        """Emit a conditional's marker (or its kept rubric) so the range's scopes stay paired.
+        """Emit a conditional's marker so the range's scopes stay paired.
 
         A range transcluded from the middle of a file can start or end inside a conditional
         scope. The scope's text that falls in the range is still governed by it, so the
@@ -1117,27 +1109,9 @@ class CompilerProcessor:
                 if self.linear_data.defer_reader_settings:
                     self._pin_known_values(retained, node)
                 return True, retained
-            if result == TriState.TRUE:
-                # The instruction outlives the condition that carried it. It is the rubric
-                # the edition prints -- "When the Reader repeats the Shemoneh Esreh, the
-                # following Kedushah is said:" -- and belongs to the text, so it is set
-                # wherever the passage is. Only a condition resolving *false* takes its
-                # instruction with it, the passage not being said at all.
-                kept = element.find(TEI_NOTE)
-                if kept is not None and kept.get("type") == "instruction":
-                    # A resolved rubric remains an instruction, so the edition's
-                    # instruction priority must still choose its wording. An empty
-                    # selected wording intentionally suppresses a fulfilled rubric.
-                    selected, command = self._annotate(kept)
-                    if command == _AnnotationCommand.REPLACE:
-                        note = selected[0]
-                        if not "".join(note.itertext()).strip():
-                            return True, None
-                        # Compiled, and its ids rewritten, by its own processor; the caller
-                        # rewrites what it is handed, which would do it twice.
-                        note.set(_ALREADY_REWRITTEN, "")
-                        return True, note
-                    return True, self._copy_element_subtree(kept)
+            # A true condition is a passage that is simply said: the rubric telling when to
+            # say it has nothing left to tell, and goes with the condition. A rubric telling
+            # what the passage is belongs to the passage, and is encoded inside the scope.
             return True, None
 
         if element.tag == J_END_CONDITIONAL:
@@ -1213,7 +1187,7 @@ class CompilerProcessor:
             # dropped in front of its heading and its first alignment boundary. Rubrics
             # are blocks of their own and keep the opening position; so does everything
             # else when the element has no text to anchor on. See annotation_placement.
-            movable = [note for note in annotated if note.get('type') != 'instruction']
+            movable = [note for note in annotated if note.get("type") not in RUBRIC_NOTE_TYPES]
             anchored = (set() if not (movable and
                                       place_structural_annotations_in_tree(copied, movable))
                         else {id(note) for note in movable})

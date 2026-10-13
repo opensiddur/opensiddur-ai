@@ -229,6 +229,13 @@ class TestPageReferences(unittest.TestCase):
                        **{"page-ref-text": "here"})
         self.assertEqual(main.xpath("string(//h:a)", namespaces=NS), "here")
 
+    def test_a_description_is_set_as_a_rubric_and_takes_no_note_number(self):
+        main = _render('<tei:p><tei:note type="description">Reader:</tei:note>Body'
+                       '<tei:note>A comment.</tei:note></tei:p>')
+        rubric = main.xpath("//h:span[@class='rubric'] | //h:p[@class='rubric']", namespaces=NS)
+        self.assertEqual(["Reader:"], ["".join(r.itertext()) for r in rubric])
+        self.assertEqual(1, len(main.xpath("//*[contains(@class, 'note-anchor')]", namespaces=NS)))
+
     def test_optional_reference_to_an_absent_passage_is_removed(self):
         main = _render('<tei:p>Before.<tei:note type="instruction">'
                        f'<tei:seg type="optional-page-reference">Grace: page {PAGE_REF}.</tei:seg>'
@@ -336,14 +343,22 @@ class TestLabelsReachEveryElement(unittest.TestCase):
                          [("two", ["option", "option-alt", "c0"])])
         self.assertEqual(len(main.xpath("//*[contains(@class, 'm0')]")), 2)
 
-    def test_a_rubric_is_the_first_note(self):
-        """As the compiler keeps a true scope's rubric only when its first note is one."""
+    def test_a_rubric_after_a_commentary_note_still_announces_the_scope(self):
+        """As in the TeX and the Python silence test: any rubric of the scope's own counts."""
         main = _render('<j:conditional xml:id="a"><tei:note type="commentary">c</tei:note>'
                        '<tei:note type="instruction">Say:</tei:note><tei:fs type="t:x">'
                        '<tei:f name="a"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
                        '<tei:p>x</tei:p><j:endConditional target="#a"/>')
         opener = main.xpath("//*[contains(@class, 'cm-open')]", namespaces=NS)[0]
-        self.assertIn("cm-norubric", _classes(opener))
+        self.assertNotIn("cm-norubric", _classes(opener))
+
+    def test_a_scope_that_opens_with_a_description_is_announced_by_it(self):
+        main = _render('<j:conditional xml:id="a"><tei:fs type="t:x">'
+                       '<tei:f name="a"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
+                       '<tei:note type="description">Reader:</tei:note>'
+                       '<tei:p>x</tei:p><j:endConditional target="#a"/>')
+        opener = main.xpath("//*[contains(@class, 'cm-open')]", namespaces=NS)[0]
+        self.assertNotIn("cm-norubric", _classes(opener))
 
 
 class TestCss(unittest.TestCase):
@@ -620,12 +635,12 @@ class TestBuildBook(unittest.TestCase):
 
     def test_without_scripts_the_page_is_the_printed_book(self):
         """The settings file says it is a wedding: the not-a-wedding passage is hidden, the
-        wedding passage keeps its rubric and drops its rule, and the minyan is undecided."""
+        wedding passage drops its rubric and its rule, and the minyan is undecided."""
         page = self._build()
         css = self._between(page, '<style id="os-cond-default">', "</style>").strip()
         self.assertEqual(css.splitlines(), [
             ".c1,.m1{display:none}",
-            ".m0.cm-close,.m0.cm-norubric,.m0 .cm-br,.m4.cm-close,.m4.cm-norubric,.m4 .cm-br"
+            ".m0.cm-close,.m0 > .rubric,.m0 .cm-br,.m4.cm-close,.m4 > .rubric,.m4 .cm-br"
             "{display:none}",
         ])
 

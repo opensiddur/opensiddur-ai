@@ -1,6 +1,7 @@
 """Resolve page pointers against content surviving compilation, before typesetting or rendering."""
 import hashlib
 from lxml import etree
+from opensiddur.exporter.constants import RUBRIC_NOTE_TYPES
 
 TEI = "http://www.tei-c.org/ns/1.0"
 P = "http://jewishliturgy.org/ns/processing"
@@ -56,7 +57,7 @@ def resolve_page_references(root, every_occurrence=False):
                span.xpath(".//tei:ref[@type='page']", namespaces=ns)):
             note = span.getparent()
             _remove_preserving_tail(span)
-            if (note.tag == "{" + TEI + "}note" and note.get("type") == "instruction"
+            if (note.tag == "{" + TEI + "}note" and note.get("type") in RUBRIC_NOTE_TYPES
                     and not len(note) and not (note.text or "").strip()):
                 _remove_preserving_tail(note)
     labelled = set()

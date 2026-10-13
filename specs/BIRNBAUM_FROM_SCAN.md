@@ -1215,15 +1215,14 @@ Three uses share these files:
 * Inside Avot, six independent `chapter-1` through `chapter-6` features gate
   the chapter transclusions. Known Hebrew date and Israel/diaspora location derive
   the weekly selections; missing inputs leave them MAYBE, with editorial instructions.
-* For the complete independent text, set all six chapter features and `complete`
-  to TRUE. `complete` suppresses selection instructions; it does not select or
-  exclude chapters. Set `season` TRUE as well if compiling through the siddur caller.
+* For the complete independent text, set all six chapter features to TRUE, and
+  `season` as well if compiling through the siddur caller. Each selection rubric is its
+  `j:conditional`'s own, so a chapter known to be read prints without it.
   Explicit chapter values override calendar derivation, including combined chapters.
 
-The complete preset is `specs/birnbaum_scan/settings_avot_complete.yaml`.
-The exporter retains ordinary conditional rubrics when their conditions are TRUE,
-so complete-text suppression is encoded independently. Its default is FALSE; all
-chapter selectors and the seasonal selector remain unknown without calendar inputs.
+The complete preset is `specs/birnbaum_scan/settings_avot_complete.yaml`. Without
+calendar inputs, all chapter selectors and the seasonal selector remain unknown, and
+each chapter is printed with the rubric that says when it is read.
 
 The weekly schedule follows Hebcal’s summer cycle:
 https://github.com/hebcal/learning/tree/main/pirkeiavot . It begins after Pesach
