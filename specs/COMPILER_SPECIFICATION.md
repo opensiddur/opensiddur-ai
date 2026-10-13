@@ -221,7 +221,7 @@ compiler warns about any marker that does not pair.
 
 ### Derived settings (feature defaulting)
 
-Many JLPTEI feature structures are **derived** from other settings (e.g. `opensiddur:hebrew-date` from `opensiddur:gregorian-date` and `opensiddur:location`; `opensiddur:holiday` from dates, times, and location). See `schema/JLPTEI-3.md` for the full derivation graph.
+Many JLPTEI feature structures are **derived** from other settings (e.g. `opensiddur:hebrew-date` from `opensiddur:gregorian-date` and `opensiddur:location`; `opensiddur:holiday` from dates, times, and location). The derivations and the inputs each needs are listed in `DERIVATION_SPECS` (`opensiddur/exporter/derivation_graph.py`), which also orders them; `schema/JLPTEI-3.md` describes what each derived feature means. Every type and feature, derived or not, and the kind of value each takes are in the settings registry (`opensiddur/exporter/features.yaml`), against which the compiler checks every `j:declare`, `j:conditional` and `j:condition` it reads and refuses one that breaks it.
 
 A feature structure may also derive one of its own features: `opensiddur:location/timezone` is derived from the latitude and longitude of the same structure. `opensiddur:time` is read as a wall clock reading in that zone.
 

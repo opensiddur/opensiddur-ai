@@ -15,6 +15,7 @@ from opensiddur.exporter.linear import (
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
+from opensiddur.exporter import feature_registry
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
@@ -144,6 +145,23 @@ class SettingsYaml(BaseModel):
     @classmethod
     def validate_annotations(cls, v: list[str], info: ValidationInfo) -> list[str]:
         return _validate_project_list(v, _project_directory_from_context(info))
+
+    @field_validator("declarations")
+    @classmethod
+    def validate_declarations(
+        cls, v: dict[str, dict[str, DeclarationFeatureValue]]
+    ) -> dict[str, dict[str, DeclarationFeatureValue]]:
+        # Each type and feature in the opensiddur: namespace must be registered, and each
+        # value of the registered kind. A misspelt feature is otherwise a setting nothing reads.
+        problems = [
+            problem
+            for fs_type, features in v.items()
+            for feature, value in features.items()
+            for problem in feature_registry.check_yaml_value(fs_type, feature, value)
+        ]
+        if problems:
+            raise ValueError("; ".join(problems))
+        return v
 
 def read_settings(
     settings_file: Path,

@@ -6,6 +6,7 @@ from lxml import etree
 
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.html.markers import P_CID, P_SCOPES, P_SPAN, prepare
+from opensiddur.tests.exporter.registry_helpers import unchecked_registry
 
 J = JLPTEI_NAMESPACE
 P = PROCESSING_NAMESPACE
@@ -228,6 +229,8 @@ class TestSilence(unittest.TestCase):
                                    ("endConditional", "true"), ("endConditional", "false")])
 
 
+# Its feature names are made up for the test.
+@unchecked_registry()
 class TestFeatures(unittest.TestCase):
 
     def test_reader_features_with_their_values_and_reach(self):

@@ -25,6 +25,7 @@ from opensiddur.exporter.linear import (
     reset_linear_data,
 )
 from opensiddur.exporter.settings import load_settings
+from opensiddur.tests.exporter.registry_helpers import unchecked_registry
 
 TEI = TEI_NS
 J = JLPTEI_NAMESPACE
@@ -40,6 +41,8 @@ def _declare_xml(body: str) -> bytes:
 </root>'''.encode()
 
 
+# Its feature names are made up for the test.
+@unchecked_registry()
 class TestParseConditionalSettings(unittest.TestCase):
     """Unit tests for tei:fs parsing and value types."""
 
