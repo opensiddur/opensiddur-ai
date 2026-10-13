@@ -37,7 +37,7 @@ Projects must have globally unique names. If a source has a particular common na
 
 ## URNs and linkages
 
-URNs (Universal Resource Names) are a form of URI (universal resource identifier) that allow reference to specific sections, paragraphs, verses, or (sometimes) words within our liturgical or scriptural XML documents. We use our own custom URN namespace that begins `urn:x-opensiddur:` The remainder of the URN is hierarchical, with the type of what is being identified (eg, `text`, `note`, `instruction`, `setting`, `condition`) The remainder is hierarchical. The final part of the URN is the project identifier, which will be after the `@` sign.
+URNs (Universal Resource Names) are a form of URI (universal resource identifier) that allow reference to specific sections, paragraphs, verses, or (sometimes) words within our liturgical or scriptural XML documents. We use our own custom URN namespace that begins `urn:x-opensiddur:` The remainder of the URN is hierarchical, beginning with the type of what is being identified (eg, `text`, `note`, `instruction`, `setting`, `condition`). A project identifier may follow, after an `@` sign, where a reference must name the project it is taken from; a `@corresp` never carries one.
 
 An element's  urn is stored in the TEI-global `@corresp` attribute.
 
@@ -832,8 +832,8 @@ Two types of annotations are recognized:
 #### Instructions
 
 Instructions are annotated as `tei:note` with a `type` attribute of `instruction` at the point where the instruction
-affects the reader's usage of the text. If the instruction covers a range of text, a `targetEnd` attribute should
-be used to indicate the end of its effect.
+affects the reader's usage of the text. An instruction that governs a passage — "On Shabbat:" — is not a range on
+its own note; it is the rubric of the `j:conditional` around the passage.
 
 Instructions may also have canonical labels (`corresp` attributes) with `urn:x-opensiddur:instruction:` URNs. If present, instruction sets may be swapped dynamically. For example, if the same "On shabbat" instruction exists in the source `A` and `B`, and they are both declared with the same `corresp` attribute, a setting can be used to choose which source's instruction should be used.
 
@@ -842,11 +842,9 @@ If an instruction says when a text is read, it is the condition's own rubric: th
 the text is, who says it or how is a description, and goes inside the text the conditional controls (see
 [Kinds of rubric](#kinds-of-rubric) below).
 
-The following shows an example instructional note:
+The following shows an example instructional note, a directive with an instruction URN:
 ```xml
-<tei:note type="instruction" n="note:time:shabbat" targetEnd="#end_on_shabbat">On shabbat</tei:note>
-and on this holy Sabbath day
-<tei:anchor xml:id="end_on_shabbat"/>
+<tei:note type="instruction" corresp="urn:x-opensiddur:instruction:amidah/rise">Rise.</tei:note>
 ```
 
 #### Comments and Notes
@@ -1027,7 +1025,13 @@ result is undefined.
 
 If the secular date/time is not set, the Hebrew date/time may be set independently.
 
-If both the secular date and the Hebrew date are set, the last setting prevails.
+If both the secular date and the Hebrew date are set, the last setting prevails. The other is then derived
+from it: a Hebrew date declared after a secular one gives the secular date it falls on (the
+evening before, at a time after nightfall), and a secular date declared after a Hebrew one gives
+its Hebrew date. A later Hebrew date may be partial, a year alone, and takes the rest from the
+date it overrides. A later secular date without a location cannot give a Hebrew date, and a later
+Hebrew date that is not a date cannot give a secular one: the date is then undefined, and so is
+everything that follows from it.
 
 In order to calculate the Hebrew date/time from the secular date/time, the location is also required. It is encoded in the following structure:
 ```xml
@@ -1086,7 +1090,12 @@ Given dates and times, the following values can then be derived:
 ```
 
 The `day` is between `1` (Sunday/Yom Rishon) and `7` (Saturday/Shabbat).
-If the day cannot be determined because the time is between sunset and star-rise, the hebrew-day is set to the following day and the `bayn-hashmashot` indicator is `true`. Consequently, the end of Shabbat will be on "day 1."
+The Hebrew day begins at nightfall (tzet hakochavim), when a time and a location are declared:
+from nightfall the Hebrew date, the `hebrew-day` and every feature derived from them are those
+of the following day, so the end of Shabbat is on day `1`. Between sunset and nightfall it is
+doubtful which day it is. Until nightfall the day that is ending is kept, and
+`bayn-hashmashot` is `true`; a text that must treat that window as the coming day (the
+restrictions of Shabbat begin at sunset) conditions on `bayn-hashmashot` as well.
 
 From the dates, times, and locations, the holiday calendar is calculated:
 ```xml
@@ -1510,7 +1519,8 @@ annual haftarah stands in for the cycle years a parshah has no reading for — t
 combined with `j:any`, which does answer true as soon as one of them is true.
 
 There are also special manual overrides available, which
-are never set automatically (they default to the `false` value)
+are never set automatically. Each defaults to `false` when nothing is declared; one declared
+`undefined` is undefined, as any other feature is.
 ```xml
 <tei:fs type="opensiddur:override">
    <tei:f name="omit-tahanun">
@@ -1647,7 +1657,9 @@ the variants evaluate independently of one another.
 Leaving `opensiddur:rite` unset is meaningful and is the right default for a printed volume:
 an undefined feature evaluates to undefined rather than to false, so every variant is kept
 together with the heading that says whose custom it is. This is unlike `opensiddur:override`,
-where undefined is equivalent to false.
+whose features default to `false` when nothing is declared. Declaring an override `undefined`
+(`<tei:default/>`, or YAML `null`) is still undefined, not false: the passages it governs are
+kept with their rubrics.
 
 The feature set is open — a rite that is not listed below is still valid. Known rite names:
 `ashkenaz`, `sepharad`, `edot_hamizrach`, `teimani_baladi`, `teimani_shami`, `italiani`,
@@ -1707,7 +1719,10 @@ it, and one leaves it out by declaring `false`. An electronic book leaves both t
 reader.
 
 
-The zman tefillah is also able to be calculated (though there may also be other settings required to determine how to calculate it):
+Which service a text belongs to is given by `opensiddur:service-time`. It is derived from the
+date and the time of day when a date, a time and a location are declared (`musaf` and `neila`
+from the day's festivals as well), and a text declares it for the service it is part of — the Shaharit Amidah in a `j:declare` of `shaharit` — so that the
+conditions inside it can ask which service this is whatever the date:
 ```xml
 <tei:fs type="opensiddur:service-time">
    <tei:f name="shaharit">

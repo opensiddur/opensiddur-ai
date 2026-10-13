@@ -543,6 +543,50 @@ The compiled output:
 - Preserves language attributes where needed
 - Marks file sources for traceability
 
+### What a consumer must handle
+
+Every output stage (`tex/reledmac.xslt`, `html/html.xslt`) reads the compiled document, and must
+handle each of the following. A construct missing from a stage is content silently dropped from
+its output.
+
+**Processing elements (`p:`)**
+- `p:transclude` — the content of an external transclusion, in place of the `j:transclude`;
+  `@target`, `@type`, and the source's `@p:project` / `@p:file_name`.
+- `p:transcludeInline` — the text of an inline transclusion: words only, with any conditional
+  markers of the scopes the range overlaps among them.
+- `p:parallel` (`@column-order`) holding two `p:parallelItem`s (`@role` `primary` or
+  `parallel`, `@xml:lang`, `@p:project`, `@p:file_name`) — one aligned unit of a parallel
+  compile, its two streams side by side.
+- `p:pinned` — inside a retained `j:conditional` of an electronic compile, a JSON object of the
+  settings decided at compile time that the condition reads, for the reader's device.
+
+**Processing attributes**
+- `@p:project`, `@p:file_name` — on content that came from a file other than its parent's:
+  where a licence, a credit or a page reference belongs.
+- `@p:part` (`first`, `middle`, `last`) — an element that alignment divided across several
+  `p:parallel` units; each piece carries which it is, so that the element is closed once, after
+  its last piece.
+- `@p:heading-level` — on `tei:head`: the depth of the heading, counted through transclusions.
+- `@p:destination="electronic"` — on the root, for a compile that leaves the reader's settings
+  undecided (`--destination electronic`).
+
+**Retained JLPTEI**
+- `j:conditional` / `j:endConditional` — the markers of a scope whose condition was undecided,
+  with their condition (`tei:fs`, `j:all`, `j:any`, `j:none`, `j:one`) and the scope's own
+  rubric. Decided scopes are resolved away. A scope may begin with a rubric of its own instead
+  (*Kinds of rubric*, JLPTEI-3).
+- `tei:choice` with `j:read` / `j:written`.
+
+**Notes**
+- `tei:note type="instruction"` and `type="description"` are rubrics, set inline in the text.
+- Every other note is an annotation, anchored before the first words of what it annotates. As
+  well as in running text, it can sit inside a `tei:anchor`, inside a `tei:head`, and inside a
+  `j:conditional`'s rubric.
+
+The output stages add their own markers before rendering — `@p:silent` on scope markers
+(`conditional_markers.mark_silent_scopes`), page labels, and note serials — which are not part of
+the compiled document.
+
 ## Detailed State Machine Diagrams
 
 ### ExternalCompilerProcessor State Flow

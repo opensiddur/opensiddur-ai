@@ -11,31 +11,33 @@ Open Siddur JLPTEI corpus. It supplements [JLPTEI-3.md](../schema/JLPTEI-3.md).
 | Shared liturgy (kiddush, birkat hamazon, etc.) | `urn:x-opensiddur:text:prayer:` | `…/kiddush/…` |
 | Biblical quotations | `urn:x-opensiddur:text:bible:` | `…/genesis/1/31` |
 
-Project suffix: `@heidenheim_haggadah_1822` (Hebrew) or
-`@feinstein_haggadah_translation_2009` (English).
+A `@corresp` carries the URN alone, with no project: the Hebrew and the English carry the
+same URNs, which is what aligns them. A project suffix — `@heidenheim_haggadah_1822`
+(Hebrew) or `@feinstein_haggadah_translation_2009` (English) — belongs only on a
+`j:transclude` target that must name the project it takes the text from.
 
 ## Haggadah namespace
 
-Top-level project URN:
+Top-level URN:
 
 ```
-urn:x-opensiddur:text:haggadah:haggadah@<project_id>
+urn:x-opensiddur:text:haggadah:haggadah
 ```
 
-Index/outline files use the index slug as the final path component before `@`:
+Index/outline files use the index slug as the final path component:
 
 ```
-urn:x-opensiddur:text:haggadah:pre_seder@heidenheim_haggadah_1822
-urn:x-opensiddur:text:haggadah:seder@heidenheim_haggadah_1822
-urn:x-opensiddur:text:haggadah:magid@heidenheim_haggadah_1822
+urn:x-opensiddur:text:haggadah:pre_seder
+urn:x-opensiddur:text:haggadah:seder
+urn:x-opensiddur:text:haggadah:magid
 ```
 
 Leaf section files use the section slug:
 
 ```
-urn:x-opensiddur:text:haggadah:bedikat_chametz@heidenheim_haggadah_1822
-urn:x-opensiddur:text:haggadah:magid/ha_lachma_anya@heidenheim_haggadah_1822
-urn:x-opensiddur:text:haggadah:nirtzah/chasal_siddur_pesach@heidenheim_haggadah_1822
+urn:x-opensiddur:text:haggadah:bedikat_chametz
+urn:x-opensiddur:text:haggadah:magid/ha_lachma_anya
+urn:x-opensiddur:text:haggadah:nirtzah/chasal_siddur_pesach
 ```
 
 Nested magid and nirtzah subsections use a two-level path under `haggadah:`.
@@ -56,6 +58,12 @@ urn:x-opensiddur:text:haggadah:magid/ha_lachma_anya/1
 <tei:milestone unit="paragraph" n="1" corresp="urn:x-opensiddur:text:haggadah:kadesh/1"/>
 <tei:p>…</tei:p>
 ```
+
+These numbered URNs align the Hebrew with its translation, which were divided together. A
+number is a poor key across editions, though, since the count is each edition's own (see
+*Sub-division numbering* in SIDDUR_URN_SCHEME.md): another haggadah should share a numbered
+URN only where it divides the passage the same way, and prefers a named subdivision where the
+passage has a name.
 
 Index files (such as `magid.xml` or `nirtzah.xml`) may contain `tei:head` and body
 content for the section title and any text that belongs to the index division itself,

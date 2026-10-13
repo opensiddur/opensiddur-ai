@@ -461,12 +461,18 @@ canonical one:
 urn:x-opensiddur:text:prayer:amidah/avot/1
 ```
 
-**Cross-edition alignment is guaranteed only down to the last _named_ component.** Two
-editions that both name `prayer:amidah/avot` align there; that both call something `/1`
-means only that each divided it, not that they divided it the same way. This is the
-honest counterpart to the haggadah's `magid/ha_lachma_anya/1`, and it is why a page turn
-in one printing must never become a numbered division — that would claim an alignment
-which does not exist.
+A numbered URN aligns like any other: the compiler pairs identical URNs, and two texts that
+both carry `prayer:amidah/avot/1` are set side by side there. That is what the haggadah's
+`magid/ha_lachma_anya/1` relies on to align its Hebrew paragraphs with their translation.
+
+**But a number is a poor alignment key, and a named subdivision is preferred.** The count is
+the edition's own, so it can change between editions — a reprint that divides a paragraph
+in two renumbers everything after it — and two editions that both call something `/1` have
+only each divided it, not necessarily the same way. Use a number only where the texts that
+share it were divided together, as a source and its translation are; name the subdivision
+where it has a name. For the same reason a page turn in one printing must never become a
+numbered division: it would claim an alignment with every other edition that does not
+exist.
 
 ## Ending a scope: the unit-terminating milestone
 

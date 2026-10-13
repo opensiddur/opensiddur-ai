@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import logging
+from datetime import date, timedelta
 from enum import StrEnum
 from typing import Any
 
+from pyluach import dates as pyluach_dates
+
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.calendar.compute import (
+    FS_GREGORIAN,
     FS_HEBREW_DATE,
     FS_READING_CYCLE,
     READING_CYCLE_DEFAULTS,
     SettingSnapshot,
+    _effective_gregorian_date,
 )
 from opensiddur.exporter.conditional_settings import INIT_DECLARE_ID
 from opensiddur.exporter.derivation_graph import DerivationSpec, topological_derivation_order
@@ -150,10 +155,46 @@ def _clear_derived(linear_data: LinearData, fs_type: str, feature_name: str) -> 
     _push_static_default(linear_data, fs_type, feature_name)
 
 
+def _unknown_overridden(
+    linear_data: LinearData, fs_type: str, overridable: frozenset[tuple[str, str]],
+) -> None:
+    """A later declaration overrides these features, but what it gives cannot be worked out.
+
+    The earlier declared value no longer holds, and nothing stands in for it: the feature is
+    undefined rather than left at a value the volume has since contradicted.
+    """
+    for overridden_type, feature_name in sorted(overridable):
+        if overridden_type != fs_type:
+            continue
+        _remove_derived_for_feature(linear_data, fs_type, feature_name)
+        register_derived_entry(
+            linear_data,
+            ConditionalSettingEntry(
+                declare_id=derived_declare_id(fs_type, feature_name),
+                fs_type=fs_type,
+                feature_name=feature_name,
+                value=Undefined,
+                source="derived",
+                contributors=_explicit_contributors(linear_data, FS_GREGORIAN),
+            ),
+        )
+
+
+def _explicit_contributors(linear_data: LinearData, fs_type: str) -> set[str]:
+    """The declarations that give a date's year, month and day."""
+    return {
+        entry.declare_id
+        for entry in (get_active_setting_entry(linear_data, fs_type, feature)
+                      for feature in _DATE_FEATURES)
+        if entry is not None and _is_explicit(entry)
+    }
+
+
 def _apply_derivation_spec(
     linear_data: LinearData,
     spec: DerivationSpec,
     snapshot: SettingSnapshot,
+    overridable: frozenset[tuple[str, str]] = frozenset(),
 ) -> None:
     fs_type = spec.fs_type
     existing_features = {
@@ -166,6 +207,7 @@ def _apply_derivation_spec(
     if computed is None:
         for feature_name in existing_features:
             _clear_derived(linear_data, fs_type, feature_name)
+        _unknown_overridden(linear_data, fs_type, overridable)
         return
 
     contributors, inputs_ok = _collect_contributors(linear_data, spec.required_inputs)
@@ -174,11 +216,13 @@ def _apply_derivation_spec(
         # so it goes rather than standing in for a value nothing now supports.
         for feature_name in computed:
             _clear_derived(linear_data, fs_type, feature_name)
+        _unknown_overridden(linear_data, fs_type, overridable)
         return
 
     for feature_name, value in computed.items():
         winning = get_active_setting_entry(linear_data, fs_type, feature_name)
-        if winning is not None and _is_explicit(winning):
+        if (winning is not None and _is_explicit(winning)
+                and (fs_type, feature_name) not in overridable):
             continue
         _remove_derived_for_feature(linear_data, fs_type, feature_name)
         register_derived_entry(
@@ -222,11 +266,119 @@ def recalculate_derived_settings(
             linear_data, fs_type, feature_name
         ),
     )
-    for spec in topological_derivation_order():
-        _apply_derivation_spec(linear_data, spec, snapshot)
+    # The dates and what follows from them are worked out together until they agree: a later
+    # Hebrew date may be partial, and take its month and day from the derivation it overrides.
+    for _ in range(_MAX_DATE_PASSES):
+        before = _date_fingerprint(linear_data)
+        overridable = _reconcile_dates(linear_data, snapshot)
+        for spec in topological_derivation_order():
+            _apply_derivation_spec(linear_data, spec, snapshot, overridable)
+        if _date_fingerprint(linear_data) == before:
+            break
 
     if trigger == SettingChangeTrigger.INIT:
         _warn_on_a_date_without_a_place(snapshot)
+
+
+_DATE_FEATURES = ("year", "month", "day")
+
+#: Enough for a partial later date to be filled in and the result to settle.
+_MAX_DATE_PASSES = 3
+
+
+def _warn_once(linear_data: LinearData, message: str) -> None:
+    if message not in linear_data.date_warnings:
+        linear_data.date_warnings.add(message)
+        logger.warning(message)
+
+
+def _date_fingerprint(linear_data: LinearData) -> tuple:
+    return tuple(
+        _get_setting_from_linear_data(linear_data, fs_type, feature)
+        for fs_type in (FS_GREGORIAN, FS_HEBREW_DATE) for feature in _DATE_FEATURES)
+
+
+def _last_declared(linear_data: LinearData, fs_type: str) -> int:
+    """Where the latest declaration of a date's year, month or day stands, or -1 for none."""
+    for index in range(len(linear_data.conditional_settings) - 1, -1, -1):
+        entry = linear_data.conditional_settings[index]
+        if (entry.fs_type == fs_type and entry.feature_name in _DATE_FEATURES
+                and _is_explicit(entry)):
+            return index
+    return -1
+
+
+def _reconcile_dates(
+    linear_data: LinearData, snapshot: SettingSnapshot,
+) -> frozenset[tuple[str, str]]:
+    """When both a secular and a Hebrew date are declared, the last one declared prevails.
+
+    JLPTEI-3: "If both the secular date and the Hebrew date are set, the last setting
+    prevails." A later secular date makes the Hebrew date derived from it override the one
+    declared earlier: the features returned may be overridden by derivation. A later Hebrew
+    date gives the secular date that day falls on, overriding the one declared earlier, so
+    that everything computed from the secular date follows it too.
+    """
+    gregorian = _last_declared(linear_data, FS_GREGORIAN)
+    hebrew = _last_declared(linear_data, FS_HEBREW_DATE)
+    if gregorian < 0 or hebrew < 0 or gregorian > hebrew:
+        for feature_name in _DATE_FEATURES:
+            _clear_derived(linear_data, FS_GREGORIAN, feature_name)
+        if gregorian >= 0 and hebrew >= 0:
+            # Without a location it cannot give one, and the Hebrew date is undefined;
+            # _warn_on_a_date_without_a_place says so.
+            return frozenset((FS_HEBREW_DATE, feature) for feature in _DATE_FEATURES)
+        return frozenset()
+    if None in (snapshot.get_int(FS_HEBREW_DATE, key) for key in _DATE_FEATURES):
+        # A partial Hebrew date: its other parts come from the derivation this pass, and the
+        # next pass works out the secular date from the whole.
+        return frozenset()
+    civil = _civil_date_of_hebrew(snapshot)
+    contributors = {
+        entry.declare_id
+        for entry in (get_active_setting_entry(linear_data, FS_HEBREW_DATE, feature)
+                      for feature in _DATE_FEATURES)
+        if entry is not None
+    }
+    values = (Undefined,) * 3 if civil is None else (civil.year, civil.month, civil.day)
+    if civil is None:
+        _warn_once(linear_data, "the declared opensiddur:hebrew-date is not a date, so the "
+                                "secular date and everything that follows from it are undefined")
+    for feature_name, value in zip(_DATE_FEATURES, values):
+        _remove_derived_for_feature(linear_data, FS_GREGORIAN, feature_name)
+        register_derived_entry(
+            linear_data,
+            ConditionalSettingEntry(
+                declare_id=derived_declare_id(FS_GREGORIAN, feature_name),
+                fs_type=FS_GREGORIAN,
+                feature_name=feature_name,
+                value=value,
+                source="derived",
+                contributors=contributors,
+            ),
+        )
+    return frozenset()
+
+
+def _civil_date_of_hebrew(snapshot: SettingSnapshot) -> date | None:
+    """The secular date on which the declared Hebrew date falls, at the declared time.
+
+    A Hebrew day begins at nightfall, so at an evening time it is the secular day before its
+    daytime: the 15th of Nisan at 9 PM is the evening of the 14th of April, not the 15th.
+    """
+    values = [snapshot.get_int(FS_HEBREW_DATE, key) for key in _DATE_FEATURES]
+    if None in values:
+        return None
+    try:
+        daytime = pyluach_dates.HebrewDate(*values).to_greg().to_pydate()
+    except ValueError:
+        return None
+    evening = daytime - timedelta(days=1)
+    civil = dict(zip(_DATE_FEATURES, (evening.year, evening.month, evening.day)))
+    probe = SettingSnapshot(get_setting=lambda fs_type, feature_name: (
+        civil[feature_name] if fs_type == FS_GREGORIAN and feature_name in civil
+        else snapshot.get(fs_type, feature_name)))
+    return evening if _effective_gregorian_date(probe) == daytime else daytime
 
 
 def _warn_on_a_date_without_a_place(snapshot: SettingSnapshot) -> None:

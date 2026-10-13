@@ -353,7 +353,7 @@
     <elementSpec ident="endDeclare" module="jlptei" ns="http://jewishliturgy.org/ns/jlptei/2" mode="add">
       <desc>
         Marks the end of the scope of a set of conditional attribute declarations previously established by a <gi>set</gi> element.
-        The <gi>endDeclare</gi> element must have a required <att>target</att> attribute, which points to the <att>xml:id</att> of the corresponding <gi>set</gi> element in the same file.
+        The <gi>endDeclare</gi> element must have a required <att>target</att> attribute, which points to the <att>xml:id</att> of the corresponding <gi>declare</gi> element in the same file.
       </desc>
       <classes>
         <memberOf key="att.global"/>

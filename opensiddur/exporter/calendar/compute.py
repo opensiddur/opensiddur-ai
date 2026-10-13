@@ -509,7 +509,7 @@ def compute_day_of_week(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     if gdate is None:
         return None
     # secular-day stays on the civil weekday while hebrew-day follows the Hebrew date, which
-    # has already rolled over at sunset. The divergence between the two is what identifies
+    # has already rolled over at nightfall. The divergence between the two is what identifies
     # Saturday night: civil Saturday, Hebrew Sunday. See motzaei-shabbat below.
     result: dict[str, Any] = {"secular-day": _jlptei_weekday(gdate.weekday())}
     loc = snapshot.location()

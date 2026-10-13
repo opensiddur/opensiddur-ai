@@ -467,6 +467,32 @@ class TestDerivedSettingsIntegration(unittest.TestCase):
         )
 
 
+    def test_a_hebrew_date_declared_in_a_text_prevails_within_it(self):
+        """The volume's secular date is Pesah; a text declaring 1 Tishrei is Rosh Hashanah
+        until its declaration ends, and Pesah again after."""
+        CompilerProcessor.load_init_settings(get_linear_data(), yaml_to_declaration_entries({
+            "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+            "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
+        }))
+
+        def on(holiday, text):
+            return (f'<j:conditional xml:id="{text}"><tei:fs type="opensiddur:holiday">'
+                    f'<tei:f name="{holiday}"><tei:numeric value="1"/></tei:f></tei:fs>'
+                    f'</j:conditional><tei:p>{text}</tei:p><j:endConditional target="#{text}"/>')
+
+        body = (f'<j:declare xml:id="h"><tei:fs type="opensiddur:hebrew-date">'
+                f'<tei:f name="year"><tei:numeric value="5786"/></tei:f>'
+                f'<tei:f name="month"><tei:numeric value="7"/></tei:f>'
+                f'<tei:f name="day"><tei:numeric value="1"/></tei:f></tei:fs></j:declare>'
+                + on("rosh-hashana", "inside_rh") + on("pesah", "inside_pesah")
+                + '<j:endDeclare target="#h"/>' + on("pesah", "after_pesah"))
+        fn = self._write("d.xml", _declare_xml(body).decode())
+        text = "".join(CompilerProcessor("test_project", fn).process().itertext())
+        self.assertIn("inside_rh", text)
+        self.assertNotIn("inside_pesah", text)
+        self.assertIn("after_pesah", text)
+
+
 class TestGoldenCalendarDates(unittest.TestCase):
     """Phase B golden-date fixtures."""
 
@@ -606,6 +632,100 @@ class TestGoldenCalendarDates(unittest.TestCase):
                 get_active_setting_entry(ld, "opensiddur:hebrew-date", "day").value,
                 1,
             )
+
+
+
+class TestTheLastDateDeclaredPrevails(unittest.TestCase):
+    """JLPTEI-3: if both the secular and the Hebrew date are set, the last setting prevails."""
+
+    NEW_YORK = {"latitude": 40.71, "longitude": -74.01}
+
+    def setUp(self):
+        reset_linear_data()
+        self.linear_data = get_linear_data()
+        self.addCleanup(reset_linear_data)
+
+    def _load(self, declarations: dict) -> None:
+        CompilerProcessor.load_init_settings(
+            self.linear_data, yaml_to_declaration_entries(declarations))
+
+    def _value(self, fs_type: str, feature: str):
+        entry = get_active_setting_entry(self.linear_data, fs_type, feature)
+        return None if entry is None else entry.value
+
+    def _hebrew_date(self):
+        return tuple(self._value("opensiddur:hebrew-date", f) for f in ("year", "month", "day"))
+
+    def _gregorian_date(self):
+        return tuple(self._value("opensiddur:gregorian-date", f) for f in ("year", "month", "day"))
+
+    def test_a_later_hebrew_date_moves_the_secular_date(self):
+        self._load({
+            "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+            "opensiddur:location": self.NEW_YORK,
+            "opensiddur:hebrew-date": {"year": 5786, "month": 7, "day": 1},
+        })
+        self.assertEqual((5786, 7, 1), self._hebrew_date())
+        self.assertEqual((2025, 9, 23), self._gregorian_date())
+        self.assertEqual(1, self._value("opensiddur:holiday", "rosh-hashana"))
+        self.assertEqual(0, self._value("opensiddur:holiday", "pesah"))
+
+    def test_a_later_secular_date_moves_the_hebrew_date(self):
+        self._load({
+            "opensiddur:hebrew-date": {"year": 5786, "month": 7, "day": 1},
+            "opensiddur:location": self.NEW_YORK,
+            "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+        })
+        self.assertEqual((5785, 1, 15), self._hebrew_date())
+        self.assertEqual((2025, 4, 13), self._gregorian_date())
+        self.assertEqual(1, self._value("opensiddur:holiday", "pesah"))
+
+    def test_a_hebrew_date_at_an_evening_hour_is_the_evening_before_its_day(self):
+        self._load({
+            "opensiddur:gregorian-date": {"year": 2025, "month": 9, "day": 23},
+            "opensiddur:location": self.NEW_YORK,
+            "opensiddur:time": {"hour": 21, "minute": 0},
+            "opensiddur:hebrew-date": {"year": 5785, "month": 1, "day": 15},
+        })
+        self.assertEqual((2025, 4, 12), self._gregorian_date())
+        self.assertEqual((5785, 1, 15), self._hebrew_date())
+
+    def test_a_later_partial_hebrew_date_takes_the_rest_from_the_secular_one(self):
+        """Settled when the volume is loaded, not at the next declaration."""
+        self._load({
+            "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+            "opensiddur:location": self.NEW_YORK,
+            "opensiddur:hebrew-date": {"year": 5790},
+        })
+        self.assertEqual((5790, 1, 15), self._hebrew_date())
+        self.assertEqual((2030, 4, 18), self._gregorian_date())
+
+    def test_a_later_secular_date_without_a_place_leaves_the_hebrew_date_undefined(self):
+        """It overrides the Hebrew date but cannot give one: neither date may be mixed in."""
+        with self.assertLogs("opensiddur.exporter.derived_settings", "WARNING") as logs:
+            self._load({
+                "opensiddur:hebrew-date": {"year": 5786, "month": 7, "day": 1},
+                "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+            })
+        self.assertEqual((Undefined,) * 3, self._hebrew_date())
+        self.assertIn(self._value("opensiddur:holiday", "pesah"), (None, Undefined))
+        self.assertIn(self._value("opensiddur:holiday", "rosh-hashana"), (None, Undefined))
+        self.assertEqual(1, sum("without an opensiddur:location" in line for line in logs.output))
+
+    def test_a_later_hebrew_date_that_is_not_a_date_leaves_the_secular_one_undefined(self):
+        with self.assertLogs("opensiddur.exporter.derived_settings", "WARNING"):
+            self._load({
+                "opensiddur:gregorian-date": {"year": 2025, "month": 4, "day": 13},
+                "opensiddur:location": self.NEW_YORK,
+                "opensiddur:hebrew-date": {"year": 5786, "month": 13, "day": 1},
+            })
+        self.assertEqual((Undefined,) * 3, self._gregorian_date())
+        self.assertIn(self._value("opensiddur:holiday", "pesah"), (None, Undefined))
+
+    def test_a_hebrew_date_alone_is_left_as_it_was(self):
+        self._load({"opensiddur:hebrew-date": {"year": 5785, "month": 1, "day": 15}})
+        self.assertEqual((None, None, None), self._gregorian_date())
+        self.assertEqual((5785, 1, 15), self._hebrew_date())
 
 
 if __name__ == "__main__":
