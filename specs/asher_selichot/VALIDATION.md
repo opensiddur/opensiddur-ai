@@ -1424,3 +1424,13 @@ Erev Rosh Hashanah English s101/n100 lower–s185/n184 upper (printed 49–91) w
 - Expanded: 93 pages; 0 of 3975 Hebrew runs are set left to right; control: 3779 of 3975 flagged when every run is reversed; SHA-256 `5305cce55e5ccb057978c01aee80dbb450755d8972bc383b089f797c8699fc35`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-08/`. Artifacts: `output/asher_selichot/proofreading/english-008/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed.
+
+
+## English proofreading checkpoint009
+
+Tzom Gedaliah English s185/n184 lower–s209/n208 (printed 91–103) was image-reread and all 13 captures frozen before comparison. Ten image-adjudicated token corrections restore printed wording, quotation marks, notes and rubric punctuation. Whole-page viewer images were used for the first reading; targeted full-resolution crops adjudicate differences. The capture helper’s overgeneralized native-band description is clarified in the separate adjudication without rewriting immutable captures. Thirty-two XML files validate; all 38 bilingual service units, eight stanza groups, seven refrain choices per language and apparatus reverse-compare. All four compiled petition expansions, Ten Days Half/Full Kaddishes and suppression of fulfilled rubrics pass. Both PDFs pass eight stanza alignment starts, all 18 English notes and the Hebrew marginal note, apparatus direction, contents, bookmark hierarchy, expansions and service boundaries. Duplicate-note, shifted-stanza, missing marginal note and direction controls fail as intended; expanded controls reject wrong seasonal Kaddish counts, a duplicated opening and fulfilled rubrics. Representative opening, pizmon, mixed-language apparatus and closing expansion inspected visually. Same-model second pass with prior exposure; independent-person and exhaustive typography review remain pending.
+
+- Documentary: 26 pages; 0 of 763 Hebrew runs are set left to right; control: 755 of 763 flagged when every run is reversed; SHA-256 `21b5213cca51504cc93a0a8251514713e53048405f7e7e4575e43112cf50509a`.
+- Expanded: 53 pages; 0 of 2041 Hebrew runs are set left to right; control: 1981 of 2041 flagged when every run is reversed; SHA-256 `79ff1dd7f578fac1a3a3d0fb9f3ebf1ac6bf378b3c115998e9680460f6ca0257`.
+
+Evidence: `sources/asher_selichot/proofreading/english-pass-09/`. Artifacts: `output/asher_selichot/proofreading/english-009/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed. Preceding checkpoint CI tests, CodeQL and Codecov all passed.
