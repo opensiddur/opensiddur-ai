@@ -1452,3 +1452,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 54 pages; 0 of 1992 Hebrew runs are set left to right; control: 1941 of 1992 flagged when every run is reversed; SHA-256 `87bb4b67c2efad3456aca1abb0c0b701c5b75d26c15490c95d2da72fe3064bd5`.
 
 Artifacts: `output/asher_selichot/proofreading/english-010/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint011
+
+[English batch011](`sources/asher_selichot/proofreading/english-pass-11/batch-011.json`) covers Third penitential day, s235/n234–s259/n258 upper, printed116–128 upper.
+13 image-first page observations were frozen before cached OCR comparison;
+13 image-adjudicated replacement rules changed 15 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 26 pages; expanded: 54 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 26 pages; 0 of 762 Hebrew runs are set left to right; control: 749 of 762 flagged when every run is reversed; SHA-256 `648fe5fa6873dbe3d401734fdf8ad7f5b27a166e920634a1fcf035f4ffa7ed1c`.
+- Expanded: 54 pages; 0 of 2014 Hebrew runs are set left to right; control: 1963 of 2014 flagged when every run is reversed; SHA-256 `97cf3d7bd04e3ef396097ac5990832160f63f263c934c2ee5973c8a18e8c4fc8`.
+
+Artifacts: `output/asher_selichot/proofreading/english-011/`. Whole-book PDFs remain earlier snapshots.
