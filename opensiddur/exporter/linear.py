@@ -62,13 +62,33 @@ class NumericValue(BaseModel):
     max_value: int | float | None = None
 
 
+class TwilightValue(BaseModel):
+    """A derived value that differs between the two days bein hashmashot lies between.
+
+    Between sunset and nightfall it is doubtful which day it is, and the day has some of the
+    character of both. A feature computed from the date then holds the value it has on the
+    day that is ending and the one it has on the day that is beginning. Only a derivation
+    produces one: a volume declares a value, never two. A condition on it is decided only
+    if it comes out the same on both days (condition_eval.evaluate_condition).
+    """
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    ending: Any
+    starting: Any
+
+    def on_day(self, day: int) -> Any:
+        """The value on the ending day (0) or the starting day (1)."""
+        return self.starting if day else self.ending
+
+
 class ConditionalSettingEntry(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     declare_id: str
     fs_type: str
     feature_name: str
-    value: int | float | bool | str | NumericValue | UndefinedType
+    value: int | float | bool | str | NumericValue | TwilightValue | UndefinedType
     source: Literal["init", "declared", "derived"]
     contributors: set[str] = Field(default_factory=set)
 

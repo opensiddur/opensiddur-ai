@@ -21,7 +21,7 @@ from opensiddur.exporter.conditional_settings import (
 )
 from opensiddur.exporter.constants import PROCESSING_NAMESPACE, is_element_node
 from opensiddur.exporter.feature_registry import require_valid_fs
-from opensiddur.exporter.linear import NumericValue, Undefined
+from opensiddur.exporter.linear import NumericValue, TwilightValue, Undefined
 
 
 class TriState(StrEnum):
@@ -230,11 +230,37 @@ def _evaluate_fs(node: FsCondition, processor: _SettingLookup) -> TriState:
 
 
 def evaluate_condition(node: ConditionNode, processor: _SettingLookup) -> TriState:
-    """Evaluate a parsed condition against the processor's active settings."""
+    """Evaluate a parsed condition against the processor's active settings.
+
+    Between sunset and nightfall a feature may hold its value on each of two days (a
+    TwilightValue). The condition is then decided only if it comes out the same on both: it
+    is evaluated whole for the day that is ending and for the day that is beginning, so that
+    a condition true either way -- the sixth day or the seventh -- is true.
+    """
+    if any(isinstance(processor.get_active_setting(fs_type, feature_name), TwilightValue)
+           for fs_type, feature_name in condition_features(node)):
+        ending = _evaluate(node, _OnDay(processor, 0))
+        starting = _evaluate(node, _OnDay(processor, 1))
+        return ending if ending == starting else TriState.UNDEFINED
+    return _evaluate(node, processor)
+
+
+class _OnDay:
+    """A view of the active settings from one of the two days of bein hashmashot."""
+
+    def __init__(self, processor: _SettingLookup, day: int):
+        self._processor = processor
+        self._day = day
+
+    def get_active_setting(self, fs_type: str, feature_name: str) -> Any:
+        value = self._processor.get_active_setting(fs_type, feature_name)
+        return value.on_day(self._day) if isinstance(value, TwilightValue) else value
+
+
+def _evaluate(node: ConditionNode, processor: _SettingLookup) -> TriState:
     if isinstance(node, FsCondition):
         return _evaluate_fs(node, processor)
-    child_results = [evaluate_condition(child, processor) for child in node.children]
-    return _combine(node.op, child_results)
+    return _combine(node.op, [_evaluate(child, processor) for child in node.children])
 
 
 # ── JSON ─────────────────────────────────────────────────────────────────────
@@ -253,7 +279,8 @@ def evaluate_condition(node: ConditionNode, processor: _SettingLookup) -> TriSta
 #
 # A *setting* -- an active value, rather than one a condition asks for -- is true, false, a
 # string, a plain number (as YAML gives it), {"num": n} (as a tei:numeric declaration gives
-# it), or null for undefined. A binary condition reads either kind of number by its truth:
+# it), null for undefined, or {"twilight": [ending, starting]} for a value bein hashmashot
+# gives on each of the two days. A binary condition reads either kind of number by its truth:
 # zero is false, anything else true.
 
 
@@ -331,6 +358,8 @@ def value_to_json(value: Any) -> Any:
         return encoded
     if isinstance(value, (bool, int, float, str)):
         return value
+    if isinstance(value, TwilightValue):
+        return {"twilight": [value_to_json(value.ending), value_to_json(value.starting)]}
     raise ValueError(f"Cannot encode setting value {value!r}")
 
 
@@ -338,6 +367,9 @@ def value_from_json(encoded: Any) -> Any:
     """An active setting value from its JSON form."""
     if encoded is None:
         return Undefined
+    if isinstance(encoded, dict) and "twilight" in encoded:
+        ending, starting = encoded["twilight"]
+        return TwilightValue(ending=value_from_json(ending), starting=value_from_json(starting))
     if isinstance(encoded, dict):
         return NumericValue(value=encoded["num"], max_value=encoded.get("max"))
     return encoded
