@@ -132,6 +132,8 @@ class LinearData(BaseModel):
     credits: list[tuple[str, str, str, str]] = Field(default_factory=list)
     # files whose reference-database rows have been checked against their contents
     index_checked: set[tuple[str, str]] = Field(default_factory=set)
+    # Problems with the declared dates already reported, so that a compile reports each once.
+    date_warnings: set[str] = Field(default_factory=set)
     # Compiling for an electronic book: the settings the reader supplies (client_settings) are
     # left undecided, for the reader's device to resolve, and each retained conditional records
     # the values the compile did know (p:pinned).

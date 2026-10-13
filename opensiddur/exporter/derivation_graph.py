@@ -91,7 +91,8 @@ DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
         required_inputs=frozenset({(FS_HEBREW_DATE, key) for key in ("year", "month", "day")} | {(FS_ISRAEL, "is-israel")}),
         compute=compute_avot,
     ),
-    # First, so that the derived time zone is on the stack before anything reads a location.
+    # Its inputs are all declared, so the topological order emits it in the first pass, and the
+    # derived time zone is on the stack before anything that reads a location.
     DerivationSpec(
         fs_type=FS_LOCATION,
         required_inputs=_location_inputs(),
