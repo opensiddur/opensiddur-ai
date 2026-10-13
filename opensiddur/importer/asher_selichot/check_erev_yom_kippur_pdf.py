@@ -20,7 +20,7 @@ ANCHORS = [('ירצהצוםעמך','Be pleased with the fast'),
 def check(tree, expanded=False):
     text=plain(' '.join(n.get('text','') for n in tree.findall('.//line')))
     # These long fingerprints remain distinctive even when a note wraps.
-    for phrase in ['This denotes the evil imagination of man.', 'Heb., he putteth his life into his hand.', 'Alluding to Job xxxiii. 24.', 'By fasting the blood suffers diminution, and the fat is wasted.', 'For which their fasting is a substitute.', 'The Synagogue.', 'Ezek. xxxvi. 25.']:
+    for phrase in ['This denotes the evil imagination of man.', 'Heb., he putteth his life into his hand.', 'Alluding to Job xxxiii. 34.', 'By fasting the blood suffers diminution, and the fat is wasted.', 'For which their fasting is a substitute.', 'The Synagogue.', 'Ezek. xxxvi. 25.']:
         if text.count(phrase)!=1:raise ValueError('Erev Yom Kippur footnote missing or duplicated: '+phrase)
     note_runs=latin_note_runs(tree)
     if not note_runs:raise ValueError('No Erev Yom Kippur Latin apparatus runs measured')
@@ -93,7 +93,7 @@ def controls(tree,expanded):
     try:check(broken,expanded)
     except ValueError:pass
     else:raise AssertionError('Missing Erev Yom Kippur heading escaped detection')
-    for phrase in ['Alluding to Job xxxiii. 24.', 'The Synagogue.']:
+    for phrase in ['Alluding to Job xxxiii. 34.', 'The Synagogue.']:
         broken=copy.deepcopy(tree)
         line=next(n for n in broken.findall('.//line') if phrase in plain(n.get('text','')))
         line.getparent().remove(line)

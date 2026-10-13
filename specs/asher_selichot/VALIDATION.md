@@ -1506,3 +1506,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 55 pages; 0 of 2012 Hebrew runs are set left to right; control: 1951 of 2012 flagged when every run is reversed; SHA-256 `11ca6c42afff44084829661aa0f22c1acb16ad38ac4ee8ef042ff39f2e86b51b`.
 
 Artifacts: `output/asher_selichot/proofreading/english-013/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint014
+
+[English batch014](`sources/asher_selichot/proofreading/english-pass-14/batch-014.json`) covers Erev Yom Kippur, s309/n308 lower–s321/n320 upper, printed153 lower–159 upper.
+7 image-first page observations were frozen before cached OCR comparison;
+17 image-adjudicated replacement rules changed 20 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 17 pages; expanded: 26 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 17 pages; 0 of 424 Hebrew runs are set left to right; control: 421 of 424 flagged when every run is reversed; SHA-256 `aca6f2a3a7b9ea48bbd28dbd7dc033a60c615dc325562c3004637095acd6640e`.
+- Expanded: 26 pages; 0 of 821 Hebrew runs are set left to right; control: 806 of 821 flagged when every run is reversed; SHA-256 `5523e0b56cf11d50043f796bb5bad021ac11a6f114f70c27cc03ae3a7067320a`.
+
+Artifacts: `output/asher_selichot/proofreading/english-014/`. Whole-book PDFs remain earlier snapshots.
