@@ -1434,3 +1434,21 @@ Tzom Gedaliah English s185/n184 lower–s209/n208 (printed 91–103) was image-r
 - Expanded: 53 pages; 0 of 2041 Hebrew runs are set left to right; control: 1981 of 2041 flagged when every run is reversed; SHA-256 `79ff1dd7f578fac1a3a3d0fb9f3ebf1ac6bf378b3c115998e9680460f6ca0257`.
 
 Evidence: `sources/asher_selichot/proofreading/english-pass-09/`. Artifacts: `output/asher_selichot/proofreading/english-009/`. Whole-book PDFs remain earlier snapshots. No generic executable logic changed. Preceding checkpoint CI tests, CodeQL and Codecov all passed.
+
+
+## English proofreading checkpoint010
+
+[English batch010](`sources/asher_selichot/proofreading/english-pass-10/batch-010.json`) covers Second penitential day, s211/n210–s233/n232, printed104–115.
+12 image-first page observations were frozen before cached OCR comparison;
+7 image-adjudicated replacement rules changed 9 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 25 pages; expanded: 54 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 25 pages; 0 of 683 Hebrew runs are set left to right; control: 681 of 683 flagged when every run is reversed; SHA-256 `9e05792dc6013d912a3518fd548c031a78405f5a8ecf6334375efedd49b94afd`.
+- Expanded: 54 pages; 0 of 1992 Hebrew runs are set left to right; control: 1941 of 1992 flagged when every run is reversed; SHA-256 `87bb4b67c2efad3456aca1abb0c0b701c5b75d26c15490c95d2da72fe3064bd5`.
+
+Artifacts: `output/asher_selichot/proofreading/english-010/`. Whole-book PDFs remain earlier snapshots.
