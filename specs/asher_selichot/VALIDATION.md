@@ -1524,3 +1524,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 26 pages; 0 of 821 Hebrew runs are set left to right; control: 806 of 821 flagged when every run is reversed; SHA-256 `5523e0b56cf11d50043f796bb5bad021ac11a6f114f70c27cc03ae3a7067320a`.
 
 Artifacts: `output/asher_selichot/proofreading/english-014/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint015
+
+[English batch015](`sources/asher_selichot/proofreading/english-pass-15/batch-015.json`) covers Monday fast, s321/n320 lower–s337/n336 upper, printed159 lower–167 upper.
+9 image-first page observations were frozen before cached OCR comparison;
+10 image-adjudicated replacement rules changed 12 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 20 pages; expanded: 22 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 20 pages; 0 of 482 Hebrew runs are set left to right; control: 478 of 482 flagged when every run is reversed; SHA-256 `54f6a90d20f44abcdb0828b76723ca45834dbdc33082b18f00d08baf025e125a`.
+- Expanded: 22 pages; 0 of 604 Hebrew runs are set left to right; control: 597 of 604 flagged when every run is reversed; SHA-256 `48013c980a42712eba5abde80de9dbc2053677dfc2184e69a1e18cdfdb2a7734`.
+
+Artifacts: `output/asher_selichot/proofreading/english-015/`. Whole-book PDFs remain earlier snapshots.
