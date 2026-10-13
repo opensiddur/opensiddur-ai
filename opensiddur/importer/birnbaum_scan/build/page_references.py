@@ -37,12 +37,13 @@ TARGETS = {
     365: 'prayer:shema/torah_procession',
     405: 'siddur:shabbat/musaf/kaddish',
 }
-NOTE = re.compile(r'(<tei:note\b[^>]*\btype="instruction"[^>]*>)(.*?)(</tei:note>)', re.S)
+NOTE = re.compile(r'(<tei:note\b[^>]*\btype="(?:instruction|description)"[^>]*>)(.*?)(</tei:note>)', re.S)
 PAGE = re.compile(r'(\bpages?\s+)(\d+)(?:[–-](\d+))?', re.I)
 
 
 def dynamic_instructions(text, project):
-    """Replace only instructions, leaving bibliographic citations untouched."""
+    """Replace only rubrics (instructions and descriptions), leaving bibliographic citations
+    untouched."""
     side = int('_en_' in project)
 
     def ref(urn):

@@ -27,3 +27,9 @@ def is_element_node(node: ElementBase) -> bool:
     """
     return isinstance(node.tag, str)
 
+
+#: The tei:note types set inline in the text as rubrics, rather than in the apparatus as
+#: annotations. An instruction says when a passage is said (as a j:conditional's own note)
+#: or tells the reader to do something the text does not contain; a description says what
+#: the passage printed after it is, who says it or how. They are rendered alike.
+RUBRIC_NOTE_TYPES = frozenset({"instruction", "description"})

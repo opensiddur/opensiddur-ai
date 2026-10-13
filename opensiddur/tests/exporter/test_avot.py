@@ -48,40 +48,35 @@ class TestAvot(unittest.TestCase):
                 self.assertIn(chapters[18:],([1,2,3,4,5,6],[3,4,5,6]),(y,israel))
 
 class TestAvotInstructionModes(unittest.TestCase):
-    def test_complete_text_and_weekly_rubrics_compile_independently(self):
+    def test_a_selected_chapter_is_printed_without_its_selection_rubric(self):
+        """The rubric says when a chapter is read; once that is known it is not printed."""
         import tempfile
         from pathlib import Path
-        from lxml import etree
         from opensiddur.exporter.compiler import CompilerProcessor
-        from opensiddur.importer.birnbaum_scan.build.avot import selection_instruction
         from opensiddur.importer.birnbaum_scan.build.common import cond, endcond, feature
 
-        for selected, complete, expected_text, expected_instruction in [
-            (True, True, True, False),
-            (True, False, True, True),
-            (False, False, False, False),
-            (None, False, True, True),
+        for selected, expected_text, expected_instruction in [
+            (True, True, False),
+            (False, False, False),
+            (None, True, True),
         ]:
-            with self.subTest(selected=selected, complete=complete), tempfile.TemporaryDirectory() as tmp:
+            with self.subTest(selected=selected), tempfile.TemporaryDirectory() as tmp:
                 reset_linear_data()
                 ld=get_linear_data()
                 ld.xml_cache.base_path=Path(tmp)
                 folder=Path(tmp)/'synthetic';folder.mkdir()
-                body=(cond('chapter',fs=feature(FS_AVOT,'chapter-1'))
-                      +selection_instruction('chapter','Selection rubric',editorial=True)
+                body=(cond('chapter',note='Selection rubric',fs=feature(FS_AVOT,'chapter-1'))
                       +'<tei:p>Chapter content</tei:p>'+endcond('chapter'))
                 (folder/'text.xml').write_text(
                     '<root xmlns:tei="http://www.tei-c.org/ns/1.0" '
                     'xmlns:j="http://jewishliturgy.org/ns/jlptei/2"><tei:text>'
                     +body+'</tei:text></root>')
                 CompilerProcessor.load_init_settings(ld,yaml_to_declaration_entries(
-                    {FS_AVOT:{'chapter-1':selected,'complete':complete}}))
+                    {FS_AVOT:{'chapter-1':selected}}))
                 compiled=CompilerProcessor('synthetic','text.xml').process()
                 text=''.join(compiled.itertext())
                 self.assertEqual('Chapter content' in text,expected_text)
                 self.assertEqual('Selection rubric' in text,expected_instruction)
-                if complete:
-                    self.assertFalse(compiled.xpath('//*[local-name()="conditional"]'))
         reset_linear_data()
 
     def test_siddur_caller_requires_season_and_a_selected_chapter(self):
@@ -90,15 +85,16 @@ class TestAvotInstructionModes(unittest.TestCase):
         from opensiddur.exporter.compiler import CompilerProcessor
         from opensiddur.importer.birnbaum_scan.build.avot import caller, ROOT, transclude
 
+        # The seasonal rubric says when Avot is read, so a season known to hold prints Avot
+        # without it, and only an undecided one keeps it.
         cases = [
-            (True, False, False, False, False),
-            (True, True, False, True, True),
-            (False, True, False, False, False),
-            (True, True, True, True, False),
-            (None, None, False, True, True),
+            (True, False, False, False),
+            (True, True, True, False),
+            (False, True, False, False),
+            (None, None, True, True),
         ]
-        for season, selected, complete, content, instruction in cases:
-            with self.subTest(season=season, selected=selected, complete=complete), tempfile.TemporaryDirectory() as tmp:
+        for season, selected, content, instruction in cases:
+            with self.subTest(season=season, selected=selected), tempfile.TemporaryDirectory() as tmp:
                 reset_linear_data()
                 ld = get_linear_data()
                 ld.xml_cache.base_path = Path(tmp)
@@ -110,7 +106,7 @@ class TestAvotInstructionModes(unittest.TestCase):
                     'xmlns:j="http://jewishliturgy.org/ns/jlptei/2"><tei:text>'
                     + body + '</tei:text></root>')
                 settings = {f'chapter-{n}': False for n in range(1, 7)}
-                settings.update({'season': season, 'chapter-1': selected, 'complete': complete})
+                settings.update({'season': season, 'chapter-1': selected})
                 CompilerProcessor.load_init_settings(ld, yaml_to_declaration_entries({FS_AVOT: settings}))
                 compiled = CompilerProcessor('synthetic', 'text.xml').process()
                 text = ''.join(compiled.itertext())

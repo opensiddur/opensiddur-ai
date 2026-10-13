@@ -180,9 +180,13 @@ Scoped liturgical content lies between a `j:conditional` element and its matchin
 
 | Evaluation | Scoped content | Instruction note in `j:conditional` | Markers in output |
 | --- | --- | --- | --- |
-| **true** | Include | Include (the rubric outlives its condition) | Strip |
+| **true** | Include | Exclude (it says when the passage is said, which is now known) | Strip |
 | **false** | Exclude | Exclude | Strip |
 | **undefined** | Include | Include | Retain |
+
+A `tei:note type="description"` placed inside the scope (see *Kinds of rubric* in JLPTEI-3) is
+scoped content like any other: it is printed with the passage when the condition is true or
+undefined, and excluded with it when false.
 
 **Undefined features:** if a condition references a feature with no active setting, the active value is treated as undefined (`tei:default` / YAML `null` semantics). Comparing a concrete condition to an undefined active value yields **undefined**.
 
@@ -198,8 +202,7 @@ Evaluation uses tristate logic with truth tables from JLPTEI-3 (`condition_eval.
 ### Conditional scopes at a range's bounds
 
 A range transcluded from the middle of a file, by an external or an inline transclusion, can
-start or end inside a scope. The range carries the markers (and, for a true scope, the rubric)
-of exactly the scopes that overlap it:
+start or end inside a scope. The range carries the markers of exactly the scopes that overlap it:
 
 - a scope that opens and closes before the start contributes nothing;
 - a scope still open at the start opens at the start: its marker is emitted in front of the

@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from lxml import etree
 
 from opensiddur.exporter.conditional_settings import J_CONDITIONAL, J_END_CONDITIONAL, XML_ID
-from opensiddur.exporter.constants import PROCESSING_NAMESPACE
+from opensiddur.exporter.constants import RUBRIC_NOTE_TYPES, PROCESSING_NAMESPACE
 
 _PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
 
@@ -100,21 +100,27 @@ _TEI_NOTE = "{http://www.tei-c.org/ns/1.0}note"
 _INVISIBLE = frozenset({"{http://www.tei-c.org/ns/1.0}milestone", "{http://www.tei-c.org/ns/1.0}pb"})
 
 
+def _is_annotation(node: etree.ElementBase) -> bool:
+    return node.tag == _TEI_NOTE and node.get("type") not in RUBRIC_NOTE_TYPES
+
+
 def _opens_with_an_instruction(opener: etree.ElementBase) -> bool:
     """Whether the first thing a scope governs is its rubric.
 
     JLPTEI-3.md has a reading instruction sit inside the text it controls, so a source's own
     rubric -- "On Shabbat say:" -- is often the scope's first child rather than the
-    conditional's note. It announces the scope all the same.
+    conditional's note, and a description of the passage always is. It announces the scope
+    all the same. An annotation the compiler anchored at the scope's start is passed over,
+    as a milestone is: it is the apparatus, not the text.
     """
     node = opener
     while True:
         if (node.tail or "").strip():
             return False
         node = node.getnext()
-        if node is None or node.tag not in _INVISIBLE:
+        if node is None or not (node.tag in _INVISIBLE or _is_annotation(node)):
             break
-    return node is not None and node.tag == _TEI_NOTE and node.get("type") == "instruction"
+    return node is not None and node.tag == _TEI_NOTE and node.get("type") in RUBRIC_NOTE_TYPES
 
 
 def is_silent(opener: etree.ElementBase) -> bool:

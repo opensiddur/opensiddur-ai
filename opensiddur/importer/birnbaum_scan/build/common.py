@@ -4,6 +4,7 @@ The bodies are written by hand, read off the scan, one function per prayer. This
 holds only what every file repeats: the header, the URN, the source pointer and the page
 break sigils. Scaffolding — the TEI files it writes are the artifact.
 """
+import re
 from pathlib import Path
 
 from opensiddur.importer.birnbaum_scan import SCAN_PAGE_PREFIX
@@ -161,6 +162,61 @@ def write(project: str, name: str, text: str) -> Path:
     return path
 
 
+#: The rubrics Birnbaum prints over a conditional passage that say *what* the passage is, who
+#: says it or how, rather than *when* it is said (schema/JLPTEI-3.md, *Kinds of rubric*). A
+#: rubric saying when is the j:conditional's own, and is not printed once the condition is
+#: known to hold; one of these belongs to the passage, so it is set as a description first
+#: inside the scope and printed whenever the passage is. A rubric that says both is one of
+#: these, since leaving it out would lose the name of the passage.
+DESCRIPTIVE_RUBRICS = frozenset({
+    # Who says it.
+    "Reader:",
+    "Reader, when a minyan holds service:",
+    "On the Sabbath, Reader and Congregation:",
+    "On the Sabbath, Congregation and Reader:",
+    "Priestly blessing recited by the Reader:",
+    "On fast days the Reader adds here:",
+    "On fast days (except Tish‘ah b’Av) the Reader adds:",
+    "On fast days, the Congregation recites here:",
+    "When the Reader repeats the Amidah, the Congregation responds here by saying:",
+    "When the Reader repeats the Shemoneh Esreh, the Congregation responds here by saying:",
+    "On Mondays and Thursdays (if Taḥanun has been said), before returning the Torah to the "
+    "ark, the Reader recites:",
+    "In silent devotion:",
+    # What it is.
+    "Mourners’ Kaddish.",
+    "MOURNERS’ KADDISH",
+    "With a minyan, when Tzidduk Hadin is omitted, recite regular Mourner’s Kaddish:",
+    "Full-Kaddish on Rosh Ḥodesh and festivals:",
+    "Half-Kaddish on Ḥanukkah:",
+    "When the Reader repeats the Amidah, the following Kedushah is said:",
+    "When the Reader repeats the Amidah, the following Kedushah is said.",
+    "When the Reader repeats the Shemoneh Esreh, the following Kedushah is said:",
+    "After the Amidah add the following meditation:",
+    "With a minyan: After the reading of the kethubah the seven blessings are chanted:",
+    # How it is done.
+    "There is a custom that mourners, in the first week of their mourning, remain at the "
+    "entrance of the synagogue until one of the congregation says to them:",
+    "Performed on the afternoon of the first day of Rosh Hashanah, or on the second, should "
+    "Sabbath commence the festival. Processions are formed to the banks of a river, where the "
+    "following is recited:",
+    "Consisting in waving a fowl three times around the head after the recitation of the "
+    "following paragraph on the day previous to Yom Kippur",
+    "Waving a fowl over the heads:",
+    "During Sukkoth (except Sabbath) the following is recited as the lulav (in the right hand) "
+    "and the ethrog (in the left hand) are held together.",
+    "When three men or more have eaten together, the following is used as an introduction to "
+    "the grace. The addition is included when a minyan is present.",
+})
+
+_MARKUP = re.compile(r"<[^>]+>")
+
+
+def is_descriptive_rubric(note: str) -> bool:
+    """Whether a rubric says what its passage is rather than when it is said."""
+    return " ".join(_MARKUP.sub("", note).split()) in DESCRIPTIVE_RUBRICS
+
+
 def cond(cid: str, *, note: str = "", note_lang: str = "en", fs: str = "", negate: bool = False,
          note_urn: str = "", note_resp: str = "", marked: bool = False) -> str:
     """A j:conditional: the rubric the edition prints, and the test it states.
@@ -168,20 +224,31 @@ def cond(cid: str, *, note: str = "", note_lang: str = "en", fs: str = "", negat
     ``marked`` says the book itself sets the passage off -- parentheses, or the asterisk that
     keys an ordinary reading to its substitute -- so an edition that cannot decide the
     condition sets it off too (schema/JLPTEI-3.md, *How an undecided scope is set off*).
+
+    A rubric in :data:`DESCRIPTIVE_RUBRICS` is set after the j:conditional, as the first thing
+    in its scope, rather than as the j:conditional's own note.
     """
     kind = ' type="marked"' if marked else ""
     parts = [f'        <j:conditional xml:id="{cid}"{kind}>']
+    rubric = ""
     if note:
         attributes = (f' corresp="{note_urn}"' if note_urn else "")
         attributes += f' resp="{note_resp}"' if note_resp else ""
-        parts.append(f'          <tei:note type="instruction" xml:lang="{note_lang}"{attributes}>{note}</tei:note>')
+        if is_descriptive_rubric(note):
+            rubric = (f'<tei:note type="description" xml:lang="{note_lang}"{attributes}>'
+                      f'{note}</tei:note>')
+        else:
+            parts.append(f'          <tei:note type="instruction" xml:lang="{note_lang}"'
+                         f'{attributes}>{note}</tei:note>')
     if negate:
         parts.append("          <j:none>")
         parts.append(fs)
         parts.append("          </j:none>")
     else:
         parts.append(fs)
-    parts.append("        </j:conditional>")
+    # Straight after the opener, with no whitespace between: the description is the first
+    # thing in the scope, and a space before it would be text at the start of a paragraph.
+    parts.append("        </j:conditional>" + rubric)
     return "\n".join(parts)
 
 

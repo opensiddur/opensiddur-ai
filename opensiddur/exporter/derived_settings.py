@@ -37,7 +37,6 @@ OVERRIDE_FEATURES = (
 STATIC_DEFAULTS: dict[str, dict[str, Any]] = {
     FS_OVERRIDE: dict.fromkeys(OVERRIDE_FEATURES, False),
     FS_READING_CYCLE: READING_CYCLE_DEFAULTS,
-    "opensiddur:pirkei-avot": {"complete": False},
     # A book's prefaces and title pages are kept unless a volume leaves them out.
     FS_PARATEXT: {"include": True, "title-page": True},
 }

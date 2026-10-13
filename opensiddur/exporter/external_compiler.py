@@ -16,6 +16,7 @@ from opensiddur.exporter.compiler import (
 )
 from opensiddur.exporter.conditional_settings import CONDITIONAL_CONTROL_TAGS
 from opensiddur.exporter.constants import (
+    RUBRIC_NOTE_TYPES,
     JLPTEI_NAMESPACE,
     PROCESSING_NAMESPACE,
     STRUCTURAL_BLOCKS,
@@ -74,7 +75,9 @@ def _alignment_boundaries(elements: list[ElementBase]) -> list[Optional[Alignmen
                 key = (structural.pop(end), "end")
         boundaries.append(key)
     # A rubric introducing a division belongs in its new row. Conditional
-    # instructions live inside the opening control element, before the div.
+    # instructions live inside the opening control element, before the div, and a
+    # description first inside the scope, after it. An annotation anchored between them
+    # is apparatus, and moves with them.
     for index, key in enumerate(list(boundaries)):
         if key is None or isinstance(key, tuple):
             continue
@@ -83,16 +86,22 @@ def _alignment_boundaries(elements: list[ElementBase]) -> list[Optional[Alignmen
             previous = elements[beginning - 1]
             opening_rubric = (
                 previous.tag == f"{{{JLPTEI_NAMESPACE}}}conditional"
-                or (previous.tag == f"{{{TEI_NS}}}note"
-                    and previous.get("type") == "instruction")
+                or previous.tag == f"{{{TEI_NS}}}note"
             )
             if (not opening_rubric or (previous.tail or "").strip()
                     or boundaries[beginning - 1] is not None):
                 break
             beginning -= 1
+        # Annotations before the first opener or rubric belong to the text they follow.
+        while beginning < index and _is_annotation(elements[beginning]):
+            beginning += 1
         if beginning != index:
             boundaries[beginning], boundaries[index] = key, None
     return boundaries
+
+
+def _is_annotation(element: ElementBase) -> bool:
+    return element.tag == f"{{{TEI_NS}}}note" and element.get("type") not in RUBRIC_NOTE_TYPES
 
 
 def _alignment_corresps(elements: list[ElementBase]) -> set[AlignmentKey]:
@@ -300,7 +309,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
         movable, opening = [], []
         if annotations:
             for note in annotations:
-                (opening if note.get('type') == 'instruction' else movable).append(note)
+                (opening if note.get("type") in RUBRIC_NOTE_TYPES else movable).append(note)
         if opening:
             # Original leading text must follow the apparatus, just as child insertion
             # in the ordinary compiler moves element.text behind the inserted notes.
@@ -1287,9 +1296,9 @@ class ExternalCompilerProcessor(CompilerProcessor):
         if annotation_command == _AnnotationCommand.INSERT and element.tag == f"{{{TEI_NS}}}milestone":
             # Keep apparatus with its opening milestone until the entire source
             # span is compiled, then place it at the end before parallel splitting.
-            copied.extend(note for note in annotations if note.get('type') != 'instruction')
+            copied.extend(note for note in annotations if note.get("type") not in RUBRIC_NOTE_TYPES)
             # Rubrics belong before the addressed words, inside their new row.
-            processed.extend(note for note in annotations if note.get('type') == 'instruction')
+            processed.extend(note for note in annotations if note.get("type") in RUBRIC_NOTE_TYPES)
         elif annotation_command == _AnnotationCommand.INSERT:
             for annotation in reversed(annotations):
                 # ExternalCompilerProcessor returns a list[Element]; insertion is at the
@@ -1300,7 +1309,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
             # The notes went in at the head of the sequence, ahead of the element's
             # heading and its first alignment boundary. Anchor them on its first words
             # instead, now that their ids have been rewritten as top-level members.
-            movable = [note for note in annotations if note.get('type') != 'instruction']
+            movable = [note for note in annotations if note.get("type") not in RUBRIC_NOTE_TYPES]
             if movable:
                 for note in movable:
                     processed.remove(note)

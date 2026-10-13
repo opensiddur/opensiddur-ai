@@ -482,8 +482,9 @@
               was meant and is otherwise not reported.
             </sch:assert>
             <sch:assert test="every $note in tei:note satisfies $note/@type = 'instruction'">
-              The note of a <gi>conditional</gi> is the rubric that sets off its passage, an
-              instruction (<att>type</att>="instruction").
+              The note of a <gi>conditional</gi> is the rubric saying when its passage is said,
+              an instruction (<att>type</att>="instruction"). A rubric saying what the passage
+              is, a description (<att>type</att>="description"), goes inside the scope.
             </sch:assert>
           </sch:rule>
         </constraint>
@@ -535,8 +536,9 @@
               A <gi>condition</gi> applies to notes in a notes standOff; text is conditioned
               with <gi>conditional</gi>.
             </sch:assert>
-            <sch:assert test="not(parent::tei:note[@type='instruction'])">
-              Instructions are conditioned with <gi>conditional</gi>, not <gi>condition</gi>.
+            <sch:assert test="not(parent::tei:note[@type = ('instruction', 'description')])">
+              Instructions and descriptions are conditioned with <gi>conditional</gi>, not
+              <gi>condition</gi>.
             </sch:assert>
           </sch:rule>
         </constraint>

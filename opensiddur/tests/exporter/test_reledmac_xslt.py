@@ -875,6 +875,21 @@ class TestNotesMapping(unittest.TestCase):
         self.assertIn(r"\instructionnote{", out)
         self.assertIn("stand", out)
 
+    def test_a_description_is_set_as_a_rubric_and_takes_no_note_number(self):
+        """A description is set exactly as an instruction is (JLPTEI-3, *Kinds of rubric*)."""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:text><tei:body><tei:p>
+            <tei:milestone unit="verse" n="1"/><tei:note type="description">Reader:</tei:note>Body
+            <tei:note>A comment.</tei:note>
+          </tei:p></tei:body></tei:text>
+        </tei:TEI>"""
+        out = _transform(xml)
+        self.assertIn(r"\instructionnote{", out)
+        self.assertIn("Reader:", out)
+        self.assertNotIn(r"\OSInterlinearNotemark{2}", out)
+        self.assertIn(r"\OSInterlinearNotemark{1}", out)
+
     def test_a_cross_direction_instruction_is_not_put_in_a_fixed_width_box(self):
         r"""An \hbox to \linewidth cannot break, so a rubric wider than it overhangs
         instead of wrapping. \linewidth inside reledpar's parallel setting is the page
@@ -1434,6 +1449,32 @@ class TestConditionalRendering(unittest.TestCase):
         for word in ("before", "conditional", "after"):
             with self.subTest(word):
                 self.assertIn(word, body)
+
+    def test_a_block_that_opens_with_a_description_takes_no_opening_rule(self):
+        """The description announces the passage, as the scope's own rubric would."""
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">{self.CONDITION}</j:conditional>
+              <tei:note type="description">Mourners’ Kaddish.</tei:note>
+              <tei:p><tei:milestone unit="verse" n="1"/>conditional paragraph</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        body = self._document_body(out)
+        self.assertNotIn(r"\OSCondStartBlock", body)
+        self.assertIn(r"\OSCondEndBlock{}", body)
+        self.assertIn("Mourners’ Kaddish.", body)
+
+    def test_an_annotation_before_the_description_does_not_hide_it(self):
+        out = self._transform_body(
+            f"""<tei:div>
+              <j:conditional xml:id="c">{self.CONDITION}</j:conditional><tei:note
+                type="commentary">A remark.</tei:note><tei:note type="description">Reader:</tei:note>
+              <tei:p><tei:milestone unit="verse" n="1"/>conditional paragraph</tei:p>
+              <j:endConditional target="#c"/>
+            </tei:div>"""
+        )
+        self.assertNotIn(r"\OSCondStartBlock", self._document_body(out))
 
     def test_block_conditional_gets_rules(self):
         out = self._transform_body(

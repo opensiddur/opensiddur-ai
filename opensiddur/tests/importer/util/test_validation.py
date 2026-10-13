@@ -872,7 +872,14 @@ class TestDeclarationsAndConditionsAreWellFormed(_DocumentInADiv, unittest.TestC
         self.assertReported(
             '<j:conditional xml:id="c1"><tei:note type="comment">On Pesah:</tei:note>'
             + self.FS + '</j:conditional><tei:p>x</tei:p><j:endConditional target="#c1"/>',
-            "the rubric that sets off")
+            "the rubric saying when")
+
+    def test_a_description_is_not_the_note_of_a_conditional(self):
+        """It says what the passage is, so it belongs inside the scope (JLPTEI-3)."""
+        self.assertReported(
+            '<j:conditional xml:id="c1"><tei:note type="description">Reader:</tei:note>'
+            + self.FS + '</j:conditional><tei:p>x</tei:p><j:endConditional target="#c1"/>',
+            "goes inside the scope")
 
 
 if __name__ == '__main__':

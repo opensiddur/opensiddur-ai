@@ -116,7 +116,9 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
         if state == TriState.FALSE:
             hidden += [f".c{cid}", f".m{cid}"]
         elif state == TriState.TRUE:
-            settled += [f".m{cid}.cm-close", f".m{cid}.cm-norubric", f".m{cid} .cm-br"]
+            # A passage that is simply said: the rubric that said when goes with its rules and
+            # brackets. Commentary the compiler anchored on the rubric stays.
+            settled += [f".m{cid}.cm-close", f".m{cid} > .rubric", f".m{cid} .cm-br"]
     for number, destinations in enumerate(book.optional_references):
         if not all(any(all(states[book.scopes[cid]] != TriState.FALSE for cid in scopes)
                        for scopes in occurrences) for occurrences in destinations):

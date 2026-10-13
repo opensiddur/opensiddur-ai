@@ -1,7 +1,7 @@
 """Place apparatus at the end of its milestone scope before parallel alignment."""
 from lxml import etree
 
-from opensiddur.exporter.constants import TEI_NS
+from opensiddur.exporter.constants import RUBRIC_NOTE_TYPES, TEI_NS
 from opensiddur.exporter.refdb import milestone_terminates
 
 MILESTONE = f"{{{TEI_NS}}}milestone"
@@ -35,7 +35,7 @@ def place_milestone_annotations(elements):
                 if milestone_terminates(item[0], node):
                     active.remove(item)
                     finish(item)
-            notes = [child for child in node if child.tag == NOTE and child.get('type') != 'instruction']
+            notes = [child for child in node if child.tag == NOTE and child.get("type") not in RUBRIC_NOTE_TYPES]
             if notes:
                 active.append([node, notes, None])
         elif node.tag != NOTE and isinstance(node.tag, str):

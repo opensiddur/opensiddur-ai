@@ -236,12 +236,13 @@ class TestDerivedSettingsFramework(unittest.TestCase):
         self.assertEqual(entry.source, "derived")
         self.assertEqual(entry.value, 5)  # Thursday
 
-    def test_the_pirkei_avot_default_outlives_a_missing_date(self):
-        """The volume's fixed choice is the one that matters when there is no date."""
+    def test_a_static_default_outlives_a_derivation_that_cannot_run(self):
+        """The volume's fixed choice is the one that matters when there is no date: the
+        reading cycle is derived, and without a date its derivation contributes nothing."""
         recalculate_derived_settings(self.linear_data, trigger=SettingChangeTrigger.INIT)
-        entry = get_active_setting_entry(self.linear_data, "opensiddur:pirkei-avot", "complete")
+        entry = get_active_setting_entry(self.linear_data, "opensiddur:reading-cycle", "annual")
         self.assertIsNotNone(entry)
-        self.assertFalse(entry.value)
+        self.assertTrue(entry.value)
 
     def test_a_date_declared_undefined_is_not_a_date(self):
         for declarations in (

@@ -825,7 +825,8 @@ works, which is what keeps a range inside one file.
 ### Annotations
 
 Two types of annotations are recognized: 
-1. Instructional annotations that appear inline in a text.
+1. Rubrics that appear inline in a text: instructions (`type="instruction"`) and descriptions
+   (`type="description"`). See [Kinds of rubric](#kinds-of-rubric) for which is which.
 2. Commentary (such as explanations or editorial notes) that is typically out-of-line with the text.
 
 #### Instructions
@@ -836,9 +837,10 @@ be used to indicate the end of its effect.
 
 Instructions may also have canonical labels (`corresp` attributes) with `urn:x-opensiddur:instruction:` URNs. If present, instruction sets may be swapped dynamically. For example, if the same "On shabbat" instruction exists in the source `A` and `B`, and they are both declared with the same `corresp` attribute, a setting can be used to choose which source's instruction should be used.
 
-If an instruction indicates that a reader should read a text conditionally, the instruction must be included inside
-the text controlled by the conditional (see the section on [Declaring text conditions](#Declaring_text_conditions) 
-below).
+If an instruction says when a text is read, it is the condition's own rubric: the `tei:note` child of the
+`j:conditional` that controls the text, which is printed only while the condition is undecided. A rubric that says what
+the text is, who says it or how is a description, and goes inside the text the conditional controls (see
+[Kinds of rubric](#kinds-of-rubric) below).
 
 The following shows an example instructional note:
 ```xml
@@ -1322,11 +1324,6 @@ passage whose occasion is easier to compute than to write as a condition:
    <tei:f name="chapter-4"><tei:binary/></tei:f>
    <tei:f name="chapter-5"><tei:binary/></tei:f>
    <tei:f name="chapter-6"><tei:binary/></tei:f>
-   <tei:f name="complete">
-      <!-- declared, not derived: the volume prints all of Pirkei Avot whatever the
-      date. Defaults to false. -->
-      <tei:binary/>
-   </tei:f>
 </tei:fs>
 ```
 
@@ -1817,6 +1814,46 @@ When a condition is evaluated, the current in-scope setting of the feature is co
 
 If any of the values in the condition are `undefined`, the condition may evaluate to `undefined` (see the truth table below). `j:conditional` allows a `tei:note` element of type `instruction` as a child element, as a sibling to the condition. If the condition evaluates to `undefined`, the note will be included. It will be excluded if the condition evaluates to either `true` (in which case, the text must always be included) or `false` (in which case the text is excluded). The conditional note itself may also have inline conditionals. 
 
+##### Kinds of rubric
+
+A rubric is classified by what it does where it stands, not by its wording, and its kind decides
+how it is encoded:
+
+- **A condition** says *when* the passage that follows is said: "On the Sabbath:", "With a
+  minyan:", "Between Rosh Hashanah and Yom Kippur add:". It is the `j:conditional`'s own
+  `tei:note type="instruction"`, and it means something only while the condition is unknown: it
+  is printed when the condition is `undefined`, and not at all when it is `true` or `false`.
+- **A directive** tells the reader to do or say something the text at that point does not
+  contain: "Mourners' Kaddish" where no kaddish follows, "The Ark is opened", "Stand". It is a
+  `tei:note type="instruction"` in the text, printed wherever its place is reached.
+- **A description** says *what* the passage printed after it is, who says it, or how: "Mourners'
+  Kaddish" before a transcluded kaddish (naming it, and implying all the instructions to
+  mourners), "Reader:", "In silent devotion:". It belongs to the passage. It is a
+  `tei:note type="description"` placed first inside the passage's scope, after the
+  `j:conditional`, and it is printed whenever the passage is: with it when the condition is
+  `true` or `undefined`, and left out with it when `false`.
+
+The same words can be a directive in one edition and a description in another: an edition that
+prints only "Mourners' Kaddish" is telling the reader to say it, and one that transcludes the
+kaddish there is naming the text that follows. A rubric that says both when and what — "When the
+Reader repeats the Amidah, the following Kedushah is said:" — is a description, since leaving it
+out would lose the name of the passage.
+
+```xml
+<j:conditional xml:id="mourners_kaddish">
+   <tei:note type="instruction">With a minyan:</tei:note>
+   <tei:fs type="opensiddur:quorum">
+      <tei:f name="minyan"><tei:binary value="true"/></tei:f>
+   </tei:fs>
+</j:conditional>
+<tei:note type="description">Mourners' Kaddish.</tei:note>
+<j:transclude target="urn:x-opensiddur:text:prayer:kaddish/mourners"/>
+<j:endConditional target="#mourners_kaddish"/>
+```
+
+Descriptions and instructions are set alike: inline, as rubrics, with the edition's instruction
+priority choosing their wording.
+
 ##### How an undecided scope is set off
 
 A scope whose condition evaluates to `undefined` is kept, and how it is set off from the text
@@ -1827,7 +1864,8 @@ around it follows the source:
   around blocks), with its instruction, if it has one.
 - **An instruction** and no `@type`: the instruction announces the passage, as the source's
   rubric does, and a closing delimiter shows where it ends. The instruction may be the
-  conditional's own `tei:note`, or the `tei:note type="instruction"` the scope opens with.
+  conditional's own `tei:note`, or the `tei:note type="instruction"` or `type="description"`
+  the scope opens with.
 - **Neither**: the conditional is a direction to the processor, not to the reader, and the passage
   is kept with no delimiters at all. The occasion conditions on a book's running order, around
   the transclusion of each section that is said only on some days, are of this kind (see

@@ -11,6 +11,12 @@ OPENING = 'urn:x-opensiddur:text:mishnah:sanhedrin/10/1/kol_yisrael'
 CLOSING = 'urn:x-opensiddur:text:mishnah:makkot/3/16'
 SIGIL = '1949 pirkei_avot'
 FS = 'opensiddur:pirkei-avot'
+#: Who wrote the weekly-cycle rubrics, which are the edition's own, not Birnbaum's.
+EDITORIAL = 'urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein'
+
+#: When a chapter, or Avot at all, is read. Each is its j:conditional's own rubric, so a
+#: condition known to hold -- a date that selects the chapter, or a volume that sets every
+#: chapter to print the whole text -- prints the passage without it.
 SEASON_RUBRIC = 'Recited on the Sabbaths between <tei:hi rend="italic">Pesaḥ</tei:hi> and <tei:hi rend="italic">Rosh Hashanah</tei:hi>'
 CHAPTER_HE = ('רִאשׁוֹן','שֵׁנִי','שְׁלִישִׁי','רְבִיעִי','חֲמִישִׁי','שִׁשִּׁי')
 CHAPTER_EN = ('One','Two','Three','Four','Five','Six')
@@ -120,7 +126,7 @@ def units(project):
         urn=f'{ROOT}/{c}'
         cid=f'avot_chapter_{c}'
         rubric=f'Read Chapter {c} when it is assigned in the weekly Pirkei Avot cycle.'
-        body+=cond(cid,fs=feature(FS,f'chapter-{c}'))+selection_instruction(cid, rubric, editorial=True)+transclude(urn)+endcond(cid)
+        body+=cond(cid,note=rubric,note_resp=EDITORIAL,fs=feature(FS,f'chapter-{c}'))+transclude(urn)+endcond(cid)
         first=next(r for r in rows if r['chapter']==c and r['key']=='opening')
         last=next(r for r in rows if r['chapter']==c and r['key']=='closing')
         title=('Chapter '+CHAPTER_EN[c-1]) if side else 'פֶּרֶק '+CHAPTER_HE[c-1]
@@ -139,13 +145,4 @@ def caller():
     """The seasonal rubric belongs to the siddur, never the reusable Avot file."""
     available='<j:any>'+''.join(feature(FS,f'chapter-{n}') for n in range(1,7))+'</j:any>'
     scope='<j:all>'+feature(FS,'season')+available+'</j:all>'
-    return cond('avot_season',fs=scope)+selection_instruction('avot_season', SEASON_RUBRIC)+transclude(ROOT)+endcond('avot_season')
-
-
-def selection_instruction(cid, text, *, editorial=False):
-    """Keep selection rubrics independently suppressible for a complete text."""
-    marker=cid+'_instruction'
-    resp=' resp="urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein"' if editorial else ''
-    return (cond(marker,fs=feature(FS,'complete'),negate=True)
-            +f'<tei:note type="instruction" xml:lang="en"{resp}>{text}</tei:note>'
-            +endcond(marker))
+    return cond('avot_season',note=SEASON_RUBRIC,fs=scope)+transclude(ROOT)+endcond('avot_season')

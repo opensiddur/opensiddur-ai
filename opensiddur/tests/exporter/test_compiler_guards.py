@@ -152,23 +152,46 @@ class TestIndexAndNamespaces(CompilerGuardTestCase):
         self.assertIn("plain", self.compile("p", "index.xml"))
 
 
-class TestRubricIds(CompilerGuardTestCase):
-    def test_a_replaced_rubric_in_a_holding_condition_is_rewritten_once(self):
+class TestRubricOfAHoldingCondition(CompilerGuardTestCase):
+    """A j:conditional's rubric says when; once the condition holds it is not printed."""
+
+    FS = '<tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>'
+
+    def test_the_rubric_of_a_true_condition_is_not_printed(self):
+        self.write("p", "index.xml",
+                   f'<j:declare xml:id="d">{self.FS}</j:declare>'
+                   f'<j:conditional xml:id="c"><tei:note type="instruction">On the Sabbath:'
+                   f'</tei:note>{self.FS}</j:conditional><tei:p>the passage</tei:p>'
+                   f'<j:endConditional target="#c"/><j:endDeclare target="#d"/>')
+        compiled = self.compile("p", "index.xml")
+        self.assertIn("the passage", compiled)
+        self.assertNotIn("On the Sabbath:", compiled)
+
+    def test_nor_a_rubric_the_instruction_priority_would_have_replaced(self):
         rubric = "urn:x-opensiddur:instruction:test/say"
-        fs = '<tei:fs type="t:fs"><tei:f name="x"><tei:binary value="true"/></tei:f></tei:fs>'
         self.write("p", "notes.xml",
                    f'<tei:p><tei:note type="instruction" corresp="{rubric}" xml:id="rub">'
                    f'Say this:</tei:note></tei:p>')
         self.write("p", "index.xml",
-                   f'<j:declare xml:id="d">{fs}</j:declare>'
+                   f'<j:declare xml:id="d">{self.FS}</j:declare>'
                    f'<j:conditional xml:id="c"><tei:note type="instruction" corresp="{rubric}"/>'
-                   f'{fs}</j:conditional><tei:p>the passage</tei:p>'
+                   f'{self.FS}</j:conditional><tei:p>the passage</tei:p>'
                    f'<j:endConditional target="#c"/><j:endDeclare target="#d"/>')
         compiled = self.compile("p", "index.xml")
-        self.assertNotIn("ids-rewritten", compiled)
-        note = etree.fromstring(f"<r>{compiled}</r>").find(f".//{{{TEI}}}note")
-        self.assertEqual("".join(note.itertext()), "Say this:")
-        self.assertRegex(note.get("{http://www.w3.org/XML/1998/namespace}id"), r"^rub_[0-9a-f]{8}$")
+        self.assertIn("the passage", compiled)
+        self.assertNotIn("Say this:", compiled)
+
+    def test_a_rubric_inside_the_scope_is_part_of_the_passage(self):
+        """A rubric saying what the passage is goes inside the scope, and prints with it."""
+        self.write("p", "index.xml",
+                   f'<j:declare xml:id="d">{self.FS}</j:declare>'
+                   f'<j:conditional xml:id="c">{self.FS}</j:conditional>'
+                   f'<tei:p><tei:note type="instruction">Mourners’ Kaddish.</tei:note>'
+                   f'the passage</tei:p>'
+                   f'<j:endConditional target="#c"/><j:endDeclare target="#d"/>')
+        compiled = self.compile("p", "index.xml")
+        self.assertIn("Mourners’ Kaddish.", compiled)
+        self.assertIn("the passage", compiled)
 
 
 class TestFileSources(CompilerGuardTestCase):

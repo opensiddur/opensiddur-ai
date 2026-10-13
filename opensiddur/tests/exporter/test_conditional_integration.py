@@ -302,12 +302,11 @@ class TestConditionalIntegration(unittest.TestCase):
             ''' % value,
         )
 
-    def test_true_keeps_the_instruction_note(self):
-        # The instruction outlives the condition that carried it: it is the rubric the
-        # edition prints over the passage, so it is set wherever the passage is.
+    def test_true_takes_the_instruction_note_away(self):
+        # The note says when the passage is said; once that is known it has nothing to say.
         out = self._compile(self._noted("note_true.xml", "true"))
         self.assertIn("the passage", out)
-        self.assertIn("Say this here", out)
+        self.assertNotIn("Say this here", out)
 
     def test_false_takes_the_instruction_note_with_it(self):
         # Nothing is said here at all, so nothing tells the reader to say it.

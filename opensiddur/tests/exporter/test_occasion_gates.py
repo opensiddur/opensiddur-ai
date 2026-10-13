@@ -92,5 +92,28 @@ class TestAGatedRunningOrder(unittest.TestCase):
         self.assertIn("Sabbath service", body)
 
 
+
+class TestARubricTheScopeOpensWith(unittest.TestCase):
+    """A scope announced by the rubric it opens with is not silent (conditional_markers)."""
+
+    def _scope(self, opening: str):
+        from lxml import etree
+        from opensiddur.exporter.conditional_markers import is_silent
+        root = etree.fromstring(
+            '<r xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'
+            f'<j:conditional xml:id="c"/>{opening}<tei:p>x</tei:p><j:endConditional target="#c"/></r>')
+        return is_silent(root[0])
+
+    def test_a_description_announces_it(self):
+        self.assertFalse(self._scope('<tei:note type="description">Reader:</tei:note>'))
+
+    def test_even_after_an_annotation_anchored_there(self):
+        self.assertFalse(self._scope('<tei:note type="commentary">A remark.</tei:note>'
+                                     '<tei:note type="description">Reader:</tei:note>'))
+
+    def test_a_scope_with_no_rubric_is_silent(self):
+        self.assertTrue(self._scope('<tei:note type="commentary">A remark.</tei:note>'))
+
+
 if __name__ == "__main__":
     unittest.main()

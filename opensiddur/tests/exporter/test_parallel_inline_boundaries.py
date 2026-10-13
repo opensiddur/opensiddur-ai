@@ -46,3 +46,21 @@ class ParallelInlineBoundariesTests(unittest.TestCase):
         reconstruct_markered_document(root)
         self.assertEqual([n.tag for n in root],['{'+P+'}parallel','{'+P+'}transclude'])
         self.assertEqual([''.join(n.itertext()) for n in root[1][0]],['prayer','translated prayer'])
+
+
+class TestARubricOpeningARow(unittest.TestCase):
+    """The rubric that opens a division moves into the division's row, with what is between."""
+
+    def test_an_annotation_between_opener_and_description_moves_with_them(self):
+        from lxml import etree
+        from opensiddur.exporter.external_compiler import _alignment_boundaries
+        tei, j = "http://www.tei-c.org/ns/1.0", "http://jewishliturgy.org/ns/jlptei/2"
+        root = etree.fromstring(
+            f'<r xmlns:tei="{tei}" xmlns:j="{j}"><tei:p>before</tei:p>'
+            '<tei:note type="commentary">on what came before</tei:note>'
+            '<j:conditional xml:id="c"/>'
+            '<tei:note type="commentary">on the passage</tei:note>'
+            '<tei:note type="description">Reader:</tei:note>'
+            '<tei:milestone unit="verse" corresp="urn:x"/></r>')
+        boundaries = _alignment_boundaries(list(root))
+        self.assertEqual([None, None, "urn:x", None, None, None], boundaries)

@@ -1264,9 +1264,9 @@
         </xsl:variable>
         <xsl:variable name="other-content" as="element()*"
                       select="($block/p:parallelItem except $item)
-                              /(.//tei:note[not(@type = 'instruction')]
+                              /(.//tei:note[not(@type = ('instruction', 'description'))]
                                 | .//tei:anchor[@type = 'page-label'
-                                               or .//tei:note[not(@type = 'instruction')]])
+                                               or .//tei:note[not(@type = ('instruction', 'description'))]])
                               [not(ancestor::tei:note or ancestor::tei:anchor[.//tei:note])]"/>
         <xsl:variable name="ink" as="xs:integer*"
                       select="index-of($leaves ! (f:puts-ink(.) and not(self::f:head)), true())"/>
@@ -2633,7 +2633,7 @@
              among them. -->
         <xsl:variable name="alt-instructions" as="xs:string*"
                       select="for $n in $alt-flattened
-                                        /descendant-or-self::tei:note[@type='instruction']
+                                        /descendant-or-self::tei:note[@type = ('instruction', 'description')]
                               return normalize-space(string($n))"/>
         <!-- 'both' keeps every rubric where it is. 'combined' drops from the second
              column only what the first already says in the same words, so two rubrics
@@ -2695,7 +2695,7 @@
                     else if ($next/self::f:para-break or $next/self::f:block-break
                              or $next/self::f:head or $next/self::f:list-label
                              or $next/self::tei:milestone[@rend = '****']
-                             or $next/self::tei:note[@type = 'instruction'])
+                             or $next/self::tei:note[@type = ('instruction', 'description')])
                     then true()
                     else if (f:is-structural-space($next) or f:renders-nothing($next)
                              or $next/self::tei:lb
@@ -2847,7 +2847,7 @@
          one thing such a note can always be set with. -->
     <xsl:function name="f:is-head-note" as="xs:boolean">
         <xsl:param name="node" as="node()?"/>
-        <xsl:sequence select="exists($node/self::tei:note[not(@type = 'instruction')]
+        <xsl:sequence select="exists($node/self::tei:note[not(@type = ('instruction', 'description'))]
                                           [not(ancestor::tei:standOff)]
                                           /parent::tei:div[tei:head])"/>
     </xsl:function>
@@ -2994,11 +2994,11 @@
                         <xsl:with-param name="rubrics-seen" select="$rubrics-seen"/>
                     </xsl:next-iteration>
                 </xsl:when>
-                <xsl:when test="descendant-or-self::tei:note[@type='instruction']">
+                <xsl:when test="descendant-or-self::tei:note[@type = ('instruction', 'description')]">
                     <!-- One rubric per leaf in practice: either the note itself, or a
                          conditional carrying the rubric that explains it. -->
                     <xsl:variable name="note"
-                                  select="descendant-or-self::tei:note[@type='instruction'][1]"/>
+                                  select="descendant-or-self::tei:note[@type = ('instruction', 'description')][1]"/>
                     <xsl:variable name="text" as="xs:string"
                                   select="normalize-space(string($note))"/>
                     <!-- How many times this column has said it, counting this one. -->
@@ -3053,7 +3053,7 @@
     <!-- A note copied with its leaf keeps the serial of the note it was copied from: the copy
          has no ancestors, and f:editorial-note-emissions-before counts from where a note
          stands in the document. -->
-    <xsl:template match="tei:note[not(@type='instruction')]" mode="stamp-rubric stamp-serial">
+    <xsl:template match="tei:note[not(@type = ('instruction', 'description'))]" mode="stamp-rubric stamp-serial">
         <xsl:copy>
             <xsl:copy-of select="@*"/>
             <xsl:attribute name="f:serial" select="f:note-serial(.)"/>
@@ -3064,7 +3064,7 @@
     <!-- Copies that carry no rubrics, only notes to keep the serials of. -->
     <xsl:mode name="stamp-serial" on-no-match="shallow-copy"/>
 
-    <xsl:template match="tei:note[@type='instruction']" mode="stamp-rubric">
+    <xsl:template match="tei:note[@type = ('instruction', 'description')]" mode="stamp-rubric">
         <xsl:param name="echoed" as="xs:boolean" tunnel="yes"/>
         <xsl:param name="note-lang" as="xs:string" tunnel="yes"/>
         <xsl:param name="text-lang" as="xs:string" tunnel="yes"/>
@@ -3626,7 +3626,7 @@
         <xsl:choose>
             <!-- Marker-only instructions announce their own labels. Within a paragraph
                  or verse, however, the instruction cannot show where an addition ends. -->
-            <xsl:when test="tei:note[@type='instruction'] and not(@type = 'marked')
+            <xsl:when test="f:is-announced(.)
                             and f:is-inline-conditional(.)
                             and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true')"/>
             <xsl:when test="f:is-inline-conditional(.)">
@@ -3638,14 +3638,14 @@
                  only reads as a stray line. The closing rule stays, since nothing else
                  shows where the passage stops. A scope the book marks off takes its rule
                  all the same. -->
-            <xsl:when test="tei:note[@type='instruction'] and not(@type = 'marked')"/>
+            <xsl:when test="f:is-announced(.)"/>
             <xsl:otherwise>
                 <xsl:text>\OSCondStartBlock{}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
         <!-- The note, when there is one, explains the condition the reader must judge. -->
         <xsl:if test="not(f:is-inline-conditional(.))
-                      or (tei:note[@type='instruction'] and not(@type = 'marked')
+                      or (tei:note[@type = ('instruction', 'description')] and not(@type = 'marked')
                           and not(ancestor::tei:p or ancestor::tei:l or @f:in-paragraph = 'true'))">
             <xsl:apply-templates select="tei:note" mode="emit"/>
         </xsl:if>
@@ -3656,8 +3656,7 @@
         <xsl:choose>
             <!-- Matching the opening: a scope whose instruction stands in for its
                  opening bracket takes no closing one. -->
-            <xsl:when test="exists($start/tei:note[@type='instruction'])
-                            and not($start/@type = 'marked')
+            <xsl:when test="exists($start) and f:is-announced($start)
                             and f:is-inline-conditional($start)
                             and not($start/ancestor::tei:p or $start/ancestor::tei:l)"/>
             <xsl:when test="if (exists($start))
@@ -3712,7 +3711,7 @@
          go to the B-series; instructional notes go to the C-series. They
          attach to a zero-width lemma so the apparatus mark sits at the
          note's textual anchor point. -->
-    <xsl:template match="tei:note[@type='instruction']" mode="emit" priority="10">
+    <xsl:template match="tei:note[@type = ('instruction', 'description')]" mode="emit" priority="10">
         <!-- A rubric the other column gives in the same words is one rubric printed twice,
              once per column. f:pair-heads has marked it; which column keeps it is the
              settings' business. Nothing is emitted for the one that does not, and nothing
@@ -3742,7 +3741,7 @@
         </xsl:if>
     </xsl:template>
 
-    <xsl:template match="tei:note[not(ancestor::tei:standOff)][not(@type='instruction')]" mode="emit">
+    <xsl:template match="tei:note[not(ancestor::tei:standOff)][not(@type = ('instruction', 'description'))]" mode="emit">
         <xsl:variable name="serial" as="xs:integer" select="f:note-serial(.)"/>
         <xsl:call-template name="os-b-footnote">
             <xsl:with-param name="serial" select="$serial"/>
@@ -3756,7 +3755,7 @@
          under endnote placement it is still a footnote, since the endnotes are printed
          from reledmac's apparatus, which the title page is not part of. -->
     <xsl:template match="tei:note[ancestor::tei:titlePage][not(ancestor::tei:standOff)]
-                                 [not(@type='instruction')]" mode="emit" priority="5">
+                                 [not(@type = ('instruction', 'description'))]" mode="emit" priority="5">
         <xsl:if test="$notes-placement != 'none'">
             <xsl:text>\begingroup\renewcommand{\thefootnote}{</xsl:text>
             <xsl:value-of select="f:note-mark(f:note-serial(.))"/>
@@ -3909,7 +3908,7 @@
     <xsl:function name="f:editorial-note-emissions-before" as="xs:integer">
         <xsl:param name="ctx" as="element()"/>
         <xsl:sequence select="count(($ctx/preceding::tei:note | $ctx/ancestor::tei:note)
-            [not(@type='instruction')][ancestor::tei:text][not(ancestor::tei:standOff)])"/>
+            [not(@type = ('instruction', 'description'))][ancestor::tei:text][not(ancestor::tei:standOff)])"/>
     </xsl:function>
 
     <!-- Heading level (1-4) to the \OSheadA/B/C/D macro suffix. -->
@@ -3987,7 +3986,7 @@
             or ((self::tei:hi | self::tei:emph | self::tei:foreign | self::tei:choice
                  | self::tei:ref)
                 and normalize-space(string(.)))
-            or descendant-or-self::tei:note[@type = 'instruction'][normalize-space(.)]
+            or descendant-or-self::tei:note[@type = ('instruction', 'description')][normalize-space(.)]
             or self::f:head or self::f:list-label])"/>
     </xsl:function>
 
@@ -4056,13 +4055,32 @@
          A rubric the scope opens with announces it as its own note would. -->
     <xsl:function name="f:is-silent" as="xs:boolean">
         <xsl:param name="start" as="element()"/>
-        <xsl:variable name="first-governed" select="$start/following-sibling::node()[
-            not(self::text()[normalize-space() = '']) and not(self::tei:milestone or self::tei:pb)][1]"/>
         <xsl:sequence select="if ($start/@p:silent) then $start/@p:silent = 'true' else
             not($start/@type = 'marked')
             and empty($start/tei:note)
-            and empty($first-governed[self::tei:note[@type = 'instruction']])
+            and not(f:opens-with-rubric($start))
             and exists(f:matching-end($start))"/>
+    </xsl:function>
+
+    <!-- True when the first thing a scope governs is a rubric: an instruction, or the
+         description of the passage (JLPTEI-3, *Kinds of rubric*). It announces the scope
+         as the scope's own note would. An annotation anchored at the scope's start
+         is passed over, as a milestone is: it is the apparatus, not the text. -->
+    <xsl:function name="f:opens-with-rubric" as="xs:boolean">
+        <xsl:param name="start" as="element()"/>
+        <xsl:variable name="first-governed" select="$start/following-sibling::node()[
+            not(self::text()[normalize-space() = '']) and not(self::tei:milestone or self::tei:pb)
+            and not(self::tei:note[not(@type = ('instruction', 'description'))])][1]"/>
+        <xsl:sequence select="exists($first-governed[self::tei:note[@type = ('instruction', 'description')]])"/>
+    </xsl:function>
+
+    <!-- True when an undecided scope is announced by a rubric, its own or the one it
+         opens with, so that the rubric stands in for its opening delimiter. -->
+    <xsl:function name="f:is-announced" as="xs:boolean">
+        <xsl:param name="start" as="element()"/>
+        <xsl:sequence select="(exists($start/tei:note[@type = ('instruction', 'description')])
+                               or f:opens-with-rubric($start))
+                              and not($start/@type = 'marked')"/>
     </xsl:function>
 
     <!-- True when a conditional governs no block content, so its delimiters can be the

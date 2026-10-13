@@ -218,8 +218,8 @@
   //
   // book.expressions: [{cond, pinned}], book.scopes: the expression of each scope by its
   // number. A scope that does not hold hides what it governs (class c<n>) and its markers
-  // (m<n>); one that holds keeps its rubric and drops its brackets and rules; an undecided
-  // one shows everything. html.py writes the same rules, for a page read without scripts.
+  // (m<n>); one that holds drops the rubric that said when to read it, its rules and its
+  // brackets, keeping any commentary anchored there; an undecided one shows everything. html.py writes the same rules, for a page read without scripts.
 
   function scopeCss(book, reader, defaults) {
     var states = book.expressions.map(function (e) {
@@ -232,7 +232,7 @@
       if (state === FALSE) {
         hidden.push(".c" + cid, ".m" + cid);
       } else if (state === TRUE) {
-        settled.push(".m" + cid + ".cm-close", ".m" + cid + ".cm-norubric",
+        settled.push(".m" + cid + ".cm-close", ".m" + cid + " > .rubric",
                      ".m" + cid + " .cm-br");
       }
     });

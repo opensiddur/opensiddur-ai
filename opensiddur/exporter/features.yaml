@@ -238,7 +238,6 @@ opensiddur:pirkei-avot:
   common: true
   supplied: derived
   features:
-    complete: binary
     season: binary
     chapter-1: binary
     chapter-2: binary
