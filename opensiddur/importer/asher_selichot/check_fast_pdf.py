@@ -73,7 +73,8 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
         if expanded and '(We are but few, &c.)' in body:raise ValueError('Esther repeat instruction remains')
     if day=='tammuz-fast':
         if body.count('on the day, &c.')!=(0 if expanded else 1):raise ValueError('Tammuz short cue count changed')
-        if body.count('on the day when the enemy prevailed, and the city was taken.')!=(3 if expanded else 2):raise ValueError('Tammuz full refrain count changed')
+        if body.count('on the day when the enemy prevailed and the city was taken.')!=(2 if expanded else 1):raise ValueError('Tammuz full refrain count changed')
+        if body.count('on the day the enemy prevailed and the city was taken.')!=1:raise ValueError('Tammuz closing refrain variant changed')
         if 'dwelleth in heaven' not in body:raise ValueError('Tammuz facsimile word join lost')
     print(day+': '+str(len(notes))+' apparatus fingerprints; stanza start deltas '+str(deltas))
     return he,en

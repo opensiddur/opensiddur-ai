@@ -1614,3 +1614,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 24 pages; 0 of 623 Hebrew runs are set left to right; control: 615 of 623 flagged when every run is reversed; SHA-256 `920d6aafcdc18257a3dce594a4c7dc177e8b7150c124d1e9ff9d89c6c5bffd0d`.
 
 Artifacts: `output/asher_selichot/proofreading/english-019/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint020
+
+[English batch020](`sources/asher_selichot/proofreading/english-pass-20/batch-020.json`) covers Seventeenth of Tammuz, s369 lower–377 (n368–376), printed 183 lower–187.
+5 image-first page observations were frozen before cached OCR comparison;
+8 image-adjudicated replacement rules changed 20 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 14 pages; expanded: 23 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 14 pages; 0 of 245 Hebrew runs are set left to right; control: 243 of 245 flagged when every run is reversed; SHA-256 `5c660fc94906af4b0aad872b016159324da4874a761c8e9244a3532111cd782f`.
+- Expanded: 23 pages; 0 of 628 Hebrew runs are set left to right; control: 618 of 628 flagged when every run is reversed; SHA-256 `c9c89266950149f3a079198e599086ef6f156427affc36c97b847b4df3d1277f`.
+
+Artifacts: `output/asher_selichot/proofreading/english-020/`. Whole-book PDFs remain earlier snapshots.
