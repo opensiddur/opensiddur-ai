@@ -1632,3 +1632,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 23 pages; 0 of 628 Hebrew runs are set left to right; control: 618 of 628 flagged when every run is reversed; SHA-256 `c9c89266950149f3a079198e599086ef6f156427affc36c97b847b4df3d1277f`.
 
 Artifacts: `output/asher_selichot/proofreading/english-020/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint021
+
+[English batch021](`sources/asher_selichot/proofreading/english-pass-21/batch-021.json`) covers Yom Kippur Katan, s379–409 upper (n378–408), printed 188–203 upper.
+16 image-first page observations were frozen before cached OCR comparison;
+13 image-adjudicated replacement rules changed 15 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 30 pages; expanded: 40 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 30 pages; 0 of 800 Hebrew runs are set left to right; control: 793 of 800 flagged when every run is reversed; SHA-256 `b36c10ba011f4199df8915a6c94bd8be3e4bdc82f426c53c6ae03a5c8a0061db`.
+- Expanded: 40 pages; 0 of 1241 Hebrew runs are set left to right; control: 1227 of 1241 flagged when every run is reversed; SHA-256 `f7e2817d2683ad7d93b80e75c826508a5de26a0b2a405fa6bd3e3572b1ab2847`.
+
+Artifacts: `output/asher_selichot/proofreading/english-021/`. Whole-book PDFs remain earlier snapshots.
