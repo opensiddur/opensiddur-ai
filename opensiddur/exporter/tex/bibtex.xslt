@@ -52,10 +52,19 @@
     <xsl:sequence select="string-join($parts, '')"/>
   </xsl:function>
 
-  <!-- Root template -->
+  <!-- Root template. A tei:bibl that names nothing to cite is left out: a file's pointer
+       back to its project's index (tei:ptr and tei:biblScope, see AGENTS.md *Project
+       layout*) is a bibl too, and printed as a source it was an empty entry. -->
   <xsl:template match="/">
-    <xsl:apply-templates select="//tei:bibl"/>
+    <xsl:apply-templates select="//tei:bibl[j:is-citable(.)]"/>
   </xsl:template>
+
+  <xsl:function name="j:is-citable" as="xs:boolean">
+    <xsl:param name="bibl" as="element()"/>
+    <xsl:sequence select="exists($bibl/(tei:title | tei:author | tei:editor | tei:publisher
+                                        | tei:distributor | tei:edition | tei:idno
+                                        | tei:ref[@target] | tei:date)[normalize-space(.) or @target])"/>
+  </xsl:function>
 
   <!-- Main bibl template -->
   <xsl:template match="tei:bibl">
@@ -264,7 +273,7 @@
        when it has none. -->
   <xsl:template name="generate-cite-key">
     <xsl:variable name="base" select="j:base-cite-key(.)"/>
-    <xsl:variable name="same-key" select="root()//tei:bibl[j:base-cite-key(.) = $base]"/>
+    <xsl:variable name="same-key" select="root()//tei:bibl[j:is-citable(.)][j:base-cite-key(.) = $base]"/>
     <xsl:choose>
       <xsl:when test="count($same-key) le 1">
         <xsl:value-of select="$base"/>

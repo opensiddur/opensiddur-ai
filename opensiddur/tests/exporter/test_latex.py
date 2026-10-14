@@ -321,6 +321,21 @@ class TestExtractSources(unittest.TestCase):
         self.assertIn(r"\addbibresource{\jobname.bib}", preamble)
         self.assertIn(r"\printbibliography", postamble)
 
+    def test_a_bibl_that_only_points_to_the_index_is_not_a_source(self):
+        """A file's pointer back to its project's index is a tei:bibl with nothing to cite."""
+        index = b"""<?xml version="1.0"?>
+        <root xmlns:tei="http://www.tei-c.org/ns/1.0">
+          <tei:sourceDesc>
+            <tei:bibl><tei:title>A Book</tei:title><tei:author>Author</tei:author></tei:bibl>
+            <tei:bibl><tei:ptr target="index.xml"/><tei:biblScope unit="page">1</tei:biblScope></tei:bibl>
+          </tei:sourceDesc>
+        </root>"""
+        doc = self._create("p", "doc.xml", b"<root/>")
+        self._create("p", "index.xml", index)
+        preamble, _ = extract_sources([doc])
+        self.assertEqual(1, preamble.count("@"))
+        self.assertIn("A Book", preamble)
+
     def test_returns_empty_strings_when_no_bibl(self):
         doc = self._create("p", "doc.xml", b"<root/>")
         self._create("p", "index.xml", b"<root/>")
