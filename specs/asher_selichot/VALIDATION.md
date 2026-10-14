@@ -1578,3 +1578,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 21 pages; 0 of 574 Hebrew runs are set left to right; control: 568 of 574 flagged when every run is reversed; SHA-256 `af23d290fb2eedb5f8b617f6f71cb9980b0b3d81a735a4833456b5c58847a6ec`.
 
 Artifacts: `output/asher_selichot/proofreading/english-017/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint018
+
+[English batch018](`sources/asher_selichot/proofreading/english-pass-18/batch-018.json`) covers Tenth of Tevet, s351 lower–359 upper (n350–358), printed 174 lower–178 upper.
+5 image-first page observations were frozen before cached OCR comparison;
+10 image-adjudicated replacement rules changed 17 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 15 pages; expanded: 25 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 15 pages; 0 of 304 Hebrew runs are set left to right; control: 304 of 304 flagged when every run is reversed; SHA-256 `ab796b5417c79fb1430cc25c79507ecbfe233f6887896407b1ea77f8d9348ac3`.
+- Expanded: 25 pages; 0 of 781 Hebrew runs are set left to right; control: 773 of 781 flagged when every run is reversed; SHA-256 `cfea033554c4a6f4a53b8bd8a048a06ec86f741aec0a73e7d6eb161db89af9e3`.
+
+Artifacts: `output/asher_selichot/proofreading/english-018/`. Whole-book PDFs remain earlier snapshots.
