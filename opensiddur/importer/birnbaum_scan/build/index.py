@@ -108,7 +108,8 @@ OCCASIONS = (
     ("rosh_hashanah/minchah_maariv_and_rites", aggregate("aseret-ymei-tshuva")),
     ("sukkot/rites", any_of(holiday("sukkot", 1, 7), holiday("shmini-atzeret", 1, 2))),
     ("chanukah", holiday("hanukkah", 1, 8)),
-    ("purim", any_of(holiday("purim", 1), holiday("shushan-purim", 1))),
+    # On the day this community celebrates Purim: the 14th, or the 15th in a walled city.
+    ("purim", holiday("purim-observed", 1)),
     # Not gated: the life-cycle services turn on opensiddur:override, which counts as false
     # when undefined, so a gate would take them out of every edition that names no occasion.
     ("lifecycle", None),

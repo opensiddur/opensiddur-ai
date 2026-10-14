@@ -336,7 +336,7 @@ prayer("amidah_hodaah", "הוֹדָאָה", "amidah/hodaah", 91, 93, "\n".join([
     f'        <j:transclude type="external" target="{U}al_hanissim/chanukah"/>',
     endcond("cond_hodaah_chanukah"),
     cond("cond_hodaah_purim", note="On Purim add:",
-         fs=feature(HOL, "purim", '<tei:numeric value="1"/>')),
+         fs=feature(HOL, "purim-observed", '<tei:numeric value="1"/>')),
     f'        <j:transclude type="external" target="{U}al_hanissim/purim"/>',
     endcond("cond_hodaah_purim"),
     d(U + "amidah/hodaah/veal_kulam", "וְעַל כֻּלָּם יִתְבָּרַךְ וְיִתְרוֹמַם שִׁמְךָ, מַלְכֵּֽנוּ, תָּמִיד לְעוֹלָם וָעֶד.", indent=10),

@@ -21,6 +21,7 @@ from opensiddur.exporter.html.html import (
     always_basic,
     basic_controls,
     build_book,
+    celebrated_purim,
     feature_words,
     read_basic_settings,
     settings_catalogue,
@@ -743,6 +744,42 @@ class TestBuildBook(unittest.TestCase):
         hidden = re.findall(r"^(.*)\{display:none\}$", result, re.MULTILINE)[0].split(",")
         self.assertEqual(sorted(hidden), [".c0", ".c2", ".c4", ".m0", ".m2", ".m4"])
 
+
+
+class TestTheDayCelebratedAsPurim(unittest.TestCase):
+    """A kind of day cannot say which of 14 and 15 Adar is celebrated as Purim; the volume
+    can, and its book's Purim choices say what it does."""
+
+    KINDS = [
+        {"label": "Purim", "set": {"opensiddur:holiday": {"purim": 1, "shushan-purim": 0}}},
+        {"label": "Shushan Purim", "set": {"opensiddur:holiday": {"purim": 0, "shushan-purim": 1}}},
+        {"label": "Ordinary", "set": {"opensiddur:holiday": {"purim": 0, "purim-observed": 0}}},
+    ]
+
+    def _observed(self, purim_day):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp) / "basic.yaml"
+            (Path(tmp) / "kinds.json").write_text(json.dumps(self.KINDS), encoding="utf-8")
+            spec.write_text("controls:\n  - id: kind\n    label: Kind\n"
+                            "    options_from: kinds.json\n", encoding="utf-8")
+            options = basic_controls(spec, purim_day)[0]["options"]
+        return [option["set"]["opensiddur:holiday"].get("purim-observed") for option in options]
+
+    def test_purim_is_celebrated_on_the_fourteenth(self):
+        self.assertEqual(self._observed(14), [1, 0, 0])
+
+    def test_purim_is_celebrated_on_the_fifteenth(self):
+        self.assertEqual(self._observed(15), [0, 1, 0])
+
+    def test_an_undefined_day_settles_nothing(self):
+        self.assertEqual(self._observed(None), [None, None, 0])
+
+    def test_the_volume_says_which_day(self):
+        self.assertEqual(celebrated_purim({}), 14)
+        self.assertEqual(celebrated_purim(
+            {"declarations": {"opensiddur:purim-observance": {"day": 15}}}), 15)
+        self.assertIsNone(celebrated_purim(
+            {"declarations": {"opensiddur:purim-observance": {"day": None}}}))
 
 if __name__ == "__main__":
     unittest.main()

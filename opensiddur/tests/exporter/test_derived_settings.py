@@ -26,7 +26,7 @@ from opensiddur.exporter.derived_settings import (
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
 from opensiddur.exporter.linear import (
-    ConditionalSettingEntry, Undefined, get_linear_data, reset_linear_data)
+    ConditionalSettingEntry, TwilightValue, Undefined, get_linear_data, reset_linear_data)
 from opensiddur.exporter.settings import load_settings
 
 TEI = TEI_NS
@@ -535,6 +535,21 @@ class TestGoldenCalendarDates(unittest.TestCase):
         entry = get_active_setting_entry(self.linear_data, "opensiddur:holiday-aggregate", "shabbat")
         self.assertTrue(entry.value)
 
+    def test_purim_is_celebrated_on_the_fourteenth_unless_the_volume_says_otherwise(self):
+        # 15 Adar 5786 is 4 March 2026: Shushan Purim.
+        shushan_purim = {
+            "opensiddur:gregorian-date": {"year": 2026, "month": 3, "day": 4},
+            "opensiddur:location": {"latitude": 31.78, "longitude": 35.22},
+        }
+        for declared, expected in (({}, 0), ({"opensiddur:purim-observance": {"day": 15}}, 1)):
+            with self.subTest(declared=declared):
+                reset_linear_data()
+                self.linear_data = get_linear_data()
+                self._load({**shushan_purim, **declared})
+                entry = get_active_setting_entry(
+                    self.linear_data, "opensiddur:holiday", "purim-observed")
+                self.assertEqual(entry.value, expected)
+
     def test_timezone_is_derived_from_the_coordinates(self):
         self._load({
             "opensiddur:location": {"latitude": 40.71, "longitude": -74.01},
@@ -634,6 +649,46 @@ class TestGoldenCalendarDates(unittest.TestCase):
             )
 
 
+
+
+class TestTheDayCelebratedAsPurimInADocument(unittest.TestCase):
+    """A document may say which day it celebrates as Purim for a stretch of its text."""
+
+    JERUSALEM = {"latitude": 31.78, "longitude": 35.22}
+    # 14 and 15 Adar II 5787.
+    PURIM, SHUSHAN_PURIM = {"year": 2027, "month": 3, "day": 23}, {"year": 2027, "month": 3, "day": 24}
+
+    def _processor(self, date, **declarations):
+        proc = _make_processor()
+        self.addCleanup(reset_linear_data)
+        CompilerProcessor.load_init_settings(proc.linear_data, yaml_to_declaration_entries({
+            "opensiddur:gregorian-date": date, "opensiddur:location": self.JERUSALEM,
+            **declarations}))
+        return proc
+
+    def _observed(self, proc):
+        return get_active_setting_entry(
+            proc.linear_data, "opensiddur:holiday", "purim-observed").value
+
+    def test_a_declaration_changes_the_day_until_it_ends(self):
+        for date, inside, outside in ((self.PURIM, 0, 1), (self.SHUSHAN_PURIM, 1, 0)):
+            with self.subTest(date=date):
+                proc = self._processor(date)
+                proc._push_declare("walled", [ConditionalSettingEntry(
+                    declare_id="walled", fs_type="opensiddur:purim-observance",
+                    feature_name="day", value=15, source="declared")])
+                self.assertEqual(self._observed(proc), inside)
+                proc._end_declare("walled")
+                self.assertEqual(self._observed(proc), outside)
+
+    def test_bein_hashmashot_holds_both_days(self):
+        for day, expected in ((14, TwilightValue(ending=1, starting=0)),
+                              (15, TwilightValue(ending=0, starting=1))):
+            with self.subTest(day=day):
+                proc = self._processor(
+                    self.PURIM, **{"opensiddur:time": {"hour": 18, "minute": 5},
+                                   "opensiddur:purim-observance": {"day": day}})
+                self.assertEqual(self._observed(proc), expected)
 
 class TestTheLastDateDeclaredPrevails(unittest.TestCase):
     """JLPTEI-3: if both the secular and the Hebrew date are set, the last setting prevails."""

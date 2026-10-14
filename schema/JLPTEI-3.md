@@ -1168,6 +1168,9 @@ From the dates, times, and locations, the holiday calendar is calculated:
    <tei:f name="shushan-purim">
       <tei:numeric value="{0-1}">
    </tei:f>
+   <tei:f name="purim-observed">
+      <tei:numeric value="{0-1}">
+   </tei:f>
    <tei:f name="purim-meshulash">
       <tei:numeric value="{0-3}">
    </tei:f>
@@ -1225,6 +1228,22 @@ Some of these need a note:
   everywhere. Whether the three-day Purim applies is for the text to say, since it is kept only
   in a walled city.
 - `sigd` is 29 Marcheshvan.
+- `purim-observed` is `1` on the day this community celebrates Purim: `purim` (the 14th of
+  Adar), or `shushan-purim` (the 15th) in a city walled since the days of Joshua, as Jerusalem
+  is. Which day that is, is declared:
+  ```xml
+  <tei:fs type="opensiddur:purim-observance">
+     <tei:f name="day">
+        <!-- 14, the default, or 15 in a walled city -->
+        <tei:numeric value="15"/>
+     </tei:f>
+  </tei:fs>
+  ```
+  What celebrates Purim — Al ha-Nissim, the Torah reading, the Megillah — conditions on
+  `purim-observed`. What marks both days alike, as the omission of Tahanun does, conditions on
+  `purim` and `shushan-purim`. Declared `undefined`, the day leaves `purim-observed` undecided
+  on both days. The day is the volume's to say, not the reader's: an electronic book is
+  compiled with it, and its reader's "Purim" and "Shushan Purim" choices follow it.
 
 For `rosh-hodesh`, `1` is the sole day of a one-day Rosh Hodesh or the first day
 of a two-day Rosh Hodesh; `2` is its second day. A month's 30th is day `1`, and

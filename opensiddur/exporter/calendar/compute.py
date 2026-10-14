@@ -35,6 +35,7 @@ FS_QUORUM = "opensiddur:quorum"
 FS_HOUSEHOLD = "opensiddur:household"
 FS_VARIANT = "opensiddur:variant"
 FS_RECITATION = "opensiddur:recitation"
+FS_PURIM_OBSERVANCE = "opensiddur:purim-observance"
 
 # The time zones that cover the Land of Israel. A zone, unlike a bounding box, stops at the
 # border: Amman, Aqaba, Tyre and Quneitra are close enough to fall in any box that holds Eilat,
@@ -59,6 +60,7 @@ HOLIDAY_FEATURES = (
     "taanit-esther",
     "purim",
     "shushan-purim",
+    "purim-observed",
     "purim-meshulash",
     "purim-katan",
     "shushan-purim-katan",
@@ -708,7 +710,26 @@ def _holidays(snapshot: SettingSnapshot, israel: bool) -> dict[str, Any] | None:
     heb = _hebrew_from_snapshot(snapshot)
     if gdate is None or heb is None:
         return None
-    return _map_hdate_holidays(hdate.HDateInfo(gdate, diaspora=not israel), heb)
+    values: dict[str, Any] = _map_hdate_holidays(hdate.HDateInfo(gdate, diaspora=not israel), heb)
+    values["purim-observed"] = _purim_observed(snapshot, values)
+    return values
+
+
+def _purim_observed(snapshot: SettingSnapshot, values: dict[str, Any]) -> Any:
+    """1 on the day this community celebrates Purim, 0 on any other.
+
+    Purim is the 14th of Adar, and the 15th (Shushan Purim) in a city walled since the days
+    of Joshua, as Jerusalem is. The calendar gives both days everywhere; which of them is
+    Purim here is the volume's to say (opensiddur:purim-observance/day). What celebrates
+    Purim -- Al ha-Nissim, the Torah reading, the Megillah -- is said on that day; what
+    marks both days alike, as the omission of Tahanun does, conditions on the two holidays.
+    """
+    if not values.get("purim") and not values.get("shushan-purim"):
+        return 0
+    day = snapshot.get_int(FS_PURIM_OBSERVANCE, "day")
+    if day is None:
+        return Undefined
+    return int(bool(values["purim"] if day == 14 else values["shushan-purim"] if day == 15 else 0))
 
 
 def compute_holiday(snapshot: SettingSnapshot) -> dict[str, Any] | None:

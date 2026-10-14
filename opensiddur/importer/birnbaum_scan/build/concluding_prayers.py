@@ -230,7 +230,7 @@ def units(project):
  yaaleh+=p('grace_yaaleh_end',True)+'</tei:p>'
  add('grace_yaaleh_veyavo',GRACE+'/yaaleh_veyavo','יעלה ויבא','Ya’aleh Veyavo',765,765,yaaleh,False)
  core=p('hazan')+p('nodeh')
- for k,expr in [('hanukkah',holiday('hanukkah',8)),('purim','<j:any>'+holiday('purim')+holiday('shushan-purim')+'</j:any>')]:core+=opt('grace_'+k,RUBRICS[k],expr,p('grace_'+k))
+ for k,expr in [('hanukkah',holiday('hanukkah',8)),('purim',holiday('purim-observed'))]:core+=opt('grace_'+k,RUBRICS[k],expr,p('grace_'+k))
  core+=p('veal_hakol')+p('rachem')+opt('retze',RUBRICS['retze'],SHABBAT,p('retze_grace'))
  core+=opt('yaaleh',RUBRICS['yaaleh'],'<j:any>'+RC+RH+FESTIVAL+'</j:any>',transclude(GRACE+'/yaaleh_veyavo'))+p('uvneh')+p('hatov')
  add('grace_four_blessings',GRACE+'/four_blessings','ברכות המזון','The four blessings',759,765,core,False)

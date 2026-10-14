@@ -118,6 +118,8 @@ DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
         required_inputs=_gregorian_inputs() | _location_inputs() | _time_inputs(),
         compute=compute_hebrew_time,
     ),
+    # Also read, but not required: opensiddur:purim-observance/day, for purim-observed. A
+    # holiday is known without it, and without it only that one feature is undefined.
     DerivationSpec(
         fs_type=FS_HOLIDAY,
         required_inputs=_gregorian_inputs()

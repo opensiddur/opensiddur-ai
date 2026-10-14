@@ -13,6 +13,7 @@ from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.calendar.compute import (
     FS_GREGORIAN,
     FS_HEBREW_DATE,
+    FS_PURIM_OBSERVANCE,
     FS_READING_CYCLE,
     READING_CYCLE_DEFAULTS,
     SettingSnapshot,
@@ -47,6 +48,8 @@ OVERRIDE_FEATURES = (
 STATIC_DEFAULTS: dict[str, dict[str, Any]] = {
     FS_OVERRIDE: dict.fromkeys(OVERRIDE_FEATURES, False),
     FS_READING_CYCLE: READING_CYCLE_DEFAULTS,
+    # Purim is the 14th of Adar unless a volume, for a walled city, says the 15th.
+    FS_PURIM_OBSERVANCE: {"day": 14},
     # A book's prefaces and title pages are kept unless a volume leaves them out.
     FS_PARATEXT: {"include": True, "title-page": True},
 }

@@ -145,7 +145,8 @@ MEGILLOT: tuple[tuple[str, str, str], ...] = (
     ("ruth", "רוּת", "shavuot"),
     ("lamentations", "אֵיכָה", "tisha-bav"),
     ("ecclesiastes", "קֹהֶלֶת", "sukkot"),
-    ("esther", "אֶסְתֵּר", "purim"),
+    # Read on the day this community celebrates Purim: the 14th, or the 15th in a walled city.
+    ("esther", "אֶסְתֵּר", "purim-observed"),
 )
 
 # The book names pointed, for headings. As with the parshah names, the table above holds the

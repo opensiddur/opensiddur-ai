@@ -782,6 +782,13 @@ class TestMegillahFile(unittest.TestCase):
         targets = self._targets("esther", "אֶסְתֵּר", "purim")
         self.assertNotIn(f"{build.URN_PREFIX}:esther", targets)
 
+
+    def test_esther_is_read_on_the_day_celebrated_as_purim(self):
+        esther = next(row for row in build.MEGILLOT if row[0] == "esther")
+        _, document = build.megillah_file(*esther, self.root)
+        names = {f.get("name") for f in etree.fromstring(document.encode("utf-8")).iter(f"{TEI}f")}
+        self.assertEqual(names, {"purim-observed"})
+
     def test_the_range_ends_on_the_last_verse_of_the_last_chapter(self):
         targets = self._targets("ruth", "רוּת", "shavuot")
         self.assertEqual(targets[0], f"{build.URN_PREFIX}:ruth/1/1-4/22")
