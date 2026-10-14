@@ -816,9 +816,10 @@
              numbered stream, which is what a stream is for, and starts a new one where the
              language changes. tei:titlePage already resolves its own language and stays a
              group of its own, since it is set outside the numbering entirely. -->
-        <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
-                            group-adjacent="if (self::tei:titlePage) then 'titlePage'
-                                            else concat('prose:', f:in-scope-lang(.))">
+        <xsl:variable name="items" as="node()*"
+                      select="$flow[not(self::text() and not(normalize-space(.)))]"/>
+        <xsl:variable name="keys" as="xs:string*" select="f:stream-keys($items)"/>
+        <xsl:for-each-group select="$items" group-adjacent="subsequence($keys, position(), 1)">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'titlePage'">
                     <xsl:apply-templates select="current-group()"/>
@@ -826,14 +827,60 @@
                 <xsl:otherwise>
                     <xsl:call-template name="numbered-stream">
                         <xsl:with-param name="nodes" select="current-group()"/>
-                        <xsl:with-param name="lang"
-                                        select="substring-after(current-grouping-key(), 'prose:')"/>
+                        <xsl:with-param name="lang" select="f:stream-lang(current-group())"/>
                         <xsl:with-param name="align-verses" select="false()"/>
                     </xsl:call-template>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:for-each-group>
     </xsl:template>
+
+    <!-- What each node of a flow is set in: a parallel block, a title page, or a numbered
+         stream of one direction ('hebrew' or 'other', the distinction numbered-stream makes).
+         Adjacent nodes of the same direction share a stream whatever their language tags.
+         A page break, a comment or a processing instruction has no direction of its own,
+         and stays in the stream it falls in rather than starting one. -->
+    <xsl:function name="f:stream-keys" as="xs:string*">
+        <xsl:param name="items" as="node()*"/>
+        <xsl:iterate select="$items">
+            <xsl:param name="previous" as="xs:string" select="''"/>
+            <xsl:variable name="key" as="xs:string"
+                          select="if (self::p:parallel) then 'parallel'
+                                  else if (self::tei:titlePage) then 'titlePage'
+                                  else if ((self::tei:pb or self::comment() or self::processing-instruction())
+                                           and $previous = ('hebrew', 'other')) then $previous
+                                  else if (f:is-hebrew-lang(f:flow-lang(.))) then 'hebrew'
+                                  else 'other'"/>
+            <xsl:sequence select="$key"/>
+            <xsl:next-iteration>
+                <xsl:with-param name="previous" select="$key"/>
+            </xsl:next-iteration>
+        </xsl:iterate>
+    </xsl:function>
+
+    <!-- The language a numbered stream is set in: its first node's that has one. -->
+    <xsl:function name="f:stream-lang" as="xs:string">
+        <xsl:param name="nodes" as="node()*"/>
+        <xsl:sequence select="f:flow-lang((
+            $nodes[not(self::tei:pb or self::comment() or self::processing-instruction())],
+            $nodes)[1])"/>
+    </xsl:function>
+
+    <!-- The language a node of the flow is set in. Its text decides, not the tag on its
+         container: a division tagged in one language whose every paragraph and line is in a
+         language of the other direction is set in theirs. A division whose text is in both
+         directions is set in its own, and the text of the other direction runs in it. -->
+    <xsl:function name="f:flow-lang" as="xs:string">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:variable name="own" select="f:in-scope-lang($node)"/>
+        <xsl:variable name="text" as="element()*"
+                      select="$node/descendant::*[self::tei:p or self::tei:l or self::tei:ab]
+                                                 [not(ancestor::tei:note)]"/>
+        <xsl:variable name="directions" as="xs:boolean*"
+                      select="distinct-values($text ! f:is-hebrew-lang(f:in-scope-lang(.)))"/>
+        <xsl:sequence select="if (count($directions) = 1 and $directions != f:is-hebrew-lang($own))
+                              then f:in-scope-lang($text[1]) else $own"/>
+    </xsl:function>
 
     <!-- A title page is a transcription of a printed page, not part of the edited text:
          it gets its own page and no line numbers, so it is emitted directly rather than
@@ -866,7 +913,6 @@
          ==================================================================== -->
 
     <xsl:template match="tei:body | tei:back">
-        <xsl:variable name="root-lang" select="string(/tei:TEI/@xml:lang)"/>
         <!-- Expand p:transclude wrapper elements emitted by the compiler: the TeX stage
              should group and typeset the transcluded content, not the wrapper itself.
              Expansion must recurse: parallel blocks end at every external transclusion, so a
@@ -877,8 +923,14 @@
              XML will split runs of adjacent p:parallel blocks. -->
         <xsl:variable name="flow" as="node()*" select="f:flatten-transcludes(node())"/>
 
-        <xsl:for-each-group select="$flow[not(self::text() and not(normalize-space(.)))]"
-                            group-adjacent="if (self::p:parallel) then 'parallel' else 'inline'">
+        <!-- Text outside the parallel blocks is grouped by its own language, as the front
+             matter's is (see tei:front): a section in another language than the root's — an
+             English document transcluded into a Hebrew book — is its own numbered stream,
+             set in its own direction, not inside the root's. -->
+        <xsl:variable name="items" as="node()*"
+                      select="$flow[not(self::text() and not(normalize-space(.)))]"/>
+        <xsl:variable name="keys" as="xs:string*" select="f:stream-keys($items)"/>
+        <xsl:for-each-group select="$items" group-adjacent="subsequence($keys, position(), 1)">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'parallel'">
                     <!-- One \Pages/\Columns per batch: see $parallel-batch-size. The
@@ -901,7 +953,7 @@
                 <xsl:otherwise>
                     <xsl:call-template name="numbered-stream">
                         <xsl:with-param name="nodes" select="current-group()"/>
-                        <xsl:with-param name="lang" select="$root-lang"/>
+                        <xsl:with-param name="lang" select="f:stream-lang(current-group())"/>
                         <xsl:with-param name="align-verses" select="false()"/>
                     </xsl:call-template>
                 </xsl:otherwise>
@@ -991,12 +1043,18 @@
         <xsl:variable name="alt-head" select="$secondary-leaves[self::f:head][1]"/>
         <!-- The notes on each heading's division. The streams below leave them out (see
              f:spanning-heads); each is set here, after the title of its own division. -->
-        <xsl:variable name="head-notes" as="element()*"
-                      select="$primary-leaves[f:is-head-note(.)]
-                                             [generate-id(parent::tei:div) = $head/@div]"/>
-        <xsl:variable name="alt-head-notes" as="element()*"
-                      select="$secondary-leaves[f:is-head-note(.)]
-                                               [generate-id(parent::tei:div) = $alt-head/@div]"/>
+        <xsl:variable name="head-notes" as="element()*">
+            <xsl:perform-sort select="$primary-leaves[f:is-head-note(.)]
+                                                     [generate-id(f:head-note-div(.)) = $head/@div]">
+                <xsl:sort select="f:note-serial(.)" data-type="number"/>
+            </xsl:perform-sort>
+        </xsl:variable>
+        <xsl:variable name="alt-head-notes" as="element()*">
+            <xsl:perform-sort select="$secondary-leaves[f:is-head-note(.)]
+                                                       [generate-id(f:head-note-div(.)) = $alt-head/@div]">
+                <xsl:sort select="f:note-serial(.)" data-type="number"/>
+            </xsl:perform-sort>
+        </xsl:variable>
         <xsl:if test="exists($head)">
             <!-- Which of the two titles this heading shows. 'combined' shows the other one
                  too where it says something different, set beneath as a translation of the
@@ -2127,9 +2185,15 @@
         <xsl:variable name="notes-by-div" as="map(xs:string, element()*)">
             <xsl:map>
                 <xsl:for-each-group select="$leaves[f:is-head-note(.)]"
-                                    group-by="generate-id(parent::tei:div)">
+                                    group-by="generate-id(f:head-note-div(.))">
                     <xsl:if test="current-grouping-key() = $head-divs">
-                        <xsl:map-entry key="current-grouping-key()" select="current-group()"/>
+                        <!-- In the order they are numbered: a note on the division can stand
+                             before its heading, and the heading's own notes come after it. -->
+                        <xsl:map-entry key="current-grouping-key()">
+                            <xsl:perform-sort select="current-group()">
+                                <xsl:sort select="f:note-serial(.)" data-type="number"/>
+                            </xsl:perform-sort>
+                        </xsl:map-entry>
                     </xsl:if>
                 </xsl:for-each-group>
             </xsl:map>
@@ -2565,7 +2629,7 @@
                     </xsl:choose>
                 </xsl:when>
                 <xsl:when test="f:is-head-note(.)
-                                and generate-id(parent::tei:div) = $head-divs">
+                                and generate-id(f:head-note-div(.)) = $head-divs">
                     <!-- Set with its division's heading; see $notes-by-div. -->
                     <xsl:next-iteration>
                         <xsl:with-param name="in-pstart" select="$in-pstart"/>
@@ -2847,9 +2911,18 @@
          one thing such a note can always be set with. -->
     <xsl:function name="f:is-head-note" as="xs:boolean">
         <xsl:param name="node" as="node()?"/>
-        <xsl:sequence select="exists($node/self::tei:note[not(@type = ('instruction', 'description'))]
-                                          [not(ancestor::tei:standOff)]
-                                          /parent::tei:div[tei:head])"/>
+        <xsl:sequence select="exists(f:head-note-div($node))"/>
+    </xsl:function>
+
+    <!-- The headed division whose heading a note is set with: the division it is on, where
+         the compiler anchored a note on the whole division, or the division whose heading
+         it stands in. -->
+    <xsl:function name="f:head-note-div" as="element(tei:div)?">
+        <xsl:param name="node" as="node()?"/>
+        <xsl:variable name="note" select="$node/self::tei:note[not(@type = ('instruction', 'description'))]
+                                                              [not(ancestor::tei:standOff)]"/>
+        <xsl:sequence select="($note/parent::tei:div[tei:head],
+                               $note/ancestor::tei:head[1]/parent::tei:div)[1]"/>
     </xsl:function>
 
     <!-- The notes a heading sets itself: its division's, unless that heading is set
@@ -3064,6 +3137,13 @@
     <!-- Copies that carry no rubrics, only notes to keep the serials of. -->
     <xsl:mode name="stamp-serial" on-no-match="shallow-copy"/>
 
+    <!-- A heading's copy (head-sentinel): its words and rubrics, without its annotations at
+         any depth. Those are set with the heading from where they stand (f:is-head-note);
+         copied as well, a note inside a tei:hi or a tei:foreign was set twice. -->
+    <xsl:mode name="head-copy" on-no-match="shallow-copy"/>
+    <xsl:template match="tei:note[not(@type = ('instruction', 'description'))][not(ancestor::tei:note)]"
+                  mode="head-copy"/>
+
     <xsl:template match="tei:note[@type = ('instruction', 'description')]" mode="stamp-rubric">
         <xsl:param name="echoed" as="xs:boolean" tunnel="yes"/>
         <xsl:param name="note-lang" as="xs:string" tunnel="yes"/>
@@ -3152,6 +3232,11 @@
                                         then min((xs:integer(tei:head[1]/@p:heading-level), 4))
                                         else min((count(ancestor::tei:div[tei:head]) + 1, 4))"/>
             </xsl:call-template>
+            <!-- A note in a heading, which the heading's copy cannot carry (see
+                 head-sentinel): set from where it stands, with the heading, as a note on the
+                 division is. -->
+            <xsl:apply-templates select="tei:head//tei:note[not(@type = ('instruction', 'description'))]
+                                                            [not(ancestor::tei:note)]" mode="leaves"/>
         </xsl:if>
         <xsl:apply-templates select="node()[not(self::tei:head)]" mode="leaves"/>
     </xsl:template>
@@ -3164,6 +3249,9 @@
             <xsl:with-param name="head" select="."/>
             <xsl:with-param name="level" select="1"/>
         </xsl:call-template>
+        <!-- Its notes follow it in the text, there being no division to set them with. -->
+        <xsl:apply-templates select=".//tei:note[not(@type = ('instruction', 'description'))]
+                                                [not(ancestor::tei:note)]" mode="leaves"/>
     </xsl:template>
 
     <xsl:template name="head-sentinel">
@@ -3208,17 +3296,16 @@
                  <foreign xml:lang="he">רות</foreign><lb/>RUTH needs its Hebrew run
                  wrapped in \texthebrew (otherwise it renders reversed inside the
                  surrounding LTR heading) and its line break preserved.
-                 Notes inside the head are dropped: these are copies, and a note's serial is
-                 counted from where the note stands in the document. A note on the whole
-                 division is set with the heading from its own place; see f:is-head-note. -->
-            <xsl:apply-templates select="$head/node()[not(self::tei:note)]" mode="stamp-serial"/>
+                 Notes inside the head are left out of the copy: a note's serial is counted
+                 from where it stands in the document. They are set with the heading from
+                 their own place, as a note on the whole division is; see f:is-head-note. -->
+            <xsl:apply-templates select="$head/node()" mode="head-copy"/>
             <!-- The counterpart's content, kept in a child element so that the primary
                  head's nodes stay direct children and mode="emit" renders them exactly as
                  before. The heading template picks this out and excludes it. -->
             <xsl:if test="exists($alt-head)">
                 <xsl:element name="f:alt-head" namespace="urn:opensiddur:reledmac">
-                    <xsl:apply-templates select="$alt-head/node()[not(self::tei:note)]"
-                                         mode="stamp-serial"/>
+                    <xsl:apply-templates select="$alt-head/node()" mode="head-copy"/>
                 </xsl:element>
             </xsl:if>
         </xsl:element>
@@ -3257,9 +3344,8 @@
     <xsl:template match="tei:label[parent::tei:list]" mode="leaves">
         <!-- tei:label is macro.phraseSeq — phrase content only, never a tei:p — so this
              is head-sentinel's shape without the block handling, the heading levels or
-             the parallel-column pairing. tei:note is dropped for the reason it is
-             dropped from a heading: an apparatus entry cannot be anchored in a line
-             that sits outside the numbered stream.
+             the parallel-column pairing. tei:note is dropped: unlike a heading's, a
+             label's notes are not set from where they stand.
              Restricted to a label inside a list: the other use of tei:label is naming
              a standoff note (see JLPTEI-3.md), which is not text on the page. -->
         <xsl:element name="f:list-label" namespace="urn:opensiddur:reledmac">

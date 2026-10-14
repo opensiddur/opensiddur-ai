@@ -2088,22 +2088,6 @@ class TestStructuralElements(unittest.TestCase):
             out,
         )
 
-    def test_notes_in_a_head_are_dropped(self):
-        """A heading sits outside the numbered line stream, so an apparatus entry cannot
-        be anchored in it."""
-        xml = """<?xml version="1.0" encoding="UTF-8"?>
-        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
-          <tei:text><tei:body>
-            <tei:div>
-              <tei:head>Genesis<tei:note>Should not appear</tei:note></tei:head>
-              <tei:p>Body</tei:p>
-            </tei:div>
-          </tei:body></tei:text>
-        </tei:TEI>"""
-        out = _transform(xml)
-        self.assertNotIn("Should not appear", out)
-        self.assertIn(r"\OSheadA{{\textdir TLT\foreignlanguage{english}{Genesis}}}", out)
-
     def test_english_head_in_hebrew_document_uses_ltr_wrapper(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
@@ -4877,3 +4861,115 @@ class TestRendAndEscaping(unittest.TestCase):
         </tei:TEI>""")
         self.assertIn("\\OSInterlinearNotemark{1}", out)
         self.assertNotIn("\\OSInterlinearNotemark{2}", out)
+
+
+class TestNotesInAHeading(unittest.TestCase):
+    """A note in a tei:head is set with the heading, numbered from where it stands."""
+
+    XML = """<?xml version="1.0"?>
+    <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en"><tei:text><tei:body>
+      <tei:div><tei:head>Heading<tei:note>On the heading.</tei:note></tei:head>
+        <tei:p><tei:milestone unit="verse" n="1"/>text<tei:note>In the text.</tei:note></tei:p></tei:div>
+      <tei:div><tei:head><tei:note>The first child.</tei:note>Second</tei:head><tei:p>more</tei:p></tei:div>
+    </tei:body></tei:text></tei:TEI>"""
+
+    def test_every_note_in_a_heading_is_printed(self):
+        out = _transform(self.XML)
+        for text in ("On the heading.", "The first child.", "In the text."):
+            with self.subTest(text=text):
+                self.assertEqual(1, out.count(text))
+
+    def test_they_are_numbered_in_document_order(self):
+        out = _transform(self.XML)
+        order = [out.index(text) for text in ("On the heading.", "In the text.", "The first child.")]
+        self.assertEqual(sorted(order), order)
+        self.assertEqual(["1", "2", "3"], re.findall(r"OSInterlinearNotemark\{(\d+)\}", out))
+
+    def test_a_note_is_set_inside_its_heading(self):
+        out = _transform(self.XML)
+        heading = out[out.index(r"\OSheadA{"):]
+        self.assertLess(heading.index("On the heading."), heading.index(r"\phantomsection"))
+
+
+class TestNotesNestedInAHeading(unittest.TestCase):
+
+    def _heading(self, head: str, lang: str = "en") -> str:
+        return _transform(f"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="{lang}"><tei:text><tei:body>
+          <tei:div>{head}<tei:p><tei:milestone unit="verse" n="1"/>text</tei:p></tei:div>
+        </tei:body></tei:text></tei:TEI>""")
+
+    def test_a_note_inside_markup_in_a_heading_is_set_once(self):
+        for head in ('<tei:head>Head <tei:hi rend="italic">it<tei:note>N</tei:note></tei:hi></tei:head>',
+                     '<tei:head>Head <tei:foreign xml:lang="he">שם<tei:note>N</tei:note></tei:foreign></tei:head>'):
+            with self.subTest(head=head):
+                out = self._heading(head)
+                self.assertEqual(1, out.count(r"\notenote{"))
+
+    def test_a_rubric_in_a_heading_stays_in_it(self):
+        out = self._heading('<tei:head>Head<tei:note type="instruction">Rise.</tei:note></tei:head>')
+        self.assertEqual(1, out.count("Rise."))
+        heading = out[out.index(r"\OSheadA{"):out.index(r"\phantomsection")]
+        self.assertIn("Rise.", heading)
+
+    def test_a_note_on_the_division_before_its_heading_comes_first(self):
+        out = self._heading('<tei:note>On the division.</tei:note>'
+                            '<tei:head>Head<tei:note>On the heading.</tei:note></tei:head>')
+        self.assertLess(out.index("On the division."), out.index("On the heading."))
+        self.assertEqual(["1", "2"], re.findall(r"OSInterlinearNotemark\{(\d+)\}", out))
+
+
+class TestTextInAnotherLanguageThanTheRoot(unittest.TestCase):
+    """English in a Hebrew-rooted body is its own stream, outside \\begin{hebrew}."""
+
+    def _streams(self, body: str, lang: str = "he") -> int:
+        out = _transform(f"""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="{lang}"><tei:text><tei:body>
+          {body}
+        </tei:body></tei:text></tei:TEI>""")
+        return out.split(r"\begin{document}")[1].count(r"\beginnumbering")
+
+    def test_languages_of_one_direction_share_a_stream(self):
+        self.assertEqual(1, self._streams(
+            '<tei:div xml:lang="en"><tei:p>one</tei:p></tei:div>'
+            '<tei:div xml:lang="en-US"><tei:p>two</tei:p></tei:div>', lang="en"))
+        self.assertEqual(1, self._streams(
+            '<tei:div xml:lang="he"><tei:p>אחת</tei:p></tei:div>'
+            '<tei:div xml:lang="arc"><tei:p>תרתין</tei:p></tei:div>'))
+
+    def test_a_page_break_between_two_sections_does_not_split_them(self):
+        self.assertEqual(1, self._streams(
+            '<tei:div xml:lang="en"><tei:p>one</tei:p></tei:div><tei:pb n="2"/>'
+            '<!-- a comment --><tei:div xml:lang="en"><tei:p>two</tei:p></tei:div>'))
+
+    def test_a_division_is_set_in_the_direction_of_its_text_not_its_tag(self):
+        out = _transform("""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en"><tei:text><tei:body>
+          <tei:div xml:lang="he"><tei:head>A heading</tei:head>
+            <tei:p xml:lang="en">An English paragraph.</tei:p></tei:div>
+        </tei:body></tei:text></tei:TEI>""")
+        self.assertNotIn(r"\begin{hebrew}", out.split(r"\begin{document}")[1])
+
+    def test_a_division_in_both_directions_is_set_in_its_own(self):
+        out = _transform("""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en"><tei:text><tei:body>
+          <tei:div xml:lang="he"><tei:p>שלום</tei:p>
+            <tei:p xml:lang="en">An English paragraph.</tei:p></tei:div>
+        </tei:body></tei:text></tei:TEI>""")
+        body = out.split(r"\begin{document}")[1]
+        self.assertLess(body.index(r"\begin{hebrew}"), body.index("שלום"))
+
+    def test_an_english_section_is_not_set_right_to_left(self):
+        out = _transform("""<?xml version="1.0"?>
+        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he"><tei:text><tei:body>
+          <tei:p><tei:milestone unit="verse" n="1"/>שלום</tei:p>
+          <tei:div xml:lang="en"><tei:p>An English paragraph.</tei:p></tei:div>
+          <tei:p>שוב</tei:p>
+        </tei:body></tei:text></tei:TEI>""")
+        body = out.split(r"\begin{document}")[1]
+        english = body.index("An English paragraph.")
+        self.assertGreater(english, body.index(r"\end{hebrew}"))
+        self.assertLess(english, body.rindex(r"\begin{hebrew}"))
+        self.assertLess(body.index("שלום"), body.index(r"\end{hebrew}"))
+        self.assertGreater(body.index("שוב"), body.rindex(r"\begin{hebrew}"))
+
