@@ -2,9 +2,12 @@
 
 import json
 import unittest
+from datetime import date
 
 from opensiddur.exporter.html import kinds_of_day
-from opensiddur.exporter.html.kinds_of_day import EXCLUDED, OUTPUT, Kind, certain, generate
+from opensiddur.exporter.html.kinds_of_day import (
+    EXCLUDED, ISRAEL, OUTPUT, Kind, _derive, certain, generate,
+)
 
 H = "opensiddur:holiday"
 A = "opensiddur:holiday-aggregate"
@@ -46,6 +49,19 @@ class TestGenerate(unittest.TestCase):
                 generate(self.DAYS)
         finally:
             kinds_of_day.KINDS = original
+
+
+class TestTheDayCelebratedAsPurim(unittest.TestCase):
+    """The volume says which day is celebrated as Purim; the kind of day cannot."""
+
+    def test_it_is_left_open_on_purim_and_on_shushan_purim(self):
+        # 14 and 15 Adar 5786.
+        for day in (date(2026, 3, 3), date(2026, 3, 4)):
+            with self.subTest(day=day):
+                self.assertNotIn((H, "purim-observed"), _derive(day, ISRAEL))
+
+    def test_it_is_settled_on_any_other_day(self):
+        self.assertEqual(_derive(date(2026, 3, 10), ISRAEL)[(H, "purim-observed")], 0)
 
 
 class TestCommittedFile(unittest.TestCase):

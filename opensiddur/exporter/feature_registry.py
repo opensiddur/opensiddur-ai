@@ -24,7 +24,7 @@ import yaml
 from lxml.etree import ElementBase
 
 from opensiddur.exporter.constants import TEI_NS
-from opensiddur.exporter.linear import parse_numeric_literal
+from opensiddur.exporter.linear import Undefined, parse_numeric_literal
 
 REGISTRY_FILE = Path(__file__).parent / "features.yaml"
 
@@ -203,8 +203,8 @@ def check_yaml_value(fs_type: str, feature: str, value: Any,
                             load_registry() if registry is None else registry)
     if problem:
         return [problem]
-    if value is None:
-        return []
+    if value is None or value is Undefined:
+        return []  # undefined is a value of every feature
     where = f"{fs_type}/{feature}"
     if kind.kind == "binary":
         return [] if isinstance(value, bool) else [

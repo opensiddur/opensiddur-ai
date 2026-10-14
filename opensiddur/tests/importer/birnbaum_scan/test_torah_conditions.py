@@ -9,7 +9,7 @@ from .test_tachanun_conditions import evaluate, settings
 def reading_settings(weekday=3, minyan=True):
     values = settings(weekday=weekday)
     values['opensiddur:quorum', 'minyan'] = minyan
-    for name in ('purim', 'shushan-purim', 'tzom-tammuz'):
+    for name in ('purim', 'shushan-purim', 'purim-observed', 'tzom-tammuz'):
         values['opensiddur:holiday', name] = 0
     for name in ('chol-hamoed', 'minor-fast'):
         values['opensiddur:holiday-aggregate', name] = False
@@ -25,7 +25,7 @@ class TestTorahConditions(unittest.TestCase):
 
     def test_each_printed_special_occasion_has_reading_without_tachanun(self):
         cases = [('opensiddur:holiday', name, 1) for name in
-                 ('rosh-hodesh', 'hanukkah', 'purim', 'shushan-purim', 'tzom-tammuz')]
+                 ('rosh-hodesh', 'hanukkah', 'purim-observed', 'tzom-tammuz')]
         cases += [('opensiddur:holiday-aggregate', name, True) for name in
                   ('chol-hamoed', 'minor-fast')]
         for fs, name, value in cases:
@@ -34,6 +34,14 @@ class TestTorahConditions(unittest.TestCase):
                 values[fs, name] = value
                 values['opensiddur:override', 'omit-tahanun'] = True
                 self.assertEqual(evaluate(torah.READING_OCCASION, values), TriState.TRUE)
+
+    def test_the_torah_is_read_on_the_day_purim_is_celebrated_only(self):
+        # The 14th where Purim is the 15th, and the 15th where it is the 14th.
+        for name in ('purim', 'shushan-purim'):
+            with self.subTest(name=name):
+                values = reading_settings()
+                values['opensiddur:holiday', name] = 1
+                self.assertEqual(evaluate(torah.READING_OCCASION, values), TriState.FALSE)
 
     def test_no_minyan_is_decisive_even_without_date(self):
         self.assertEqual(evaluate(torah.READING_OCCASION,

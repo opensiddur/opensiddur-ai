@@ -34,6 +34,7 @@ from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.common.xslt import xslt_transform_string
+from opensiddur.exporter.calendar.compute import FS_HOLIDAY, FS_PURIM_OBSERVANCE
 from opensiddur.exporter.client_settings import is_reader_supplied, resolve
 from opensiddur.exporter.condition_eval import TriState, condition_features, condition_from_json, value_to_json
 from opensiddur.exporter.constants import PROCESSING_NAMESPACE, TEI_NS
@@ -210,13 +211,42 @@ def read_basic_settings(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[str, Any]
         return yaml.safe_load(f)
 
 
-def basic_controls(spec_file: Path = BASIC_SETTINGS_FILE) -> list[dict[str, Any]]:
-    """The composite controls (basic_settings.yaml), each with the features its options set."""
+def celebrated_purim(settings: dict[str, Any]) -> int | None:
+    """The day of Adar this volume celebrates as Purim: its settings file's, or the default.
+
+    None when the settings file leaves it undefined.
+    """
+    declared = (settings.get("declarations") or {}).get(FS_PURIM_OBSERVANCE) or {}
+    if "day" in declared:
+        return declared["day"]
+    return STATIC_DEFAULTS[FS_PURIM_OBSERVANCE]["day"]
+
+
+def _settle_purim(options: list[dict[str, Any]], purim_day: int | None) -> None:
+    """Purim and Shushan Purim, as kinds of day, cannot say which is celebrated as Purim; the
+    volume can. So a book takes `purim-observed` on those two days from its own volume's."""
+    if purim_day is None:
+        return
+    for option in options:
+        holidays = option["set"].get(FS_HOLIDAY, {})
+        for name, day in (("purim", 14), ("shushan-purim", 15)):
+            if holidays.get(name):
+                holidays["purim-observed"] = int(purim_day == day)
+
+
+def basic_controls(
+    spec_file: Path = BASIC_SETTINGS_FILE, purim_day: int | None = None,
+) -> list[dict[str, Any]]:
+    """The composite controls (basic_settings.yaml), each with the features its options set.
+
+    `purim_day` is the day the volume celebrates as Purim (see `celebrated_purim`).
+    """
     controls = read_basic_settings(spec_file)["controls"]
     for control in controls:
         if "options_from" in control:
             with open(spec_file.parent / control.pop("options_from"), encoding="utf-8") as f:
                 control["options"] = json.load(f)
+            _settle_purim(control["options"], purim_day)
         control["features"] = sorted(
             {(fs, name) for option in control["options"]
              for fs, features in option["set"].items() for name in features})
@@ -308,9 +338,10 @@ def book_json(
     book_identifier: str,
     defaults: dict,
     basic_settings: Path = BASIC_SETTINGS_FILE,
+    purim_day: int | None = None,
 ) -> str:
     words = feature_words(basic_settings)
-    controls = basic_controls(basic_settings)
+    controls = basic_controls(basic_settings, purim_day)
     data = {
         "version": 1,
         "id": book_identifier,
@@ -373,7 +404,8 @@ def build_book(
         "@@DEFAULT_CONDITIONS@@": scope_css(book, expression_states(book, defaults)),
         "@@MAIN@@": main,
         "@@ABOUT@@": about_html(title, compiled_file, project_directory),
-        "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings),
+        "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
+                                celebrated_purim(settings)),
         "@@CONDITION_JS@@": _inline(
             (ASSETS / "condition.js").read_text(encoding="utf-8"), "</script"),
         "@@READER_JS@@": _inline(

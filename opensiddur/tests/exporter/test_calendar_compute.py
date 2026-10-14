@@ -16,6 +16,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_HEBREW_DATE,
     FS_ISRAEL,
     FS_LOCATION,
+    FS_PURIM_OBSERVANCE,
     FS_QUORUM,
     FS_TIME,
     SettingSnapshot,
@@ -1104,6 +1105,52 @@ class TestHolidayCoverage(unittest.TestCase):
                 self.assertEqual(compute_holiday(_civil(5785, 12, day))["purim-meshulash"],
                                  expected)
         self.assertEqual(compute_holiday(_civil(5786, 12, 15))["purim-meshulash"], 0)
+
+
+def _celebrating(snap, day):
+    """The same snapshot, for a community that celebrates Purim on `day` (None: unknown)."""
+    def get_setting(fs_type, feature_name):
+        if (fs_type, feature_name) == (FS_PURIM_OBSERVANCE, "day"):
+            return day
+        return snap.get(fs_type, feature_name)
+    return SettingSnapshot(get_setting=get_setting)
+
+
+class TestPurimObserved(unittest.TestCase):
+    """`purim-observed` is the day this community celebrates as Purim."""
+
+    def _observed(self, hebrew_year, month, day, celebrated):
+        found = compute_holiday(_celebrating(_civil(hebrew_year, month, day), celebrated))
+        return found["purim-observed"]
+
+    def test_the_fourteenth_is_purim_where_purim_is_celebrated_on_it(self):
+        self.assertEqual(self._observed(5786, 12, 14, 14), 1)
+        self.assertEqual(self._observed(5786, 12, 15, 14), 0)
+
+    def test_the_fifteenth_is_purim_in_a_walled_city(self):
+        self.assertEqual(self._observed(5786, 12, 14, 15), 0)
+        self.assertEqual(self._observed(5786, 12, 15, 15), 1)
+
+    def test_a_leap_year_celebrates_in_the_second_adar(self):
+        self.assertEqual(self._observed(5787, 13, 14, 14), 1)
+        self.assertEqual(self._observed(5787, 12, 14, 14), 0)
+        self.assertEqual(self._observed(5787, 13, 15, 15), 1)
+
+    def test_an_unknown_day_leaves_either_day_of_purim_undecided(self):
+        self.assertIs(self._observed(5786, 12, 14, None), Undefined)
+        self.assertIs(self._observed(5786, 12, 15, None), Undefined)
+
+    def test_any_other_day_is_not_purim_wherever_it_is_celebrated(self):
+        for celebrated in (14, 15, None):
+            with self.subTest(celebrated=celebrated):
+                self.assertEqual(self._observed(5786, 12, 13, celebrated), 0)
+                self.assertEqual(self._observed(5786, 12, 16, celebrated), 0)
+
+    def test_the_days_themselves_do_not_depend_on_where_purim_is_celebrated(self):
+        for celebrated in (14, 15):
+            with self.subTest(celebrated=celebrated):
+                found = compute_holiday(_celebrating(_civil(5786, 12, 15), celebrated))
+                self.assertEqual((found["purim"], found["shushan-purim"]), (0, 1))
 
 
 class TestAggregateDefinitions(unittest.TestCase):

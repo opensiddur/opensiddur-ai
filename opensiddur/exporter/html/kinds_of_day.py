@@ -129,6 +129,10 @@ def _derive(day: date, place: tuple[float, float]) -> Day:
     derived = {(e.fs_type, e.feature_name): e.value for e in linear_data.conditional_settings
                if e.fs_type in (FS_HOLIDAY, FS_HOLIDAY_AGG)}
     reset_linear_data()
+    # Which of the two days is the one celebrated as Purim is the volume's to say, not the
+    # date's: on either of them, a kind of day cannot settle it.
+    if holiday(derived, "purim") or holiday(derived, "shushan-purim"):
+        derived.pop((FS_HOLIDAY, "purim-observed"), None)
     return derived
 
 

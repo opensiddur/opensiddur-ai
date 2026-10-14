@@ -30,7 +30,7 @@ SUPPLICATION_RUBRIC = ('On Mondays and Thursdays (if Taḥanun has been said), '
 GOMEL_RUBRIC = 'One who has come safely through a dangerous experience recites:'
 READING_DAYS = ('<j:any>' + MON_THU + holiday('rosh-hodesh', 2)
     + feature(AGG, 'chol-hamoed') + holiday('hanukkah', 8)
-    + holiday('purim') + holiday('shushan-purim') + FAST + '</j:any>')
+    + holiday('purim-observed') + FAST + '</j:any>')
 # A known missing minyan or a known non-reading day must suppress the service,
 # even when the other fact has not been supplied.
 READING_OCCASION = ('<j:none>'

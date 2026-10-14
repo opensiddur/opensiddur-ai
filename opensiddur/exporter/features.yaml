@@ -57,6 +57,14 @@ opensiddur:location:
     # An IANA zone name. Derived from the coordinates unless declared.
     timezone: {symbol: {}}
 
+# Which day of Adar this community celebrates as Purim: the 14th, or the 15th (Shushan
+# Purim) in a city walled since the days of Joshua, as Jerusalem is. Defaults to 14.
+opensiddur:purim-observance:
+  common: true
+  supplied: input
+  features:
+    day: {numeric: {min: 14, max: 15}}
+
 opensiddur:israel:
   common: true
   supplied: derived
@@ -109,6 +117,8 @@ opensiddur:holiday:
     taanit-esther: {numeric: {min: 0, max: 1}}
     purim: {numeric: {min: 0, max: 1}}
     shushan-purim: {numeric: {min: 0, max: 1}}
+    # 1 on the day this community celebrates Purim: purim, or shushan-purim in a walled city.
+    purim-observed: {numeric: {min: 0, max: 1}}
     purim-meshulash: {numeric: {min: 0, max: 3}}
     purim-katan: {numeric: {min: 0, max: 1}}
     shushan-purim-katan: {numeric: {min: 0, max: 1}}

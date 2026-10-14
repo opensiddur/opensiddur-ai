@@ -33,6 +33,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_HOLIDAY_AGG,
     FS_ISRAEL,
     FS_LOCATION,
+    FS_PURIM_OBSERVANCE,
     FS_QUORUM,
     FS_RECITATION,
     FS_SERVICE_TIME,
@@ -70,6 +71,9 @@ CALENDAR_FS_TYPES: frozenset[str] = frozenset({
     FS_HALLEL,
     FS_MOTZAEI_SHABBAT,
     FS_AVOT,
+    # Which day is Purim goes with the calendar, not the reader: an electronic book is
+    # compiled with it, so the celebrated day is known wherever the date is.
+    FS_PURIM_OBSERVANCE,
 })
 
 #: Derivations the device runs: every input is one the reader can set, and none needs the
