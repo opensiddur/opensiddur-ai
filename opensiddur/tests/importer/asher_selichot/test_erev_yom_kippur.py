@@ -37,6 +37,6 @@ class ErevYomKippurTests(unittest.TestCase):
             root=entry('he','example',{},book=True,include_erev_yom_kippur=True)
         condition=root.find('.//{'+service.J+'}conditional[@xml:id="erev_yom_kippur_occasion"]',namespaces={'xml':XML[1:-1]})
         self.assertIsNotNone(condition)
-        self.assertEqual([(f.get('name'),f[0].get('value'))for f in condition.findall('.//{'+TEI+'}f')],[('month','7'),('day','9')])
+        self.assertEqual([(f.get('name'),f[0].get('value'))for f in condition.findall('.//{'+TEI+'}fs[@type="opensiddur:hebrew-date"]/{'+TEI+'}f')],[('month','7'),('day','9')])
         self.assertIsNone(condition.find('.//{'+TEI+'}note'))
-        self.assertTrue(all(fs.get('type')=='opensiddur:hebrew-date'for fs in condition.findall('.//{'+TEI+'}fs')))
+        self.assertEqual({'opensiddur:hebrew-date','opensiddur:holiday-aggregate'},{fs.get('type')for fs in condition.findall('.//{'+TEI+'}fs')})

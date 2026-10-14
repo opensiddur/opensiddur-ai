@@ -156,6 +156,21 @@ subdivision files: these were authoring batches, not printed service divisions.
 An expanded first-day assembly is redundant because cue replacements are
 conditional within the shared text modules and service rubrics.
 
+## Day gates in the running order
+
+Every service with a calendar day is gated on it in `index.xml`/`expanded.xml`, from
+`asher_selichot/occasions.py`, using only calendar-derived features. A dated edition
+prints that day's service; an undated one prints all of them, silently. The Elul days
+follow the first-day rubric (from the Sunday before the New Year, or the Sunday a week
+earlier when it falls on Monday or Tuesday; never on the Sabbath) and are said in
+order, so a short year never reaches the later days: Rosh Hashanah on Thursday gives
+three, on the Sabbath five, on Monday six, on Tuesday seven. Each gate is the union of
+its Hebrew date and weekday over Rosh Hashanah's four weekdays. The Ten Days always
+hold four weekdays between Tzom Gedaliah and Erev Yom Kippur, which are Asher's second
+to fifth penitential days in order. Elul gates declare `aseret-ymei-tshuva=false` and
+Ten Days gates declare it true. Circumcision is ungated: no calendar knows it, and a
+condition on `opensiddur:override` would drop it from every undated edition.
+
 Use `ashrei.xml` with `prayer:ashrei` and `kaddish_chatzi.xml` with
 `prayer:kaddish/chatzi`. The distinct piyyutim have their own files and `poem:`
 URNs named for their distinctive incipits: `ein_mi_yiqra_betsedeq`,
@@ -500,8 +515,8 @@ The contents call the first two services “Second Fast” and “Fifth Fast”;
 לשני / לחמישי identifies weekdays, not penitential-day ordinals. The first
 Monday fast runs from n319/n320 (printed159) to n335/n336 (printed167), ending
 above Thursday's large body heading. Its final Ezekiel footnote sits below that
-heading and stays with Monday. Keep native weekday gates plus an explicit edition
-occasion selector while the calendar has no derived feature for this fast series.
+heading and stays with Monday. Gate the three fasts on the Monday, Thursday and
+Monday after the first Sabbath of Iyar or Marheshvan (Hebrew days 3–9, 6–12, 10–16).
 
 Malakhei rahamim has eight shared stanza units, six short אולי יחום / “Perchance”
 cues, and a Hebrew-only final full refrain plus opening-repeat cue. Its stanza
@@ -523,12 +538,12 @@ units, four short cues and a concluding full-opening cue in each language.
 Preserve its full refrain hyphenation variants and the apparent English final
 pair citation “pp. 1, 12.”. Its opening and conclusion repeat bounded Monday
 ranges; the expanded conclusion inherits fourteen Monday notes alongside two
-Thursday notes, but no Full Kaddish. Gate it on native weekday five plus the
-explicit Thursday-fast occasion. When measuring stanza starts, scope the actual
+Thursday notes, but no Full Kaddish. It is the Thursday of the series (weekday five,
+days 6–12). When measuring stanza starts, scope the actual
 pizmon after its heading: earlier scripture also contains Israel is saved.
 
 The final Monday (Last of the Three Fasts) covers n343/n344 through n349/n350
-upper, printed171–174. Gate on native weekday two and its own explicit occasion.
+upper, printed171–174. It is the last Monday of the series (days 10–16).
 Its Hebrew petition-repeat cue on printed172 has no English counterpart: retain
 an empty paired expansion boundary rather than inventing English text. Ezkerah's
 Thirteen Attributes opening is prose followed by four verse stanza units; its
@@ -566,10 +581,12 @@ exposure from a preceding service's full-page context must also be disclosed.
 
 ## Yom Kippur Katan
 
-Printed188–203 upper, n377–n408, ends above the circumcision heading. Use an
-explicit monthly-service occasion while the printed Psalm-order customs remain
-ambiguous: the first rubric says New Moon on Sabbath/Sunday, the last its eve.
-Preserve the different conditions without inventing a derived calendar rule.
+Printed188–203 upper, n377–n408, ends above the circumcision heading. Gate it on
+the opening rubric's day: the eve of the New Moon, or the Thursday before when the
+New Moon falls on the Sabbath or Sunday. The book names no months; the gate follows
+the common Ashkenazi custom, omitting the eves of Tishrei, Marheshvan, Tevet and
+Iyar. The printed Psalm-order rubrics stay printed instructions; their customs remain
+ambiguous (the first says New Moon on Sabbath/Sunday, the last its eve).
 Keep once/twice/seven-times repetitions and Ark actions as performance instructions.
 
 Yom zeh has five shared stanza units and four short opening-repeat cues in each

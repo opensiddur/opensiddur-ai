@@ -7,11 +7,12 @@ from opensiddur.importer.asher_selichot.build import TEI,XML,PRAYER
 from opensiddur.importer.asher_selichot.first_day import entry
 
 class YomKippurKatanTests(unittest.TestCase):
-    def test_occasion_has_no_invented_weekday(self):
+    def test_occasion_is_the_eve_of_the_new_moon(self):
         with patch('opensiddur.importer.asher_selichot.first_day.titles'):
             root=entry('he','example',{},book=True,remaining_services=('yom-kippur-katan',))
         gate=root.find('.//{'+service.J+'}conditional[@xml:id="yom_kippur_katan_occasion"]',namespaces={'xml':XML[1:-1]})
-        self.assertEqual([(n.get('type'),n[0].get('name')) for n in gate.findall('.//{'+TEI+'}fs')],[('asher:occasion','yom_kippur_katan')])
+        self.assertEqual({'opensiddur:hebrew-date','opensiddur:day-of-week'},{n.get('type') for n in gate.findall('.//{'+TEI+'}fs')})
+        self.assertIsNone(gate.find('.//{'+TEI+'}note'))
 
     def test_two_kaddish_supplies_have_distinct_scopes_without_ten_days(self):
         root=etree.Element('{'+TEI+'}body')

@@ -155,61 +155,32 @@ def entry(lang, project, title_data, expanded=False, *, book=False, include_seco
         titles(element(text, 'front'), title_data)
     div = element(element(text, 'body'), 'div', corresp=urn)
     if book:
-        declaration=element(div,'j:declare');declaration.set(XML+'id','asher_pre_rosh_hashanah_services')
-        fs=element(declaration,'fs',type='opensiddur:holiday-aggregate')
-        feature=element(fs,'f');feature.set('name','aseret-ymei-tshuva');element(feature,'binary',value='false')
-        element(div, 'j:transclude', target=FIRST_DAY)
+        from .occasions import gated_transclusion
+        from .penitential_days import service_urn
+        services = [('first', FIRST_DAY)]
         if include_second_day:
             from .second_day import SECOND_DAY
-            element(div, 'j:transclude', target=SECOND_DAY)
+            services.append(('second', SECOND_DAY))
         if include_third_day:
             from .third_day import THIRD_DAY
-            element(div, 'j:transclude', target=THIRD_DAY)
-        for day_name in additional_days:
-            element(div, 'j:transclude', target='urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day')
+            services.append(('third', THIRD_DAY))
+        services += [(day_name, 'urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day') for day_name in additional_days]
         if include_erev:
             from .erev_rosh_hashanah import EREV
-            element(div, 'j:transclude', target=EREV)
-        element(div,'j:endDeclare',target='#asher_pre_rosh_hashanah_services')
+            services.append(('erev-rosh-hashanah', EREV))
         if include_gedaliah:
             from .tzom_gedaliah import GEDALIAH
-            from opensiddur.importer.util.occasion import gate, holiday
-            opening_markup, closing_markup = gate('tzom_gedaliah_occasion', holiday('tzom-gedalia'))
-            for markup in [opening_markup, '<j:transclude target="'+GEDALIAH+'"/>', closing_markup]:
-                fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
-                div.extend(fragment)
+            services.append(('tzom-gedaliah', GEDALIAH))
         if include_penitential_second:
             from .penitential_second_day import PENITENTIAL_SECOND_DAY
-            from opensiddur.importer.util.occasion import gate, aggregate
-            opening_markup, closing_markup = gate('penitential_second_occasion', aggregate('aseret-ymei-tshuva'))
-            for markup in [opening_markup, '<j:transclude target="'+PENITENTIAL_SECOND_DAY+'"/>', closing_markup]:
-                fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
-                div.extend(fragment)
-        for day in penitential_days:
-            from .penitential_days import service_urn
-            from opensiddur.importer.util.occasion import gate, aggregate
-            opening_markup,closing_markup=gate('penitential_'+day+'_occasion',aggregate('aseret-ymei-tshuva'))
-            for markup in [opening_markup,'<j:transclude target="'+service_urn(day)+'"/>',closing_markup]:
-                fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
-                div.extend(fragment)
+            services.append(('penitential-second', PENITENTIAL_SECOND_DAY))
+        services += [('penitential-'+day, service_urn(day)) for day in penitential_days]
         if include_erev_yom_kippur:
-            from .penitential_days import service_urn
-            from opensiddur.importer.util.occasion import gate, all_of, Feature, HEBREW_DATE
-            opening_markup,closing_markup=gate('erev_yom_kippur_occasion', all_of(Feature(HEBREW_DATE, "month", 7), Feature(HEBREW_DATE, "day", 9)))
-            for markup in [opening_markup,'<j:transclude target="'+service_urn('erev-yom-kippur')+'"/>',closing_markup]:
-                fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
-                div.extend(fragment)
-        for day in remaining_services:
-            from .penitential_days import service_urn
-            from opensiddur.importer.util.occasion import gate, all_of, Feature, DAY_OF_WEEK, holiday
-            # BeHaB is an explicit book occasion until the calendar derives its series.
-            weekday = 5 if day == 'thursday-fast' else 2
-            condition=holiday({'tenth-tevet':'asara-btevet','esther-fast':'taanit-esther','tammuz-fast':'tzom-tammuz'}[day]) if day in ('tenth-tevet','esther-fast','tammuz-fast') else all_of(Feature('asher:occasion',day.replace('-', '_')),Feature(DAY_OF_WEEK,'hebrew-day',weekday))
-            if day in ('yom-kippur-katan','circumcision'):condition=Feature('asher:occasion',day.replace('-','_'))
-            opening_markup,closing_markup=gate(day.replace('-','_')+'_occasion',condition)
-            for markup in [opening_markup,'<j:transclude target="'+service_urn(day)+'"/>',closing_markup]:
-                fragment=etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode())
-                div.extend(fragment)
+            services.append(('erev-yom-kippur', service_urn('erev-yom-kippur')))
+        services += [(day, service_urn(day)) for day in remaining_services]
+        # Each service behind the day it is said on, declaring what that day fixes.
+        markup=''.join(part for service, target in services for part in gated_transclusion(service, target))
+        div.extend(etree.fromstring(('<wrapper xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+markup+'</wrapper>').encode()))
         return root
     return root
 

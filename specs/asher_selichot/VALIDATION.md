@@ -1675,3 +1675,17 @@ Artifacts: `output/asher_selichot/proofreading/english-022/`. Whole-book PDFs re
 English batches001–022 reach the final English page, s411/n410 (printed204). Every service checkpoint has documentary and expanded rendering checks. The final whole-book audit validates all 398 XML files, reverse-compares all services and resolves both projects’ URN/transclusion references. Evidence: `sources/asher_selichot/proofreading/english-pass-22/completion.json`; local log: `output/asher_selichot/proofreading/english-complete/verify.log`.
 
 This is a same-model pass with prior exposure. The later batches use sparse frozen image observations and cached Archive OCR, not a second complete manual transcription. Independent-person and exhaustive typography review, uncertain Hebrew readings, missing printed apparatus and the recorded note-anchor/paragraph issues remain pending. The current PDFs are service-level inspection artifacts; earlier whole-book PDFs were not rebuilt in this pass.
+
+## Day gates
+
+Every dated service in the running order is now gated on its own day from calendar-derived
+features, replacing the shared pre-Rosh Hashanah declaration, the four identical Ten Days
+gates and the never-declared `asher:occasion` gates. Circumcision is ungated. A rebuild
+changes only the four `index.xml`/`expanded.xml` files; `verify` passes (398 schema-valid
+files) and `validate_features` finds nothing to report. Synthetic tests decide every gate on
+every day from 1 Elul to 10 Tishrei in 5783, 5786, 5785 and 5787 (Rosh Hashanah on Monday,
+Tuesday, Thursday and the Sabbath), plus BeHaB series in Marheshvan and Iyar and Yom Kippur
+Katan on a regular eve, a Thursday move and excluded months. Breaking the start rule or the
+Thursday move turns them red. Compiling the documentary edition in Jerusalem at 09:00 yields
+only the third Elul day on 16 September 2025 and only the fourth penitential day on
+29 September 2025, each with the ungated circumcision pizmon; undated, all 22 services remain.

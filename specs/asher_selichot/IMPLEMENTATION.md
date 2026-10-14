@@ -194,7 +194,9 @@ Closing repetition includes the printed confessions through Mahi umasi, followed
 by Makhnise rahamim and the first-day closing prayers. Editorial Full Kaddish
 uses the secondary source with first_day=false and Ten Days=true, then restores
 scope. Fulfilled cues disappear. The holiday gate encloses the service in the
-book's running order, without printing an undecided-occasion instruction.
+book's running order, without printing an undecided-occasion instruction. Every
+dated service has such a gate; `asher_selichot/occasions.py` derives them, as the
+skill reference's *Day gates in the running order* describes.
 
 Preserve the unattached printed-103 Hebrew marginal note as explicitly documented
 editorial commentary; its original target remains unknown. Mixed Hebrew within

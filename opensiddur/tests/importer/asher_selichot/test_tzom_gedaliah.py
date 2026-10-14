@@ -68,8 +68,8 @@ class GedaliahTests(unittest.TestCase):
         ns={'t':TEI,'j':'http://jewishliturgy.org/ns/jlptei/2'}
         gate=root.find('.//j:conditional[@xml:id="tzom_gedaliah_occasion"]',dict(ns,xml=XML[1:-1]))
         self.assertIsNone(gate.get('type'))
-        self.assertEqual(gate.find('t:fs/t:f',ns).get('name'),'tzom-gedalia')
-        self.assertEqual(gate.find('t:fs/t:f/t:numeric',ns).get('value'),'1')
+        self.assertEqual(gate.find('.//t:fs[@type="opensiddur:holiday"]/t:f',ns).get('name'),'tzom-gedalia')
+        self.assertEqual(gate.find('.//t:fs[@type="opensiddur:holiday"]/t:f/t:numeric',ns).get('value'),'1')
         self.assertFalse(gate.findall('.//t:note',ns))
         refs=root.findall('.//j:transclude',ns)
         self.assertEqual(refs[-1].get('target'),gedaliah.GEDALIAH)
