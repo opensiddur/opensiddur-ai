@@ -83,5 +83,25 @@ class TestLinkResolution(unittest.TestCase):
         self.assertEqual(target, "urn:x-opensiddur:text:bible:kings_1/4/5")
 
 
+
+class TestRepeatedVerse(unittest.TestCase):
+    """A liturgically repeated verse, set in smaller type at the end of a book."""
+
+    def test_its_lines_are_kept_as_lines(self):
+        """{{gap}} opens each line and <br /> ends it, as in Malachi's repetition of 3:23."""
+        root = _transform(
+            '<span style="font-size: 83%;">\n<gap/>Behold, I will send you<br/>\n'
+            '<gap/>Elijah the prophet<br/>\n<gap/>Before the coming<br/>\n'
+            '<gap/>Of the great and terrible day of the <sc>Lord</sc>.\n</span>',
+            "malachi")
+        repetition = root.find(".//tei:ab[@type='repetition']", NS)
+        self.assertIsNotNone(repetition)
+        self.assertIsNone(repetition.find("tei:list", NS))
+        self.assertEqual(4, len(repetition.findall("tei:lb", NS)))
+        text = " ".join("".join(repetition.itertext()).split())
+        self.assertEqual("Behold, I will send you Elijah the prophet Before the coming "
+                         "Of the great and terrible day of the Lord.", text)
+
+
 if __name__ == "__main__":
     unittest.main()
