@@ -15,7 +15,7 @@ from pyluach import dates as pyluach_dates
 from pyluach import hebrewcal
 from pyluach import parshios
 
-from opensiddur.exporter.linear import NumericValue, Undefined
+from opensiddur.exporter.linear import NumericValue, TwilightValue, Undefined
 
 FeatureRef = tuple[str, str]
 
@@ -208,9 +208,36 @@ class SettingSnapshot:
     """Read-only view of active setting values."""
 
     get_setting: Callable[[str, str], Any | None]
+    #: During bein hashmashot, which of the two days this view is of: 0 the day that is
+    #: ending, 1 the day that is beginning. None outside a two-day computation.
+    day: int | None = None
 
     def get(self, fs_type: str, feature_name: str) -> Any | None:
         return self.get_setting(fs_type, feature_name)
+
+    def on_day(self, day: int) -> "SettingSnapshot":
+        """The view from one of the two days of bein hashmashot.
+
+        Each value that differs between the days reads as its value on this one, and the
+        current Hebrew date is this day's (``_effective_gregorian_date``). Only for a moment
+        between sunset and nightfall: from the beginning day's view the date has moved on.
+        """
+        def get(fs_type: str, feature_name: str) -> Any | None:
+            value = self.get_setting(fs_type, feature_name)
+            return value.on_day(day) if isinstance(value, TwilightValue) else value
+        return SettingSnapshot(get_setting=get, day=day)
+
+    def in_twilight(self) -> bool:
+        """Whether the declared moment falls between sunset and nightfall at the location."""
+        gdate = self.gregorian_date()
+        loc = self.location()
+        if gdate is None or loc is None or self.time_of_day() is None:
+            return False
+        moment = _datetime_from_snapshot(self)
+        if moment is None:
+            return False
+        zmanim = hdate.Zmanim(gdate, location=loc)
+        return zmanim.shkia.local < moment < zmanim.tset_hakohavim.local
 
     def _defined(self, fs_type: str, feature_name: str) -> Any | None:
         """The value, or None when it is unset *or* declared undefined.
@@ -219,6 +246,9 @@ class SettingSnapshot:
         not known. To a computation that is the same as never having been told.
         """
         value = self.get(fs_type, feature_name)
+        if isinstance(value, TwilightValue):
+            # Read outside a two-day computation, the day that is ending is the day it is.
+            value = value.ending
         return None if value is Undefined else value
 
     def get_int(self, fs_type: str, feature_name: str) -> int | None:
@@ -380,8 +410,9 @@ def _effective_gregorian_date(snapshot: SettingSnapshot) -> date | None:
     plain case: it begins after nightfall on 14 Nisan, and belongs to 15 Nisan.
 
     The boundary is tzet hakochavim rather than sunset. Between sunset and nightfall it is
-    doubtful which day it is; that window is reported separately as ``bayn-hashmashot`` and is
-    left on the day that is ending rather than being silently rolled forward.
+    doubtful which day it is: that window is reported as ``bayn-hashmashot``, and a view of it
+    from the day that is beginning (``SettingSnapshot.on_day(1)``) rolls forward, while any
+    other stays on the day that is ending (derived_settings._compute_across_twilight).
 
     Rolling requires both a location and a time of day, since neither nightfall nor "is it yet
     evening" is otherwise knowable. Without them the civil date is returned unchanged, so
@@ -395,7 +426,13 @@ def _effective_gregorian_date(snapshot: SettingSnapshot) -> date | None:
     if loc is None or tod is None:
         return gdate
     nightfall = hdate.Zmanim(gdate, location=loc).tset_hakohavim.local
-    return gdate + timedelta(days=1) if _datetime_from_snapshot(snapshot) >= nightfall else gdate
+    if _datetime_from_snapshot(snapshot) >= nightfall:
+        return gdate + timedelta(days=1)
+    if snapshot.day == 1:
+        # The view of bein hashmashot from the day that is beginning; such a view is made
+        # only between sunset and nightfall.
+        return gdate + timedelta(days=1)
+    return gdate
 
 
 def _hebrew_from_snapshot(snapshot: SettingSnapshot) -> pyluach_dates.HebrewDate | None:

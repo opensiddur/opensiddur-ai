@@ -1,0 +1,14 @@
+{
+  "description": "Bein hashmashot: a pinned value that differs between the day that is ending and the one that is beginning ({\"twilight\": [ending, starting]}). The whole condition is resolved for each day, and is decided only if it comes out the same on both. Synthetic feature structures (t:x).",
+  "cases": [
+    {"name": "true on the starting day only is undecided", "condition": "<tei:fs type='t:x'><tei:f name='day'><tei:numeric value='7'/></tei:f></tei:fs>", "pinned": {"t:x": {"day": {"twilight": [6, 7]}}}, "expected": "undefined"},
+    {"name": "true on neither day is false", "condition": "<tei:fs type='t:x'><tei:f name='day'><tei:numeric value='3'/></tei:f></tei:fs>", "pinned": {"t:x": {"day": {"twilight": [6, 7]}}}, "expected": "false"},
+    {"name": "true on both days is true", "condition": "<tei:fs type='t:x'><tei:f name='day'><tei:numeric value='6' max='7'/></tei:f></tei:fs>", "pinned": {"t:x": {"day": {"twilight": [6, 7]}}}, "expected": "true"},
+    {"name": "alternatives covering both days are true", "condition": "<j:any xmlns:j='http://jewishliturgy.org/ns/jlptei/2'><tei:fs type='t:x'><tei:f name='day'><tei:numeric value='6'/></tei:f></tei:fs><tei:fs type='t:x'><tei:f name='day'><tei:numeric value='7'/></tei:f></tei:fs></j:any>", "pinned": {"t:x": {"day": {"twilight": [6, 7]}}}, "expected": "true"},
+    {"name": "two features that change together are read on the same day", "condition": "<tei:fs type='t:x'><tei:f name='day'><tei:numeric value='7'/></tei:f><tei:f name='rest'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"t:x": {"day": {"twilight": [6, 7]}, "rest": {"twilight": [false, true]}}}, "expected": "undefined"},
+    {"name": "a condition that holds on one day and fails on the other with another feature", "condition": "<j:all xmlns:j='http://jewishliturgy.org/ns/jlptei/2'><tei:fs type='t:x'><tei:f name='rest'><tei:binary value='false'/></tei:f></tei:fs><tei:fs type='t:x'><tei:f name='other'><tei:binary value='true'/></tei:f></tei:fs></j:all>", "pinned": {"t:x": {"rest": {"twilight": [false, true]}}}, "reader": {"t:x": {"other": true}}, "expected": "undefined"},
+    {"name": "a binary test of a pair of numbers", "condition": "<tei:fs type='t:x'><tei:f name='hol'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"t:x": {"hol": {"twilight": [{"num": 0}, {"num": 1}]}}}, "expected": "undefined"},
+    {"name": "an undefined side leaves it undecided", "condition": "<tei:fs type='t:x'><tei:f name='day'><tei:numeric value='6'/></tei:f></tei:fs>", "pinned": {"t:x": {"day": {"twilight": [6, null]}}}, "expected": "undefined"},
+    {"name": "the device derives from each day's value", "condition": "<tei:fs type='opensiddur:holiday'><tei:f name='shavuot'><tei:binary value='true'/></tei:f></tei:fs>", "pinned": {"opensiddur:holiday-aggregate": {"yom-tov": {"twilight": [false, true]}}}, "expected": "undefined"}
+  ]
+}

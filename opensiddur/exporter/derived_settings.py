@@ -20,7 +20,12 @@ from opensiddur.exporter.calendar.compute import (
 )
 from opensiddur.exporter.conditional_settings import INIT_DECLARE_ID
 from opensiddur.exporter.derivation_graph import DerivationSpec, topological_derivation_order
-from opensiddur.exporter.linear import ConditionalSettingEntry, LinearData, Undefined
+from opensiddur.exporter.linear import (
+    ConditionalSettingEntry,
+    LinearData,
+    TwilightValue,
+    Undefined,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -190,11 +195,48 @@ def _explicit_contributors(linear_data: LinearData, fs_type: str) -> set[str]:
     }
 
 
+def _compute_across_twilight(
+    spec: DerivationSpec, snapshot: SettingSnapshot, twilight: bool,
+) -> dict | None:
+    """What a derivation gives, and between sunset and nightfall what it gives on both days.
+
+    Bein hashmashot has something of the day that is ending and of the one that is beginning,
+    so each derivation is worked out for both. A feature on which they agree keeps its value;
+    one on which they differ holds both, as a TwilightValue, and a condition on it is decided
+    only if it comes out the same either way.
+    """
+    if not twilight:
+        return spec.compute(snapshot)
+    days = (snapshot.on_day(0), snapshot.on_day(1))
+    ending, starting = (spec.compute(day) for day in days)
+    if ending is None or starting is None:
+        # Both days have the same inputs but the date, so a derivation that cannot run on one
+        # cannot run on the other either; none of them does otherwise.
+        return None
+
+    def on(day: int, computed: dict, feature_name: str) -> Any:
+        # A derivation that contributes nothing to a feature on one day leaves it as it is
+        # on that day (compute_holiday_from_aggregate gives only what a false yom-tov says).
+        if feature_name in computed:
+            return computed[feature_name]
+        value = days[day].get(spec.fs_type, feature_name)
+        return Undefined if value is None else value
+
+    merged: dict[str, Any] = {}
+    for feature_name in [*ending, *(name for name in starting if name not in ending)]:
+        on_ending = on(0, ending, feature_name)
+        on_starting = on(1, starting, feature_name)
+        merged[feature_name] = (on_ending if on_ending == on_starting
+                                else TwilightValue(ending=on_ending, starting=on_starting))
+    return merged
+
+
 def _apply_derivation_spec(
     linear_data: LinearData,
     spec: DerivationSpec,
     snapshot: SettingSnapshot,
     overridable: frozenset[tuple[str, str]] = frozenset(),
+    twilight: bool = False,
 ) -> None:
     fs_type = spec.fs_type
     existing_features = {
@@ -203,7 +245,7 @@ def _apply_derivation_spec(
         if entry.fs_type == fs_type
     }
 
-    computed = spec.compute(snapshot)
+    computed = _compute_across_twilight(spec, snapshot, twilight)
     if computed is None:
         for feature_name in existing_features:
             _clear_derived(linear_data, fs_type, feature_name)
@@ -271,8 +313,11 @@ def recalculate_derived_settings(
     for _ in range(_MAX_DATE_PASSES):
         before = _date_fingerprint(linear_data)
         overridable = _reconcile_dates(linear_data, snapshot)
+        # Bein hashmashot is worked out for both days -- unless the volume's last word on the
+        # date is a Hebrew date, which already says which day it is.
+        twilight = snapshot.in_twilight() and not _hebrew_date_prevails(linear_data)
         for spec in topological_derivation_order():
-            _apply_derivation_spec(linear_data, spec, snapshot, overridable)
+            _apply_derivation_spec(linear_data, spec, snapshot, overridable, twilight)
         if _date_fingerprint(linear_data) == before:
             break
 
@@ -306,6 +351,12 @@ def _last_declared(linear_data: LinearData, fs_type: str) -> int:
                 and _is_explicit(entry)):
             return index
     return -1
+
+
+def _hebrew_date_prevails(linear_data: LinearData) -> bool:
+    """Whether a Hebrew date is the volume's last word on the date."""
+    hebrew = _last_declared(linear_data, FS_HEBREW_DATE)
+    return hebrew >= 0 and hebrew > _last_declared(linear_data, FS_GREGORIAN)
 
 
 def _reconcile_dates(

@@ -210,7 +210,38 @@
     }));
   }
 
+  // client_settings.resolve: a value pinned for bein hashmashot holds one value for each of
+  // the two days, and the condition is decided only if it comes out the same on both.
+  function isTwilight(value) {
+    return isObject(value) && "twilight" in value;
+  }
+
+  function pinnedOnDay(pinned, day) {
+    var out = {};
+    Object.keys(pinned || {}).forEach(function (fsType) {
+      out[fsType] = {};
+      Object.keys(pinned[fsType]).forEach(function (name) {
+        var value = pinned[fsType][name];
+        out[fsType][name] = isTwilight(value) ? value.twilight[day] : value;
+      });
+    });
+    return out;
+  }
+
+  function hasTwilight(pinned) {
+    return Object.keys(pinned || {}).some(function (fsType) {
+      return Object.keys(pinned[fsType]).some(function (name) {
+        return isTwilight(pinned[fsType][name]);
+      });
+    });
+  }
+
   function resolve(condition, pinned, reader, defaults) {
+    if (hasTwilight(pinned)) {
+      var ending = evaluate(condition, new Settings(pinnedOnDay(pinned, 0), reader, defaults));
+      var starting = evaluate(condition, new Settings(pinnedOnDay(pinned, 1), reader, defaults));
+      return ending === starting ? ending : UNDEFINED;
+    }
     return evaluate(condition, new Settings(pinned, reader, defaults));
   }
 

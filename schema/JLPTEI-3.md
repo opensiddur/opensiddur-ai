@@ -1092,10 +1092,27 @@ Given dates and times, the following values can then be derived:
 The `day` is between `1` (Sunday/Yom Rishon) and `7` (Saturday/Shabbat).
 The Hebrew day begins at nightfall (tzet hakochavim), when a time and a location are declared:
 from nightfall the Hebrew date, the `hebrew-day` and every feature derived from them are those
-of the following day, so the end of Shabbat is on day `1`. Between sunset and nightfall it is
-doubtful which day it is. Until nightfall the day that is ending is kept, and
-`bayn-hashmashot` is `true`; a text that must treat that window as the coming day (the
-restrictions of Shabbat begin at sunset) conditions on `bayn-hashmashot` as well.
+of the following day, so the end of Shabbat is on day `1`.
+
+Between sunset and nightfall (bein hashmashot) it is doubtful which day it is, and the time
+has something of both. `bayn-hashmashot` is `true`, and every feature derived from the date is
+worked out for the day that is ending and for the day that is beginning:
+
+- a feature on which the two days agree keeps its one value;
+- a feature on which they differ holds both — on Friday at twilight, `hebrew-day` is `6` on
+  the ending day and `7` on the beginning one, and `holiday-aggregate/shabbat` is `false` and
+  `true`;
+- a condition is evaluated whole for each of the two days. It is `true` if it is true on both,
+  `false` if it is false on both, and `undefined` otherwise, so the passages it governs are
+  kept with their rubrics. A condition that holds either way is decided: `hebrew-day` from `6`
+  to `7` is `true` at Friday twilight.
+
+This covers the boundaries of a month and a year as well: on the eve of Rosh Hodesh the day of
+the month is `29` and `30`, or `29` and the `1st` of the next month, and on the eve of Rosh
+Hashanah the year is both. A declaration gives one value, never two, and a Hebrew date declared
+last says which day it is: there is then no second day to work out. A partial Hebrew date
+declared at twilight takes its other parts from the day that is ending. What begins at sunset in practice — the restrictions of Shabbat, and
+candle lighting before it — is a matter for a text's own condition on `bayn-hashmashot`.
 
 From the dates, times, and locations, the holiday calendar is calculated:
 ```xml

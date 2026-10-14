@@ -124,6 +124,9 @@ class ClientSettings:
     settings.
     """
 
+    # Pinned values hold one value per feature: `resolve` splits a pinned bein hashmashot
+    # value into its two days before building one of these, so that the derivations below
+    # never see a pair.
     def __init__(self, pinned: Settings, reader: Settings, defaults: Settings):
         self.pinned = pinned
         self.reader = reader
@@ -170,8 +173,36 @@ def resolve(
     reader: Settings | None = None,
     defaults: Settings | None = None,
 ) -> TriState:
-    """Evaluate a condition as the reader's device does. Takes a parsed condition or its JSON."""
+    """Evaluate a condition as the reader's device does. Takes a parsed condition or its JSON.
+
+    A value the compile pinned for bein hashmashot holds one value for each of the two days.
+    The condition is resolved once for each day, the device's own derivations included, and
+    is decided only if it comes out the same on both.
+    """
     if isinstance(condition, Mapping):
         condition = condition_from_json(condition)
-    return evaluate_condition(
-        condition, ClientSettings(pinned or {}, reader or {}, defaults or {}))
+    pinned = pinned or {}
+    if _has_twilight(pinned):
+        ending, starting = (
+            evaluate_condition(condition, ClientSettings(
+                _pinned_on_day(pinned, day), reader or {}, defaults or {}))
+            for day in (0, 1))
+        return ending if ending == starting else TriState.UNDEFINED
+    return evaluate_condition(condition, ClientSettings(pinned, reader or {}, defaults or {}))
+
+
+def _is_twilight(encoded: Any) -> bool:
+    return isinstance(encoded, Mapping) and "twilight" in encoded
+
+
+def _has_twilight(settings: Settings) -> bool:
+    return any(_is_twilight(value) for features in settings.values() for value in features.values())
+
+
+def _pinned_on_day(settings: Settings, day: int) -> Settings:
+    """Pinned settings as they stand on the ending day (0) or the starting day (1)."""
+    return {
+        fs_type: {name: value["twilight"][day] if _is_twilight(value) else value
+                  for name, value in features.items()}
+        for fs_type, features in settings.items()
+    }
