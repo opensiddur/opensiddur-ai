@@ -355,6 +355,19 @@
         </tei:ab>
     </xsl:template>
 
+    <!-- A repeated verse is set as the verse is, a line at a time. Its source starts each
+         line with {{gap}} and ends it with <br />, which elsewhere in the 1917 JPS mark the
+         items of a list (see br[1] below): read that way, each item took only the newline
+         after its break, and the repeated lines were lost. Here the gap opens a line, as
+         a poetry line's indent does, and the break is only the end of one. -->
+    <xsl:template match="(smaller_block|span)/gap" priority="2">
+        <tei:lb/>
+    </xsl:template>
+    <xsl:template match="(smaller_block|span)/br" priority="2"/>
+    <xsl:template match="(smaller_block|span)/text()" priority="2">
+        <xsl:copy/>
+    </xsl:template>
+
     <xsl:template match="sup">
         <tei:hi rend="superscript">
             <xsl:apply-templates select="node()"/>
