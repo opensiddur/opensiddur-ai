@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from opensiddur.importer.birnbaum_scan import compare as cmp
+from opensiddur.importer.scan import compare as cmp
 from opensiddur.importer.birnbaum_scan import open_questions as oq
 
 

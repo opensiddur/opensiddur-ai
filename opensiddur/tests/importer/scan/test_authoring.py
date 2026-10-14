@@ -153,7 +153,7 @@ class AuthoringTests(unittest.TestCase):
 
     def test_structure_audit_rejects_prose_wrong_counts_and_nonterminal_refrains(self):
         unit = self.parent(); lg = a.element(unit,'lg'); line = a.element(lg,'l','אב ')
-        refrain = a.element(line,'seg','גד׃',type='refrain')
+        a.element(line,'seg','גד׃',type='refrain')
         rule = {'line_count':1,'refrain_count':1,'refrain':'גד'}
         a.check_poetry(unit,rule)
         for variant in ['prose','line_count','refrain_count','wording','parent','following','tail']:

@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from lxml import etree
-from .check_pdf import plain, strip_numeric_markers
+from .check_pdf import plain
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 from opensiddur.common.constants import SOURCETEXTS_ROOT
@@ -81,7 +81,7 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
 
 
 def controls(tree,day,source_root,expanded):
-    he,en=check(tree,day,source_root,expanded)
+    check(tree,day,source_root,expanded)
     broken=copy.deepcopy(tree)
     fingerprint={'thursday-fast':'In rewarding the good','last-monday-fast':'Ps. cii. 28.','tenth-tevet':'The 9th of Tebeth','esther-fast':'After his conference with Moses.','tammuz-fast':'See the preceding prayer.'}[day]
     note=next(n for n in broken.findall('.//line')if fingerprint in n.get('text',''));note.getparent().remove(note)

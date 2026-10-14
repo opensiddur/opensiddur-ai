@@ -2,7 +2,6 @@
 import argparse
 import copy
 from collections import Counter
-import json
 import re
 from pathlib import Path
 from lxml import etree

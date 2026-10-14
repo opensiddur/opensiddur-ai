@@ -1,6 +1,5 @@
 """Check Erev Yom Kippur stanza alignment, apparatus, and fulfilled reference boundaries."""
 import copy
-import re
 from lxml import etree
 from .check_pdf import plain, strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs

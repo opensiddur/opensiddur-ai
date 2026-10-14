@@ -24,7 +24,7 @@ import pathlib
 import re
 import sys
 
-from . import compare as cmp
+from opensiddur.importer.scan import compare as cmp
 from .pages import BOOK_DIRECTORY
 
 READING_DIRECTORY = BOOK_DIRECTORY / "scan_reading"

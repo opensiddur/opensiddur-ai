@@ -96,7 +96,7 @@ class NumberedDaysTest(unittest.TestCase):
         check_phrase_dots(tree)
 
     def test_serialization_preserves_binding_spaces_and_normalizes_glyphs(self):
-        from opensiddur.importer.asher_selichot.build import normalized_xml
+        from opensiddur.importer.scan.authoring import normalized_xml
         node=etree.Element(f'{{{TEI}}}p');node.text='שׁיר · סוף\u00a0·'
         restored=etree.fromstring(normalized_xml(node).encode())
         self.assertEqual('שׁיר\u00a0· סוף\u00a0·',restored.text)

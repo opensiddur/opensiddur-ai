@@ -4,12 +4,11 @@ Reads the committed scan reading, not OCR. Dependency ranges are authored from
 this edition, never substituted from another project's prayer text.
 """
 
-from opensiddur.importer.scan.authoring import element, marker, choice, italicize, normalized_xml, conditional_scope, write_documents
+from opensiddur.importer.scan.authoring import element, marker, choice, italicize, conditional_scope, write_documents
 
 import argparse
 import json
 from pathlib import Path
-import unicodedata
 from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT, PROJECT_DIRECTORY
 from opensiddur.importer.util.validation import validate

@@ -137,7 +137,6 @@ def numbered_documents(source, day_name):
 def verify_numbered_readings(source, project_directory, day_name):
     """Follow the printed service order and compare only documentary choice branches."""
     import copy
-    import re
     import unicodedata
     from lxml import etree
     from opensiddur.importer.scan.reverse import streams, check

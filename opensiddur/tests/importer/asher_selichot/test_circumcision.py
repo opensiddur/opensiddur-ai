@@ -13,7 +13,7 @@ class CircumcisionTests(unittest.TestCase):
         self.assertEqual([n.text for n in root.findall('.//{'+TEI+'}expan')],['וְהָשֵׁב שְׁבוּת','וְשׁוּב בְּרַחֲמִים'])
 
     def test_unresolved_marker_survives_normalization_as_superscript(self):
-        from opensiddur.importer.asher_selichot.build import normalized_xml
+        from opensiddur.importer.scan.authoring import normalized_xml
         f={'en':dict(scan='s409',printed_page='203',text='The flesh?¹ No note follows.'),'notes':{'en':[]}}
         r=dict(fragments=[f],stanzas=[dict(fragments=[f])],refrain_cues={'en':'(?!)'},refrain={'en':''},literal_superscript_markers=['¹'])
         root=etree.Element('{'+TEI+'}body');service.pizmon(root,r,'en','urn:example')
