@@ -1596,3 +1596,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 25 pages; 0 of 781 Hebrew runs are set left to right; control: 773 of 781 flagged when every run is reversed; SHA-256 `cfea033554c4a6f4a53b8bd8a048a06ec86f741aec0a73e7d6eb161db89af9e3`.
 
 Artifacts: `output/asher_selichot/proofreading/english-018/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint019
+
+[English batch019](`sources/asher_selichot/proofreading/english-pass-19/batch-019.json`) covers Fast of Esther, s359 lower–369 upper (n358–368), printed 178 lower–183 upper.
+6 image-first page observations were frozen before cached OCR comparison;
+9 image-adjudicated replacement rules changed 12 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 16 pages; expanded: 24 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 16 pages; 0 of 250 Hebrew runs are set left to right; control: 250 of 250 flagged when every run is reversed; SHA-256 `2a27beebae8054f439547457face47a737de7957b6f6ae38c3df8e1f19e448ec`.
+- Expanded: 24 pages; 0 of 623 Hebrew runs are set left to right; control: 615 of 623 flagged when every run is reversed; SHA-256 `920d6aafcdc18257a3dce594a4c7dc177e8b7150c124d1e9ff9d89c6c5bffd0d`.
+
+Artifacts: `output/asher_selichot/proofreading/english-019/`. Whole-book PDFs remain earlier snapshots.
