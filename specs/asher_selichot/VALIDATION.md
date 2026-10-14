@@ -85,10 +85,10 @@ reference links resolve.
 ```bash
 export TEXMFVAR=/tmp/asher-tex-cache
 export TEXMFCACHE=/tmp/asher-tex-cache
-python -m opensiddur.exporter.compiler -s specs/asher_selichot/documentary.yaml --project-directory "$project_root" -o "$output_root/asher_selichot/selichot.xml"
-python -m opensiddur.exporter.pdf.pdf -s specs/asher_selichot/documentary.yaml --project-directory "$project_root" --keep-tex --build-dir "$output_root/asher_selichot/build-selichot" "$output_root/asher_selichot/selichot.xml" "$output_root/asher_selichot/selichot.pdf"
-python -m opensiddur.exporter.compiler -s specs/asher_selichot/expanded.yaml --project-directory "$project_root" -o "$output_root/asher_selichot/selichot-expanded.xml"
-python -m opensiddur.exporter.pdf.pdf -s specs/asher_selichot/expanded.yaml --project-directory "$project_root" --keep-tex --build-dir "$output_root/asher_selichot/build-selichot-expanded" "$output_root/asher_selichot/selichot-expanded.xml" "$output_root/asher_selichot/selichot-expanded.pdf"
+python -m opensiddur.exporter.compiler -s "$project_root/../settings/asher_selichot/documentary.yaml" --project-directory "$project_root" -o "$output_root/asher_selichot/selichot.xml"
+python -m opensiddur.exporter.pdf.pdf -s "$project_root/../settings/asher_selichot/documentary.yaml" --project-directory "$project_root" --keep-tex --build-dir "$output_root/asher_selichot/build-selichot" "$output_root/asher_selichot/selichot.xml" "$output_root/asher_selichot/selichot.pdf"
+python -m opensiddur.exporter.compiler -s "$project_root/../settings/asher_selichot/expanded.yaml" --project-directory "$project_root" -o "$output_root/asher_selichot/selichot-expanded.xml"
+python -m opensiddur.exporter.pdf.pdf -s "$project_root/../settings/asher_selichot/expanded.yaml" --project-directory "$project_root" --keep-tex --build-dir "$output_root/asher_selichot/build-selichot-expanded" "$output_root/asher_selichot/selichot-expanded.xml" "$output_root/asher_selichot/selichot-expanded.pdf"
 python -m opensiddur.importer.asher_selichot.check_book_pdf "$pdf" --control
 python -m opensiddur.importer.scan.pdf_direction "$pdf" "$tex" --control
 ```
@@ -1689,3 +1689,12 @@ Katan on a regular eve, a Thursday move and excluded months. Breaking the start 
 Thursday move turns them red. Compiling the documentary edition in Jerusalem at 09:00 yields
 only the third Elul day on 16 September 2025 and only the fourth penitential day on
 29 September 2025, each with the ungated circumcision pizmon; undated, all 22 services remain.
+
+## Release settings
+
+The documentary and expanded settings moved to opensiddur-projects
+`settings/asher_selichot/`, so every release builds both books; `books --check` passes for all
+five books. The copies under `specs/asher_selichot/` are removed, with the redundant
+`default.yaml` and the first-day pilot's `first-day.yaml`. Compile commands above now read
+the settings from the projects checkout. The open review items listed with the English pass
+completion still apply to the released PDFs.

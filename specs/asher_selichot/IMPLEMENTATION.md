@@ -14,8 +14,8 @@ those readings. The source README records editorial additions and target ranges.
 including inline transclusion. Schema adds expan; PDF emits the selected branch.
 Documentary/expanded service roots reuse source modules; expanded adds the referenced
 prayers in place of the concluding instruction. Expanded output also omits the
-fulfilled refrain-repetition rubric; documentary output retains both instructions. Settings here are deliberately not
-in release-book settings. Images and render artifacts stay in output/asher_selichot.
+fulfilled refrain-repetition rubric; documentary output retains both instructions. The documentary and expanded
+settings are release books in opensiddur-projects `settings/asher_selichot/`. Images and render artifacts stay in output/asher_selichot.
 
 Acceptance: synthetic shared-tool and compiler tests; schema and URN validation;
 page/language reverse check; paired PDF builds with direction, text, footnote and
@@ -33,8 +33,8 @@ complete bilingual prayer groups, printed rubrics and anchored footnotes. XML
 verification compares each unit with its reading and checks source page order and
 the final Kaddish boundary. Synthetic fixtures check crossed page breaks, repeated
 footnote anchors, missing anchors, litanies and mixed-language closing instructions.
-`first-day.yaml` renders the full documentary day; automatic releases remain
-excluded. Independent Hebrew pointing review and the remaining book are pending.
+The documentary settings render the full documentary day. Independent Hebrew
+pointing review is pending.
 
 ## Piyyut invocation correction
 
@@ -54,8 +54,8 @@ with unqualified target URNs when repetitions are present. Register bounded
 repeat-range milestones within the two source prose prayers. Supply the poem’s
 concluding prayers in a true conditional branch next to its printed conclusion cue. Add reusable Birnbaum Full Kaddish
 `prayer:kaddish/shalem`, assembled from six edition-bound existing passages.
-`default.yaml` selects the expanded book entrypoint `expanded.xml`, Asher-first primary priorities,
-and Asher/Birnbaum English parallel priorities, outside release settings.
+The expanded settings select the book entrypoint `expanded.xml`, Asher-first primary priorities,
+and Asher/Birnbaum English parallel priorities.
 
 Parallel subcompilation must retain the remaining configured parallel projects as
 fallback priorities rather than reducing its priority list to a singleton. Restore

@@ -12,7 +12,7 @@ from lxml import etree
 from .check_pdf import plain
 from opensiddur.importer.scan.pdf_direction import base
 
-# Measured from first-day.yaml's SBL Hebrew 12pt bilingual output.
+# Measured from the documentary settings' SBL Hebrew 12pt bilingual output.
 MAX_BASELINE_DIFFERENCE = 16
 ANCHORS = [('אשרייושביביתך', 'Happy are they who dwell'),
            ('תהלתיי', 'My mouth shall utter'),

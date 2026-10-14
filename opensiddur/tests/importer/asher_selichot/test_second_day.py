@@ -1,7 +1,6 @@
 """Synthetic checks for second-day scope, repeated cues and semantic alignment."""
 import tempfile
 import unittest
-from pathlib import Path
 from lxml import etree
 from opensiddur.importer.asher_selichot.build import TEI, XML, J
 from opensiddur.importer.asher_selichot.second_day import pizmon, printed_unit, OPENING
@@ -52,14 +51,6 @@ class SecondDayTest(unittest.TestCase):
         self.assertEqual(['repetitions_present','prayers_present'],[f.get('name') for f in root.findall(f'.//{{{TEI}}}f')])
         self.assertIn('urn:x-opensiddur:text:prayer:selah_lanu_avinu',OPENING)
         self.assertNotIn('urn:x-opensiddur:text:poem:eikh_niftah_peh',OPENING)
-
-    def test_export_settings_request_two_heading_levels_in_contents(self):
-        import yaml
-        directory=Path(__file__).resolve().parents[4]/'specs/asher_selichot'
-        for path in directory.glob('*.yaml'):
-            with self.subTest(path=path.name):
-                d=yaml.safe_load(path.read_text())
-                self.assertEqual({'enabled':True,'depth':2},d['typography']['table_of_contents'])
 
     def test_bookmark_audit_rejects_a_day_below_its_pizmon(self):
         from opensiddur.importer.asher_selichot.check_book_pdf import day_bookmarks

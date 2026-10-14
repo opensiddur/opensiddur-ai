@@ -47,8 +47,8 @@ Do not auto-settle qamats-qatan or assume Birnbaum’s punctuation/glyph convent
 ## Output and measurement
 
 Use `readings.abbreviations: abbreviated` for the documentary edition and `expanded`
-for prayer-use output. Edition settings stay under specs/asher_selichot, outside
-release book settings. Verify both compiled and rendered outputs; derive row/column
+for prayer-use output. Both are release books, in opensiddur-projects
+`settings/asher_selichot/`. Verify both compiled and rendered outputs; derive row/column
 thresholds from their actual typography rather than copying Birnbaum’s numeric values.
 
 The edition uses SBL Hebrew at 12pt because the available CLM faces lack U+00B7.
@@ -124,7 +124,7 @@ the printed cue; both book views use the same `first_day.xml` assembly.
 The final Kaddish Titkabel is not printed in this Asher range. For this
 expanded edition, transclude the unqualified Full Kaddish URN
 `urn:x-opensiddur:text:prayer:kaddish/shalem`; select Birnbaum’s Hebrew and English
-projects as fallbacks in `specs/asher_selichot/default.yaml`. Preserve that provenance
+projects as fallbacks in opensiddur-projects `settings/asher_selichot/expanded.yaml`. Preserve that provenance
 in documentation and do not present the supplied prayer as an Asher scan reading.
 Verify all six Full Kaddish parts, including Titkabel and the closing peace passages,
 and check the English column retains its configured secondary-source fallbacks.
