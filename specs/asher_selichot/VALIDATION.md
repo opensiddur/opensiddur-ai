@@ -1560,3 +1560,21 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 21 pages; 0 of 545 Hebrew runs are set left to right; control: 540 of 545 flagged when every run is reversed; SHA-256 `377e6a6f77a65e546144fc37dad8e4828c379e83bee42e3422b0dc765b59390c`.
 
 Artifacts: `output/asher_selichot/proofreading/english-016/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint017
+
+[English batch017](`sources/asher_selichot/proofreading/english-pass-17/batch-017.json`) covers Last Monday fast, s345–351 upper (n344–350), printed 171–174 upper.
+4 image-first page observations were frozen before cached OCR comparison;
+6 image-adjudicated replacement rules changed 6 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 12 pages; expanded: 21 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 12 pages; 0 of 194 Hebrew runs are set left to right; control: 192 of 194 flagged when every run is reversed; SHA-256 `ce50978ee1e6cfda6d96478b451543ba057fefff27937211661a8656736a36b8`.
+- Expanded: 21 pages; 0 of 574 Hebrew runs are set left to right; control: 568 of 574 flagged when every run is reversed; SHA-256 `af23d290fb2eedb5f8b617f6f71cb9980b0b3d81a735a4833456b5c58847a6ec`.
+
+Artifacts: `output/asher_selichot/proofreading/english-017/`. Whole-book PDFs remain earlier snapshots.
