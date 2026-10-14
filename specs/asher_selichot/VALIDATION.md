@@ -1650,3 +1650,28 @@ Exhaustive typography review remains pending. See the adjudication for uncertain
 - Expanded: 40 pages; 0 of 1241 Hebrew runs are set left to right; control: 1227 of 1241 flagged when every run is reversed; SHA-256 `f7e2817d2683ad7d93b80e75c826508a5de26a0b2a405fa6bd3e3572b1ab2847`.
 
 Artifacts: `output/asher_selichot/proofreading/english-021/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English proofreading checkpoint022
+
+[English batch022](`sources/asher_selichot/proofreading/english-pass-22/batch-022.json`) covers Circumcision, s409 lower–411 (n408–410), printed 203 lower–204; end of book.
+2 image-first page observations were frozen before cached OCR comparison;
+1 image-adjudicated replacement rules changed 2 stored occurrences.
+Schema, source-order reverse comparison, compilation, both service PDFs, all printed
+English-page notes, contents/bookmarks, alignment and deliberately broken controls pass.
+Documentary: 8 pages; expanded: 8 pages.
+This is same-model proofreading with prior exposure, sparse observations and OCR-assisted
+comparison, rather than a second full manual transcription or independent-person review.
+Exhaustive typography review remains pending. See the adjudication for uncertain readings.
+
+- Documentary: 8 pages; 0 of 41 Hebrew runs are set left to right; control: 38 of 41 flagged when every run is reversed; SHA-256 `81392824401f37c73d80ad9161ebd25111ccb540a595ee61e635b95053734a81`.
+- Expanded: 8 pages; 0 of 39 Hebrew runs are set left to right; control: 39 of 39 flagged when every run is reversed; SHA-256 `9fb5b36f8deffde99dc14bd55afe3ce6654f53eb5ddcfb525e016bfcd474fedc`.
+
+Artifacts: `output/asher_selichot/proofreading/english-022/`. Whole-book PDFs remain earlier snapshots.
+
+
+## English pass completion
+
+English batches001–022 reach the final English page, s411/n410 (printed204). Every service checkpoint has documentary and expanded rendering checks. The final whole-book audit validates all 398 XML files, reverse-compares all services and resolves both projects’ URN/transclusion references. Evidence: `sources/asher_selichot/proofreading/english-pass-22/completion.json`; local log: `output/asher_selichot/proofreading/english-complete/verify.log`.
+
+This is a same-model pass with prior exposure. The later batches use sparse frozen image observations and cached Archive OCR, not a second complete manual transcription. Independent-person and exhaustive typography review, uncertain Hebrew readings, missing printed apparatus and the recorded note-anchor/paragraph issues remain pending. The current PDFs are service-level inspection artifacts; earlier whole-book PDFs were not rebuilt in this pass.
