@@ -5,7 +5,7 @@ from collections import Counter
 import re
 from pathlib import Path
 from lxml import etree
-from .check_pdf import plain, strip_numeric_markers
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, strip_numeric_markers, load_glyphs
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 ANCHORS=[('מלאכירחמים','Angels of mercy!'),('אוליירחםשארית','Perchance he will have mercy on the remnant'),('אוליירחםמעני','Perchance he will have mercy on those who are afflicted'),('אוליירחםוירא','Perchance he will have mercy and look'),('אוליירחםאומרי','Perchance he will have mercy upon those who pray'),('אוליירחםלקתה','Perchance he will have mercy on those who are doubly'),('אוליירחםכבושי','Perchance he will have mercy on those who are ashamed'),('אוליירחםיחלץ','Perchance he will have mercy who delivereth')]
@@ -46,7 +46,7 @@ def check(tree, expanded=False):
         e=min(matches,key=lambda r:abs(r[0]-h[0])*1000+abs(r[1]-h[1])) if matches and h else None
         if h is None or e is None:raise ValueError('Missing Monday stanza: '+e_anchor)
         if not deltas and not any(r[0]==h[0] and r[1]<h[1] for r in headings):raise ValueError('Monday pizmon heading stranded or absent')
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Monday stanza misaligned: '+str((h[:2],e[:2])))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Monday stanza misaligned: '+str((h[:2],e[:2])))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     body=re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(r[2]for r in en))
     body=strip_numeric_markers(body)
@@ -98,7 +98,7 @@ def main(argv=None):
     import subprocess,tempfile
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');a=p.parse_args(argv)
     with tempfile.TemporaryDirectory()as tmp:
-        xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.expanded)
+        xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=load_glyphs(xml);check(tree,a.expanded)
         if a.control:controls(tree,a.expanded)
     return 0
 if __name__=='__main__':raise SystemExit(main())

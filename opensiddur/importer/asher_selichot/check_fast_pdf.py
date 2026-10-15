@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from lxml import etree
-from .check_pdf import plain
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, load_glyphs
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 from opensiddur.common.constants import SOURCETEXTS_ROOT
@@ -33,7 +33,7 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
         h=next((r for r in he if ha in r[2]and r[:2]>previous),None)
         e=next((r for r in en if ea in r[2]and r[:2]>previous),None)
         if h is None or e is None:raise ValueError('Missing fast stanza: '+str((ha,ea)))
-        if h[0]!=e[0]or abs(h[1]-e[1])>16:raise ValueError('Misaligned fast stanza: '+str((h,e)))
+        if h[0]!=e[0]or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Misaligned fast stanza: '+str((h,e)))
         if not deltas and not any(r[0]==h[0]and r[1]<h[1]for r in headings):raise ValueError('Fast pizmon heading stranded')
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     for chars in latin_note_runs(tree).values():
@@ -110,7 +110,7 @@ def controls(tree,day,source_root,expanded):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--day',required=True,choices=['thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast']);p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');p.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT);a=p.parse_args(argv)
     with tempfile.TemporaryDirectory()as tmp:
-        xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.day,a.source_root,a.expanded)
+        xml=Path(tmp)/'glyphs.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=load_glyphs(xml);check(tree,a.day,a.source_root,a.expanded)
         if a.control:controls(tree,a.day,a.source_root,a.expanded)
     return 0
 

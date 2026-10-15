@@ -1,13 +1,13 @@
 """Source boundaries, apparatus and cue replacements in the Erev PDF."""
 import copy
 import re
-from .check_pdf import plain
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, strip_line_numbers
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
 
 def check(tree, expanded=False):
-    text=re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)', '', ' '.join(plain(n.get('text','')) for n in tree.findall('.//line')))
+    text=strip_line_numbers(' '.join(plain(n.get('text','')) for n in tree.findall('.//line')))
     for phrase in ['Supreme Judge','Remember the covenant','Accept, O Lord','Guardian of Israel','glory of thy name']:
         if phrase not in text:raise ValueError('Missing Erev passage: '+phrase)
     if 'FAST OF GEDALIAH' in text:raise ValueError('Erev reference boundary crossed')
@@ -35,7 +35,7 @@ def check(tree, expanded=False):
                 words+=char.get('c','')
                 quad=list(map(float,char.get('quad').split()));right=max(quad[0::2])
             words=plain(words)
-            words=re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)','',words)
+            words=strip_line_numbers(words)
             words=re.sub(r'\s+([,.;!?])',r'\1',words)
             en.append((number,y,words))
     deltas=[]
@@ -44,7 +44,7 @@ def check(tree, expanded=False):
         matches=[r for r in he if h_anchor in r[2]]
         h=min(matches,key=lambda r:abs(r[0]-e[0])*1000+abs(r[1]-e[1])) if matches and e else None
         if h is None or e is None:raise ValueError('Missing Erev alignment anchor: '+e_anchor)
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Erev start alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Erev start alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
         deltas.append(round(abs(h[1]-e[1]),2))
     cues=['The Reader says Kaddish.','Say “Omnipotent King,”','Say from “Like a father']
     if expanded:

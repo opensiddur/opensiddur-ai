@@ -1,7 +1,7 @@
 """Check Erev Yom Kippur stanza alignment, apparatus, and fulfilled reference boundaries."""
 import copy
 from lxml import etree
-from .check_pdf import plain, strip_numeric_markers
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, strip_numeric_markers, load_glyphs
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
@@ -53,7 +53,7 @@ def check(tree, expanded=False):
         if h is None or e is None:raise ValueError('Missing Erev Yom Kippur stanza: '+e_anchor)
         if not deltas and not any(r[0]==h[0] and r[1]<h[1] for r in headings):
             raise ValueError('Erev Yom Kippur pizmon heading stranded or missing')
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Erev Yom Kippur stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Erev Yom Kippur stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     body=' '.join(r[2] for r in en)
     body=strip_numeric_markers(body)
@@ -155,7 +155,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as tmp:
         path=Path(tmp)/'text.xml'
         subprocess.run(['mutool','draw','-F','stext','-o',str(path),str(args.pdf)],check=True,capture_output=True)
-        tree=etree.parse(str(path)).getroot();check(tree,args.expanded)
+        tree=load_glyphs(path);check(tree,args.expanded)
         if args.control:controls(tree,args.expanded)
     return 0
 

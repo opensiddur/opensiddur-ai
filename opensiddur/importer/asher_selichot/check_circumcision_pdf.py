@@ -3,7 +3,7 @@ import argparse,copy,subprocess,tempfile
 from pathlib import Path
 from lxml import etree
 from .check_fast_pdf import glyph_rows
-from .check_pdf import plain, strip_numeric_markers
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, strip_numeric_markers, load_glyphs
 from opensiddur.importer.scan.pdf_direction import base
 
 ANCHORS=[('זכורברית','Remember the covenant'),('אותברית','It is a sign'),('רחמיךזכור','Remember thy mercy'),('מפיאוהביך','The blood of thy'),('דורשדמים','O thou, who avengest')]
@@ -24,7 +24,7 @@ def check(tree,expanded=False):
         h=next((r for r in he if r[2].startswith(ha) and r[:2]>previous),None)
         e=next((r for r in en if ea in r[2] and r[:2]>previous),None)
         if h is None or e is None:raise ValueError('Missing final-poem stanza: '+str((ha,ea)))
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Final-poem stanza misaligned: '+str((h,e)))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Final-poem stanza misaligned: '+str((h,e)))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     words=strip_numeric_markers(plain(' '.join(r[2] for r in en)))
     if words.count('When a Circumcision')!=2:
@@ -75,7 +75,7 @@ def controls(tree,expanded=False):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');a=p.parse_args(argv)
     with tempfile.TemporaryDirectory()as tmp:
-        xml=Path(tmp)/'g.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.expanded)
+        xml=Path(tmp)/'g.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=load_glyphs(xml);check(tree,a.expanded)
         if a.control:controls(tree,a.expanded)
     return 0
 if __name__=='__main__':raise SystemExit(main())

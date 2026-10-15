@@ -1718,3 +1718,20 @@ verse's ׃ and ?, as printed; the English note is two paragraphs, its instructio
 the PDF now starts each later paragraph of a note on a new line. `verify` passes (398
 schema-valid files).
 
+## Release build
+
+Both books were built through the release command (`books`), with only the fonts the release
+builders install, and audited with `check_book_pdf --control`. The Hebrew is set in Ezra SIL:
+the Culmus faces lack the middle dot that divides Asher's verses (5,019 of them), and SBL Hebrew
+is not installed there. Documentary: 362 pages; expanded: 792; no missing glyphs. Ezra SIL sets
+pointed Hebrew rows 17.5-18.3pt apart (SBL Hebrew: 14.5pt), which the owner accepted; the
+alignment tolerance is now one Ezra line, 19pt, shared by every check. Stanza starts otherwise
+differ by at most 0.06pt.
+
+The audit found a verse line holding only a phrase dot (fourth penitential day, s268), left by
+an image-pass replacement; the reading is fixed. Ezra SIL also changed what the checks read:
+mutool ends a line at every Hebrew word, so Hebrew rows are now grouped by baseline
+(`hebrew_rows`, `load_glyphs`); a day's last notes can fall below the next day's heading and
+stay with their day; and a margin line number standing alone after a comma is stripped
+(`strip_line_numbers`). Every check, and every deliberately broken control, passes on both PDFs.
+

@@ -9,11 +9,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 from lxml import etree
-from .check_pdf import plain
+from .check_pdf import MAX_BASELINE_DIFFERENCE, hebrew_rows, plain, load_glyphs
 from opensiddur.importer.scan.pdf_direction import base
 
-# Measured from the documentary settings' SBL Hebrew 12pt bilingual output.
-MAX_BASELINE_DIFFERENCE = 16
 ANCHORS = [('אשרייושביביתך', 'Happy are they who dwell'),
            ('תהלתיי', 'My mouth shall utter'),
            ('יתגדלויתקדש', 'May his great name be exalted'),
@@ -40,14 +38,13 @@ def check(tree, complete=False, expanded=False):
     he_rows, en_rows, citation = [], [], []
     for page_no, page in enumerate(tree.findall('page'), 1):
         gutter = 288 if page_no % 2 else 324
+        he_rows.extend((page_no, y, letters) for y, letters in hebrew_rows(page, gutter))
         for line in page.findall('.//line'):
             chars = list(line.findall('.//char'))
             en = [c for c in chars if float(c.get('x')) > gutter]
             he = [c for c in chars if base(c.get('c', ' ')) and float(c.get('x')) < gutter]
             if en:
                 en_rows.append((page_no, float(en[0].get('y')), plain(''.join(c.get('c') for c in en))))
-            if he:
-                he_rows.append((page_no, float(he[0].get('y')), ''.join(base(c.get('c')) for c in sorted(he,key=lambda c:float(c.get('x')),reverse=True))))
             left = [c for c in chars if float(c.get('x')) < gutter]
             left_text = ''.join(c.get('c') for c in left).strip()
             if any(c in ':׃' for c in left_text) and all(c.isspace() or c.isdigit() or c in ':׃' for c in left_text):
@@ -175,7 +172,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as tmp:
         xml=Path(tmp)/'text.xml'
         subprocess.run(['mutool','draw','-q','-F','stext','-o',str(xml),str(args.pdf)],check=True)
-        tree=etree.parse(str(xml)).getroot()
+        tree=load_glyphs(xml)
     print('Prayer baseline differences:',check(tree,complete=args.complete,expanded=args.expanded))
     if args.control:
         controls(tree,complete=args.complete,expanded=args.expanded)

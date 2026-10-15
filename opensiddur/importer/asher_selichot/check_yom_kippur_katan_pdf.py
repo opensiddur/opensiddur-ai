@@ -5,7 +5,7 @@ from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT
 from opensiddur.importer.scan.pdf_direction import base
 from .check_fast_pdf import glyph_rows,body_text
-from .check_pdf import corrected, plain, strip_numeric_markers
+from .check_pdf import MAX_BASELINE_DIFFERENCE, corrected, plain, strip_numeric_markers, load_glyphs
 from .check_first_day_pdf import latin_note_runs
 
 
@@ -35,7 +35,7 @@ def check(tree,source_root=SOURCETEXTS_ROOT,expanded=False):
                 combined=strip_numeric_markers(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(r[2] for r in candidates[index:index+3] if r[0]==row[0])))
                 if ea in combined:e=row;break
             if h is None or e is None:raise ValueError('Missing monthly-service stanza: '+str((poem['id'],ha,ea)))
-            if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Monthly stanza misalignment: '+str((h,e)))
+            if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Monthly stanza misalignment: '+str((h,e)))
             deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     for chars in latin_note_runs(tree).values():
         xs=[float(c.get('x')) for c in chars]
@@ -91,7 +91,7 @@ def controls(tree,source_root,expanded):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('pdf');p.add_argument('--source-root',type=Path,default=SOURCETEXTS_ROOT);p.add_argument('--expanded',action='store_true');p.add_argument('--control',action='store_true');a=p.parse_args(argv)
     with tempfile.TemporaryDirectory() as tmp:
-        xml=Path(tmp)/'g.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=etree.parse(str(xml));check(tree,a.source_root,a.expanded)
+        xml=Path(tmp)/'g.xml';subprocess.run(['mutool','draw','-F','stext','-o',str(xml),a.pdf],check=True,capture_output=True);tree=load_glyphs(xml);check(tree,a.source_root,a.expanded)
         if a.control:controls(tree,a.source_root,a.expanded)
     return 0
 if __name__=='__main__':raise SystemExit(main())

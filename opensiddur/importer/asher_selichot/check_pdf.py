@@ -13,6 +13,72 @@ from pathlib import Path
 from lxml import etree
 from opensiddur.importer.scan.pdf_direction import base
 
+HEBREW_FRAGMENT = re.compile(r'[\u0590-\u05ff\ufb1d-\ufb4f·∙\s,.;:!?()\-]*[\u05d0-\u05ea\ufb1d-\ufb4f][\u0590-\u05ff\ufb1d-\ufb4f·∙\s,.;:!?()\-]*')
+WORD_GAP = 20
+
+
+def load_glyphs(path):
+    """mutool's glyph XML for a PDF, with each Hebrew line whole again.
+
+    With some faces (Ezra SIL) mutool ends a line at every Hebrew word, and a check that
+    looks for a phrase within a line finds none. Adjacent all-Hebrew fragments on one row,
+    nearer each other than a word gap, are joined back into the first: right to left, as
+    they are read. English lines, margin line numbers and Hebrew set inside an English line
+    keep the lines mutool gave them.
+    """
+    root = etree.parse(str(path)).getroot()
+    for page in root.findall('page'):
+        fragments = []
+        for line in page.findall('.//line'):
+            text = line.get('text', '')
+            if HEBREW_FRAGMENT.fullmatch(text) and not any(ch.isdigit() for ch in text):
+                x0, y0, x1, y1 = map(float, line.get('bbox').split())
+                fragments.append([line, x0, y0, x1, y1])
+        fragments.sort(key=lambda f: -f[3])
+        joined = set()
+        for i, first in enumerate(fragments):
+            if id(first[0]) in joined:
+                continue
+            for other in fragments[i + 1:]:
+                if id(other[0]) in joined:
+                    continue
+                overlap = min(first[4], other[4]) - max(first[2], other[2])
+                if (overlap > 0.5 * min(first[4] - first[2], other[4] - other[2])
+                        and first[1] - other[3] < WORD_GAP):
+                    line, more = first[0], other[0]
+                    for child in list(more):
+                        line.append(child)
+                    line.set('text', line.get('text', '') + ' ' + more.get('text', ''))
+                    first[1], first[2], first[4] = other[1], min(first[2], other[2]), max(first[4], other[4])
+                    line.set('bbox', ' '.join(str(v) for v in (first[1], first[2], first[3], first[4])))
+                    more.getparent().remove(more)
+                    joined.add(id(more))
+    return root
+
+
+def hebrew_rows(page, gutter):
+    """(baseline, letters) for each row of the Hebrew column, read right to left.
+
+    Grouped by each letter's own baseline, not by mutool's lines: with some faces a row
+    comes out as several lines, one holding a margin line number, another joined to the
+    English column's line.
+    """
+    rows = {}
+    for char in page.iter('char'):
+        if float(char.get('x')) < gutter and base(char.get('c', ' ')):
+            rows.setdefault(round(float(char.get('y')), 1), []).append(char)
+    return [(y, ''.join(base(c.get('c')) for c in sorted(chars, key=lambda c: float(c.get('x')), reverse=True)))
+            for y, chars in sorted(rows.items())]
+
+
+def strip_line_numbers(text):
+    """Body text without reledmac's margin line numbers, which extraction runs into the line:
+    after a word ("mercy 10 when") or standing alone after a comma ("Lord, 15 be").
+    A number before punctuation after a comma, as in "pp. 11, 12.", is a citation and stays."""
+    text = re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)', '', text)
+    return re.sub(r'(?<=,)\s+\d+(?=\s)', '', text)
+
+
 def corrected(text, asher_source):
     """Reading text as the PDF sets it: each misprint in corrections.json read corrected,
     the exporter's default. `asher_source` is sourcetexts' sources/asher_selichot."""
@@ -28,9 +94,11 @@ def corrected(text, asher_source):
 HEBREW = ['במוצאי', 'אתימין', 'דרוש', 'זוחלים', 'יוצר', 'מרוםאם', 'פנה', 'רצה']
 ENGLISH = ['On the outgoing', 'O raise', 'O seek', 'They tremble',
            'Thou, who hast formed', 'If the misdeeds', 'Turn, we beseech', 'Be pleased']
-# Measured from this edition's 12pt font and 14.5pt leading. The first stanza
-# begins one line higher in Hebrew after the unequal-length bilingual rubrics.
-MAX_BASELINE_DIFFERENCE = 16
+# One Hebrew line, the most a paired stanza start may differ by: the first stanza begins
+# one line higher in Hebrew after the unequal-length bilingual rubrics. Measured from the
+# release face, Ezra SIL at 12pt, whose pointed rows are 17.5-18.3pt apart (SBL Hebrew's
+# were 14.5pt).
+MAX_BASELINE_DIFFERENCE = 19
 
 
 def plain(text):
@@ -43,14 +111,13 @@ def check(tree, expanded, complete=False):
     hebrew = []
     for page_no, page in enumerate(tree.findall('page'), 1):
         gutter = 288 if page_no % 2 else 324
+        hebrew.extend((page_no, y, letters) for y, letters in hebrew_rows(page, gutter))
         for line in page.findall('.//line'):
             chars = list(line.findall('.//char'))
             en = [c for c in chars if float(c.get('x')) > gutter]
             he = [c for c in chars if base(c.get('c', ' ')) and float(c.get('x')) < gutter]
             if en:
                 english.append((page_no, float(en[0].get('y')), plain(''.join(c.get('c') for c in en)), en))
-            if he:
-                hebrew.append((page_no, float(he[0].get('y')), ''.join(base(c.get('c')) for c in sorted(he, key=lambda c: float(c.get('x')), reverse=True))))
     rows = []
     he_start = en_start = (0, 0)
     for he_anchor, en_anchor in zip(HEBREW, ENGLISH):
@@ -128,7 +195,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as temp:
         path = Path(temp)/'text.xml'
         subprocess.run(['mutool', 'draw', '-F', 'stext', '-o', str(path), str(args.pdf)], check=True, capture_output=True)
-        tree = etree.parse(str(path)).getroot()
+        tree = load_glyphs(path)
         rows = check(tree, args.expanded, args.complete)
         if args.control:
             controls(tree, args.expanded, args.complete)

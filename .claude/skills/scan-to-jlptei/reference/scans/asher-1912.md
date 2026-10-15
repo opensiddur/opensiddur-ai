@@ -48,7 +48,9 @@ Do not auto-settle qamats-qatan or assume Birnbaum’s punctuation/glyph convent
 
 Use `readings.abbreviations: abbreviated` for the documentary edition and `expanded`
 for prayer-use output. Both are release books, in opensiddur-projects
-`settings/asher_selichot/`. Verify both compiled and rendered outputs; derive row/column
+`settings/asher_selichot/`. Releases set the Hebrew in Ezra SIL, and the PDF
+checks measure from it (rows 17.5-18.3pt apart; mutool splits its Hebrew lines by
+word, so group Hebrew by baseline). Verify both compiled and rendered outputs; derive row/column
 thresholds from their actual typography rather than copying Birnbaum’s numeric values.
 
 The edition uses SBL Hebrew at 12pt because the available CLM faces lack U+00B7.

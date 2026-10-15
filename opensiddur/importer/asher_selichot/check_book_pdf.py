@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 from lxml import etree
 from pypdf import PdfReader
-from .check_pdf import check as check_poem, controls as poem_controls, corrected, plain
+from .check_pdf import MAX_BASELINE_DIFFERENCE, check as check_poem, controls as poem_controls, corrected, hebrew_rows, plain, load_glyphs
 from .check_first_day_pdf import check as check_first, controls as first_controls, latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
@@ -42,12 +42,12 @@ def second_day_check(tree, expanded):
     he,en=[],[]
     for number,page in enumerate(tree.findall('page'),1):
         gutter=288 if number%2 else 324
+        he.extend((number,y,letters) for y,letters in hebrew_rows(page,gutter))
         for line in page.findall('.//line'):
             if plain(line.get('text','')).strip().isdigit():continue  # Reledmac line numbers are not prayer words.
             chars=line.findall('.//char')
             h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
-            if h:he.append((number,float(h[0].get('y')),''.join(base(c.get('c')) for c in sorted(h,key=lambda c:float(c.get('x')),reverse=True))))
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
     anchors=[('ישראלנושע','Israel is saved'),('שעריך','They knock'),('פחודים','They are intimidated'),
              ('טובותיך','Anticipate them'),('יושעו','Let them be saved'),('הקשיבה','Attend, O Lord')]
@@ -56,7 +56,7 @@ def second_day_check(tree, expanded):
         h=next((r for r in he if ha in r[2] and r[:2]>=previous),None)
         e=next((r for r in en if ea in r[2] and r[:2]>=previous),None)
         if h is None or e is None:raise ValueError('Missing second-day stanza '+ha+' / '+ea)
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Second-day stanza alignment failed: '+str((h,e)))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Second-day stanza alignment failed: '+str((h,e)))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     text=plain(' '.join(l.get('text','') for l in tree.findall('.//line')))
     # The closing transclusion adds its own Deut. iv. 31 note in expanded output.
@@ -85,12 +85,12 @@ def third_day_check(tree, expanded):
     he,en=[],[]
     for number,page in enumerate(tree.findall('page'),1):
         gutter=288 if number%2 else 324
+        he.extend((number,y,letters) for y,letters in hebrew_rows(page,gutter))
         for line in page.findall('.//line'):
             if plain(line.get('text','')).strip().isdigit():continue  # Reledmac line numbers are not prayer words.
             chars=line.findall('.//char')
             h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
-            if h:he.append((number,float(h[0].get('y')),''.join(base(c.get('c')) for c in sorted(h,key=lambda c:float(c.get('x')),reverse=True))))
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
     anchors=[('שחרקמתי','At dawn of day I'),('לפניםזאת','In former days'),('מזבח','While the altar'),
              ('הןבהיות','Lo, when the service'),('הןקדם','Formerly the clean priests'),('חזהקדוש','Behold, O most holy One')]
@@ -99,7 +99,7 @@ def third_day_check(tree, expanded):
         h=next((r for r in he if ha in r[2] and r[:2]>=previous),None)
         e=next((r for r in en if ea in r[2] and r[:2]>=previous),None)
         if h is None or e is None:raise ValueError('Missing third-day stanza '+ha+' / '+ea)
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Third-day stanza alignment failed: '+str((h,e)))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Third-day stanza alignment failed: '+str((h,e)))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     text=plain(' '.join(l.get('text','') for l in tree.findall('.//line')))
     for phrase,count in [('this prayer is intended for the Reader.',1),('During the crusades.',1),
@@ -125,19 +125,19 @@ def numbered_day_check(tree, expanded, data, scope, asher_source=None):
     he,en=[],[]
     for number,page in enumerate(tree.findall('page'),1):
         gutter=288 if number%2 else 324
+        he.extend((number,y,letters) for y,letters in hebrew_rows(page,gutter))
         for line in page.findall('.//line'):
             if plain(line.get('text','')).strip().isdigit():continue
             chars=line.findall('.//char')
             h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
-            if h:he.append((number,float(h[0].get('y')),''.join(base(c.get('c')) for c in sorted(h,key=lambda c:float(c.get('x')),reverse=True))))
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
     deltas=[];previous=(0,0)
     for anchor in scope['pizmon_stanza_anchors']:
         h=next((r for r in he if anchor['he'] in r[2] and r[:2]>=previous),None)
         e=next((r for r in en if anchor['en'] in r[2] and r[:2]>=previous),None)
         if h is None or e is None:raise ValueError('Missing numbered-day stanza '+str(anchor))
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('Numbered-day stanza alignment failed: '+str((h,e)))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('Numbered-day stanza alignment failed: '+str((h,e)))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     normalize=lambda s:' '.join(re.sub(r'-\s+','',re.sub(r'[\u0590-\u05ff]', '', plain(s))).split())
     text=normalize(' '.join(l.get('text','') for l in tree.findall('.//line')))
@@ -190,7 +190,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as temp:
         path=Path(temp)/'text.xml'
         subprocess.run(['mutool','draw','-F','stext','-o',str(path),str(args.pdf)],check=True,capture_output=True)
-        tree=etree.parse(str(path)).getroot()
+        tree=load_glyphs(path)
         text=' '.join(l.get('text','') for l in tree.findall('.//line'))
         if 'Contents' not in text:raise ValueError('Missing generated contents page')
         check_contents(tree,rows,reader.page_labels)
@@ -202,12 +202,23 @@ def main(argv=None):
         second_deltas=second_day_check(second,args.expanded)
         third_deltas=third_day_check(third,args.expanded) if third is not None else []
         later_deltas={}
+        def note_openings(day_name):
+            # A note's opening words, up to any Hebrew, identify its apparatus line wherever the
+            # page puts it: a day's last notes can fall below the next day's heading.
+            path=args.source_root/'asher_selichot'/'scan_reading'/(day_name+'-day.json')
+            if not path.exists():return ()
+            day=json.loads(path.read_text())
+            openings=(re.split(r'[\u0590-\u05ff]',n['text'])[0].strip()[:25] for u in day['units']
+                      for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
+            return tuple(o for o in openings if len(o)>=8)
         for i,day_name in enumerate(['fourth','fifth','sixth','seventh'],3):
             if i>=len(days):break
             source=args.source_root/'asher_selichot'
             data=json.loads((source/'scan_reading'/(day_name+'-day.json')).read_text())
             scope=json.loads((source/(day_name+'-day-scope.json')).read_text())
-            portion=slice_day(tree,days[i],days[i+1] if i+1<len(days) else None)
+            previous=['third','fourth','fifth','sixth'][i-3]
+            portion=slice_day(tree,days[i],days[i+1] if i+1<len(days) else None,
+                              trailing_note_texts=note_openings(day_name),prior_note_texts=note_openings(previous))
             later_deltas[day_name]=numbered_day_check(portion,args.expanded,data,scope,source)
             if args.control:
                 broken=copy.deepcopy(portion)

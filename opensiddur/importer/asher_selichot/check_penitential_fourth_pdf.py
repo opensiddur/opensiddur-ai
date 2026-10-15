@@ -2,7 +2,7 @@
 import copy
 import re
 from lxml import etree
-from .check_pdf import plain
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, load_glyphs, strip_line_numbers
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
@@ -49,10 +49,10 @@ def check(tree, expanded=False):
         matches=[r for r in he if h_anchor in r[2] and r[:2]>=previous]
         h=min(matches,key=lambda r:abs(r[0]-e[0])*1000+abs(r[1]-e[1])) if matches and e else None
         if h is None or e is None:raise ValueError('Missing fourth penitential day stanza: '+e_anchor)
-        if h[0]!=e[0] or abs(h[1]-e[1])>16:raise ValueError('fourth penitential day stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
+        if h[0]!=e[0] or abs(h[1]-e[1])>MAX_BASELINE_DIFFERENCE:raise ValueError('fourth penitential day stanza alignment differs: '+e_anchor+': '+str((h[:2],e[:2])))
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     body=' '.join(r[2] for r in en)
-    body=re.sub(r'(?<=[A-Za-z])\s*\d+(?=[,.;!?]|\s)','',body)
+    body=strip_line_numbers(body)
     if expanded:
         if ''.join(r[2] for r in he).count('לעלאלעלאמןכלברכתא')!=2:
             raise ValueError('Ten Days Half and Full Kaddishes must both double leela')
@@ -121,7 +121,7 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         path=Path(tmp)/'text.xml'
         subprocess.run(['mutool','draw','-F','stext','-o',str(path),str(args.pdf)],check=True,capture_output=True)
-        tree=etree.parse(str(path)).getroot();check(tree,args.expanded)
+        tree=load_glyphs(path);check(tree,args.expanded)
         if args.control:controls(tree,args.expanded)
 
 
