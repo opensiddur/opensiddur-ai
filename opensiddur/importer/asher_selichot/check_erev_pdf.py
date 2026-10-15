@@ -11,7 +11,7 @@ def check(tree, expanded=False):
     for phrase in ['Supreme Judge','Remember the covenant','Accept, O Lord','Guardian of Israel','glory of thy name']:
         if phrase not in text:raise ValueError('Missing Erev passage: '+phrase)
     if 'FAST OF GEDALIAH' in text:raise ValueError('Erev reference boundary crossed')
-    for phrase in ['Alluding to Ezek. xxiv. 2.', 'Alluding to Job xxxiii. 34']:
+    for phrase in ['Alluding to Ezek. xxiv. 2.', 'Alluding to Job xxxiii. 24']:
         if text.count(phrase)!=1:raise ValueError('Erev footnote missing or duplicated: '+phrase)
     for chars in latin_note_runs(tree).values():
         xs=[float(c.get('x')) for c in chars]

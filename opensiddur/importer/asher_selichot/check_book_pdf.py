@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 from lxml import etree
 from pypdf import PdfReader
-from .check_pdf import check as check_poem, controls as poem_controls, plain
+from .check_pdf import check as check_poem, controls as poem_controls, corrected, plain
 from .check_first_day_pdf import check as check_first, controls as first_controls, latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 
@@ -120,7 +120,7 @@ def third_day_check(tree, expanded):
     return deltas
 
 
-def numbered_day_check(tree, expanded, data, scope):
+def numbered_day_check(tree, expanded, data, scope, asher_source=None):
     """Measure the independently recorded stanza anchors and printed apparatus."""
     he,en=[],[]
     for number,page in enumerate(tree.findall('page'),1):
@@ -141,7 +141,7 @@ def numbered_day_check(tree, expanded, data, scope):
         deltas.append(round(abs(h[1]-e[1]),2));previous=max(h[:2],e[:2])
     normalize=lambda s:' '.join(re.sub(r'-\s+','',re.sub(r'[\u0590-\u05ff]', '', plain(s))).split())
     text=normalize(' '.join(l.get('text','') for l in tree.findall('.//line')))
-    notes=Counter(normalize(n['text']) for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
+    notes=Counter(normalize(corrected(n['text'],asher_source) if asher_source else n['text']) for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
     for phrase,count in notes.items():
         if text.count(phrase)!=count:raise ValueError('Numbered-day footnote occurrence: '+phrase)
     for chars in latin_note_runs(tree).values():
@@ -208,7 +208,7 @@ def main(argv=None):
             data=json.loads((source/'scan_reading'/(day_name+'-day.json')).read_text())
             scope=json.loads((source/(day_name+'-day-scope.json')).read_text())
             portion=slice_day(tree,days[i],days[i+1] if i+1<len(days) else None)
-            later_deltas[day_name]=numbered_day_check(portion,args.expanded,data,scope)
+            later_deltas[day_name]=numbered_day_check(portion,args.expanded,data,scope,source)
             if args.control:
                 broken=copy.deepcopy(portion)
                 phrase=next(n['text'] for u in data['units'] for part in u.get('stanzas',[u]) for f in part['fragments'] for n in f['notes']['en'])
@@ -216,7 +216,7 @@ def main(argv=None):
                 line=next(l for l in broken.findall('.//line') if fingerprint in plain(l.get('text','')))
                 duplicate=copy.deepcopy(line);duplicate.set('text',phrase)
                 line.getparent().append(duplicate)
-                try:numbered_day_check(broken,args.expanded,data,scope)
+                try:numbered_day_check(broken,args.expanded,data,scope,source)
                 except ValueError:pass
                 else:raise AssertionError('Duplicate numbered-day note escaped detection')
                 broken=copy.deepcopy(portion);anchor=scope['pizmon_stanza_anchors'][1]['en']
@@ -226,7 +226,7 @@ def main(argv=None):
                             for char in line.findall('.//char'):
                                 if float(char.get('x'))>(288 if number%2 else 324):
                                     char.set('y',str(float(char.get('y'))+50))
-                try:numbered_day_check(broken,args.expanded,data,scope)
+                try:numbered_day_check(broken,args.expanded,data,scope,source)
                 except ValueError:pass
                 else:raise AssertionError('Shifted numbered-day stanza escaped detection')
         if len(days)>7:

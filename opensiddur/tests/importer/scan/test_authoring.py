@@ -94,6 +94,60 @@ class AuthoringTests(unittest.TestCase):
         a.words_with_notes(plain, 'אב', [{'anchor':'אב','text':'גד'}], 'he')
         self.assertEqual(plain[0].text, 'גד')
 
+    def test_a_multi_line_note_is_paragraphs_with_their_emphasis(self):
+        p = self.parent()
+        a.words_with_notes(p, 'praise? Then', [{'anchor': 'praise?', 'text': 'Said by the Reader—\nBlessed are the people.',
+                                                  'italic': ['Said by the Reader—']}], 'en')
+        note = p[0]
+        self.assertEqual(['p', 'p'], [etree.QName(child).localname for child in note])
+        self.assertEqual('italic', note[0][0].get('rend'))
+        self.assertEqual('Said by the Reader—', note[0][0].text)
+        self.assertEqual('Blessed are the people.', note[1].text)
+        self.assertEqual(' Then', note.tail)
+
+    def correctable(self):
+        root = etree.fromstring(f'<div xmlns="{a.TEI}"><p>the oppessors fled; Isaiah vi. 7.'
+                                f'<note>first<hi>inner</hi></note>” after<abbr>(When, &amp;c.</abbr>'
+                                f'<abbr>(When, &amp;c.)</abbr></p></div>')
+        return root
+
+    def choices(self, root):
+        return [(c[0].text, c[1].text) for c in root.iter(f'{{{a.TEI}}}choice')]
+
+    def test_a_correction_marks_the_printed_form_beside_its_correction(self):
+        root = self.correctable()
+        a.apply_corrections({'x/y.xml': root}, [
+            {'id': 'typo', 'file': 'x/y.xml', 'sic': 'oppessors', 'corr': 'oppressors'},
+            {'id': 'cite', 'file': 'x/y.xml', 'before': 'Isaiah ', 'sic': 'vi.', 'corr': 'lvi.', 'after': ' 7.'}])
+        self.assertEqual([('oppessors', 'oppressors'), ('vi.', 'lvi.')], self.choices(root))
+        self.assertEqual('the oppessors fled; Isaiah vi. 7.firstinner” after(When, &c.(When, &c.)', a.printed_text(root))
+
+    def test_a_correction_can_follow_an_element_or_match_a_whole_text(self):
+        root = self.correctable()
+        a.apply_corrections({'x/y.xml': root}, [
+            {'id': 'stray', 'file': 'x/y.xml', 'follows': 'inner', 'sic': '”', 'corr': ''},
+            {'id': 'paren', 'file': 'x/y.xml', 'exact': True, 'before': '(When, ', 'sic': '&c.', 'corr': '&c.)'}])
+        self.assertEqual([('”', None), ('&c.', '&c.)')], self.choices(root))
+        self.assertEqual(' after', root.find(f'.//{{{a.TEI}}}choice').tail)
+
+    def test_a_correction_that_matches_nowhere_or_twice_is_refused(self):
+        for correction in [{'id': 'gone', 'file': 'x/y.xml', 'sic': 'absent', 'corr': 'x'},
+                           {'id': 'twice', 'file': 'x/y.xml', 'sic': '(When, &c.', 'corr': 'x'},
+                           {'id': 'nofile', 'file': 'x/z.xml', 'sic': 'fled', 'corr': 'x'}]:
+            with self.subTest(correction=correction['id']), self.assertRaises(ValueError):
+                a.apply_corrections({'x/y.xml': self.correctable()}, [correction])
+
+    def test_a_misspelt_note_emphasis_phrase_is_refused(self):
+        with self.assertRaisesRegex(ValueError, 'Missing printed emphasis'):
+            a.words_with_notes(self.parent(), 'word', [{'anchor': 'word', 'text': 'one\ntwo', 'italic': ['three']}], 'en')
+
+    def test_a_correction_never_lands_inside_an_earlier_one(self):
+        root = etree.fromstring(f'<div xmlns="{a.TEI}"><p>oppessors and oppressors</p></div>')
+        a.apply_corrections({'x/y.xml': root}, [
+            {'id': 'first', 'file': 'x/y.xml', 'sic': 'oppessors', 'corr': 'oppressors and more'},
+            {'id': 'second', 'file': 'x/y.xml', 'before': 'and ', 'sic': 'oppressors', 'corr': 'x'}])
+        self.assertEqual([('oppessors', 'oppressors and more'), ('oppressors', 'x')], self.choices(root))
+
     def test_language_wrapping_preserves_tree_and_is_idempotent(self):
         p = self.parent(); p.text = 'Start אב '
         hi = a.element(p, 'hi', 'inside גד'); hi.tail = ' end הו.'

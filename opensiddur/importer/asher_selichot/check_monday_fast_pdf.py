@@ -12,7 +12,7 @@ ANCHORS=[('מלאכירחמים','Angels of mercy!'),('אוליירחםשארי�
 
 def check(tree, expanded=False):
     text=plain(' '.join(n.get('text','') for n in tree.findall('.//line')))
-    for phrase,count in [('The concluding sentence is a quotation',1),('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah vi. 7.',1),('Ezek. xxxvi. 25.',2)]:
+    for phrase,count in [('The concluding sentence is a quotation',1),('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah lvi. 7.',1),('Ezek. xxxvi. 25.',2)]:
         if text.count(phrase)!=count:raise ValueError('Monday footnote missing or duplicated: '+phrase)
     runs=latin_note_runs(tree)
     if not runs:raise ValueError('No Monday apparatus glyph runs measured')

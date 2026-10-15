@@ -439,8 +439,12 @@ and four English choices. Hebrew prints a refrain between the lily and dove
 stanzas; English joins them. Its final Hebrew cue repeats the opening stanza,
 while English ends with the full refrain and no repeat cue. Do not invent an
 English opening repeat. Full printed refrains stay ordinary text with refrain
-markup. The scan's English footnote citations can contain mistakes; preserve
-those documentary citations and record suspected errors separately.
+markup. The scan can misprint: a garbled word, a wrong citation number, an
+unmatched quotation mark. Readings keep the print; each clear misprint is listed
+in sourcetexts `scan_reading/corrections.json`, which the build applies as
+`tei:choice/tei:sic + tei:corr` (`readings.errors` picks the form; corrected by
+default). Archaic spellings are not misprints. Problems of fact or wording stay
+as printed and go to `specs/asher_selichot/OPEN_QUESTIONS.md` for a decision.
 
 The fourth penitential day occupies n257–n282, printed 128–140, between large
 body headings shared with the third and fifth days. Yoshev beseter has eight
@@ -571,8 +575,9 @@ record the source's inconsistent feet/yards figures rather than correcting them.
 Seventeenth of Tammuz occupies printed183 lower–187, n367–n376, with native
 tzom-tammuz gate. Sheeh has four shared stanza units: Hebrew ends with a full-opening
 cue, English prints one short refrain cue. Do not invent a repetition rubric.
-Printed184 appears to interchange note numbers2/3; preserve printed associations
-and document the mismatch. Printed185 has three superscript markers without note
+Printed184 interchanges note numbers2/3. A printed superscript only locates
+its note, so attach each note where its content belongs (the Manasseh note to
+the image, the second-temple note to the breach). Printed185 has three superscript markers without note
 texts: encode unresolved markers without invented reference targets or notes.
 When a provisional capture guessed apparatus text, retain its immutable evidence,
 remove the guesses from working text, and disclose the correction. Incidental OCR

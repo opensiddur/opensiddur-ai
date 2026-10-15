@@ -1698,3 +1698,23 @@ five books. The copies under `specs/asher_selichot/` are removed, with the redun
 `default.yaml` and the first-day pilot's `first-day.yaml`. Compile commands above now read
 the settings from the projects checkout. The open review items listed with the English pass
 completion still apply to the released PDFs.
+
+## Corrections, note placement and open questions
+
+Owner decisions of 2026-10-14. Clear misprints (typographical errors, wrong citation numbers,
+unmatched quotation marks and parentheses) are encoded as `tei:choice/tei:sic + tei:corr`.
+The new exporter setting `readings.errors` (`corrected`, the default, or `printed`) selects
+the form, before inline transclusion flattens it. The 34 corrections are data, in sourcetexts
+`scan_reading/corrections.json`; the build applies each and refuses one that matches nowhere
+or more than once. A review of the evidence and scans found them; it also showed that
+"heald" (s297) is a damaged "healed", which the encoding already had. Problems of fact or
+wording, the two ambiguous abbreviated citations and three further questions are in
+`OPEN_QUESTIONS.md`.
+
+A printed note superscript only locates its note: Tammuz printed184's interchanged numbers
+are corrected by attaching each note by content. The first day's "Reader alone" note, which
+has no body marker, opens its range after "Most Holy?". On printed5 both markers follow the
+verse's ׃ and ?, as printed; the English note is two paragraphs, its instruction italic, and
+the PDF now starts each later paragraph of a note on a new line. `verify` passes (398
+schema-valid files).
+

@@ -1,4 +1,5 @@
 """Manifest-driven authoring and reverse verification of later selichot services."""
+from opensiddur.importer.scan.authoring import printed_text
 import copy
 import hashlib
 import json
@@ -261,7 +262,7 @@ def verify_readings(source,project_directory,day):
                     continue
                 if embedded is None:raise ValueError('Missing interleaved source rubric')
                 printed_note=embedded.find(f'.//{{{TEI}}}note[@type="instruction"]')
-                if normalize(''.join(printed_note.itertext()))!=normalize(words):raise ValueError('Interleaved rubric wording changed')
+                if normalize(printed_text(printed_note))!=normalize(words):raise ValueError('Interleaved rubric wording changed')
                 if [n.get('target') for n in embedded.findall(f'.//{{{J}}}transclude')]!=targets(rubric,lang):raise ValueError('Interleaved expansion targets changed')
                 node.remove(embedded)
             scopes=node.findall(f'{{{J}}}conditional')
@@ -276,7 +277,7 @@ def verify_readings(source,project_directory,day):
                     for child in children[children.index(start):children.index(end)+1]:node.remove(child)
             notes=node.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             wanted=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
-            if list(map(normalize,(''.join(n.itertext()) for n in notes)))!=list(map(normalize,wanted)):raise ValueError('penitential day footnote changed: '+reading['id'])
+            if list(map(normalize,(printed_text(n) for n in notes)))!=list(map(normalize,wanted)):raise ValueError('penitential day footnote changed: '+reading['id'])
             markers=node.findall(f'.//{{{TEI}}}hi[@rend="superscript"]') if reading.get('note_markers') and lang=='en' else []
             wanted_markers=[str(n) for page,anchors in reading.get('note_markers',{}).items() for n in range(reading.get('note_marker_start',{}).get(page,1),reading.get('note_marker_start',{}).get(page,1)+len(anchors))] if lang=='en' else []
             if markers and [n.text for n in markers]!=wanted_markers:raise ValueError('Printed unresolved note marker changed')
@@ -290,11 +291,11 @@ def verify_readings(source,project_directory,day):
                 source_pages=[f[lang]['scan'] for f in reading['fragments'] if f[lang]['text']]
                 actual_pages=['s'+str(int(re.search(r'/n(\d+)',n.get('facs')).group(1))+1) for n in node.findall(f'.//{{{TEI}}}pb')]
                 if actual_pages!=source_pages:raise ValueError('Pizmon facsimile source order changed')
-                choices=node.findall(f'.//{{{TEI}}}choice')
+                choices=node.findall(f'.//{{{TEI}}}choice[{{{TEI}}}abbr]')
                 if len(choices)!=reading['choice_counts'][lang]:raise ValueError(day+' penitential day refrain count changed')
                 opening=' '.join(f[lang]['text'] for f in reading['stanzas'][0]['fragments'])
                 for c in choices:
-                    cue=''.join(c.find(f'{{{TEI}}}abbr').itertext())
+                    cue=printed_text(c.find(f'{{{TEI}}}abbr'))
                     wanted=opening if cue==reading.get('opening_cue',{}).get(lang) else reading.get('refrain_expansions',{}).get(lang,{}).get(cue,reading['refrain'][lang])
                     if normalize(''.join(c.find(f'{{{TEI}}}expan').itertext()))!=normalize(wanted):raise ValueError('Refrain expansion changed')
                 milestones=node.findall(f'{{{TEI}}}milestone[@corresp]')

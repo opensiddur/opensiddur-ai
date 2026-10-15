@@ -1,4 +1,5 @@
 """Numbered Asher services and their source-verified expansions."""
+from opensiddur.importer.scan.authoring import printed_text
 import json
 import re
 from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
@@ -212,7 +213,7 @@ def verify_numbered_readings(source, project_directory, day_name):
                     if part.get('trailing_cue', {}).get(lang):append(page,lang,part['trailing_cue'][lang])
                     if part.get('opening_cue', {}).get(lang):append(page,lang,part['opening_cue'][lang])
             notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
-            if [normalize(' '.join(n.itertext())) for n in notes] != list(map(normalize,expected_notes)):
+            if [normalize(printed_text(n,' ')) for n in notes] != list(map(normalize,expected_notes)):
                 raise ValueError('Numbered-day printed footnotes changed')
             for n in notes+unit.findall(f'{{{TEI}}}head'):
                 parent=n.getparent();prev=n.getprevious()
@@ -225,7 +226,7 @@ def verify_numbered_readings(source, project_directory, day_name):
             differences=check(actual,expected)
             if differences:raise ValueError(f'{reading["id"]}: {differences}')
             if reading['kind']=='pizmon':
-                choices=unit.findall(f'.//{{{TEI}}}choice')
+                choices=unit.findall(f'.//{{{TEI}}}choice[{{{TEI}}}abbr]')
                 opening=' '.join(f[lang]['text'] for f in parts[0]['fragments'])+' '+data['refrain'][lang]
                 expected_expansions = []
                 for stanza in parts:

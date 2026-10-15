@@ -43,7 +43,7 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
     body=body_text(tree)
     notes=[(phrase,1) for phrase in ({'thursday-fast':['In rewarding the good','Viz., Ishmael.'],'last-monday-fast':['Ps. cii. 28.'],'tenth-tevet':['viz., The 8th, 9th, and 10th','Ptolomeus Philadelphus','The 9th of Tebeth','Ezekiel.','Ezek. xxiv. 1.','Tebeth is the tenth month','The daughter of Zion','Abi Sonoach','Nebusaradon.','Ezek. xxiv. 3.'],'esther-fast':['Haman.','See Deut. xxxi. 18.','Exod. xxx. 23.','Josh. v. 12.','Gen. iii. 11.','See Talmud Megillah, x.','Ezra iv. 6.','Megillah, xi. 2.','The following is an allegory','After his conference with Moses.','And might, therefore, be revoked','Thus far the legend taken from','In allusion to the gallows','i.e., the celebration of the festival','At the time of Manasseh','By Deut. xxv.','Mordecai and Esther.'],'tammuz-fast':['By a certain Appostemus','According to some this was done','In the time of the second temple.','See Taanith vi. 4.','According to a tradition','In allusion to Deut. i. 44.','See the preceding prayer.','The city being besieged','The King of Babylon.','Nebuchadnezzar and Sannacherib.','David.','Palestine.','Esau’s descendants.']}[day])]
     if day=='esther-fast':notes.append(('Ahasuerus.',2))
-    if expanded:notes += [('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah vi. 7.',1),('Ezek. xxxvi. 25.',2)]
+    if expanded:notes += [('Lev. xxvi',3),('Deut. xxx.',3),('Deut. iv.',2),('Isaiah xliv. 22.',1),('Isaiah xliii. 25.',1),('Isaiah i. 18.',1),('Isaiah lvi. 7.',1),('Ezek. xxxvi. 25.',2)]
     for fingerprint,count in notes:
         if text.count(fingerprint)!=count:raise ValueError('Fast footnote occurrence: '+fingerprint)
     if 'May the prayers and supplications' in body:raise ValueError('Unrequested Full Kaddish supplied')
@@ -64,7 +64,8 @@ def check(tree, day, source_root=SOURCETEXTS_ROOT, expanded=False):
         if body.count('(The Eternal, &c.)')!=(0 if expanded else 1):raise ValueError('Final Monday opening cue changed')
         if body.count('an Omnipotent God, merciful and gracious')!=(2 if expanded else 1):raise ValueError('Final Monday attributes count')
     if day=='tenth-tevet':
-        if body.count('(When, &c.)')!=(0 if expanded else 12):raise ValueError('Tevet closed cue count changed')
+        # The printed unclosed cue is read corrected, closing the twelfth into a thirteenth.
+        if body.count('(When, &c.)')!=(0 if expanded else 13):raise ValueError('Tevet closed cue count changed')
         if body.count('(When, &c.')!=(0 if expanded else 13):raise ValueError('Tevet cue count changed, including printed unclosed cue')
         if body.count('When our forefathers trusted')!=(13 if expanded else 1):raise ValueError('Tevet complete refrain count changed')
         if 'advanced towards the holy city' not in body:raise ValueError('Tevet facsimile word join lost')

@@ -5,7 +5,7 @@ from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT
 from opensiddur.importer.scan.pdf_direction import base
 from .check_fast_pdf import glyph_rows,body_text
-from .check_pdf import plain, strip_numeric_markers
+from .check_pdf import corrected, plain, strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 
 
@@ -42,7 +42,7 @@ def check(tree,source_root=SOURCETEXTS_ROOT,expanded=False):
         if any(b<a-.05 for a,b in zip(xs,xs[1:])):raise ValueError('Reversed monthly-service apparatus')
     normalize=lambda text:strip_numeric_markers(plain(re.sub(r'(?<=\w)-\s+(?=\w)','',' '.join(text.split()))))
     apparatus=normalize(' '.join(''.join(c.get('c','') for font in line.findall('font') if float(font.get('size','100'))<=10 for c in font.findall('char')) for line in tree.findall('.//line')))
-    notes=[n['text'] for u in units for f in u['fragments'] for n in f['notes']['en']]
+    notes=[corrected(n['text'],source.parent) for u in units for f in u['fragments'] for n in f['notes']['en']]
     for note in notes:
         if apparatus.count(normalize(note))!=1:raise ValueError('Monthly-service note occurrence: '+note)
     body=body_text(tree)

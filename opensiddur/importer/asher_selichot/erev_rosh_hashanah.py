@@ -1,4 +1,5 @@
 """The image-read Erev Rosh Hashanah service and its bilingual cue ranges."""
+from opensiddur.importer.scan.authoring import printed_text
 import copy
 import hashlib
 import json
@@ -293,7 +294,7 @@ def verify_readings(source, project_directory):
                     for child in children[children.index(start):children.index(end)+1]:node.remove(child)
             notes=node.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             expected_notes=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
-            if [normalize(''.join(n.itertext())) for n in notes]!=list(map(normalize,expected_notes)):raise ValueError('Erev note text changed: '+reading['id'])
+            if [normalize(printed_text(n)) for n in notes]!=list(map(normalize,expected_notes)):raise ValueError('Erev note text changed: '+reading['id'])
             references=node.findall(f'.//{{{TEI}}}hi[@rend="superscript"]')
             expected_references=[str(n) for n in range(1,sum(map(len,reading.get('note_markers',{}).values()))+1)] if lang=='en' else []
             if [n.text for n in references]!=expected_references:raise ValueError('Tamid reference markers changed')

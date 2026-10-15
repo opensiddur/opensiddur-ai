@@ -83,6 +83,20 @@ def words_with_notes(parent, words, notes, lang):
             first, following = note['text'].split('\n',1)
             p = element(node,'p');p.set(XML+'lang','en');mixed_words(p,first)
             element(node,'p',following)
+        elif '\n' in note['text']:
+            # Each printed line of a multi-paragraph note is its own paragraph, with the
+            # emphasis the print gives it.
+            italic = note.get('italic', [])
+            for phrase in italic:
+                if not any(phrase in paragraph for paragraph in note['text'].split('\n')):
+                    raise ValueError(f'Missing printed emphasis phrase: {phrase}')
+            for paragraph in note['text'].split('\n'):
+                p = element(node, 'p')
+                if lang == 'en' and re.search(r'[\u05d0-\u05ea]', paragraph):
+                    mixed_words(p, paragraph)
+                else:
+                    p.text = paragraph
+                    italicize(p, [phrase for phrase in italic if phrase in paragraph])
         elif lang == 'en' and re.search(r'[\u05d0-\u05ea]', note['text']):
             node.set(XML+'lang', 'en')
             mixed_words(node, note['text'])
@@ -169,6 +183,76 @@ def conditional_scope(parent, identity, present, *, fs_type, feature):
     field.set('name', feature)
     element(field, 'binary', value='true' if present else 'false')
     return conditional
+
+
+def printed_text(node, separator=''):
+    """The words of `node` as the edition prints them: every misprint's tei:corr left out."""
+    parts = []
+    def walk(current):
+        if current.text:
+            parts.append(current.text)
+        for child in current:
+            if child.tag != f'{{{TEI}}}corr':
+                walk(child)
+            if child.tail:
+                parts.append(child.tail)
+    walk(node)
+    return separator.join(parts)
+
+
+def apply_corrections(documents, corrections):
+    """Mark each recorded misprint as tei:choice/tei:sic + tei:corr in its document.
+
+    `documents` maps a project-relative path (``project/file.xml``) to its root. A correction
+    names its `file`, the printed `sic` and its `corr`, with `before`/`after` text that must
+    surround it in the same text node (the whole of it, with `exact`), or `follows`: the end of
+    the string value of the element whose tail it begins. Each must match exactly once, so a correction never lands twice or
+    goes stale silently.
+    """
+    for correction in corrections:
+        root = documents.get(correction['file'])
+        if root is None:
+            raise ValueError(f"Correction {correction['id']}: no document {correction['file']}")
+        before, after = correction.get('before', ''), correction.get('after', '')
+        target = before + correction['sic'] + after
+        matches = []
+        corrected = {f'{{{TEI}}}sic', f'{{{TEI}}}corr'}
+        for node in root.iter():
+            if not isinstance(node.tag, str):
+                continue
+            inside = node.tag in corrected or any(a.tag in corrected for a in node.iterancestors())
+            for attribute in ('text', 'tail'):
+                if inside and (attribute == 'text' or node.tag not in corrected):
+                    continue
+                value = getattr(node, attribute)
+                if not value:
+                    continue
+                if 'follows' in correction:
+                    if (attribute == 'tail' and value.startswith(target)
+                            and ''.join(node.itertext()).endswith(correction['follows'])):
+                        matches.append((node, attribute, 0))
+                elif correction.get('exact'):
+                    if value == target:
+                        matches.append((node, attribute, len(before)))
+                elif value.count(target) == 1:
+                    matches.append((node, attribute, value.index(target) + len(before)))
+                elif value.count(target) > 1:
+                    matches.extend([None, None])
+        if len(matches) != 1 or matches[0] is None:
+            raise ValueError(f"Correction {correction['id']}: {len(matches)} places match in {correction['file']}")
+        node, attribute, start = matches[0]
+        value = getattr(node, attribute)
+        end = start + len(correction['sic'])
+        choice_node = etree.Element(f'{{{TEI}}}choice')
+        element(choice_node, 'sic', correction['sic'] or None)
+        element(choice_node, 'corr', correction['corr'] or None)
+        choice_node.tail = value[end:]
+        setattr(node, attribute, value[:start])
+        if attribute == 'text':
+            node.insert(0, choice_node)
+        else:
+            parent = node.getparent()
+            parent.insert(parent.index(node) + 1, choice_node)
 
 
 def write_documents(documents, *, validator, obsolete_paths=()):

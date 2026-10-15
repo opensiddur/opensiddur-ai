@@ -1,4 +1,5 @@
 """Verify the edition against independent documentary streams and its expansion policy."""
+from opensiddur.importer.scan.authoring import printed_text
 
 from opensiddur.importer.scan.authoring import check_poetry
 
@@ -36,7 +37,7 @@ def verify(source_root, project_directory):
             for key,text in streams(root,include_notes=True).items():
                 actual[key]=(actual.get(key,'')+' '+text).strip()
         root=etree.parse(str(project/'bemotzaei_menuhah.xml'))
-        choices=root.findall(f'.//{{{TEI}}}choice')
+        choices=root.findall(f'.//{{{TEI}}}choice[{{{TEI}}}abbr]')
         if len(choices)!=(7 if lang=='he' else 6):
             raise ValueError(f'{lang}: missing or duplicated refrain choices')
         for node in choices:
@@ -289,7 +290,7 @@ def verify_continuation(source, project_directory):
             expected_notes=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
             notes=unit.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             normalize=lambda text:' '.join(unicodedata.normalize('NFKD',text).split())
-            if [normalize(' '.join(n.itertext())) for n in notes]!=list(map(normalize,expected_notes)):
+            if [normalize(printed_text(n,' ')) for n in notes]!=list(map(normalize,expected_notes)):
                 raise ValueError(f'{reading["id"]}: missing or changed printed footnote')
             # Exclude apparatus after checking it separately, preserving surrounding body text.
             for note in notes:

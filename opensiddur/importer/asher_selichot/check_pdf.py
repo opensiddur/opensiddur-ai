@@ -4,6 +4,7 @@ from opensiddur.importer.scan.pdf import strip_numeric_markers
 
 import argparse
 import copy
+import json
 import re
 import subprocess
 import tempfile
@@ -11,6 +12,18 @@ import unicodedata
 from pathlib import Path
 from lxml import etree
 from opensiddur.importer.scan.pdf_direction import base
+
+def corrected(text, asher_source):
+    """Reading text as the PDF sets it: each misprint in corrections.json read corrected,
+    the exporter's default. `asher_source` is sourcetexts' sources/asher_selichot."""
+    path = Path(asher_source) / 'scan_reading/corrections.json'
+    for c in (json.loads(path.read_text())['corrections'] if path.exists() else []):
+        if 'follows' in c or c.get('exact'):
+            continue
+        before, after = c.get('before', ''), c.get('after', '')
+        text = text.replace(before + c['sic'] + after, before + c['corr'] + after)
+    return text
+
 
 HEBREW = ['במוצאי', 'אתימין', 'דרוש', 'זוחלים', 'יוצר', 'מרוםאם', 'פנה', 'רצה']
 ENGLISH = ['On the outgoing', 'O raise', 'O seek', 'They tremble',

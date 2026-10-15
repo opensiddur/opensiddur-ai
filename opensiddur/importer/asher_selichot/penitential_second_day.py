@@ -1,4 +1,5 @@
 """The complete image-read second penitential day service, printed 104–115 (n209–n232)."""
+from opensiddur.importer.scan.authoring import printed_text
 
 from opensiddur.importer.scan.authoring import wrap_hebrew
 
@@ -216,14 +217,14 @@ def verify_readings(source,project_directory):
                     for child in children[children.index(start):children.index(end)+1]:node.remove(child)
             notes=node.findall(f'.//{{{TEI}}}note[@type="commentary"]')
             wanted=[n['text'] for f in reading['fragments'] for n in f['notes'][lang]]
-            if list(map(normalize,(''.join(n.itertext()) for n in notes)))!=list(map(normalize,wanted)):raise ValueError('second penitential day footnote changed: '+reading['id'])
+            if list(map(normalize,(printed_text(n) for n in notes)))!=list(map(normalize,wanted)):raise ValueError('second penitential day footnote changed: '+reading['id'])
             for n in notes+node.findall(f'{{{TEI}}}head'):
                 parent=n.getparent();prev=n.getprevious()
                 if prev is None:parent.text=(parent.text or '')+(n.tail or '')
                 else:prev.tail=(prev.tail or '')+(n.tail or '')
                 parent.remove(n)
             if reading['kind']=='pizmon':
-                choices=node.findall(f'.//{{{TEI}}}choice')
+                choices=node.findall(f'.//{{{TEI}}}choice[{{{TEI}}}abbr]')
                 if len(choices)!=(7 if lang=='he' else 6) or any(normalize(''.join(c.find(f'{{{TEI}}}expan').itertext()))!=normalize(reading['refrain'][lang]) for c in choices):raise ValueError('second penitential day verified refrain changed')
                 milestones=node.findall(f'{{{TEI}}}milestone[@corresp]')
                 if len(milestones)!=7:raise ValueError('second penitential day stanza alignment changed')
