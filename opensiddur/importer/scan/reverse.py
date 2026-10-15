@@ -45,6 +45,8 @@ def streams(root, *, include_notes=False):
         children = list(el)
         if el.tag == TEI + 'choice' and el.find(TEI + 'abbr') is not None:
             children = [el.find(TEI + 'abbr')]
+        if el.tag == TEI + 'choice' and el.find(TEI + 'sic') is not None:
+            children = [el.find(TEI + 'sic')]
         if el.text and state['page']:
             result[(state['page'], lang)].append(el.text)
         for child in children:

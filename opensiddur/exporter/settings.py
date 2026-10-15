@@ -8,6 +8,7 @@ import yaml
 from opensiddur.exporter.linear import (
     AbbreviationReading,
     DeclarationFeatureValue,
+    ErrorReading,
     LinearData,
     ParallelColumnOrder,
     Undefined,
@@ -126,6 +127,9 @@ class ReadingSettings(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     abbreviations: AbbreviationReading = AbbreviationReading.ABBREVIATED
+    # An edition's misprints (tei:sic) are read corrected (tei:corr) unless a book asks for
+    # the print.
+    errors: ErrorReading = ErrorReading.CORRECTED
 
 
 class SettingsYaml(BaseModel):
@@ -208,6 +212,7 @@ def load_settings(
     linear_data.project_priority = settings.priority.transclusion
     linear_data.instruction_priority = settings.priority.instructions
     linear_data.abbreviation_reading = settings.readings.abbreviations
+    linear_data.error_reading = settings.readings.errors
     linear_data.annotation_projects = settings.annotations
     linear_data.annotation_print_once_types = settings.print_once.note_types()
     if settings.parallel:

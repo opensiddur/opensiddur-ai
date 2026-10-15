@@ -3776,6 +3776,11 @@
                      to the printed abbreviation, rather than concatenating both. -->
                 <xsl:apply-templates select="(tei:abbr, tei:expan)[1]/node()" mode="emit"/>
             </xsl:when>
+            <xsl:when test="tei:sic or tei:corr">
+                <!-- Likewise one form of an edition error; uncompiled input reads the
+                     correction, as the exporter's default does. -->
+                <xsl:apply-templates select="(tei:corr, tei:sic)[1]/node()" mode="emit"/>
+            </xsl:when>
             <xsl:when test="j:option">
                 <!-- Alternate wordings: exactly one is read, but nothing here has chosen
                      between them, so all are shown, the first plain and the rest bracketed
@@ -3931,7 +3936,22 @@
          surrounding note's forced direction. Keep ordinary groups, not paragraph
          environments, inside reledmac's auxiliary-file writes. -->
     <xsl:template match="tei:p[ancestor::tei:note][@xml:lang]" mode="emit" priority="10">
+        <xsl:call-template name="note-paragraph-break"/>
         <xsl:call-template name="note-content"/>
+    </xsl:template>
+
+    <xsl:template match="tei:p[ancestor::tei:note]" mode="emit" priority="9">
+        <xsl:call-template name="note-paragraph-break"/>
+        <xsl:apply-templates mode="emit"/>
+    </xsl:template>
+
+    <!-- A note's second and later paragraphs start a new line, as the print sets them: an
+         English instruction followed by the Hebrew verses it introduces otherwise share a
+         line. \newline rather than \par, for the reason given at tei:item below. -->
+    <xsl:template name="note-paragraph-break">
+        <xsl:if test="preceding-sibling::tei:p">
+            <xsl:text>\newline </xsl:text>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template name="note-content">

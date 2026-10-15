@@ -645,6 +645,17 @@ inline transclusion flattens the text. This does not select between kri/ktiv or
 <tei:choice><tei:abbr>Hearken, &amp;c.</tei:abbr><tei:expan>Hearken to our prayer.</tei:expan></tei:choice>
 ```
 
+A clear misprint in the source edition -- a misspelled or garbled word, a wrong citation
+number, an unmatched quotation mark -- keeps the printed form in `tei:sic` beside its
+correction in `tei:corr`. The exporter setting `readings.errors` selects `corrected`
+(default) or `printed`. Archaic spellings are not errors, and a problem of fact or wording
+is not a misprint; leave both as printed. A misprint inside an abbreviation nests its
+`tei:choice` inside the `tei:abbr`.
+
+```xml
+<tei:choice><tei:sic>oppessors</tei:sic><tei:corr>oppressors</tei:corr></tei:choice>
+```
+
 To indicate alternate wordings of the same text, exactly one of which is read, use `j:option`
 inside a `tei:choice`. Use `xml:lang` where the alternates differ in language, and `corresp` to
 carry a URN by which a setting may select one:

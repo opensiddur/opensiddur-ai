@@ -1133,7 +1133,8 @@ class CompilerProcessor:
         return False, None
 
     def _reading_children(self, element):
-        """Visit only the selected abbreviation form; never flatten both readings.
+        """Visit only the selected form of an abbreviation or an edition error; never flatten
+        both readings.
 
         Other TEI choices retain their existing behavior. Source XML is not mutated.
         """
@@ -1142,6 +1143,10 @@ class CompilerProcessor:
             abbr, expan = element.find(tei + "abbr"), element.find(tei + "expan")
             if abbr is not None and expan is not None:
                 yield expan if self.linear_data.abbreviation_reading == "expanded" else abbr
+                return
+            sic, corr = element.find(tei + "sic"), element.find(tei + "corr")
+            if sic is not None and corr is not None:
+                yield sic if self.linear_data.error_reading == "printed" else corr
                 return
         yield from element
 
