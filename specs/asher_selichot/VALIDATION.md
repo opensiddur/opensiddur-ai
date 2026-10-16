@@ -1735,3 +1735,14 @@ mutool ends a line at every Hebrew word, so Hebrew rows are now grouped by basel
 stay with their day; and a margin line number standing alone after a comma is stripped
 (`strip_line_numbers`). Every check, and every deliberately broken control, passes on both PDFs.
 
+## Open questions answered
+
+The owner answered all 19 questions in `OPEN_QUESTIONS.md` on 2026-10-16. Fourteen more
+misprints became corrections (48 in all), among them the seventh day's reversed refrain limits,
+"coming" for "come", "Father!" for "fathers!", "ardent pass[ion]", two misplaced stops and a
+comma in Num. 14:19-20, the unclosed "They cast lots" quotation, and the transposed "unclean"
+and "clean" on s111. The raised mark after "page 7" on Erev Yom Kippur is dropped from the
+reading. Five editorial notes, each beginning "Editor:", are standoff notes on anchors
+(`scan_reading/editorial_notes.json`, applied by `apply_editorial_notes`); the release books
+print them by listing the English project under `annotations`. The rest stay as printed.
+

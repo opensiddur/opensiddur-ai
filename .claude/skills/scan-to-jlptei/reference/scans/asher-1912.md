@@ -447,6 +447,10 @@ in sourcetexts `scan_reading/corrections.json`, which the build applies as
 `tei:choice/tei:sic + tei:corr` (`readings.errors` picks the form; corrected by
 default). Archaic spellings are not misprints. Problems of fact or wording stay
 as printed and go to `specs/asher_selichot/OPEN_QUESTIONS.md` for a decision.
+Where the decision is an explanation rather than a correction, it goes in
+`scan_reading/editorial_notes.json`: a standoff `tei:note type="editorial"` on an
+anchor, beginning "Editor:", printed where a book lists the English project under
+`annotations`.
 
 The fourth penitential day occupies n257–n282, printed 128–140, between large
 body headings shared with the third and fifth days. Yoshev beseter has eight

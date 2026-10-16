@@ -148,6 +148,32 @@ class AuthoringTests(unittest.TestCase):
             {'id': 'second', 'file': 'x/y.xml', 'before': 'and ', 'sic': 'oppressors', 'corr': 'x'}])
         self.assertEqual([('oppessors', 'oppressors and more'), ('oppressors', 'x')], self.choices(root))
 
+    def test_a_correction_after_an_element_keeps_its_context(self):
+        root = etree.fromstring(f'<div xmlns="{a.TEI}"><p>the unclean<note>Thy laws.</note> for the clean;</p></div>')
+        a.apply_corrections({'x/y.xml': root}, [
+            {'id': 'second', 'file': 'x/y.xml', 'follows': 'Thy laws.', 'before': ' for the ', 'sic': 'clean',
+             'corr': 'unclean', 'after': ';'}])
+        note = root.find(f'.//{{{a.TEI}}}note')
+        self.assertEqual(' for the ', note.tail)
+        self.assertEqual([('clean', 'unclean')], self.choices(root))
+
+    def test_an_editorial_note_is_standoff_on_an_anchor_where_the_text_names(self):
+        root = etree.fromstring(f'<TEI xmlns="{a.TEI}"><text><body><p>unto thy holy mountain, and I will</p>'
+                                f'</body></text></TEI>')
+        a.apply_editorial_notes({'x/y.xml': root}, [
+            {'id': 'holy-mountain', 'file': 'x/y.xml', 'before': 'thy holy mountain', 'after': ', and I',
+             'text': 'Editor: Isaiah reads “my holy mountain” (הַר קָדְשִׁי).'}])
+        p = root.find(f'.//{{{a.TEI}}}p')
+        anchor = p.find(f'{{{a.TEI}}}anchor')
+        self.assertEqual('unto thy holy mountain', p.text)
+        self.assertEqual(', and I will', anchor.tail)
+        note = root.find(f'{{{a.TEI}}}standOff[@type="notes"]/{{{a.TEI}}}note')
+        self.assertEqual(('editorial', '#editorial_holy_mountain'), (note.get('type'), note.get('target')))
+        self.assertEqual('editorial_holy_mountain', anchor.get(a.XML + 'id'))
+        self.assertEqual('he', note.find(f'{{{a.TEI}}}foreign').get(a.XML + 'lang'))
+        with self.assertRaisesRegex(ValueError, 'Editorial note gone'):
+            a.apply_editorial_notes({'x/y.xml': root}, [{'id': 'gone', 'file': 'x/y.xml', 'before': 'absent', 'text': 'x'}])
+
     def test_language_wrapping_preserves_tree_and_is_idempotent(self):
         p = self.parent(); p.text = 'Start אב '
         hi = a.element(p, 'hi', 'inside גד'); hi.tail = ' end הו.'

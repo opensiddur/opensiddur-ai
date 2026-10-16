@@ -4,7 +4,7 @@ Reads the committed scan reading, not OCR. Dependency ranges are authored from
 this edition, never substituted from another project's prayer text.
 """
 
-from opensiddur.importer.scan.authoring import element, marker, choice, italicize, conditional_scope, write_documents, apply_corrections
+from opensiddur.importer.scan.authoring import element, marker, choice, italicize, conditional_scope, write_documents, apply_corrections, apply_editorial_notes
 
 import argparse
 import json
@@ -172,10 +172,13 @@ def build(source_root,project_directory):
             authored.extend(later_penitential_documents(readings,day))
     documents.extend((Path(project_directory)/project/name, root)
                      for project, name, root in authored)
+    by_path = {f'{path.parent.name}/{path.name}': root for path, root in documents}
     corrections = readings/'corrections.json'
     if corrections.exists():
-        apply_corrections({f'{path.parent.name}/{path.name}': root for path, root in documents},
-                          json.loads(corrections.read_text())['corrections'])
+        apply_corrections(by_path, json.loads(corrections.read_text())['corrections'])
+    editorial = readings/'editorial_notes.json'
+    if editorial.exists():
+        apply_editorial_notes(by_path, json.loads(editorial.read_text())['notes'])
     obsolete = [Path(project_directory)/f'asher_selichot_{lang}_1912'/(name+'.xml')
                 for lang in ['he', 'en'] for name in OBSOLETE_ASSEMBLIES]
     return write_documents(documents, validator=validate, obsolete_paths=obsolete)
