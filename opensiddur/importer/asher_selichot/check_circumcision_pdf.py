@@ -1,9 +1,9 @@
 """Measure the final circumcision recension and the book's final boundary."""
 import argparse,copy,subprocess,tempfile
 from pathlib import Path
-from lxml import etree
 from .check_fast_pdf import glyph_rows
-from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, strip_numeric_markers, load_glyphs
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, load_glyphs
+from opensiddur.importer.scan.pdf import strip_numeric_markers
 from opensiddur.importer.scan.pdf_direction import base
 
 ANCHORS=[('זכורברית','Remember the covenant'),('אותברית','It is a sign'),('רחמיךזכור','Remember thy mercy'),('מפיאוהביך','The blood of thy'),('דורשדמים','O thou, who avengest')]

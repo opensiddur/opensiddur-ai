@@ -1,11 +1,11 @@
 """Measure monthly-service stanzas, apparatus and independently placed repeat cues."""
 import argparse,copy,json,re,subprocess,tempfile
 from pathlib import Path
-from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT
 from opensiddur.importer.scan.pdf_direction import base
 from .check_fast_pdf import glyph_rows,body_text
-from .check_pdf import MAX_BASELINE_DIFFERENCE, corrected, plain, strip_numeric_markers, load_glyphs
+from .check_pdf import MAX_BASELINE_DIFFERENCE, corrected, plain, load_glyphs
+from opensiddur.importer.scan.pdf import strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 
 

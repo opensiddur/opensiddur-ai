@@ -9,7 +9,6 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
-from lxml import etree
 from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, load_glyphs
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base

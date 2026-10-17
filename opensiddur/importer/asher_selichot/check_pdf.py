@@ -1,6 +1,5 @@
 """Check Asher poem PDF content, bilingual stanza geometry, and broken controls."""
 
-from opensiddur.importer.scan.pdf import strip_numeric_markers
 
 import argparse
 import copy
@@ -115,7 +114,6 @@ def check(tree, expanded, complete=False):
         for line in page.findall('.//line'):
             chars = list(line.findall('.//char'))
             en = [c for c in chars if float(c.get('x')) > gutter]
-            he = [c for c in chars if base(c.get('c', ' ')) and float(c.get('x')) < gutter]
             if en:
                 english.append((page_no, float(en[0].get('y')), plain(''.join(c.get('c') for c in en)), en))
     rows = []

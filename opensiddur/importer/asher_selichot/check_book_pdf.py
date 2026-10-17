@@ -16,7 +16,6 @@ from lxml import etree
 from pypdf import PdfReader
 from .check_pdf import MAX_BASELINE_DIFFERENCE, check as check_poem, controls as poem_controls, corrected, hebrew_rows, plain, load_glyphs
 from .check_first_day_pdf import check as check_first, controls as first_controls, latin_note_runs
-from opensiddur.importer.scan.pdf_direction import base
 
 
 def day_bookmarks(rows, captions=("FIRST DAY", "SECOND DAY")):
@@ -46,7 +45,6 @@ def second_day_check(tree, expanded):
         for line in page.findall('.//line'):
             if plain(line.get('text','')).strip().isdigit():continue  # Reledmac line numbers are not prayer words.
             chars=line.findall('.//char')
-            h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
     anchors=[('ישראלנושע','Israel is saved'),('שעריך','They knock'),('פחודים','They are intimidated'),
@@ -89,7 +87,6 @@ def third_day_check(tree, expanded):
         for line in page.findall('.//line'):
             if plain(line.get('text','')).strip().isdigit():continue  # Reledmac line numbers are not prayer words.
             chars=line.findall('.//char')
-            h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
     anchors=[('שחרקמתי','At dawn of day I'),('לפניםזאת','In former days'),('מזבח','While the altar'),
@@ -129,7 +126,6 @@ def numbered_day_check(tree, expanded, data, scope, asher_source=None):
         for line in page.findall('.//line'):
             if plain(line.get('text','')).strip().isdigit():continue
             chars=line.findall('.//char')
-            h=[c for c in chars if float(c.get('x'))<gutter and base(c.get('c',' '))]
             e=[c for c in chars if float(c.get('x'))>gutter]
             if e:en.append((number,float(e[0].get('y')),plain(''.join(c.get('c') for c in e))))
     deltas=[];previous=(0,0)

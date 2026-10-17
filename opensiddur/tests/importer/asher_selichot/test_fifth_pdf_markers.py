@@ -43,5 +43,5 @@ class NumericMarkerRuntimeTests(unittest.TestCase):
     def test_long_nonmarker_digit_run_does_not_backtrack_exponentially(self):
         # A failed trailing boundary triggered the previous nested repetition.
         # Bound the child process so a regression fails without hanging the suite.
-        code="from opensiddur.importer.asher_selichot.check_pdf import strip_numeric_markers; text='a'+'0'*20000+'x'; assert strip_numeric_markers(text)==text"
+        code="from opensiddur.importer.scan.pdf import strip_numeric_markers; text='a'+'0'*20000+'x'; assert strip_numeric_markers(text)==text"
         subprocess.run([sys.executable,'-c',code],check=True,timeout=5,capture_output=True)

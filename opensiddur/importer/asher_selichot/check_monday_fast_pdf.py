@@ -1,11 +1,11 @@
 """Measure Monday fast stanza starts, notes, asymmetric refrains and reference limits."""
 import argparse
 import copy
-from collections import Counter
 import re
 from pathlib import Path
 from lxml import etree
-from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, strip_numeric_markers, load_glyphs
+from .check_pdf import MAX_BASELINE_DIFFERENCE, plain, load_glyphs
+from opensiddur.importer.scan.pdf import strip_numeric_markers
 from .check_first_day_pdf import latin_note_runs
 from opensiddur.importer.scan.pdf_direction import base
 ANCHORS=[('מלאכירחמים','Angels of mercy!'),('אוליירחםשארית','Perchance he will have mercy on the remnant'),('אוליירחםמעני','Perchance he will have mercy on those who are afflicted'),('אוליירחםוירא','Perchance he will have mercy and look'),('אוליירחםאומרי','Perchance he will have mercy upon those who pray'),('אוליירחםלקתה','Perchance he will have mercy on those who are doubly'),('אוליירחםכבושי','Perchance he will have mercy on those who are ashamed'),('אוליירחםיחלץ','Perchance he will have mercy who delivereth')]
