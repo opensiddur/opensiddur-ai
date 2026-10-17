@@ -12,3 +12,4 @@
 {"urn": "urn:x-opensiddur:contributor:opensiddur.org/eve-feinstein", "status": "canonical", "label_en": "Dr. Eve Levavi Feinstein"}
 {"urn": "urn:x-opensiddur:contributor:opensiddur.org/example-editor", "status": "canonical", "label_en": "Example Editor"}
 {"urn": "urn:x-opensiddur:contributor:opensiddur.org/example-translator", "status": "canonical", "label_en": "Example Translator"}
+{"urn": "urn:x-opensiddur:contributor:opensiddur.org/codex", "status": "canonical", "label_en": "Codex (AI-assisted scan reading and encoding)"}

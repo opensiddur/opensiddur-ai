@@ -12,7 +12,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from opensiddur.importer.birnbaum_scan import compare
+from opensiddur.importer.scan import compare
 
 
 BARUKH = "בָּרוּךְ"

@@ -4757,6 +4757,26 @@ class TestKeepTogether(unittest.TestCase):
         self.assertLess(spanning.index(r"\OSApplyKeep"), spanning.index(r"\OSheadA{"))
 
 
+class TestEnglishForeignDirection(unittest.TestCase):
+    def test_english_citation_is_scoped_inside_hebrew_prose(self):
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+        <tei:text><tei:body><tei:p>אשרי <tei:foreign xml:lang="en">Ps. cxlv.</tei:foreign>
+        תהלה</tei:p></tei:body></tei:text></tei:TEI>'''
+        out = _transform(xml)
+        self.assertIn(r'\leavevmode{\textdir TLT\foreignlanguage{english}{\textit{Ps. cxlv.}}}', out)
+        self.assertEqual(out.count('Ps. cxlv.'), 1)
+        self.assertIn('תהלה', out)
+
+    def test_nested_hebrew_keeps_its_own_direction(self):
+        xml = '''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
+        <tei:text><tei:body><tei:p><tei:foreign xml:lang="en">Say
+        <tei:foreign xml:lang="he">אשרי</tei:foreign>.</tei:foreign>
+        </tei:p></tei:body></tei:text></tei:TEI>'''
+        out = _transform(xml)
+        self.assertIn(r'\texthebrew{אשרי}', out)
+        self.assertIn(r'\textdir TLT\foreignlanguage{english}{\textit{Say', out)
+
+
 class TestNoteParagraphDirection(unittest.TestCase):
     def render_note(self, language, paragraphs):
         return _transform(f'''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="{language}">
@@ -4772,6 +4792,18 @@ class TestNoteParagraphDirection(unittest.TestCase):
         out = self.render_note('en', '<tei:p>English explanation.</tei:p><tei:p xml:lang="he">אשרי העם</tei:p>')
         self.assertIn(r'{{\textdir TRT\foreignlanguage{hebrew}{אשרי העם}}}', out)
         self.assertIn('English explanation.', out)
+
+    def test_each_later_paragraph_starts_a_new_line(self):
+        out = self.render_note('he', '<tei:p xml:lang="en">Said by the Reader—</tei:p><tei:p>אשרי העם</tei:p>'
+                                     '<tei:p>בחצצרות</tei:p>')
+        note = out[out.index('Said by the Reader'):]
+        self.assertEqual(2, note.count('\\newline '))
+        self.assertLess(note.index('Said by the Reader'), note.index('\\newline '))
+        self.assertLess(note.index('\\newline '), note.index('אשרי העם'))
+
+    def test_a_single_paragraph_note_has_no_line_break(self):
+        out = self.render_note('en', '<tei:p>Only one.</tei:p>')
+        self.assertNotIn('\\newline', out[out.index('Only one.') - 200:])
 
 
 class TestRendAndEscaping(unittest.TestCase):

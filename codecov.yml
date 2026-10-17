@@ -9,3 +9,18 @@ coverage:
       default:
         target: 85%
         informational: false
+
+# Edition recipes and one-off inspection commands; shared scan algorithms remain covered.
+ignore:
+  - "opensiddur/importer/asher_selichot/build.py"
+  - "opensiddur/importer/asher_selichot/first_day.py"
+  - "opensiddur/importer/asher_selichot/second_day.py"
+  - "opensiddur/importer/asher_selichot/third_day.py"
+  - "opensiddur/importer/asher_selichot/erev_rosh_hashanah.py"
+  - "opensiddur/importer/asher_selichot/tzom_gedaliah.py"
+  - "opensiddur/importer/asher_selichot/penitential_second_day.py"
+  - "opensiddur/importer/asher_selichot/penitential_days.py"
+  - "opensiddur/importer/asher_selichot/identities.py"
+  - "opensiddur/importer/asher_selichot/download.py"
+  - "opensiddur/importer/asher_selichot/verify.py"
+  - "opensiddur/importer/asher_selichot/check_*pdf.py"

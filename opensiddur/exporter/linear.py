@@ -105,10 +105,24 @@ class ParallelColumnOrder(StrEnum):
     PRIMARY_LAST = "primary_last"
 
 
+class AbbreviationReading(StrEnum):
+    ABBREVIATED = "abbreviated"
+    EXPANDED = "expanded"
+
+
+class ErrorReading(StrEnum):
+    """Which form of an edition error to read: the misprint as printed, or its correction."""
+    PRINTED = "printed"
+    CORRECTED = "corrected"
+
+
 class LinearData(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         validate_assignment=True)
+
+    abbreviation_reading: AbbreviationReading = AbbreviationReading.ABBREVIATED
+    error_reading: ErrorReading = ErrorReading.CORRECTED
 
     # Logical headed-division nesting, preserved while parallel assembly splits containers.
     heading_depth: int = 0
