@@ -156,6 +156,15 @@ p.rubric { text-align: start; }
   .par { grid-template-columns: 1fr; row-gap: 0.4rem; }
   .col-parallel { padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
 }
+/* One column at a time, as the reader chooses (Settings, Columns): data-columns on <html> names
+   the column shown. A row whose shown column has no words keeps the other, which is all it
+   has. Absent, as without scripts, both are shown. */
+[data-columns="primary"] .par:has(> .col-primary:not(.col-empty)) > .col-parallel,
+[data-columns="parallel"] .par:has(> .col-parallel:not(.col-empty)) > .col-primary {
+  display: none;
+}
+[data-columns] .par { grid-template-columns: 1fr; }
+[data-columns] .col-parallel { padding-bottom: 0; border-bottom: none; }
 
 /* ── Undecided passages ──────────────────────────────────────────────── */
 

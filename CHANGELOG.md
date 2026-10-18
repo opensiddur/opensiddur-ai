@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - The reading cycle is now the reader's, so an electronic humash carries both cycles.
     - The device also derives the recitation from the service, and the festivals a day that
       is not yom tov cannot be.
+  - **Columns:** a bilingual book can show both columns, the Hebrew alone, or the
+    translation alone. A passage with no counterpart stays, and the choice is remembered.
   - **The settings dialog** opens with × in the upper-right corner. ×, Cancel, Escape or a
     click outside leaves the settings as they were; Done keeps and saves them. Its buttons
     stay on screen however far the settings scroll.

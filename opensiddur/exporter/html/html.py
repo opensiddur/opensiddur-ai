@@ -26,6 +26,7 @@ import json
 import logging
 import re
 import sys
+from collections import Counter
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,8 @@ XSLT_FILE = HERE / "html.xslt"
 P_DESTINATION = f"{{{PROCESSING_NAMESPACE}}}destination"
 P_PROJECT = f"{{{PROCESSING_NAMESPACE}}}project"
 P_FILE_NAME = f"{{{PROCESSING_NAMESPACE}}}file_name"
+P_PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
+XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
 
 # ── Settings ────────────────────────────────────────────────────────────────
@@ -131,6 +134,33 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
     if settled:
         css += ",".join(settled) + "{display:none}\n"
     return css
+
+
+#: Names for the columns' languages, by the first part of their tag.
+LANGUAGE_NAMES = {"he": "Hebrew", "en": "English", "arc": "Aramaic", "yi": "Yiddish"}
+
+
+def columns(root: etree.ElementBase) -> dict[str, dict[str, str]] | None:
+    """The two columns of the book's parallel text, each with its language and its label.
+
+    Each role's language is the one most of its items have. The Hebrew column is "Hebrew" and
+    the other "Translation"; a book with neither column Hebrew names its primary column by its
+    language. None for a book with no parallel text.
+    """
+    found: dict[str, Counter] = {"primary": Counter(), "parallel": Counter()}
+    for item in root.iter(P_PARALLEL_ITEM):
+        role = item.get("role")
+        if role in found:
+            found[role][(item.get(XML_LANG) or "").split("-")[0]] += 1
+    if not all(found.values()):
+        return None
+    langs = {role: counts.most_common(1)[0][0] for role, counts in found.items()}
+    hebrew = next((role for role in ("primary", "parallel") if langs[role] == "he"), None)
+    named = hebrew or "primary"
+    return {role: {"lang": langs[role],
+                   "label": (LANGUAGE_NAMES.get(langs[role], langs[role]) if role == named
+                             else "Translation")}
+            for role in ("primary", "parallel")}
 
 
 def calendar_scopes(book: BookConditions) -> int:
@@ -365,6 +395,7 @@ def book_json(
     defaults: dict,
     basic_settings: Path = BASIC_SETTINGS_FILE,
     purim_day: int | None = None,
+    book_columns: dict[str, dict[str, str]] | None = None,
 ) -> str:
     calendar = calendar_scopes(book)
     words = feature_words(basic_settings)
@@ -389,6 +420,8 @@ def book_json(
         "calendarScopes": calendar,
         # Only a book with passages that turn on the day needs places to work it out at.
         "places": read_places() if calendar else [],
+        # The parallel text's columns, which the reader can show one at a time.
+        "columns": book_columns,
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change
     # how the parser reads what follows. "\u003c" is the same character to JSON.
@@ -417,6 +450,7 @@ def build_book(
 
     # The reader's settings can hide the first occurrence of a destination: label them all.
     resolve_page_references(root, every_occurrence=True)
+    book_columns = columns(root)
     book = prepare(root)
     main = xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),
@@ -434,7 +468,7 @@ def build_book(
         "@@MAIN@@": main,
         "@@ABOUT@@": about_html(title, compiled_file, project_directory),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
-                                celebrated_purim(settings)),
+                                celebrated_purim(settings), book_columns),
         "@@CALENDAR_JS@@": _inline(
             (ASSETS / "calendar.js").read_text(encoding="utf-8"), "</script"),
         "@@CONDITION_JS@@": _inline(

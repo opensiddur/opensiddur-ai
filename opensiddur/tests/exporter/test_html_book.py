@@ -23,6 +23,7 @@ from opensiddur.exporter.html.html import (
     basic_controls,
     build_book,
     celebrated_purim,
+    columns,
     feature_words,
     read_basic_settings,
     read_places,
@@ -169,6 +170,15 @@ class TestStructure(unittest.TestCase):
         self.assertEqual((primary.get("lang"), primary.get("dir")), ("he", "rtl"))
         self.assertEqual((parallel.get("lang"), parallel.get("dir")), ("en", "ltr"))
         self.assertEqual(_classes(primary), ["col", "col-primary"])
+
+    def test_a_column_with_no_words_is_marked(self):
+        main = _render('<p:parallel column-order="primary_first">'
+                       '<p:parallelItem role="primary" xml:lang="he"><tei:p>א</tei:p></p:parallelItem>'
+                       '<p:parallelItem role="parallel" xml:lang="en"><tei:pb n="3"/></p:parallelItem>'
+                       '</p:parallel>')
+        primary, parallel = main.xpath("//h:div[contains(@class, 'par')]", namespaces=NS)[0]
+        self.assertEqual(_classes(primary), ["col", "col-primary"])
+        self.assertEqual(_classes(parallel), ["col", "col-parallel", "col-empty"])
 
     def test_notes_open_from_numbered_marks(self):
         main = _render('<tei:p>a<tei:note type="commentary">first</tei:note> b'
@@ -587,6 +597,35 @@ BODY = (
 )
 
 
+def _parallels(*rows) -> etree.ElementBase:
+    body = "".join(
+        f'<p:parallel><p:parallelItem role="primary" xml:lang="{primary}"><tei:p>x</tei:p>'
+        f'</p:parallelItem><p:parallelItem role="parallel" xml:lang="{parallel}"><tei:p>y</tei:p>'
+        f'</p:parallelItem></p:parallel>' for primary, parallel in rows)
+    return etree.fromstring(_compiled(body))
+
+
+class TestColumns(unittest.TestCase):
+    """The parallel text's columns, which the reader can show one at a time."""
+
+    def test_hebrew_and_its_translation(self):
+        self.assertEqual(columns(_parallels(("he", "en"), ("he", "en"), ("arc-Hebr", "en"))), {
+            "primary": {"lang": "he", "label": "Hebrew"},
+            "parallel": {"lang": "en", "label": "Translation"}})
+
+    def test_the_hebrew_column_is_named_wherever_it_is(self):
+        self.assertEqual(columns(_parallels(("en", "he")))["parallel"]["label"], "Hebrew")
+        self.assertEqual(columns(_parallels(("en", "he")))["primary"]["label"], "Translation")
+
+    def test_neither_hebrew_names_the_primary_by_its_language(self):
+        self.assertEqual(columns(_parallels(("yi", "en"))), {
+            "primary": {"lang": "yi", "label": "Yiddish"},
+            "parallel": {"lang": "en", "label": "Translation"}})
+
+    def test_no_parallel_text_has_no_columns(self):
+        self.assertIsNone(columns(etree.fromstring(_compiled("<tei:p>only</tei:p>"))))
+
+
 class TestPlaces(unittest.TestCase):
     """The places the settings panel offers."""
 
@@ -716,6 +755,16 @@ class TestBuildBook(unittest.TestCase):
         self.assertEqual(page.count("// @license-end"), 3)
         self.assertLess(page.index("root.OSCal ="), page.index("root.OSCond ="))
         self.assertLess(page.index("root.OSCond ="), page.index("var storageKey"))
+
+    def test_columns_reach_the_book_and_no_script_page_shows_both(self):
+        self.assertIsNone(self._book(self._build())["columns"])
+        self.compiled.write_bytes(_compiled(
+            '<p:parallel><p:parallelItem role="primary" xml:lang="he"><tei:p>א</tei:p>'
+            '</p:parallelItem><p:parallelItem role="parallel" xml:lang="en"><tei:p>a</tei:p>'
+            '</p:parallelItem></p:parallel>'))
+        page = build_book(self.compiled, self.settings, self.base)
+        self.assertEqual(self._book(page)["columns"]["primary"]["label"], "Hebrew")
+        self.assertNotIn("data-columns", re.search(r"<html[^>]*>", page).group(0))
 
     def test_places_only_where_the_day_matters(self):
         self.assertEqual(self._book(self._build())["places"], [])

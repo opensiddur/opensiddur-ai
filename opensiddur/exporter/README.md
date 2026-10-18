@@ -104,7 +104,12 @@ clock, the book's defaults, the reader's settings, and what the compile pinned
   same list as `OSCal.READ_FEATURES`). So a document's own date, service or minyan holds where
   it stands, whatever the clock says, and a place keeps its zone.
 
-The settings panel has three parts:
+The settings panel has four parts:
+- **Columns,** in a book with parallel text: both, or one language alone ("Hebrew only",
+  "Translation only"). It is a display preference, not a setting the text turns on: it sets
+  `data-columns` on the page, and `reader.css` hides the other column. A row whose shown column
+  has no words (`col-empty`, marked by `html.xslt`) keeps the other, so no passage is lost.
+  `html.py` `columns` names the columns by their languages.
 - **Day and place,** in a book with passages that turn on the day (above).
 - **The top:** the settings that decide the most of the book's text. The build decides which,
   for each book, and writes them into it.

@@ -162,6 +162,38 @@
   }
 
   var calendar = loadCalendar();
+
+  // ── What is shown ──────────────────────────────────────────────────────
+  //
+  // A display preference, not a setting the text turns on: which columns of the parallel text
+  // are shown -- both, or one (book.columns names them). Kept beside the settings.
+
+  var displayKey = "opensiddur:" + book.id + ":display";
+
+  function loadDisplay() {
+    try {
+      var stored = JSON.parse(window.localStorage.getItem(displayKey));
+      return stored && typeof stored === "object" ? stored : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveDisplay() {
+    try {
+      window.localStorage.setItem(displayKey, JSON.stringify(display));
+    } catch (e) {
+      /* not remembered */
+    }
+  }
+
+  var display = loadDisplay();
+
+  // The column shown alone, "primary" or "parallel", or null for both.
+  function shownColumns() {
+    return book.columns && (display.columns === "primary" || display.columns === "parallel")
+      ? display.columns : null;
+  }
   var lastDevice = null;
   var statusListeners = [];
 
@@ -279,9 +311,14 @@
 
   function apply() {
     var result = resolveAll();
-    if (liveStyle.textContent !== result.css) {
+    var page = document.documentElement;
+    var columns = shownColumns();
+    var columnsChange = (page.getAttribute("data-columns") || null) !== columns;
+    if (liveStyle.textContent !== result.css || columnsChange) {
       var before = !applied ? null : heldAnchor || anchor();
-      liveStyle.textContent = result.css;
+      if (liveStyle.textContent !== result.css) liveStyle.textContent = result.css;
+      if (columns) page.setAttribute("data-columns", columns);
+      else page.removeAttribute("data-columns");
       keepInPlace(before);
     }
     defaultStyle.disabled = true;
@@ -636,6 +673,22 @@
     }
   }
 
+  // Which columns of the parallel text are shown.
+  function columnsControl() {
+    var select = el("select");
+    select.appendChild(el("option", { value: "", text: "Both" }));
+    ["primary", "parallel"].forEach(function (role) {
+      select.appendChild(el("option", { value: role, text: book.columns[role].label + " only" }));
+    });
+    select.addEventListener("change", function () {
+      if (select.value) display.columns = select.value;
+      else delete display.columns;
+      changed();
+    });
+    refreshers.push(function () { select.value = shownColumns() || ""; });
+    return el("div", { class: "os-basic" }, [row("Columns", select)]);
+  }
+
   var resetDayControls = function () {};
 
   function dayControls() {
@@ -907,6 +960,7 @@
   function settingsDialog() {
     var snapshot = "{}";
     var calendarSnapshot = "{}";
+    var displaySnapshot = "{}";
     var done = false;
     var frame = dialogFrame("os-settings", "Settings", "Cancel");
     settingsFrame = frame;
@@ -920,9 +974,11 @@
       if (done) {
         saveSettings(reader);
         saveCalendar();
+        saveDisplay();
       } else {
         reader = JSON.parse(snapshot);
         calendar = JSON.parse(calendarSnapshot);
+        display = JSON.parse(displaySnapshot);
         changed();
       }
     });
@@ -933,6 +989,7 @@
       "something not set is shown with the instruction for when to say it, as in the " +
       "printed book." }));
 
+    if (book.columns) body.appendChild(columnsControl());
     if (hasCalendar) body.appendChild(dayControls());
 
     if (book.basic && book.basic.length) {
@@ -980,6 +1037,7 @@
     frame.footer.appendChild(button("Clear all", "os-clear", function () {
       reader = {};
       calendar = { mode: "now", place: null };
+      display = {};
       changed();
     }));
     frame.footer.appendChild(el("span", { class: "os-spacer" }));
@@ -992,6 +1050,7 @@
     frame.open = function () {
       snapshot = JSON.stringify(reader);
       calendarSnapshot = JSON.stringify(calendar);
+      displaySnapshot = JSON.stringify(display);
       done = false;
       resetDayControls();
       heldAnchor = anchor();
@@ -1007,7 +1066,8 @@
     var headings = document.querySelectorAll(".os-book h1, .os-book h2, .os-book h3");
     var shown = OSCond.sectionsShown(book, resolveAll().states);
     Array.prototype.forEach.call(headings, function (heading, index) {
-      if (heading.closest(".col-parallel")) return;  // a translated heading repeats its row's
+      // A translated heading repeats its row's, unless the translation is shown alone.
+      if (heading.closest(".col-parallel") && shownColumns() !== "parallel") return;
       if (!heading.getClientRects().length) return;  // in a passage the settings hide
       // A section none of whose text will show, though its heading does.
       if (heading.dataset.section !== undefined && !shown[Number(heading.dataset.section)]) return;
