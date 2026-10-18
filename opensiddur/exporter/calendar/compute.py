@@ -1,4 +1,9 @@
-"""Compute derived JLPTEI calendar feature values from active settings."""
+"""Compute derived JLPTEI calendar feature values from active settings.
+
+The electronic book carries a JavaScript port of these derivations, ``html/assets/calendar.js``,
+and test_calendar_agreement holds the two to the same values: a change here needs the same
+change there.
+"""
 
 from __future__ import annotations
 

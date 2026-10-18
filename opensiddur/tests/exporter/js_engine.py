@@ -44,7 +44,8 @@ def require_node(test_case: unittest.TestCase) -> str:
     return node
 
 
-def run_js(node: str, body: str, args: Any = None, scripts: tuple[str, ...] = ("condition.js",)) -> Any:
+def run_js(node: str, body: str, args: Any = None, scripts: tuple[str, ...] = ("condition.js",),
+           timeout: float = 60) -> Any:
     """Load `scripts` from the assets directory, then run `body` as a function of `args`.
 
     `body` returns a JSON-serialisable value, which is returned decoded.
@@ -60,7 +61,7 @@ def run_js(node: str, body: str, args: Any = None, scripts: tuple[str, ...] = ("
         capture_output=True,
         text=True,
         check=False,
-        timeout=60,
+        timeout=timeout,
     )
     if completed.returncode != 0:
         raise AssertionError(f"node failed:\n{completed.stderr}")
