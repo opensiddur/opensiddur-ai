@@ -3,8 +3,9 @@
 #
 # The book follows the device's clock at the place the reader gives, and works out the day from
 # them. A reader who wants no particular day -- to see what is said on Rosh Hodesh, say -- sets
-# the day by hand instead, with the controls marked `when: no-date`, which show only then. One
-# marked `when: no-place` shows only while the book has no place to work from. Every feature can
+# the day by hand instead, with the controls marked `when: no-date`, which show only then, and
+# are cleared on leaving it. One marked `when: no-place` shows only while the book has no place
+# to work from, and is cleared when the reader gives one. Every feature can
 # still be set one by one in the settings panel's Advanced box, whatever the book works out.
 #
 # A control appears in a book only when the book's conditions read one of the features it sets.

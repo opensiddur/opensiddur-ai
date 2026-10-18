@@ -615,7 +615,9 @@
     return { latitude: latitude, longitude: longitude };
   };
 
-  // compute._ISRAEL_ZONES: Israel is decided by its time zones, by their canonical names.
+  // compute._ISRAEL_ZONES: Israel is decided by its time zones, by their canonical names. The
+  // compiler looks the zone up from the coordinates; the device takes the zone it is given with
+  // them, so the two agree when that zone is the one the coordinates are in.
   var ISRAEL_ZONES = ["Asia/Jerusalem", "Asia/Hebron", "Asia/Gaza"];
 
   function isIsraelZone(zone) {

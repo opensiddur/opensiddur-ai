@@ -58,11 +58,12 @@
   var calendarKey = "opensiddur:" + book.id + ":calendar";
   var hasCalendar = Boolean(book.calendarScopes);
 
-  // The features the controls for no particular day set (basic_settings.yaml, when: no-date).
-  function noDateFeatures() {
+  // The features the controls marked `when` (basic_settings.yaml) set: "no-date" for no
+  // particular day, "no-place" for no place.
+  function controlFeatures(when) {
     var keys = [];
     (book.basic || []).forEach(function (entry) {
-      if (entry.type !== "control" || entry.when !== "no-date") return;
+      if (entry.type !== "control" || entry.when !== when) return;
       entry.options.forEach(function (option) {
         Object.keys(option.set).forEach(function (fs) {
           Object.keys(option.set[fs]).forEach(function (name) { keys.push([fs, name]); });
@@ -70,6 +71,10 @@
       });
     });
     return keys;
+  }
+
+  function noDateFeatures() {
+    return controlFeatures("no-date");
   }
 
   function loadCalendar() {
@@ -163,22 +168,31 @@
   function resolveAll() {
     var device = deviceLayer();
     lastDevice = JSON.stringify(device);
-    var layer = readerLayer();
-    var resolver = new OSCond.Resolver(layer, book.defaults, device);
-    var result = OSCond.scopeCss(book, layer, book.defaults, device);
-    result.settings = resolver.settings({});
+    var result = OSCond.scopeCss(book, readerLayer(), book.defaults, device);
+    result.settings = result.resolver.settings({});
     return result;
   }
 
+  // A live region is announced when it changes: write it only when what it says does.
+  function say(element, text) {
+    if (element.textContent !== text) element.textContent = text;
+  }
+
   // The first passage on screen, below the toolbar, and where it is.
+  // In the book's text, not in the settings dialog over it.
   function anchor() {
     var x = window.innerWidth / 2;
     var y = (toolbar ? toolbar.offsetHeight : 0) + 8;
-    var element = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
+    var hits = document.elementsFromPoint ? document.elementsFromPoint(x, y) : [];
+    var element = hits.find(function (hit) { return hit.closest && hit.closest(".os-book"); });
     return element ? { element: element, top: element.getBoundingClientRect().top } : null;
   }
 
-  // Keep the passage the reader is at where it is when what shows above it changes.
+  // Keep the passage the reader is at where it is when what shows above it changes. Rows off
+  // screen take their real heights only once laid out (content-visibility: auto), which moves
+  // the passage again after the first correction: correct it until it has stayed put for a
+  // few frames, or until the reader scrolls.
+  var keeping = 0;
   function keepInPlace(before) {
     if (!before) return;
     var element = before.element;
@@ -186,17 +200,28 @@
       element = element.parentElement;
     }
     if (!element || element === document.body) return;
-    var moved = element.getBoundingClientRect().top - before.top;
-    if (Math.abs(moved) > 1) window.scrollBy(0, moved);
+    var run = ++keeping, frames = 0, still = 0;
+    (function correct() {
+      if (run !== keeping) return;
+      var moved = element.getBoundingClientRect().top - before.top;
+      if (Math.abs(moved) > 1) {
+        window.scrollBy(0, moved);
+        still = 0;
+      } else still++;
+      if (still < 3 && ++frames < 60) requestAnimationFrame(correct);
+    })();
   }
 
   var applied = false;
   var lastSettings = {};
+  // While the settings dialog is open over the book, the passage that was on screen when it
+  // opened: the book under a modal dialog cannot be found by where it is on screen.
+  var heldAnchor = null;
 
   function apply() {
     var result = resolveAll();
     if (liveStyle.textContent !== result.css) {
-      var before = applied ? anchor() : null;
+      var before = !applied ? null : heldAnchor || anchor();
       liveStyle.textContent = result.css;
       keepInPlace(before);
     }
@@ -493,6 +518,10 @@
     reader[FS_LOCATION] = { latitude: location.latitude, longitude: location.longitude,
                             timezone: location.timezone };
     calendar.place = { name: name, source: source };
+    // What was set by hand for want of a place -- "Where", or Israel in Advanced -- would
+    // override what the place says. The reader can set it again over the place.
+    controlFeatures("no-place").concat([["opensiddur:israel", "is-israel"]])
+      .forEach(function (k) { setValue(k[0], k[1], undefined); });
   }
 
   function clearPlace() {
@@ -518,6 +547,10 @@
 
   // The device's position, as a place in its own time zone. Asked for only from the panel,
   // and on opening only if the reader has already allowed it.
+  //
+  // The place's zone is the device's own. The device decides Israel by the zone, where the
+  // compiler looks a zone up from the coordinates: the two agree unless the device's clock is
+  // set for somewhere else.
   function locate(done, failed) {
     var zone = deviceZone();
     if (!navigator.geolocation || !zone) {
@@ -527,10 +560,24 @@
     navigator.geolocation.getCurrentPosition(function (position) {
       done({ latitude: Math.round(position.coords.latitude * 1000) / 1000,
              longitude: Math.round(position.coords.longitude * 1000) / 1000, timezone: zone });
-    }, function () {
-      failed("Your location could not be had. Choose a city instead.");
+    }, function (error) {
+      failed(error && error.code === 1
+        ? "The book was not allowed to know your location. Choose a city instead."
+        : "Your location could not be found. Choose a city instead.");
     }, { maximumAge: 600000, timeout: 20000 });
   }
+
+  function validZone(zone) {
+    if (!zone) return false;
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: zone });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var resetDayControls = function () {};
 
   function dayControls() {
     var section = el("fieldset", { class: "os-day" }, [el("legend", { text: "Day and place" })]);
@@ -574,30 +621,19 @@
 
     var where = el("select");
     where.appendChild(el("option", { value: "", text: "Not set" }));
-    where.appendChild(el("option", { value: "locate", text: "Use my location" }));
+    // The device's location, once it has been used: an option only then.
     var saved = el("option", { value: "saved", text: "" });
-    where.appendChild(saved);
     (book.places || []).forEach(function (p, index) {
       where.appendChild(el("option", { value: "city" + index, text: p.name }));
     });
     where.appendChild(el("option", { value: "custom", text: "Other: coordinates and time zone" }));
     var message = el("p", { class: "os-note", role: "status" });
     where.addEventListener("change", function () {
-      message.textContent = "";
+      say(message, "");
       var value = where.value;
+      customOpen = value === "custom";
       if (value === "") {
         clearPlace();
-      } else if (value === "locate") {
-        message.textContent = "Finding your location…";
-        locate(function (location) {
-          setPlace(location, "Your location", "geolocation");
-          message.textContent = "";
-          changed();
-        }, function (problem) {
-          message.textContent = problem;
-          changed();
-        });
-        return;
       } else if (value.indexOf("city") === 0) {
         var city = book.places[Number(value.slice(4))];
         setPlace(city, city.name, "city");
@@ -608,6 +644,26 @@
       changed();
     });
     section.appendChild(row("Place", where));
+
+    // A button, not an option: the location is asked for only when the reader asks for it.
+    var asking = 0;
+    var useLocation = button("Use my location", "", function () {
+      var request = ++asking;
+      say(message, "Finding your location…");
+      locate(function (location) {
+        // A reply that comes after the dialog has closed, or after another request, is
+        // for a choice no longer being made.
+        if (request !== asking || !settingsFrame.dialog.open) return;
+        customOpen = false;
+        setPlace(location, "Your location", "geolocation");
+        say(message, "");
+        changed();
+      }, function (problem) {
+        if (request !== asking || !settingsFrame.dialog.open) return;
+        say(message, problem);
+      });
+    });
+    section.appendChild(el("div", { class: "os-setting" }, [el("span"), useLocation]));
     section.appendChild(message);
 
     var latitude = el("input", { type: "number", step: "any", min: "-90", max: "90" });
@@ -615,9 +671,12 @@
     var names = zoneNames();
     var zone;
     if (names.length) {
+      // The list can lack the device's own zone (V8 leaves out "UTC").
+      var own = deviceZone();
+      if (own && names.indexOf(own) < 0) names = [own].concat(names);
       zone = el("select");
       names.forEach(function (name) { zone.appendChild(el("option", { value: name, text: name })); });
-      zone.value = deviceZone() || names[0];
+      zone.value = own || names[0];
     } else {
       zone = el("input", { type: "text", placeholder: "e.g. Europe/London",
                            value: deviceZone() || "" });
@@ -627,11 +686,16 @@
                       row("Time zone", zone)];
     customRows.forEach(function (r) { section.appendChild(r); });
     var customOpen = false;
+    resetDayControls = function () {
+      customOpen = false;
+      asking++;
+      say(message, "");
+    };
     function customChanged() {
       customOpen = true;
       var lat = Number(latitude.value), lon = Number(longitude.value);
       if (latitude.value !== "" && longitude.value !== "" && Math.abs(lat) <= 90 &&
-          Math.abs(lon) <= 180 && zone.value) {
+          Math.abs(lon) <= 180 && validZone(zone.value)) {
         setPlace({ latitude: lat, longitude: lon, timezone: zone.value }, "Other place", "custom");
       } else {
         clearPlace();
@@ -644,7 +708,7 @@
 
     var summary = el("p", { class: "os-note os-day-summary", role: "status" });
     section.appendChild(summary);
-    function summarise(settings) { summary.textContent = describeDay(settings); }
+    function summarise(settings) { say(summary, describeDay(settings)); }
     statusListeners.push(summarise);
     summarise(lastSettings);
 
@@ -656,8 +720,12 @@
       time.value = clock ? pad(clock.hour) + ":" + pad(clock.minute) : "";
       var at = place();
       var source = calendar.place && calendar.place.source;
-      saved.hidden = source !== "geolocation";
-      saved.textContent = calendar.place && source === "geolocation" ? calendar.place.name : "";
+      if (source === "geolocation") {
+        saved.textContent = calendar.place.name;
+        if (!saved.parentNode) where.insertBefore(saved, where.options[1]);
+      } else if (saved.parentNode) {
+        where.removeChild(saved);
+      }
       if (!at) {
         where.value = customOpen ? "custom" : "";
       } else if (source === "geolocation") {
@@ -666,6 +734,11 @@
         where.value = "custom";
         latitude.value = String(at.latitude);
         longitude.value = String(at.longitude);
+        if (zone.tagName === "SELECT" && !Array.prototype.some.call(zone.options, function (o) {
+          return o.value === at.timezone;
+        })) {
+          zone.insertBefore(el("option", { value: at.timezone, text: at.timezone }), zone.firstChild);
+        }
         zone.value = at.timezone;
       } else {
         var index = (book.places || []).findIndex(function (p) {
@@ -676,7 +749,7 @@
       }
       var showCustom = where.value === "custom";
       customRows.forEach(function (r) { r.hidden = !showCustom; });
-      where.disabled = calendar.mode === "none";
+      where.disabled = useLocation.disabled = calendar.mode === "none";
     });
     return section;
   }
@@ -766,15 +839,21 @@
     return b;
   }
 
+  var settingsFrame = null;
+
   function settingsDialog() {
     var snapshot = "{}";
     var calendarSnapshot = "{}";
     var done = false;
     var frame = dialogFrame("os-settings", "Settings", "Cancel");
+    settingsFrame = frame;
 
     // However the dialog closes -- ×, Cancel, Escape, a click outside -- the settings go back
     // to what they were when it opened, unless the reader said Done.
     frame.dialog.addEventListener("close", function () {
+      // Restored or kept, the settings are applied with the anchor still held.
+      var release = function () { heldAnchor = null; };
+      window.setTimeout(release, 0);
       if (done) {
         saveSettings(reader);
         saveCalendar();
@@ -851,6 +930,8 @@
       snapshot = JSON.stringify(reader);
       calendarSnapshot = JSON.stringify(calendar);
       done = false;
+      resetDayControls();
+      heldAnchor = anchor();
       refreshers.forEach(function (refresh) { refresh(); });
       frame.dialog.showModal();
     };
@@ -883,10 +964,12 @@
   var toolbar = document.querySelector(".os-toolbar");
   var status = document.getElementById("os-status");
   if (hasCalendar && status) {
+    status.setAttribute("aria-haspopup", "dialog");
+    status.title = "The day and the place: open Settings to change them";
     statusListeners.push(function (settings) {
       var text = describeDay(settings);
       status.hidden = !text;
-      status.textContent = following() ? text : "Set the place";
+      say(status, following() ? text : "Set the place");
     });
   }
 
@@ -976,7 +1059,7 @@
     })();
   }
   ["wheel", "touchstart", "pointerdown", "keydown"].forEach(function (type) {
-    window.addEventListener(type, function () { settling++; }, { passive: true });
+    window.addEventListener(type, function () { settling++; keeping++; }, { passive: true });
   });
   document.addEventListener("click", function (event) {
     if (event.defaultPrevented || event.button || event.ctrlKey || event.metaKey

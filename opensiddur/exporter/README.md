@@ -63,15 +63,23 @@ says how it knows the day:
 - **Now,** the default: the device's clock, read as the wall clock at the place. While the book
   is open it checks the clock every 20 seconds and when it comes back into view. When what the
   day decides changes, at dawn or at nightfall say, the text changes, and the passage on screen
-  stays where it is.
+  stays where it is (the first one below the toolbar, kept in place by `reader.js`).
 - **A day and time the reader chooses.**
 - **No particular day:** nothing is worked out, and the reader sets the kind of day by hand
   (the controls marked `when: no-date` in `basic_settings.yaml`).
 
 The place is the reader's: a city from `html/places.yaml`, the device's location, or
 coordinates with a time zone. The device reads the clock in that zone, and decides Israel by
-it. Until there is a place, nothing that needs one is worked out: passages that turn on the day
-show every option, as in print. (The parsha is worked out anyway: it needs only the date.)
+it. The compiler decides Israel by looking the zone up from the coordinates, so the two agree
+when the zone is the one the coordinates are in: a test holds every city to it, and the
+device's location comes with the device's own zone. Until there is a place, nothing that needs
+one is worked out: passages that turn on the day show every option, as in print. (The parsha is
+worked out anyway: it needs only the date.) Choosing a place clears what was set by hand for
+want of one: "Where" (`when: no-place`), and Israel in Advanced.
+
+A section the book gives to a festival -- one that declares `yom-tov` -- still takes its
+festival from the date. Read on an ordinary weekday, the Festival Amidah shows none of the
+insertions for a particular festival; with no particular day, it shows them all, as in print.
 
 Everything worked out can be overridden in Advanced, as a declaration overrides a derivation in
 a compile. The reader's settings, the place and a chosen day are kept in `localStorage`, under
@@ -83,9 +91,10 @@ clock, the book's defaults, the reader's settings, and what the compile pinned
 `client_settings.resolve`, which runs the compiler's own derivations over the same layers.
 - A pinned value that no derivation reads is laid over what the other layers derive
   (`OSCal.READ_FEATURES`). Derived once, that serves most of a book.
-- The compile pins, for each undecided condition, the features it reads and the inputs of
-  every derivation of those, transitively. So a document's own date, service or minyan holds
-  where it stands, whatever the clock says.
+- The compile pins, for each undecided condition, the features it reads, and where it reads
+  anything derived, every feature a derivation reads (`derivation_graph.READ_FEATURES`, the
+  same list as `OSCal.READ_FEATURES`). So a document's own date, service or minyan holds where
+  it stands, whatever the clock says, and a place keeps its zone.
 
 The settings panel has three parts:
 - **Day and place,** in a book with passages that turn on the day (above).

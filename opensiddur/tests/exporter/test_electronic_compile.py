@@ -62,6 +62,17 @@ SEDER_SECTION = '''
   <j:endDeclare target="#d"/>'''
 
 
+PLACED_SECTION = '''
+  <j:declare xml:id="d"><tei:fs type="opensiddur:location">
+    <tei:f name="latitude"><tei:numeric value="31.778"/></tei:f>
+    <tei:f name="longitude"><tei:numeric value="35.235"/></tei:f></tei:fs></j:declare>
+  <j:conditional xml:id="c"><tei:fs type="opensiddur:holiday-aggregate">
+    <tei:f name="yom-tov"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+  <tei:p>on yom tov</tei:p>
+  <j:endConditional target="#c"/>
+  <j:endDeclare target="#d"/>'''
+
+
 class _Compiling(unittest.TestCase):
 
     def setUp(self):
@@ -160,6 +171,13 @@ class TestPinnedValues(_Compiling):
         self.assertIsNotNone(pinned)
         self.assertEqual(json.loads(pinned.text)["opensiddur:hebrew-date"],
                          {"year": {"num": 5786}, "month": {"num": 1}, "day": {"num": 15}})
+
+    def test_a_place_is_pinned_with_its_zone(self):
+        """The device takes a place only with its zone; the compile derives the zone."""
+        root = self._compile(PLACED_SECTION, electronic=True)
+        pinned = json.loads(root.find(f".//{{{J}}}conditional/{{{P}}}pinned").text)
+        self.assertEqual(pinned["opensiddur:location"]["timezone"], "Asia/Jerusalem")
+        self.assertIs(pinned["opensiddur:israel"]["is-israel"], True)
 
     def test_print_pins_nothing(self):
         root = self._compile(MAARIV_SECTION, electronic=False)

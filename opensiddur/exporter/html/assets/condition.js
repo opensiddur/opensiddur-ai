@@ -291,7 +291,7 @@
     var css = "";
     if (hidden.length) css += hidden.join(",") + "{display:none}\n";
     if (settled.length) css += settled.join(",") + "{display:none}\n";
-    return { css: css, states: states };
+    return { css: css, states: states, resolver: resolver };
   }
 
   // Whether each section of the book has text that shows, given the expressions' states:

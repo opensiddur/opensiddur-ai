@@ -30,7 +30,11 @@ from opensiddur.exporter.calendar.compute import (
 )
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.condition_eval import value_from_json, value_to_json
-from opensiddur.exporter.derivation_graph import DERIVATION_SPECS, topological_derivation_order
+from opensiddur.exporter.derivation_graph import (
+    DERIVATION_SPECS,
+    READ_FEATURES,
+    topological_derivation_order,
+)
 from opensiddur.exporter import derived_settings
 from opensiddur.exporter.derived_settings import (
     STATIC_DEFAULTS,
@@ -234,6 +238,8 @@ class TestFeaturesTheDerivationsRead(unittest.TestCase):
                 python_derive(case)
         listed = run_js(self.node, "return OSCal.READ_FEATURES;", scripts=SCRIPTS)
         listed = {(fs, name) for fs, names in listed.items() for name in names}
+        # The compiler pins the same list, so that what the device derives from has its whole.
+        self.assertEqual(listed, set(READ_FEATURES))
         # Between sunset and nightfall, a derivation that gives a feature on one day only reads
         # what the feature is on the other (derived_settings._compute_across_twilight): the
         # festivals a day that is not yom tov cannot be. A pinned value for one of them is

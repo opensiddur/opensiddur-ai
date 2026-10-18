@@ -14,6 +14,7 @@ from opensiddur.exporter.calendar.compute import (
     FS_HOLIDAY_AGG,
     FS_ISRAEL,
     FS_LOCATION,
+    FS_PURIM_OBSERVANCE,
     FS_QUORUM,
     FS_RECITATION,
     FS_READING_CYCLE,
@@ -179,6 +180,16 @@ DERIVATION_SPECS: tuple[DerivationSpec, ...] = (
 
 
 DERIVED_FS_TYPES: frozenset[str] = frozenset(spec.fs_type for spec in DERIVATION_SPECS)
+
+#: Every feature a derivation reads: the inputs it requires, and what it consults besides --
+#: the zone of a place, the seconds of a time, the day Purim is kept, whether it is Israel.
+#: html/assets/calendar.js has the same list (READ_FEATURES), and a test holds both to what
+#: the derivations read.
+READ_FEATURES: frozenset[FeatureRef] = frozenset(
+    {ref for spec in DERIVATION_SPECS for ref in spec.required_inputs}
+    | {(FS_LOCATION, "timezone"), (FS_TIME, "second"), (FS_PURIM_OBSERVANCE, "day"),
+       (FS_ISRAEL, "is-israel")}
+)
 
 
 def topological_derivation_order() -> list[DerivationSpec]:
