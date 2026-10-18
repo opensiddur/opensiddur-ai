@@ -1973,6 +1973,19 @@ section's own conditions on it are decided even when the date is not. For exampl
 Features that count as `false` when undefined (`opensiddur:override`) do not belong in such a
 condition: an edition with no occasion would lose the section.
 
+**A declaration of the kind of day is a condition too.** A `j:declare` of
+`opensiddur:holiday-aggregate` features says what kind of day the text it covers is for -- the
+weekday service declaring that it is neither Shabbat nor yom tov. The processor reads it as
+gated as well, on the same features, judged against the day -- what the date gives where the
+declaration stands: where the day contradicts it (a dated edition for a Sabbath, a reader's
+device on a festival), the section is left out, so that what the date shows is only what is
+appropriate for that day; where the day agrees it stands; where there is no date it stands, and
+nothing is printed around it. What an enclosing text or the volume *declares* is not the day:
+the section's declaration overrides it, as a selichot volume for the Ten Days has a first day
+before them. On a reader's device, what the reader sets by hand counts as the day. A declaration
+already gated, as above, by a conditional on the same features just before it is not gated
+again.
+
 ##### Truth tables
 
 The truth tables are here:

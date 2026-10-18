@@ -165,10 +165,51 @@
   var lastDevice = null;
   var statusListeners = [];
 
+  // The structures that say what day it is. A reader who sets one of them by hand to other
+  // than what the date gives has said the day is another one: the date is set aside, and
+  // with it everything it implies -- the clock, a chosen day, the place.
+  var DAY_FS_TYPES = ["opensiddur:holiday-aggregate", "opensiddur:holiday",
+                      "opensiddur:day-of-week", "opensiddur:hebrew-date"];
+
+  function sameDayValue(a, b) {
+    var plainNumber = function (v) {
+      if (v !== null && typeof v === "object" && "num" in v) return v.num;
+      return typeof v === "boolean" ? Number(v) : v;
+    };
+    return plainNumber(a) === plainNumber(b);
+  }
+
+  function omitting(layer, fsTypes) {
+    var out = {};
+    Object.keys(layer).forEach(function (fs) { if (fsTypes.indexOf(fs) < 0) out[fs] = layer[fs]; });
+    return out;
+  }
+
+  function contradictsTheDate(layer, device) {
+    var own = DAY_FS_TYPES.filter(function (fs) { return layer[fs]; });
+    if (!own.length) return false;
+    var dated = new OSCond.Resolver(omitting(layer, DAY_FS_TYPES), book.defaults, device)
+      .settings({});
+    return own.some(function (fs) {
+      return Object.keys(layer[fs]).some(function (name) {
+        var mine = layer[fs][name], theirs = plain((dated[fs] || {})[name]);
+        return mine !== null && theirs !== null && theirs !== undefined && !sameDayValue(mine, theirs);
+      });
+    });
+  }
+
+  var dateSetAside = false;
+
   function resolveAll() {
     var device = deviceLayer();
     lastDevice = JSON.stringify(device);
-    var result = OSCond.scopeCss(book, readerLayer(), book.defaults, device);
+    var layer = readerLayer();
+    dateSetAside = following() && contradictsTheDate(layer, device);
+    if (dateSetAside) {
+      device = {};
+      layer = omitting(layer, [FS_GREGORIAN, FS_TIME, FS_LOCATION]);
+    }
+    var result = OSCond.scopeCss(book, layer, book.defaults, device);
     result.settings = result.resolver.settings({});
     return result;
   }
@@ -179,36 +220,54 @@
   }
 
   // The first passage on screen, below the toolbar, and where it is.
-  // In the book's text, not in the settings dialog over it.
+  // In the book's text, not in the settings dialog over it. Several passages down the
+  // screen, the first first: a change can hide the one at the top.
   function anchor() {
+    if (!document.elementsFromPoint) return null;
     var x = window.innerWidth / 2;
-    var y = (toolbar ? toolbar.offsetHeight : 0) + 8;
-    var hits = document.elementsFromPoint ? document.elementsFromPoint(x, y) : [];
-    var element = hits.find(function (hit) { return hit.closest && hit.closest(".os-book"); });
-    return element ? { element: element, top: element.getBoundingClientRect().top } : null;
+    var top = (toolbar ? toolbar.offsetHeight : 0) + 8;
+    var candidates = [];
+    for (var y = top; y < window.innerHeight; y += 60) {
+      var element = document.elementsFromPoint(x, y).find(function (hit) {
+        return hit.closest && hit.closest(".os-book");
+      });
+      // The outermost row around it. A row off screen is not laid out (content-visibility),
+      // and what is inside it reports the row's place, not its own.
+      for (var row = element && element.closest(".par"); row; row = row.parentElement.closest(".par")) {
+        element = row;
+      }
+      if (element && !candidates.some(function (c) { return c.element === element; })) {
+        candidates.push({ element: element, top: element.getBoundingClientRect().top });
+      }
+    }
+    return candidates.length ? candidates : null;
   }
 
   // Keep the passage the reader is at where it is when what shows above it changes. Rows off
   // screen take their real heights only once laid out (content-visibility: auto), which moves
-  // the passage again after the first correction: correct it until it has stayed put for a
-  // few frames, or until the reader scrolls.
+  // the passage again after a first correction: correct it each time it settles somewhere
+  // else, until it settles in place, or until the reader scrolls.
   var keeping = 0;
-  function keepInPlace(before) {
-    if (!before) return;
-    var element = before.element;
-    while (element && element !== document.body && !element.getClientRects().length) {
-      element = element.parentElement;
-    }
-    if (!element || element === document.body) return;
-    var run = ++keeping, frames = 0, still = 0;
+  function keepInPlace(candidates) {
+    var kept = (candidates || []).find(function (c) { return c.element.getClientRects().length; });
+    if (!kept) return;
+    var element = kept.element;
+    var run = ++keeping, frames = 0, still = 0, last = null;
     (function correct() {
       if (run !== keeping) return;
-      var moved = element.getBoundingClientRect().top - before.top;
-      if (Math.abs(moved) > 1) {
+      // Wait for the layout to stop moving before correcting: correcting while rows are
+      // still taking their heights chases them, back and forth.
+      var top = element.getBoundingClientRect().top;
+      still = last !== null && Math.abs(top - last) <= 1 ? still + 1 : 0;
+      last = top;
+      if (still >= 2) {
+        var moved = top - kept.top;
+        if (Math.abs(moved) <= 1) return;
         window.scrollBy(0, moved);
+        last = null;
         still = 0;
-      } else still++;
-      if (still < 3 && ++frames < 60) requestAnimationFrame(correct);
+      }
+      if (++frames < 120) requestAnimationFrame(correct);
     })();
   }
 
@@ -770,6 +829,10 @@
   // What the book has worked out the day to be, in words.
   function describeDay(settings) {
     if (!hasCalendar || calendar.mode === "none") return "";
+    if (dateSetAside) {
+      return "Your settings say it is another day than the date, so the date is set aside, " +
+        "and the book follows your settings. Clear them in Advanced to follow the date again.";
+    }
     var at = place();
     if (!at) {
       return "Choose a place, and the book works out the day — its date by the Hebrew " +
@@ -969,7 +1032,8 @@
     statusListeners.push(function (settings) {
       var text = describeDay(settings);
       status.hidden = !text;
-      say(status, following() ? text : "Set the place");
+      say(status, dateSetAside ? "Following your settings, not the date"
+                               : following() ? text : "Set the place");
     });
   }
 

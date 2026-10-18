@@ -77,9 +77,17 @@ one is worked out: passages that turn on the day show every option, as in print.
 worked out anyway: it needs only the date.) Choosing a place clears what was set by hand for
 want of one: "Where" (`when: no-place`), and Israel in Advanced.
 
-A section the book gives to a festival -- one that declares `yom-tov` -- still takes its
-festival from the date. Read on an ordinary weekday, the Festival Amidah shows none of the
-insertions for a particular festival; with no particular day, it shows them all, as in print.
+The book shows only what is appropriate for the day it works out:
+- A section that declares what kind of day it is for -- a `j:declare` of
+  `opensiddur:holiday-aggregate` features, as the weekday services declare that they are not
+  Shabbat or yom tov -- is gated on that declaration (`day_gates.py`). On a day of another kind
+  it is left out, so a reader never reaches a section whose settings contradict the date. With
+  no date it is kept, as in print. The gate is judged against the day, not against what an
+  enclosing text or the volume declares, which the section's declaration overrides.
+- A reader who sets the day by hand to other than the date gives -- yom tov in Advanced on a
+  weekday, say -- has said it is another day: the date is set aside, with everything it implies
+  (the clock, a chosen day, the place), and the book follows the reader's settings alone. The
+  status line says so. Clearing the setting brings the date back.
 
 Everything worked out can be overridden in Advanced, as a declaration overrides a derivation in
 a compile. The reader's settings, the place and a chosen day are kept in `localStorage`, under

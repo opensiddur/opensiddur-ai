@@ -22,7 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       allowed), or coordinates with a time zone. Until there is one, passages that turn on
       the day show every option, as in print.
     - **The reader can override it:** choose a day and time instead, set any calendar
-      feature in Advanced, or choose no particular day and set the kind of day by hand.
+      feature in Advanced, or choose no particular day and set the kind of day by hand. A
+      setting for the day that contradicts the date sets the date aside, with all it implies.
+    - **Only what is appropriate for the day is shown.** A section that declares its kind of
+      day (`opensiddur:holiday-aggregate`) is gated on it: on a day of another kind, as the
+      weekday services on Shabbat, it is left out. A dated print edition leaves it out too;
+      an undated one is unchanged.
     - **Remembered:** the mode, the place, a chosen day and the overrides. The clock's time
       is never saved; it is read afresh each time the book opens.
     - The calendar is a JavaScript port of the compiler's (`html/assets/calendar.js`),
