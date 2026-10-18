@@ -263,11 +263,10 @@
       var element = document.elementsFromPoint(x, y).find(function (hit) {
         return hit.closest && hit.closest(".os-book");
       });
-      // The outermost row around it. A row off screen is not laid out (content-visibility),
-      // and what is inside it reports the row's place, not its own.
-      for (var row = element && element.closest(".par"); row; row = row.parentElement.closest(".par")) {
-        element = row;
-      }
+      // The row it is in: the innermost, since a row can hold others, and a row's top does not
+      // move when what is inside it changes. The rows around are held laid out while the change
+      // settles (holdNearRows), so it is measured where it is.
+      element = (element && element.closest(".par")) || element;
       if (element && !candidates.some(function (c) { return c.element === element; })) {
         candidates.push({ element: element, top: element.getBoundingClientRect().top });
       }
@@ -280,13 +279,32 @@
   // the passage again after a first correction: correct it each time it settles somewhere
   // else, until it settles in place, or until the reader scrolls.
   var keeping = 0;
-  function keepInPlace(candidates) {
+  // The rows around the reader's place -- three screens up and down, and the rows inside them
+  // -- laid out until the change has settled: the place's position depends on their heights,
+  // and a row reached for the first time takes its own only then.
+  var allRows = null;
+  function holdNearRows() {
+    allRows = allRows || Array.prototype.slice.call(document.querySelectorAll(".par"));
+    var low = -3 * window.innerHeight, high = 4 * window.innerHeight;
+    var near = allRows.filter(function (row) {
+      var box = row.getBoundingClientRect();
+      return box.height && box.bottom > low && box.top < high;
+    });
+    near.forEach(function (row) { row.classList.add("os-near"); });
+    return near;
+  }
+
+  function releaseRows(rows) {
+    (rows || []).forEach(function (row) { row.classList.remove("os-near"); });
+  }
+
+  function keepInPlace(candidates, near) {
     var kept = (candidates || []).find(function (c) { return c.element.getClientRects().length; });
-    if (!kept) return;
+    if (!kept) return releaseRows(near);
     var element = kept.element;
     var run = ++keeping, frames = 0, still = 0, last = null;
     (function correct() {
-      if (run !== keeping) return;
+      if (run !== keeping) return releaseRows(near);
       // Wait for the layout to stop moving before correcting: correcting while rows are
       // still taking their heights chases them, back and forth.
       var top = element.getBoundingClientRect().top;
@@ -294,12 +312,13 @@
       last = top;
       if (still >= 2) {
         var moved = top - kept.top;
-        if (Math.abs(moved) <= 1) return;
+        if (Math.abs(moved) <= 1) return releaseRows(near);
         window.scrollBy(0, moved);
         last = null;
         still = 0;
       }
       if (++frames < 120) requestAnimationFrame(correct);
+      else releaseRows(near);
     })();
   }
 
@@ -316,10 +335,11 @@
     var columnsChange = (page.getAttribute("data-columns") || null) !== columns;
     if (liveStyle.textContent !== result.css || columnsChange) {
       var before = !applied ? null : heldAnchor || anchor();
+      var near = applied ? holdNearRows() : [];
       if (liveStyle.textContent !== result.css) liveStyle.textContent = result.css;
       if (columns) page.setAttribute("data-columns", columns);
       else page.removeAttribute("data-columns");
-      keepInPlace(before);
+      keepInPlace(before, near);
     }
     defaultStyle.disabled = true;
     applied = true;

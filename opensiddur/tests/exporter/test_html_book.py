@@ -791,6 +791,27 @@ class TestBuildBook(unittest.TestCase):
         result = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults);", book)
         self.assertEqual(result["css"].strip(), css)
 
+    def test_a_row_none_of_whose_text_shows_goes_whole(self):
+        """The row's two columns are each a wedding's; the settings file says it is a wedding,
+        then not: the row is hidden whole, on the device as without scripts."""
+        node = require_node(self)
+        self.compiled.write_bytes(_compiled(
+            '<p:parallel><p:parallelItem role="primary" xml:lang="he">'
+            + _cond("w1", "wedding") + '<tei:p>א</tei:p><j:endConditional target="#w1"/>'
+            '</p:parallelItem><p:parallelItem role="parallel" xml:lang="en">'
+            + _cond("w2", "wedding") + '<tei:p>a</tei:p><j:endConditional target="#w2"/>'
+            '</p:parallelItem></p:parallel>'))
+        page = build_book(self.compiled, self.settings, self.base)
+        book = self._book(page)
+        self.assertEqual(len(book["rows"]), 1)
+        self.assertIn('class="par r0"', page)
+        css = self._between(page, '<style id="os-cond-default">', "</style>")
+        self.assertNotIn(".r0", css, "a wedding: the row shows")
+        not_a_wedding = {"opensiddur:override": {"wedding": False}}
+        result = run_js(node, "return OSCond.scopeCss(args.book, args.reader, args.book.defaults);",
+                        {"book": book, "reader": not_a_wedding})
+        self.assertIn(".r0", result["css"])
+
     def test_optional_reference_goes_when_every_destination_does(self):
         """The destination occurs at a wedding and at a circumcision. The settings file says
         it is a wedding, and not a circumcision."""

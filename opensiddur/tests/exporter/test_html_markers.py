@@ -5,7 +5,7 @@ import unittest
 from lxml import etree
 
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
-from opensiddur.exporter.html.markers import P_CID, P_SCOPES, P_SPAN, prepare
+from opensiddur.exporter.html.markers import P_CID, P_ROW, P_SCOPES, P_SPAN, prepare
 from opensiddur.tests.exporter.registry_helpers import unchecked_registry
 
 J = JLPTEI_NAMESPACE
@@ -160,6 +160,45 @@ class TestColumns(unittest.TestCase):
         root = _tree(_cond("a") + self._row("<tei:p>h</tei:p>", "<tei:p>e</tei:p>") + _end("a"))
         prepare(root)
         self.assertEqual(_labels(root), [("he", "0")])
+
+
+class TestRows(unittest.TestCase):
+    """A row of parallel text all of whose text the settings can hide is numbered, so that the
+    device can hide it whole (BookConditions.rows)."""
+
+    _row = staticmethod(TestColumns._row)
+
+    def test_a_row_all_of_whose_text_is_governed_is_numbered(self):
+        root = _tree(self._row(_cond("a") + "<tei:p>h</tei:p>" + _end("a"),
+                               _cond("b") + "<tei:p>e</tei:p>" + _end("b")))
+        book = prepare(root)
+        row = root.find(f"{{{P}}}parallel")
+        self.assertEqual(row.get(P_ROW), "0")
+        self.assertEqual(book.rows, [[[0], [1]]])
+
+    def test_a_row_with_text_no_scope_governs_is_not(self):
+        root = _tree(self._row(_cond("a") + "<tei:p>h</tei:p>" + _end("a"), "<tei:p>e</tei:p>"))
+        book = prepare(root)
+        self.assertIsNone(root.find(f"{{{P}}}parallel").get(P_ROW))
+        self.assertEqual(book.rows, [])
+
+    def test_a_row_with_no_text_is_not(self):
+        root = _tree(_cond("a") + "<tei:p>outside</tei:p>" + _end("a")
+                     + self._row('<tei:pb n="1"/>', ""))
+        book = prepare(root)
+        self.assertEqual(book.rows, [])
+
+    def test_a_rubric_is_not_the_row_s_text(self):
+        """The marker's rubric says when the text applies: the row is the text's."""
+        root = _tree(self._row(_cond("a", rubric="On a weekday:") + "<tei:p>h</tei:p>" + _end("a"),
+                               ""))
+        book = prepare(root)
+        self.assertEqual(book.rows, [[[0]]])
+
+    def test_a_scope_around_the_row_governs_it(self):
+        root = _tree(_cond("a") + self._row("<tei:p>h</tei:p>", "<tei:p>e</tei:p>") + _end("a"))
+        book = prepare(root)
+        self.assertEqual(book.rows, [[[0]]])
 
 
 class TestSilence(unittest.TestCase):

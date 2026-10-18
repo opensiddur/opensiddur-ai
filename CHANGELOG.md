@@ -60,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       is not yom tov cannot be.
   - **Columns:** a bilingual book can show both columns, the Hebrew alone, or the
     translation alone. A passage with no counterpart stays, and the choice is remembered.
+  - **Scrolling through text the settings hide** no longer shows blank space that pulls the
+    page back: a row of parallel text with nothing left to show is hidden whole, and one with
+    no words is laid out always.
   - **The settings dialog** opens with × in the upper-right corner. ×, Cancel, Escape or a
     click outside leaves the settings as they were; Done keeps and saves them. Its buttons
     stay on screen however far the settings scroll.

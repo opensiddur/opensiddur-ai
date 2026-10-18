@@ -537,7 +537,8 @@
         <div>
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class"
-                                select="('par', @column-order ! concat('par-', .))"/>
+                                select="('par', @column-order ! concat('par-', .),
+                                         @p:row ! concat('r', .))"/>
             </xsl:call-template>
             <xsl:apply-templates/>
         </div>

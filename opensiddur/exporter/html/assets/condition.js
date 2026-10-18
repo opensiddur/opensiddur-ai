@@ -279,6 +279,13 @@
                      ".m" + cid + " .cm-br");
       }
     });
+    // A row none of whose text shows goes whole, so that off screen it is no row's height.
+    (book.rows || []).forEach(function (sets, number) {
+      var shows = sets.some(function (set) {
+        return set.every(function (cid) { return states[book.scopes[cid]] !== FALSE; });
+      });
+      if (!shows) hidden.push(".r" + number);
+    });
     // An optional page reference goes when every occurrence of one of its destinations does.
     (book.optionalReferences || []).forEach(function (destinations, number) {
       var reachable = destinations.every(function (occurrences) {

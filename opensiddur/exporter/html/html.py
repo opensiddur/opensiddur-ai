@@ -124,6 +124,11 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
             # A passage that is simply said: the rubric that said when goes with its rules and
             # brackets. Commentary the compiler anchored on the rubric stays.
             settled += [f".m{cid}.cm-close", f".m{cid} > .rubric", f".m{cid} .cm-br"]
+    # A row none of whose text shows goes whole (BookConditions.rows).
+    for number, sets in enumerate(book.rows):
+        if not any(all(states[book.scopes[cid]] != TriState.FALSE for cid in scopes)
+                   for scopes in sets):
+            hidden.append(f".r{number}")
     for number, destinations in enumerate(book.optional_references):
         if not all(any(all(states[book.scopes[cid]] != TriState.FALSE for cid in scopes)
                        for scopes in occurrences) for occurrences in destinations):
@@ -417,6 +422,7 @@ def book_json(
         "basic": settings_catalogue(book, controls, always_basic(basic_settings)),
         "sections": book.sections,
         "optionalReferences": book.optional_references,
+        "rows": book.rows,
         "calendarScopes": calendar,
         # Only a book with passages that turn on the day needs places to work it out at.
         "places": read_places() if calendar else [],

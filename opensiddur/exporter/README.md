@@ -110,6 +110,18 @@ The settings panel has four parts:
   `data-columns` on the page, and `reader.css` hides the other column. A row whose shown column
   has no words (`col-empty`, marked by `html.xslt`) keeps the other, so no passage is lost.
   `html.py` `columns` names the columns by their languages.
+
+**Rows off screen.** A row of parallel text is laid out only as it is reached
+(`content-visibility: auto`), and until then is taken to have an estimated height. A row with no
+text left to show would be taken to have that height too, and scrolling through a run of them
+shows blank space that shrinks as it is reached. So:
+- a row with no words at all (both columns `col-empty`) is always laid out;
+- a row all of whose text the settings can hide is numbered (`markers.py` `_rows`,
+  `BookConditions.rows`), and hidden whole once none of it shows, by the same rules on the
+  device (`condition.js` `scopeCss`) and without scripts (`html.py` `scope_css`);
+- the browser's own scroll anchoring is off: it anchored on rows still taking their heights,
+  and pulled the page back as the reader scrolled. `reader.js` keeps the reader's place across
+  what it changes, holding the rows around it laid out until the change settles.
 - **Day and place,** in a book with passages that turn on the day (above).
 - **The top:** the settings that decide the most of the book's text. The build decides which,
   for each book, and writes them into it.
