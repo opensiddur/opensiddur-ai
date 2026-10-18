@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import tzfpy
 from lxml import etree
 
 from opensiddur.common.xslt import xslt_transform_string
@@ -24,6 +25,7 @@ from opensiddur.exporter.html.html import (
     celebrated_purim,
     feature_words,
     read_basic_settings,
+    read_places,
     settings_catalogue,
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
@@ -520,8 +522,9 @@ class TestBasicSettingsSpec(unittest.TestCase):
         for control in controls:
             with self.subTest(control=control["id"]):
                 self.assertLessEqual(
-                    set(control), {"id", "label", "note", "top", "options", "features"})
+                    set(control), {"id", "label", "note", "top", "when", "options", "features"})
                 self.assertIsInstance(control.get("top", False), bool)
+                self.assertIn(control.get("when"), (None, "no-date", "no-place"))
                 self.assertTrue(control["options"])
                 for option in control["options"]:
                     for fs, features in option["set"].items():
@@ -582,6 +585,21 @@ BODY = (
       '<j:endConditional target="#d"/>'
     + "<tei:p>" + _cond("e", "wedding") + "inline<j:endConditional target=\"#e\"/></tei:p>"
 )
+
+
+class TestPlaces(unittest.TestCase):
+    """The places the settings panel offers."""
+
+    def test_each_zone_is_the_one_its_coordinates_are_in(self):
+        """The device reads the clock in the zone given; the compiler would look it up."""
+        for place in read_places():
+            with self.subTest(place=place["name"]):
+                self.assertEqual(tzfpy.get_tz(place["longitude"], place["latitude"]),
+                                 place["timezone"])
+
+    def test_names_are_unique(self):
+        names = [place["name"] for place in read_places()]
+        self.assertEqual(len(names), len(set(names)))
 
 
 class TestBuildBook(unittest.TestCase):
@@ -686,6 +704,27 @@ class TestBuildBook(unittest.TestCase):
         about = self._between(page, '<footer class="os-about">', "</footer>")
         self.assertIn("Some One", about)
         self.assertIn('href="http://creativecommons.org/publicdomain/zero/1.0/"', about)
+
+    def test_colophon_has_the_software_notice(self):
+        about = self._between(self._build(), '<footer class="os-about">', "</footer>")
+        self.assertIn("GNU Lesser General Public License", about)
+        self.assertIn("Meir S. List", about)
+
+    def test_scripts_are_labelled_and_the_calendar_comes_first(self):
+        page = self._build()
+        self.assertEqual(page.count("// @license magnet:"), 3)
+        self.assertEqual(page.count("// @license-end"), 3)
+        self.assertLess(page.index("root.OSCal ="), page.index("root.OSCond ="))
+        self.assertLess(page.index("root.OSCond ="), page.index("var storageKey"))
+
+    def test_places_only_where_the_day_matters(self):
+        self.assertEqual(self._book(self._build())["places"], [])
+        self.compiled.write_bytes(_compiled(
+            _cond("h", "shabbat", fs="opensiddur:holiday-aggregate") + "<tei:p>Shabbat</tei:p>"
+            '<j:endConditional target="#h"/>'))
+        book = self._book(build_book(self.compiled, self.settings, self.base))
+        self.assertEqual(book["calendarScopes"], 1)
+        self.assertEqual(book["places"], read_places())
 
     def test_book_id_is_stable(self):
         self.assertEqual(self._book(self._build())["id"], self._book(self._build())["id"])

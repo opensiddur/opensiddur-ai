@@ -35,7 +35,7 @@ from opensiddur.exporter.constants import (
     is_element_node,
 )
 
-from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, is_reader_supplied
+from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.derivation_graph import DERIVATION_SPECS
 from opensiddur.exporter.derived_settings import (
     SettingChangeTrigger,
@@ -783,18 +783,19 @@ class CompilerProcessor:
         {"<fs type>": {"<feature>": <value>}}, values as condition_eval.value_to_json, an
         explicit undefined as null.
 
-        Pinned: the features the condition reads, and the inputs of any derivation the device
-        runs for a structure it reads -- so that a document's minyan reaches the device that
-        derives a zimmun from it. Not pinned: the settings file's own values for the reader's
-        settings, which are the book's defaults, the reader's to change.
+        Pinned: the features the condition reads, and the inputs of every derivation of a
+        structure it reads, and of theirs in turn -- the device runs them all, so that a
+        document's minyan reaches the device that derives a zimmun from it, and a document's
+        Hebrew date the device that derives its holidays. Not pinned: the settings file's own
+        values for the reader's settings, which are the book's defaults, the reader's to change.
         """
         features = set(condition_features(node))
-        read = {fs for fs, _ in features}
-        for spec in DERIVATION_SPECS:
-            # The device's own derivation only: a structure can also be derived from the date,
-            # which the device does not do, and whose inputs are no concern of it.
-            if spec.fs_type in read and spec.compute is CLIENT_DERIVATIONS.get(spec.fs_type):
-                features |= spec.required_inputs
+        read: set[str] = set()
+        while {fs for fs, _ in features} - read:
+            read |= {fs for fs, _ in features}
+            for spec in DERIVATION_SPECS:
+                if spec.fs_type in read:
+                    features |= spec.required_inputs
         pinned: dict[str, dict[str, object]] = {}
         for fs_type, feature_name in sorted(features):
             entry = self.get_active_setting_entry(fs_type, feature_name)

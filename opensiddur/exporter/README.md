@@ -55,11 +55,40 @@ or `python -m opensiddur.exporter.books --format html` for the books in the sett
   condition: what the document declared there, and what was derived from it.
 - The settings file's declarations become the book's defaults. Read without scripts, the
   page shows exactly what the PDF of the same settings file shows.
-- Calendar settings are not yet answered on the device. Until they are, the reader sets them
-  by hand. Passages that depend on one left unset show every option with its rubric, as in
-  print.
+- Calendar settings are answered on the device: see below.
 
-The settings panel has two parts:
+**The day.** The device works out the day as a compile does, from a date, a time and a place,
+with the calendar's port (`html/assets/calendar.js`). The settings panel's *Day and place*
+says how it knows the day:
+- **Now,** the default: the device's clock, read as the wall clock at the place. While the book
+  is open it checks the clock every 20 seconds and when it comes back into view. When what the
+  day decides changes, at dawn or at nightfall say, the text changes, and the passage on screen
+  stays where it is.
+- **A day and time the reader chooses.**
+- **No particular day:** nothing is worked out, and the reader sets the kind of day by hand
+  (the controls marked `when: no-date` in `basic_settings.yaml`).
+
+The place is the reader's: a city from `html/places.yaml`, the device's location, or
+coordinates with a time zone. The device reads the clock in that zone, and decides Israel by
+it. Until there is a place, nothing that needs one is worked out: passages that turn on the day
+show every option, as in print. (The parsha is worked out anyway: it needs only the date.)
+
+Everything worked out can be overridden in Advanced, as a declaration overrides a derivation in
+a compile. The reader's settings, the place and a chosen day are kept in `localStorage`, under
+the book's id. The clock's time is not.
+
+The device resolves each condition against four layers, the earliest first: the device's
+clock, the book's defaults, the reader's settings, and what the compile pinned
+(`client_settings.LAYERS`). The calendar's derivations run over all four. The reference is
+`client_settings.resolve`, which runs the compiler's own derivations over the same layers.
+- A pinned value that no derivation reads is laid over what the other layers derive
+  (`OSCal.READ_FEATURES`). Derived once, that serves most of a book.
+- The compile pins, for each undecided condition, the features it reads and the inputs of
+  every derivation of those, transitively. So a document's own date, service or minyan holds
+  where it stands, whatever the clock says.
+
+The settings panel has three parts:
+- **Day and place,** in a book with passages that turn on the day (above).
 - **The top:** the settings that decide the most of the book's text. The build decides which,
   for each book, and writes them into it.
 - **An Advanced box,** holding every feature the book's conditions read, one by one.

@@ -50,6 +50,18 @@ MAARIV_SECTION = '''
   <j:endDeclare target="#d"/>'''
 
 
+SEDER_SECTION = '''
+  <j:declare xml:id="d"><tei:fs type="opensiddur:hebrew-date">
+    <tei:f name="year"><tei:numeric value="5786"/></tei:f>
+    <tei:f name="month"><tei:numeric value="1"/></tei:f>
+    <tei:f name="day"><tei:numeric value="15"/></tei:f></tei:fs></j:declare>
+  <j:conditional xml:id="c"><tei:fs type="opensiddur:holiday-aggregate">
+    <tei:f name="yom-tov"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>
+  <tei:p>on yom tov</tei:p>
+  <j:endConditional target="#c"/>
+  <j:endDeclare target="#d"/>'''
+
+
 class _Compiling(unittest.TestCase):
 
     def setUp(self):
@@ -136,6 +148,18 @@ class TestPinnedValues(_Compiling):
             json.loads(pinned.text),
             {"opensiddur:recitation": {"repetition": False},
              "opensiddur:service-time": {"maariv": True}})
+
+    def test_the_inputs_of_a_derivation_are_pinned_transitively(self):
+        """A section declares its Hebrew date; a condition on yom tov stands in it.
+
+        The device derives yom tov from a date, as the compile does, so the section's date
+        goes with the condition -- and prevails there over the device's clock.
+        """
+        root = self._compile(SEDER_SECTION, electronic=True)
+        pinned = root.find(f".//{{{J}}}conditional/{{{P}}}pinned")
+        self.assertIsNotNone(pinned)
+        self.assertEqual(json.loads(pinned.text)["opensiddur:hebrew-date"],
+                         {"year": {"num": 5786}, "month": {"num": 1}, "day": {"num": 15}})
 
     def test_print_pins_nothing(self):
         root = self._compile(MAARIV_SECTION, electronic=False)

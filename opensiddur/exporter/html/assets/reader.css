@@ -251,6 +251,21 @@ p.rubric { text-align: start; }
   .os-setting-count { grid-column: 1; }
 }
 .os-note { color: var(--muted); font-size: 0.85rem; }
+.os-setting[hidden], .os-note[hidden] { display: none; }
+/* The day the book has worked out, at the start of the toolbar; it opens the settings. */
+.os-toolbar .os-status {
+  order: -1;
+  margin-inline-end: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-color: transparent;
+  background: none;
+  color: var(--muted);
+}
+.os-toolbar .os-status[hidden] { display: none; }
+.os-day-summary { color: var(--ink); }
 .os-contents { padding-inline-start: 1.2rem; }
 .os-contents a { color: var(--ink); }
 .os-contents-h2 { margin-inline-start: 1rem; }

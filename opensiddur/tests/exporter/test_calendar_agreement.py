@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import unittest
+from unittest.mock import patch
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -30,6 +31,7 @@ from opensiddur.exporter.calendar.compute import (
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.condition_eval import value_from_json, value_to_json
 from opensiddur.exporter.derivation_graph import DERIVATION_SPECS, topological_derivation_order
+from opensiddur.exporter import derived_settings
 from opensiddur.exporter.derived_settings import (
     STATIC_DEFAULTS,
     SettingChangeTrigger,
@@ -198,6 +200,46 @@ class TestConstants(unittest.TestCase):
         js = run_js(self.node, "return OSCal.STATIC_DEFAULTS;", scripts=SCRIPTS, timeout=TIMEOUT)
         self.assertEqual(js, {fs: values for fs, values in STATIC_DEFAULTS.items()
                               if not is_reader_supplied(fs)})
+
+
+class TestFeaturesTheDerivationsRead(unittest.TestCase):
+    """The device lays a pinned value over what it derives without it, unless a derivation reads
+    it (condition.js, Resolver). That holds only if OSCal.READ_FEATURES has every one they do.
+    """
+
+    def setUp(self):
+        self.node = require_node(self)
+
+    def test_every_feature_read_is_listed(self):
+        read: set[tuple[str, str]] = set()
+        real = derived_settings._get_setting_from_linear_data
+
+        def recording(linear_data, fs_type, feature_name):
+            read.add((fs_type, feature_name))
+            return real(linear_data, fs_type, feature_name)
+
+        friday = date(2026, 4, 3)
+        hebrew_date = [{"fs": HEBREW_DATE, "feature": f, "value": v}
+                       for f, v in (("year", 5786), ("month", 1), ("day", 15))]
+        flags = [{"fs": "opensiddur:quorum", "feature": "minyan", "value": True},
+                 {"fs": "opensiddur:reading-cycle", "feature": "triennial", "value": True},
+                 {"fs": "opensiddur:holiday-aggregate", "feature": "yom-tov", "value": False}]
+        cases = [moment_entries(friday, clock, place, locale) + extra
+                 for clock in (None, time(9), time(19, 30))
+                 for place in ("jerusalem", "new-york", None)
+                 for locale in ("derive", None)
+                 for extra in ([], hebrew_date, flags)]
+        with patch.object(derived_settings, "_get_setting_from_linear_data", recording):
+            for case in cases:
+                python_derive(case)
+        listed = run_js(self.node, "return OSCal.READ_FEATURES;", scripts=SCRIPTS)
+        listed = {(fs, name) for fs, names in listed.items() for name in names}
+        # Between sunset and nightfall, a derivation that gives a feature on one day only reads
+        # what the feature is on the other (derived_settings._compute_across_twilight): the
+        # festivals a day that is not yom tov cannot be. A pinned value for one of them is
+        # explicit, and prevails whatever the merge reads, so laying it over is still exact.
+        merged = {("opensiddur:holiday", name) for name in ALWAYS_YOM_TOV}
+        self.assertLessEqual(read - merged, listed, sorted(read - merged - listed))
 
 
 class TestCalendarArithmetic(unittest.TestCase):

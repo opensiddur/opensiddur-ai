@@ -4,23 +4,26 @@ a condition with them.
 A printed book is compiled once, for whatever its settings file says, and a setting it does not
 declare stays undefined: every branch is printed with the rubric that says when to read it. An
 electronic book is compiled once too, but resolved again on the reader's device, every time the
-reader changes a setting. Its compile keeps the conditions that turn on *reader-supplied*
-settings undecided -- the rite, who is present, whether a mourner is in the house -- so that the
-device can decide them.
+reader changes a setting and as the day goes by. Its compile keeps the conditions that turn on
+*reader-supplied* settings undecided -- the rite, who is present, whether a mourner is in the
+house -- so that the device can decide them.
 
 The *calendar* settings are the others: the date, the time and the place, and everything derived
-from them. A device could answer them too, from its clock and its location, but not yet: that
-takes a port of the calendar layer (`calendar/compute.py`), and until there is one they are
-left as print leaves them. The reader sees every branch, with its rubric.
+from them. The device answers them from its clock and from the place the reader gives, deriving
+everything a compile derives (html/assets/calendar.js ports the derivations). A calendar setting
+the settings file declares is compiled in, as in print.
 
 `resolve` is the reference for what the device computes. The JavaScript in
-`html/assets/condition.js` has to agree with it, and the agreement tests hold both to the same
-cases.
+`html/assets/condition.js` and `html/assets/calendar.js` has to agree with it, and the agreement
+tests hold both to the same cases.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 from collections.abc import Mapping
+from functools import lru_cache
 from typing import Any
 
 from opensiddur.exporter.calendar.avot import FS_AVOT
@@ -34,15 +37,9 @@ from opensiddur.exporter.calendar.compute import (
     FS_ISRAEL,
     FS_LOCATION,
     FS_PURIM_OBSERVANCE,
-    FS_QUORUM,
-    FS_RECITATION,
     FS_SERVICE_TIME,
     FS_TIME,
     FS_TORAH,
-    SettingSnapshot,
-    compute_holiday_from_aggregate,
-    compute_quorum,
-    compute_recitation,
 )
 from opensiddur.exporter.calendar.hallel import FS_HALLEL
 from opensiddur.exporter.calendar.motzaei_shabbat import FS_MOTZAEI_SHABBAT
@@ -53,7 +50,7 @@ from opensiddur.exporter.condition_eval import (
     evaluate_condition,
     value_from_json,
 )
-from opensiddur.exporter.linear import Undefined
+from opensiddur.exporter.linear import ConditionalSettingEntry, LinearData
 
 #: Feature structures a device would answer from its clock and its location.
 CALENDAR_FS_TYPES: frozenset[str] = frozenset({
@@ -76,15 +73,6 @@ CALENDAR_FS_TYPES: frozenset[str] = frozenset({
     FS_PURIM_OBSERVANCE,
 })
 
-#: Derivations the device runs: every input is one the reader can set, and none needs the
-#: calendar. Each must have a counterpart in `condition.js`'s `DERIVATIONS`, which a test
-#: checks.
-CLIENT_DERIVATIONS: dict[str, Any] = {
-    FS_QUORUM: compute_quorum,
-    FS_RECITATION: compute_recitation,
-    FS_HOLIDAY: compute_holiday_from_aggregate,
-}
-
 
 def is_reader_supplied(fs_type: str) -> bool:
     """Whether an electronic book leaves this feature structure to its reader.
@@ -97,77 +85,72 @@ def is_reader_supplied(fs_type: str) -> bool:
 
 Settings = Mapping[str, Mapping[str, Any]]
 
+#: The layers the device resolves against, the earliest first: a later one prevails, and is the
+#: later declaration where a civil and a Hebrew date are both given.
+#:
+#: 1. *device* -- what the device knows by itself: the date and the time, from its clock.
+#: 2. *defaults* -- what the book starts from: the settings file's declarations and the static
+#:    defaults, for the reader's feature structures. A null is undefined.
+#: 3. *reader* -- what the reader has set in the book's settings panel: a chosen date and time,
+#:    a place, any feature at all. A feature the reader has not touched is absent; a null is the
+#:    reader's own "show every option", which holds even where the book has a default.
+#: 4. *pinned* -- the values the compile knew where the condition stands: what the volume's
+#:    settings file and the document's own `j:declare`s said, and what was derived from them.
+#:    They are part of the text, and the reader cannot override them.
+#:
+#: The calendar's derivations run over all four, as a compile runs them over its declarations:
+#: an explicit value -- even an explicit null -- is never replaced by a derived one. So the
+#: device resolves a condition the way a compile would, given the same settings.
+LAYERS = ("device", "defaults", "reader", "pinned")
 
-def _lookup(settings: Settings, fs_type: str, feature_name: str) -> tuple[bool, Any]:
-    """(present, value) for one feature in a JSON settings mapping, value decoded."""
-    features = settings.get(fs_type) or {}
-    if feature_name not in features:
-        return False, None
-    return True, value_from_json(features[feature_name])
+
+def derive_settings(
+    *, device: Settings | None = None, defaults: Settings | None = None,
+    reader: Settings | None = None, pinned: Settings | None = None,
+) -> dict[tuple[str, str], Any]:
+    """Every setting in force on the device, derived ones included, by (fs type, feature)."""
+    layers = {"device": device, "defaults": defaults, "reader": reader, "pinned": pinned}
+    return _derive(json.dumps([layers[name] or {} for name in LAYERS], sort_keys=True))
 
 
-class ClientSettings:
-    """The settings one condition is evaluated against on the reader's device.
+_derived_settings_logger = logging.getLogger("opensiddur.exporter.derived_settings")
 
-    In order of precedence:
 
-    1. *pinned* -- the values the compile knew where the condition stands: what the volume's
-       settings file and the document's own `j:declare`s said, and what was derived from them.
-       They are part of the text, and the reader cannot override them.
-    2. *reader* -- what the reader has set in the book's settings panel. A feature the reader
-       has not touched is absent; a null is the reader's own "show every option", which
-       holds even where the book has a default.
-    3. *defaults* -- what the book starts from: the settings file's declarations and the static
-       defaults, for the reader's feature structures. A null is undefined.
-    4. derived -- what `CLIENT_DERIVATIONS` compute from the layers above.
+@lru_cache(maxsize=4096)
+def _derive(key: str) -> dict[tuple[str, str], Any]:
+    # derived_settings decides what is the reader's by this module, so it is imported here.
+    from opensiddur.exporter.derived_settings import (
+        SettingChangeTrigger,
+        recalculate_derived_settings,
+    )
 
-    The reader's settings and the defaults together play the part of a settings file's
-    declarations in a compile, and rank the same way: an explicit value -- even an explicit
-    null -- is never replaced by a derived one, just as `derived_settings` never overrides an
-    `init` entry. So the device resolves a condition the way a compile would, given the same
-    settings.
-    """
+    linear_data = LinearData(defer_reader_settings=True)
+    for name, layer in zip(LAYERS, json.loads(key)):
+        # What the device and the book start from is a settings file's; the rest is declared.
+        source = "init" if name in ("device", "defaults") else "declared"
+        for fs_type, features in layer.items():
+            for feature_name, value in features.items():
+                linear_data.conditional_settings.append(ConditionalSettingEntry(
+                    declare_id=f"{name}:{fs_type}:{feature_name}", fs_type=fs_type,
+                    feature_name=feature_name, value=value_from_json(value), source=source))
+    # A date without a place is the device's ordinary state until the reader gives one, not a
+    # mistake in a settings file to warn of.
+    disabled = _derived_settings_logger.disabled
+    _derived_settings_logger.disabled = True
+    try:
+        recalculate_derived_settings(linear_data, trigger=SettingChangeTrigger.INIT)
+    finally:
+        _derived_settings_logger.disabled = disabled
+    return {(entry.fs_type, entry.feature_name): entry.value
+            for entry in linear_data.conditional_settings}
 
-    # Pinned values hold one value per feature: `resolve` splits a pinned bein hashmashot
-    # value into its two days before building one of these, so that the derivations below
-    # never see a pair.
-    def __init__(self, pinned: Settings, reader: Settings, defaults: Settings):
-        self.pinned = pinned
-        self.reader = reader
-        self.defaults = defaults
 
-    def _given(self, fs_type: str, feature_name: str) -> tuple[bool, Any]:
-        present, value = _lookup(self.pinned, fs_type, feature_name)
-        if present:
-            return True, value
-        return _lookup(self.reader, fs_type, feature_name)
-
-    def _derived(self, fs_type: str, feature_name: str) -> tuple[bool, Any]:
-        compute = CLIENT_DERIVATIONS.get(fs_type)
-        if compute is None:
-            return False, None
-
-        def get_setting(fs, name):
-            present, value = self._explicit(fs, name)
-            return value if present and value is not Undefined else None
-
-        computed = compute(SettingSnapshot(get_setting=get_setting)) or {}
-        if feature_name in computed:
-            return True, computed[feature_name]
-        return False, None
-
-    def _explicit(self, fs_type: str, feature_name: str) -> tuple[bool, Any]:
-        present, value = self._given(fs_type, feature_name)
-        if present:
-            return True, value
-        return _lookup(self.defaults, fs_type, feature_name)
+class _Active:
+    def __init__(self, settings: dict[tuple[str, str], Any]):
+        self.settings = settings
 
     def get_active_setting(self, fs_type: str, feature_name: str) -> Any | None:
-        for layer in (self._explicit, self._derived):
-            present, value = layer(fs_type, feature_name)
-            if present:
-                return value
-        return None
+        return self.settings.get((fs_type, feature_name))
 
 
 def resolve(
@@ -176,23 +159,26 @@ def resolve(
     pinned: Settings | None = None,
     reader: Settings | None = None,
     defaults: Settings | None = None,
+    device: Settings | None = None,
 ) -> TriState:
     """Evaluate a condition as the reader's device does. Takes a parsed condition or its JSON.
 
     A value the compile pinned for bein hashmashot holds one value for each of the two days.
-    The condition is resolved once for each day, the device's own derivations included, and
-    is decided only if it comes out the same on both.
+    The condition is resolved once for each day, the derivations included, and is decided only
+    if it comes out the same on both. A moment the device is at between sunset and nightfall is
+    worked out for both days by the derivations themselves.
     """
     if isinstance(condition, Mapping):
         condition = condition_from_json(condition)
     pinned = pinned or {}
+    layers = {"device": device, "defaults": defaults, "reader": reader}
     if _has_twilight(pinned):
         ending, starting = (
-            evaluate_condition(condition, ClientSettings(
-                _pinned_on_day(pinned, day), reader or {}, defaults or {}))
+            evaluate_condition(condition, _Active(derive_settings(
+                **layers, pinned=_pinned_on_day(pinned, day))))
             for day in (0, 1))
         return ending if ending == starting else TriState.UNDEFINED
-    return evaluate_condition(condition, ClientSettings(pinned, reader or {}, defaults or {}))
+    return evaluate_condition(condition, _Active(derive_settings(**layers, pinned=pinned)))
 
 
 def _is_twilight(encoded: Any) -> bool:

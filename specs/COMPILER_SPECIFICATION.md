@@ -558,7 +558,8 @@ its output.
   `parallel`, `@xml:lang`, `@p:project`, `@p:file_name`) — one aligned unit of a parallel
   compile, its two streams side by side.
 - `p:pinned` — inside a retained `j:conditional` of an electronic compile, a JSON object of the
-  settings decided at compile time that the condition reads, for the reader's device.
+  settings decided at compile time that the condition reads, and that the derivations of what
+  it reads take as inputs, transitively, for the reader's device.
 
 **Processing attributes**
 - `@p:project`, `@p:file_name` — on content that came from a file other than its parent's:

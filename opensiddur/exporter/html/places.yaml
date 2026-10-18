@@ -1,0 +1,69 @@
+# Places the electronic book offers in its settings panel, for a reader who would rather pick a
+# city than share a location. Each has its coordinates and its IANA time zone: the device reads
+# the clock in that zone, and decides Israel by it (calendar/compute._ISRAEL_ZONES). A test
+# checks each zone against the one the compiler looks up from the coordinates.
+#
+# Shape: [{name, latitude, longitude, timezone}], in the order shown.
+
+- {name: Jerusalem, latitude: 31.778, longitude: 35.235, timezone: Asia/Jerusalem}
+- {name: Tel Aviv, latitude: 32.085, longitude: 34.782, timezone: Asia/Jerusalem}
+- {name: Haifa, latitude: 32.794, longitude: 34.990, timezone: Asia/Jerusalem}
+- {name: Be'er Sheva, latitude: 31.252, longitude: 34.791, timezone: Asia/Jerusalem}
+- {name: Eilat, latitude: 29.558, longitude: 34.952, timezone: Asia/Jerusalem}
+- {name: Amsterdam, latitude: 52.368, longitude: 4.904, timezone: Europe/Amsterdam}
+- {name: Antwerp, latitude: 51.219, longitude: 4.402, timezone: Europe/Brussels}
+- {name: Atlanta, latitude: 33.749, longitude: -84.388, timezone: America/New_York}
+- {name: Auckland, latitude: -36.848, longitude: 174.763, timezone: Pacific/Auckland}
+- {name: Baltimore, latitude: 39.290, longitude: -76.612, timezone: America/New_York}
+- {name: Berlin, latitude: 52.520, longitude: 13.405, timezone: Europe/Berlin}
+- {name: Boston, latitude: 42.360, longitude: -71.059, timezone: America/New_York}
+- {name: Budapest, latitude: 47.498, longitude: 19.040, timezone: Europe/Budapest}
+- {name: Buenos Aires, latitude: -34.604, longitude: -58.382, timezone: America/Argentina/Buenos_Aires}
+- {name: Cape Town, latitude: -33.925, longitude: 18.424, timezone: Africa/Johannesburg}
+- {name: Casablanca, latitude: 33.573, longitude: -7.590, timezone: Africa/Casablanca}
+- {name: Chicago, latitude: 41.878, longitude: -87.630, timezone: America/Chicago}
+- {name: Cleveland, latitude: 41.499, longitude: -81.694, timezone: America/New_York}
+- {name: Dallas, latitude: 32.777, longitude: -96.797, timezone: America/Chicago}
+- {name: Denver, latitude: 39.739, longitude: -104.990, timezone: America/Denver}
+- {name: Detroit, latitude: 42.331, longitude: -83.046, timezone: America/Detroit}
+- {name: Dubai, latitude: 25.205, longitude: 55.271, timezone: Asia/Dubai}
+- {name: Hong Kong, latitude: 22.320, longitude: 114.169, timezone: Asia/Hong_Kong}
+- {name: Houston, latitude: 29.760, longitude: -95.370, timezone: America/Chicago}
+- {name: Istanbul, latitude: 41.008, longitude: 28.978, timezone: Europe/Istanbul}
+- {name: Johannesburg, latitude: -26.204, longitude: 28.047, timezone: Africa/Johannesburg}
+- {name: Kyiv, latitude: 50.450, longitude: 30.524, timezone: Europe/Kyiv}
+- {name: Las Vegas, latitude: 36.170, longitude: -115.140, timezone: America/Los_Angeles}
+- {name: London, latitude: 51.507, longitude: -0.128, timezone: Europe/London}
+- {name: Los Angeles, latitude: 34.052, longitude: -118.244, timezone: America/Los_Angeles}
+- {name: Madrid, latitude: 40.417, longitude: -3.704, timezone: Europe/Madrid}
+- {name: Manchester, latitude: 53.481, longitude: -2.243, timezone: Europe/London}
+- {name: Melbourne, latitude: -37.814, longitude: 144.963, timezone: Australia/Melbourne}
+- {name: Mexico City, latitude: 19.433, longitude: -99.133, timezone: America/Mexico_City}
+- {name: Miami, latitude: 25.762, longitude: -80.192, timezone: America/New_York}
+- {name: Minneapolis, latitude: 44.978, longitude: -93.265, timezone: America/Chicago}
+- {name: Montreal, latitude: 45.502, longitude: -73.567, timezone: America/Toronto}
+- {name: Moscow, latitude: 55.756, longitude: 37.617, timezone: Europe/Moscow}
+- {name: Mumbai, latitude: 19.076, longitude: 72.878, timezone: Asia/Kolkata}
+- {name: New York, latitude: 40.713, longitude: -74.006, timezone: America/New_York}
+- {name: Panama City, latitude: 8.983, longitude: -79.517, timezone: America/Panama}
+- {name: Paris, latitude: 48.857, longitude: 2.352, timezone: Europe/Paris}
+- {name: Perth, latitude: -31.950, longitude: 115.860, timezone: Australia/Perth}
+- {name: Philadelphia, latitude: 39.953, longitude: -75.165, timezone: America/New_York}
+- {name: Phoenix, latitude: 33.448, longitude: -112.074, timezone: America/Phoenix}
+- {name: Prague, latitude: 50.076, longitude: 14.438, timezone: Europe/Prague}
+- {name: Rome, latitude: 41.903, longitude: 12.496, timezone: Europe/Rome}
+- {name: San Francisco, latitude: 37.775, longitude: -122.419, timezone: America/Los_Angeles}
+- {name: São Paulo, latitude: -23.551, longitude: -46.633, timezone: America/Sao_Paulo}
+- {name: Seattle, latitude: 47.606, longitude: -122.332, timezone: America/Los_Angeles}
+- {name: Singapore, latitude: 1.352, longitude: 103.820, timezone: Asia/Singapore}
+- {name: St. Louis, latitude: 38.627, longitude: -90.199, timezone: America/Chicago}
+- {name: Stockholm, latitude: 59.329, longitude: 18.069, timezone: Europe/Stockholm}
+- {name: Sydney, latitude: -33.869, longitude: 151.209, timezone: Australia/Sydney}
+- {name: Tokyo, latitude: 35.676, longitude: 139.650, timezone: Asia/Tokyo}
+- {name: Toronto, latitude: 43.653, longitude: -79.383, timezone: America/Toronto}
+- {name: Vancouver, latitude: 49.283, longitude: -123.121, timezone: America/Vancouver}
+- {name: Vienna, latitude: 48.208, longitude: 16.373, timezone: Europe/Vienna}
+- {name: Warsaw, latitude: 52.230, longitude: 21.012, timezone: Europe/Warsaw}
+- {name: Washington, latitude: 38.907, longitude: -77.037, timezone: America/New_York}
+- {name: Winnipeg, latitude: 49.895, longitude: -97.138, timezone: America/Winnipeg}
+- {name: Zurich, latitude: 47.377, longitude: 8.541, timezone: Europe/Zurich}

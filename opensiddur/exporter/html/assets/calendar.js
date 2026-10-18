@@ -1252,6 +1252,21 @@
 
   var ORDER = derivationOrder();
 
+  // Every feature a derivation reads, its inputs and what it consults besides. A value given
+  // for any other feature changes nothing else that is derived.
+  var READ_FEATURES = {};
+  READ_FEATURES[FS_GREGORIAN] = ["year", "month", "day"];
+  READ_FEATURES[FS_TIME] = ["hour", "minute", "second"];
+  READ_FEATURES[FS_LOCATION] = ["latitude", "longitude", "timezone"];
+  READ_FEATURES[FS_ISRAEL] = ["is-israel"];
+  READ_FEATURES[FS_HEBREW_DATE] = ["year", "month", "day"];
+  READ_FEATURES[FS_PURIM_OBSERVANCE] = ["day"];
+  READ_FEATURES[FS_HOLIDAY_AGG] = ["yom-tov"];
+  READ_FEATURES[FS_READING_CYCLE] = ["triennial"];
+  READ_FEATURES[FS_TORAH] = ["triennial-year"];
+  READ_FEATURES[FS_SERVICE_TIME] = ["maariv"];
+  READ_FEATURES[FS_QUORUM] = ["minyan"];
+
   // ── The settings stack (derived_settings.recalculate_derived_settings) ───
   //
   // A list of entries {fs, feature, value, source}, the last one for a feature being the one
@@ -1469,6 +1484,7 @@
     derive: derive,
     SPECS: SPECS,
     ORDER: ORDER,
+    READ_FEATURES: READ_FEATURES,
     STATIC_DEFAULTS: STATIC_DEFAULTS,
     HOLIDAY_FEATURES: HOLIDAY_FEATURES,
     TORAH_FEATURES: TORAH_FEATURES,

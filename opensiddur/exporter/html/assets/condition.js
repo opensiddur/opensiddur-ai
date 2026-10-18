@@ -4,7 +4,8 @@
  * A port of the compiler's evaluator (opensiddur/exporter/condition_eval.py) and of the
  * client settings it is resolved against (opensiddur/exporter/client_settings.py). The two
  * must agree: the agreement tests run the same cases through both. Conditions and settings
- * arrive as JSON, in the shapes condition_eval.py documents.
+ * arrive as JSON, in the shapes condition_eval.py documents. The settings are derived by
+ * calendar.js (OSCal), which is loaded first.
  *
  * Three-valued throughout. A result is one of the strings "true", "false" and "undefined",
  * never a JavaScript boolean: undefined is not falsy here. A condition that cannot be decided
@@ -106,116 +107,122 @@
     return pyEqual(active, wanted) ? TRUE : FALSE;
   }
 
-  // ── Settings (client_settings.ClientSettings) ────────────────────────────
+  // ── Settings (client_settings.derive_settings) ──────────────────────────
+  //
+  // The layers, the earliest first, each {fs type: {feature: value}}: what the device knows
+  // by itself (its clock), the book's defaults, the reader's settings, and what the compile
+  // pinned where the condition stands. A later layer prevails. The calendar's derivations run
+  // over them all, as a compile runs them over its declarations.
 
-  function lookup(settings, fsType, feature) {
-    var features = settings && settings[fsType];
-    if (!features || !Object.prototype.hasOwnProperty.call(features, feature)) {
-      return { present: false };
-    }
-    return { present: true, value: features[feature] };
+  function layerEntries(layer, source, out) {
+    Object.keys(layer || {}).forEach(function (fsType) {
+      Object.keys(layer[fsType]).forEach(function (feature) {
+        out.push({ fs: fsType, feature: feature, value: layer[fsType][feature], source: source });
+      });
+    });
+    return out;
   }
 
-  // SettingSnapshot.get_bool: true, false, or null when there is no truth value to be had. A
-  // string is read as a word rather than by truthiness, so "false" is false and "yes" unknown.
-  var BOOLEAN_WORDS = { "true": true, "1": true, "false": false, "0": false };
-
-  function asBool(value) {
-    if (value === null) return null;
-    if (typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "num")) {
-      return value.num !== 0;
-    }
-    if (typeof value === "string") {
-      var word = value.trim().toLowerCase();
-      return Object.prototype.hasOwnProperty.call(BOOLEAN_WORDS, word) ? BOOLEAN_WORDS[word] : null;
-    }
-    return Boolean(value);
+  function baseEntries(reader, defaults, device) {
+    var entries = layerEntries(device, "init", []);
+    layerEntries(defaults, "init", entries);
+    return layerEntries(reader, "declared", entries);
   }
 
-  // Derivations whose every input is the reader's, as client_settings.CLIENT_DERIVATIONS.
-  // Each takes a getter returning an active value or null, and returns the features it
-  // derives, or null when it cannot run.
-  // calendar/compute.ALWAYS_YOM_TOV: the festivals every day of which is yom tov.
-  var ALWAYS_YOM_TOV = ["shavuot", "rosh-hashana", "yom-kippur", "shmini-atzeret"];
-
-  var DERIVATIONS = {
-    // calendar/compute.compute_quorum: ten adults are also three.
-    "opensiddur:quorum": function (get) {
-      var minyan = get("opensiddur:quorum", "minyan");
-      if (asBool(minyan) !== true) return null;
-      return { zimmun: true };
-    },
-    // calendar/compute.compute_recitation: Ma'ariv has no repetition.
-    "opensiddur:recitation": function (get) {
-      var maariv = get("opensiddur:service-time", "maariv");
-      if (asBool(maariv) !== true) return null;
-      return { silent: true, repetition: false };
-    },
-    // calendar/compute.compute_holiday_from_aggregate: a day that is not yom tov is none of
-    // the festivals that are yom tov throughout.
-    "opensiddur:holiday": function (get) {
-      var yomTov = get("opensiddur:holiday-aggregate", "yom-tov");
-      if (asBool(yomTov) !== false) return null;
-      var derived = {};
-      ALWAYS_YOM_TOV.forEach(function (festival) { derived[festival] = 0; });
-      return derived;
-    }
-  };
-
-  function Settings(pinned, reader, defaults) {
-    this.pinned = pinned || {};
-    this.reader = reader || {};
-    this.defaults = defaults || {};
+  // Whether pinned values can change what is derived: only a value a derivation reads can.
+  // The rest are laid over what the other layers derive, which comes to the same thing.
+  function readByDerivations(pinned) {
+    return Object.keys(pinned).some(function (fsType) {
+      var read = OSCal.READ_FEATURES[fsType];
+      return read && Object.keys(pinned[fsType]).some(function (f) { return read.indexOf(f) >= 0; });
+    });
   }
 
-  Settings.prototype.explicit = function (fsType, feature) {
-    var found = lookup(this.pinned, fsType, feature);
-    if (found.present) return found;
-    found = lookup(this.reader, fsType, feature);
-    if (found.present) return found;  // a null here is the reader's "show every option"
-    return lookup(this.defaults, fsType, feature);
-  };
+  // The settings in force for each pinned set, under one set of reader, default and device
+  // settings: derived once for everything that pins nothing the derivations read.
+  function Resolver(reader, defaults, device) {
+    this.base = baseEntries(reader, defaults, device);
+    this.baseSettings = null;
+    this.cache = {};
+  }
 
-  Settings.prototype.derived = function (fsType, feature) {
-    var derive = DERIVATIONS[fsType];
-    if (!derive) return { present: false };
-    var self = this;
-    var computed = derive(function (fs, name) {
-      var found = self.explicit(fs, name);
-      return found.present && found.value !== null ? found.value : null;
-    }) || {};
-    if (Object.prototype.hasOwnProperty.call(computed, feature)) {
-      return { present: true, value: computed[feature] };
+  Resolver.prototype.settings = function (pinned) {
+    if (this.baseSettings === null) this.baseSettings = OSCal.derive(this.base);
+    if (!pinned || !Object.keys(pinned).length) return this.baseSettings;
+    var key = JSON.stringify(pinned);
+    if (Object.prototype.hasOwnProperty.call(this.cache, key)) return this.cache[key];
+    var settings;
+    if (readByDerivations(pinned)) {
+      settings = OSCal.derive(layerEntries(pinned, "declared", this.base.slice()));
+    } else {
+      settings = {};
+      var base = this.baseSettings;
+      Object.keys(base).forEach(function (fsType) { settings[fsType] = base[fsType]; });
+      Object.keys(pinned).forEach(function (fsType) {
+        var merged = {};
+        Object.keys(base[fsType] || {}).forEach(function (f) { merged[f] = base[fsType][f]; });
+        Object.keys(pinned[fsType]).forEach(function (f) { merged[f] = pinned[fsType][f]; });
+        settings[fsType] = merged;
+      });
     }
-    return { present: false };
+    this.cache[key] = settings;
+    return settings;
   };
 
   // The active value of a feature, or null when it is undefined or unset.
-  Settings.prototype.get = function (fsType, feature) {
-    var found = this.explicit(fsType, feature);
-    if (!found.present) found = this.derived(fsType, feature);
-    return found.present ? found.value : null;
-  };
+  function active(settings, fsType, feature) {
+    var features = settings[fsType];
+    if (!features || !Object.prototype.hasOwnProperty.call(features, feature)) return null;
+    return features[feature];
+  }
 
   // ── Evaluation (condition_eval.evaluate_condition) ───────────────────────
 
-  function evaluate(condition, settings) {
-    if ("fs" in condition) {
-      return combineAll(condition.f.map(function (f) {
-        return match(settings.get(condition.fs, f.name), f.v);
-      }));
-    }
-    return combine(condition.op, condition.args.map(function (child) {
-      return evaluate(child, settings);
-    }));
-  }
-
-  // client_settings.resolve: a value pinned for bein hashmashot holds one value for each of
-  // the two days, and the condition is decided only if it comes out the same on both.
   function isTwilight(value) {
     return isObject(value) && "twilight" in value;
   }
 
+  function conditionFeatures(condition, out) {
+    if ("fs" in condition) {
+      condition.f.forEach(function (f) { out.push([condition.fs, f.name]); });
+    } else {
+      condition.args.forEach(function (child) { conditionFeatures(child, out); });
+    }
+    return out;
+  }
+
+  function evaluateOn(condition, get) {
+    if ("fs" in condition) {
+      return combineAll(condition.f.map(function (f) {
+        return match(get(condition.fs, f.name), f.v);
+      }));
+    }
+    return combine(condition.op, condition.args.map(function (child) {
+      return evaluateOn(child, get);
+    }));
+  }
+
+  // Between sunset and nightfall a setting may hold its value on each of two days. The
+  // condition is then decided only if it comes out the same on both.
+  function evaluate(condition, settings) {
+    var get = function (fsType, feature) { return active(settings, fsType, feature); };
+    var twilight = conditionFeatures(condition, []).some(function (ref) {
+      return isTwilight(get(ref[0], ref[1]));
+    });
+    if (!twilight) return evaluateOn(condition, get);
+    var onDay = function (day) {
+      return function (fsType, feature) {
+        var value = get(fsType, feature);
+        return isTwilight(value) ? value.twilight[day] : value;
+      };
+    };
+    var ending = evaluateOn(condition, onDay(0));
+    var starting = evaluateOn(condition, onDay(1));
+    return ending === starting ? ending : UNDEFINED;
+  }
+
+  // client_settings.resolve: a value pinned for bein hashmashot holds one value for each of
+  // the two days, and the condition is decided only if it comes out the same on both.
   function pinnedOnDay(pinned, day) {
     var out = {};
     Object.keys(pinned || {}).forEach(function (fsType) {
@@ -236,13 +243,17 @@
     });
   }
 
-  function resolve(condition, pinned, reader, defaults) {
+  function resolveWith(resolver, condition, pinned) {
     if (hasTwilight(pinned)) {
-      var ending = evaluate(condition, new Settings(pinnedOnDay(pinned, 0), reader, defaults));
-      var starting = evaluate(condition, new Settings(pinnedOnDay(pinned, 1), reader, defaults));
+      var ending = evaluate(condition, resolver.settings(pinnedOnDay(pinned, 0)));
+      var starting = evaluate(condition, resolver.settings(pinnedOnDay(pinned, 1)));
       return ending === starting ? ending : UNDEFINED;
     }
-    return evaluate(condition, new Settings(pinned, reader, defaults));
+    return evaluate(condition, resolver.settings(pinned));
+  }
+
+  function resolve(condition, pinned, reader, defaults, device) {
+    return resolveWith(new Resolver(reader, defaults, device), condition, pinned);
   }
 
   // ── The book's conditions as CSS ─────────────────────────────────────────
@@ -252,9 +263,10 @@
   // (m<n>); one that holds drops the rubric that said when to read it, its rules and its
   // brackets, keeping any commentary anchored there; an undecided one shows everything. html.py writes the same rules, for a page read without scripts.
 
-  function scopeCss(book, reader, defaults) {
+  function scopeCss(book, reader, defaults, device) {
+    var resolver = new Resolver(reader, defaults, device);
     var states = book.expressions.map(function (e) {
-      return resolve(e.cond, e.pinned, reader, defaults);
+      return resolveWith(resolver, e.cond, e.pinned);
     });
     var hidden = [];
     var settled = [];
@@ -301,9 +313,7 @@
     match: match,
     evaluate: evaluate,
     resolve: resolve,
-    Settings: Settings,
-    DERIVATIONS: DERIVATIONS,
-    ALWAYS_YOM_TOV: ALWAYS_YOM_TOV,
+    Resolver: Resolver,
     scopeCss: scopeCss,
     sectionsShown: sectionsShown
   };
