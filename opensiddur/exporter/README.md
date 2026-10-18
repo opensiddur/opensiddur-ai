@@ -55,11 +55,81 @@ or `python -m opensiddur.exporter.books --format html` for the books in the sett
   condition: what the document declared there, and what was derived from it.
 - The settings file's declarations become the book's defaults. Read without scripts, the
   page shows exactly what the PDF of the same settings file shows.
-- Calendar settings are not yet answered on the device. Until they are, the reader sets them
-  by hand. Passages that depend on one left unset show every option with its rubric, as in
-  print.
+- Calendar settings are answered on the device: see below.
 
-The settings panel has two parts:
+**The day.** The device works out the day as a compile does, from a date, a time and a place,
+with the calendar's port (`html/assets/calendar.js`). The settings panel's *Day and place*
+says how it knows the day:
+- **Now,** the default unless the book says otherwise: the device's clock, read as the wall
+  clock at the place. While the book
+  is open it checks the clock every 20 seconds and when it comes back into view. When what the
+  day decides changes, at dawn or at nightfall say, the text changes, and the passage on screen
+  stays where it is (the first one below the toolbar, kept in place by `reader.js`).
+- **A day and time the reader chooses.**
+- **No particular day:** nothing is worked out, and the reader sets the kind of day by hand
+  (the controls marked `when: no-date` in `basic_settings.yaml`).
+
+**How a book starts** is its settings file's, in a section of its own for the electronic book,
+`electronic` (`settings.ElectronicSettings`, documented in `doc/exporter-settings.example.yaml`):
+`day: now | none`, and `columns: both | primary | parallel`. A haggadah, read ahead of the seder
+as well as at it, starts with no particular day. The reader's own choices, once made, are
+remembered and win; Clear all goes back to the book's.
+
+The place is the reader's: a city from `html/places.yaml`, the device's location, or
+coordinates with a time zone. The device reads the clock in that zone, and decides Israel by
+it. The compiler decides Israel by looking the zone up from the coordinates, so the two agree
+when the zone is the one the coordinates are in: a test holds every city to it, and the
+device's location comes with the device's own zone. Until there is a place, nothing that needs
+one is worked out: passages that turn on the day show every option, as in print. (The parsha is
+worked out anyway: it needs only the date.) Choosing a place clears what was set by hand for
+want of one: "Where" (`when: no-place`), and Israel in Advanced.
+
+The book shows only what is appropriate for the day it works out:
+- A section that declares what kind of day it is for -- a `j:declare` of
+  `opensiddur:holiday-aggregate` features, as the weekday services declare that they are not
+  Shabbat or yom tov -- is gated on that declaration (`day_gates.py`). On a day of another kind
+  it is left out, so a reader never reaches a section whose settings contradict the date. With
+  no date it is kept, as in print. The gate is judged against the day, not against what an
+  enclosing text or the volume declares, which the section's declaration overrides.
+- A reader who sets the day by hand to other than the date gives -- yom tov in Advanced on a
+  weekday, say -- has said it is another day: the date is set aside, with everything it implies
+  (the clock, a chosen day, the place), and the book follows the reader's settings alone. The
+  status line says so. Clearing the setting brings the date back.
+
+Everything worked out can be overridden in Advanced, as a declaration overrides a derivation in
+a compile. The reader's settings, the place and a chosen day are kept in `localStorage`, under
+the book's id. The clock's time is not.
+
+The device resolves each condition against four layers, the earliest first: the device's
+clock, the book's defaults, the reader's settings, and what the compile pinned
+(`client_settings.LAYERS`). The calendar's derivations run over all four. The reference is
+`client_settings.resolve`, which runs the compiler's own derivations over the same layers.
+- A pinned value that no derivation reads is laid over what the other layers derive
+  (`OSCal.READ_FEATURES`). Derived once, that serves most of a book.
+- The compile pins, for each undecided condition, the features it reads, and where it reads
+  anything derived, every feature a derivation reads (`derivation_graph.READ_FEATURES`, the
+  same list as `OSCal.READ_FEATURES`). So a document's own date, service or minyan holds where
+  it stands, whatever the clock says, and a place keeps its zone.
+
+The settings panel has four parts:
+- **Columns,** in a book with parallel text: both, or one language alone ("Hebrew only",
+  "Translation only"). It is a display preference, not a setting the text turns on: it sets
+  `data-columns` on the page, and `reader.css` hides the other column. A row whose shown column
+  has no words (`col-empty`, marked by `html.xslt`) keeps the other, so no passage is lost.
+  `html.py` `columns` names the columns by their languages.
+
+**Rows off screen.** A row of parallel text is laid out only as it is reached
+(`content-visibility: auto`), and until then is taken to have an estimated height. A row with no
+text left to show would be taken to have that height too, and scrolling through a run of them
+shows blank space that shrinks as it is reached. So:
+- a row with no words at all (both columns `col-empty`) is always laid out;
+- a row all of whose text the settings can hide is numbered (`markers.py` `_rows`,
+  `BookConditions.rows`), and hidden whole once none of it shows, by the same rules on the
+  device (`condition.js` `scopeCss`) and without scripts (`html.py` `scope_css`);
+- the browser's own scroll anchoring is off: it anchored on rows still taking their heights,
+  and pulled the page back as the reader scrolled. `reader.js` keeps the reader's place across
+  what it changes, holding the rows around it laid out until the change settles.
+- **Day and place,** in a book with passages that turn on the day (above).
 - **The top:** the settings that decide the most of the book's text. The build decides which,
   for each book, and writes them into it.
 - **An Advanced box,** holding every feature the book's conditions read, one by one.

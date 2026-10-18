@@ -2,7 +2,8 @@
 
 The book is a document and a program at once. Its text is html.xslt's rendering of the compiled
 file; its program resolves the passages the compile left undecided, on the reader's device,
-against the reader's own settings (assets/condition.js, assets/reader.js). Styles, scripts and
+against the reader's own settings and the device's clock (assets/calendar.js,
+assets/condition.js, assets/reader.js). Styles, scripts and
 data are all inline, so the one file is the whole book: it opens from a disk, a USB stick or
 an email, offline, and needs nothing else.
 
@@ -25,6 +26,7 @@ import json
 import logging
 import re
 import sys
+from collections import Counter
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -51,6 +53,7 @@ from opensiddur.exporter.metadata import (
     role_order,
 )
 from opensiddur.exporter.page_references import resolve_page_references
+from opensiddur.exporter.settings import ElectronicSettings
 from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 
 logger = logging.getLogger(__name__)
@@ -62,6 +65,8 @@ XSLT_FILE = HERE / "html.xslt"
 P_DESTINATION = f"{{{PROCESSING_NAMESPACE}}}destination"
 P_PROJECT = f"{{{PROCESSING_NAMESPACE}}}project"
 P_FILE_NAME = f"{{{PROCESSING_NAMESPACE}}}file_name"
+P_PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
+XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
 
 # ── Settings ────────────────────────────────────────────────────────────────
@@ -120,6 +125,11 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
             # A passage that is simply said: the rubric that said when goes with its rules and
             # brackets. Commentary the compiler anchored on the rubric stays.
             settled += [f".m{cid}.cm-close", f".m{cid} > .rubric", f".m{cid} .cm-br"]
+    # A row none of whose text shows goes whole (BookConditions.rows).
+    for number, sets in enumerate(book.rows):
+        if not any(all(states[book.scopes[cid]] != TriState.FALSE for cid in scopes)
+                   for scopes in sets):
+            hidden.append(f".r{number}")
     for number, destinations in enumerate(book.optional_references):
         if not all(any(all(states[book.scopes[cid]] != TriState.FALSE for cid in scopes)
                        for scopes in occurrences) for occurrences in destinations):
@@ -132,8 +142,35 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
     return css
 
 
+#: Names for the columns' languages, by the first part of their tag.
+LANGUAGE_NAMES = {"he": "Hebrew", "en": "English", "arc": "Aramaic", "yi": "Yiddish"}
+
+
+def columns(root: etree.ElementBase) -> dict[str, dict[str, str]] | None:
+    """The two columns of the book's parallel text, each with its language and its label.
+
+    Each role's language is the one most of its items have. The Hebrew column is "Hebrew" and
+    the other "Translation"; a book with neither column Hebrew names its primary column by its
+    language. None for a book with no parallel text.
+    """
+    found: dict[str, Counter] = {"primary": Counter(), "parallel": Counter()}
+    for item in root.iter(P_PARALLEL_ITEM):
+        role = item.get("role")
+        if role in found:
+            found[role][(item.get(XML_LANG) or "").split("-")[0]] += 1
+    if not all(found.values()):
+        return None
+    langs = {role: counts.most_common(1)[0][0] for role, counts in found.items()}
+    hebrew = next((role for role in ("primary", "parallel") if langs[role] == "he"), None)
+    named = hebrew or "primary"
+    return {role: {"lang": langs[role],
+                   "label": (LANGUAGE_NAMES.get(langs[role], langs[role]) if role == named
+                             else "Translation")}
+            for role in ("primary", "parallel")}
+
+
 def calendar_scopes(book: BookConditions) -> int:
-    """How many scopes turn on the calendar, which the device does not answer yet."""
+    """How many scopes turn on the calendar: the device answers them once it has a place."""
     turning: list[bool] = []
     for expression in book.expressions:
         features = condition_features(condition_from_json(expression["cond"]))
@@ -185,7 +222,24 @@ def about_html(title: str, compiled_file: Path, project_directory: Path) -> str:
         parts += [f'<li><a href="{escape(lic.url)}">{escape(lic.name or lic.url)}</a></li>'
                   for lic in licenses]
         parts.append("</ul>")
+    parts.append(SOFTWARE_NOTICE)
     return "\n".join(parts)
+
+
+#: The book's scripts are a program, apart from the texts it shows, and under its own licence.
+SOFTWARE_NOTICE = (
+    "<h2>Software</h2>"
+    "<p>The scripts in this book, which choose what it shows, are free software from "
+    '<a href="https://github.com/opensiddur/opensiddur-ai">opensiddur-ai</a>: you can '
+    "redistribute them and change them under the terms of the "
+    '<a href="https://www.gnu.org/licenses/lgpl-3.0.html">GNU Lesser General Public License</a>, '
+    "version 3 or any later version. They come with no warranty. Their source is in the book "
+    "itself, and in that repository.</p>"
+    "<p>The Hebrew calendar and the weekly readings follow "
+    '<a href="https://github.com/simlist/pyluach">pyluach</a>, copyright © 2014 Meir S. List, '
+    "under the MIT licence, which is given in full in the calendar's script. The times of day "
+    "use NOAA's solar equations.</p>"
+)
 
 
 # ── The book ────────────────────────────────────────────────────────────────
@@ -200,6 +254,7 @@ def _inline(text: str, closing: str) -> str:
 # ── The settings panel ──────────────────────────────────────────────────────
 
 BASIC_SETTINGS_FILE = HERE / "basic_settings.yaml"
+PLACES_FILE = HERE / "places.yaml"
 #: At most this many settings at the top of the panel...
 BASIC_LIMIT = 6
 #: ...each deciding at least this share of the text that any setting decides.
@@ -305,6 +360,7 @@ def settings_catalogue(
         candidates.append((chars(cids), top, {
             "type": "control", "id": control["id"], "label": control["label"],
             **({"note": control["note"]} if control.get("note") else {}),
+            **({"when": control["when"]} if control.get("when") else {}),
             "options": options}))
     for key, feature in features.items():
         if key not in covered:
@@ -333,13 +389,22 @@ def feature_words(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[tuple[str, str]
             for fs, features in words.items() for name, spec in features.items()}
 
 
+def read_places(places_file: Path = PLACES_FILE) -> list[dict[str, Any]]:
+    """The places the settings panel offers, each with its coordinates and time zone."""
+    with open(places_file, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
 def book_json(
     book: BookConditions,
     book_identifier: str,
     defaults: dict,
     basic_settings: Path = BASIC_SETTINGS_FILE,
     purim_day: int | None = None,
+    book_columns: dict[str, dict[str, str]] | None = None,
+    start: dict[str, str] | None = None,
 ) -> str:
+    calendar = calendar_scopes(book)
     words = feature_words(basic_settings)
     controls = basic_controls(basic_settings, purim_day)
     data = {
@@ -359,7 +424,14 @@ def book_json(
         "basic": settings_catalogue(book, controls, always_basic(basic_settings)),
         "sections": book.sections,
         "optionalReferences": book.optional_references,
-        "calendarScopes": calendar_scopes(book),
+        "rows": book.rows,
+        "calendarScopes": calendar,
+        # Only a book with passages that turn on the day needs places to work it out at.
+        "places": read_places() if calendar else [],
+        # The parallel text's columns, which the reader can show one at a time.
+        "columns": book_columns,
+        # How the book starts, before its reader chooses: the settings file's `electronic`.
+        "start": start or ElectronicSettings().model_dump(),
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change
     # how the parser reads what follows. "\u003c" is the same character to JSON.
@@ -388,6 +460,7 @@ def build_book(
 
     # The reader's settings can hide the first occurrence of a destination: label them all.
     resolve_page_references(root, every_occurrence=True)
+    book_columns = columns(root)
     book = prepare(root)
     main = xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),
@@ -405,7 +478,11 @@ def build_book(
         "@@MAIN@@": main,
         "@@ABOUT@@": about_html(title, compiled_file, project_directory),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
-                                celebrated_purim(settings)),
+                                celebrated_purim(settings), book_columns,
+                                ElectronicSettings.model_validate(
+                                    settings.get("electronic") or {}).model_dump()),
+        "@@CALENDAR_JS@@": _inline(
+            (ASSETS / "calendar.js").read_text(encoding="utf-8"), "</script"),
         "@@CONDITION_JS@@": _inline(
             (ASSETS / "condition.js").read_text(encoding="utf-8"), "</script"),
         "@@READER_JS@@": _inline(

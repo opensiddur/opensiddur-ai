@@ -4,10 +4,13 @@
  * The page arrives showing what the printed book shows for the same settings: the rules in
  * <style id="os-cond-default">, computed when the book was built. This script takes over from
  * them. It resolves every undecided passage against the reader's own settings, kept in this
- * browser, writes the result into <style id="os-cond-live">, and redoes it whenever a setting
- * changes. Without it -- no scripting, as in most EPUB readers -- the page is the printed book.
+ * browser, and against the day: the device's clock, at the place the reader gives. It writes
+ * the result into <style id="os-cond-live">, and redoes it whenever a setting changes, and as
+ * the day goes on -- at nightfall the book moves to the next day. Without it -- no scripting, as
+ * in most EPUB readers -- the page is the printed book.
  *
- * Nothing leaves the device: no network access, no tracking.
+ * Nothing leaves the device: no network access, no tracking. The device's location is asked for
+ * only when the reader asks the settings panel to use it.
  */
 (function () {
   "use strict";
@@ -38,9 +41,329 @@
 
   var reader = loadSettings();
 
+  // ── The day ────────────────────────────────────────────────────────────
+  //
+  // How the book knows what day it is (calendar.mode):
+  //   "now"    -- from the device's clock, kept up to date while the book is open;
+  //   "chosen" -- a date and time the reader chose;
+  //   "none"   -- no particular day: the reader sets the kind of day by hand, if at all.
+  // The place is the reader's: coordinates and a time zone, in reader["opensiddur:location"],
+  // with its name and where it came from in calendar.place. A chosen date and time are the
+  // reader's too, in reader["opensiddur:gregorian-date"] and reader["opensiddur:time"]. The
+  // clock's time is never saved: it is read afresh.
+
+  var FS_GREGORIAN = "opensiddur:gregorian-date";
+  var FS_TIME = "opensiddur:time";
+  var FS_LOCATION = "opensiddur:location";
+  var calendarKey = "opensiddur:" + book.id + ":calendar";
+  var hasCalendar = Boolean(book.calendarScopes);
+
+  // The features the controls marked `when` (basic_settings.yaml) set: "no-date" for no
+  // particular day, "no-place" for no place.
+  function controlFeatures(when) {
+    var keys = [];
+    (book.basic || []).forEach(function (entry) {
+      if (entry.type !== "control" || entry.when !== when) return;
+      entry.options.forEach(function (option) {
+        Object.keys(option.set).forEach(function (fs) {
+          Object.keys(option.set[fs]).forEach(function (name) { keys.push([fs, name]); });
+        });
+      });
+    });
+    return keys;
+  }
+
+  function noDateFeatures() {
+    return controlFeatures("no-date");
+  }
+
+  function loadCalendar() {
+    var stored = null;
+    try {
+      stored = JSON.parse(window.localStorage.getItem(calendarKey));
+    } catch (e) {
+      stored = null;
+    }
+    if (stored && typeof stored === "object" &&
+        ["now", "chosen", "none"].indexOf(stored.mode) >= 0) {
+      var where = stored.place || null;
+      // Where the device was, until it says where it is now (refreshLocation).
+      if (where && where.source === "geolocation") where.name = "Your last known location";
+      return { mode: stored.mode, place: where };
+    }
+    // A reader who set the kind of day by hand before the book could tell the day keeps it;
+    // otherwise the book starts as its settings file says (book.start).
+    var manual = noDateFeatures().some(function (k) { return has(k[0], k[1]); });
+    return { mode: manual ? "none" : startingMode(), place: null };
+  }
+
+  function startingMode() {
+    return book.start && book.start.day === "none" ? "none" : "now";
+  }
+
+  function saveCalendar() {
+    try {
+      window.localStorage.setItem(calendarKey, JSON.stringify(calendar));
+    } catch (e) {
+      /* not remembered */
+    }
+  }
+
+  // The time now: window.opensiddurClock, if a page embedding the book (or a test) gives one.
+  function now() {
+    return typeof window.opensiddurClock === "function" ? window.opensiddurClock() : new Date();
+  }
+
+  function place() {
+    var location = reader[FS_LOCATION];
+    return location && typeof location.latitude === "number" &&
+      typeof location.longitude === "number" && location.timezone ? location : null;
+  }
+
+  // The wall clock in a zone (the device's own, for none): {year, month, day, hour, minute}.
+  function wallClock(date, zone) {
+    var options = { hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+                    hour: "numeric", minute: "numeric" };
+    var parts = {};
+    var format;
+    try {
+      format = new Intl.DateTimeFormat("en-US", zone ? Object.assign({ timeZone: zone }, options)
+                                                      : options);
+    } catch (e) {
+      format = new Intl.DateTimeFormat("en-US", options);
+    }
+    format.formatToParts(date).forEach(function (part) { parts[part.type] = Number(part.value); });
+    return { year: parts.year, month: parts.month, day: parts.day, hour: parts.hour % 24,
+             minute: parts.minute };
+  }
+
+  // What the device knows by itself: the date and the time, at the place, in "now" mode.
+  function deviceLayer() {
+    if (!hasCalendar || calendar.mode !== "now") return {};
+    var where = place();
+    var clock = wallClock(now(), where ? where.timezone : null);
+    var layer = {};
+    layer[FS_GREGORIAN] = { year: clock.year, month: clock.month, day: clock.day };
+    layer[FS_TIME] = { hour: clock.hour, minute: clock.minute };
+    return layer;
+  }
+
+  // The reader's settings as they apply in the mode: no chosen day but in "chosen", and no
+  // place for no particular day.
+  function readerLayer() {
+    var omit = calendar.mode === "chosen" ? [] :
+      calendar.mode === "now" ? [FS_GREGORIAN, FS_TIME] : [FS_GREGORIAN, FS_TIME, FS_LOCATION];
+    if (!hasCalendar || !omit.some(function (fs) { return reader[fs]; })) return reader;
+    var layer = {};
+    Object.keys(reader).forEach(function (fs) {
+      if (omit.indexOf(fs) < 0) layer[fs] = reader[fs];
+    });
+    return layer;
+  }
+
+  // Whether the book works out the day: it has one, and a place to work it out at.
+  function following() {
+    return hasCalendar && calendar.mode !== "none" && place() !== null;
+  }
+
+  var calendar = loadCalendar();
+
+  // ── What is shown ──────────────────────────────────────────────────────
+  //
+  // A display preference, not a setting the text turns on: which columns of the parallel text
+  // are shown -- both, or one (book.columns names them). Kept beside the settings.
+
+  var displayKey = "opensiddur:" + book.id + ":display";
+
+  // The book's own starting columns (book.start), until the reader chooses.
+  function startingDisplay() {
+    var columns = book.start && book.start.columns;
+    return columns === "primary" || columns === "parallel" ? { columns: columns } : {};
+  }
+
+  function loadDisplay() {
+    try {
+      var stored = JSON.parse(window.localStorage.getItem(displayKey));
+      return stored && typeof stored === "object" ? stored : startingDisplay();
+    } catch (e) {
+      return startingDisplay();
+    }
+  }
+
+  function saveDisplay() {
+    try {
+      window.localStorage.setItem(displayKey, JSON.stringify(display));
+    } catch (e) {
+      /* not remembered */
+    }
+  }
+
+  var display = loadDisplay();
+
+  // The column shown alone, "primary" or "parallel", or null for both.
+  function shownColumns() {
+    return book.columns && (display.columns === "primary" || display.columns === "parallel")
+      ? display.columns : null;
+  }
+  var lastDevice = null;
+  var statusListeners = [];
+
+  // The structures that say what day it is. A reader who sets one of them by hand to other
+  // than what the date gives has said the day is another one: the date is set aside, and
+  // with it everything it implies -- the clock, a chosen day, the place.
+  var DAY_FS_TYPES = ["opensiddur:holiday-aggregate", "opensiddur:holiday",
+                      "opensiddur:day-of-week", "opensiddur:hebrew-date"];
+
+  function sameDayValue(a, b) {
+    var plainNumber = function (v) {
+      if (v !== null && typeof v === "object" && "num" in v) return v.num;
+      return typeof v === "boolean" ? Number(v) : v;
+    };
+    return plainNumber(a) === plainNumber(b);
+  }
+
+  function omitting(layer, fsTypes) {
+    var out = {};
+    Object.keys(layer).forEach(function (fs) { if (fsTypes.indexOf(fs) < 0) out[fs] = layer[fs]; });
+    return out;
+  }
+
+  function contradictsTheDate(layer, device) {
+    var own = DAY_FS_TYPES.filter(function (fs) { return layer[fs]; });
+    if (!own.length) return false;
+    var dated = new OSCond.Resolver(omitting(layer, DAY_FS_TYPES), book.defaults, device)
+      .settings({});
+    return own.some(function (fs) {
+      return Object.keys(layer[fs]).some(function (name) {
+        var mine = layer[fs][name], theirs = plain((dated[fs] || {})[name]);
+        return mine !== null && theirs !== null && theirs !== undefined && !sameDayValue(mine, theirs);
+      });
+    });
+  }
+
+  var dateSetAside = false;
+
+  function resolveAll() {
+    var device = deviceLayer();
+    lastDevice = JSON.stringify(device);
+    var layer = readerLayer();
+    dateSetAside = following() && contradictsTheDate(layer, device);
+    if (dateSetAside) {
+      device = {};
+      layer = omitting(layer, [FS_GREGORIAN, FS_TIME, FS_LOCATION]);
+    }
+    var result = OSCond.scopeCss(book, layer, book.defaults, device);
+    result.settings = result.resolver.settings({});
+    return result;
+  }
+
+  // A live region is announced when it changes: write it only when what it says does.
+  function say(element, text) {
+    if (element.textContent !== text) element.textContent = text;
+  }
+
+  // The first passage on screen, below the toolbar, and where it is.
+  // In the book's text, not in the settings dialog over it. Several passages down the
+  // screen, the first first: a change can hide the one at the top.
+  function anchor() {
+    if (!document.elementsFromPoint) return null;
+    var x = window.innerWidth / 2;
+    var top = (toolbar ? toolbar.offsetHeight : 0) + 8;
+    var candidates = [];
+    for (var y = top; y < window.innerHeight; y += 60) {
+      var element = document.elementsFromPoint(x, y).find(function (hit) {
+        return hit.closest && hit.closest(".os-book");
+      });
+      // The row it is in: the innermost, since a row can hold others, and a row's top does not
+      // move when what is inside it changes. The rows around are held laid out while the change
+      // settles (holdNearRows), so it is measured where it is.
+      element = (element && element.closest(".par")) || element;
+      if (element && !candidates.some(function (c) { return c.element === element; })) {
+        candidates.push({ element: element, top: element.getBoundingClientRect().top });
+      }
+    }
+    return candidates.length ? candidates : null;
+  }
+
+  // Keep the passage the reader is at where it is when what shows above it changes. Rows off
+  // screen take their real heights only once laid out (content-visibility: auto), which moves
+  // the passage again after a first correction: correct it each time it settles somewhere
+  // else, until it settles in place, or until the reader scrolls.
+  var keeping = 0;
+  // The rows around the reader's place -- three screens up and down, and the rows inside them
+  // -- laid out until the change has settled: the place's position depends on their heights,
+  // and a row reached for the first time takes its own only then.
+  var allRows = null;
+  function holdNearRows() {
+    allRows = allRows || Array.prototype.slice.call(document.querySelectorAll(".par"));
+    var low = -3 * window.innerHeight, high = 4 * window.innerHeight;
+    var near = allRows.filter(function (row) {
+      var box = row.getBoundingClientRect();
+      return box.height && box.bottom > low && box.top < high;
+    });
+    near.forEach(function (row) { row.classList.add("os-near"); });
+    return near;
+  }
+
+  function releaseRows(rows) {
+    (rows || []).forEach(function (row) { row.classList.remove("os-near"); });
+  }
+
+  function keepInPlace(candidates, near) {
+    var kept = (candidates || []).find(function (c) { return c.element.getClientRects().length; });
+    if (!kept) return releaseRows(near);
+    var element = kept.element;
+    var run = ++keeping, frames = 0, still = 0, last = null;
+    (function correct() {
+      if (run !== keeping) return releaseRows(near);
+      // Wait for the layout to stop moving before correcting: correcting while rows are
+      // still taking their heights chases them, back and forth.
+      var top = element.getBoundingClientRect().top;
+      still = last !== null && Math.abs(top - last) <= 1 ? still + 1 : 0;
+      last = top;
+      if (still >= 2) {
+        var moved = top - kept.top;
+        if (Math.abs(moved) <= 1) return releaseRows(near);
+        window.scrollBy(0, moved);
+        last = null;
+        still = 0;
+      }
+      if (++frames < 120) requestAnimationFrame(correct);
+      else releaseRows(near);
+    })();
+  }
+
+  var applied = false;
+  var lastSettings = {};
+  // While the settings dialog is open over the book, the passage that was on screen when it
+  // opened: the book under a modal dialog cannot be found by where it is on screen.
+  var heldAnchor = null;
+
   function apply() {
-    liveStyle.textContent = OSCond.scopeCss(book, reader, book.defaults).css;
+    var result = resolveAll();
+    var page = document.documentElement;
+    var columns = shownColumns();
+    var columnsChange = (page.getAttribute("data-columns") || null) !== columns;
+    if (liveStyle.textContent !== result.css || columnsChange) {
+      var before = !applied ? null : heldAnchor || anchor();
+      var near = applied ? holdNearRows() : [];
+      if (liveStyle.textContent !== result.css) liveStyle.textContent = result.css;
+      if (columns) page.setAttribute("data-columns", columns);
+      else page.removeAttribute("data-columns");
+      keepInPlace(before, near);
+    }
     defaultStyle.disabled = true;
+    applied = true;
+    lastSettings = result.settings;
+    statusListeners.forEach(function (listener) { listener(result.settings); });
+    return result;
+  }
+
+  // In "now" mode, follow the clock: the text changes at the moments the day does -- dawn,
+  // nightfall -- whether the book is in view or comes back into it.
+  function tick() {
+    if (calendar.mode !== "now" || !hasCalendar) return;
+    if (JSON.stringify(deviceLayer()) !== lastDevice) apply();
   }
 
   // ── Words for the settings panel ───────────────────────────────────────
@@ -123,6 +446,16 @@
 
   // ── Controls ───────────────────────────────────────────────────────────
 
+  var UNSET = "Not set — show every option";
+  var FOLLOWS = "Not set — follows the day";
+
+  // Whether a control marked `when` (basic_settings.yaml) is for the way the day is known now.
+  function shownInMode(when) {
+    if (when === "no-date") return !hasCalendar || calendar.mode === "none";
+    if (when === "no-place") return !following();
+    return true;
+  }
+
   var controlCount = 0;
 
   function row(label, control, note) {
@@ -155,6 +488,7 @@
       return set && set[k[1]] !== undefined && set[k[1]] !== null;
     });
     var select = el("select");
+    var unset = null;
     if (defaults.length) {
       // The book's own choice, by the option it amounts to if there is one.
       var bookChoice = entry.options.find(function (option) {
@@ -169,8 +503,13 @@
         (bookChoice ? " — " + bookChoice.label : "") }));
       select.appendChild(el("option", { value: "null", text: "Show every option" }));
     } else {
-      select.appendChild(el("option", { value: "", text: "Not set — show every option" }));
+      unset = el("option", { value: "", text: UNSET });
+      select.appendChild(unset);
     }
+    var onCalendar = keys.every(function (k) {
+      var feature = features[k[0] + "\u0000" + k[1]];
+      return !feature || feature.calendar;
+    });
     entry.options.forEach(function (option, index) {
       select.appendChild(el("option", { value: String(index), text: option.label }));
     });
@@ -195,6 +534,8 @@
       var every = defaults.length && everyOption();
       custom.hidden = found >= 0 || every || !any;
       select.value = found >= 0 ? String(found) : every ? "null" : (any ? "custom" : "");
+      if (unset) unset.textContent = onCalendar && following() ? FOLLOWS : UNSET;
+      control.hidden = !shownInMode(entry.when);
     }
 
     select.addEventListener("change", function () {
@@ -212,9 +553,10 @@
       }
       changed();
     });
+    var control = row(entry.label, select, entry.note);
     refreshers.push(refresh);
     refresh();
-    return row(entry.label, select, entry.note);
+    return control;
   }
 
   // One feature: a select of its values, or for a number without names, a number field.
@@ -263,11 +605,13 @@
     }
 
     var select = el("select");
+    var unset = null;
     if (hasDefault) {
       select.appendChild(el("option", { value: "", text: "The book's default — " + valueLabel(feature, fallback) }));
       select.appendChild(el("option", { value: "null", text: "Show every option" }));
     } else {
-      select.appendChild(el("option", { value: "", text: "Not set — show every option" }));
+      unset = el("option", { value: "", text: UNSET });
+      select.appendChild(unset);
     }
     values.forEach(function (value) {
       select.appendChild(el("option", { value: JSON.stringify(value), text: valueLabel(feature, value) }));
@@ -280,9 +624,326 @@
       select.value = has(feature.fs, feature.name)
         ? JSON.stringify(reader[feature.fs][feature.name]) : "";
       if (select.selectedIndex < 0) select.value = "";
+      if (unset) unset.textContent = feature.calendar && following() ? FOLLOWS : UNSET;
     });
     refreshers[refreshers.length - 1]();
     return row(label, select, note);
+  }
+
+  // ── The day and the place ──────────────────────────────────────────────
+
+  function pad(number) {
+    return (number < 10 ? "0" : "") + number;
+  }
+
+  function setDay(clock) {
+    reader[FS_GREGORIAN] = { year: clock.year, month: clock.month, day: clock.day };
+    reader[FS_TIME] = { hour: clock.hour, minute: clock.minute };
+  }
+
+  function setPlace(location, name, source) {
+    reader[FS_LOCATION] = { latitude: location.latitude, longitude: location.longitude,
+                            timezone: location.timezone };
+    calendar.place = { name: name, source: source };
+    // What was set by hand for want of a place -- "Where", or Israel in Advanced -- would
+    // override what the place says. The reader can set it again over the place.
+    controlFeatures("no-place").concat([["opensiddur:israel", "is-israel"]])
+      .forEach(function (k) { setValue(k[0], k[1], undefined); });
+  }
+
+  function clearPlace() {
+    delete reader[FS_LOCATION];
+    calendar.place = null;
+  }
+
+  function deviceZone() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function zoneNames() {
+    try {
+      return typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // The device's position, as a place in its own time zone. Asked for only from the panel,
+  // and on opening only if the reader has already allowed it.
+  //
+  // The place's zone is the device's own. The device decides Israel by the zone, where the
+  // compiler looks a zone up from the coordinates: the two agree unless the device's clock is
+  // set for somewhere else.
+  function locate(done, failed) {
+    var zone = deviceZone();
+    if (!navigator.geolocation || !zone) {
+      failed("This device cannot give its location here. Choose a city instead.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(function (position) {
+      done({ latitude: Math.round(position.coords.latitude * 1000) / 1000,
+             longitude: Math.round(position.coords.longitude * 1000) / 1000, timezone: zone });
+    }, function (error) {
+      failed(error && error.code === 1
+        ? "The book was not allowed to know your location. Choose a city instead."
+        : "Your location could not be found. Choose a city instead.");
+    }, { maximumAge: 600000, timeout: 20000 });
+  }
+
+  function validZone(zone) {
+    if (!zone) return false;
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: zone });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Which columns of the parallel text are shown.
+  function columnsControl() {
+    var select = el("select");
+    select.appendChild(el("option", { value: "", text: "Both" }));
+    ["primary", "parallel"].forEach(function (role) {
+      select.appendChild(el("option", { value: role, text: book.columns[role].label + " only" }));
+    });
+    select.addEventListener("change", function () {
+      if (select.value) display.columns = select.value;
+      else delete display.columns;
+      changed();
+    });
+    refreshers.push(function () { select.value = shownColumns() || ""; });
+    return el("div", { class: "os-basic" }, [row("Columns", select)]);
+  }
+
+  var resetDayControls = function () {};
+
+  function dayControls() {
+    var section = el("fieldset", { class: "os-day" }, [el("legend", { text: "Day and place" })]);
+
+    var when = el("select");
+    [["now", "Now — follows this device's clock"], ["chosen", "A day and time I choose"],
+     ["none", "No particular day — set the kind of day below"]].forEach(function (option) {
+      when.appendChild(el("option", { value: option[0], text: option[1] }));
+    });
+    when.addEventListener("change", function () {
+      calendar.mode = when.value;
+      if (calendar.mode !== "none") {
+        // The kind of day set by hand would contradict the one worked out.
+        noDateFeatures().forEach(function (k) { setValue(k[0], k[1], undefined); });
+      }
+      if (calendar.mode === "chosen" && !reader[FS_GREGORIAN]) {
+        var where = place();
+        setDay(wallClock(now(), where ? where.timezone : null));
+      }
+      changed();
+    });
+    section.appendChild(row("When", when));
+
+    var date = el("input", { type: "date" });
+    var time = el("input", { type: "time" });
+    function chosen() {
+      var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.value);
+      var t = /^(\d{2}):(\d{2})/.exec(time.value);
+      if (!d) return;
+      reader[FS_GREGORIAN] = { year: Number(d[1]), month: Number(d[2]), day: Number(d[3]) };
+      if (t) reader[FS_TIME] = { hour: Number(t[1]), minute: Number(t[2]) };
+      else delete reader[FS_TIME];
+      changed();
+    }
+    date.addEventListener("change", chosen);
+    time.addEventListener("change", chosen);
+    var dateRow = row("Date", date, "From nightfall, the book shows the next Hebrew day.");
+    var timeRow = row("Time", time, "At the place, by its clock.");
+    section.appendChild(dateRow);
+    section.appendChild(timeRow);
+
+    var where = el("select");
+    where.appendChild(el("option", { value: "", text: "Not set" }));
+    // The device's location, once it has been used: an option only then.
+    var saved = el("option", { value: "saved", text: "" });
+    (book.places || []).forEach(function (p, index) {
+      where.appendChild(el("option", { value: "city" + index, text: p.name }));
+    });
+    where.appendChild(el("option", { value: "custom", text: "Other: coordinates and time zone" }));
+    var message = el("p", { class: "os-note", role: "status" });
+    where.addEventListener("change", function () {
+      say(message, "");
+      var value = where.value;
+      customOpen = value === "custom";
+      if (value === "") {
+        clearPlace();
+      } else if (value.indexOf("city") === 0) {
+        var city = book.places[Number(value.slice(4))];
+        setPlace(city, city.name, "city");
+      } else if (value === "custom") {
+        customChanged();
+        return;
+      }
+      changed();
+    });
+    section.appendChild(row("Place", where));
+
+    // A button, not an option: the location is asked for only when the reader asks for it.
+    var asking = 0;
+    var useLocation = button("Use my location", "", function () {
+      var request = ++asking;
+      say(message, "Finding your location…");
+      locate(function (location) {
+        // A reply that comes after the dialog has closed, or after another request, is
+        // for a choice no longer being made.
+        if (request !== asking || !settingsFrame.dialog.open) return;
+        customOpen = false;
+        setPlace(location, "Your location", "geolocation");
+        say(message, "");
+        changed();
+      }, function (problem) {
+        if (request !== asking || !settingsFrame.dialog.open) return;
+        say(message, problem);
+      });
+    });
+    section.appendChild(el("div", { class: "os-setting" }, [el("span"), useLocation]));
+    section.appendChild(message);
+
+    var latitude = el("input", { type: "number", step: "any", min: "-90", max: "90" });
+    var longitude = el("input", { type: "number", step: "any", min: "-180", max: "180" });
+    var names = zoneNames();
+    var zone;
+    if (names.length) {
+      // The list can lack the device's own zone (V8 leaves out "UTC").
+      var own = deviceZone();
+      if (own && names.indexOf(own) < 0) names = [own].concat(names);
+      zone = el("select");
+      names.forEach(function (name) { zone.appendChild(el("option", { value: name, text: name })); });
+      zone.value = own || names[0];
+    } else {
+      zone = el("input", { type: "text", placeholder: "e.g. Europe/London",
+                           value: deviceZone() || "" });
+    }
+    var customRows = [row("Latitude", latitude, "North is positive."),
+                      row("Longitude", longitude, "East is positive."),
+                      row("Time zone", zone)];
+    customRows.forEach(function (r) { section.appendChild(r); });
+    var customOpen = false;
+    resetDayControls = function () {
+      customOpen = false;
+      asking++;
+      say(message, "");
+    };
+    function customChanged() {
+      customOpen = true;
+      var lat = Number(latitude.value), lon = Number(longitude.value);
+      if (latitude.value !== "" && longitude.value !== "" && Math.abs(lat) <= 90 &&
+          Math.abs(lon) <= 180 && validZone(zone.value)) {
+        setPlace({ latitude: lat, longitude: lon, timezone: zone.value }, "Other place", "custom");
+      } else {
+        clearPlace();
+      }
+      changed();
+    }
+    [latitude, longitude, zone].forEach(function (input) {
+      input.addEventListener("change", customChanged);
+    });
+
+    var summary = el("p", { class: "os-note os-day-summary", role: "status" });
+    section.appendChild(summary);
+    function summarise(settings) { say(summary, describeDay(settings)); }
+    statusListeners.push(summarise);
+    summarise(lastSettings);
+
+    refreshers.push(function () {
+      when.value = calendar.mode;
+      dateRow.hidden = timeRow.hidden = calendar.mode !== "chosen";
+      var day = reader[FS_GREGORIAN], clock = reader[FS_TIME];
+      date.value = day ? day.year + "-" + pad(day.month) + "-" + pad(day.day) : "";
+      time.value = clock ? pad(clock.hour) + ":" + pad(clock.minute) : "";
+      var at = place();
+      var source = calendar.place && calendar.place.source;
+      if (source === "geolocation") {
+        saved.textContent = calendar.place.name;
+        if (!saved.parentNode) where.insertBefore(saved, where.options[1]);
+      } else if (saved.parentNode) {
+        where.removeChild(saved);
+      }
+      if (!at) {
+        where.value = customOpen ? "custom" : "";
+      } else if (source === "geolocation") {
+        where.value = "saved";
+      } else if (source === "custom") {
+        where.value = "custom";
+        latitude.value = String(at.latitude);
+        longitude.value = String(at.longitude);
+        if (zone.tagName === "SELECT" && !Array.prototype.some.call(zone.options, function (o) {
+          return o.value === at.timezone;
+        })) {
+          zone.insertBefore(el("option", { value: at.timezone, text: at.timezone }), zone.firstChild);
+        }
+        zone.value = at.timezone;
+      } else {
+        var index = (book.places || []).findIndex(function (p) {
+          return p.latitude === at.latitude && p.longitude === at.longitude &&
+            p.timezone === at.timezone;
+        });
+        where.value = index >= 0 ? "city" + index : "custom";
+      }
+      var showCustom = where.value === "custom";
+      customRows.forEach(function (r) { r.hidden = !showCustom; });
+      where.disabled = useLocation.disabled = calendar.mode === "none";
+    });
+    return section;
+  }
+
+  var WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Shabbat"];
+  var MONTHS = ["Nisan", "Iyar", "Sivan", "Tammuz", "Av", "Elul", "Tishrei", "Heshvan",
+                "Kislev", "Tevet", "Shevat", "Adar", "Adar II"];
+
+  // A value as it stands on the day that is ending, and whether the next one has begun to.
+  function plain(value) {
+    return value !== null && typeof value === "object" && "twilight" in value ? value.twilight[0] : value;
+  }
+
+  function get(settings, fs, name) {
+    return settings[fs] ? plain(settings[fs][name]) : undefined;
+  }
+
+  // What the book has worked out the day to be, in words.
+  function describeDay(settings) {
+    if (!hasCalendar || calendar.mode === "none") return "";
+    if (dateSetAside) {
+      return "Your settings say it is another day than the date, so the date is set aside, " +
+        "and the book follows your settings. Clear them in Advanced to follow the date again.";
+    }
+    var at = place();
+    if (!at) {
+      return "Choose a place, and the book works out the day — its date by the Hebrew " +
+        "calendar, its holidays, the service — and follows it.";
+    }
+    var parts = [];
+    var weekday = get(settings, "opensiddur:day-of-week", "hebrew-day");
+    var year = get(settings, "opensiddur:hebrew-date", "year");
+    var month = get(settings, "opensiddur:hebrew-date", "month");
+    var day = get(settings, "opensiddur:hebrew-date", "day");
+    if (typeof weekday === "number") parts.push(WEEKDAYS[weekday - 1]);
+    if (typeof day === "number" && typeof month === "number") {
+      var leap = get(settings, "opensiddur:hebrew-date", "leap-year");
+      var name = month === 12 && leap ? "Adar I" : MONTHS[month - 1];
+      parts.push(day + " " + name + " " + year);
+    }
+    var text = parts.join(", ");
+    if (get(settings, "opensiddur:day-of-week", "bayn-hashmashot")) {
+      text += ", between sunset and nightfall";
+    }
+    var service = ["shaharit", "minha", "maariv"].filter(function (s) {
+      return get(settings, "opensiddur:service-time", s) === true;
+    });
+    var services = { shaharit: "Shaharit", minha: "Minha", maariv: "Ma'ariv" };
+    if (service.length) text += " · " + services[service[0]];
+    text += " · " + (calendar.place ? calendar.place.name : "the place given");
+    return (calendar.mode === "chosen" ? "Chosen day: " : "") + text;
   }
 
   // ── Dialogs ────────────────────────────────────────────────────────────
@@ -325,18 +986,30 @@
     return b;
   }
 
+  var settingsFrame = null;
+
   function settingsDialog() {
     var snapshot = "{}";
+    var calendarSnapshot = "{}";
+    var displaySnapshot = "{}";
     var done = false;
     var frame = dialogFrame("os-settings", "Settings", "Cancel");
+    settingsFrame = frame;
 
     // However the dialog closes -- ×, Cancel, Escape, a click outside -- the settings go back
     // to what they were when it opened, unless the reader said Done.
     frame.dialog.addEventListener("close", function () {
+      // Restored or kept, the settings are applied with the anchor still held.
+      var release = function () { heldAnchor = null; };
+      window.setTimeout(release, 0);
       if (done) {
         saveSettings(reader);
+        saveCalendar();
+        saveDisplay();
       } else {
         reader = JSON.parse(snapshot);
+        calendar = JSON.parse(calendarSnapshot);
+        display = JSON.parse(displaySnapshot);
         changed();
       }
     });
@@ -346,6 +1019,9 @@
       "Choose what applies, and the book shows what you say. A passage that depends on " +
       "something not set is shown with the instruction for when to say it, as in the " +
       "printed book." }));
+
+    if (book.columns) body.appendChild(columnsControl());
+    if (hasCalendar) body.appendChild(dayControls());
 
     if (book.basic && book.basic.length) {
       var basic = el("div", { class: "os-basic" });
@@ -375,15 +1051,24 @@
     });
     body.appendChild(advanced);
 
-    if (book.calendarScopes) {
-      body.appendChild(el("p", { class: "os-note", text:
-        book.calendarScopes + " passages depend on the day, the time or the place. Set them " +
-        "here, by hand: this edition cannot yet read them from your device, nor work out one " +
-        "from another. A Hebrew date does not say what kind of day it is: set that too." }));
+    if (hasCalendar) {
+      var calendarNote = el("p", { class: "os-note" });
+      body.appendChild(calendarNote);
+      refreshers.push(function () {
+        var count = passages(book.calendarScopes);
+        calendarNote.textContent = following() ? "" : calendar.mode === "none"
+          ? count + " depend on the day, the time or the place. With no particular day, set " +
+            "them here by hand; or choose Now, and a place, for the book to work them out."
+          : count + " depend on the day, the time or the place. Choose a place, and the book " +
+            "works them out.";
+        calendarNote.hidden = !calendarNote.textContent;
+      });
     }
 
     frame.footer.appendChild(button("Clear all", "os-clear", function () {
       reader = {};
+      calendar = { mode: startingMode(), place: null };
+      display = startingDisplay();
       changed();
     }));
     frame.footer.appendChild(el("span", { class: "os-spacer" }));
@@ -395,7 +1080,11 @@
 
     frame.open = function () {
       snapshot = JSON.stringify(reader);
+      calendarSnapshot = JSON.stringify(calendar);
+      displaySnapshot = JSON.stringify(display);
       done = false;
+      resetDayControls();
+      heldAnchor = anchor();
       refreshers.forEach(function (refresh) { refresh(); });
       frame.dialog.showModal();
     };
@@ -406,9 +1095,10 @@
     var frame = dialogFrame("os-contents", "Contents", "Close");
     var list = el("ol", { class: "os-contents" });
     var headings = document.querySelectorAll(".os-book h1, .os-book h2, .os-book h3");
-    var shown = OSCond.sectionsShown(book, OSCond.scopeCss(book, reader, book.defaults).states);
+    var shown = OSCond.sectionsShown(book, resolveAll().states);
     Array.prototype.forEach.call(headings, function (heading, index) {
-      if (heading.closest(".col-parallel")) return;  // a translated heading repeats its row's
+      // A translated heading repeats its row's, unless the translation is shown alone.
+      if (heading.closest(".col-parallel") && shownColumns() !== "parallel") return;
       if (!heading.getClientRects().length) return;  // in a passage the settings hide
       // A section none of whose text will show, though its heading does.
       if (heading.dataset.section !== undefined && !shown[Number(heading.dataset.section)]) return;
@@ -425,13 +1115,52 @@
 
   // ── Start ──────────────────────────────────────────────────────────────
 
+  var toolbar = document.querySelector(".os-toolbar");
+  var status = document.getElementById("os-status");
+  if (hasCalendar && status) {
+    status.setAttribute("aria-haspopup", "dialog");
+    status.title = "The day and the place: open Settings to change them";
+    statusListeners.push(function (settings) {
+      var text = describeDay(settings);
+      status.hidden = !text;
+      say(status, dateSetAside ? "Following your settings, not the date"
+                               : following() ? text : "Set the place");
+    });
+  }
+
   apply();
 
   var settings = settingsDialog();
   document.body.appendChild(settings.dialog);
-  var toolbar = document.querySelector(".os-toolbar");
   toolbar.hidden = false;
   document.getElementById("os-open-settings").addEventListener("click", settings.open);
+  if (status) status.addEventListener("click", settings.open);
+
+  if (hasCalendar) {
+    window.setInterval(tick, 20000);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) tick();
+    });
+    window.addEventListener("focus", tick);
+    refreshLocation();
+  }
+
+  // A place from the device's location follows the device, if the reader has allowed that
+  // already: the book never asks on opening. Otherwise it is the last one known.
+  function refreshLocation() {
+    if (!calendar.place || calendar.place.source !== "geolocation") return;
+    if (!navigator.permissions || !navigator.permissions.query) return;
+    navigator.permissions.query({ name: "geolocation" }).then(function (permission) {
+      if (permission.state !== "granted") return;
+      locate(function (location) {
+        if (settings.dialog.open) return;  // the reader is changing the settings
+        setPlace(location, "Your location", "geolocation");
+        saveSettings(reader);
+        saveCalendar();
+        changed();
+      }, function () { /* the last one known stands */ });
+    }, function () { /* the last one known stands */ });
+  }
   // Built afresh each time: which headings are shown depends on the settings.
   document.getElementById("os-open-contents").addEventListener("click", function () {
     var old = document.getElementById("os-contents");
@@ -485,7 +1214,7 @@
     })();
   }
   ["wheel", "touchstart", "pointerdown", "keydown"].forEach(function (type) {
-    window.addEventListener(type, function () { settling++; }, { passive: true });
+    window.addEventListener(type, function () { settling++; keeping++; }, { passive: true });
   });
   document.addEventListener("click", function (event) {
     if (event.defaultPrevented || event.button || event.ctrlKey || event.metaKey

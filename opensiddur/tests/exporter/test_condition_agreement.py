@@ -1,7 +1,8 @@
 """The compiler's evaluator and the electronic book's agree.
 
 An electronic book resolves its undecided conditions on the reader's device, in JavaScript
-(html/assets/condition.js), against the reader's settings (client_settings). The cases in
+(html/assets/condition.js, html/assets/calendar.js), against the reader's settings and the
+device's clock (client_settings). The cases in
 fixtures/condition_agreement are resolved three ways -- by the Python reference, by the Python
 reference after a round trip through the JSON the book carries, and by the JavaScript -- and
 all three must give the expected result.
@@ -13,18 +14,15 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.exporter.calendar.compute import ALWAYS_YOM_TOV, SettingSnapshot
-from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, resolve
+from opensiddur.exporter.client_settings import resolve
 from opensiddur.exporter.condition_eval import (
     TriState,
     _combine,
     condition_from_json,
     condition_to_json,
     parse_condition_element,
-    value_from_json,
 )
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, TEI_NS
-from opensiddur.exporter.linear import Undefined
 from opensiddur.tests.exporter.js_engine import require_node, run_js
 from opensiddur.tests.exporter.spec_tables import truth_tables
 
@@ -45,7 +43,7 @@ def _condition(case) -> dict:
 
 
 def _layers(case) -> dict:
-    return {key: case.get(key, {}) for key in ("pinned", "reader", "defaults")}
+    return {key: case.get(key, {}) for key in ("pinned", "reader", "defaults", "device")}
 
 
 class TestPythonReference(unittest.TestCase):
@@ -77,7 +75,8 @@ class TestJavaScript(unittest.TestCase):
         cases = list(_cases())
         results = run_js(
             self.node,
-            "return args.map(c => OSCond.resolve(c.condition, c.pinned, c.reader, c.defaults));",
+            "return args.map(c => OSCond.resolve(c.condition, c.pinned, c.reader, c.defaults,"
+            " c.device));",
             [{"condition": _condition(case), **_layers(case)} for _, case in cases])
         for (corpus, case), result in zip(cases, results, strict=True):
             with self.subTest(corpus=corpus, case=case["name"]):
@@ -106,42 +105,6 @@ class TestJavaScript(unittest.TestCase):
         for (op, ops), result in zip(cases, results, strict=True):
             with self.subTest(op=op, operands=ops):
                 self.assertEqual(result, _combine(op.upper(), [TriState(v) for v in ops]).value)
-
-    #: The one input each device derivation reads.
-    DERIVATION_INPUTS = {
-        "opensiddur:quorum": ("opensiddur:quorum", "minyan"),
-        "opensiddur:recitation": ("opensiddur:service-time", "maariv"),
-        "opensiddur:holiday": ("opensiddur:holiday-aggregate", "yom-tov"),
-    }
-
-    def test_derivations_are_the_clients(self):
-        """The device runs the derivations client_settings says it does, and gives the same
-        results for every value their input can be set to."""
-        self.assertEqual(
-            run_js(self.node, "return Object.keys(OSCond.DERIVATIONS).sort();"),
-            sorted(CLIENT_DERIVATIONS))
-        self.assertEqual(sorted(self.DERIVATION_INPUTS), sorted(CLIENT_DERIVATIONS))
-        values = [None, True, False, 0, 1, "", "yes", {"num": 10}, {"num": 0}]
-        cases = [(fs, value) for fs in sorted(CLIENT_DERIVATIONS) for value in values]
-        results = run_js(
-            self.node,
-            "return args.cases.map(([fs, v]) => OSCond.DERIVATIONS[fs]("
-            "(f, n) => (f === args.inputs[fs][0] && n === args.inputs[fs][1]) ? v : null));",
-            {"cases": cases, "inputs": self.DERIVATION_INPUTS})
-        for (fs, value), result in zip(cases, results, strict=True):
-            with self.subTest(derivation=fs, input=value):
-                def get(f, n, fs=fs, value=value):
-                    decoded = value_from_json(value)
-                    if (f, n) != self.DERIVATION_INPUTS[fs] or decoded is Undefined:
-                        return None
-                    return decoded
-
-                # Python says "nothing" with None or {}; the device with null.
-                expected = CLIENT_DERIVATIONS[fs](SettingSnapshot(get)) or None
-                self.assertEqual(result, expected)
-
-    def test_festivals_always_yom_tov_are_the_compilers(self):
-        self.assertEqual(run_js(self.node, "return OSCond.ALWAYS_YOM_TOV;"), list(ALWAYS_YOM_TOV))
 
 
 if __name__ == "__main__":

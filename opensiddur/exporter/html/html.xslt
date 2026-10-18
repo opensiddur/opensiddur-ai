@@ -537,16 +537,21 @@
         <div>
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class"
-                                select="('par', @column-order ! concat('par-', .))"/>
+                                select="('par', @column-order ! concat('par-', .),
+                                         @p:row ! concat('r', .))"/>
             </xsl:call-template>
             <xsl:apply-templates/>
         </div>
     </xsl:template>
 
+    <!-- A column with no words (col-empty) stays shown when the reader shows only the other
+         column's language: its row has nothing else to show. -->
     <xsl:template match="p:parallelItem">
         <div>
             <xsl:call-template name="attributes">
-                <xsl:with-param name="class" select="('col', @role ! concat('col-', .))"/>
+                <xsl:with-param name="class"
+                                select="('col', @role ! concat('col-', .),
+                                         if (normalize-space(.) = '') then 'col-empty' else ())"/>
             </xsl:call-template>
             <xsl:apply-templates/>
         </div>

@@ -44,7 +44,8 @@ def require_node(test_case: unittest.TestCase) -> str:
     return node
 
 
-def run_js(node: str, body: str, args: Any = None, scripts: tuple[str, ...] = ("condition.js",),
+def run_js(node: str, body: str, args: Any = None,
+           scripts: tuple[str, ...] = ("calendar.js", "condition.js"),
            timeout: float = 60) -> Any:
     """Load `scripts` from the assets directory, then run `body` as a function of `args`.
 

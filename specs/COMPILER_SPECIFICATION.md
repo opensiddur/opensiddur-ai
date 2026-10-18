@@ -557,8 +557,14 @@ its output.
 - `p:parallel` (`@column-order`) holding two `p:parallelItem`s (`@role` `primary` or
   `parallel`, `@xml:lang`, `@p:project`, `@p:file_name`) — one aligned unit of a parallel
   compile, its two streams side by side.
+- A `j:conditional` whose `xml:id` ends in `__day` — the gate the compiler gives a declaration
+  of the kind of day (`day_gates.py`, JLPTEI-3 "Conditions on a running order"), retained only
+  by an electronic compile, with no rubric: silent. A print compile that cannot decide one keeps
+  its section and leaves no marker.
 - `p:pinned` — inside a retained `j:conditional` of an electronic compile, a JSON object of the
-  settings decided at compile time that the condition reads, for the reader's device.
+  settings decided at compile time that the condition reads -- and, where it reads anything
+  derived, that any derivation reads (`derivation_graph.READ_FEATURES`) -- for the reader's
+  device. A fixed static default is not pinned: the device puts it in place itself.
 
 **Processing attributes**
 - `@p:project`, `@p:file_name` — on content that came from a file other than its parent's:

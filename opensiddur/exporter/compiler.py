@@ -35,9 +35,11 @@ from opensiddur.exporter.constants import (
     is_element_node,
 )
 
-from opensiddur.exporter.client_settings import CLIENT_DERIVATIONS, is_reader_supplied
-from opensiddur.exporter.derivation_graph import DERIVATION_SPECS
+from opensiddur.exporter.client_settings import is_reader_supplied
+from opensiddur.exporter.day_gates import is_day_gate
+from opensiddur.exporter.derivation_graph import DERIVED_FS_TYPES, READ_FEATURES
 from opensiddur.exporter.derived_settings import (
+    STATIC_DEFAULTS,
     SettingChangeTrigger,
     get_active_setting_entry,
     recalculate_derived_settings,
@@ -138,6 +140,20 @@ def transclusion_type_of(element: ElementBase) -> str:
 
 class UnresolvedTarget(ValueError):
     """A transclusion target that no project in the priority list carries."""
+
+
+class _TheDay:
+    """The settings as the day gives them: a value declared, by the volume or a text, counts as
+    unknown, and only what is derived -- from the date -- is known."""
+
+    def __init__(self, processor):
+        self._processor = processor
+
+    def get_active_setting(self, fs_type: str, feature_name: str):
+        entry = self._processor.get_active_setting_entry(fs_type, feature_name)
+        if entry is None or entry.source != "derived":
+            return None
+        return entry.value
 
 
 class CompilerProcessor:
@@ -773,7 +789,7 @@ class CompilerProcessor:
                 return el
         return None
 
-    def _pin_known_values(self, retained: ElementBase, node) -> None:
+    def _pin_known_values(self, retained: ElementBase, node, *, day_gate: bool = False) -> None:
         """Record on a retained conditional the values the compile knows for its condition.
 
         An electronic book resolves the condition again on the reader's device, which knows
@@ -783,22 +799,27 @@ class CompilerProcessor:
         {"<fs type>": {"<feature>": <value>}}, values as condition_eval.value_to_json, an
         explicit undefined as null.
 
-        Pinned: the features the condition reads, and the inputs of any derivation the device
-        runs for a structure it reads -- so that a document's minyan reaches the device that
-        derives a zimmun from it. Not pinned: the settings file's own values for the reader's
-        settings, which are the book's defaults, the reader's to change.
+        Pinned: the features the condition reads, and, where it reads anything the device
+        derives, every feature a derivation reads (derivation_graph.READ_FEATURES) -- the device
+        runs the derivations, so that a document's minyan reaches the device that derives a
+        zimmun from it, and a document's Hebrew date, or a volume's place with its zone, the
+        device that derives the holidays. Not pinned: the settings file's own values for the
+        reader's settings, which are the book's defaults, the reader's to change.
         """
         features = set(condition_features(node))
-        read = {fs for fs, _ in features}
-        for spec in DERIVATION_SPECS:
-            # The device's own derivation only: a structure can also be derived from the date,
-            # which the device does not do, and whose inputs are no concern of it.
-            if spec.fs_type in read and spec.compute is CLIENT_DERIVATIONS.get(spec.fs_type):
-                features |= spec.required_inputs
+        gate_features = set(features) if day_gate else set()
+        if {fs for fs, _ in features} & DERIVED_FS_TYPES:
+            features |= READ_FEATURES
         pinned: dict[str, dict[str, object]] = {}
         for fs_type, feature_name in sorted(features):
             entry = self.get_active_setting_entry(fs_type, feature_name)
             if entry is None or (entry.source == "init" and is_reader_supplied(fs_type)):
+                continue
+            if entry.source == "derived" and feature_name in STATIC_DEFAULTS.get(fs_type, {}):
+                # A fixed default, which the device puts in place by itself.
+                continue
+            if (fs_type, feature_name) in gate_features and entry.source != "derived":
+                # A gate is judged against the day, not against what is declared around it.
                 continue
             pinned.setdefault(fs_type, {})[feature_name] = value_to_json(entry.value)
         if pinned:
@@ -1098,7 +1119,17 @@ class CompilerProcessor:
                 raise ValueError("j:conditional requires an xml:id attribute")
             scoped_id = self._scoped_declare_id(xml_id, element)
             node = parse_condition_element(element)
-            result = evaluate_condition(node, self)
+            day_gate = is_day_gate(element)
+            # A section's kind-of-day gate (day_gates) is judged against the day -- the date and
+            # what follows from it -- not against what an enclosing text or the volume declares,
+            # which the section's own declaration overrides.
+            result = evaluate_condition(node, _TheDay(self) if day_gate else self)
+            if (result == TriState.UNDEFINED and day_gate
+                    and not self.linear_data.defer_reader_settings):
+                # A section's kind-of-day gate (day_gates) that print cannot decide keeps the
+                # section, and prints nothing around it: it is the reader's device that
+                # decides an undecided one.
+                result = TriState.TRUE
             self._push_conditional_scope(scoped_id, result)
             # Nested controls must maintain the scope stack even in omitted
             # text, but their rubrics and brackets must not escape that scope.
@@ -1107,7 +1138,7 @@ class CompilerProcessor:
             if result == TriState.UNDEFINED:
                 retained = self._copy_element_subtree(element)
                 if self.linear_data.defer_reader_settings:
-                    self._pin_known_values(retained, node)
+                    self._pin_known_values(retained, node, day_gate=day_gate)
                 return True, retained
             # A true condition is a passage that is simply said: the rubric telling when to
             # say it has nothing left to tell, and goes with the condition. A rubric telling

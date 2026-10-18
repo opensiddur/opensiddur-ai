@@ -141,21 +141,47 @@ p.rubric { text-align: start; }
 
 /* ── Parallel text ───────────────────────────────────────────────────── */
 
+/* The browser's own scroll anchoring is off. With rows laid out only as they are reached
+   (content-visibility below), it anchors on rows still taking their heights, and pulls the page
+   back as the reader scrolls on: scrolling down shows blank space and more to scroll. The book
+   keeps the reader's place itself across what it changes (reader.js, keepInPlace). */
+html { overflow-anchor: none; }
+
 .tr { display: contents; }
 .par {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 2rem;
   content-visibility: auto;
-  contain-intrinsic-size: auto 6rem;
+  /* The size a row off screen is taken to have, until it is laid out: about the average of
+     the rows in each layout (measured on the Birnbaum siddur). An estimate far from it moves
+     the text under the reader as rows are reached, all one way: too tall, and scrolling down
+     shows blank space and pulls back as each row shrinks. */
+  contain-intrinsic-size: auto 4.5rem;
 }
+[data-columns] .par { contain-intrinsic-size: auto 3rem; }
+/* The rows around the reader's place, while the settings change what they show: laid out, so
+   that their heights are their own before the change and after it (reader.js, keepInPlace). */
+.par.os-near { content-visibility: visible; }
+/* A row with no words in either column -- a page break, an anchor -- is laid out always: it is
+   tiny, and taken off screen to have a row's height it would leave blank space to scroll. */
+.par:not(:has(> .col:not(.col-empty))) { content-visibility: visible; }
 .par-primary_last > .col-primary { order: 2; }
 .col { min-width: 0; }
 .col > .div, .col .div { margin: 0; }
 @media (max-width: 40rem) {
-  .par { grid-template-columns: 1fr; row-gap: 0.4rem; }
+  .par { grid-template-columns: 1fr; row-gap: 0.4rem; contain-intrinsic-size: auto 6.5rem; }
   .col-parallel { padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
 }
+/* One column at a time, as the reader chooses (Settings, Columns): data-columns on <html> names
+   the column shown. A row whose shown column has no words keeps the other, which is all it
+   has. Absent, as without scripts, both are shown. */
+[data-columns="primary"] .par:has(> .col-primary:not(.col-empty)) > .col-parallel,
+[data-columns="parallel"] .par:has(> .col-parallel:not(.col-empty)) > .col-primary {
+  display: none;
+}
+[data-columns] .par { grid-template-columns: 1fr; }
+[data-columns] .col-parallel { padding-bottom: 0; border-bottom: none; }
 
 /* ── Undecided passages ──────────────────────────────────────────────── */
 
@@ -251,6 +277,21 @@ p.rubric { text-align: start; }
   .os-setting-count { grid-column: 1; }
 }
 .os-note { color: var(--muted); font-size: 0.85rem; }
+.os-setting[hidden], .os-note[hidden] { display: none; }
+/* The day the book has worked out, at the start of the toolbar; it opens the settings. */
+.os-toolbar .os-status {
+  order: -1;
+  margin-inline-end: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-color: transparent;
+  background: none;
+  color: var(--muted);
+}
+.os-toolbar .os-status[hidden] { display: none; }
+.os-day-summary { color: var(--ink); }
 .os-contents { padding-inline-start: 1.2rem; }
 .os-contents a { color: var(--ink); }
 .os-contents-h2 { margin-inline-start: 1rem; }

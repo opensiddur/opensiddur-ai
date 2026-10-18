@@ -99,6 +99,14 @@ declarations:
 readings:
   abbreviations: abbreviated  # abbreviated | expanded
 
+# How the electronic (adaptive) book starts, before its reader chooses otherwise; a printed
+# book ignores it. The reader's own choices are remembered, and win.
+electronic:
+  day: now        # now: the device's clock, at the reader's place | none: no particular day,
+                  # every passage that turns on the day shown with its rubric (a haggadah,
+                  # read ahead of the seder)
+  columns: both   # both | primary | parallel: the columns of parallel text shown
+
 # Output-format settings, read by the output stages: all of them by the TeX/PDF stage, and the
 # ones a reflowing page can use by the electronic book (see doc/typography.md).
 typography:

@@ -25,5 +25,9 @@ class XMLCache:
             raise FileNotFoundError(f"File {path} not found")
         
         parsed = etree.parse(str(path))
+        # The compiler reads a section's kind-of-day declaration as its gate too (day_gates,
+        # imported here: it reads conditions, which need the settings this module is under).
+        from opensiddur.exporter.day_gates import gate_kind_of_day_declarations
+        gate_kind_of_day_declarations(parsed.getroot())
         self.cache[key] = parsed
         return parsed

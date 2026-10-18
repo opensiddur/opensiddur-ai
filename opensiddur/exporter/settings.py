@@ -1,7 +1,7 @@
 """ Exporter settings management utilities. """
 
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 import yaml
 
@@ -132,6 +132,22 @@ class ReadingSettings(BaseModel):
     errors: ErrorReading = ErrorReading.CORRECTED
 
 
+class ElectronicSettings(BaseModel):
+    """How the electronic (adaptive) book starts, before its reader has chosen otherwise.
+
+    Read only by the electronic book: a printed book has no day to follow and shows both
+    columns. A reader's own choices, once made, are remembered and win.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    #: How the book knows the day: `now`, from the device's clock at the reader's place; or
+    #: `none`, no particular day, every passage that turns on the day shown with its rubric --
+    #: for a book read ahead of its day, as a haggadah is.
+    day: Literal["now", "none"] = "now"
+    #: Which columns of parallel text it shows: `both`, or `primary` or `parallel` alone.
+    columns: Literal["both", "primary", "parallel"] = "both"
+
+
 class SettingsYaml(BaseModel):
     """ A settings file, whole.
 
@@ -153,6 +169,7 @@ class SettingsYaml(BaseModel):
     readings: ReadingSettings = Field(default_factory=ReadingSettings)
     typography: TypographyConfig = Field(default_factory=TypographyConfig)
     declarations: dict[str, dict[str, DeclarationFeatureValue]] = Field(default_factory=dict)
+    electronic: ElectronicSettings = Field(default_factory=ElectronicSettings)
 
     @field_validator("annotations")
     @classmethod

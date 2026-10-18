@@ -55,6 +55,8 @@ P_SPAN = f"{{{PROCESSING_NAMESPACE}}}span"
 P_PINNED = f"{{{PROCESSING_NAMESPACE}}}pinned"
 P_PARALLEL_ITEM = f"{{{PROCESSING_NAMESPACE}}}parallelItem"
 P_SECTION = f"{{{PROCESSING_NAMESPACE}}}section"
+P_PARALLEL = f"{{{PROCESSING_NAMESPACE}}}parallel"
+P_ROW = f"{{{PROCESSING_NAMESPACE}}}row"
 P_OPTIONAL_REFERENCE = f"{{{PROCESSING_NAMESPACE}}}optional-reference"
 P_HEADING_LEVEL = f"{{{PROCESSING_NAMESPACE}}}heading-level"
 TEI_HEAD = f"{{{TEI_NS}}}head"
@@ -112,6 +114,11 @@ class BookConditions:
     #: sets of scopes that govern its occurrences. It shows if every destination has a set with
     #: no scope that is false.
     optional_references: list[list[list[list[int]]]] = field(default_factory=list)
+    #: For each row of parallel text all of whose text is governed by scopes, by its number
+    #: (p:row), the distinct sets of scopes that govern its runs of text: it shows if any one
+    #: set has no scope that is false. A row the settings leave with no text is hidden whole, so
+    #: that, off screen, it is not taken to have a row's height.
+    rows: list[list[list[int]]] = field(default_factory=list)
 
 
 def _leaf_values(condition: dict[str, Any]):
@@ -297,6 +304,43 @@ def _sections(root: etree.ElementBase, measured, book: BookConditions) -> None:
     book.sections = [None if sets is None else sorted(sorted(s) for s in sets) for sets in found]
 
 
+def _rows(root: etree.ElementBase, measured, book: BookConditions) -> None:
+    """Which scopes each row of parallel text turns on (see BookConditions.rows).
+
+    Every row's text counts, a nested row's included, and its headings; a scope's markers do
+    not, being no text of the row. A row with some text no scope governs always shows, and one
+    with no text at all is left alone: it is no row's height.
+    """
+    for row in root.iter(P_PARALLEL):
+        sets: set[frozenset[int]] = set()
+        unconditional = False
+
+        def record(text, active):
+            nonlocal unconditional
+            if not (text and text.strip()):
+                return
+            if active:
+                sets.add(active)
+            else:
+                unconditional = True
+
+        def walk(element):
+            if _is_marker(element):
+                return
+            record(element.text, measured[element][0])
+            for child in element:
+                if is_element_node(child):
+                    walk(child)
+                    record(child.tail, measured[child][1])
+                else:
+                    record(child.tail, measured[element][0])
+
+        walk(row)
+        if sets and not unconditional:
+            row.set(P_ROW, str(len(book.rows)))
+            book.rows.append(sorted(sorted(s) for s in sets))
+
+
 def _optional_references(root: etree.ElementBase, measured, book: BookConditions) -> None:
     """When each optional page reference can reach its destination (see
     BookConditions.optional_references), numbering the ones the settings can strand.
@@ -399,6 +443,7 @@ def prepare(root: etree.ElementBase) -> BookConditions:
         mark_silent_scopes(root)
         measured = _measure(root)
         _sections(root, measured, book)
+        _rows(root, measured, book)
         _optional_references(root, measured, book)
         _assign(root, measured)
         measure_text(root, book)

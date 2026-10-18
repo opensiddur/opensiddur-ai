@@ -12,8 +12,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   passages are resolved on the reader's device, against settings the reader chooses in the
   book: the rite, who is present, a house of mourning, and the like. The text changes as
   they do, and they are remembered in the browser. Read without scripts, the page is the
-  printed book. Passages that turn on the date, the time or the place are not yet decided
-  on the device, and show every option with its rubric, as in print.
+  printed book.
+  - **The book follows the day.** By default it reads the date and the time from the
+    device's clock, at a place the reader gives, and works out what a compile would: the
+    Hebrew date, the holidays, Shabbat, the omer, the weekly reading, the service by the time
+    of day, bein hashmashot, and the rest. At nightfall it moves to the next day while open.
+    - **The place** is a city from a list (`html/places.yaml`), the device's location
+      (asked for only when the reader chooses it, and refreshed on opening only if already
+      allowed), or coordinates with a time zone. Until there is one, passages that turn on
+      the day show every option, as in print.
+    - **The reader can override it:** choose a day and time instead, set any calendar
+      feature in Advanced, or choose no particular day and set the kind of day by hand. A
+      setting for the day that contradicts the date sets the date aside, with all it implies.
+    - **Only what is appropriate for the day is shown.** A section that declares its kind of
+      day (`opensiddur:holiday-aggregate`) is gated on it: on a day of another kind, as the
+      weekday services on Shabbat, it is left out. A dated print edition leaves it out too;
+      an undated one is unchanged.
+    - **Remembered:** the mode, the place, a chosen day and the overrides. The clock's time
+      is never saved; it is read afresh each time the book opens.
+    - The calendar is a JavaScript port of the compiler's (`html/assets/calendar.js`),
+      tested against it for exact agreement over sampled days, places and times.
   - `python -m opensiddur.exporter.compiler --destination electronic` leaves the reader's
     settings undecided, and records on each undecided conditional what the compile did
     know (`p:pinned`).
@@ -24,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     electronic book is built first, and a PDF that fails does not keep it off the release.
   - The device's evaluator is a JavaScript port of the compiler's. The two are tested
     against one corpus of cases, the JavaScript under Node.
-  - Until the calendar is ported, the day, the place and the service are set by hand.
+  - With no particular day, the day, the place and the service are set by hand.
     - **The top of the panel** has plain choices: where, the day of the week, the kind of
       day, the service, the reading cycle, the rite. Each sets several features at once
       (`html/basic_settings.yaml`). Only the ones that decide the most of the book's text
@@ -40,6 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - The reading cycle is now the reader's, so an electronic humash carries both cycles.
     - The device also derives the recitation from the service, and the festivals a day that
       is not yom tov cannot be.
+  - **Columns:** a bilingual book can show both columns, the Hebrew alone, or the
+    translation alone. A passage with no counterpart stays, and the choice is remembered.
+  - **A book chooses how it starts:** a settings file's `electronic` section gives the day mode
+    (`now` or `none`) and the columns. The haggadah starts with no particular day.
+  - **Scrolling through text the settings hide** no longer shows blank space that pulls the
+    page back: a row of parallel text with nothing left to show is hidden whole, and one with
+    no words is laid out always.
   - **The settings dialog** opens with × in the upper-right corner. ×, Cancel, Escape or a
     click outside leaves the settings as they were; Done keeps and saves them. Its buttons
     stay on screen however far the settings scroll.

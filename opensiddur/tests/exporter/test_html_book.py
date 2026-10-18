@@ -7,7 +7,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import tzfpy
 from lxml import etree
+from pydantic import ValidationError
 
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
@@ -22,11 +24,14 @@ from opensiddur.exporter.html.html import (
     basic_controls,
     build_book,
     celebrated_purim,
+    columns,
     feature_words,
     read_basic_settings,
+    read_places,
     settings_catalogue,
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
+from opensiddur.exporter.settings import ElectronicSettings
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
 from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter import typography as typography_module
@@ -167,6 +172,15 @@ class TestStructure(unittest.TestCase):
         self.assertEqual((primary.get("lang"), primary.get("dir")), ("he", "rtl"))
         self.assertEqual((parallel.get("lang"), parallel.get("dir")), ("en", "ltr"))
         self.assertEqual(_classes(primary), ["col", "col-primary"])
+
+    def test_a_column_with_no_words_is_marked(self):
+        main = _render('<p:parallel column-order="primary_first">'
+                       '<p:parallelItem role="primary" xml:lang="he"><tei:p>א</tei:p></p:parallelItem>'
+                       '<p:parallelItem role="parallel" xml:lang="en"><tei:pb n="3"/></p:parallelItem>'
+                       '</p:parallel>')
+        primary, parallel = main.xpath("//h:div[contains(@class, 'par')]", namespaces=NS)[0]
+        self.assertEqual(_classes(primary), ["col", "col-primary"])
+        self.assertEqual(_classes(parallel), ["col", "col-parallel", "col-empty"])
 
     def test_notes_open_from_numbered_marks(self):
         main = _render('<tei:p>a<tei:note type="commentary">first</tei:note> b'
@@ -520,8 +534,9 @@ class TestBasicSettingsSpec(unittest.TestCase):
         for control in controls:
             with self.subTest(control=control["id"]):
                 self.assertLessEqual(
-                    set(control), {"id", "label", "note", "top", "options", "features"})
+                    set(control), {"id", "label", "note", "top", "when", "options", "features"})
                 self.assertIsInstance(control.get("top", False), bool)
+                self.assertIn(control.get("when"), (None, "no-date", "no-place"))
                 self.assertTrue(control["options"])
                 for option in control["options"]:
                     for fs, features in option["set"].items():
@@ -582,6 +597,63 @@ BODY = (
       '<j:endConditional target="#d"/>'
     + "<tei:p>" + _cond("e", "wedding") + "inline<j:endConditional target=\"#e\"/></tei:p>"
 )
+
+
+def _parallels(*rows) -> etree.ElementBase:
+    body = "".join(
+        f'<p:parallel><p:parallelItem role="primary" xml:lang="{primary}"><tei:p>x</tei:p>'
+        f'</p:parallelItem><p:parallelItem role="parallel" xml:lang="{parallel}"><tei:p>y</tei:p>'
+        f'</p:parallelItem></p:parallel>' for primary, parallel in rows)
+    return etree.fromstring(_compiled(body))
+
+
+class TestColumns(unittest.TestCase):
+    """The parallel text's columns, which the reader can show one at a time."""
+
+    def test_hebrew_and_its_translation(self):
+        self.assertEqual(columns(_parallels(("he", "en"), ("he", "en"), ("arc-Hebr", "en"))), {
+            "primary": {"lang": "he", "label": "Hebrew"},
+            "parallel": {"lang": "en", "label": "Translation"}})
+
+    def test_the_hebrew_column_is_named_wherever_it_is(self):
+        self.assertEqual(columns(_parallels(("en", "he")))["parallel"]["label"], "Hebrew")
+        self.assertEqual(columns(_parallels(("en", "he")))["primary"]["label"], "Translation")
+
+    def test_neither_hebrew_names_the_primary_by_its_language(self):
+        self.assertEqual(columns(_parallels(("yi", "en"))), {
+            "primary": {"lang": "yi", "label": "Yiddish"},
+            "parallel": {"lang": "en", "label": "Translation"}})
+
+    def test_no_parallel_text_has_no_columns(self):
+        self.assertIsNone(columns(etree.fromstring(_compiled("<tei:p>only</tei:p>"))))
+
+
+class TestElectronicSettings(unittest.TestCase):
+    """A settings file's `electronic` section: how the adaptive book starts."""
+
+    def test_defaults(self):
+        self.assertEqual(ElectronicSettings().model_dump(), {"day": "now", "columns": "both"})
+
+    def test_values(self):
+        self.assertEqual(ElectronicSettings.model_validate({"day": "none"}).day, "none")
+        for bad in ({"day": "tomorrow"}, {"columns": "hebrew"}, {"days": "now"}):
+            with self.subTest(bad=bad), self.assertRaises(ValidationError):
+                ElectronicSettings.model_validate(bad)
+
+
+class TestPlaces(unittest.TestCase):
+    """The places the settings panel offers."""
+
+    def test_each_zone_is_the_one_its_coordinates_are_in(self):
+        """The device reads the clock in the zone given; the compiler would look it up."""
+        for place in read_places():
+            with self.subTest(place=place["name"]):
+                self.assertEqual(tzfpy.get_tz(place["longitude"], place["latitude"]),
+                                 place["timezone"])
+
+    def test_names_are_unique(self):
+        names = [place["name"] for place in read_places()]
+        self.assertEqual(len(names), len(set(names)))
 
 
 class TestBuildBook(unittest.TestCase):
@@ -687,6 +759,44 @@ class TestBuildBook(unittest.TestCase):
         self.assertIn("Some One", about)
         self.assertIn('href="http://creativecommons.org/publicdomain/zero/1.0/"', about)
 
+    def test_colophon_has_the_software_notice(self):
+        about = self._between(self._build(), '<footer class="os-about">', "</footer>")
+        self.assertIn("GNU Lesser General Public License", about)
+        self.assertIn("Meir S. List", about)
+
+    def test_scripts_are_labelled_and_the_calendar_comes_first(self):
+        page = self._build()
+        self.assertEqual(page.count("// @license magnet:"), 3)
+        self.assertEqual(page.count("// @license-end"), 3)
+        self.assertLess(page.index("root.OSCal ="), page.index("root.OSCond ="))
+        self.assertLess(page.index("root.OSCond ="), page.index("var storageKey"))
+
+    def test_columns_reach_the_book_and_no_script_page_shows_both(self):
+        self.assertIsNone(self._book(self._build())["columns"])
+        self.compiled.write_bytes(_compiled(
+            '<p:parallel><p:parallelItem role="primary" xml:lang="he"><tei:p>א</tei:p>'
+            '</p:parallelItem><p:parallelItem role="parallel" xml:lang="en"><tei:p>a</tei:p>'
+            '</p:parallelItem></p:parallel>'))
+        page = build_book(self.compiled, self.settings, self.base)
+        self.assertEqual(self._book(page)["columns"]["primary"]["label"], "Hebrew")
+        self.assertNotIn("data-columns", re.search(r"<html[^>]*>", page).group(0))
+
+    def test_the_book_starts_as_its_settings_file_says(self):
+        self.assertEqual(self._book(self._build())["start"], {"day": "now", "columns": "both"})
+        self.settings.write_text(SETTINGS + "electronic:\n  day: none\n  columns: primary\n",
+                                 encoding="utf-8")
+        self.assertEqual(self._book(self._build())["start"],
+                         {"day": "none", "columns": "primary"})
+
+    def test_places_only_where_the_day_matters(self):
+        self.assertEqual(self._book(self._build())["places"], [])
+        self.compiled.write_bytes(_compiled(
+            _cond("h", "shabbat", fs="opensiddur:holiday-aggregate") + "<tei:p>Shabbat</tei:p>"
+            '<j:endConditional target="#h"/>'))
+        book = self._book(build_book(self.compiled, self.settings, self.base))
+        self.assertEqual(book["calendarScopes"], 1)
+        self.assertEqual(book["places"], read_places())
+
     def test_book_id_is_stable(self):
         self.assertEqual(self._book(self._build())["id"], self._book(self._build())["id"])
 
@@ -702,6 +812,27 @@ class TestBuildBook(unittest.TestCase):
         css = self._between(page, '<style id="os-cond-default">', "</style>").strip()
         result = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults);", book)
         self.assertEqual(result["css"].strip(), css)
+
+    def test_a_row_none_of_whose_text_shows_goes_whole(self):
+        """The row's two columns are each a wedding's; the settings file says it is a wedding,
+        then not: the row is hidden whole, on the device as without scripts."""
+        node = require_node(self)
+        self.compiled.write_bytes(_compiled(
+            '<p:parallel><p:parallelItem role="primary" xml:lang="he">'
+            + _cond("w1", "wedding") + '<tei:p>א</tei:p><j:endConditional target="#w1"/>'
+            '</p:parallelItem><p:parallelItem role="parallel" xml:lang="en">'
+            + _cond("w2", "wedding") + '<tei:p>a</tei:p><j:endConditional target="#w2"/>'
+            '</p:parallelItem></p:parallel>'))
+        page = build_book(self.compiled, self.settings, self.base)
+        book = self._book(page)
+        self.assertEqual(len(book["rows"]), 1)
+        self.assertIn('class="par r0"', page)
+        css = self._between(page, '<style id="os-cond-default">', "</style>")
+        self.assertNotIn(".r0", css, "a wedding: the row shows")
+        not_a_wedding = {"opensiddur:override": {"wedding": False}}
+        result = run_js(node, "return OSCond.scopeCss(args.book, args.reader, args.book.defaults);",
+                        {"book": book, "reader": not_a_wedding})
+        self.assertIn(".r0", result["css"])
 
     def test_optional_reference_goes_when_every_destination_does(self):
         """The destination occurs at a wedding and at a circumcision. The settings file says
