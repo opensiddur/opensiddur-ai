@@ -53,6 +53,7 @@ from opensiddur.exporter.metadata import (
     role_order,
 )
 from opensiddur.exporter.page_references import resolve_page_references
+from opensiddur.exporter.settings import ElectronicSettings
 from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 
 logger = logging.getLogger(__name__)
@@ -401,6 +402,7 @@ def book_json(
     basic_settings: Path = BASIC_SETTINGS_FILE,
     purim_day: int | None = None,
     book_columns: dict[str, dict[str, str]] | None = None,
+    start: dict[str, str] | None = None,
 ) -> str:
     calendar = calendar_scopes(book)
     words = feature_words(basic_settings)
@@ -428,6 +430,8 @@ def book_json(
         "places": read_places() if calendar else [],
         # The parallel text's columns, which the reader can show one at a time.
         "columns": book_columns,
+        # How the book starts, before its reader chooses: the settings file's `electronic`.
+        "start": start or ElectronicSettings().model_dump(),
     }
     # No "<" at all inside the script element: not only "</script" ends it, "<!--" can change
     # how the parser reads what follows. "\u003c" is the same character to JSON.
@@ -474,7 +478,9 @@ def build_book(
         "@@MAIN@@": main,
         "@@ABOUT@@": about_html(title, compiled_file, project_directory),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
-                                celebrated_purim(settings), book_columns),
+                                celebrated_purim(settings), book_columns,
+                                ElectronicSettings.model_validate(
+                                    settings.get("electronic") or {}).model_dump()),
         "@@CALENDAR_JS@@": _inline(
             (ASSETS / "calendar.js").read_text(encoding="utf-8"), "</script"),
         "@@CONDITION_JS@@": _inline(

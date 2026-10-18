@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import tzfpy
 from lxml import etree
+from pydantic import ValidationError
 
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
@@ -30,6 +31,7 @@ from opensiddur.exporter.html.html import (
     settings_catalogue,
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
+from opensiddur.exporter.settings import ElectronicSettings
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
 from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter import typography as typography_module
@@ -626,6 +628,19 @@ class TestColumns(unittest.TestCase):
         self.assertIsNone(columns(etree.fromstring(_compiled("<tei:p>only</tei:p>"))))
 
 
+class TestElectronicSettings(unittest.TestCase):
+    """A settings file's `electronic` section: how the adaptive book starts."""
+
+    def test_defaults(self):
+        self.assertEqual(ElectronicSettings().model_dump(), {"day": "now", "columns": "both"})
+
+    def test_values(self):
+        self.assertEqual(ElectronicSettings.model_validate({"day": "none"}).day, "none")
+        for bad in ({"day": "tomorrow"}, {"columns": "hebrew"}, {"days": "now"}):
+            with self.subTest(bad=bad), self.assertRaises(ValidationError):
+                ElectronicSettings.model_validate(bad)
+
+
 class TestPlaces(unittest.TestCase):
     """The places the settings panel offers."""
 
@@ -765,6 +780,13 @@ class TestBuildBook(unittest.TestCase):
         page = build_book(self.compiled, self.settings, self.base)
         self.assertEqual(self._book(page)["columns"]["primary"]["label"], "Hebrew")
         self.assertNotIn("data-columns", re.search(r"<html[^>]*>", page).group(0))
+
+    def test_the_book_starts_as_its_settings_file_says(self):
+        self.assertEqual(self._book(self._build())["start"], {"day": "now", "columns": "both"})
+        self.settings.write_text(SETTINGS + "electronic:\n  day: none\n  columns: primary\n",
+                                 encoding="utf-8")
+        self.assertEqual(self._book(self._build())["start"],
+                         {"day": "none", "columns": "primary"})
 
     def test_places_only_where_the_day_matters(self):
         self.assertEqual(self._book(self._build())["places"], [])

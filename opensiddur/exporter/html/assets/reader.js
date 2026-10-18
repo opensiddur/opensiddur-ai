@@ -91,9 +91,14 @@
       if (where && where.source === "geolocation") where.name = "Your last known location";
       return { mode: stored.mode, place: where };
     }
-    // A reader who set the kind of day by hand before the book could tell the day keeps it.
+    // A reader who set the kind of day by hand before the book could tell the day keeps it;
+    // otherwise the book starts as its settings file says (book.start).
     var manual = noDateFeatures().some(function (k) { return has(k[0], k[1]); });
-    return { mode: manual ? "none" : "now", place: null };
+    return { mode: manual ? "none" : startingMode(), place: null };
+  }
+
+  function startingMode() {
+    return book.start && book.start.day === "none" ? "none" : "now";
   }
 
   function saveCalendar() {
@@ -170,12 +175,18 @@
 
   var displayKey = "opensiddur:" + book.id + ":display";
 
+  // The book's own starting columns (book.start), until the reader chooses.
+  function startingDisplay() {
+    var columns = book.start && book.start.columns;
+    return columns === "primary" || columns === "parallel" ? { columns: columns } : {};
+  }
+
   function loadDisplay() {
     try {
       var stored = JSON.parse(window.localStorage.getItem(displayKey));
-      return stored && typeof stored === "object" ? stored : {};
+      return stored && typeof stored === "object" ? stored : startingDisplay();
     } catch (e) {
-      return {};
+      return startingDisplay();
     }
   }
 
@@ -1056,8 +1067,8 @@
 
     frame.footer.appendChild(button("Clear all", "os-clear", function () {
       reader = {};
-      calendar = { mode: "now", place: null };
-      display = {};
+      calendar = { mode: startingMode(), place: null };
+      display = startingDisplay();
       changed();
     }));
     frame.footer.appendChild(el("span", { class: "os-spacer" }));

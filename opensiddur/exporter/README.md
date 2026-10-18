@@ -60,13 +60,20 @@ or `python -m opensiddur.exporter.books --format html` for the books in the sett
 **The day.** The device works out the day as a compile does, from a date, a time and a place,
 with the calendar's port (`html/assets/calendar.js`). The settings panel's *Day and place*
 says how it knows the day:
-- **Now,** the default: the device's clock, read as the wall clock at the place. While the book
+- **Now,** the default unless the book says otherwise: the device's clock, read as the wall
+  clock at the place. While the book
   is open it checks the clock every 20 seconds and when it comes back into view. When what the
   day decides changes, at dawn or at nightfall say, the text changes, and the passage on screen
   stays where it is (the first one below the toolbar, kept in place by `reader.js`).
 - **A day and time the reader chooses.**
 - **No particular day:** nothing is worked out, and the reader sets the kind of day by hand
   (the controls marked `when: no-date` in `basic_settings.yaml`).
+
+**How a book starts** is its settings file's, in a section of its own for the electronic book,
+`electronic` (`settings.ElectronicSettings`, documented in `doc/exporter-settings.example.yaml`):
+`day: now | none`, and `columns: both | primary | parallel`. A haggadah, read ahead of the seder
+as well as at it, starts with no particular day. The reader's own choices, once made, are
+remembered and win; Clear all goes back to the book's.
 
 The place is the reader's: a city from `html/places.yaml`, the device's location, or
 coordinates with a time zone. The device reads the clock in that zone, and decides Israel by
