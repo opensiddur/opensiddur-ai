@@ -77,6 +77,29 @@ class TestPlacementInATree(unittest.TestCase):
         anchor = target.xpath('.//tei:note[not(@type)]', namespaces=NS)[0]
         self.assertEqual(anchor.getnext().get('type'), 'instruction')
 
+    def test_a_retained_condition_is_not_the_target_s_text(self):
+        """A condition's string and an electronic compile's pinned JSON are data, not words."""
+        placed, target = self.place(
+            '<tei:div><j:conditional xml:id="c"><tei:fs type="t:x"><tei:f name="s">'
+            '<tei:string>word</tei:string></tei:f></tei:fs>'
+            '<p:pinned>{"t:y": {"a": true}}</p:pinned></j:conditional>'
+            '<tei:p>Holy, holy, holy.</tei:p></tei:div>')
+        self.assertTrue(placed)
+        anchor = target.xpath('.//tei:note', namespaces=NS)[0]
+        self.assertEqual(anchor.getparent().tag, f'{{{TEI_NS}}}p')
+        pinned = target.xpath('.//p:pinned', namespaces=NS)[0]
+        self.assertEqual(pinned.text, '{"t:y": {"a": true}}')
+        self.assertEqual(len(pinned), 0)
+
+    def test_a_retained_condition_s_rubric_still_stops_the_search(self):
+        placed, target = self.place(
+            '<tei:div><j:conditional xml:id="c"><tei:note type="instruction">With a minyan:'
+            '</tei:note><tei:fs type="t:x"><tei:f name="a"><tei:binary value="true"/></tei:f>'
+            '</tei:fs></j:conditional><tei:p>Holy.</tei:p></tei:div>')
+        self.assertTrue(placed)
+        anchor = target.xpath('.//tei:note[not(@type)]', namespaces=NS)[0]
+        self.assertEqual(anchor.getnext().get('type'), 'instruction')
+
     def test_a_note_body_is_not_mistaken_for_the_target_s_text(self):
         placed, target = self.place(
             '<tei:div><tei:note type="instruction">Recited standing.</tei:note>'

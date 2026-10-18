@@ -13,6 +13,9 @@ body text. The search walks the target's content in document order and
 * skips a ``tei:head`` whole — a heading is not the annotated text, and the stylesheet
   hoists it out of the flow anyway (see the ``tei:div`` leaves template in
   reledmac.xslt);
+* skips whole the condition of a retained ``j:conditional`` and the values an electronic
+  compile pins on it (``p:pinned``): they are data, not words, though a ``tei:string`` in
+  a condition and the JSON in ``p:pinned`` are text. The rubric beside them is not skipped;
 * does not descend into a ``tei:milestone``, whose children may be apparatus parked
   there by the compiler for :mod:`opensiddur.exporter.milestone_annotations`, but does
   consider its tail — which is what carries the anchor across the first alignment
@@ -40,6 +43,16 @@ from opensiddur.exporter.constants import (
 )
 
 HEAD = f"{{{TEI_NS}}}head"
+#: Skipped whole, but for their tails: a heading, and a retained condition's data.
+_SKIPPED_TAGS = frozenset({
+    HEAD,
+    f"{{{TEI_NS}}}fs",
+    f"{{{JLPTEI_NAMESPACE}}}all",
+    f"{{{JLPTEI_NAMESPACE}}}any",
+    f"{{{JLPTEI_NAMESPACE}}}none",
+    f"{{{JLPTEI_NAMESPACE}}}one",
+    f"{{{PROCESSING_NAMESPACE}}}pinned",
+})
 MILESTONE = f"{{{TEI_NS}}}milestone"
 NOTE = f"{{{TEI_NS}}}note"
 
@@ -70,7 +83,7 @@ def _scan(nodes):
                 return _ABORT
             if node.tag == NOTE:
                 return (node, 'before')
-            if node.tag not in (HEAD, MILESTONE):
+            if node.tag not in _SKIPPED_TAGS and node.tag != MILESTONE:
                 if _has_text(node.text):
                     return (node, 'text')
                 found = _scan(list(node))
