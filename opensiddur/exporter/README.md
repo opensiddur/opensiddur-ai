@@ -103,6 +103,20 @@ The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
 Without Node those tests are skipped, unless `OPENSIDDUR_REQUIRE_JS=1`, as CI sets it. Point
 `OPENSIDDUR_NODE` at a Node binary that is not on the `PATH`.
 
+The calendar has a port too, `html/assets/calendar.js`: the derivations of `calendar/compute.py`
+and the modules beside it, the derivation graph, and the settings stack they run on
+(`derived_settings.py`). Given the same date, time and place, it derives what a compile does.
+`test_calendar_agreement.py` runs both over sampled days, places, times and the moments either
+side of each zman, and compares every derived value exactly. Set
+`OPENSIDDUR_CALENDAR_SWEEP=full` to sweep every day of several years; it takes some minutes. A
+change to the calendar derivations needs the same change in `calendar.js`.
+- The Hebrew calendar and the weekly readings follow pyluach (MIT; its notice is in the file).
+- The zmanim are NOAA's low-accuracy equations, with hdate's definitions of each zman. hdate
+  uses astral instead when astral is installed, and a test fails if it is.
+- Times are compared as the place's wall clock reads them, as the compiler compares them.
+- The device gives the time zone with the place. It does not look up a zone from coordinates,
+  as the compiler does with tzfpy.
+
 ## Printed books
 
 Printed books are settings files in
