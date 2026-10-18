@@ -219,6 +219,7 @@ class TestCalendarArithmetic(unittest.TestCase):
             return out;""",
             {"year": start.year, "month": start.month, "day": start.day, "count": len(days)},
             scripts=SCRIPTS, timeout=TIMEOUT)
+        self.assertEqual(len(js), len(days))
         for gdate, row in zip(days, js):
             g = pyluach_dates.GregorianDate(gdate.year, gdate.month, gdate.day)
             h = g.to_heb()
@@ -262,6 +263,7 @@ class TestCalendarArithmetic(unittest.TestCase):
             return out;""",
             {"year": start.year, "month": start.month, "day": start.day, "count": len(days)},
             scripts=SCRIPTS, timeout=TIMEOUT)
+        self.assertEqual(len(js), len(days))
         for gdate, row in zip(days, js):
             for israel, found in zip((True, False), row):
                 info = hdate.HDateInfo(gdate, diaspora=not israel)
@@ -282,6 +284,7 @@ class TestCalendarArithmetic(unittest.TestCase):
               var p = args.places[c[1]];
               return OSCal.zmanim(c[0], {latitude: p[0], longitude: p[1]}, p[2]);
             });""", {"cases": cases, "places": PLACES}, scripts=SCRIPTS, timeout=TIMEOUT)
+        self.assertEqual(len(js), len(cases))
         for (jdn, place), found in zip(cases, js):
             gdate = date.fromordinal(jdn - 1721425)
             z = hdate_zmanim(gdate, place)
@@ -307,6 +310,7 @@ class TestDerivations(unittest.TestCase):
     def agree(self, cases: list[tuple[str, list[dict]]]):
         js = run_js(self.node, "return args.map(function (e) { return OSCal.derive(e); });",
                     [case for _, case in cases], scripts=SCRIPTS, timeout=TIMEOUT)
+        self.assertEqual(len(js), len(cases))
         for (name, case), found in zip(cases, js):
             expected = python_derive(case)
             if _canonical(found) != _canonical(expected):
@@ -330,8 +334,8 @@ class TestDerivations(unittest.TestCase):
         for index, gdate in enumerate(_days(date(2024, 10, 1), date(2027, 10, 1), step)):
             for turn in range(4 if FULL else 1):
                 place = places[(index + turn) % len(places)]
-                clock = clocks[(index + turn) % len(clocks)]
-                locale = locales[(index // len(places) + turn) % len(locales)]
+                clock = clocks[(index // len(places) + turn) % len(clocks)]
+                locale = locales[(index // (len(places) * len(clocks)) + turn) % len(locales)]
                 cases.append((f"{gdate} {clock} {place} is-israel={locale}",
                               moment_entries(gdate, clock, place, locale)))
         self.agree(cases)
@@ -420,11 +424,43 @@ class TestDerivations(unittest.TestCase):
             ("a clock change, the hour repeated",
              moment_entries(date(2026, 11, 1), time(1, 30), "new-york")),
             ("seconds", moment_entries(friday, time(19, 2, 30), "jerusalem")),
+            ("a zone by another of its names",
+             [e if e["feature"] != "timezone" else {**e, "value": "Israel"}
+              for e in moment_entries(friday, time(9), "jerusalem")]),
             ("init and declared",
              [{**e, "source": "init"} for e in moment_entries(friday, time(9), "london")]
              + [{"fs": TIME, "feature": "hour", "value": 22}]),
         ]
         self.agree(cases)
+
+
+class TestPlaceWithoutAZone(unittest.TestCase):
+    """The device gives the zone with the place. Without one it knows, the place is unknown.
+
+    The compiler would look the zone up from the coordinates; the device cannot, and reading
+    the clock as UTC would derive the wrong hour. So nothing that needs the place is derived.
+    """
+
+    def setUp(self):
+        self.node = require_node(self)
+
+    def test_no_place_without_a_zone(self):
+        friday = date(2026, 4, 3)
+        cases = {
+            "no zone": [e for e in moment_entries(friday, time(9), "london")
+                        if e["feature"] != "timezone"],
+            "an unknown zone": [e if e["feature"] != "timezone" else {**e, "value": "Mars/Olympus"}
+                                for e in moment_entries(friday, time(9), "london")],
+        }
+        js = run_js(self.node, "return args.map(function (e) { return OSCal.derive(e); });",
+                    list(cases.values()), scripts=SCRIPTS)
+        expected = run_js(self.node, "return OSCal.derive(args);",
+                          moment_entries(friday, time(9), None), scripts=SCRIPTS)
+        for name, found in zip(cases, js):
+            with self.subTest(name):
+                for fs in ("opensiddur:hebrew-date", "opensiddur:hebrew-time",
+                           "opensiddur:service-time", ISRAEL):
+                    self.assertEqual(found.get(fs), expected.get(fs), fs)
 
 
 def _between_sunset_and_nightfall(gdate: date, place: str) -> time:

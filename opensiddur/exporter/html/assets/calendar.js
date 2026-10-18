@@ -35,9 +35,10 @@
  *   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  *   DEALINGS IN THE SOFTWARE.
  *
- * The times of day are NOAA's low-accuracy solar equations, with the definitions of the zmanim
- * the compiler's calendar library (hdate) uses. The holidays are the calendar's facts, as
- * JLPTEI-3 states them.
+ * The times of day are NOAA's low-accuracy solar equations
+ * (https://gml.noaa.gov/grad/solcalc/solareqns.PDF), with the definitions of the zmanim that
+ * the compiler's calendar library (hdate) uses. The holidays are the calendar's facts, restated
+ * here, giving the same days as that library.
  *
  * No DOM access.
  */
@@ -493,13 +494,14 @@
     return formatters[zone];
   }
 
-  function validZone(zone) {
-    if (typeof zone !== "string" || !zone) return false;
+  // The zone's canonical name ("Asia/Jerusalem" for "Israel" or "asia/jerusalem"), or null for
+  // one this device does not know.
+  function canonicalZone(zone) {
+    if (typeof zone !== "string" || !zone) return null;
     try {
-      formatter(zone);
-      return true;
+      return formatter(zone).resolvedOptions().timeZone;
     } catch (e) {
-      return false;
+      return null;
     }
   }
 
@@ -598,25 +600,26 @@
     return hour * 3600 + minute * 60 + second;
   };
 
-  // The zone the time is read in, or null for UTC. The device gives the zone with the place:
-  // it does not look a zone up from coordinates, as the compiler can.
+  // The zone the time is read in, or null. The device gives the zone with the place: it does
+  // not look a zone up from coordinates, as the compiler can.
   Snapshot.prototype.zone = function () {
-    var name = this.get(FS_LOCATION, "timezone");
-    return validZone(name) ? name : null;
+    return canonicalZone(this.get(FS_LOCATION, "timezone"));
   };
 
+  // The place, or null. A place without a zone this device knows is no place: its clock cannot
+  // be read, and it is better unknown -- every option shown -- than read as UTC.
   Snapshot.prototype.location = function () {
     var latitude = this.getFloat(FS_LOCATION, "latitude");
     var longitude = this.getFloat(FS_LOCATION, "longitude");
-    if (latitude === null || longitude === null) return null;
+    if (latitude === null || longitude === null || this.zone() === null) return null;
     return { latitude: latitude, longitude: longitude };
   };
 
-  // compute._ISRAEL_ZONES: Israel is decided by its time zones.
+  // compute._ISRAEL_ZONES: Israel is decided by its time zones, by their canonical names.
   var ISRAEL_ZONES = ["Asia/Jerusalem", "Asia/Hebron", "Asia/Gaza"];
 
   function isIsraelZone(zone) {
-    return ISRAEL_ZONES.indexOf(zone) >= 0;
+    return ISRAEL_ZONES.some(function (name) { return canonicalZone(name) === zone; });
   }
 
   Snapshot.prototype.inIsrael = function () {
@@ -624,8 +627,7 @@
     if (declared === null) return null;
     if (declared !== undefined) return this.getBool(FS_ISRAEL, "is-israel");
     if (this.location() === null) return null;
-    var zone = this.zone();
-    return zone === null ? null : isIsraelZone(zone);
+    return isIsraelZone(this.zone());
   };
 
   // The declared moment, at noon when no time is given: a wall-clock time at the place, in
@@ -682,11 +684,7 @@
     if (snapshot.gregorianDate() !== null && snapshot.location() !== null) {
       return hebrewFromJdn(effectiveGregorianDate(snapshot));
     }
-    var year = snapshot.getInt(FS_HEBREW_DATE, "year");
-    var month = snapshot.getInt(FS_HEBREW_DATE, "month");
-    var day = snapshot.getInt(FS_HEBREW_DATE, "day");
-    if (year === null || month === null || day === null) return null;
-    return hebrewOrNull(year, month, day);
+    return snapshotHebrewDate(snapshot);
   }
 
   // ── The derivations (compute.py) ─────────────────────────────────────────
@@ -761,15 +759,13 @@
 
   function computeIsrael(snapshot) {
     if (snapshot.location() === null) return null;
-    var zone = snapshot.zone();
-    return zone === null ? null : { "is-israel": isIsraelZone(zone) };
+    return { "is-israel": isIsraelZone(snapshot.zone()) };
   }
 
   // The device gives the zone with the place, so there is nothing to derive.
   function computeLocation(snapshot) {
     if (snapshot.location() === null) return null;
-    var zone = snapshot.zone();
-    return zone === null ? null : { timezone: zone };
+    return { timezone: snapshot.zone() };
   }
 
   function computeDayOfWeek(snapshot) {
@@ -1272,7 +1268,8 @@
 
   function Stack(entries) {
     this.entries = entries.map(function (e) {
-      return { fs: e.fs, feature: e.feature, value: e.value, source: e.source || "declared" };
+      return { fs: e.fs, feature: e.feature, value: e.value,
+             source: e.source === "init" ? "init" : "declared" };
     });
   }
 
@@ -1402,10 +1399,9 @@
     }
     var civil = civilDateOfHebrew(snapshot);
     var values = [null, null, null];
-    if (civil !== null) {
-      var g = jdnToGregorian(civil);
-      values = [g.year, g.month, g.day];
-    }
+    var g = civil === null ? null : jdnToGregorian(civil);
+    // Before the first year of the Common Era there is no civil date to give.
+    if (g !== null && g.year >= 1) values = [g.year, g.month, g.day];
     DATE_FEATURES.forEach(function (feature, i) {
       stack.pushDerived(FS_GREGORIAN, feature, values[i]);
     });
@@ -1441,7 +1437,8 @@
   }
 
   // Everything the settings imply. `entries` are the explicit settings, the earliest first:
-  // [{fs, feature, value, source?}], source "init" or "declared". Returns the settings in
+  // [{fs, feature, value, source?}], source "init" or else "declared" -- never a derived value,
+  // which the derivations would treat as their own. A place is given with its time zone. Returns the settings in
   // force, {fs type: {feature: value}}, derived values included.
   function derive(entries) {
     var stack = new Stack(entries);
