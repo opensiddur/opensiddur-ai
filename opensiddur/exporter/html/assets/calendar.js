@@ -709,7 +709,7 @@
   ];
 
   var TORAH_FEATURES = [
-    "diaspora-parsha", "israel-parsha", "triennial-year"
+    "diaspora-parsha", "israel-parsha", "diaspora-next-parsha", "israel-next-parsha", "triennial-year"
   ].concat(TRIENNIAL_PAIRS.map(function (p) { return "triennial-pattern-" + p[0]; }), [
     "shabbat-shuva", "shabbat-shira", "shabbat-shkalim", "shabbat-zachor", "shabbat-parah",
     "shabbat-hahodesh", "shabbat-hagadol", "shabbat-hazon", "shabbat-nahamu",
@@ -1022,6 +1022,21 @@
     return false;
   }
 
+  function nextWeeklyParsha(day, israel) {
+    var first = weekday(day) === 7 ? 1 : 0;
+    for (var offset = first; offset < first + 29; offset += 7) {
+      var name = parshaName(day + offset, israel);
+      if (name) {
+        var h = hebrewFromJdn(day);
+        if (parshaSlug(name) === "bereishis" && h.month === TISHREI && h.day < (israel ? 22 : 23)) {
+          return "vezos-haberachah";
+        }
+        return parshaSlug(name);
+      }
+    }
+    throw new Error("No weekly Torah reading within four weeks");
+  }
+
   function computeTorahReading(snapshot) {
     var gdate = effectiveGregorianDate(snapshot);
     if (gdate === null) return null;
@@ -1037,6 +1052,8 @@
     var result = {
       "diaspora-parsha": parshaSlug(diaspora),
       "israel-parsha": parshaSlug(inIsrael),
+      "diaspora-next-parsha": nextWeeklyParsha(gdate, false),
+      "israel-next-parsha": nextWeeklyParsha(gdate, true),
       "triennial-year": triennialYear(shabbat),
       "shabbat-shuva": is(shabbatOnOrBefore(hebrew(year, TISHREI, 9))),
       "shabbat-shira": parshaSlug(diaspora) === "beshalach",

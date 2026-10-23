@@ -119,6 +119,9 @@ controls:
     options_from: kinds_of_day.json
 
 features:
+  opensiddur:practice:
+    tefillin-on-chol-hamoed:
+      label: Wear tefillin on Chol HaMoed
   opensiddur:hebrew-date:
     month:
       label: Hebrew month

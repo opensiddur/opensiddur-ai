@@ -43,6 +43,7 @@ from opensiddur.exporter.constants import PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.derived_settings import STATIC_DEFAULTS
 from opensiddur.exporter.html.css import typography_css, xslt_parameters
 from opensiddur.exporter.html.markers import BookConditions, prepare
+from opensiddur.exporter.html.psalms import normalize as normalize_psalm_titles
 from opensiddur.exporter.metadata import (
     extract_credits,
     extract_licenses,
@@ -135,10 +136,11 @@ def scope_css(book: BookConditions, states: list[TriState]) -> str:
                        for scopes in occurrences) for occurrences in destinations):
             hidden.append(f".oref{number}")
     css = ""
-    if hidden:
-        css += ",".join(hidden) + "{display:none}\n"
-    if settled:
-        css += ",".join(settled) + "{display:none}\n"
+    # Expanded books can exceed a browser's selector limit for one rule.
+    # Keep every selector effective, including scopes near the end of the book.
+    for selectors in (hidden, settled):
+        for start in range(0, len(selectors), 256):
+            css += ",".join(selectors[start:start + 256]) + "{display:none}\n"
     return css
 
 
@@ -458,6 +460,7 @@ def build_book(
             "%s was not compiled with --destination electronic: the settings a reader would "
             "choose were decided when it was compiled", compiled_file)
 
+    normalize_psalm_titles(root)
     # The reader's settings can hide the first occurrence of a destination: label them all.
     resolve_page_references(root, every_occurrence=True)
     book_columns = columns(root)

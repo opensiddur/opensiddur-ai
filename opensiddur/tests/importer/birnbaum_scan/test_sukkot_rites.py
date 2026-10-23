@@ -13,9 +13,9 @@ class TestSukkotRites(unittest.TestCase):
                     ('opensiddur:day-of-week','hebrew-day'):(first-1+offset)%7+1}
                 actual=[n for n in range(1,7) if evaluate(r.hoshana_day(n),settings)==TriState.TRUE]
                 self.assertEqual(actual,[] if want==8 else [want],(first,offset))
-    def test_rabbah_omits_five_and_six(self):
+    def test_rabbah_includes_all_daily_hoshanot(self):
         settings={('opensiddur:hebrew-date','month'):7,('opensiddur:hebrew-date','day'):21}
-        self.assertEqual([n for n in range(1,7) if evaluate(r.hoshana_day(n),settings)==TriState.TRUE],[1,2,3,4])
+        self.assertEqual([n for n in range(1,7) if evaluate(r.hoshana_day(n),settings)==TriState.TRUE],[1,2,3,4,5,6])
     def test_personal_first_use_unknown_yes_no(self):
         self.assertEqual(evaluate(r.FIRST_USE,{}),TriState.UNDEFINED)
         for selected in (False,True):

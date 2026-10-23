@@ -119,6 +119,8 @@ TRIENNIAL_PATTERN_FEATURES = tuple(
 TORAH_FEATURES = (
     "diaspora-parsha",
     "israel-parsha",
+    "diaspora-next-parsha",
+    "israel-next-parsha",
     "triennial-year",
     *TRIENNIAL_PATTERN_FEATURES,
     "shabbat-shuva",
@@ -1035,6 +1037,26 @@ def _is_shabbat_mevarchim(shabbat) -> bool:
     return False
 
 
+def _next_weekly_parsha(day, israel):
+    """The next actual weekly reading, looking past festival Shabbatot.
+
+    On Shabbat this is the reading used that afternoon; on a weekday it is
+    the next weekly reading, even when a festival replaces the coming Shabbat.
+    Before Simchat Torah, Vezot Haberakhah precedes Bereshit in this sequence.
+    """
+    day = day.to_heb()
+    first = 1 if day.weekday() == 7 else 0
+    for offset in range(first, first + 29, 7):
+        name = parshios.getparsha_string(day.add(days=offset), israel=israel)
+        if name:
+            hebrew = day.to_heb()
+            if (_parsha_slug(name) == "bereishis" and hebrew.month == _TISHREI
+                    and hebrew.day < (22 if israel else 23)):
+                return _parsha_slug(parshios.PARSHIOS[-1])
+            return _parsha_slug(name)
+    raise ValueError("No weekly Torah reading within four weeks")
+
+
 def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     # The effective date, so that Saturday night already looks ahead to the coming week.
     gdate = _effective_gregorian_date(snapshot)
@@ -1056,6 +1078,8 @@ def compute_torah_reading(snapshot: SettingSnapshot) -> dict[str, Any] | None:
     result: dict[str, Any] = {
         "diaspora-parsha": _parsha_slug(diaspora),
         "israel-parsha": _parsha_slug(israel),
+        "diaspora-next-parsha": _next_weekly_parsha(g, False),
+        "israel-next-parsha": _next_weekly_parsha(g, True),
         "triennial-year": _triennial_year(shabbat),
         # Between Rosh Hashanah and Yom Kippur. Anchoring on 9 Tishrei rather than on a range
         # keeps the case where Erev Yom Kippur is itself Shabbat.

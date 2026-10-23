@@ -1,6 +1,6 @@
 """Friday-night home prayers and table hymns, printed 283–298."""
 import re
-from .common import PRAYER, POEM, SIDDUR, PROJECT_HE, pb
+from .common import cond, endcond, feature, AGG, PRAYER, POEM, SIDDUR, PROJECT_HE, pb
 from .conclusion import BIBLE, instruction, transclude, text_xml
 from .milestones import marked
 from .shacharit_end import editorial_head
@@ -97,5 +97,5 @@ def units(project):
     add('','לליל שבת','FOR SABBATH EVE',283,297,
         instruction('Upon returning from synagogue:')
         +''.join(transclude(URNS[k]) for k in ('shalom_aleichem','guard','ribbon','eshet'))
-        +transclude(ROOT+'/kiddush')+transclude(ROOT+'/zemirot'))
+        +cond('night_meal_shabbat_kiddush', fs='<j:none>'+feature(AGG, 'yom-tov')+'</j:none>')+transclude(ROOT+'/kiddush')+endcond('night_meal_shabbat_kiddush')+transclude(ROOT+'/zemirot'))
     return tuple(result)

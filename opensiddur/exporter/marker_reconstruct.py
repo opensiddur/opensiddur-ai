@@ -102,9 +102,11 @@ def _new_wrapped_segment(
     *,
     logical_id: str | None,
     leading_text_chunks: list[str],
+    makeelement=None,
 ) -> etree.ElementBase:
     nsmap = dict(children[0].nsmap) if children else {}
-    wrapped = etree.Element(tag, nsmap=nsmap) if nsmap else etree.Element(tag)
+    factory = makeelement or etree.Element
+    wrapped = factory(tag, nsmap=nsmap) if nsmap else factory(tag)
     for k, v in attrs.items():
         wrapped.set(k, v)
     prefix = "".join(leading_text_chunks)
@@ -131,6 +133,7 @@ def _close_open_segment(
     *,
     pid: str,
     kind: str,
+    makeelement=None,
 ) -> None:
     if not stack:
         raise ValueError(f"p:{kind} for {pid=} with empty reconstruction stack")
@@ -159,6 +162,7 @@ def _close_open_segment(
         frame.buffer,
         logical_id=logical_id,
         leading_text_chunks=frame.text_chunks,
+        makeelement=makeelement,
     )
 
     if stack:
@@ -192,9 +196,11 @@ def reconstruct_container(
     fragments: list[etree.ElementBase] = []
     stack: list[_Frame] = []
 
-    while len(pi) > 0:
-        el = pi[0]
-        pi.remove(el)
+    # Leave content in its document until it is reparented. Detaching large
+    # subtrees first makes lxml migrate their namespaces and IDs to temporary
+    # documents, only to migrate them again when the fragments are appended.
+    # The snapshot also avoids repeatedly counting lxml's linked child list.
+    for el in list(pi):
 
         mmap = _structural_marker_map(el)
 
@@ -221,11 +227,11 @@ def reconstruct_container(
             continue
 
         if "suspend" in mmap:
-            _close_open_segment(stack, fragments, pid_state, pid=mmap["suspend"], kind="suspend")
+            _close_open_segment(stack, fragments, pid_state, pid=mmap["suspend"], kind="suspend", makeelement=pi.makeelement)
             continue
 
         if "end" in mmap:
-            _close_open_segment(stack, fragments, pid_state, pid=mmap["end"], kind="end")
+            _close_open_segment(stack, fragments, pid_state, pid=mmap["end"], kind="end", makeelement=pi.makeelement)
             continue
 
         _move_plain_content(el, stack, fragments)
@@ -233,6 +239,10 @@ def reconstruct_container(
     if stack:
         raise ValueError(f"unclosed structural frames remain in container: {[f.pid for f in stack]}")
 
+    retained = set(fragments)
+    for el in list(pi):
+        if el not in retained:
+            pi.remove(el)
     for frag in fragments:
         pi.append(frag)
 

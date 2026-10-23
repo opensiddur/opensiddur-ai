@@ -106,7 +106,7 @@ def amidah(lang,by_name):
     text+=conditional('kohanim','During the Reader’s repetition:',READER,transclude(PRAYER+'amidah/birkat_kohanim'))
     text+=transclude(PRAYER+'amidah/shalom')
     text+=conditional('meditation','After the Amidah add the following meditation:',READER,
-        f'<tei:div corresp="{ROOT}/meditation">'+transclude(PRAYER+'amidah/elohai_netzor/text')+'</tei:div>'+transclude(PRAYER+'amidah/yehi_ratzon'),negate=True)
+        f'<tei:div corresp="{ROOT}/meditation">'+transclude(PRAYER+'amidah/elohai_netzor/text')+'</tei:div>',negate=True)+transclude(PRAYER+'amidah/yehi_ratzon')
     return text
 
 

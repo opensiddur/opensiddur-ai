@@ -1909,7 +1909,7 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         result = processor.process()
         
         # make sure refdb was called with the correct arguments
-        self.refdb.get_references_to.assert_called_once_with(urn, None, None, None)
+        self.refdb.get_references_to.assert_called_once_with(urn, None, None, None, element_tag="{http://www.tei-c.org/ns/1.0}note")
 
         # Find the note element
         notes = result.xpath(".//tei:note[@type='editorial']", namespaces=processor.ns_map)
@@ -1955,7 +1955,7 @@ class TestCompilerProcessorAnnotations(unittest.TestCase):
         result = processor.process()
         
         # make sure refdb was called with the correct arguments
-        self.refdb.get_references_to.assert_called_once_with(None, "note_id", project, file_name)
+        self.refdb.get_references_to.assert_called_once_with(None, "note_id", project, file_name, element_tag="{http://www.tei-c.org/ns/1.0}note")
 
         # Find the new note element
         notes = result.xpath(".//tei:body//tei:note[@type='editorial']", namespaces=processor.ns_map)

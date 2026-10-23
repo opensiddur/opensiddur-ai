@@ -53,7 +53,11 @@ SHABBAT_OR_FESTIVAL = any_of(SHABBAT, YOM_TOV)
 FESTIVAL = all_of(YOM_TOV, any_of(holiday("pesah", 1, 8), holiday("shavuot", 1, 2),
                                   holiday("sukkot", 1, 7), holiday("shmini-atzeret", 1, 2)))
 #: Candle lighting and Kabbalat Shabbat come before nightfall, on the Hebrew Friday.
-HEBREW_FRIDAY_OR_SHABBAT = any_of(Feature(DAY_OF_WEEK, "hebrew-day", 6), SHABBAT)
+SHABBAT_EVENING = any_of(
+    all_of(Feature(DAY_OF_WEEK, "hebrew-day", 6), service("minha")),
+    all_of(SHABBAT, service("maariv")),
+)
+DAYTIME = none_of(service("maariv"))
 IN_ISRAEL = Feature(ISRAEL, "is-israel", True)
 IN_DIASPORA = Feature(ISRAEL, "is-israel", False)
 
@@ -68,31 +72,29 @@ CHOL = (
 )
 SHABBAT_SECTIONS = (
     # The Hebrew Friday, which is also what an electronic book's reader sets as the day.
-    ("shabbat/preparations", HEBREW_FRIDAY_OR_SHABBAT),
+    ("shabbat/preparations", SHABBAT_EVENING),
     # Often said before nightfall, while it is still the Hebrew Friday.
-    ("shabbat/kabbalat_service", HEBREW_FRIDAY_OR_SHABBAT),
+    ("shabbat/kabbalat_service", SHABBAT_EVENING),
     ("shabbat/arvit", all_of(SHABBAT_OR_FESTIVAL, service("maariv"))),
-    ("shabbat/leil_shabbat", SHABBAT),
+    ("shabbat/leil_shabbat", all_of(SHABBAT, service("maariv"))),
     ("shabbat/shacharit", all_of(SHABBAT_OR_FESTIVAL, service("shaharit"))),
     # The Sabbath Musaf, and the prayers after Musaf on festivals and Hol ha-Moed too: the
     # festival Musaf ends with its Amidah, and this section chooses its own Amidah by
     # conditions on both. So it declares neither.
-    ("shabbat/musaf", any_of(SHABBAT, YOM_TOV, aggregate("chol-hamoed"))),
-    ("shabbat/day_meal", SHABBAT),
+    ("shabbat/musaf", all_of(any_of(SHABBAT, YOM_TOV, aggregate("chol-hamoed")), DAYTIME)),
+    ("shabbat/day_meal", all_of(SHABBAT, DAYTIME)),
 )
 #: Minha and the Pirkei Avot that follows it on summer Sabbath afternoons share one gate.
 SHABBAT_MINCHAH = all_of(SHABBAT_OR_FESTIVAL, service("minha"))
-#: Saturday night, and the Sabbath whose end it is: a volume dated to a Sabbath, with no
-#: time, is the Sabbath's Hebrew day, on which motzaei-shabbat is never true.
-SHABBAT_CONCLUSION = any_of(SHABBAT, aggregate("motzaei-shabbat"))
+#: Saturday night is a distinct occasion, tested before its local Sunday declaration.
+SHABBAT_CONCLUSION = all_of(aggregate("motzaei-shabbat"), service("maariv"), none_of(YOM_TOV))
 OCCASIONS = (
     # Birnbaum gives no window; the Ashkenazic custom is from the third day of the month to
     # the middle of it.
     ("berakhot/birkat_halevanah", Feature(HEBREW_DATE, "day", 3, 15)),
-    ("hallel", any_of(holiday("rosh-hodesh", 1, 2), holiday("hanukkah", 1, 8),
-                      holiday("pesah", 1, 8), holiday("shavuot", 1, 2), holiday("sukkot", 1, 7),
-                      holiday("shmini-atzeret", 1, 2))),
-    ("rosh_chodesh/musaf", holiday("rosh-hodesh", 1, 2)),
+    ("hallel", all_of(service("shaharit"), any_of(holiday("rosh-hodesh", 1, 2), holiday("hanukkah", 1, 8),
+        holiday("pesah", 1, 8), holiday("shavuot", 1, 2), holiday("sukkot", 1, 7), holiday("shmini-atzeret", 1, 2)))),
+    ("rosh_chodesh/musaf", all_of(holiday("rosh-hodesh", 1, 2), DAYTIME)),
     # The festival service opens with the eruv tavshilin, made on the eve of the festival.
     ("regalim", any_of(FESTIVAL, aggregate("eruv-tavshilin"))),
     # The same days as yizkor.py's own OCCASION.
@@ -100,9 +102,9 @@ OCCASIONS = (
                       all_of(IN_ISRAEL, any_of(holiday("pesah", 7), holiday("shavuot", 1))),
                       all_of(IN_DIASPORA, any_of(holiday("pesah", 8), holiday("shavuot", 2))))),
     # Musaf of Hol ha-Moed is the festival Musaf.
-    ("regalim/musaf", any_of(FESTIVAL, aggregate("chol-hamoed"))),
-    ("regalim/morning_meal", FESTIVAL),
-    ("sefirat_haomer", holiday("omer", 1, 49)),
+    ("regalim/musaf", all_of(any_of(FESTIVAL, aggregate("chol-hamoed")), DAYTIME)),
+    ("regalim/morning_meal", all_of(FESTIVAL, DAYTIME)),
+    ("sefirat_haomer", all_of(holiday("omer", 1, 49), service("maariv"))),
     ("regalim/akdamut", holiday("shavuot", 1)),
     # Rosh Hashanah, and Kapparoth on the eve of Yom Kippur: the Ten Days.
     ("rosh_hashanah/minchah_maariv_and_rites", aggregate("aseret-ymei-tshuva")),
@@ -134,7 +136,9 @@ def _entries(entries, indent: int) -> str:
 BODY = f"""      <tei:div corresp="{S}siddur">
         <tei:div corresp="{S}all">
           <tei:div corresp="{S}all/shacharit">
+            <j:conditional xml:id="occasion_yeladim">{service("shaharit").markup()}</j:conditional>
             <j:transclude type="external" target="{S}all/shacharit/yeladim"/>
+            <j:endConditional target="#occasion_yeladim"/>
           </tei:div>
         </tei:div>
         <tei:div corresp="{S}chol">

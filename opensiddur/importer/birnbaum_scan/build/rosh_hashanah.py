@@ -1,6 +1,6 @@
 """Rosh Hashanah Minḥah/Ma‘ariv, Kiddush, Tashlikh and Kapparot, IA n679–698."""
 import re
-from .common import PRAYER, SIDDUR, PROJECT_HE, SERVICE, AGG, feature, pb
+from .common import cond, endcond, PRAYER, SIDDUR, PROJECT_HE, SERVICE, AGG, feature, pb
 from .conclusion import BIBLE, instruction, transclude, text_xml
 from .festival import conditional, MINCHAH, MAARIV, SATURDAY_NIGHT
 from .shabbat_amidah import READER as AMIDAH_READER
@@ -141,7 +141,7 @@ def units(project):
     group('shalom','שלום','Peace',663,663,['shalom_rav','besefer'])
     body=instruction(RUBRICS['amidah_rubric'])+c('ki_shem','At Minḥah:',MINCHAH,p('ki_shem'))+p('adonai_sefatai')
     body+=''.join(transclude(AMIDAH+'/'+k) for k in ('avot','gevurot','kedushat_hashem','kedushat_hayom','avodah','hodaah','shalom'))
-    body+=c('meditation',RUBRICS['elohai_netzor_rubric'],READER,p('elohai_netzor')+p('yehi_ratzon_temple'),negate=True)
+    body+=c('meditation',RUBRICS['elohai_netzor_rubric'],READER,p('elohai_netzor'),negate=True)+p('yehi_ratzon_temple')
     add('rh_amidah',AMIDAH,'מִנְחָה וְעַרְבִית לְרֹאשׁ הַשָּׁנָה','MINḤAH AND MA‘ARIV FOR ROSH HASHANAH',655,665,body,True)
     add('rh_greeting',ROOT+'/greeting','ברכה לשנה החדשה','Rosh Hashanah Greeting',665,665,instruction(RUBRICS['greeting_rubric'])+p('greeting'),heading=False)
     body=c('vayekhulu',RUBRICS['vayekhulu_rubric'],SHABBAT,p('vayekhulu'))+p('savri')+p('wine')+p('kiddush')
@@ -176,8 +176,10 @@ def units(project):
     add('kapparot',KAPPAROT,'כַּפָּרוֹת','KAPPAROTH',673,673,body,True)
     add('kapparot_service',SIDDUR+'yom_kippur/kapparot','סדר כפרות','Kapparot',673,673,c('kapparot_day',RUBRICS['kapparot_rubric'],KAPPAROT_DAY,transclude(KAPPAROT)),heading=False)
     add('yom_kippur_candles',CANDLES,'הַדְלָקַת נֵר שֶׁל יוֹם הַכִּפּוּרִים','BLESSING OVER THE YOM KIPPUR LIGHTS',673,673,p('yk_candle_blessing')+p('yk_shehecheyanu'),True)
-    body=c('rh_occasion','On Rosh Hashanah:',RH,transclude(AMIDAH)+transclude(ROOT+'/greeting')+transclude(KIDDUSH))
+    body=c('rh_occasion','On Rosh Hashanah:',RH,cond('rh_amidah_service', fs='<j:any>'+MINCHAH+MAARIV+'</j:any>')+transclude(AMIDAH)+endcond('rh_amidah_service')
+        +cond('rh_evening_greeting', fs=MAARIV)+transclude(ROOT+'/greeting')+endcond('rh_evening_greeting')
+        +cond('rh_evening_kiddush', fs=MAARIV)+transclude(KIDDUSH)+endcond('rh_evening_kiddush'))
     body+=transclude(ROOT+'/tashlikh')+transclude(SIDDUR+'yom_kippur/kapparot')
-    body+=c('yk_candles','Before Yom Kippur begins:',holiday('yom-kippur'),transclude(CANDLES))
+    body+=c('yk_candles','Before Yom Kippur begins:','<j:all>'+date(7,9)+MINCHAH+'</j:all>',transclude(CANDLES))
     add('rh_rites',ROOT+'/minchah_maariv_and_rites','ראש השנה וערב יום הכיפורים','Rosh Hashanah and Erev Yom Kippur',655,673,body)
     return tuple(out)

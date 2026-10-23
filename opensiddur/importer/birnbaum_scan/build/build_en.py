@@ -248,10 +248,23 @@ def unit_body():
     lines.append('        <tei:head xml:lang="en">SHEMONEH ESREH</tei:head>')
     lines.append('        <tei:note type="instruction" xml:lang="en">The Shemoneh Esreh is recited in silent devotion while standing, facing east.</tei:note>')
     lines.append('        <tei:note type="instruction" xml:lang="en">The Reader repeats the Shemoneh Esreh aloud when a minyan holds service.</tei:note>')
+    public = '<j:all>'+feature('opensiddur:recitation', 'repetition')+feature('opensiddur:quorum', 'minyan')+'</j:all>'
+    gates = {'amidah_qedushah': ('weekday_kedushah', public),
+             'amidah_qedushat_hashem': ('weekday_silent_kedushat_hashem', '<j:none>'+public+'</j:none>'),
+             'amidah_birkat_kohanim': ('weekday_reader_birkat_kohanim', public)}
     for name in build_he.ORDER:
+        if name == 'amidah_elohai_netzor':
+            lines.append(cond('weekday_silent_meditation', fs='<j:none>'+public+'</j:none>'))
+        if name in gates:
+            cid, predicate = gates[name]
+            lines.append(cond(cid, fs=predicate))
         if name == "amidah_qedushah":
             lines.append('        <tei:head xml:lang="en">KEDUSHAH</tei:head>')
         lines.append(f'        <j:transclude type="external" target="{BY_NAME[name]["urn"]}"/>')
+        if name in gates:
+            lines.append(endcond(gates[name][0]))
+        if name == 'amidah_elohai_netzor':
+            lines.append(endcond('weekday_silent_meditation'))
     lines.append('        <tei:note type="instruction" xml:lang="en">Hallel (page 566) is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.</tei:note>')
     lines.append('        <tei:div>')
     lines.append('          <tei:head xml:lang="en">ABRIDGED SHEMONEH ESREH</tei:head>')

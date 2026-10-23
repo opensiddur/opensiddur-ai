@@ -70,7 +70,7 @@ class TestTheGates(unittest.TestCase):
     def test_sections_said_on_any_day_are_not_gated(self):
         """The life-cycle services turn on opensiddur:override, which is false when undefined:
         a gate on it would take them out of every edition that names no occasion."""
-        for section in ("all/shacharit/yeladim", "lifecycle", "concluding_prayers"):
+        for section in ("lifecycle", "concluding_prayers"):
             with self.subTest(section):
                 self.assertNotIn(section, self.gates)
 
@@ -154,14 +154,23 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
         })
 
     def test_a_sabbath(self):
-        """21 November 2026, 11 Kislev. Friday night belongs to it, and so does havdalah."""
+        """21 November 2026, 11 Kislev. Without a time the evening sections stay undecided; Saturday night is a separate Hebrew day."""
         self._assert_days(CalendarDay(date=(2026, 11, 21)), {
             "chol/shacharit": FALSE, "chol/minchah": FALSE, "chol/arvit": FALSE,
-            "shabbat/preparations": TRUE, "shabbat/kabbalat_service": TRUE,
-            "shabbat/arvit": UNDEFINED, "shabbat/leil_shabbat": TRUE,
-            "shabbat/shacharit": UNDEFINED, "shabbat/musaf": TRUE, "shabbat/day_meal": TRUE,
-            "shabbat/minchah": UNDEFINED, "shabbat/conclusion": TRUE,
+            "shabbat/preparations": UNDEFINED, "shabbat/kabbalat_service": UNDEFINED,
+            "shabbat/arvit": UNDEFINED, "shabbat/leil_shabbat": UNDEFINED,
+            "shabbat/shacharit": UNDEFINED, "shabbat/musaf": UNDEFINED, "shabbat/day_meal": UNDEFINED,
+            "shabbat/minchah": UNDEFINED, "shabbat/conclusion": FALSE,
             "regalim": FALSE, "hallel": FALSE,
+        })
+
+    def test_shmini_atzeret_on_shabbat_at_nine(self):
+        self._assert_days(CalendarDay(date=(2023, 10, 7), time=(9, 0), place=NEW_YORK), {
+            "all/shacharit/yeladim": TRUE, "shabbat/shacharit": TRUE,
+            "shabbat/musaf": TRUE, "regalim/musaf": TRUE, "hallel": TRUE,
+            "shabbat/kabbalat_service": FALSE, "shabbat/preparations": FALSE,
+            "shabbat/arvit": FALSE, "shabbat/leil_shabbat": FALSE,
+            "shabbat/conclusion": FALSE,
         })
 
     def test_saturday_night_is_a_weekday_with_havdalah(self):
@@ -172,7 +181,7 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
 
     def test_friday_is_for_the_sabbath_s_preparations(self):
         self._assert_days(CalendarDay(date=(2026, 11, 20)), {
-            "shabbat/preparations": TRUE, "shabbat/kabbalat_service": TRUE,
+            "shabbat/preparations": UNDEFINED, "shabbat/kabbalat_service": UNDEFINED,
             "shabbat/arvit": FALSE, "chol/shacharit": UNDEFINED,
         })
 
@@ -185,13 +194,13 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
     def test_weekday_rosh_hodesh(self):
         """10 November 2026, 30 Heshvan: the weekday services, Hallel and Rosh Hodesh Musaf."""
         self._assert_days(CalendarDay(date=(2026, 11, 10)), {
-            "chol/shacharit": UNDEFINED, "hallel": TRUE, "rosh_chodesh/musaf": TRUE,
+            "chol/shacharit": UNDEFINED, "hallel": UNDEFINED, "rosh_chodesh/musaf": UNDEFINED,
             "shabbat/shacharit": FALSE, "regalim/musaf": FALSE,
         })
 
     def test_hanukkah(self):
         self._assert_days(CalendarDay(date=(2026, 12, 7)), {
-            "chanukah": TRUE, "hallel": TRUE, "chol/shacharit": UNDEFINED, "purim": FALSE,
+            "chanukah": TRUE, "hallel": UNDEFINED, "chol/shacharit": UNDEFINED, "purim": FALSE,
         })
 
     def test_purim(self):
@@ -202,11 +211,11 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
     def test_the_first_day_of_shavuot(self):
         """11 June 2027, a Friday: a festival, not a weekday, and Akdamut is chanted."""
         self._assert_days(CalendarDay(date=(2027, 6, 11)), {
-            "regalim/akdamut": TRUE, "regalim": TRUE, "regalim/musaf": TRUE,
-            "regalim/morning_meal": TRUE, "hallel": TRUE, "shabbat/shacharit": UNDEFINED,
+            "regalim/akdamut": TRUE, "regalim": TRUE, "regalim/musaf": UNDEFINED,
+            "regalim/morning_meal": UNDEFINED, "hallel": UNDEFINED, "shabbat/shacharit": UNDEFINED,
             "chol/shacharit": FALSE, "yizkor": TRUE,
             # Its prayers after Musaf are the festival's too.
-            "shabbat/musaf": TRUE,
+            "shabbat/musaf": UNDEFINED,
         })
 
     def test_yizkor_is_on_the_second_day_of_shavuot_outside_israel(self):
@@ -216,15 +225,15 @@ class TestTheGatesAgainstTheCalendar(unittest.TestCase):
         """1 October 2026, the sixth of Sukkot: the weekday services, with the festival's
         Musaf, Hallel and rites."""
         self._assert_days(CalendarDay(date=(2026, 10, 1)), {
-            "chol/shacharit": UNDEFINED, "regalim/musaf": TRUE, "hallel": TRUE,
+            "chol/shacharit": UNDEFINED, "regalim/musaf": UNDEFINED, "hallel": UNDEFINED,
             "sukkot/rites": TRUE, "regalim": FALSE, "regalim/morning_meal": FALSE,
-            "yizkor": FALSE, "shabbat/musaf": TRUE, "shabbat/shacharit": FALSE,
+            "yizkor": FALSE, "shabbat/musaf": UNDEFINED, "shabbat/shacharit": FALSE,
         })
 
     def test_rosh_hashanah(self):
         self._assert_days(CalendarDay(date=(2026, 9, 12)), {
             "rosh_hashanah/minchah_maariv_and_rites": TRUE, "regalim": FALSE,
-            "regalim/musaf": FALSE, "hallel": FALSE, "shabbat/musaf": TRUE,
+            "regalim/musaf": FALSE, "hallel": FALSE, "shabbat/musaf": UNDEFINED,
         })
 
 

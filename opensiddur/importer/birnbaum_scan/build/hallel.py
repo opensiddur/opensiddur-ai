@@ -73,8 +73,11 @@ def verses(chapter,first,last):
 
 def units(project):
     side=int(project!=PROJECT_HE);lang=('he','en')[side];result=[]
-    def add(name,urn,he,en,first,last,body,*,printed=False):
+    def add(name,urn,he,en,first,last,body,*,printed=False,gate=None):
         head=(f'<tei:head xml:lang="{lang}">'+(he,en)[side]+'</tei:head>') if printed else editorial_head(lang,he,en)
+        if gate is not None:
+            body=cond('hallel_occasion', note='On Hallel occasions, except in a house of mourning during shiv‘ah:', fs=gate)+head+body+endcond('hallel_occasion')
+            head=''
         result.append(dict(name=name,urn=urn,title_he=he,title_en=en,pages=(first+side,last+side),body=f'<tei:div corresp="{urn}">'+head+body+'</tei:div>'))
     for chapter,count,first,last in [(113,9,565,567),(114,8,567,567),(115,18,567,569),(116,19,569,569),(117,2,571,571),(118,29,571,573)]:
         if chapter in (115,116):
@@ -98,9 +101,9 @@ def units(project):
     add('hallel_kaddish',SERVICE+'/kaddish','קדיש לאחר הלל','Kaddish after Hallel',573,573,conditional('minyan','When a minyan holds service:',MINYAN,following))
     scope='<j:all>'+feature(FS,'recite')+'<j:none>'+MOURNING+'</j:none></j:all>'
     body=instruction(PAGES[str(565+side)]['rubrics'][0])
-    body+=conditional('occasion','On Hallel occasions, except in a house of mourning during shiv‘ah:',scope,transclude(ROOT)+transclude(SERVICE+'/kaddish'))
+    body+=transclude(ROOT)+transclude(SERVICE+'/kaddish')
     # Preserve the book's continuation directions outside the reusable Hallel.
     from .notes_motzaei_shabbat import xml as note_xml
     body+='<tei:note type="instruction" xml:lang="en">'+note_xml(PAGES[str(573+side)]['rubrics'][-1])+'</tei:note>'
-    add('hallel_service',SERVICE,'סדר הלל','Hallel service',565,573,body)
+    add('hallel_service',SERVICE,'סדר הלל','Hallel service',565,573,body,gate=scope)
     return tuple(result)

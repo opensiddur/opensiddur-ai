@@ -1242,6 +1242,17 @@ class TestReferenceDatabaseReferences(unittest.TestCase):
         element_types = {r.element_type for r in results}
         self.assertEqual(element_types, {"type1", "type2"})
 
+    def test_reference_tag_filter_keeps_notes_and_excludes_transclusions(self):
+        target = "urn:x-opensiddur:test:target"
+        root = etree.Element("root")
+        for tag in ["{http://www.tei-c.org/ns/1.0}note", "{http://jewishliturgy.org/ns/jlptei/2}transclude"]:
+            element = etree.SubElement(root, tag, target=target)
+            self.db.add_reference("synthetic", "index.xml", element)
+        self.assertEqual(len(self.db.get_references_to(urn=target)), 2)
+        notes = self.db.get_references_to(urn=target, element_tag="{http://www.tei-c.org/ns/1.0}note")
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].element_tag, "{http://www.tei-c.org/ns/1.0}note")
+
     def _create_first_standoff_note(self, target: str) -> ElementBase:
         """Helper to create the first note of a standoff notes file.
 

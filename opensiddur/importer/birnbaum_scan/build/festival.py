@@ -159,7 +159,7 @@ def units(project):
     body+=conditional('kohanim','Priestly blessing recited by the Reader:', '<j:all>'+READER+SHACHARIT+'</j:all>',p('kohanim'))
     body+=conditional('sim_shalom','For Shaḥarith:',SHACHARIT,p('sim_shalom'))
     body+=conditional('shalom_rav','For Minḥah and Ma‘ariv:','<j:any>'+MINCHAH+MAARIV+'</j:any>',p('shalom_rav'))
-    body+=conditional('meditation','After the Amidah add the following meditation:',READER,p('elohai')+p('yehi'),negate=True)
+    body+=conditional('meditation','After the Amidah add the following meditation:',READER,p('elohai'),negate=True)+p('yehi')
     # This reusable Amidah is intrinsically Yom Tov. Declare that context so
     # inherited weekday-only commentary does not appear in an undated proof.
     body='<j:declare xml:id="festival_amidah_context">'+feature(AGG,'yom-tov')+'</j:declare>'+body+'<j:endDeclare target="#festival_amidah_context"/>'
@@ -172,7 +172,8 @@ def units(project):
     add('kiddush','קִדּוּשׁ לְשָׁלֹשׁ רְגָלִים','KIDDUSH FOR FESTIVALS',597,599,body,printed=True)
     body=conditional('eruv_occasion','',feature(AGG,'eruv-tavshilin'),transclude(ROOT+'/eruv_tavshilin'))
     body+=conditional('festival_occasion','On festivals:',REGALIM,
-        ''.join(transclude(ROOT+'/'+k) for k in ('candles','amidah','kiddush')))
+        cond('festival_evening_candles', fs='<j:any>'+MINCHAH+MAARIV+'</j:any>')+transclude(ROOT+'/candles')+endcond('festival_evening_candles')
+        +transclude(ROOT+'/amidah')+cond('festival_evening_kiddush', fs=MAARIV)+transclude(ROOT+'/kiddush')+endcond('festival_evening_kiddush'))
     add('','שלש רגלים','Three Pilgrimage Festivals',585,599,body)
     return tuple(result)
 

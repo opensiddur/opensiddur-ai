@@ -170,6 +170,8 @@ def units(project,by_name):
     def add(key,he,en,first,last,body,*,printed=False):
         urn=ROOT+('/'+key if key else '')
         head=f'<tei:head xml:lang="{lang}">{(he,en)[side]}</tei:head>' if printed else editorial_head(lang,he,en)
+        if not key:
+            head=cond('shabbat_musaf_heading', fs=OCCASION)+head+endcond('shabbat_musaf_heading')
         result.append(dict(name='shabbat_musaf'+('_'+key.replace('/','_') if key else ''),urn=urn,title_he=he,title_en=en,pages=(first+side,last+side),body=f'<tei:div corresp="{urn}">'+head+pb(first+side,sigil=SIGIL)+body+'</tei:div>'))
     add('amidah/kedushah','קדושה','KEDUSHAH',393,393,kedushah())
     add('amidah/ordinary','תכנת שבת','Ordinary Sabbath blessing',395,395,p('amidah/tikanta_shabbat')+transclude(BIBLE+'numbers/28/9')+transclude(BIBLE+'numbers/28/10')+transclude(YISMECHU)+transclude(ARVIT['retzeh']))
@@ -187,7 +189,7 @@ def units(project,by_name):
     body+=conditional('hanukkah','On Ḥanukkah add:',holiday('hanukkah',8),p('al_hanissim/chanukah'))
     body+=p('amidah/hodaah/veal_kulam')+conditional('ukhtov','Between Rosh Hashanah and Yom Kippur add:',TEN_DAYS,p('amidah/hodaah/ukhtov'))+p('amidah/hodaah/hatov_shimkha')
     body+=conditional('kohanim','During the Reader’s repetition:',READER,p('amidah/birkat_kohanim'))+p('amidah/shalom')
-    body+=conditional('meditation','After the Amidah add the following meditation:',READER,f'<tei:div corresp="{ROOT}/amidah/meditation">'+p('amidah/elohai_netzor/text')+'</tei:div>'+p('amidah/yehi_ratzon'),negate=True)
+    body+=conditional('meditation','After the Amidah add the following meditation:',READER,f'<tei:div corresp="{ROOT}/amidah/meditation">'+p('amidah/elohai_netzor/text')+'</tei:div>',negate=True)+p('amidah/yehi_ratzon')
     add('amidah','עמידה למוסף','Musaf Amidah',391,405,body)
     full=instruction('Reader:')+''.join(p('kaddish/'+k) for k in ('yitgadal','yehe_shmeh','yitbarakh','titkabal','yatom/yehe_shlama','yatom/oseh_shalom'))
     add('kaddish','קדיש שלם','Full Kaddish',405,405,conditional('full_kaddish','When a minyan holds service:',MINYAN,full))

@@ -465,7 +465,7 @@ class ReferenceDatabase:
             )
             for row in cursor.fetchall()]
     
-    def get_references_to(self, urn: Optional[str] = None, id: Optional[str] = None, project: Optional[str] = None, file_name: Optional[str] = None) -> list[Reference]:
+    def get_references_to(self, urn: Optional[str] = None, id: Optional[str] = None, project: Optional[str] = None, file_name: Optional[str] = None, *, element_tag: Optional[str] = None) -> list[Reference]:
         """Get a list of all references to a specific URN or ID/file combination.
         
         Args:
@@ -473,25 +473,29 @@ class ReferenceDatabase:
             id: The ID identifier (with or without # prefix)
             project: The project name (for id)
             file_name: The file name (for id)
+            element_tag: Optionally select only references from this element tag.
+                Annotation lookup uses this to avoid materializing transclusions.
         Returns:
             List of Reference objects
         """
         cursor = self.conn.cursor()
+        tag_clause = " AND element_tag = ?" if element_tag is not None else ""
+        tag_values = (element_tag,) if element_tag is not None else ()
         if urn:
             # In document order, file by file: a re-indexed file's rows are new, so the order
             # they were inserted in is not the order of the text.
-            cursor.execute('''
-                SELECT * FROM element_references WHERE target_start = ?
-                ORDER BY project, file_name, rowid''', (urn,))
+            cursor.execute(f'''
+                SELECT * FROM element_references WHERE target_start = ?{tag_clause}
+                ORDER BY project, file_name, rowid''', (urn,) + tag_values)
             by_urn = cursor.fetchall()
         else:
             by_urn = []
         if id and project and file_name:
             # Ensure ID has # prefix for query
             id_with_hash = id if id.startswith('#') else f"#{id}"
-            cursor.execute('''
-                SELECT * FROM element_references WHERE target_start = ? AND target_is_id = true AND project = ? AND file_name = ?
-                ORDER BY rowid''', (id_with_hash, project, file_name))
+            cursor.execute(f'''
+                SELECT * FROM element_references WHERE target_start = ? AND target_is_id = true AND project = ? AND file_name = ?{tag_clause}
+                ORDER BY rowid''', (id_with_hash, project, file_name) + tag_values)
             by_id = cursor.fetchall()
         else:
             by_id = []

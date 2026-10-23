@@ -29,6 +29,7 @@ from opensiddur.exporter.html.html import (
     read_basic_settings,
     read_places,
     settings_catalogue,
+    scope_css,
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
 from opensiddur.exporter.settings import ElectronicSettings
@@ -77,6 +78,31 @@ def _classes(element) -> list[str]:
 
 
 class TestConditionalRendering(unittest.TestCase):
+
+    def test_liturgical_psalm_owns_title_and_suppresses_repeated_chapter_numbers(self):
+        main=_render('''<tei:div type="psalm" n="23">
+            <tei:head xml:lang="he">תהלים כג</tei:head><tei:head xml:lang="en">Psalm 23</tei:head>
+            <tei:div type="book"><tei:head corresp="urn:fixture:psalm-title">PSALMS<tei:anchor corresp="urn:fixture:title-child"/></tei:head>
+            <tei:p><tei:milestone unit="chapter" n="23" corresp="urn:fixture:chapter"/>
+            <tei:milestone unit="verse" n="1"/>Prayer text</tei:p></tei:div></tei:div>''')
+        self.assertEqual(main.xpath('//h:h2/text()',namespaces=NS),['תהלים כג','Psalm 23'])
+        self.assertFalse(main.xpath('//*[contains(concat(" ",@class," ")," ch ")]',namespaces=NS))
+        self.assertTrue(main.xpath('//*[@id="urn:fixture:chapter"]'))
+        self.assertTrue(main.xpath('//*[@id="urn:fixture:psalm-title"]'))
+        self.assertTrue(main.xpath('//*[@id="urn:fixture:title-child"]'))
+        self.assertIn('Prayer text',''.join(main.itertext()))
+        self.assertTrue(main.xpath('//h:span[@class="v"][text()="1"]',namespaces=NS))
+
+    def test_bible_chapter_number_remains_outside_a_liturgical_psalm(self):
+        main=_render('''<tei:div type="book"><tei:p>
+            <tei:milestone unit="chapter" n="23"/>Bible text</tei:p></tei:div>''')
+        self.assertEqual(main.xpath('//h:span[@class="ch"]/text()',namespaces=NS),['23'])
+
+    def test_psalm_display_title_keeps_nested_heading_anchors(self):
+        main=_render('''<tei:head xml:lang="he" p:psalm-title="תהלים קטו">תהלים 115
+            <tei:anchor corresp="urn:fixture:psalm-heading"/></tei:head>''')
+        self.assertEqual(main.xpath('//h:h2/text()',namespaces=NS),['תהלים קטו'])
+        self.assertTrue(main.xpath('//*[@id="urn:fixture:psalm-heading"]'))
 
     def test_block_scope(self):
         main = _render(_cond("a", "wedding", rubric="At a wedding:")
@@ -812,6 +838,26 @@ class TestBuildBook(unittest.TestCase):
         css = self._between(page, '<style id="os-cond-default">', "</style>").strip()
         result = run_js(node, "return OSCond.scopeCss(args, {}, args.defaults);", book)
         self.assertEqual(result["css"].strip(), css)
+
+    def test_large_books_keep_late_selectors_in_bounded_rules(self):
+        from opensiddur.exporter.condition_eval import TriState
+        node = require_node(self)
+        # More selectors than Chromium accepts in one rule: the late scope
+        # must still hide, both initially and after changing reader settings.
+        count = 40000
+        expression = {"cond": {"fs": "opensiddur:override", "f": [
+            {"name": "wedding", "v": True}]}, "pinned": {}}
+        book = BookConditions(expressions=[expression], scopes=[0] * count)
+        expected = scope_css(book, [TriState.FALSE])
+        actual = run_js(node, "return OSCond.scopeCss(args, "
+                        "{'opensiddur:override': {wedding: false}}, {}).css;",
+                        {"expressions": [expression], "scopes": [0] * count})
+        self.assertEqual(actual, expected)
+        self.assertIn(".c39999", actual)
+        rules = actual.strip().splitlines()
+        self.assertGreater(len(rules), 1)
+        self.assertTrue(all(len(rule.split("{")[0].split(",")) <= 256
+                            for rule in rules))
 
     def test_a_row_none_of_whose_text_shows_goes_whole(self):
         """The row's two columns are each a wedding's; the settings file says it is a wedding,

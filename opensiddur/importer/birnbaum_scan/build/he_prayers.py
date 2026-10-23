@@ -101,7 +101,7 @@ prayer("amidah_qedushah", "קְדֻשָּׁה", "amidah/qedushah", 83, 85, "\n".
     f'        <tei:div corresp="{U}amidah/qedushah">',
     cond("cond_qedushah_repetition",
          note="When the Reader repeats the Shemoneh Esreh, the following Kedushah is said:",
-         fs=feature(RECITATION, "repetition")),
+         fs="<j:all>"+feature(RECITATION, "repetition")+feature(QUORUM, "minyan")+"</j:all>"),
     d(U + "amidah/qedushah/neqadesh",
       "נְקַדֵּשׁ אֶת שִׁמְךָ בָּעוֹלָם כְּשֵׁם שֶׁמַּקְדִּישִׁים אוֹתוֹ בִּשְׁמֵי מָרוֹם, "
       "כַּכָּתוּב עַל יַד נְבִיאֶֽךָ: וְקָרָא זֶה אֶל זֶה וְאָמַר:", indent=10),
@@ -174,7 +174,7 @@ prayer("amidah_geulah", "גְּאוּלָּה", "amidah/geulah", 85, 85, "\n".jo
     cond("cond_geulah_aneinu",
          note="On fast days (except Tish‘ah b’Av) the Reader adds:",
          fs="\n".join(["          <j:all>", feature(AGG, "minor-fast"),
-                       feature(RECITATION, "repetition"), "          </j:all>"])),
+                       feature(RECITATION, "repetition"), feature(QUORUM, "minyan"), "          </j:all>"])),
     d(U + "amidah/aneinu",
       "(עֲנֵֽנוּ, יְיָ, עֲנֵֽנוּ בְּיוֹם צוֹם תַּעֲנִיתֵֽנוּ, כִּי בְצָרָה גְדוֹלָה אֲנָֽחְנוּ. אַל תֵּֽפֶן אֶל רִשְׁעֵֽנוּ, "
       "וְאַל תַּסְתֵּר פָּנֶֽיךָ מִמֶּֽנּוּ, וְאַל תִּתְעַלַּם מִתְּחִנָּתֵֽנוּ. הֱיֵה נָא קָרוֹב לְשַׁוְעָתֵֽנוּ, יְהִי נָא "
@@ -318,7 +318,7 @@ prayer("amidah_hodaah", "הוֹדָאָה", "amidah/hodaah", 91, 93, "\n".join([
     f'        <tei:div corresp="{U}amidah/hodaah">',
     cond("cond_modim_derabbanan",
          note="When the Reader repeats the Shemoneh Esreh, the Congregation responds here by saying:",
-         fs=feature(RECITATION, "repetition")),
+         fs="<j:all>"+feature(RECITATION, "repetition")+feature(QUORUM, "minyan")+"</j:all>"),
     d(U + "amidah/hodaah/modim_derabbanan",
       "(מוֹדִים אֲנַֽחְנוּ לָךְ, שָׁאַתָּה הוּא יְיָ אֱלֹהֵֽינוּ וֵאלֹהֵי אֲבוֹתֵֽינוּ. אֱלֹהֵי כָל בָּשָׂר, "
       "יוֹצְרֵֽנוּ, יוֹצֵר בְּרֵאשִׁית. בְּרָכוֹת וְהוֹדָאוֹת לְשִׁמְךָ הַגָּדוֹל וְהַקָּדוֹשׁ עַל שֶׁהֶחֱיִיתָֽנוּ "
