@@ -411,6 +411,8 @@ ISHMAEL_ORDER = (
 ) + tuple(f"middot_{n}" for n in range(1, 14)) + (
     ("citation", "אבות ה, כג; מלאכי ג, ד", "Mishnah Avoth 5:23; Malachi 3:4"),
     "ishmael_yehi_ratzon",
+    ("start-conditional", "morning_study_kaddish", "When a minyan holds service:",
+     feature("opensiddur:quorum", "minyan")),
     ("head", "קַדִּישׁ דְּרַבָּנָן", "KADDISH D\u2019RABBANAN"),
     ("mourners", None),
     "kaddish_derabbanan_yitgadal",
@@ -419,6 +421,7 @@ ISHMAEL_ORDER = (
     "kaddish_derabbanan_al_yisrael",
     "kaddish_derabbanan_yehe_shlama",
     "kaddish_derabbanan_oseh_shalom",
+    ("end-conditional", "morning_study_kaddish"),
     ("closing", None),
 )
 
@@ -465,6 +468,11 @@ def _emit(lines, project, by_name, order):
                          % (("he", he_cit) if project == PROJECT_HE else ("en", en_cit)))
             _transclude(lines, by_name, name)
             lines.append(endcond(cid))
+        elif kind == "start-conditional":
+            lines.append(cond(item[1], note=item[2], fs=item[3],
+                              note_resp='urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein'))
+        elif kind == "end-conditional":
+            lines.append(endcond(item[1]))
         else:
             raise ValueError(f"unknown unit item {item!r}")
 
@@ -483,6 +491,13 @@ def unit_body_birchot(project, by_name):
     lines.append(BIRCHOT_CITATION[project])
     for name in ("tallith_mah_yakar", "tallith_yehi_ratzon"):
         _transclude(lines, by_name, name)
+    tefillin = ('<j:all><j:none>'+feature(AGG, 'shabbat')+feature(AGG, 'yom-tov')
+                +feature(HOL, 'tisha-bav', '<tei:numeric value="1"/>')+'</j:none><j:any>'
+                +'<j:none>'+feature(AGG, 'chol-hamoed')+'</j:none>'
+                +feature('opensiddur:practice', 'tefillin-on-chol-hamoed')+'</j:any></j:all>')
+    lines.append(cond('morning_tefillin', fs=tefillin,
+        note='On weekdays, except Shabbat, Yom Tov and Tish‘ah b’Av morning; on Ḥol ha-Mo‘ed, according to the custom of wearing tefillin:',
+        note_resp='urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein'))
     lines.append(TEFILLIN_HEAD[project])
     for note, names in TEFILLIN_RUBRICS:
         if note:
@@ -492,6 +507,7 @@ def unit_body_birchot(project, by_name):
                 _citation(lines, project, name[1], name[2])
             else:
                 _transclude(lines, by_name, name)
+    lines.append(endcond('morning_tefillin'))
     adon, yigdal = POEM_HEADS[project]
     for head, name in ((adon, "poem_adon_olam"), (yigdal, "poem_yigdal")):
         if head:
@@ -686,10 +702,23 @@ def unit_body():
     lines.append('        <tei:head xml:lang="en">SHEMONEH ESREH</tei:head>')
     lines.append('        <tei:note type="instruction" xml:lang="en">The Shemoneh Esreh is recited in silent devotion while standing, facing east.</tei:note>')
     lines.append('        <tei:note type="instruction" xml:lang="en">The Reader repeats the Shemoneh Esreh aloud when a minyan holds service.</tei:note>')
+    public = '<j:all>'+feature('opensiddur:recitation', 'repetition')+feature('opensiddur:quorum', 'minyan')+'</j:all>'
+    gates = {'amidah_qedushah': ('weekday_kedushah', public),
+             'amidah_qedushat_hashem': ('weekday_silent_kedushat_hashem', '<j:none>'+public+'</j:none>'),
+             'amidah_birkat_kohanim': ('weekday_reader_birkat_kohanim', public)}
     for name in ORDER:
+        if name == 'amidah_elohai_netzor':
+            lines.append(cond('weekday_silent_meditation', fs='<j:none>'+public+'</j:none>'))
+        if name in gates:
+            cid, predicate = gates[name]
+            lines.append(cond(cid, fs=predicate))
         if name == "amidah_qedushah":
             lines.append('        <tei:head xml:lang="en">KEDUSHAH</tei:head>')
         lines.append(f'        <j:transclude type="external" target="{BY_NAME[name]["urn"]}"/>')
+        if name in gates:
+            lines.append(endcond(gates[name][0]))
+        if name == 'amidah_elohai_netzor':
+            lines.append(endcond('weekday_silent_meditation'))
     # A cross-reference rubric: it names a page in this book and governs nothing here.
     lines.append('        <tei:note type="instruction" xml:lang="en">Hallel (page 565) is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.</tei:note>')
     lines.append('        <tei:div>')

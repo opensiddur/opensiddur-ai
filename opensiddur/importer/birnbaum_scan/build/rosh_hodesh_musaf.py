@@ -100,7 +100,7 @@ def units(project):
     body+=conditional('modim','When the Reader repeats the Amidah, the Congregation responds here by saying:',READER,p('modim_derabbanan'))+p('modim')
     body+=conditional('hanukkah','On Ḥanukkah add:',holiday('hanukkah',8),p('al_hanissim')+p('bimei'))+p('veal_kulam')+p('hatov')
     body+=conditional('kohanim','Priestly blessing recited by the Reader:',READER,p('kohanim'))+p('sim_shalom')
-    body+=conditional('meditation','After the Amidah add the following meditation:',READER,p('elohai')+p('yehi'),negate=True)
+    body+=conditional('meditation','After the Amidah add the following meditation:',READER,p('elohai'),negate=True)+p('yehi')
     add('amidah','מוּסָף לְרֹאשׁ חֹדֶשׁ','MUSAF FOR ROSH ḤODESH',575,583,body,printed=True)
     # Occasion gates stay outside the reusable Amidah. Sabbath has its own Musaf.
     scope='<j:all>'+holiday('rosh-hodesh',2)+'<j:none>'+feature(AGG,'shabbat')+'</j:none></j:all>'

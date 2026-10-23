@@ -160,8 +160,32 @@
             <xsl:if test="@p:section">
                 <xsl:attribute name="data-section" select="@p:section"/>
             </xsl:if>
-            <xsl:apply-templates/>
+            <xsl:choose>
+                <xsl:when test="@p:psalm-title">
+                    <xsl:value-of select="@p:psalm-title"/>
+                    <xsl:call-template name="psalm-title-annotations"/>
+                </xsl:when>
+                <xsl:otherwise><xsl:apply-templates/></xsl:otherwise>
+            </xsl:choose>
         </xsl:element>
+    </xsl:template>
+
+    <!-- A liturgical psalm wrapper owns its bilingual title. The transcluded
+         edition may also supply a title or book heading; keep its anchor and
+         annotations without printing a second title. -->
+    <xsl:template match="tei:head[@p:suppress-psalm-heading = 'true'] |
+                        tei:head[ancestor::tei:div[@type = 'psalm']]
+                                [not(parent::tei:div[@type = 'psalm'])]
+                                [not(ancestor::tei:note)]" priority="2">
+        <xsl:if test="@corresp">
+            <span><xsl:call-template name="attributes"/></span>
+        </xsl:if>
+        <xsl:call-template name="psalm-title-annotations"/>
+    </xsl:template>
+
+    <xsl:template name="psalm-title-annotations">
+        <xsl:apply-templates select="descendant::*[self::tei:note or self::tei:anchor or self::tei:milestone]
+                                    [not(ancestor::tei:note)]"/>
     </xsl:template>
 
     <xsl:template match="tei:p | tei:ab">
@@ -394,7 +418,8 @@
 
     <!-- A chapter number is set only in a book of the Bible; a psalm quoted in the liturgy
          is named by its heading. -->
-    <xsl:template match="tei:milestone[@unit = 'chapter'][@n][ancestor::tei:div[@type = 'book']]">
+    <xsl:template match="tei:milestone[@unit = 'chapter'][@n][ancestor::tei:div[@type = 'book']]
+                                     [not(ancestor::tei:div[@type = 'psalm'])][not(@p:chapter-label = 'hidden')]">
         <span>
             <xsl:call-template name="attributes">
                 <xsl:with-param name="class" select="'ch'"/>

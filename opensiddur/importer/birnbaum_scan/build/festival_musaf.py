@@ -175,7 +175,7 @@ def units(project):
     body+=c('duchen_retzeh','When the Kohanim bless the congregation:',DUCHEN,transclude(KOHANIM+'/avodah'))+c('ordinary_retzeh','When the Kohanim do not bless the congregation:',DUCHEN,p('vetechezenah'),True)
     body+=transclude(AMIDAH+'/hodaah')+c('duchen','When the Kohanim bless the congregation:',DUCHEN,transclude(KOHANIM))
     body+=c('reader_blessing','Priestly blessing recited by the Reader:','<j:all>'+READER+'<j:none>'+feature('opensiddur:practice','birkat-kohanim')+'</j:none></j:all>',p('kohanim_reader'))+p('sim_shalom')
-    body+=c('meditation','After the Amidah add the following meditation:',READER,seq('elohai_netzor','yehi_ratzon'),True)
+    body+=c('meditation','After the Amidah add the following meditation:',READER,p('elohai_netzor'),True)+p('yehi_ratzon')
     add('amidah',AMIDAH,'מוּסָף לְשָׁלֹשׁ רְגָלִים','MUSAF FOR FESTIVALS',609,635,body,True)
     fields=''.join(f'<tei:f name="{k}"><tei:binary value="{str(k=="musaf").lower()}"/></tei:f>' for k in ('shaharit','minha','maariv','musaf','neila','slihot'))
     add('service',ROOT,'מוסף לשלש רגלים','Festival Musaf',609,635,'<j:declare xml:id="festival_musaf_context"><tei:fs type="'+SERVICE+'">'+fields+'</tei:fs></j:declare>'+c('occasion','On festivals and Ḥol ha-Mo‘ed:',OCCASION,transclude(AMIDAH))+'<j:endDeclare target="#festival_musaf_context"/>')

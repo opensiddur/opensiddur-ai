@@ -1393,7 +1393,13 @@ passage whose occasion is easier to compute than to write as a condition:
 </tei:fs>
 ```
 
-The weekly parsha and special additions can also be calculated:
+The weekly parsha and special additions can also be calculated.
+`diaspora-next-parsha` and `israel-next-parsha` name the next actual weekly
+reading, looking past festival Shabbatot. On Shabbat they advance to the next
+reading for Minchah; on weekdays they name the upcoming weekly reading. Before
+Simchat Torah, when the next regular Shabbat reads Bereshit, they name Vezot
+Haberakhah until Simchat Torah (22 Tishrei in Israel, 23 in the diaspora):
+
 ```xml
 <tei:fs type="opensiddur:torah-reading">
    <tei:f name="diaspora-parsha">
@@ -1402,6 +1408,8 @@ The weekly parsha and special additions can also be calculated:
    <tei:f name="israel-parsha">
       <tei:string/>
    </tei:f>
+   <tei:f name="diaspora-next-parsha"><tei:string/></tei:f>
+   <tei:f name="israel-next-parsha"><tei:string/></tei:f>
    <tei:f name="triennial-year">
       <tei:numeric value="1"/>
    </tei:f>

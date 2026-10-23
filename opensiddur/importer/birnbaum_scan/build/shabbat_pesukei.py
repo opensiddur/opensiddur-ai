@@ -4,7 +4,7 @@ The Reader's entry points within Nishmat are performance rubrics, not boundaries
 of Shacharit or Pesukei dezimrah. Whole-prayer occasion gates live in the callers.
 """
 import re
-from .common import PRAYER, SIDDUR, PROJECT_HE, SERVICE, cond, endcond, pb
+from .common import AGG, feature, PRAYER, SIDDUR, PROJECT_HE, SERVICE, cond, endcond, pb
 from .conclusion import BIBLE, instruction, transclude, text_xml, MINYAN
 from .milestones import Correspondences, marked
 from .shacharit_end import editorial_head
@@ -136,8 +136,10 @@ def units(project,by_name):
     add('opening/kaddish','קדיש יתום','MOURNERS’ KADDISH',299,301,gate('yatom',tr('kaddish_yatom')),printed=True)
     add('opening','פתיחת שחרית','Morning service opening',299,301,tr('mizmor_shir_chanukat_habayit')+transclude(ROOT+'/opening/kaddish'))
     add('pesukei_dezimra/nishmat','נשמת','NISHMATH',331,335,
-        transclude(NISHMAT)+instruction('On festivals the Reader begins here:')+transclude(HAEL)
-        +instruction('On Sabbaths the Reader begins here:')+transclude(SHOKHEN)+transclude(BEFI)+transclude(BEMAKHALOT)+tr('yishtabach'),printed=True)
+        transclude(NISHMAT)+cond('nishmat_reader_festival', fs=feature(AGG, 'yom-tov'))
+        +instruction('On festivals the Reader begins here:')+endcond('nishmat_reader_festival')+transclude(HAEL)
+        +cond('nishmat_reader_shabbat', fs='<j:all>'+feature(AGG, 'shabbat')+'<j:none>'+feature(AGG, 'yom-tov')+'</j:none></j:all>')
+        +instruction('On Sabbaths the Reader begins here:')+endcond('nishmat_reader_shabbat')+transclude(SHOKHEN)+transclude(BEFI)+transclude(BEMAKHALOT)+tr('yishtabach'),printed=True)
     add('pesukei_dezimra/kaddish','חצי קדיש','Half Kaddish',335,335,gate('chatzi',tr('kaddish_chatzi')))
     body=''.join(tr(k) for k in ('hareni_mezamen','barukh_sheamar','hodu','romemu','vehu_rahum','hoshia_et_amekha'))
     for n in (19,34,90,91,135,136,33,92,93):

@@ -136,7 +136,15 @@ def amidah(lang, by_name):
                 conditional('peace_ten_days', 'Between Rosh Hashanah and Yom Kippur say:', TEN_DAYS, passage('shalom/besefer_chayim'))]
         else:
             if name == 'amidah_qedushah':
-                parts.append('<tei:div>'+head(lang, 'קְדֻשָּׁה', 'KEDUSHAH')+transclude(by_name[name]['urn'])+'</tei:div>')
+                parts.append(cond('weekday_kedushah', fs='<j:all>'+REPETITION+MINYAN+'</j:all>')
+                    +'<tei:div>'+head(lang, 'קְדֻשָּׁה', 'KEDUSHAH')+transclude(by_name[name]['urn'])+'</tei:div>'+endcond('weekday_kedushah'))
+            elif name == 'amidah_qedushat_hashem':
+                parts.append(cond('weekday_silent_kedushat_hashem', fs='<j:none><j:all>'+REPETITION+MINYAN+'</j:all></j:none>')
+                    +transclude(by_name[name]['urn'])+endcond('weekday_silent_kedushat_hashem'))
+            elif name == 'amidah_elohai_netzor':
+                parts.append(cond('weekday_silent_meditation', fs='<j:none><j:all>'+REPETITION+MINYAN+'</j:all></j:none>')+transclude(by_name[name]['urn'])+endcond('weekday_silent_meditation'))
+            elif name == 'amidah_yehi_ratzon':
+                parts.append(transclude(by_name[name]['urn']))
             else:
                 parts.append(transclude(by_name[name]['urn']))
     return '\n'.join(parts)
@@ -199,7 +207,7 @@ def units(project, by_name):
     opening = [transclude(PRAYER+'ashrei')]
     kaddish(opening,'half_kaddish')
     # The scan supplies a direction, not the Torah/Haftarah text here.
-    opening.append(instruction(TORAH_RUBRIC))
+    opening.append(conditional('torah_rubric', '', FAST, instruction(TORAH_RUBRIC)))
     unit('opening','אַשְׁרֵי וַחֲצִי קַדִּישׁ','Ashrei and Half Kaddish',157,159,'\n'.join(opening))
     unit('amidah','תפילת העמידה','SHEMONEH ESREH',159,175,amidah(lang,by_name))
     unit('avinu_malkenu','אָבִֽינוּ מַלְכֵּֽנוּ','Avinu Malkenu',175,179,avinu(lang))

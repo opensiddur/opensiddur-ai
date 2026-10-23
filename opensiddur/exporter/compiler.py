@@ -598,7 +598,7 @@ class CompilerProcessor:
         elif corresp or xml_id:
             # For commentary/editorial notes, select all annotations for corresp or xml_id
             # May be standoff annotation, or inline.
-            references = self._refdb.get_references_to(corresp, xml_id, project, file_name)
+            references = self._refdb.get_references_to(corresp, xml_id, project, file_name, element_tag=f"{{{TEI_NS}}}note")
             note_references = [r for r in references
                 if r.element_tag =="{http://www.tei-c.org/ns/1.0}note"]
             limited_references = self._urn_resolver.prioritize_range(

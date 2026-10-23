@@ -1974,3 +1974,16 @@
 {"urn": "urn:x-opensiddur:text:siddur:selichot/circumcision/performance_instruction", "status": "canonical", "label_en": "selichot/circumcision/performance instruction", "parent": "urn:x-opensiddur:text:siddur:selichot/circumcision"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/circumcision/refrain_instruction", "status": "canonical", "label_en": "selichot/circumcision/refrain instruction", "parent": "urn:x-opensiddur:text:siddur:selichot/circumcision"}
 {"urn": "urn:x-opensiddur:text:siddur:selichot/circumcision/refrain_instruction/printed", "status": "canonical", "label_en": "selichot/circumcision/refrain instruction/printed", "parent": "urn:x-opensiddur:text:siddur:selichot/circumcision/refrain_instruction"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded", "status": "canonical", "label_en": "Expanded Ashkenazi siddur"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/afternoon", "status": "canonical", "label_en": "Expanded afternoon service", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/appendices", "status": "canonical", "label_en": "Blessings and lifecycle appendices in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/evening", "status": "canonical", "label_en": "Expanded evening service", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/morning", "status": "canonical", "label_en": "Expanded morning service", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/musaf", "status": "canonical", "label_en": "Expanded additional service", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/occasions", "status": "canonical", "label_en": "Occasional rites in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/readings_afternoon_haftarah", "status": "canonical", "label_en": "Afternoon haftarah selections in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/readings_afternoon_maftir", "status": "canonical", "label_en": "Afternoon maftir selections in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/readings_afternoon_torah", "status": "canonical", "label_en": "Afternoon torah selections in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/readings_morning_haftarah", "status": "canonical", "label_en": "Morning haftarah selections in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/readings_morning_maftir", "status": "canonical", "label_en": "Morning maftir selections in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}
+{"urn": "urn:x-opensiddur:text:siddur:expanded/readings_morning_torah", "status": "canonical", "label_en": "Morning torah selections in the expanded siddur", "parent": "urn:x-opensiddur:text:siddur:expanded"}

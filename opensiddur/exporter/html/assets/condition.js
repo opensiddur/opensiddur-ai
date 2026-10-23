@@ -296,8 +296,12 @@
       if (!reachable) hidden.push(".oref" + number);
     });
     var css = "";
-    if (hidden.length) css += hidden.join(",") + "{display:none}\n";
-    if (settled.length) css += settled.join(",") + "{display:none}\n";
+    // Large expanded books exceed browser limits for selectors in a single rule.
+    [hidden, settled].forEach(function (selectors) {
+      for (var start = 0; start < selectors.length; start += 256) {
+        css += selectors.slice(start, start + 256).join(",") + "{display:none}\n";
+      }
+    });
     return { css: css, states: states, resolver: resolver };
   }
 

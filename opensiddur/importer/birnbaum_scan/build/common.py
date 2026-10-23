@@ -147,6 +147,8 @@ def header(*, title_he: str, title_en: str, urn: str, project: str,
 
 
 def document(*, body: str, lang: str, **kw) -> str:
+    from .scopes import scope_section_headings
+    body = scope_section_headings(body)
     return (f'<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" '
             f'xmlns:j="http://jewishliturgy.org/ns/jlptei/2" xml:lang="{lang}">\n'
             f'{header(lang=lang, **kw)}\n'

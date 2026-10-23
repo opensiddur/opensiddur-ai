@@ -321,3 +321,27 @@ class TestMarkerReconstruct(unittest.TestCase):
         with unittest.mock.patch.object(mr, "_structural_marker_map", return_value={"unknown": "z"}):
             reconstruct_container(pi, mr.defaultdict(dict))
         self.assertEqual(len(pi), 2)
+
+    def test_large_stream_reparents_content_without_detaching_it(self):
+        # Detached lxml subtrees migrate namespaces and IDs to temporary
+        # documents. A book-sized stream must move its content directly into
+        # the rebuilt wrappers; only the empty marker carriers are discarded.
+        class RetainedElement(etree.ElementBase):
+            def remove(self, element):
+                if not mr._structural_marker_map(element):
+                    raise AssertionError('content was detached into a temporary document')
+                return super().remove(element)
+        parser = etree.XMLParser()
+        parser.set_element_class_lookup(etree.ElementDefaultClassLookup(element=RetainedElement))
+        children = ''.join(f'<tei:seg xml:id="word-{i}">word {i}</tei:seg>' for i in range(1000))
+        xml = f'<root xmlns:tei="{TEI_NS}" xmlns:p="{P_NS}"><tei:p p:start="paragraph"/>{children}<tei:p p:end="paragraph"/></root>'
+        root = etree.fromstring(xml.encode(), parser)
+        original = list(root)[1:-1]
+        reconstruct_container(root, mr.defaultdict(dict))
+        self.assertEqual(len(root), 1)
+        self.assertEqual(root[0].tag, f'{{{TEI_NS}}}p')
+        self.assertEqual(list(root[0]), original)
+        self.assertEqual([e.text for e in root[0]], [f'word {i}' for i in range(1000)])
+        self.assertEqual(root[0][500].get(f'{{{XML_NS}}}id'), 'word-500')
+        reparsed = etree.fromstring(etree.tostring(root))
+        self.assertEqual(len(reparsed.xpath("id('word-500')")), 1)

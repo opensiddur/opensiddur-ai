@@ -125,7 +125,7 @@ def hoshana_day(number):
             if n==number:
                 weekday=(first-1+offset)%7+1
                 clauses.append('<j:all>'+date(7,15+offset)+feature('opensiddur:day-of-week','hebrew-day',f'<tei:numeric value="{weekday}"/>')+'</j:all>')
-    if number in (1,2,3,4):clauses.append(RABBAH)
+    clauses.append(RABBAH)
     return '<j:any>'+''.join(clauses)+'</j:any>'
 
 
@@ -163,7 +163,7 @@ def units(project):
     daily=rubric(679,'order')+rubric(679,'responsive')+hp('opening')
     for n in range(1,7):daily+=c('hoshana_'+str(n),'Hoshana '+str(n)+' according to the printed daily order:',hoshana_day(n),transclude(HOSHANOT+'/'+str(n)))
     daily+=c('hoshana7',RUBRICS['683']['weekdays'],SHABBAT,transclude(HOSHANOT+'/7'),True)
-    daily+=c('hoshana8','On Sabbath:',SHABBAT,transclude(HOSHANOT+'/8'))
+    daily+=c('hoshana8','On Sabbath:','<j:any>'+SHABBAT+RABBAH+'</j:any>',transclude(HOSHANOT+'/8'))
     # The final-day additions form a separately addressable sequence.
     rab_keys=[r['key'] for r in ROWS if r['group']=='hoshanot']
     rab_keys=rab_keys[rab_keys.index('hoshanot_ani_vaho_rabbah'):]

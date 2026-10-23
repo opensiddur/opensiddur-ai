@@ -1,5 +1,5 @@
 """Sabbath morning Kiddush and table hymns, printed 423–436."""
-from .common import SIDDUR, POEM, PROJECT_HE, pb
+from .common import cond, endcond, feature, AGG, SIDDUR, POEM, PROJECT_HE, pb
 from .conclusion import BIBLE, instruction, transclude, text_xml
 from .milestones import marked
 from .shacharit_end import editorial_head
@@ -102,5 +102,5 @@ def units(project):
         instruction('Chanted at the table')+''.join(transclude(u) for u in URNS.values())+
         transclude(ROOT+'/yah_ribbon')+transclude(ROOT+'/tzur_mishelo'))
     add('','סעודת יום השבת','Sabbath daytime meal',423,435,
-        transclude(ROOT+'/kiddush')+transclude(ROOT+'/zemirot'),editorial=True)
+        cond('day_meal_shabbat_kiddush', fs='<j:none>'+feature(AGG, 'yom-tov')+'</j:none>')+transclude(ROOT+'/kiddush')+endcond('day_meal_shabbat_kiddush')+transclude(ROOT+'/zemirot'),editorial=True)
     return tuple(result)

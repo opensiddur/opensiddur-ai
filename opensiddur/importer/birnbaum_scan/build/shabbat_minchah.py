@@ -132,7 +132,7 @@ def amidah(lang):
     text+=transclude(SHALOM)
     text+=conditional('peace_seal','Except during the Ten Days of Repentance:',TEN_DAYS,tr('shalom/hamevarekh'),negate=True)
     text+=conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,tr('shalom/besefer_chayim'))
-    text+=conditional('meditation','After the Amidah add the following meditation:',READER,tr('elohai_netzor/text')+tr('yehi_ratzon'),negate=True)
+    text+=conditional('meditation','After the Amidah add the following meditation:',READER,tr('elohai_netzor/text'),negate=True)+tr('yehi_ratzon')
     return text
 
 

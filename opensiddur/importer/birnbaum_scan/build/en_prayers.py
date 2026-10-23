@@ -7,7 +7,7 @@ on the image. Emits the SAME URNs as the Hebrew project, which is what aligns th
 """
 import functools
 
-from .common import PRAYER, cond, endcond, feature, AGG, HOL, RECITATION
+from .common import QUORUM, PRAYER, cond, endcond, feature, AGG, HOL, RECITATION
 from . import common
 
 #: Every page break in this module belongs to the Amidah's printing. Bound once here
@@ -107,7 +107,7 @@ prayer("amidah_qedushah", "Kedushah", "amidah/qedushah", 84, 86, "\n".join([
     f'        <tei:div corresp="{U}amidah/qedushah">',
     cond("cond_qedushah_repetition",
          note="When the Reader repeats the Shemoneh Esreh, the following Kedushah is said:",
-         fs=feature(RECITATION, "repetition")),
+         fs="<j:all>"+feature(RECITATION, "repetition")+feature(QUORUM, "minyan")+"</j:all>"),
     d(U + "amidah/qedushah/neqadesh",
       "We sanctify thy name in this world even as they sanctify it in the highest heavens, "
       "as it is written by thy prophet: “They keep calling to one another:"),
@@ -166,7 +166,7 @@ prayer("amidah_geulah", "Blessing for redemption", "amidah/geulah", 86, 86, "\n"
     cond("cond_geulah_aneinu",
          note="On fast days (except Tish‘ah b’Av) the Reader adds:",
          fs="\n".join(["          <j:all>", feature(AGG, "minor-fast"),
-                       feature(RECITATION, "repetition"), "          </j:all>"])),
+                       feature(RECITATION, "repetition"), feature(QUORUM, "minyan"), "          </j:all>"])),
     d(U + "amidah/aneinu",
       "(Answer us, O Lord, answer us on the day of our fast, for we are in great distress. "
       "Regard not our wickedness; conceal not thy presence from us, and hide not thyself from "
@@ -298,7 +298,7 @@ prayer("amidah_hodaah", "Blessing of thanksgiving", "amidah/hodaah", 92, 94, "\n
     f'        <tei:div corresp="{U}amidah/hodaah">',
     cond("cond_modim_derabbanan",
          note="When the Reader repeats the Shemoneh Esreh, the Congregation responds here by saying:",
-         fs=feature(RECITATION, "repetition")),
+         fs="<j:all>"+feature(RECITATION, "repetition")+feature(QUORUM, "minyan")+"</j:all>"),
     d(U + "amidah/hodaah/modim_derabbanan",
       "(We thank thee, who art the Lord our God and the God of our fathers. God of all mankind, "
       "our Creator and Creator of the universe, blessings and thanks are due to thy great and "
