@@ -171,7 +171,9 @@ The device's evaluator (`html/assets/condition.js`) is a port of the compiler's
 (`condition_eval.py`, `client_settings.py`). The tests run the same corpus
 (`opensiddur/tests/fixtures/condition_agreement/`) through both, the JavaScript under Node.
 Without Node those tests are skipped, unless `OPENSIDDUR_REQUIRE_JS=1`, as CI sets it. Point
-`OPENSIDDUR_NODE` at a Node binary that is not on the `PATH`.
+`OPENSIDDUR_NODE` at a Node binary that is not on the `PATH`. CI runs Node 24; to get the same
+major version without installing Node, run `uvx --from 'nodejs-wheel-binaries>=24,<25' node --version`
+once and point `OPENSIDDUR_NODE` at the `nodejs_wheel/bin/node` it unpacks under `~/.cache/uv/`.
 
 The calendar has a port too, `html/assets/calendar.js`: the derivations of `calendar/compute.py`
 and the modules beside it, the derivation graph, and the settings stack they run on
