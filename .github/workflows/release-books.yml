@@ -30,7 +30,6 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     outputs:
       tag: ${{ env.TAG }}
