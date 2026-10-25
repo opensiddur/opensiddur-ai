@@ -674,8 +674,8 @@ class ExternalCompilerProcessor(CompilerProcessor):
             parallels never nest. The p:transclude wrapper itself is a display no-op, so the
             hierarchy it holds is independent of the enclosing one rather than nested inside it.
             Items built from a transcluded document must be attributed to that document, not to
-            the enclosing one: latex.py::get_file_references reads these attributes to build the
-            licence, credits and bibliography, and numbered-stream in reledmac.xslt reads
+            the enclosing one: metadata.get_file_references reads these attributes to build the
+            licences and bibliography, and numbered-stream in reledmac.xslt reads
             @xml:lang to pick the stream's typesetting direction, so a stale language here
             mislabels a translation as the host document's language and gets it mirrored under
             RTL (#p856).
@@ -1323,6 +1323,7 @@ class ExternalCompilerProcessor(CompilerProcessor):
     def process(self, root: Optional[ElementBase] = None) -> list[ElementBase]:
         if root is None:
             root = self.root_tree
+        self._gather_file_credits()
 
         # Root parallel trigger
         is_root = len(self.linear_data.processing_context) == 0

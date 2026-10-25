@@ -103,7 +103,7 @@ def _emit_bidi_literal(s: str) -> str:
 def escape_with_hebrew_runs(s: str) -> str:
     """Escape text for a left-to-right context, setting each Hebrew run as Hebrew.
 
-    The Python counterpart of ``j:directional-text`` in ``bibtex.xslt``: the
+    Used for the colophon (licences, credits and the bibliography): the
     surrounding text is already left to right, so only the Hebrew needs a wrapper —
     for its direction and for the font a Latin face has no glyphs in.
     """

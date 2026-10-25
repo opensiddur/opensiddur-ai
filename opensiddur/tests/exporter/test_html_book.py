@@ -54,11 +54,11 @@ def _cond(xml_id: str, name: str, value: str = "true", rubric: str = "",
             f'<tei:binary value="{value}"/></tei:f></tei:fs></j:conditional>')
 
 
-def _compiled(body: str, *, electronic: bool = True, lang: str = "en") -> bytes:
+def _compiled(body: str, *, electronic: bool = True, lang: str = "en", credits: str = "") -> bytes:
     destination = ' p:destination="electronic"' if electronic else ""
     return f'''<tei:TEI xmlns:tei="{TEI_NS}" xmlns:j="{J}" xmlns:p="{P}" xml:lang="{lang}"
     p:project="proj" p:file_name="index.xml"{destination}>
-  <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>Header Title</tei:title>
+  <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>Header Title</tei:title>{credits}
   </tei:titleStmt></tei:fileDesc></tei:teiHeader>
   <tei:text><tei:body>{body}</tei:body></tei:text>
 </tei:TEI>'''.encode()
@@ -603,12 +603,20 @@ declarations:
     is-israel: true
 """
 
+#: A credit as the compiler merges it into the compiled document's titleStmt.
+SOME_ONE = ('<tei:respStmt><tei:resp key="trc">Transcribed by</tei:resp>'
+            '<tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/some-one">Some One</tei:name>'
+            '</tei:respStmt>')
+
 INDEX = f"""<tei:TEI xmlns:tei="{TEI_NS}" xml:lang="en"><tei:teiHeader><tei:fileDesc>
   <tei:titleStmt><tei:title>I</tei:title><tei:respStmt><tei:resp key="trc">Transcribed by</tei:resp>
-  <tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/some-one">Some One</tei:name>
+  <tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/only-in-the-source">Only In The Source</tei:name>
   </tei:respStmt></tei:titleStmt>
   <tei:publicationStmt><tei:availability><tei:licence target="http://creativecommons.org/publicdomain/zero/1.0/">CC0</tei:licence>
-  </tei:availability></tei:publicationStmt></tei:fileDesc></tei:teiHeader>
+  </tei:availability></tei:publicationStmt>
+  <tei:sourceDesc><tei:bibl><tei:author>A. Writer</tei:author><tei:title>Prayers &amp; Hymns</tei:title>
+  <tei:publisher>The Press</tei:publisher><tei:pubPlace>London</tei:pubPlace><tei:date>1912</tei:date>
+  <tei:idno type="url">https://example.org/book</tei:idno></tei:bibl></tei:sourceDesc></tei:fileDesc></tei:teiHeader>
   <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text></tei:TEI>"""
 
 BODY = (
@@ -695,7 +703,7 @@ class TestBuildBook(unittest.TestCase):
         self.compiled = self.base / "compiled.xml"
 
     def _build(self, *, electronic=True, settings=True) -> str:
-        self.compiled.write_bytes(_compiled(BODY, electronic=electronic))
+        self.compiled.write_bytes(_compiled(BODY, electronic=electronic, credits=SOME_ONE))
         return build_book(self.compiled, self.settings if settings else None, self.base)
 
     @staticmethod
@@ -782,8 +790,21 @@ class TestBuildBook(unittest.TestCase):
     def test_colophon(self):
         page = self._build()
         about = self._between(page, '<footer class="os-about">', "</footer>")
-        self.assertIn("Some One", about)
+        self.assertIn("<strong>Transcriptionist:</strong> Some One", about)
         self.assertIn('href="http://creativecommons.org/publicdomain/zero/1.0/"', about)
+
+    def test_colophon_credits_whom_the_compiled_document_credits(self):
+        """As the PDF does: a credit the compiler did not carry into the book is not the
+        book's, even though a file the book refers to names it."""
+        about = self._between(self._build(), '<footer class="os-about">', "</footer>")
+        self.assertNotIn("Only In The Source", about)
+
+    def test_colophon_cites_the_sources(self):
+        about = self._between(self._build(), '<footer class="os-about">', "</footer>")
+        self.assertIn('<h2>Sources</h2><ul class="os-sources">', about)
+        self.assertIn("<li>A. Writer. <cite>Prayers &amp; Hymns</cite>. London, The Press, 1912. "
+                      '<a href="https://example.org/book">https://example.org/book</a>.</li>',
+                      about)
 
     def test_colophon_has_the_software_notice(self):
         about = self._between(self._build(), '<footer class="os-about">', "</footer>")

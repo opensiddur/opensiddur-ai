@@ -324,6 +324,7 @@ class InlineCompilerProcessor(CompilerProcessor):
     def process(self, root: Optional[ElementBase] = None) -> ElementBase:
         if root is None:
             root = self.root_tree
+        self._gather_file_credits()
 
         self.root_language = self._get_in_scope_language(root)
 

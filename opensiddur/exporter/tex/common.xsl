@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Functions the TeX stylesheets share (reledmac.xslt, bibtex.xslt). One copy of each, so
+<!-- Functions the TeX stylesheet (reledmac.xslt) shares across its templates. One copy of each, so
      that a fix reaches every caller: the escaping below once existed three times, and the copy
      the book's text went through escaped the braces of its own \textbackslash{}. -->
 <xsl:stylesheet version="3.0"

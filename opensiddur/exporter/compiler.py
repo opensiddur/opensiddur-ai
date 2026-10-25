@@ -11,7 +11,9 @@ The things that need to be done:
 (2) process conditions that result in yes/no answers. Leave maybe answers with
 their instructions.
 (3) process out of line annotations
-(4) include relevant header information like licenses, sources, and contributor credits
+(4) gather the contributor credits of every transcluded document into the compiled header.
+Licences and sources stay in the files the book is compiled from, which the output stages read
+through the p:project/p:file_name attributes (metadata.build_colophon).
 """
 
 import argparse
@@ -411,13 +413,9 @@ class CompilerProcessor:
             # never teiHeader/sourceDesc metadata.
             tei_ns = self.ns_map.get("tei", "http://www.tei-c.org/ns/1.0")
             tei_root_tag = f"{{{tei_ns}}}TEI"
+            # (Whoever digitised the words being taken is still credited: the processor
+            # gathered its file's credits when it compiled it; see _gather_file_credits.)
             for processed in processed_list:
-                # ...with one exception. Whoever digitised the words being taken is
-                # owed a credit for them, and this is the moment their header is
-                # about to be dropped. Gathering the credits here is what makes the
-                # compiled document self-describing: it can be printed, or turned
-                # into HTML, without reopening the sources it was built from.
-                gather_credits(processed, self.linear_data)
                 if processed.tag == tei_root_tag:
                     text_el = processed.find(f"{{{tei_ns}}}text")
                     if text_el is None:
@@ -1249,6 +1247,19 @@ class CompilerProcessor:
         self._update_processing_context_after(element)
         return copied
 
+    def _gather_file_credits(self) -> None:
+        """Credit whoever digitised this file, whatever part of it is being compiled.
+
+        The compiled document keeps the words a file contributes and drops its header, so the
+        credits in that header are gathered here, by every processor that compiles a file: a
+        whole-file transclusion, a range of verses, a parallel column or an inline quotation.
+        Gathering them is what makes the compiled document self-describing: it can be printed,
+        or turned into HTML, without reopening the sources it was built from.
+        """
+        header = self.root_tree.find(f"{{{TEI_NS}}}teiHeader")
+        if header is not None:
+            gather_credits(header, self.linear_data)
+
     def process(self, root: Optional[ElementBase] = None):
         """
         Recursively process elements and text nodes of root_tree as an identity transform.
@@ -1259,6 +1270,7 @@ class CompilerProcessor:
         """
         if root is None:
             root = self.root_tree
+        self._gather_file_credits()
 
         self.root_language = self._get_in_scope_language(root)
 
