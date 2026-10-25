@@ -38,7 +38,6 @@ jobs:
 
     # The electronic book's JavaScript is tested under Node. Pin the major version so CI runs the
     # same Node as local development, not whatever the runner image provides.
-    # OPENSIDDUR_REQUIRE_JS makes a missing Node fail those tests instead of skipping them.
     - name: Set up Node
       uses: actions/setup-node@v7
       with:
@@ -47,6 +46,7 @@ jobs:
     - name: Node version
       run: node --version
 
+    # OPENSIDDUR_REQUIRE_JS makes a missing Node fail those tests instead of skipping them.
     - name: Run tests with coverage
       env:
         OPENSIDDUR_REQUIRE_JS: "1"
