@@ -231,7 +231,7 @@ Marginal line numbers, as a critical edition uses to cite a passage.
 | `line_numbers.first` | integer ≥ 1 | `5` | The first line number printed, so the numbers run 5, 10, 15 rather than 1, 5, 10. |
 | `line_numbers.margin` | `inner` \| `outer` \| `left` \| `right` | `outer` | `inner`/`outer` are relative to the binding; `left`/`right` are fixed. The default applies to every layout, a single text included. In a `pairs` parallel layout each column takes the nearer outer margin regardless, since the alternative is numbers in the gutter between the columns. In an `interleaved` layout both texts are numbered in the one margin chosen here, whichever direction each runs in. |
 | `line_numbers.separation` | length | `1em` | Space between the number and the text block. |
-| `line_numbers.numerals` | `arabic` \| `hebrew` | `arabic` | |
+| `line_numbers.numerals` | `arabic` \| `hebrew` | `arabic` | Arabic numerals with no `styles.line_number` are set in the face of the text they number; a style sets them in the Latin face. |
 
 ## `notes`
 

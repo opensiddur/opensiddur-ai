@@ -408,8 +408,12 @@ class TestTheStylesheetKeepsNoCopy(unittest.TestCase):
         }
         for macro in sorted(defined):
             with self.subTest(macro=macro):
+                # However it might be defined: \newcommand, \renewcommand,
+                # \providecommand (starred or not), \def or \let.
                 found = re.search(
-                    r"\\(re)?newcommand\*?\{" + re.escape(macro) + r"\}", self.stylesheet
+                    r"\\(?:(?:re|provide|new)command\*?\s*\{|def\s*|let\s*)"
+                    + re.escape(macro) + r"(?![A-Za-z])",
+                    self.stylesheet,
                 )
                 self.assertIsNone(found and found.group(0))
 
@@ -418,6 +422,7 @@ class TestTheStylesheetKeepsNoCopy(unittest.TestCase):
             r"\setlength{\parindent}", r"\setlength{\linenumsep}",
             r"\setlength{\Lcolwidth}", r"\setlength{\Rcolwidth}", r"\columnsposition{",
             r"\lineation{", r"\lineationR{", r"\linenummargin{", r"\linenummarginR{",
+            r"\linenumincrement", r"\firstlinenum", r"\linespread",
             r"\setmainfont", r"\newfontfamily\hebrewfont", r"\IfFontExistsTF",
         ):
             with self.subTest(declaration=declaration):

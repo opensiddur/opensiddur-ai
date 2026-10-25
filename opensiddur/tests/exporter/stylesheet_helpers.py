@@ -46,10 +46,18 @@ def transform(xml: str, typography: Settings = None, **params) -> str:
     """Transform ``xml`` with reledmac.xslt. ``params`` override the computed parameters.
 
     ``layout`` is a setting as well as a parameter — the typography preamble depends on
-    it too — so with no ``typography`` of its own a ``layout`` is taken as the setting.
+    it too — so with no ``typography`` of its own a ``layout`` is taken as the setting,
+    and one that disagrees with the ``typography`` given is refused: the preamble and
+    the document would be set for two different layouts.
     """
-    if typography is None and "layout" in params:
-        typography = {"parallel": {"layout": params["layout"]}}
+    if "layout" in params:
+        if typography is None:
+            typography = {"parallel": {"layout": params["layout"]}}
+        elif _config(typography).parallel.layout.value != params["layout"]:
+            raise ValueError(
+                f"layout={params['layout']!r} disagrees with the settings' "
+                f"{_config(typography).parallel.layout.value!r}"
+            )
     full = stylesheet_parameters(xml, typography)
     full.update(params)
     return xslt_transform_string(XSLT_FILE, xml, xslt_params=full)
