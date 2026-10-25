@@ -212,8 +212,7 @@ def colophon_to_html(title: str, colophon: Colophon) -> str:
                   for role in colophon.credits]
     if colophon.licenses:
         parts.append("<h2>Licences</h2><p>This book includes texts under these licences:</p><ul>")
-        parts += [f'<li><a href="{escape(lic.url)}">{escape(lic.name)}</a></li>'
-                  for lic in colophon.licenses]
+        parts += [f"<li>{_link(lic.url, escape(lic.name))}</li>" for lic in colophon.licenses]
         parts.append("</ul>")
     if colophon.sources:
         parts.append('<h2>Sources</h2><ul class="os-sources">')
@@ -231,6 +230,14 @@ _HEBREW_SCRIPT = re.compile("[\u0590-\u05ff\ufb1d-\ufb4f]")
 def _value(text: str) -> str:
     escaped = html.escape(text)
     return f"<bdi>{escaped}</bdi>" if _HEBREW_SCRIPT.search(text) else escaped
+
+
+def _link(url: str, text: str) -> str:
+    """A link to a web address. Anything else (a URN, or a script) is shown, not linked: the
+    book opens offline from an email, and a link there must go where it says."""
+    if re.match(r"https?://", url, re.IGNORECASE):
+        return f'<a href="{html.escape(url)}">{text}</a>'
+    return text
 
 
 def _names(names: list[str]) -> str:
@@ -262,11 +269,15 @@ def source_html(source: SourceRecord) -> str:
     pieces += [_value(f"{'ISBN' if kind in ISBN_TYPES else kind}: {value}" if kind else value)
                for kind, value in source.identifiers]
     if source.url:
-        escaped = html.escape(source.url)
-        pieces.append(f'<a href="{escaped}">{escaped}</a>'
+        pieces.append(_link(source.url, html.escape(source.url))
                       + (f" (accessed {_value(source.urldate)})" if source.urldate else ""))
     pieces += [_value(note) for note in source.notes]
-    return ". ".join(piece.removesuffix(".") for piece in pieces) + "."
+    # A piece's own full stop, even inside its markup (a title ending "ed."), is the one the
+    # citation ends that piece with.
+    return ". ".join(_TRAILING_STOP.sub(r"\1", piece) for piece in pieces) + "."
+
+
+_TRAILING_STOP = re.compile(r"\.((?:</\w+>)*)$")
 
 
 #: The book's scripts are a program, apart from the texts it shows, and under its own licence.

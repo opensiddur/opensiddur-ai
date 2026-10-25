@@ -2061,7 +2061,7 @@ class TestExternalCompilerParallelTransclude(unittest.TestCase):
 
 
 class TestRangeTransclusionCredits(unittest.TestCase):
-    """A range of a file is still that file's words: whoever digitised it is credited.
+    """Whatever part of a file is compiled, whoever digitised it is credited.
 
     Only the range is compiled, so the file's header is never among the elements processed;
     an expanded siddur that took its verses from JPS 1917 this way credited none of the
@@ -2099,6 +2099,10 @@ class TestRangeTransclusionCredits(unittest.TestCase):
 
     def test_an_external_range_credits_the_files_contributors(self):
         ExternalCompilerProcessor("test_project", "genesis.xml", self.start, self.end).process()
+        self.assertIn(self.CREDIT, self.linear_data.credits)
+
+    def test_a_whole_file_credits_its_contributors(self):
+        ExternalCompilerProcessor("test_project", "genesis.xml").process()
         self.assertIn(self.CREDIT, self.linear_data.credits)
 
     def test_an_inline_range_credits_the_files_contributors(self):

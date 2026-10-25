@@ -242,10 +242,13 @@ def order_credits(credits: dict[str, dict[str, list[CreditRecord]]]) -> list[Rol
     ordered: list[RoleCredits] = []
     for role in sorted(credits, key=role_order):
         namespace_dict = credits[role]
-        total = sum(len(group) for group in namespace_dict.values())
+        people = {credit.name_text for group in namespace_dict.values() for credit in group}
+        # Only a role's own name takes a plural: an unrecognised role is headed by the
+        # document's wording ("Illuminated by"), which does not.
+        plural = role in contributor_keys_to_roles and len(people) > 1
         ordered.append(RoleCredits(
             role=role,
-            heading=role_name(role, namespace_dict) + ("s" if total > 1 else ""),
+            heading=role_name(role, namespace_dict) + ("s" if plural else ""),
             namespaces=[
                 NamespaceCredits(namespace=namespace,
                                  credits=sorted(namespace_dict[namespace],

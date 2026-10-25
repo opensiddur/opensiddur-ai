@@ -155,6 +155,16 @@ class TestOrderCredits(unittest.TestCase):
         ordered = order_credits({"xyz": {"ns": [_credit("xyz", "a", "A", resp="Illuminated by")]}})
         self.assertEqual(ordered[0].heading, "Illuminated by")
 
+    def test_the_documents_wording_takes_no_plural(self):
+        ordered = order_credits({"xyz": {"ns": [_credit("xyz", "a", "A", resp="Illuminated by"),
+                                                _credit("xyz", "b", "B", resp="Illuminated by")]}})
+        self.assertEqual(ordered[0].heading, "Illuminated by")
+
+    def test_one_person_credited_from_two_namespaces_is_one_person(self):
+        ordered = order_credits({"trl": {"x": [_credit("trl", "bob", "Bob", "x")],
+                                         "y": [_credit("trl", "bob", "Bob", "y")]}})
+        self.assertEqual((ordered[0].heading, ordered[0].names), ("Translator", ["Bob"]))
+
 
 class TestGroupLicenses(unittest.TestCase):
 
@@ -227,6 +237,28 @@ class TestSerialisers(unittest.TestCase):
                          "Rödelheim, Heidenheim &amp; Co., 1822. ISBN: 123. "
                          '<a href="https://example.org/a_b">https://example.org/a_b</a>. '
                          "Folio 2_40.")
+
+    def test_a_hebrew_phrase_is_one_run_across_its_punctuation(self):
+        """Set as three runs, the words of the phrase would be laid out left to right."""
+        source = SourceRecord(key="k", entry_type="misc", title='ספר "החינוך" (ה׳)')
+        self.assertIn('  title = {\\texthebrew{ספר "החינוך" (ה׳}' + ")},\n", source_to_bibtex(source))
+
+    def test_bibliography_specials_are_escaped_inside_a_hebrew_run(self):
+        source = SourceRecord(key="k", entry_type="misc", title="ספר & טוב")
+        self.assertIn("  title = {\\texthebrew{ספר \\& טוב}},\n", source_to_bibtex(source))
+
+    def test_html_a_full_stop_inside_markup_is_not_doubled(self):
+        source = SourceRecord(key="k", entry_type="misc", title="Collected Works, ed.",
+                              notes=["הערה."])
+        self.assertEqual(source_html(source),
+                         "<cite>Collected Works, ed</cite>. <bdi>הערה</bdi>.")
+
+    def test_html_links_only_web_addresses(self):
+        source = SourceRecord(key="k", entry_type="misc", url="javascript:alert(1)")
+        self.assertEqual(source_html(source), "javascript:alert(1).")
+        html = colophon_to_html("Book", Colophon(
+            licenses=[LicenseRecord(url="urn:x-licence:cc0", name="CC0")], credits=[], sources=[]))
+        self.assertIn("<li>CC0</li>", html)
 
     def test_html_names_editors_when_there_is_no_author(self):
         source = SourceRecord(key="k", entry_type="misc", title="T", editors=["A", "B"])
