@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-24
+
 ### Added
 - An electronic-book output format (#92): one self-contained HTML file. Its undecided
   passages are resolved on the reader's device, against settings the reader chooses in the
@@ -259,6 +261,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A range now carries the markers of exactly the scopes that overlap it. The compiler warns
   about any marker that still doesn't pair. A range that ends on a transclusion now ends
   there, instead of running on to the end of its file.
+
+### Pinned sources
+
+- `opensiddur-projects`: f52dbf981fb0ac5bd7d9b1b7b4b2da00d73e79e0
+- `sourcetexts`: 7713ae87299e563fe0d1a6ba4c69ca0e1e734bfe
 
 ## [0.5.1] - 2026-10-05
 
