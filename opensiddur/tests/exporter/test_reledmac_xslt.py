@@ -1253,7 +1253,7 @@ class TestSourceWhitespaceIsNotAParagraphBreak(unittest.TestCase):
 
     def test_the_postamble_keeps_its_blank_lines(self):
         """Why the collapse is scoped to a numbered stream and not applied to the
-        whole document: bibtex.xslt ends every record with a blank line, and the
+        whole document: the embedded bibliography ends every record with a blank line, and the
         licence block sets its paragraphs with them."""
         out = self._transform_body(
             "<tei:p>Text</tei:p>",

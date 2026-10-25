@@ -2053,8 +2053,8 @@
          reledmac's apparatus grouping.
 
          Scoped to a stream on purpose: $additional-preamble and $additional-postamble are
-         written elsewhere and do use blank lines deliberately — bibtex.xslt ends every
-         record with one, and the licence block sets paragraphs with them — so the
+         written elsewhere and do use blank lines deliberately — the embedded bibliography
+         ends every record with one, and the licence block sets paragraphs with them — so the
          invariant is this stylesheet's own, not theirs. -->
     <xsl:template name="numbered-stream">
         <xsl:param name="nodes" as="node()*"/>

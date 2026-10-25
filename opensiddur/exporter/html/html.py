@@ -44,15 +44,7 @@ from opensiddur.exporter.derived_settings import STATIC_DEFAULTS
 from opensiddur.exporter.html.css import typography_css, xslt_parameters
 from opensiddur.exporter.html.markers import BookConditions, prepare
 from opensiddur.exporter.html.psalms import normalize as normalize_psalm_titles
-from opensiddur.exporter.metadata import (
-    extract_credits,
-    extract_licenses,
-    get_file_references,
-    group_credits,
-    group_licenses,
-    role_name,
-    role_order,
-)
+from opensiddur.exporter.metadata import ISBN_TYPES, Colophon, SourceRecord, build_colophon
 from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter.settings import ElectronicSettings
 from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
@@ -206,26 +198,86 @@ def generator() -> str:
 
 
 def about_html(title: str, compiled_file: Path, project_directory: Path) -> str:
-    """The book's colophon: what it is, and whose work it is under which licences."""
+    """The book's colophon: what it is, whose work it is under which licences, and from where."""
+    return colophon_to_html(title, build_colophon(compiled_file, project_directory))
+
+
+def colophon_to_html(title: str, colophon: Colophon) -> str:
     escape = html.escape
-    sources = get_file_references(compiled_file, project_directory)
-    licenses = group_licenses(extract_licenses(sources, project_directory))
-    credits = group_credits(extract_credits(sources))
     parts = [f"<h2>{escape(title)}</h2>",
              f"<p>An electronic edition from the Open Siddur Project, built by {escape(generator())}.</p>"]
-    if credits:
+    if colophon.credits:
         parts.append("<h2>Contributors</h2>")
-        for role in sorted(credits, key=role_order):
-            names = sorted({credit.name_text for group in credits[role].values() for credit in group})
-            parts.append(f"<p><strong>{escape(role_name(role, credits[role]))}:</strong> "
-                         f"{escape(', '.join(names))}</p>")
-    if licenses:
+        parts += [f"<p><strong>{escape(role.heading)}:</strong> {escape(', '.join(role.names))}</p>"
+                  for role in colophon.credits]
+    if colophon.licenses:
         parts.append("<h2>Licences</h2><p>This book includes texts under these licences:</p><ul>")
-        parts += [f'<li><a href="{escape(lic.url)}">{escape(lic.name or lic.url)}</a></li>'
-                  for lic in licenses]
+        parts += [f"<li>{_link(lic.url, escape(lic.name))}</li>" for lic in colophon.licenses]
+        parts.append("</ul>")
+    if colophon.sources:
+        parts.append('<h2>Sources</h2><ul class="os-sources">')
+        parts += [f"<li>{source_html(source)}</li>" for source in colophon.sources]
         parts.append("</ul>")
     parts.append(SOFTWARE_NOTICE)
     return "\n".join(parts)
+
+
+#: Hebrew script, whose runs are isolated in a citation so that they do not reorder the
+#: punctuation around them (the counterpart of \\texthebrew in the printed bibliography).
+_HEBREW_SCRIPT = re.compile("[\u0590-\u05ff\ufb1d-\ufb4f]")
+
+
+def _value(text: str) -> str:
+    escaped = html.escape(text)
+    return f"<bdi>{escaped}</bdi>" if _HEBREW_SCRIPT.search(text) else escaped
+
+
+def _link(url: str, text: str) -> str:
+    """A link to a web address. Anything else (a URN, or a script) is shown, not linked: the
+    book opens offline from an email, and a link there must go where it says."""
+    if re.match(r"https?://", url, re.IGNORECASE):
+        return f'<a href="{html.escape(url)}">{text}</a>'
+    return text
+
+
+def _names(names: list[str]) -> str:
+    return " and ".join(map(_value, names))
+
+
+def source_html(source: SourceRecord) -> str:
+    """One source as a citation: who, what, which edition, where and when, and a link.
+
+    In the order a bibliography gives them, so that the electronic book cites what its printed
+    counterpart does.
+    """
+    pieces: list[str] = []
+    if source.authors:
+        pieces.append(_names(source.authors))
+    elif source.editors:
+        pieces.append(_names(source.editors) + (" (eds.)" if len(source.editors) > 1 else " (ed.)"))
+    if source.title:
+        pieces.append(f"<cite>{_value(source.title)}</cite>"
+                      + (f": {_value(source.subtitle)}" if source.subtitle else ""))
+    if source.authors and source.editors:
+        pieces.append("Edited by " + _names(source.editors))
+    if source.edition:
+        pieces.append(_value(source.edition))
+    imprint = ", ".join(_value(part) for part in (
+        ", ".join(source.address), source.publisher or source.distributor, source.date) if part)
+    if imprint:
+        pieces.append(imprint)
+    pieces += [_value(f"{'ISBN' if kind in ISBN_TYPES else kind}: {value}" if kind else value)
+               for kind, value in source.identifiers]
+    if source.url:
+        pieces.append(_link(source.url, html.escape(source.url))
+                      + (f" (accessed {_value(source.urldate)})" if source.urldate else ""))
+    pieces += [_value(note) for note in source.notes]
+    # A piece's own full stop, even inside its markup (a title ending "ed."), is the one the
+    # citation ends that piece with.
+    return ". ".join(_TRAILING_STOP.sub(r"\1", piece) for piece in pieces) + "."
+
+
+_TRAILING_STOP = re.compile(r"\.((?:</\w+>)*)$")
 
 
 #: The book's scripts are a program, apart from the texts it shows, and under its own licence.

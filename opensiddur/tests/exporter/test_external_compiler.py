@@ -2058,3 +2058,61 @@ class TestExternalCompilerParallelTransclude(unittest.TestCase):
         self.assertEqual(out.get("{http://www.w3.org/XML/1998/namespace}lang"), "he")
         self.assertEqual(len(list(out)), 1)
         self.assertEqual(list(out)[0].tag, f"{{{P_NS}}}row")
+
+
+class TestRangeTransclusionCredits(unittest.TestCase):
+    """Whatever part of a file is compiled, whoever digitised it is credited.
+
+    Only the range is compiled, so the file's header is never among the elements processed;
+    an expanded siddur that took its verses from JPS 1917 this way credited none of the
+    Wikisource transcribers of those verses.
+    """
+
+    XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">
+  <tei:teiHeader><tei:fileDesc><tei:titleStmt><tei:title>Genesis</tei:title>
+    <tei:respStmt><tei:resp key="trc">Transcribed by</tei:resp>
+    <tei:name ref="urn:x-opensiddur:contributor:en.wikisource.org/Prosody">Prosody</tei:name>
+    </tei:respStmt></tei:titleStmt></tei:fileDesc></tei:teiHeader>
+  <tei:text><tei:body><tei:div>
+    <tei:p xml:id="start">In the beginning</tei:p>
+    <tei:p xml:id="end">God created</tei:p>
+    <tei:p>the heaven</tei:p>
+  </tei:div></tei:body></tei:text>
+</tei:TEI>"""
+
+    CREDIT = ("trc", "urn:x-opensiddur:contributor:en.wikisource.org/Prosody", "Prosody",
+              "Transcribed by")
+
+    def setUp(self):
+        reset_linear_data()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        project_dir = Path(self.temp_dir.name) / "test_project"
+        project_dir.mkdir()
+        (project_dir / "genesis.xml").write_bytes(self.XML)
+        self.linear_data = get_linear_data()
+        self.linear_data.xml_cache.base_path = Path(self.temp_dir.name)
+        root = etree.fromstring(self.XML)
+        path = root.getroottree().getpath
+        self.start, self.end = (path(root.xpath(f"//*[@xml:id='{i}']")[0]) for i in ("start", "end"))
+
+    def test_an_external_range_credits_the_files_contributors(self):
+        ExternalCompilerProcessor("test_project", "genesis.xml", self.start, self.end).process()
+        self.assertIn(self.CREDIT, self.linear_data.credits)
+
+    def test_a_whole_file_credits_its_contributors(self):
+        ExternalCompilerProcessor("test_project", "genesis.xml").process()
+        self.assertIn(self.CREDIT, self.linear_data.credits)
+
+    def test_an_inline_range_credits_the_files_contributors(self):
+        from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
+
+        InlineCompilerProcessor("test_project", "genesis.xml", self.start, self.end,
+                                linear_data=self.linear_data).process()
+        self.assertIn(self.CREDIT, self.linear_data.credits)
+
+    def test_each_person_is_credited_once_however_often_the_file_is_used(self):
+        for _ in range(2):
+            ExternalCompilerProcessor("test_project", "genesis.xml", self.start, self.end).process()
+        self.assertEqual(self.linear_data.credits.count(self.CREDIT), 1)

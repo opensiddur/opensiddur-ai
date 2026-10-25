@@ -2,9 +2,9 @@
 """
 JLPTEI to LuaLaTeX exporter (reledmac/reledpar pipeline).
 
-This module is the Python driver for the reledmac.xslt stylesheet. It collects
-license, credit, and source bibliographic metadata from all referenced source
-files, then drives the XSLT transformation that produces a LuaLaTeX document
+This module is the Python driver for the reledmac.xslt stylesheet. It writes the
+book's colophon (``metadata.build_colophon``: licences, credits and sources) as
+TeX, then drives the XSLT transformation that produces a LuaLaTeX document
 ready for ``lualatex`` (``pdf/pdf.py`` runs the passes).
 
 Typography settings (font, paper, layout, fontsize, running heads) are pulled from the same
@@ -17,6 +17,7 @@ import argparse
 import os
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Optional
 
@@ -29,6 +30,7 @@ sys.path.insert(0, str(project_root))
 from opensiddur.common.xslt import xslt_transform_string  # noqa: E402
 from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 from opensiddur.exporter.typography import TypographyConfig  # noqa: E402
+from opensiddur.exporter.tex.escape import escape_tex  # noqa: E402
 from opensiddur.exporter.tex.running_heads import (  # noqa: E402
     build_page_style_tex,
     escape_with_hebrew_runs,
@@ -41,14 +43,18 @@ from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
 )
 
 from opensiddur.exporter.metadata import (  # noqa: E402
+    ISBN_TYPES,
+    ISO_DATE,
     CreditRecord,
     LicenseRecord,
-    role_name as _role_name,
-    role_order as _role_order,
+    RoleCredits,
+    SourceRecord,
+    build_colophon,
     extract_credits,
     group_credits,
     group_licenses,
     load_typography,
+    order_credits,
 )
 from opensiddur.exporter import metadata  # noqa: E402
 
@@ -88,98 +94,116 @@ def licenses_to_tex(licenses: list[LicenseRecord]) -> str:
     )
 
 
-def credits_to_tex(credits: dict[str, dict[str, list[CreditRecord]]]) -> str:
-    """Convert grouped credits into a LaTeX appendix section."""
+def credits_to_tex(credits: list[RoleCredits]) -> str:
+    """Convert ordered credits into a LaTeX appendix section."""
     if not credits:
         return ""
-    # Sorted, because the file order these were gathered in is not meaningful and a
-    # credits list that reshuffles between two builds of the same document reads as though
-    # something changed.
     tex = "\\section*{Contributor credits}\n"
-    for role in sorted(credits, key=_role_order):
-        namespace_dict = credits[role]
-        total = sum(len(c) for c in namespace_dict.values())
-        role_name = _role_name(role, namespace_dict) + ("s" if total > 1 else "")
-        tex += f"\\subsection*{{{escape_with_hebrew_runs(role_name)}}}\n"
-        for namespace in sorted(namespace_dict):
-            sorted_credits = sorted(namespace_dict[namespace], key=lambda x: x.contributor)
+    for role in credits:
+        tex += f"\\subsection*{{{escape_with_hebrew_runs(role.heading)}}}\n"
+        for group in role.namespaces:
             # A credit with no namespace is one whose reference could not be read. It is
             # still a person, so it is listed -- just under no heading claiming to know
             # where their name is meaningful.
-            if namespace:
-                tex += f"\\subsubsection*{{From {escape_with_hebrew_runs(namespace)}}}\n"
+            if group.namespace:
+                tex += f"\\subsubsection*{{From {escape_with_hebrew_runs(group.namespace)}}}\n"
             tex += "\\begin{itemize}\n"
-            for credit in sorted_credits:
+            for credit in group.credits:
                 tex += f"\\item {escape_with_hebrew_runs(credit.name_text)}\n"
             tex += "\\end{itemize}\n"
     return tex
 
 
-def get_project_index(file_path: Path) -> Path:
-    """Get the project index file for a given file path."""
-    return file_path.parent / "index.xml"
+# Hebrew letters and points, and the geresh and gershayim that end an abbreviation or a
+# numeral (ה׳, תשפ״ו), which belong to the word they end.
+_BIBLIOGRAPHY_HEBREW = re.compile("[\u05d0-\u05ea\u0591-\u05c7\u05f3\u05f4\ufb1d-\ufb4f]+")
 
 
-_CITE_KEY = re.compile(r"@\w+\{([^,]*),")
-_ADDENDUM = re.compile(r"^  addendum = \{.*\},\n", re.M)
+def _bibliography_text(text: str) -> str:
+    """Escape a bibliographic value, setting each Hebrew phrase as one Hebrew run.
 
-
-def _with_key(entry: str, key_match: re.Match, key: str) -> str:
-    """``entry`` with the cite key ``key_match`` found in it replaced by ``key``."""
-    return entry[: key_match.start(1)] + key + entry[key_match.end(1):]
-
-
-def _without_addendum(entry: str) -> str:
-    """A bibtex entry without its ``addendum`` line: the work it cites, not the remark."""
-    return _ADDENDUM.sub("", entry + "\n").strip()
-
-
-def extract_sources(xml_file_paths: list[Path]) -> tuple[str, str]:
-    """Extract bibliographic sources from index.xml files.
-
-    Returns a (preamble_tex, postamble_tex) tuple. The preamble carries the
-    embedded ``filecontents*`` block + ``\\addbibresource``, the postamble
-    carries ``\\printbibliography``. Both are empty when there is no
-    ``listBibl`` content.
+    Wider than ``escape_with_hebrew_runs``: Hebrew words separated only by spaces and
+    punctuation of any kind (quotation marks, parentheses, a geresh) are one phrase. A title
+    such as ספר "החינוך" set as three runs would have its words laid out left to right in
+    the left-to-right bibliography, so the phrase would read backwards.
     """
-    index_files = sorted(set(get_project_index(fp) for fp in xml_file_paths))
-    bibtex_records: list[str] = []
-    # Each listed entry with its key blanked and its addendum dropped: the work it cites.
-    work_by_key: dict[str, str] = {}
-    for index_xml in index_files:
-        try:
-            index_xml_text = index_xml.read_text(encoding="utf-8")
-            bib_xslt_path = Path(__file__).parent / "bibtex.xslt"
-            bibtex_str = xslt_transform_string(bib_xslt_path, index_xml_text).strip()
-        except Exception as e:
-            print(f"Could not extract bibtex from {index_xml}: {e}", file=sys.stderr)
-            continue
-        for entry in filter(None, (e.strip() for e in bibtex_str.split("\n\n"))):
-            key_match = _CITE_KEY.match(entry)
-            if key_match is None:
-                print(f"Warning: {index_xml}: a source with no cite key; left out", file=sys.stderr)
-                continue
-            key = key_match.group(1)
-            # Two projects of the same book cite it identically but for a note, so the
-            # same key arrives twice; the book is listed once. A different work that
-            # happens to share an author and a year is a source in its own right, and
-            # BibTeX keeps only the first entry with a key, so it is given a key of its
-            # own — unless an earlier rename already gave this same work one.
-            work = _without_addendum(_with_key(entry, key_match, ""))
-            candidate, suffix = key, 1
-            while candidate in work_by_key:
-                if work_by_key[candidate] == work:
-                    break
-                suffix += 1
-                candidate = f"{key}-{suffix}"
-            else:
-                renamed = _with_key(entry, key_match, candidate)
-                work_by_key[candidate] = work
-                bibtex_records.append(renamed)
+    runs: list[list[int]] = []
+    for match in _BIBLIOGRAPHY_HEBREW.finditer(text):
+        gap = text[runs[-1][1]:match.start()] if runs else None
+        if gap is not None and all(c.isspace() or unicodedata.category(c).startswith("P")
+                                   for c in gap):
+            runs[-1][1] = match.end()
+        else:
+            runs.append([match.start(), match.end()])
+    parts: list[str] = []
+    position = 0
+    for run_start, run_end in runs:
+        parts.append(escape_tex(text[position:run_start]))
+        parts.append(r"\texthebrew{" + escape_tex(text[run_start:run_end]) + "}")
+        position = run_end
+    parts.append(escape_tex(text[position:]))
+    return "".join(parts)
 
-    bibtex_blob = "\n\n".join(bibtex_records)
-    if not bibtex_blob:
+
+def source_to_bibtex(source: SourceRecord) -> str:
+    """One source as a BibTeX entry, ending in a blank line.
+
+    Every value is escaped, with its Hebrew runs set as Hebrew, except the URL, which biblatex
+    reads verbatim. Direction is decided by the script actually in the string, not by the
+    language of the index it came from: a Hebrew index cites Latin publishers and
+    transliterations, and Hebrew turns up in English notes.
+    """
+    fields: list[tuple[str, str]] = []
+
+    def add(name: str, value: str) -> None:
+        if value:
+            fields.append((name, _bibliography_text(value)))
+
+    add("title", source.title)
+    add("subtitle", source.subtitle)
+    if source.editors:
+        fields.append(("editor", " and ".join(map(_bibliography_text, source.editors))))
+    if source.authors:
+        fields.append(("author", " and ".join(map(_bibliography_text, source.authors))))
+    add("edition", source.edition)
+    add("publisher", source.publisher)
+    # The site that hosts an online source is its organization: biblatex prints
+    # "organization" for @online and ignores "publisher" there. For a printed source with no
+    # publisher of its own, the distributor is the closest thing to one.
+    add("organization" if source.entry_type == "online" else "publisher", source.distributor)
+    if source.address:
+        fields.append(("address", ", ".join(map(_bibliography_text, source.address))))
+    # An ISO-shaped date goes in "date", which biblatex parses and formats; anything else
+    # stays in "year", which it prints verbatim.
+    add("date" if ISO_DATE.match(source.date) else "year", source.date)
+    if source.url:
+        fields.append(("url", source.url))
+    add("urldate", source.urldate)
+    # A site-specific identifier (archive.org, hebrewbooks) becomes an eprint keyed by the
+    # site that issued it, which biblatex prints as "archive.org: <id>".
+    for kind, value in source.identifiers:
+        if kind in ISBN_TYPES:
+            add("isbn", value)
+        else:
+            add("eprinttype", kind)
+            add("eprint", value)
+    # Everything explanatory is one addendum: it prints after the publication data and the
+    # URL, where a remark on a citation belongs, and a repeated field is an error to biber.
+    if source.notes:
+        fields.append(("addendum", " ".join(map(_bibliography_text, source.notes))))
+    body = "".join(f"  {name} = {{{value}}},\n" for name, value in fields)
+    return f"@{source.entry_type}{{{source.key},\n{body}}}\n\n"
+
+
+def sources_to_tex(sources: list[SourceRecord]) -> tuple[str, str]:
+    """The bibliography, as a (preamble_tex, postamble_tex) pair.
+
+    The preamble embeds the .bib in a ``filecontents*`` block and adds it as a resource; the
+    postamble prints it. Both are empty when there are no sources.
+    """
+    if not sources:
         return "", ""
+    bibtex_blob = "\n\n".join(source_to_bibtex(source).strip() for source in sources)
 
     # Named after the job, so two documents built in one directory do not share it, and
     # overwritten, because filecontents otherwise keeps a .bib it finds already there —
@@ -240,16 +264,10 @@ def transform_xml_to_tex(
     if project_directory is None:
         project_directory = projects_source_root
     project_directory = project_directory.resolve()
-    file_references = get_file_references(input_file, project_directory)
-
-    licenses = extract_licenses(file_references, project_directory)
-    licenses_tex = licenses_to_tex(group_licenses(licenses))
-    # From the compiled document, not from the sources it was built out of: the
-    # compiler gathers every contributing document's credits into it, so the file
-    # printed from is the file that says who made it.
-    credits = extract_credits([input_file])
-    credits_tex = credits_to_tex(group_credits(credits))
-    sources_preamble_tex, sources_postamble_tex = extract_sources(file_references)
+    colophon = build_colophon(Path(input_file), project_directory)
+    licenses_tex = licenses_to_tex(colophon.licenses)
+    credits_tex = credits_to_tex(colophon.credits)
+    sources_preamble_tex, sources_postamble_tex = sources_to_tex(colophon.sources)
 
     # Running-head slots that declare no language of their own follow the
     # document's, so their direction is right without being restated.

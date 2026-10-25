@@ -27,14 +27,21 @@ from opensiddur.exporter.tex.latex import (
     credits_to_tex,
     extract_credits,
     extract_licenses,
-    extract_sources,
     get_file_references,
     group_credits,
     group_licenses,
     licenses_to_tex,
     load_typography,
+    order_credits,
+    sources_to_tex,
     transform_xml_to_tex,
 )
+from opensiddur.exporter import metadata
+
+
+def extract_sources(xml_file_paths):
+    """The bibliography the PDF stage embeds for these files' projects."""
+    return sources_to_tex(metadata.extract_sources(xml_file_paths))
 
 
 def _no_fontconfig():
@@ -263,7 +270,7 @@ class TestCreditsToTex(unittest.TestCase):
             role="aut", resp_text="Author", ref="urn:x:ns/b",
             name_text="B", namespace="ns", contributor="b",
         )
-        out = credits_to_tex({"aut": {"ns": [c1, c2]}})
+        out = credits_to_tex(order_credits({"aut": {"ns": [c1, c2]}}))
         self.assertIn(r"\subsection*{Authors}", out)
 
     def test_emits_singular_when_one_contributor(self):
@@ -271,7 +278,7 @@ class TestCreditsToTex(unittest.TestCase):
             role="aut", resp_text="Author", ref="urn:x:ns/a",
             name_text="A", namespace="ns", contributor="a",
         )
-        out = credits_to_tex({"aut": {"ns": [c1]}})
+        out = credits_to_tex(order_credits({"aut": {"ns": [c1]}}))
         self.assertIn(r"\subsection*{Author}", out)
         self.assertNotIn(r"\subsection*{Authors}", out)
 
@@ -287,7 +294,7 @@ class TestCreditsToTex(unittest.TestCase):
                 name_text="משה בן 100%", namespace="ns_one", contributor="b",
             ),
         ]
-        out = credits_to_tex({"trl": {"ns_one": credits}})
+        out = credits_to_tex(order_credits({"trl": {"ns_one": credits}}))
         self.assertIn(r"\subsubsection*{From ns\_one}", out)
         self.assertIn(r"\item A. \& B. Smith\_Jones", out)
         self.assertIn(r"\item \texthebrew{משה בן} 100\%", out)
