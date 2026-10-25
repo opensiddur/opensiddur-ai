@@ -231,6 +231,39 @@ def get_file_references(
     return metadata.get_file_references(input_file, project_directory or projects_source_root)
 
 
+def typography_parameters(typography: TypographyConfig, root: etree._Element) -> dict:
+    """Every stylesheet parameter that carries typography, for one document.
+
+    The stylesheet keeps no typography default of its own and requires each of
+    these, so this is the one place a document's appearance is handed to it.
+    ``root`` is the compiled document's root element.
+    """
+    # Running-head slots that declare no language of their own follow the
+    # document's, so their direction is right without being restated.
+    root_language = root.get("{http://www.w3.org/XML/1998/namespace}lang")
+    # Several reledpar declarations do not exist unless the package is
+    # loaded, and the stylesheet loads it only for a document with two
+    # aligned streams. The typography block has to know which this is.
+    has_parallel = (
+        root.find(".//{http://jewishliturgy.org/ns/processing}parallel") is not None
+    )
+    return {
+        "documentclass-options": documentclass_options(typography),
+        "typography-preamble": build_typography_preamble(typography, has_parallel),
+        "layout": typography.parallel.layout.value,
+        "notes-placement": typography.notes.placement.value,
+        "notes-mark": typography.notes.mark.value,
+        "table-of-contents": typography.table_of_contents.enabled,
+        "table-of-contents-depth": typography.table_of_contents.depth,
+        "bookmarks-from": typography.bookmarks.from_.value,
+        "headings-from": typography.headings.from_.value,
+        "instructions-from": typography.instructions.from_.value,
+        "page-style-preamble": build_page_style_tex(
+            typography.page_header, typography.page_footer, root_language
+        ),
+    }
+
+
 def transform_xml_to_tex(
     input_file,
     xslt_file: Path = XSLT_FILE,
@@ -269,8 +302,6 @@ def transform_xml_to_tex(
     credits_tex = credits_to_tex(colophon.credits)
     sources_preamble_tex, sources_postamble_tex = sources_to_tex(colophon.sources)
 
-    # Running-head slots that declare no language of their own follow the
-    # document's, so their direction is right without being restated.
     parsed = etree.parse(input_file)
     root = parsed.getroot()
     resolve_page_references(root)
@@ -278,17 +309,6 @@ def transform_xml_to_tex(
     # stylesheet meets a scope's two markers in different streams, and in copies.
     mark_silent_scopes(root)
     input_xml = etree.tostring(root, encoding="unicode")
-    root_language = root.get("{http://www.w3.org/XML/1998/namespace}lang")
-    page_style_tex = build_page_style_tex(
-        typography.page_header, typography.page_footer, root_language
-    )
-    # Several reledpar declarations do not exist unless the package is
-    # loaded, and the stylesheet loads it only for a document with two
-    # aligned streams. The typography block has to know which this is.
-    has_parallel = (
-        root.find(".//{http://jewishliturgy.org/ns/processing}parallel") is not None
-    )
-    typography_tex = build_typography_preamble(typography, has_parallel)
 
     result = xslt_transform_string(
         Path(xslt_file),
@@ -305,17 +325,7 @@ def transform_xml_to_tex(
                 + "\n"
                 + sources_postamble_tex
             ),
-            "documentclass-options": documentclass_options(typography),
-            "typography-preamble": typography_tex,
-            "layout": typography.parallel.layout.value,
-            "notes-placement": typography.notes.placement.value,
-            "notes-mark": typography.notes.mark.value,
-            "table-of-contents": typography.table_of_contents.enabled,
-            "table-of-contents-depth": typography.table_of_contents.depth,
-            "bookmarks-from": typography.bookmarks.from_.value,
-            "headings-from": typography.headings.from_.value,
-            "instructions-from": typography.instructions.from_.value,
-            "page-style-preamble": page_style_tex,
+            **typography_parameters(typography, root),
         },
     )
 

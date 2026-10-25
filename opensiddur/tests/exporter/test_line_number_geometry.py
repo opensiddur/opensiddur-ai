@@ -27,8 +27,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from opensiddur.common.xslt import xslt_transform_string
-from opensiddur.exporter.tex.latex import XSLT_FILE
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 
 _PARALLEL_TEI = """<?xml version="1.0" encoding="UTF-8"?>
 <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
@@ -113,11 +112,7 @@ class TestLineNumberGeometry(unittest.TestCase):
 
     @staticmethod
     def _preamble() -> str:
-        out = xslt_transform_string(
-            XSLT_FILE, _PARALLEL_TEI,
-            xslt_params={"additional-preamble": "", "additional-postamble": "",
-                         "layout": "pairs"},
-        )
+        out = transform(_PARALLEL_TEI, layout="pairs")
         return out.split(r"\begin{document}")[0]
 
     def _typeset(self, macros: str = "") -> list[Page]:

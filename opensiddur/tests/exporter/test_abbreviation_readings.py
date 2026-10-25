@@ -7,9 +7,8 @@ from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.settings import SettingsYaml
-from opensiddur.common.xslt import xslt_transform_string
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 TEI='http://www.tei-c.org/ns/1.0'
-ROOT=Path(__file__).resolve().parents[3]
 class AbbreviationTest(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
@@ -37,7 +36,7 @@ after.</tei:p></tei:div></tei:body></tei:text></tei:TEI>''')
     def test_pdf_stylesheet_emits_the_selected_form(self):
         for form in ['abbreviated','expanded']:
             compiled=CompilerProcessor('x','test.xml',linear_data=self.data(form)).process()
-            tex=xslt_transform_string(ROOT/'opensiddur/exporter/tex/reledmac.xslt',etree.tostring(compiled,encoding='unicode'))
+            tex=transform(etree.tostring(compiled,encoding='unicode'))
             self.assertIn('cue' if form=='abbreviated' else 'expanded wording',tex)
             self.assertNotIn('expanded wording' if form=='abbreviated' else 'cue',tex)
     def test_kri_ktiv_unchanged(self):

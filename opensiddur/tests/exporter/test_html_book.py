@@ -426,6 +426,19 @@ class TestCss(unittest.TestCase):
         self.assertIn(".v { display: none; }", css)
         self.assertNotIn(".ch { display: none; }", css)
 
+    def test_the_base_styles_keep_no_typography_default(self):
+        """Every variable the settings write is written for every book, so the base
+        styles give none a value of their own that could disagree with typography.py."""
+        from opensiddur.exporter.html.html import ASSETS
+
+        written = re.findall(r"(--[a-z-]+):", typography_css(TypographyConfig()))
+        self.assertTrue(written)
+        reader = (ASSETS / "reader.css").read_text(encoding="utf-8")
+        for variable in written:
+            with self.subTest(variable=variable):
+                self.assertNotIn(variable + ":", reader)
+                self.assertIn(f"var({variable})", reader)
+
 
 class TestSettingsCatalogue(unittest.TestCase):
     """Which settings reach the top of a book's panel, decided when it is built."""

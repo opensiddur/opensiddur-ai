@@ -90,8 +90,7 @@ class TestParallelAnnotations(unittest.TestCase):
         self.assertFalse(root.xpath('//*[@p:start or @p:end or @p:suspend or @p:resume]', namespaces=NS))
 
     def test_milestone_notes_follow_their_verse_in_both_columns_and_plain_text(self):
-        from opensiddur.common.xslt import xslt_transform_string
-        from opensiddur.exporter.tex.latex import XSLT_FILE
+        from opensiddur.tests.exporter.stylesheet_helpers import transform
         for project in ('he', 'en'):
             self.write(project, 'index.xml', f'''<tei:div corresp="{URN}unit"><tei:p>
               <tei:milestone unit="verse" corresp="{URN}1"/>First verse.
@@ -115,8 +114,7 @@ class TestParallelAnnotations(unittest.TestCase):
                             self.assertEqual(len(row.xpath(f'.//tei:milestone[@corresp="{URN}{n}"]', namespaces=NS)), 2)
                     if not parallel:
                         continue
-                    tex = xslt_transform_string(XSLT_FILE, etree.tostring(root[0], encoding='unicode'),
-                        xslt_params={'additional-preamble': '', 'additional-postamble': ''})
+                    tex = transform(etree.tostring(root[0], encoding='unicode'))
                     self.assertLess(tex.index('First verse.'), tex.index('APPARATUS1'))
                     self.assertLess(tex.index('Second verse.'), tex.index('APPARATUS2'))
 
@@ -204,8 +202,7 @@ class TestParallelAnnotations(unittest.TestCase):
         self.assert_notes(self.compile(), role='parallel')
 
     def test_annotations_survive_split_container_and_reach_tex(self):
-        from opensiddur.common.xslt import xslt_transform_string
-        from opensiddur.exporter.tex.latex import XSLT_FILE
+        from opensiddur.tests.exporter.stylesheet_helpers import transform
         self.fixture(target='p')
         for project in ('he', 'en'):
             for n in ('one', 'two'):
@@ -217,8 +214,7 @@ class TestParallelAnnotations(unittest.TestCase):
                     'Second verse</tei:p></tei:div>')
         root = self.compile()
         self.assert_notes(root, role='parallel')
-        tex = xslt_transform_string(XSLT_FILE, etree.tostring(root[0], encoding='unicode'),
-                                    xslt_params={'additional-preamble': '', 'additional-postamble': ''})
+        tex = transform(etree.tostring(root[0], encoding='unicode'))
         for n in ('one', 'two'):
             for i in (1, 2):
                 self.assertEqual(tex.count(f'Note {n} {i}'), 1)
@@ -292,8 +288,7 @@ class TestParallelAnnotations(unittest.TestCase):
         self.assertEqual(notes[0].xpath('ancestor::p:parallelItem/@role', namespaces=NS), ['parallel'])
 
     def test_bookmark_depth_survives_splits_and_nested_transclusions(self):
-        from opensiddur.common.xslt import xslt_transform_string
-        from opensiddur.exporter.tex.latex import XSLT_FILE
+        from opensiddur.tests.exporter.stylesheet_helpers import transform
         for project in ('he', 'en'):
             self.write(project, 'index.xml', f'''<tei:div corresp="{URN}unit">
               <tei:head>Days</tei:head>
@@ -314,7 +309,7 @@ class TestParallelAnnotations(unittest.TestCase):
                 self.assertEqual({h.text for h in heads}, set(expected))
                 for head in heads:
                     self.assertEqual(head.get(f'{{{NS["p"]}}}heading-level'), expected[head.text])
-                tex = xslt_transform_string(XSLT_FILE, etree.tostring(root[0], encoding='unicode'))
+                tex = transform(etree.tostring(root[0], encoding='unicode'))
                 for title, level in expected.items():
                     outline = next(line for line in tex.splitlines()
                                    if 'addcontentsline' in line and title in line)
@@ -428,12 +423,9 @@ class TestStructuralAnnotationSharesItsRow(unittest.TestCase):
             root.xpath('.//tei:head', namespaces=NS)[0].itertext()))
 
     def test_the_columns_do_not_drift_in_the_rendered_tex(self):
-        from opensiddur.common.xslt import xslt_transform_string
-        from opensiddur.exporter.tex.latex import XSLT_FILE
+        from opensiddur.tests.exporter.stylesheet_helpers import transform
         self.fixture(heading='<tei:head>A Heading</tei:head>')
-        tex = xslt_transform_string(
-            XSLT_FILE, etree.tostring(self.compile()[0], encoding='unicode'),
-            xslt_params={'additional-preamble': '', 'additional-postamble': ''})
+        tex = transform(etree.tostring(self.compile()[0], encoding='unicode'))
         left = tex.split(r'\begin{Leftside}', 1)[1].split(r'\end{Leftside}', 1)[0]
         right = tex.split(r'\begin{Rightside}', 1)[1].split(r'\end{Rightside}', 1)[0]
         self.assertEqual(left.count(r'\pstart'), right.count(r'\pstart'))

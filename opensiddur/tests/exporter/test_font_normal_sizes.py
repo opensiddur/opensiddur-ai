@@ -69,8 +69,7 @@ class TestRenderedFontSizes(unittest.TestCase):
 \usepackage{polyglossia}
 \setdefaultlanguage{english}
 \setotherlanguage{hebrew}
-\newfontfamily\hebrewfont[Script=Hebrew]{FreeSerif}
-\newcommand{\OSheadA}[1]{#1}
+\usepackage{reledmac}
 """ + preamble + r"""
 \makeatletter
 \newcommand{\report}[1]{\typeout{SIZE:#1:\f@size:BASE:\f@baselineskip}}

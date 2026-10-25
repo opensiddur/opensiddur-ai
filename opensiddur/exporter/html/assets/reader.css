@@ -1,15 +1,12 @@
 /* The base styles of an Open Siddur electronic book. The book's own typography (css.py) is
-   layered over them; the conditions' rules (reader.js) over that. */
+   layered over them; the conditions' rules (reader.js) over that.
+
+   The typography variables (--font-latin, --font-hebrew, --line-spacing, --text-align,
+   --paragraph-spacing, --cond-rule-width, --cond-rule-thickness) are not given values here:
+   css.py writes every one of them for every book, from typography.py's defaults where the
+   settings file says nothing. */
 
 :root {
-  --font-latin: "Linux Libertine O", serif;
-  --font-hebrew: "Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", serif;
-  --line-spacing: 1.35;
-  --text-align: justify;
-  --paragraph-spacing: 0.5em;
-  --cond-rule-width: 25%;
-  --cond-rule-thickness: 0.4pt;
-
   --ink: #1d1b16;
   --paper: #fdfbf6;
   --muted: #6b6457;

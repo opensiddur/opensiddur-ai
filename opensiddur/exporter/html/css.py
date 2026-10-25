@@ -25,12 +25,6 @@ from opensiddur.exporter.typography import (
     Visibility,
 )
 
-_DEFAULT_CHAINS = {
-    LATIN_FAMILY: ["Linux Libertine O", "Linux Libertine", "Libertinus Serif"],
-    HEBREW_FAMILY: ["Frank Ruehl CLM", "Ezra SIL", "SBL Hebrew", "FreeSerif"],
-}
-
-
 def css_length(length: str) -> str:
     """A settings length in CSS: TeX's big point, which CSS lacks, as points."""
     if length.endswith("bp"):
@@ -45,8 +39,8 @@ def css_string(text: str) -> str:
 
 
 def _stack(typography: TypographyConfig, family: str) -> str:
-    chain = typography.fonts.get(family)
-    names = chain.names if chain is not None else _DEFAULT_CHAINS[family]
+    # Always there: TypographyConfig fills in both chains a settings file leaves out.
+    names = typography.fonts[family].names
     return ", ".join([*(css_string(name) for name in names), "serif"])
 
 
@@ -69,7 +63,11 @@ def xslt_parameters(typography: TypographyConfig) -> dict[str, str]:
 
 
 def typography_css(typography: TypographyConfig) -> str:
-    """The book's own styles, layered over reader.css."""
+    """The book's own styles, layered over reader.css.
+
+    Every typography variable reader.css uses is written here, for every book: reader.css
+    gives them no value of its own, so there is no fallback to disagree with the settings.
+    """
     markers = typography.markers
     conditional = markers.conditional
     rules = [

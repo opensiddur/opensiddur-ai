@@ -24,20 +24,14 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.common.xslt import xslt_transform_string
-from opensiddur.exporter.tex.latex import XSLT_FILE
+from opensiddur.tests.exporter.stylesheet_helpers import stylesheet_parameters, transform
 from opensiddur.exporter.marker_reconstruct import reconstruct_markered_document
 
 
 def _transform(xml: str, **params) -> str:
-    """Transform ``xml`` with the reledmac XSLT, supplying empty defaults
-    for the preamble/postamble parameters that the XSLT expects."""
-    full_params = {
-        "additional-preamble": "",
-        "additional-postamble": "",
-    }
-    full_params.update(params)
-    return xslt_transform_string(XSLT_FILE, xml, xslt_params=full_params)
+    """Transform ``xml`` with the reledmac XSLT, with the parameters tex/latex.py would
+    give it at the default settings; see stylesheet_helpers.transform."""
+    return transform(xml, **params)
 
 
 class TestPreamble(unittest.TestCase):
@@ -118,7 +112,7 @@ class TestPreamble(unittest.TestCase):
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
         </tei:TEI>"""
-        self.assertNotIn("fancyhdr", _transform(xml))
+        self.assertNotIn("fancyhdr", _transform(xml, **{"page-style-preamble": ""}))
 
         out = _transform(xml, **{"page-style-preamble": r"\usepackage{fancyhdr}"})
         self.assertIn(r"\usepackage{fancyhdr}", out)
@@ -148,9 +142,9 @@ class TestPreamble(unittest.TestCase):
         out = _transform(xml, **{"documentclass-options": "12pt,a5paper,oneside"})
         self.assertIn(r"\documentclass[12pt,a5paper,oneside]{book}", out)
 
-    def test_typography_preamble_overrides_the_stylesheet_defaults(self):
-        """The block has to land after every default it is meant to override,
-        and before the bibliography, which is not typography."""
+    def test_the_typography_preamble_follows_the_packages_it_configures(self):
+        """After the packages and the stylesheet's own definitions, which it may use; and
+        before the bibliography, which is not typography and may redefine what it defines."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
@@ -162,32 +156,25 @@ class TestPreamble(unittest.TestCase):
                 "additional-preamble": "\\OSBIBLIOGRAPHY\n",
             },
         )
-        self.assertLess(out.index(r"\newcommand{\OSheadA}"), out.index(r"\OSTYPOGRAPHY"))
-        self.assertLess(out.index(r"\setlength{\parskip}"), out.index(r"\OSTYPOGRAPHY"))
+        self.assertLess(out.index(r"\usepackage{reledmac}"), out.index(r"\OSTYPOGRAPHY"))
+        self.assertLess(out.index(r"\newcommand{\OSMeasure}"), out.index(r"\OSTYPOGRAPHY"))
+        self.assertLess(out.index(r"\newcommand{\OSPstartSkip}"), out.index(r"\OSTYPOGRAPHY"))
         self.assertLess(out.index(r"\OSTYPOGRAPHY"), out.index(r"\OSBIBLIOGRAPHY"))
         self.assertLess(out.index(r"\OSTYPOGRAPHY"), out.index(r"\begin{document}"))
 
-    def test_built_in_paragraph_spacing_is_the_settings_default(self):
-        """The preamble writes \\parskip only when a settings file sets it, so the
-        stylesheet's own value is what every other document gets, and the documented
-        default must be it."""
-        from opensiddur.exporter.typography import ParagraphConfig
+    def test_the_typography_parameters_are_required(self):
+        """The stylesheet keeps no default of its own to fall back on (#249)."""
+        from opensiddur.common.xslt import xslt_transform_string
+        from opensiddur.exporter.tex.latex import XSLT_FILE
 
-        xml = """<?xml version="1.0"?>
-        <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
-          <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
-        </tei:TEI>"""
-        default = ParagraphConfig().spacing
-        self.assertIn(rf"\setlength{{\parskip}}{{{default}}}", _transform(xml))
-
-    def test_empty_typography_preamble_leaves_the_defaults_alone(self):
-        """A document that configures nothing must be the document this
-        exporter has always produced."""
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text>
         </tei:TEI>"""
-        self.assertEqual(_transform(xml), _transform(xml, **{"typography-preamble": ""}))
+        params = stylesheet_parameters(xml)
+        del params["typography-preamble"]
+        with self.assertRaisesRegex(Exception, "required parameter typography-preamble"):
+            xslt_transform_string(XSLT_FILE, xml, xslt_params=params)
 
     def test_preamble_bookmarks_four_levels_deep(self):
         """The deeper heading levels (index > section > haftarah > rite) must reach the PDF
@@ -740,12 +727,7 @@ class TestParallelMapping(unittest.TestCase):
         </tei:TEI>"""
         root = etree.fromstring(xml.encode("utf-8"))
         reconstruct_markered_document(root)
-        out = xslt_transform_string(
-            XSLT_FILE,
-            etree.tostring(root, encoding="unicode"),
-            xslt_params={"additional-preamble": "", "additional-postamble": "",
-                         "layout": "pages"},
-        )
+        out = _transform(etree.tostring(root, encoding="unicode"), layout="pages")
 
         self.assertIn(r"\begin{pages}", out)
         self.assertIn(r"\Pages", out)

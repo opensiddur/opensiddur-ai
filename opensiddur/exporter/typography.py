@@ -489,8 +489,8 @@ class TextStyle(ForbidExtra):
 class Styles(ForbidExtra):
     """ The appearance of each kind of text the exporter distinguishes.
 
-    The defaults are the appearance the stylesheet has always produced. Changing
-    one changes only that role.
+    The defaults are a book's appearance when its settings say nothing; no renderer
+    keeps a copy of them. Changing one changes only that role.
     """
 
     body: TextStyle = Field(
@@ -558,11 +558,15 @@ class Styles(ForbidExtra):
         description="The author/editor line on the title page.",
     )
     edition: TextStyle = Field(
-        default_factory=lambda: TextStyle(align=Alignment.CENTER, space_before="2ex"),
+        default_factory=lambda: TextStyle(
+            size=NamedSize.NORMAL, align=Alignment.CENTER, space_before="2ex"
+        ),
         description="The edition statement on the title page.",
     )
     imprint: TextStyle = Field(
-        default_factory=lambda: TextStyle(align=Alignment.CENTER, space_before="4ex"),
+        default_factory=lambda: TextStyle(
+            size=NamedSize.NORMAL, align=Alignment.CENTER, space_before="4ex"
+        ),
         description="The publisher/place/date block at the foot of the title page.",
     )
     epigraph: TextStyle = Field(
@@ -584,12 +588,12 @@ class Styles(ForbidExtra):
         description="An imprimatur or approbation on the title page.",
     )
     title_page_block: TextStyle = Field(
-        default_factory=lambda: TextStyle(align=Alignment.CENTER),
+        default_factory=lambda: TextStyle(size=NamedSize.NORMAL, align=Alignment.CENTER),
         description="Any other paragraph on the title page.",
     )
     citation: TextStyle = Field(
         default_factory=lambda: TextStyle(
-            style=FontStyle.ITALIC, align=Alignment.CENTER
+            size=NamedSize.NORMAL, style=FontStyle.ITALIC, align=Alignment.CENTER
         ),
         description=(
             "A scriptural citation set on a line of its own, naming where a "
@@ -1262,9 +1266,9 @@ class TypographyConfig(ForbidExtra):
     )
 
     # Which families the settings file actually named, as opposed to the ones
-    # filled in below. The renderer emits a font declaration only for the
-    # former, so an unmentioned `hebrew` keeps whatever the renderer already
-    # does — which for the PDF stage is the same chain, chosen at TeX time.
+    # filled in below. Only the former are checked against the installed
+    # fonts, so the PDF stage leaves the choice among an unmentioned default's
+    # faces to TeX.
     _declared_fonts: frozenset[str] = PrivateAttr(default=frozenset())
 
     @property
@@ -1307,8 +1311,8 @@ class TypographyConfig(ForbidExtra):
             self.fonts.setdefault(family, FontFamily(names=list(names)))
         # Only a chain the settings file named is checked. A default the user
         # never asked for must not fail on a machine that happens not to have
-        # it: the renderer already falls back for those — for the PDF stage,
-        # the stylesheet's own \IfFontExistsTF chain — and refusing to build at
+        # it: the renderer falls back for those — the PDF stage leaves the
+        # choice to TeX, as an \IfFontExistsTF chain — and refusing to build at
         # all would mean nobody could export anything without first installing
         # this project's house fonts.
         if not (info.context or {}).get(RESOLVE_FONTS, True):

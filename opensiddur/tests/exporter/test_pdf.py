@@ -316,8 +316,7 @@ class TestCompileTexToPdfRelativeTexFile(unittest.TestCase):
 class TestBibliographyLineBreaking(unittest.TestCase):
     def test_long_archive_url_and_eprint_fit_the_text_block(self):
         from pypdf import PdfReader
-        from opensiddur.common.xslt import xslt_transform_string
-        from opensiddur.exporter.tex.latex import XSLT_FILE
+        from opensiddur.tests.exporter.stylesheet_helpers import transform
         identifier = "PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerBook1949"
         url = "https://archive.org/details/" + identifier
         bibliography = (
@@ -330,7 +329,7 @@ class TestBibliographyLineBreaking(unittest.TestCase):
         xml = ('<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en">'
                '<tei:text><tei:body><tei:p>Bibliography regression.</tei:p>'
                '</tei:body></tei:text></tei:TEI>')
-        tex = xslt_transform_string(XSLT_FILE, xml, xslt_params={
+        tex = transform(xml, **{
             "additional-preamble": bibliography,
             "additional-postamble": r"\nocite{longarchive}\printbibliography",
         })

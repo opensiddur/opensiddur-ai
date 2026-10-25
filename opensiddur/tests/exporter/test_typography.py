@@ -548,10 +548,9 @@ class TestBookmarksConfig(unittest.TestCase):
 class TestHeadingTranslationStyle(unittest.TestCase):
     """The translated title under a heading, where a division is titled twice."""
 
-    def test_default_matches_the_built_in_appearance(self):
-        """Unset, the role must describe exactly what reledmac.xslt's own \\newcommand
-        does — otherwise setting the style to its documented default would change the
-        page."""
+    def test_default_is_the_documented_appearance(self):
+        """Normal size, italic, centred: the second title reads as naming the same
+        section again rather than opening one of its own."""
         style = _validate({}).styles.heading_translation
         self.assertEqual("normal", style.size)
         self.assertEqual("italic", style.style)

@@ -42,7 +42,8 @@ class TestPageReferences(unittest.TestCase):
         self.assertIn('Continue here.', tex)
         self.assertIn('Present service', tex)
         self.assertIn('\\label{os-page-', tex)
-        self.assertLess(tex.index('\\label{os-page-'), tex.index('Text'))
+        body = tex.split('\\begin{document}', 1)[1]
+        self.assertLess(body.index('\\label{os-page-'), body.index('Text'))
 
     def test_required_missing_reference_fails(self):
         root = self.document('<tei:p><tei:ref type="page" target="urn:missing@he"/></tei:p>')
