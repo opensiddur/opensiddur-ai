@@ -927,13 +927,13 @@ class TestTransformXmlToTex(unittest.TestCase):
                 out = transform_xml_to_tex(f, typography=typography)
 
         self.assertIn(r"\documentclass[12pt,letterpaper]{book}", out)
-        self.assertIn(r"\renewfontfamily\hebrewfont", out)
+        self.assertIn(r"\newfontfamily\hebrewfont", out)
         self.assertIn(r"\setmainfont{FreeSerif}", out)
 
     def test_a_settings_file_reaches_the_emitted_tex(self):
         """The whole path, YAML to TeX: a settings file that names paper,
         margins, a heading size and line numbers has to show up in the
-        document, and nothing it did not name may."""
+        document, and what it did not name is printed at its default."""
         xml = b"""<?xml version="1.0"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
           <tei:text><tei:body><tei:p>x</tei:p></tei:body></tei:text>
@@ -964,10 +964,10 @@ typography:
         self.assertIn("top=2cm", out)
         self.assertIn("left=25mm", out)   # one-sided, so inner is the left margin
         self.assertIn(r"\linespread{1.4}", out)
-        self.assertIn(r"\renewcommand{\OSheadA}", out)
+        self.assertIn(r"{\normalfont\small\mdseries #1}", out)
         self.assertIn(r"\numberlinefalse", out)
-        # Nothing the file did not ask for.
-        self.assertNotIn(r"\renewcommand{\OSheadB}", out)
+        # What it did not name is at its default.
+        self.assertIn(r"{\normalfont\Large\bfseries #1}", out)
         self.assertNotIn("bottom=", out)
 
     def test_an_invalid_settings_file_fails_before_anything_is_rendered(self):
@@ -1109,11 +1109,9 @@ typography:
         self.assertNotIn(r"\begin{pairs}", out)
         self.assertNotIn(r"\linenumincrementR", out)
         self.assertIn(r"\begin{OSInterleavedTranslation}", out)
-        # The settings' override follows the stylesheet's default, so it is the one in force.
-        self.assertLess(
-            out.index(r"\newcommand{\OSInterleavedNumbering}"),
-            out.index(r"\renewcommand{\OSInterleavedNumbering}{}"),
-        )
+        # Defined once, at the setting's value.
+        self.assertEqual(1, out.count(r"\newcommand{\OSInterleavedNumbering}"))
+        self.assertIn(r"\newcommand{\OSInterleavedNumbering}{}", out)
 
     def test_table_of_contents_setting_is_threaded_into_xslt_params(self):
         xml = b"""<?xml version="1.0"?>

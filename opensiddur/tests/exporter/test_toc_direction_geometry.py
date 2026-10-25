@@ -5,8 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from lxml import etree
-from opensiddur.common.xslt import xslt_transform_string
-from opensiddur.exporter.tex.latex import XSLT_FILE
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 
 
 @unittest.skipUnless(shutil.which('lualatex') and shutil.which('mutool'), 'requires LuaLaTeX and mutool')
@@ -15,7 +14,7 @@ class TocDirectionGeometryTest(unittest.TestCase):
         xml='''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="he">
         <tei:text><tei:body><tei:div><tei:head>פזמון</tei:head><tei:p>שלום עולם</tei:p></tei:div>
         </tei:body></tei:text></tei:TEI>'''
-        tex=xslt_transform_string(XSLT_FILE,xml,xslt_params={'table-of-contents':True})
+        tex=transform(xml,{'table_of_contents':{'enabled':True}})
         tex=tex.replace('\\mainmatter','\\mainmatter\\setcounter{page}{35}')
         with tempfile.TemporaryDirectory() as temp:
             directory=Path(temp);(directory/'toc.tex').write_text(tex)

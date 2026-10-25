@@ -22,8 +22,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from opensiddur.common.xslt import xslt_transform_string
-from opensiddur.exporter.tex.latex import XSLT_FILE
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 
 _MINIMAL_TEI = """<?xml version="1.0" encoding="UTF-8"?>
 <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">
@@ -62,10 +61,7 @@ _DOCUMENT = r"""\documentclass[11pt,letterpaper]{book}
 
 
 def _preamble() -> str:
-    return xslt_transform_string(
-        XSLT_FILE, _MINIMAL_TEI,
-        xslt_params={"additional-preamble": "", "additional-postamble": ""},
-    )
+    return transform(_MINIMAL_TEI)
 
 
 _PARALLEL_TEI = """<?xml version="1.0" encoding="UTF-8"?>
@@ -86,11 +82,7 @@ _PARALLEL_TEI = """<?xml version="1.0" encoding="UTF-8"?>
 
 def _paragraph_break() -> str:
     r"""Whatever the exporter now puts between two paragraphs of one parallel block."""
-    out = xslt_transform_string(
-        XSLT_FILE, _PARALLEL_TEI,
-        xslt_params={"additional-preamble": "", "additional-postamble": "",
-                     "layout": "pairs"},
-    )
+    out = transform(_PARALLEL_TEI, layout="pairs")
     found = re.search(r"First(.*?)Second", out, re.S)
     assert found, "the two paragraphs are not both in the output"
     return found.group(1).strip()
@@ -297,11 +289,7 @@ class TestParallelColumnGeometry(unittest.TestCase):
         split it. A Latin left column with everything else identical does not split, which
         is what points at the direction rather than at the break.
         """
-        preamble = xslt_transform_string(
-            XSLT_FILE, _RTL_TEI,
-            xslt_params={"additional-preamble": "", "additional-postamble": "",
-                         "layout": "pairs"},
-        ).split(r"\begin{document}")[0]
+        preamble = transform(_RTL_TEI, layout="pairs").split(r"\begin{document}")[0]
         with tempfile.TemporaryDirectory() as tmp:
             work = Path(tmp)
             (work / "t.tex").write_text(preamble + _RTL_BODY % {

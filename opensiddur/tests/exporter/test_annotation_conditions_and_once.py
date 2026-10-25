@@ -258,17 +258,14 @@ class TestNoteCondition(AnnotationHarness):
         self.assertEqual(len(self.note_texts(root, 'editorial')), 2)
 
     def test_false_condition_in_parallel_columns_reaches_no_output(self):
-        from opensiddur.common.xslt import xslt_transform_string
-        from opensiddur.exporter.tex.latex import XSLT_FILE
+        from opensiddur.tests.exporter.stylesheet_helpers import transform
         self.contexts(projects=('en', 'he'))
         self.notes(('commentary', 'one', 'WEEKDAYNOTE', condition()))
         for primary in ('he', 'en'):
             with self.subTest(primary=primary):
                 root = self.compile(parallel=True, primary=primary)
                 self.assertEqual(self.placements(root, 'WEEKDAYNOTE'), ['On', 'Undeclared'])
-                tex = xslt_transform_string(
-                    XSLT_FILE, etree.tostring(root[0], encoding='unicode'),
-                    xslt_params={'additional-preamble': '', 'additional-postamble': ''})
+                tex = transform(etree.tostring(root[0], encoding='unicode'))
                 self.assertEqual(tex.count('WEEKDAYNOTE'), 2)
 
 

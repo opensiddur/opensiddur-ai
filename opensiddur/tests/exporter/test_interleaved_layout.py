@@ -9,8 +9,7 @@ counted — is measured in ``test_interleaved_geometry``.
 import re
 import unittest
 
-from opensiddur.common.xslt import xslt_transform_string
-from opensiddur.exporter.tex.latex import XSLT_FILE
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 from opensiddur.exporter.tex.typography_tex import _NAMED_SIZE_COMMANDS
 from opensiddur.exporter.typography import InterleavedConfig, InterleavedLineNumbers
 
@@ -45,9 +44,7 @@ def _paragraphs(order: str = "primary_first") -> str:
 
 
 def _transform(xml: str, **params) -> str:
-    full = {"additional-preamble": "", "additional-postamble": "", "layout": "interleaved"}
-    full.update(params)
-    return xslt_transform_string(XSLT_FILE, xml, xslt_params=full)
+    return transform(xml, **{"layout": "interleaved", **params})
 
 
 def _split(out: str) -> tuple[str, str]:

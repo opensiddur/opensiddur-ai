@@ -105,7 +105,8 @@ means exactly 11pt.
 
 **Only a chain you write is checked.** The two defaults are not: a document that asked for
 nothing must still export on a machine that does not have this project's house fonts, so the
-renderer falls back for them on its own. Writing a chain down — even one whose names happen to
+renderer falls back for them on its own: the PDF stage chooses among them when the document is
+typeset, and with none of the `latin` defaults installed keeps the document class's own face. Writing a chain down — even one whose names happen to
 be the defaults — opts it into the check.
 
 That makes a one-name chain a deliberate assertion: name a single font and a machine without it
@@ -201,12 +202,12 @@ as the surrounding text has it.
 | `styles.title_sub` | `x-large`, centered, `1.5ex` before | The subtitle. |
 | `styles.title_alt` | `large`, centered, `1ex` after | An alternative title, usually the title in the other language. |
 | `styles.byline` | `large`, centered, `3ex` before | The author/editor line. |
-| `styles.edition` | centered, `2ex` before | The edition statement. |
-| `styles.imprint` | centered, `4ex` before | The publisher/place/date block at the foot of the title page. |
+| `styles.edition` | `normal`, centered, `2ex` before | The edition statement. |
+| `styles.imprint` | `normal`, centered, `4ex` before | The publisher/place/date block at the foot of the title page. |
 | `styles.epigraph` | `small`, italic, centered, `2ex` before | An epigraph on the title page. |
 | `styles.imprimatur` | `small`, italic, centered, `2ex` before | An imprimatur or approbation. |
-| `styles.title_page_block` | centered | Any other paragraph on the title page. |
-| `styles.citation` | italic, centered | A scriptural citation on a line of its own, naming where a reading begins or resumes. |
+| `styles.title_page_block` | `normal`, centered | Any other paragraph on the title page. |
+| `styles.citation` | `normal`, italic, centered | A scriptural citation on a line of its own, naming where a reading begins or resumes. |
 | `styles.parsha` | `large`, bold | A parsha name, run in at the head of the text it opens. |
 | `styles.aliyah` | bold | An aliyah or maftir marker, inline at the verse it begins on. |
 | `styles.verse_number` | inherits | The verse number at the start of each verse. |
@@ -228,7 +229,7 @@ Marginal line numbers, as a critical edition uses to cite a passage.
 | `line_numbers.unit` | `page` \| `section` | `page` | What numbering restarts at. |
 | `line_numbers.increment` | integer ≥ 1 | `5` | Print a number every nth line. |
 | `line_numbers.first` | integer ≥ 1 | `5` | The first line number printed, so the numbers run 5, 10, 15 rather than 1, 5, 10. |
-| `line_numbers.margin` | `inner` \| `outer` \| `left` \| `right` | `outer` | `inner`/`outer` are relative to the binding; `left`/`right` are fixed. In a `pairs` parallel layout each column takes the nearer outer margin regardless, since the alternative is numbers in the gutter between the columns. In an `interleaved` layout both texts are numbered in the one margin chosen here, whichever direction each runs in. |
+| `line_numbers.margin` | `inner` \| `outer` \| `left` \| `right` | `outer` | `inner`/`outer` are relative to the binding; `left`/`right` are fixed. The default applies to every layout, a single text included. In a `pairs` parallel layout each column takes the nearer outer margin regardless, since the alternative is numbers in the gutter between the columns. In an `interleaved` layout both texts are numbered in the one margin chosen here, whichever direction each runs in. |
 | `line_numbers.separation` | length | `1em` | Space between the number and the text block. |
 | `line_numbers.numerals` | `arabic` \| `hebrew` | `arabic` | |
 
@@ -535,11 +536,13 @@ are about paper, mean nothing to it. It honours:
 
 `opensiddur/exporter/typography.py` holds the models above and knows nothing about any
 renderer. `opensiddur/exporter/tex/typography_tex.py` turns a validated settings tree into a
-block of LuaLaTeX, which `tex/reledmac.xslt` emits after all of its own definitions — so the
-stylesheet keeps every default it ever had and the settings override them. A directive is
-emitted only for a setting the file actually wrote, which is what keeps an unconfigured
-document byte-for-byte what it was.
+block of LuaLaTeX, which `tex/reledmac.xslt` emits before `\begin{document}`. **The models are
+the only place a default is stated.** Every setting is emitted at its resolved value, whether
+the file wrote it or not, and the stylesheet defines none of the macros or lengths a setting
+controls; the electronic book's `html/css.py` likewise writes every value its stylesheet
+uses. So the defaults in the tables above are the ones a book is printed with.
 
 Adding a setting means adding a field to the model, a case to the emitter, a row to this
 document, and a test. `opensiddur/tests/exporter/test_typography_doc.py` fails if the row is
-missing.
+missing, and `test_typography_defaults.py` fails if its default is not the model's or does not
+reach the stylesheet.

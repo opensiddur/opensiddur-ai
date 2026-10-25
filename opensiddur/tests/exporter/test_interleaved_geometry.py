@@ -26,9 +26,7 @@ import unittest
 from functools import lru_cache
 from pathlib import Path
 
-from opensiddur.common.xslt import xslt_transform_string
-from opensiddur.exporter.tex.latex import XSLT_FILE
-from opensiddur.exporter.tex.typography_tex import build_typography_preamble
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 from opensiddur.exporter.typography import TypographyConfig
 
 # Hebrew long enough for three lines a block, English for five; fourteen blocks run to
@@ -111,11 +109,8 @@ def _typeset(line_numbers: str = "primary", macros: str = "",
         "parallel": {"layout": "interleaved",
                      "interleaved": {"line_numbers": line_numbers}},
     })
-    tex = xslt_transform_string(XSLT_FILE, _SINGLE_TEI if single else _TEI, xslt_params={
-        "layout": "interleaved",
-        "typography-preamble": build_typography_preamble(settings, has_parallel=not single),
+    tex = transform(_SINGLE_TEI if single else _TEI, settings, **{
         "additional-preamble": macros,
-        "additional-postamble": "",
     })
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)

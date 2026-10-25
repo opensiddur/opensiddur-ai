@@ -3,14 +3,13 @@
 ``opensiddur/exporter/tex/typography_tex.py`` is a pure function of the settings,
 so it is tested directly rather than through the XSLT.
 
-The property most of these tests are protecting: **a directive is emitted only
-for a setting the file actually wrote.** The stylesheet keeps every default it
-ever had and this block overrides them, so anything emitted for an unwritten
-setting is a change to a document that asked for none.
+Every setting is emitted at its resolved value, written or not: the stylesheet
+defines none of the macros a setting controls. That every documented default
+arrives is tested in ``test_typography_defaults.py``; these test how each setting
+is rendered.
 """
 
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 from opensiddur.exporter import typography as typography_module
@@ -45,11 +44,25 @@ def _tex(data: dict, has_parallel: bool = False) -> str:
         )
 
 
+def _macro(tex: str, name: str) -> str:
+    """The definition of one macro in a preamble, continuation lines included."""
+    lines = tex.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith((rf"\newcommand{{{name}}}", rf"\renewcommand*{{{name}}}")):
+            end = index + 1
+            while lines[end - 1].endswith("%"):
+                end += 1
+            return "\n".join(lines[index:end])
+    raise AssertionError(f"{name} is not defined")
+
+
 class TestNothingConfigured(unittest.TestCase):
-    def test_an_empty_settings_section_emits_nothing_at_all(self):
-        """The whole point: an unconfigured document is the document this
-        exporter has always produced."""
-        self.assertEqual(_tex({}), "")
+    def test_an_empty_settings_section_states_the_defaults(self):
+        """The stylesheet has no copy of them to fall back on."""
+        tex = _tex({})
+        self.assertIn(r"\setlength{\parskip}{0.5em}", tex)
+        self.assertIn(r"\newcommand{\OSheadA}[1]", tex)
+        self.assertIn(r"\lineation{page}", tex)
 
     def test_default_class_options_are_what_they_have_always_been(self):
         self.assertEqual(documentclass_options(_config({})), "11pt,letterpaper")
@@ -109,10 +122,18 @@ class TestGeometry(unittest.TestCase):
 
 
 class TestFonts(unittest.TestCase):
-    def test_an_undeclared_family_is_left_to_the_stylesheet(self):
-        """The stylesheet already declares latin and hebrew with the same chain,
-        so re-emitting it would be noise at best."""
-        self.assertNotIn(r"\setmainfont", _tex({}))
+    def test_an_undeclared_family_is_chosen_when_the_document_is_typeset(self):
+        """The defaults are never checked against the installed fonts (#88): a
+        document that asked for nothing must build on a machine without this
+        project's house fonts. So TeX chooses, and without any of the Latin
+        defaults the class's own face stands."""
+        with patch.object(
+            typography_module, "_installed_font_families", return_value=frozenset()
+        ):
+            tex = build_typography_preamble(TypographyConfig.model_validate({}))
+        self.assertIn("\\IfFontExistsTF{Linux Libertine O}{\n  \\setmainfont{Linux Libertine O}\n}{\n}", tex)
+        self.assertIn(r"\IfFontExistsTF{SBL Hebrew}", tex)
+        self.assertIn(r"\newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{FreeSerif}", tex)
 
     def test_a_declared_latin_family_sets_the_main_font(self):
         """One name is not a chain: it is named outright, with no test around
@@ -120,14 +141,16 @@ class TestFonts(unittest.TestCase):
         becoming something else."""
         tex = _tex({"fonts": {"latin": "TeX Gyre Pagella"}})
         self.assertIn(r"\setmainfont{TeX Gyre Pagella}", tex)
-        self.assertNotIn(r"\IfFontExistsTF", tex)
+        self.assertEqual(1, tex.count(r"\setmainfont"))
+        self.assertNotIn(r"\IfFontExistsTF{TeX Gyre Pagella}", tex)
 
-    def test_a_declared_hebrew_family_renews_rather_than_declares(self):
-        """\\hebrewfont already exists — the stylesheet declared it — so a
-        \\newfontfamily here would be a "command already defined" error."""
+    def test_a_declared_hebrew_family_is_declared_once(self):
+        """In place of the default chain, not after it: a second \\newfontfamily
+        would be a "command already defined" error."""
         tex = _tex({"fonts": {"hebrew": ["Ezra SIL"]}})
-        self.assertIn(r"\renewfontfamily\hebrewfont", tex)
-        self.assertNotIn(r"\newfontfamily\hebrewfont", tex)
+        self.assertEqual(1, tex.count(r"\newfontfamily\hebrewfont"))
+        self.assertNotIn(r"\renewfontfamily", tex)
+        self.assertNotIn("Frank Ruehl CLM", tex)
         self.assertIn("Renderer=HarfBuzz", tex)
         self.assertIn(r"\let\hebrewfontsf\hebrewfont", tex)
 
@@ -148,7 +171,7 @@ class TestFonts(unittest.TestCase):
             config = TypographyConfig.model_validate({"fonts": {"latin": ["First", "Second"]}})
             tex = build_typography_preamble(config)
         self.assertIn(r"\setmainfont{Second}", tex)
-        self.assertNotIn(r"\IfFontExistsTF", tex)
+        self.assertNotIn(r"\IfFontExistsTF{First}", tex)
 
     def test_a_user_family_gets_a_command_named_after_its_key(self):
         tex = _tex({"fonts": {"note-sans": "DejaVu Sans"}})
@@ -158,7 +181,7 @@ class TestFonts(unittest.TestCase):
         tex = _tex(
             {"fonts": {"note-sans": "DejaVu Sans"}, "styles": {"note": {"font": "note-sans"}}}
         )
-        self.assertIn(r"\renewcommand{\notenote}[1]{{\OSfontNoteSans #1}}", tex)
+        self.assertIn(r"\newcommand{\notenote}[1]{{\OSfontNoteSans #1}}", tex)
 
 
 class TestStyleTokens(unittest.TestCase):
@@ -197,10 +220,11 @@ class TestStyleTokens(unittest.TestCase):
 
 
 class TestStyles(unittest.TestCase):
-    def test_only_the_written_roles_are_emitted(self):
+    def test_a_written_role_replaces_its_default_whole(self):
+        """And the roles it does not name keep theirs."""
         tex = _tex({"styles": {"heading1": {"size": "large"}}})
-        self.assertIn(r"\renewcommand{\OSheadA}", tex)
-        self.assertNotIn(r"\OSheadB", tex)
+        self.assertEqual(r"\newcommand{\OSheadA}[1]{{\normalfont\large #1}}", _macro(tex, r"\OSheadA"))
+        self.assertIn(r"{\normalfont\Large\bfseries #1}", _macro(tex, r"\OSheadB"))
 
     def test_headings_are_aligned_with_fill_glue_not_a_paragraph(self):
         """reledmac captures numbered text one \\par-delimited line at a time, so
@@ -208,15 +232,16 @@ class TestStyles(unittest.TestCase):
         its column."""
         tex = _tex({"styles": {"heading1": {"size": "large", "align": "center"}}})
         self.assertIn(r"\mbox{}\hfill{\normalfont\large #1}\hfill\mbox{}", tex)
-        self.assertNotIn(r"\centering", tex)
+        self.assertNotIn(r"\centering", _macro(tex, r"\OSheadA"))
+        self.assertNotIn(r"\par", _macro(tex, r"\OSheadA"))
 
     def test_left_and_right_alignment_use_one_sided_fill(self):
         self.assertIn(
-            r"\renewcommand{\OSheadA}[1]{{\normalfont\large #1}\hfill\mbox{}}",
+            r"\newcommand{\OSheadA}[1]{{\normalfont\large #1}\hfill\mbox{}}",
             _tex({"styles": {"heading1": {"size": "large", "align": "left"}}}),
         )
         self.assertIn(
-            r"\renewcommand{\OSheadA}[1]{\mbox{}\hfill{\normalfont\large #1}}",
+            r"\newcommand{\OSheadA}[1]{\mbox{}\hfill{\normalfont\large #1}}",
             _tex({"styles": {"heading1": {"size": "large", "align": "right"}}}),
         )
 
@@ -228,28 +253,28 @@ class TestStyles(unittest.TestCase):
 
     def test_space_before_and_after_sit_outside_the_group(self):
         tex = _tex({"styles": {"byline": {"space_before": "3ex", "space_after": "1ex"}}})
-        self.assertIn(r"\renewcommand{\OSByline}[1]{\vspace{3ex}{", tex)
-        self.assertTrue(tex.rstrip().endswith(r"\par}\vspace{1ex}}"))
+        self.assertIn(r"\newcommand{\OSByline}[1]{\vspace{3ex}{", tex)
+        self.assertTrue(_macro(tex, r"\OSByline").endswith(r"\par}\vspace{1ex}}"))
 
     def test_verse_and_chapter_numbers_stay_left_to_right(self):
         """Digits laid out in an RTL context come out reversed: 50 reads 05."""
         for role, macro in (("verse_number", r"\vno"), ("chapter_number", r"\chno")):
             tex = _tex({"styles": {role: {"size": "small"}}})
-            self.assertIn(rf"\renewcommand{{{macro}}}[1]{{", tex)
+            self.assertIn(rf"\newcommand{{{macro}}}[1]{{", tex)
             self.assertIn(r"\textdir TLT\foreignlanguage{english}{", tex)
 
     def test_body_style_goes_through_the_document_wide_hook(self):
         self.assertIn(
-            r"\renewcommand{\OSBodyStyle}{\small}", _tex({"styles": {"body": {"size": "small"}}})
+            r"\newcommand{\OSBodyStyle}{\small}", _tex({"styles": {"body": {"size": "small"}}})
         )
 
     def test_notes_and_instructions(self):
         self.assertIn(
-            r"\renewcommand{\notenote}[1]{{\mdseries #1}}",
+            r"\newcommand{\notenote}[1]{{\mdseries #1}}",
             _tex({"styles": {"note": {"weight": "normal"}}}),
         )
         self.assertIn(
-            r"\renewcommand{\instructionnote}[1]{{\itshape #1}}",
+            r"\newcommand{\instructionnote}[1]{{\itshape #1}}",
             _tex({"styles": {"instruction": {"style": "italic"}}}),
         )
 
@@ -267,7 +292,7 @@ class TestParagraphs(unittest.TestCase):
         self.assertIn(r"\AtBeginDocument{\raggedright}", _tex({"paragraphs": {"alignment": "left"}}))
 
     def test_justified_is_the_absence_of_raggedness(self):
-        self.assertEqual(_tex({"paragraphs": {"alignment": "justify"}}), "")
+        self.assertNotIn(r"\AtBeginDocument", _tex({"paragraphs": {"alignment": "justify"}}))
 
 
 class TestLineNumbers(unittest.TestCase):
@@ -276,9 +301,14 @@ class TestLineNumbers(unittest.TestCase):
         apparatus are unaffected; only the printing stops."""
         self.assertIn(r"\numberlinefalse", _tex({"line_numbers": {"enabled": False}}))
 
-    def test_switching_them_off_makes_the_rest_of_the_section_moot(self):
-        tex = _tex({"line_numbers": {"enabled": False, "increment": 2}})
-        self.assertNotIn(r"\linenumincrement", tex)
+    def test_switching_them_off_still_configures_the_count(self):
+        """Only the printing stops; the lines are still counted, and \\lineation still
+        decides where the count restarts."""
+        tex = _tex({"line_numbers": {"enabled": False, "increment": 2}}, has_parallel=True)
+        self.assertIn(r"\numberlinefalse", tex)
+        self.assertIn(r"\linenumincrement{2}", tex)
+        self.assertIn(r"\lineation{page}", tex)
+        self.assertIn(r"\lineationR{page}", tex)
 
     def test_increment_first_and_separation(self):
         tex = _tex({"line_numbers": {"increment": 2, "first": 1, "separation": "2em"}})
@@ -320,7 +350,7 @@ class TestLineNumbers(unittest.TestCase):
         direction; only digits have to be forced."""
         tex = _tex({"line_numbers": {"numerals": "hebrew"}})
         self.assertIn(r"\hebrewnumeral{#1}", tex)
-        self.assertNotIn(r"\textdir TLT", tex)
+        self.assertNotIn(r"\textdir TLT", _macro(tex, r"\linenumrep"))
 
     def test_the_number_is_formatted_through_linenumrep(self):
         """\\linenumberstyle is a declaration whose only job is to define
@@ -342,6 +372,18 @@ class TestLineNumbers(unittest.TestCase):
         self.assertEqual(tex.count(r"\renewcommand*{\linenumrep}"), 1)
         self.assertIn(r"\small\hebrewnumeral{#1}", tex)
 
+    def test_unstyled_arabic_numerals_are_reledmacs_own(self):
+        """reledmac's \\ledlinenum already sets them left to right in the main series;
+        reledpar's right-hand series does not, so it is always given the switch."""
+        self.assertNotIn(r"\linenumrep", _tex({}))
+        tex = _tex({}, has_parallel=True)
+        self.assertIn(r"\renewcommand*{\linenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}", tex)
+        self.assertIn(r"\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}", tex)
+
+    def test_a_numeral_setting_keeps_the_right_sub_line_numbers_left_to_right(self):
+        tex = _tex({"line_numbers": {"numerals": "hebrew"}}, has_parallel=True)
+        self.assertIn(r"\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}", tex)
+
     def test_the_right_hand_stream_is_formatted_only_in_a_parallel_document(self):
         settings = {"styles": {"line_number": {"size": "small"}}}
         self.assertNotIn(r"\linenumrepR", _tex(settings))
@@ -357,15 +399,14 @@ class TestNotes(unittest.TestCase):
         self.assertIn(r"\raisebox{1.5ex}", tex)
 
     def test_a_superscript_anchor(self):
-        tex = _tex({"notes": {"anchor": "superscript"}})
-        self.assertIn(r"\renewcommand{\OSInterlinearNotemark}[1]{", tex)
-        self.assertIn(r"\textsuperscript", tex)
-        self.assertNotIn(r"\hbox to 0pt", tex)
+        mark = _macro(_tex({"notes": {"anchor": "superscript"}}), r"\OSInterlinearNotemark")
+        self.assertIn(r"\textsuperscript", mark)
+        self.assertNotIn(r"\hbox to 0pt", mark)
 
     def test_an_inline_anchor(self):
-        tex = _tex({"notes": {"anchor": "inline"}})
-        self.assertNotIn(r"\textsuperscript", tex)
-        self.assertNotIn(r"\raisebox", tex)
+        mark = _macro(_tex({"notes": {"anchor": "inline"}}), r"\OSInterlinearNotemark")
+        self.assertNotIn(r"\textsuperscript", mark)
+        self.assertNotIn(r"\raisebox", mark)
 
     def test_the_mark_keeps_its_sans_face_unless_a_font_is_asked_for(self):
         """Changing the anchor should not silently change the face too."""
@@ -390,20 +431,22 @@ class TestMarkers(unittest.TestCase):
         self.assertIn(r"\&", tex)
 
     def test_an_empty_separator_leaves_nothing_but_the_space(self):
-        self.assertIn(r"\renewcommand{\OSSectionSeparator}{}", _tex({"markers": {"section_separator": ""}}))
+        self.assertIn(r"\newcommand{\OSSectionSeparator}{}", _tex({"markers": {"section_separator": ""}}))
 
     def test_hiding_verse_and_chapter_numbers(self):
         tex = _tex({"markers": {"verse_numbers": "hidden", "chapter_numbers": "hidden"}})
-        self.assertIn(r"\renewcommand{\vno}[1]{}", tex)
-        self.assertIn(r"\renewcommand{\chno}[1]{}", tex)
+        self.assertIn(r"\newcommand{\vno}[1]{}", tex)
+        self.assertIn(r"\newcommand{\chno}[1]{}", tex)
 
-    def test_showing_them_is_the_stylesheet_default_and_emits_nothing(self):
-        self.assertEqual(_tex({"markers": {"verse_numbers": "shown"}}), "")
+    def test_shown_numbers_are_set_in_their_style(self):
+        tex = _tex({"markers": {"verse_numbers": "shown"}})
+        self.assertIn(r"\newcommand{\vno}[1]{\textsuperscript{", tex)
+        self.assertIn(r"\newcommand{\chno}[1]{{\large\bfseries", tex)
 
     def test_conditional_inline_markers(self):
         tex = _tex({"markers": {"conditional": {"inline_open": "(", "inline_close": ")"}}})
-        self.assertIn(r"\renewcommand{\OSCondStartInline}{{\bfseries(}}", tex)
-        self.assertIn(r"\renewcommand{\OSCondEndInline}{{\bfseries)}}", tex)
+        self.assertIn(r"\newcommand{\OSCondStartInline}{{\bfseries(}}", tex)
+        self.assertIn(r"\newcommand{\OSCondEndInline}{{\bfseries)}}", tex)
 
     def test_the_conditional_block_rule(self):
         tex = _tex({"markers": {"conditional": {"rule_width": "50%", "rule_thickness": "1pt"}}})
@@ -419,18 +462,19 @@ class TestMarkers(unittest.TestCase):
 
     def test_a_bracketed_conditional_block_reuses_the_inline_markers(self):
         tex = _tex({"markers": {"conditional": {"block": "brackets"}}})
-        self.assertIn(r"\renewcommand{\OSCondStartBlock}{\OSCondStartInline}", tex)
+        self.assertIn(r"\newcommand{\OSCondStartBlock}{\OSCondStartInline}", tex)
 
     def test_conditional_blocks_can_be_left_unmarked(self):
         tex = _tex({"markers": {"conditional": {"block": "none"}}})
-        self.assertIn(r"\renewcommand{\OSCondStartBlock}{}", tex)
-        self.assertIn(r"\renewcommand{\OSCondEndBlock}{}", tex)
+        self.assertIn(r"\newcommand{\OSCondStartBlock}{}", tex)
+        self.assertIn(r"\newcommand{\OSCondEndBlock}{}", tex)
 
 
 class TestParallelColumns(unittest.TestCase):
     def test_column_geometry_needs_two_columns_on_one_page(self):
         settings = {"parallel": {"column_width": "40%", "column_position": "left"}}
-        self.assertEqual(_tex(settings), "")
+        self.assertNotIn(r"\Lcolwidth", _tex(settings))
+        self.assertNotIn(r"\columnsposition", _tex(settings))
         tex = _tex(settings, has_parallel=True)
         self.assertIn(r"\setlength{\Lcolwidth}{0.4\textwidth}", tex)
         self.assertIn(r"\setlength{\Rcolwidth}{0.4\textwidth}", tex)
@@ -447,7 +491,7 @@ class TestParallelColumns(unittest.TestCase):
 
 
 class TestInterleaved(unittest.TestCase):
-    """Each setting overrides a macro the stylesheet defines with the model's default."""
+    """Each setting defines a macro the stylesheet's translation environment applies."""
 
     INTERLEAVED = {"layout": "interleaved"}
 
@@ -457,11 +501,14 @@ class TestInterleaved(unittest.TestCase):
             has_parallel,
         )
 
-    def test_nothing_written_leaves_the_stylesheet_defaults(self):
-        self.assertEqual(_tex({"parallel": self.INTERLEAVED}, has_parallel=True), "")
+    def test_nothing_written_takes_the_models_defaults(self):
+        tex = _tex({"parallel": self.INTERLEAVED}, has_parallel=True)
+        self.assertIn(r"\newcommand{\OSInterleavedSize}{\small}", tex)
+        self.assertIn(r"\newcommand{\OSInterleavedIndent}{1em}", tex)
+        self.assertIn(r"\newcommand{\OSInterleavedSpacing}{0.25em}", tex)
 
     def test_nothing_without_a_parallel_text(self):
-        self.assertEqual(self._interleaved({"spacing": "2pt"}, has_parallel=False), "")
+        self.assertNotIn("OSInterleaved", self._interleaved({"spacing": "2pt"}, has_parallel=False))
 
     def test_nothing_in_another_layout(self):
         tex = _tex(
@@ -474,23 +521,26 @@ class TestInterleaved(unittest.TestCase):
         tex = self._interleaved(
             {"translation_size": "x-small", "translation_indent": "2em", "spacing": "3pt"}
         )
-        self.assertIn(r"\renewcommand{\OSInterleavedSize}{\footnotesize}", tex)
-        self.assertIn(r"\renewcommand{\OSInterleavedIndent}{2em}", tex)
-        self.assertIn(r"\renewcommand{\OSInterleavedSpacing}{3pt}", tex)
+        self.assertIn(r"\newcommand{\OSInterleavedSize}{\footnotesize}", tex)
+        self.assertIn(r"\newcommand{\OSInterleavedIndent}{2em}", tex)
+        self.assertIn(r"\newcommand{\OSInterleavedSpacing}{3pt}", tex)
 
     def test_an_absolute_size_sets_its_own_leading(self):
         tex = self._interleaved({"translation_size": "9pt"})
         self.assertIn(
-            r"\renewcommand{\OSInterleavedSize}{\fontsize{9pt}{10.8pt}\selectfont}", tex
+            r"\newcommand{\OSInterleavedSize}{\fontsize{9pt}{10.8pt}\selectfont}", tex
         )
 
     def test_numbering_both_texts_empties_the_switch(self):
         self.assertIn(
-            r"\renewcommand{\OSInterleavedNumbering}{}",
+            r"\newcommand{\OSInterleavedNumbering}{}",
             self._interleaved({"line_numbers": "both"}),
         )
-        self.assertNotIn(
-            "OSInterleavedNumbering", self._interleaved({"line_numbers": "primary"})
+        # Numbering only the original also disarms \skipnumbering, or a heading inside
+        # the translation would pull back the original's count (#193).
+        self.assertIn(
+            r"\newcommand{\OSInterleavedNumbering}{\numberlinefalse\let\skipnumbering\relax}",
+            self._interleaved({"line_numbers": "primary"}),
         )
 
     def test_no_reledpar_series_in_an_interleaved_document(self):
@@ -514,44 +564,21 @@ class TestInterleaved(unittest.TestCase):
             self.assertIn(macro, columns)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestHeadingTranslation(unittest.TestCase):
-    r"""The translated title under a heading, where a division is titled twice.
+    r"""The translated title under a heading, where a division is titled twice."""
 
-    Its appearance lives in two places — a \newcommand in reledmac.xslt and this role —
-    and they must agree, or setting the style to the value the reference documents would
-    change the page.
-    """
-
-    XSLT = Path(__file__).resolve().parents[3] / "opensiddur" / "exporter" / "tex" / "reledmac.xslt"
-
-    def test_unset_emits_nothing_so_the_built_in_stands(self):
-        self.assertNotIn("OSheadTranslation", _tex({}))
-
-    def test_the_declared_default_reproduces_the_built_in_definition(self):
-        """Set to its own documented default, the role must generate the definition the
-        stylesheet already carries, character for character."""
-        generated = [
-            line for line in _tex({
-                "styles": {"heading_translation":
-                           {"size": "normal", "style": "italic", "align": "center"}}
-            }).splitlines() if "OSheadTranslation" in line
-        ]
-        self.assertEqual(1, len(generated))
-        body = generated[0].split("[1]", 1)[1]
-        built_in = self.XSLT.read_text(encoding="utf-8")
-        marker = r"\newcommand{\OSheadTranslation}[1]"
-        self.assertIn(marker, built_in)
-        built_in_body = built_in.split(marker, 1)[1].split("&#10;", 1)[0]
-        self.assertEqual(built_in_body, body)
+    def test_the_default_cannot_be_broken_from_its_heading(self):
+        """\\nobreak after the \\par, or a page could end between the two (#208)."""
+        self.assertEqual(
+            r"\newcommand{\OSheadTranslation}[1]{\par\nobreak\mbox{}\hfill"
+            r"{\normalfont\normalsize\itshape #1}\hfill\mbox{}}",
+            _macro(_tex({}), r"\OSheadTranslation"),
+        )
 
     def test_a_configured_style_reaches_the_macro(self):
         tex = _tex({"styles": {"heading_translation":
                                {"size": "small", "style": "normal", "align": "right"}}})
-        self.assertIn(r"\renewcommand{\OSheadTranslation}[1]{\par", tex)
+        self.assertIn(r"\newcommand{\OSheadTranslation}[1]{\par", tex)
         self.assertIn(r"\small", tex)
         # Right-aligned: glue leads, and none follows.
         line = [l for l in tex.splitlines() if "OSheadTranslation" in l][0]
@@ -564,7 +591,7 @@ class TestLists(unittest.TestCase):
 
     def test_the_label_style_writes_the_label_macro(self):
         tex = _tex({"styles": {"list_label": {"variant": "small-caps", "weight": "bold"}}})
-        self.assertIn(r"\renewcommand{\OSListLabelStyle}[1]{", tex)
+        self.assertIn(r"\newcommand{\OSListLabelStyle}[1]{", tex)
         self.assertIn(r"\scshape", tex)
         self.assertIn(r"\bfseries", tex)
 
@@ -572,12 +599,12 @@ class TestLists(unittest.TestCase):
         r"""Like a heading, it is set inside a \pstart, where a block environment's
         \par escapes reledmac's per-line capture."""
         tex = _tex({"styles": {"list_label": {"align": "center"}}})
-        self.assertIn(r"\renewcommand{\OSListLabelStyle}[1]{\mbox{}\hfill", tex)
-        self.assertNotIn(r"\begin{center}", tex)
+        self.assertIn(r"\newcommand{\OSListLabelStyle}[1]{\mbox{}\hfill", tex)
+        self.assertNotIn(r"\begin{center}", _macro(tex, r"\OSListLabelStyle"))
 
     def test_the_item_indent_writes_the_indent_macro(self):
         self.assertIn(
-            r"\renewcommand{\OSListIndent}{1.5em}",
+            r"\newcommand{\OSListIndent}{1.5em}",
             _tex({"lists": {"item_indent": "1.5em"}}),
         )
 
@@ -585,11 +612,15 @@ class TestLists(unittest.TestCase):
         """Setting it to 0pt is how a file asks for flush items, and is not the same
         as leaving it unset."""
         self.assertIn(
-            r"\renewcommand{\OSListIndent}{0pt}",
+            r"\newcommand{\OSListIndent}{0pt}",
             _tex({"lists": {"item_indent": "0pt"}}),
         )
 
-    def test_neither_is_emitted_unconfigured(self):
+    def test_unconfigured_they_take_the_models_defaults(self):
         tex = _tex({"paragraphs": {"indent": "1em"}})
-        self.assertNotIn(r"\OSListIndent", tex)
-        self.assertNotIn(r"\OSListLabelStyle", tex)
+        self.assertIn(r"\newcommand{\OSListIndent}{2em}", tex)
+        self.assertIn(r"\newcommand{\OSListLabelStyle}[1]{{\normalfont\scshape #1}}", tex)
+
+
+if __name__ == "__main__":
+    unittest.main()

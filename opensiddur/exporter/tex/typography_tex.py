@@ -10,17 +10,15 @@ Two products come out of a :class:`TypographyConfig`:
 ``documentclass_options`` — the bracketed options on ``\\documentclass``, which
 have to be there and nowhere else.
 
-``build_typography_preamble`` — a block of ``\\renewcommand`` and ``\\setlength``
-that ``reledmac.xslt`` emits *after* all of its own definitions. The stylesheet
-keeps every default it ever had; this block overrides them. So a settings file
-that says nothing produces an empty block and, with it, exactly the document the
-exporter produced before any of this existed.
+``build_typography_preamble`` — the definitions of every macro and length a
+setting controls, which ``reledmac.xslt`` emits after its own structural
+preamble and before ``\\begin{document}``.
 
-**A directive is emitted only for a setting the user actually wrote.** Not for
-one that merely equals its default. Some of the stylesheet's behaviour is
-contextual — line numbers sit in the outer margin in a parallel document and
-wherever reledmac puts them otherwise — and no single default value can stand
-for that. Keying on what was written keeps the untouched cases untouched.
+**Every setting is emitted, at its resolved value**, whether the settings file
+wrote it or not. The stylesheet holds no copy of any default: what a book looks
+like when its settings file says nothing is what ``typography.py`` says, and
+nothing else. A macro the stylesheet relies on is therefore *defined* here, with
+``\\newcommand``; only a macro a package already defines is renewed.
 """
 
 from __future__ import annotations
@@ -114,7 +112,7 @@ def _font_command(family: Optional[str]) -> str:
     """The command that selects a declared family.
 
     ``latin`` is the document's main font, so selecting it is just returning to
-    the normal font; ``hebrew`` is polyglossia's, which the stylesheet declares.
+    the normal font; ``hebrew`` is polyglossia's, which this module declares.
     Anything else is a family this module declared, named after its key.
     """
     if family is None:
@@ -193,6 +191,29 @@ def _vspace(length: Optional[str]) -> str:
     return rf"\vspace{{{length}}}" if length else ""
 
 
+# A display set off from the text on either side, which takes the space a list
+# environment puts around itself.
+_DISPLAY_ENVIRONMENTS: dict[Alignment, str] = {
+    Alignment.CENTER: "center",
+    Alignment.LEFT: "flushleft",
+    Alignment.RIGHT: "flushright",
+}
+
+
+def _display_block(style: TextStyle, body: str, line_spacing: float) -> str:
+    """An aligned display between paragraphs, such as a section separator."""
+    environment = _DISPLAY_ENVIRONMENTS.get(style.align or Alignment.JUSTIFY)
+    if environment is None:
+        return _block_paragraph(style, body, line_spacing)
+    tokens = style_tokens(style, line_spacing)
+    content = r"{\normalfont" + tokens + " " + body + "}" if tokens else body
+    return (
+        _vspace(style.space_before)
+        + rf"\begin{{{environment}}}{content}\end{{{environment}}}"
+        + _vspace(style.space_after)
+    )
+
+
 def _block_paragraph(style: TextStyle, body: str, line_spacing: float) -> str:
     """A centred (or otherwise aligned) paragraph with space around it."""
     alignment = _BLOCK_ALIGNMENT[style.align or Alignment.JUSTIFY]
@@ -243,6 +264,7 @@ def documentclass_options(config: TypographyConfig) -> str:
 def _font_declaration(
     command: str, options: str, names: list[str],
     entries: Optional[list[FontFace]] = None, selector: str = "",
+    *, at_compile_time: bool = False, optional: bool = False,
 ) -> list[str]:
     """Declare a font family, falling back through the chain if need be.
 
@@ -251,6 +273,11 @@ def _font_declaration(
     chain is emitted as nested ``\\IfFontExistsTF`` so TeX makes the same choice
     at compile time. The chain is known to contain an installed font either way:
     settings validation refuses one that does not.
+
+    A default chain the settings file never named is not validated, so it may
+    contain no installed font at all. ``at_compile_time`` leaves the whole choice
+    to TeX, and ``optional`` guards the last name too, declaring nothing when
+    none is present — the class's own font then stands.
     """
     def declaration(index: int) -> str:
         result = f"{command}{options}{{{names[index]}}}"
@@ -259,17 +286,20 @@ def _font_declaration(
             result += rf"\OSRegisterFontSize{{{selector}}}{{{size}}}"
         return result
 
-    resolved = resolve_font(names)
-    if resolved is not None:
-        return [declaration(names.index(resolved))]
+    if not at_compile_time:
+        resolved = resolve_font(names)
+        if resolved is not None:
+            return [declaration(names.index(resolved))]
 
+    guarded = len(names) if optional else len(names) - 1
     lines: list[str] = []
-    for depth, name in enumerate(names[:-1]):
+    for depth, name in enumerate(names[:guarded]):
         lines.append("  " * depth + rf"\IfFontExistsTF{{{name}}}{{")
         lines.append("  " * (depth + 1) + declaration(depth))
         lines.append("  " * depth + "}{")
-    lines.append("  " * (len(names) - 1) + declaration(len(names) - 1))
-    lines.extend("  " * depth + "}" for depth in reversed(range(len(names) - 1)))
+    if not optional:
+        lines.append("  " * guarded + declaration(len(names) - 1))
+    lines.extend("  " * depth + "}" for depth in reversed(range(guarded)))
     return lines
 
 
@@ -291,9 +321,9 @@ def _fonts_section(config: TypographyConfig) -> list[str]:
         r"\makeatother",
     ] if sized else []
     for family, spec in sorted(config.fonts.items()):
-        if family in (LATIN_FAMILY, HEBREW_FAMILY) and family not in config.declared_fonts:
-            # The stylesheet already declares these, with the same chain.
-            continue
+        # A default the settings file did not name was never checked against the
+        # installed fonts (TypographyConfig.apply_font_defaults), so TeX chooses.
+        default = family not in config.declared_fonts
         options = _HEBREW_FONT_OPTIONS if family == HEBREW_FAMILY else ""
         if any(entry.normal_size is not None for entry in spec.entries):
             # fontspec otherwise shares NFSS identities for identical faces. Two
@@ -301,13 +331,24 @@ def _fonts_section(config: TypographyConfig) -> list[str]:
             identity = "OS" + family.encode("utf-8").hex()
             options = (options[:-1] + "," if options else "[") + f"NFSSFamily={identity}]"
         if family == LATIN_FAMILY:
-            lines.extend(_font_declaration(r"\setmainfont", options, spec.names, spec.entries, r"\rmfamily"))
-        elif family == HEBREW_FAMILY:
-            # \hebrewfont already exists — the stylesheet declared it — so this
-            # has to renew rather than declare.
+            # Without any of the default faces, the class's own font is the Latin one.
             lines.extend(
-                _font_declaration(r"\renewfontfamily\hebrewfont", options, spec.names, spec.entries, r"\hebrewfont")
+                _font_declaration(
+                    r"\setmainfont", options, spec.names, spec.entries, r"\rmfamily",
+                    at_compile_time=default, optional=default,
+                )
             )
+        elif family == HEBREW_FAMILY:
+            # Polyglossia sets every Hebrew run in \hebrewfont, so this one is
+            # declared whether or not any of its faces is present.
+            lines.extend(
+                _font_declaration(
+                    r"\newfontfamily\hebrewfont", options, spec.names, spec.entries,
+                    r"\hebrewfont", at_compile_time=default,
+                )
+            )
+            # Polyglossia expects \hebrewfontsf if anything uses \sffamily inside
+            # Hebrew; the alias saves declaring the same faces twice.
             lines.append(r"\let\hebrewfontsf\hebrewfont")
         else:
             lines.extend(
@@ -363,9 +404,8 @@ def _font_size_support() -> str:
 def _geometry_section(config: TypographyConfig) -> list[str]:
     """Page size and margins, as ``geometry`` options.
 
-    The stylesheet loads ``geometry`` with no options at all, so an unconfigured
-    document gets the document class's own margins. Only what was asked for is
-    said here.
+    The stylesheet loads ``geometry`` with no options at all. A margin with no
+    value is the document class's own, and is left unsaid.
     """
     page = config.page
     options: list[str] = []
@@ -388,7 +428,7 @@ def _geometry_section(config: TypographyConfig) -> list[str]:
         ("binding_offset", "bindingoffset"),
     ):
         value = getattr(margins, name)
-        if name in margins.model_fields_set and value is not None:
+        if value is not None:
             options.append(f"{option}={value}")
 
     return [rf"\geometry{{{','.join(options)}}}"] if options else []
@@ -396,45 +436,41 @@ def _geometry_section(config: TypographyConfig) -> list[str]:
 
 def _paragraph_section(config: TypographyConfig) -> list[str]:
     paragraphs = config.paragraphs
-    written = paragraphs.model_fields_set
-    lines: list[str] = []
-    if "indent" in written:
-        lines.append(rf"\setlength{{\parindent}}{{{paragraphs.indent}}}")
-    if "spacing" in written:
-        lines.append(rf"\setlength{{\parskip}}{{{paragraphs.spacing}}}")
+    lines = [
+        rf"\setlength{{\parindent}}{{{paragraphs.indent}}}",
         # The body is reledmac numbered text, whose paragraphs are \pstart...\pend
         # groups, and those do not take \parskip between them. reledmac.xslt hooks
         # \AtEveryPstart* to \OSPstartSkip for exactly that reason; \parskip is read
-        # when a \pstart is set, so rewriting it here is all this has to do.
-    if "line_spacing" in written:
-        lines.append(rf"\linespread{{{_format_number(paragraphs.line_spacing)}}}\selectfont")
-    if "alignment" in written:
-        alignment = _BLOCK_ALIGNMENT[paragraphs.alignment]
+        # when a \pstart is set, so setting it here is all this has to do.
+        rf"\setlength{{\parskip}}{{{paragraphs.spacing}}}",
+        rf"\linespread{{{_format_number(paragraphs.line_spacing)}}}\selectfont",
+    ]
+    alignment = _BLOCK_ALIGNMENT[paragraphs.alignment]
+    if alignment:
         # \AtBeginDocument because the raggedness has to survive the class's own
         # \normalfont setup, and because \raggedright in a preamble is a no-op.
-        lines.append(rf"\AtBeginDocument{{{alignment}}}" if alignment else "")
-    return [line for line in lines if line]
+        # Justified is what TeX does anyway, and says nothing.
+        lines.append(rf"\AtBeginDocument{{{alignment}}}")
+    return lines
 
 
 # Each role, the macro that renders it, and how that macro is built. The
-# stylesheet defines every one of these with the same shape, so overriding one
-# is a matter of substituting the style's tokens for the hardcoded ones.
+# stylesheet calls every one of these and defines none of them.
 def _styles_section(config: TypographyConfig) -> list[str]:
     styles = config.styles
+    markers = config.markers
     spacing = config.paragraphs.line_spacing
-    written = styles.model_fields_set
     lines: list[str] = []
 
     def tokens(style: TextStyle) -> str:
         return style_tokens(style, spacing)
 
-    def emit(role: str, definition_of) -> None:
-        if role in written:
-            lines.append(definition_of(getattr(styles, role)))
+    def define(role: str, definition_of) -> None:
+        lines.append(definition_of(getattr(styles, role)))
 
     # Body text has no macro of its own; the stylesheet applies \OSBodyStyle at
     # the start of the document, where it is in force for everything.
-    emit("body", lambda s: rf"\renewcommand{{\OSBodyStyle}}{{{tokens(s)}}}")
+    define("body", lambda s: rf"\newcommand{{\OSBodyStyle}}{{{tokens(s)}}}")
 
     # Headings: plain paragraph content inside a \pstart, hence inline alignment.
     for role, macro in (
@@ -443,20 +479,22 @@ def _styles_section(config: TypographyConfig) -> list[str]:
         ("heading3", r"\OSheadC"),
         ("heading4", r"\OSheadD"),
     ):
-        emit(
+        define(
             role,
-            lambda s, macro=macro: rf"\renewcommand{{{macro}}}[1]{{"
+            lambda s, macro=macro: rf"\newcommand{{{macro}}}[1]{{"
             + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
             + "}",
         )
 
     # A translated title, under the heading it translates. \par first, because it is a
     # line of its own beneath the title rather than a continuation of it; the alignment
-    # then applies to that line. Set at whichever of the four levels the heading is, so
-    # it takes one style rather than four.
-    emit(
+    # then applies to that line. \nobreak, because a page break between a title and its
+    # translation would leave the translation heading a page it does not name (#198).
+    # Set at whichever of the four levels the heading is, so it takes one style rather
+    # than four.
+    define(
         "heading_translation",
-        lambda s: r"\renewcommand{\OSheadTranslation}[1]{\par\nobreak"
+        lambda s: r"\newcommand{\OSheadTranslation}[1]{\par\nobreak"
         + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
         + "}",
     )
@@ -473,58 +511,67 @@ def _styles_section(config: TypographyConfig) -> list[str]:
         ("imprimatur", r"\OSImprimatur"),
         ("title_page_block", r"\OSTitlePageBlock"),
     ):
-        emit(
+        define(
             role,
-            lambda s, macro=macro: rf"\renewcommand{{{macro}}}[1]{{"
+            lambda s, macro=macro: rf"\newcommand{{{macro}}}[1]{{"
             + _block_paragraph(s, "#1", spacing)
             + "}",
         )
 
     # Verse and chapter numbers force LTR: digits laid out in an RTL context
-    # come out reversed, so 50 would read 05.
-    emit(
-        "verse_number",
-        lambda s: r"\renewcommand{\vno}[1]{\textsuperscript{{\textdir TLT"
-        r"\foreignlanguage{english}{" + tokens(s) + r"#1}}}\,}",
-    )
-    emit(
-        "chapter_number",
-        lambda s: r"\renewcommand{\chno}[1]{{" + tokens(s)
-        + r"{\textdir TLT\foreignlanguage{english}{#1}}}\,}",
-    )
-    emit(
+    # come out reversed, so 50 would read 05. A hidden number is a macro that
+    # prints nothing, so the stylesheet need not know.
+    if markers.verse_numbers is Visibility.HIDDEN:
+        lines.append(r"\newcommand{\vno}[1]{}")
+    else:
+        define(
+            "verse_number",
+            lambda s: r"\newcommand{\vno}[1]{\textsuperscript{{\textdir TLT"
+            r"\foreignlanguage{english}{" + tokens(s) + r"#1}}}\,}",
+        )
+    if markers.chapter_numbers is Visibility.HIDDEN:
+        lines.append(r"\newcommand{\chno}[1]{}")
+    else:
+        define(
+            "chapter_number",
+            lambda s: r"\newcommand{\chno}[1]{{" + tokens(s)
+            + r"{\textdir TLT\foreignlanguage{english}{#1}}}\,}",
+        )
+    define(
         "citation",
-        lambda s: r"\renewcommand{\OScitation}[1]{"
+        lambda s: r"\newcommand{\OScitation}[1]{"
         + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
         + "}",
     )
-    emit(
+    define(
         "aliyah",
-        lambda s: r"\renewcommand{\OSaliyah}[1]{{" + tokens(s) + r"[#1]}\,}",
+        lambda s: r"\newcommand{\OSaliyah}[1]{{" + tokens(s) + r"[#1]}\,}",
     )
-    emit(
+    define(
         "parsha",
-        lambda s: r"\renewcommand{\OSParsha}[1]{{\normalfont" + tokens(s) + r" #1}\quad}",
+        lambda s: r"\newcommand{\OSParsha}[1]{{\normalfont" + tokens(s) + r" #1}\quad}",
     )
-    emit(
+    # Regular braces, not \begingroup/\endgroup: the latter can close reledmac's
+    # own groups early inside \edtext/\Bfootnote.
+    define(
         "instruction",
-        lambda s: r"\renewcommand{\instructionnote}[1]{{" + tokens(s) + " #1}}",
+        lambda s: r"\newcommand{\instructionnote}[1]{{" + tokens(s) + " #1}}",
     )
-    emit("note", lambda s: r"\renewcommand{\notenote}[1]{{" + tokens(s) + " #1}}")
+    define("note", lambda s: r"\newcommand{\notenote}[1]{{" + tokens(s) + " #1}}")
     # styles.line_number is emitted by _line_numbers_section: the style and
     # the numeral system write the same macro, so they have to be combined.
-    emit(
+    define(
         "section_separator",
-        lambda s: r"\renewcommand{\OSSectionSeparatorStyle}[1]{"
-        + _block_paragraph(s, "#1", spacing)
+        lambda s: r"\newcommand{\OSSectionSeparatorStyle}[1]{"
+        + _display_block(s, "#1", spacing)
         + "}",
     )
     # A list label, like a heading, is paragraph content inside a \pstart, so it
     # takes inline alignment for the same reason the heading roles do: a block
     # environment's \par escapes reledmac's per-line capture.
-    emit(
+    define(
         "list_label",
-        lambda s: r"\renewcommand{\OSListLabelStyle}[1]{"
+        lambda s: r"\newcommand{\OSListLabelStyle}[1]{"
         + _inline_aligned(s, r"{\normalfont" + tokens(s) + " #1}")
         + "}",
     )
@@ -537,11 +584,10 @@ def _note_mark_tex(style: TextStyle, anchor: NoteAnchor, spacing: float) -> list
     ``\\OSInterlinearNotemark`` keeps its name whichever anchor is chosen: it is
     what the stylesheet emits, and the setting decides only what it does.
     """
-    # The stylesheet sets note marks in a sans face so they read as editorial
-    # apparatus rather than as part of the text. Keep that unless the settings
-    # name a font of their own — changing the anchor should not silently change
-    # the face too.
-    tokens = (r"\sffamily" if style.font is None else "") + style_tokens(style, spacing)
+    # Note marks are set in a sans face so they read as editorial apparatus
+    # rather than as part of the text, unless the settings name a font of their
+    # own. Last, after the size, as a family switch.
+    tokens = style_tokens(style, spacing) + (r"\sffamily" if style.font is None else "")
     if anchor is NoteAnchor.INTERLINEAR:
         # Raised, zero-width and centred on the anchor, so the mark sits in the
         # interlinear band and the text it annotates is not respaced — which is
@@ -561,64 +607,60 @@ def _note_mark_tex(style: TextStyle, anchor: NoteAnchor, spacing: float) -> list
     else:
         body = r"{\textdir TLT\foreignlanguage{english}{\normalfont" + tokens + " #1}}"
     return [
-        r"\renewcommand{\OSInterlinearNotemark}[1]{%",
+        r"\newcommand{\OSInterlinearNotemark}[1]{%",
         "  " + body + "%",
         "}",
-        r"\renewcommand{\OSFootnotemark}[1]{%",
-        r"  {\textdir TLT\foreignlanguage{english}{\normalfont" + tokens + r" #1}}\space",
+        # The mark at the head of the note itself, which is already in the
+        # apparatus's own normal font.
+        r"\newcommand{\OSFootnotemark}[1]{%",
+        r"  {\textdir TLT\foreignlanguage{english}{" + tokens + r" #1}}\space",
         "}",
     ]
 
 
 def _notes_section(config: TypographyConfig) -> list[str]:
-    notes = config.notes
-    lines: list[str] = []
-    if "note_mark" in config.styles.model_fields_set or "anchor" in notes.model_fields_set:
-        lines.extend(
-            _note_mark_tex(
-                config.styles.note_mark, notes.anchor, config.paragraphs.line_spacing
-            )
-        )
-    return lines
+    return _note_mark_tex(
+        config.styles.note_mark, config.notes.anchor, config.paragraphs.line_spacing
+    )
 
 
 def _line_numbers_section(config: TypographyConfig, uses_reledpar: bool) -> list[str]:
+    """Where line numbers go and how they are counted.
+
+    Every declaration here must be in the preamble: ``\\lineation`` aborts with
+    ``\\led@err@LineationInNumbered`` once numbering is open. Each has an ``R``
+    twin for reledpar's right-hand series, which exists only when reledpar is
+    loaded and which keeps settings of its own — so the twin is always said too.
+    """
     line_numbers = config.line_numbers
-    written = line_numbers.model_fields_set
-    lines: list[str] = []
+    unit = line_numbers.unit.value
+    margin = line_numbers.margin.value
+
+    lines = [rf"\lineation{{{unit}}}"]
+    if uses_reledpar:
+        # reledpar keeps a separate \bypage@R that defaults to numbering by
+        # section, so without the twin the right column runs on unbroken through
+        # the whole document.
+        lines.append(rf"\lineationR{{{unit}}}")
+    lines.append(rf"\linenumincrement{{{line_numbers.increment}}}")
+    if uses_reledpar:
+        lines.append(rf"\linenumincrementR{{{line_numbers.increment}}}")
+    lines.append(rf"\firstlinenum{{{line_numbers.first}}}")
+    if uses_reledpar:
+        lines.append(rf"\firstlinenumR{{{line_numbers.first}}}")
+    lines.append(rf"\linenummargin{{{margin}}}")
+    if uses_reledpar:
+        lines.append(rf"\linenummarginR{{{margin}}}")
+    # Between the number and the text. If too small, right-hand numbers collide
+    # with the right column of a paired layout.
+    lines.append(rf"\setlength{{\linenumsep}}{{{line_numbers.separation}}}")
+    lines.extend(_line_number_format_tex(config, uses_reledpar))
     if not line_numbers.enabled:
         # reledmac's own switch, the one \skipnumbering sets for a single
         # paragraph. Setting it in the preamble applies it to all of them: the
         # numbering machinery still runs, so cross-references and the apparatus
-        # are unaffected, but no number is printed. Nothing else in this section
-        # would have anything to configure.
-        return [r"\numberlinefalse"]
-    if "unit" in written:
-        lines.append(rf"\lineation{{{line_numbers.unit.value}}}")
-        if uses_reledpar:
-            # \lineation sets the main series only; reledpar keeps a separate
-            # \bypage@R that defaults to numbering by section. This block is emitted
-            # after the XSLT's own defaults and wins over them, so without the twin a
-            # settings file that names a unit -- `page' included -- would put the right
-            # column back to running on unbroken through the document.
-            lines.append(rf"\lineationR{{{line_numbers.unit.value}}}")
-    if "increment" in written:
-        lines.append(rf"\linenumincrement{{{line_numbers.increment}}}")
-        if uses_reledpar:
-            lines.append(rf"\linenumincrementR{{{line_numbers.increment}}}")
-    if "first" in written:
-        lines.append(rf"\firstlinenum{{{line_numbers.first}}}")
-        if uses_reledpar:
-            lines.append(rf"\firstlinenumR{{{line_numbers.first}}}")
-    if "margin" in written:
-        margin = line_numbers.margin.value
-        lines.append(rf"\linenummargin{{{margin}}}")
-        if uses_reledpar:
-            lines.append(rf"\linenummarginR{{{margin}}}")
-    if "separation" in written:
-        lines.append(rf"\setlength{{\linenumsep}}{{{line_numbers.separation}}}")
-    if "numerals" in written or "line_number" in config.styles.model_fields_set:
-        lines.extend(_line_number_format_tex(config, uses_reledpar))
+        # are unaffected, but no number is printed.
+        lines.append(r"\numberlinefalse")
     return lines
 
 
@@ -632,75 +674,77 @@ def _line_number_format_tex(config: TypographyConfig, uses_reledpar: bool) -> li
     Hebrew numerals are letters, so unlike digits they belong in the surrounding
     direction and need no left-to-right wrapper. Digits do: laid out in an RTL
     context they come out reversed, 50 reading as 05.
+
+    Unstyled arabic numerals in the main series are reledmac's own
+    ``\\linenumrep``, which is left alone: ``\\ledlinenum`` already sets them left
+    to right. reledpar's right-hand series has no such switch, so its
+    ``\\linenumrepR`` and ``\\sublinenumrepR`` are always given one.
     """
     tokens = style_tokens(config.styles.line_number, config.paragraphs.line_spacing)
+    reledmac_own = config.line_numbers.numerals is Numerals.ARABIC and not tokens
     if config.line_numbers.numerals is Numerals.HEBREW:
         body = tokens + r"\hebrewnumeral{#1}"
+    elif reledmac_own:
+        body = r"\textdir TLT\@arabic{#1}"
     else:
         body = r"\textdir TLT\foreignlanguage{english}{" + tokens + r"\@arabic{#1}}"
     # \@arabic is internal; the \hbox keeps the direction and language switches
-    # from leaking into reledmac's aux-file writes.
-    lines = [r"\makeatletter", r"\renewcommand*{\linenumrep}[1]{\hbox{" + body + "}}"]
+    # from leaking into reledmac's aux-file writes, which these tokens reach.
+    lines: list[str] = []
+    if not reledmac_own:
+        lines.append(r"\renewcommand*{\linenumrep}[1]{\hbox{" + body + "}}")
     if uses_reledpar:
         lines.append(r"\renewcommand*{\linenumrepR}[1]{\hbox{" + body + "}}")
-    lines.append(r"\makeatother")
-    return lines
+        lines.append(r"\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}")
+    return [r"\makeatletter", *lines, r"\makeatother"] if lines else []
 
 
 def _markers_section(config: TypographyConfig) -> list[str]:
     markers = config.markers
-    written = markers.model_fields_set
-    lines: list[str] = []
-    if "section_separator" in written:
-        separator = escape_tex(markers.section_separator)
-        lines.append(
-            r"\renewcommand{\OSSectionSeparator}{"
-            + (rf"\OSSectionSeparatorStyle{{{separator}}}" if separator else "")
-            + "}"
-        )
-    if "verse_numbers" in written and markers.verse_numbers is Visibility.HIDDEN:
-        lines.append(r"\renewcommand{\vno}[1]{}")
-    if "chapter_numbers" in written and markers.chapter_numbers is Visibility.HIDDEN:
-        lines.append(r"\renewcommand{\chno}[1]{}")
+    separator = escape_tex(markers.section_separator)
+    lines = [
+        r"\newcommand{\OSSectionSeparator}{"
+        + (rf"\OSSectionSeparatorStyle{{{separator}}}" if separator else "")
+        + "}"
+    ]
 
+    # Only markers whose condition could not be decided survive compilation, so
+    # a marker in the output means "say this only if ...", and the reader has to
+    # see where that passage starts and stops.
     conditional = markers.conditional
-    conditional_written = conditional.model_fields_set
-    if "inline_open" in conditional_written:
-        lines.append(
-            r"\renewcommand{\OSCondStartInline}{{\bfseries"
-            + escape_tex(conditional.inline_open)
-            + "}}"
-        )
-    if "inline_close" in conditional_written:
-        lines.append(
-            r"\renewcommand{\OSCondEndInline}{{\bfseries"
-            + escape_tex(conditional.inline_close)
-            + "}}"
-        )
-    if conditional_written & {"block", "rule_width", "rule_thickness"}:
-        width = _percent_of(conditional.rule_width, r"\hsize")
-        if conditional.block is ConditionalBlock.RULE:
-            # A full-width box rather than \par-separated material: these rules
-            # sit inside reledmac \pstart groups, where \par does not reliably
-            # break the line. \hsize rather than \linewidth: reledpar narrows
-            # \hsize to the column but leaves \linewidth at the page width, so a
-            # \linewidth box centres its rule outside the column it belongs to.
-            # \OSMeasure is \hsize less the paragraph's own indents.
-            lines.append(
-                r"\renewcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure{\hss\rule{"
-                + width
-                + "}{"
-                + conditional.rule_thickness
-                + r"}\hss}}"
-            )
-            lines.append(r"\renewcommand{\OSCondStartBlock}{\OSCondRule}")
-            lines.append(r"\renewcommand{\OSCondEndBlock}{\OSCondRule}")
-        elif conditional.block is ConditionalBlock.BRACKETS:
-            lines.append(r"\renewcommand{\OSCondStartBlock}{\OSCondStartInline}")
-            lines.append(r"\renewcommand{\OSCondEndBlock}{\OSCondEndInline}")
-        else:
-            lines.append(r"\renewcommand{\OSCondStartBlock}{}")
-            lines.append(r"\renewcommand{\OSCondEndBlock}{}")
+    lines.append(
+        r"\newcommand{\OSCondStartInline}{{\bfseries"
+        + escape_tex(conditional.inline_open)
+        + "}}"
+    )
+    lines.append(
+        r"\newcommand{\OSCondEndInline}{{\bfseries"
+        + escape_tex(conditional.inline_close)
+        + "}}"
+    )
+    width = _percent_of(conditional.rule_width, r"\hsize")
+    # A full-width box rather than \par-separated material: these rules sit
+    # inside reledmac \pstart groups, where \par does not reliably break the
+    # line. \hsize rather than \linewidth: reledpar narrows \hsize to the column
+    # but leaves \linewidth at the page width, so a \linewidth box centres its
+    # rule outside the column it belongs to. \OSMeasure is \hsize less the
+    # paragraph's own indents.
+    lines.append(
+        r"\newcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure{\hss\rule{"
+        + width
+        + "}{"
+        + conditional.rule_thickness
+        + r"}\hss}}"
+    )
+    if conditional.block is ConditionalBlock.RULE:
+        lines.append(r"\newcommand{\OSCondStartBlock}{\OSCondRule}")
+        lines.append(r"\newcommand{\OSCondEndBlock}{\OSCondRule}")
+    elif conditional.block is ConditionalBlock.BRACKETS:
+        lines.append(r"\newcommand{\OSCondStartBlock}{\OSCondStartInline}")
+        lines.append(r"\newcommand{\OSCondEndBlock}{\OSCondEndInline}")
+    else:
+        lines.append(r"\newcommand{\OSCondStartBlock}{}")
+        lines.append(r"\newcommand{\OSCondEndBlock}{}")
     return lines
 
 
@@ -712,10 +756,7 @@ def _lists_section(config: TypographyConfig) -> list[str]:
     each of the item's paragraphs rather than as a box, so that a parallel
     compile measures it against the column and not the page.
     """
-    lists = config.lists
-    if "item_indent" not in lists.model_fields_set:
-        return []
-    return [rf"\renewcommand{{\OSListIndent}}{{{lists.item_indent}}}"]
+    return [rf"\newcommand{{\OSListIndent}}{{{config.lists.item_indent}}}"]
 
 
 def _percent_of(percent: str, dimension: str) -> str:
@@ -725,20 +766,18 @@ def _percent_of(percent: str, dimension: str) -> str:
 
 def _parallel_section(config: TypographyConfig, has_parallel: bool) -> list[str]:
     parallel = config.parallel
-    written = parallel.model_fields_set
     if not has_parallel or parallel.layout is not ParallelLayout.PAIRS:
         # Column geometry exists only where there are two columns on one page.
         return []
-    lines: list[str] = []
-    if "column_width" in written:
-        width = _percent_of(parallel.column_width, r"\textwidth")
-        lines.append(rf"\setlength{{\Lcolwidth}}{{{width}}}")
-        lines.append(rf"\setlength{{\Rcolwidth}}{{{width}}}")
-    if "column_position" in written:
-        lines.append(
-            rf"\columnsposition{{{_COLUMN_POSITIONS[parallel.column_position]}}}"
-        )
-    return lines
+    # Narrower than half, so the outer margins keep room for the line numbers.
+    width = _percent_of(parallel.column_width, r"\textwidth")
+    return [
+        rf"\setlength{{\Lcolwidth}}{{{width}}}",
+        rf"\setlength{{\Rcolwidth}}{{{width}}}",
+        # reledpar's own default sets the block against the right edge of the
+        # type area, which can leave no right margin for the numbers at all.
+        rf"\columnsposition{{{_COLUMN_POSITIONS[parallel.column_position]}}}",
+    ]
 
 
 _COLUMN_POSITIONS = {
@@ -751,29 +790,28 @@ _COLUMN_POSITIONS = {
 def _interleaved_section(config: TypographyConfig, has_parallel: bool) -> list[str]:
     """How the translation is set apart when it follows the original in one column.
 
-    Each setting overrides a macro the stylesheet defines, with the model's default,
-    for the ``OSInterleavedTranslation`` environment it wraps the translation in.
+    The macros the stylesheet's ``OSInterleavedTranslation`` environment applies
+    to the translation it wraps.
     """
     parallel = config.parallel
     if not has_parallel or parallel.layout is not ParallelLayout.INTERLEAVED:
         return []
     interleaved = parallel.interleaved
-    written = interleaved.model_fields_set
-    lines: list[str] = []
-    if "translation_size" in written:
-        size = _size_command(interleaved.translation_size, config.paragraphs.line_spacing)
-        lines.append(rf"\renewcommand{{\OSInterleavedSize}}{{{size}}}")
-    if "translation_indent" in written:
-        lines.append(
-            rf"\renewcommand{{\OSInterleavedIndent}}{{{interleaved.translation_indent}}}"
-        )
-    if "spacing" in written:
-        lines.append(rf"\renewcommand{{\OSInterleavedSpacing}}{{{interleaved.spacing}}}")
+    size = _size_command(interleaved.translation_size, config.paragraphs.line_spacing)
     if interleaved.line_numbers is InterleavedLineNumbers.BOTH:
-        # The stylesheet's default turns numbering off for the translation; with
-        # nothing to do, the translation's lines count like any other.
-        lines.append(r"\renewcommand{\OSInterleavedNumbering}{}")
-    return lines
+        # The translation's lines count like any other.
+        numbering = ""
+    else:
+        # The translation is left unnumbered. \skipnumbering is disarmed as well,
+        # or a heading or citation inside the translation would pull back the
+        # count of the numbered text around it.
+        numbering = r"\numberlinefalse\let\skipnumbering\relax"
+    return [
+        rf"\newcommand{{\OSInterleavedSize}}{{{size}}}",
+        rf"\newcommand{{\OSInterleavedIndent}}{{{interleaved.translation_indent}}}",
+        rf"\newcommand{{\OSInterleavedSpacing}}{{{interleaved.spacing}}}",
+        rf"\newcommand{{\OSInterleavedNumbering}}{{{numbering}}}",
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -784,10 +822,7 @@ def _interleaved_section(config: TypographyConfig, has_parallel: bool) -> list[s
 def build_typography_preamble(
     config: TypographyConfig, has_parallel: bool = False
 ) -> str:
-    """Everything the settings ask for, as TeX, in preamble order.
-
-    Returns the empty string when the settings ask for nothing, which leaves the
-    stylesheet's own defaults untouched.
+    """Every setting, as TeX, in preamble order.
 
     ``has_parallel`` says whether the document has two aligned streams. Several
     reledpar declarations do not exist unless the package is loaded, and the

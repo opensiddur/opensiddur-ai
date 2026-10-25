@@ -5,7 +5,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.common.xslt import xslt_transform_string
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.external_compiler import ExternalCompilerProcessor
 from opensiddur.exporter.inline_compiler import InlineCompilerProcessor
@@ -14,7 +14,6 @@ from opensiddur.exporter.settings import SettingsYaml
 from opensiddur.importer.scan import reverse
 
 TEI = 'http://www.tei-c.org/ns/1.0'
-ROOT = Path(__file__).resolve().parents[3]
 
 
 class ErrorReadingTest(unittest.TestCase):
@@ -72,14 +71,12 @@ after.</tei:p></tei:div></tei:body></tei:text></tei:TEI>''')
         for errors, wanted, unwanted in [('corrected', 'oppressors', 'oppessors'), ('printed', 'oppessors', 'oppressors')]:
             with self.subTest(errors=errors):
                 compiled = self.compile('base', self.data(errors))
-                tex = xslt_transform_string(ROOT / 'opensiddur/exporter/tex/reledmac.xslt',
-                                            etree.tostring(compiled, encoding='unicode'))
+                tex = transform(etree.tostring(compiled, encoding='unicode'))
                 self.assertIn(wanted, tex)
                 self.assertNotIn(unwanted, tex)
 
     def test_pdf_stylesheet_reads_an_uncompiled_choice_corrected(self):
-        tex = xslt_transform_string(ROOT / 'opensiddur/exporter/tex/reledmac.xslt',
-                                    (self.root / 'x' / 'test.xml').read_text())
+        tex = transform((self.root / 'x' / 'test.xml').read_text())
         self.assertIn('oppressors', tex)
         self.assertNotIn('oppessors', tex)
 

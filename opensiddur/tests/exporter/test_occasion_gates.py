@@ -11,13 +11,12 @@ from pathlib import Path
 
 from lxml import etree
 
-from opensiddur.common.xslt import xslt_transform_string
+from opensiddur.tests.exporter.stylesheet_helpers import transform
 from opensiddur.exporter.compiler import CompilerProcessor
 from opensiddur.exporter.conditional_markers import mark_silent_scopes
 from opensiddur.exporter.conditional_settings import yaml_to_declaration_entries
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
-from opensiddur.exporter.tex.latex import XSLT_FILE
 from opensiddur.importer.util.occasion import aggregate, gated, none_of
 
 SHABBAT = aggregate("shabbat")
@@ -84,9 +83,7 @@ class TestAGatedRunningOrder(unittest.TestCase):
              for marker in root.iter(f"{{{JLPTEI_NAMESPACE}}}conditional",
                                      f"{{{JLPTEI_NAMESPACE}}}endConditional")},
             {"true"})
-        tex = xslt_transform_string(
-            XSLT_FILE, etree.tostring(root, encoding="unicode"),
-            xslt_params={"additional-preamble": "", "additional-postamble": ""})
+        tex = transform(etree.tostring(root, encoding="unicode"))
         body = tex.split(r"\begin{document}", 1)[1]
         self.assertNotIn(r"\OSCond", body)
         self.assertIn("Sabbath service", body)

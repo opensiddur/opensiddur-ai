@@ -44,49 +44,48 @@
 
     <!-- Typography (driven by settings.yaml `typography` section).
 
-         Everything this stylesheet lays out is defined below as a macro or a
-         declaration with the defaults it has always had, so the output is
-         complete and correct with no typography settings at all. The settings
-         reach it two ways:
+         This stylesheet holds no typography default of its own: every setting,
+         whether a settings file wrote it or not, arrives resolved from
+         opensiddur/exporter/typography.py, through tex/latex.py's
+         typography_parameters. Hence `required`: a caller that forgets one gets an
+         error rather than an appearance nobody chose. The settings reach it as
 
-           $documentclass-options   for the handful of things the class has to
-                                    be told when it is loaded (base font size,
+           $documentclass-options   the handful of things the class has to be
+                                    told when it is loaded (base font size,
                                     paper, one- or two-sided);
-           $typography-preamble     a block of \renewcommand and \setlength,
-                                    emitted after every default below, built by
-                                    opensiddur/exporter/tex/typography_tex.py.
+           $typography-preamble     the definition of every macro and length a
+                                    setting controls, built by
+                                    tex/typography_tex.py;
 
-         Only the settings that change the *structure* of the emitted document,
-         rather than its appearance, need a parameter of their own — those are
-         the three below the class options. -->
-    <xsl:param name="documentclass-options" as="xs:string">11pt,letterpaper</xsl:param>
-    <xsl:param name="typography-preamble" as="xs:string?"/>
+         and, for the settings that change the *structure* of the emitted document
+         rather than its appearance, a parameter each, below. -->
+    <xsl:param name="documentclass-options" as="xs:string" required="yes"/>
+    <xsl:param name="typography-preamble" as="xs:string" required="yes"/>
     <!-- pages | pairs | interleaved. The first two set a parallel text with reledpar, on
          facing pages or in columns; interleaved sets it in one reledmac stream, each
-         block followed by its translation. The default is the settings model's
-         (ParallelTypographyConfig.layout in typography.py). -->
-    <xsl:param name="layout" as="xs:string">pairs</xsl:param>
+         block followed by its translation. -->
+    <xsl:param name="layout" as="xs:string" required="yes"/>
     <xsl:variable name="interleaved" as="xs:boolean" select="$layout = 'interleaved'"/>
     <xsl:variable name="facing-pages" as="xs:boolean" select="$layout = 'pages'"/>
     <!-- footnote | endnote | none — where the text of an editorial note goes.
          `none` drops notes entirely, anchor and all. -->
-    <xsl:param name="notes-placement" as="xs:string">footnote</xsl:param>
+    <xsl:param name="notes-placement" as="xs:string" required="yes"/>
     <!-- numeric | alpha | roman | symbol — the series note marks are drawn
          from. The serial is known here, so the conversion is done here. -->
-    <xsl:param name="notes-mark" as="xs:string">numeric</xsl:param>
+    <xsl:param name="notes-mark" as="xs:string" required="yes"/>
 
     <!-- Auto-generated table of contents (driven by settings.yaml
          `typography.table_of_contents`). Depth is independent of the PDF
          bookmark depth below, which is always 4 levels deep. -->
-    <xsl:param name="table-of-contents" as="xs:boolean" select="false()"/>
-    <xsl:param name="table-of-contents-depth" as="xs:integer" select="4"/>
+    <xsl:param name="table-of-contents" as="xs:boolean" required="yes"/>
+    <xsl:param name="table-of-contents-depth" as="xs:integer" required="yes"/>
 
     <!-- Running heads and feet: a complete fancyhdr block built by
          opensiddur/exporter/tex/running_heads.py from the settings.yaml
-         `typography.page_header`/`page_footer` sections. Empty when nothing is
-         configured, which leaves the book class's own page style alone. The
-         mark classes it reads are declared and inserted by this stylesheet. -->
-    <xsl:param name="page-style-preamble" as="xs:string?"/>
+         `typography.page_header`/`page_footer` sections. Empty when both are
+         empty, which leaves the book class's own page style alone. The mark
+         classes it reads are declared and inserted by this stylesheet. -->
+    <xsl:param name="page-style-preamble" as="xs:string" required="yes"/>
 
     <!-- How many parallel blocks one \Pages/\Columns typesets at a time. reledpar holds
          every chunk of a group in memory as a pair of boxes and refuses more than
@@ -99,14 +98,14 @@
     <!-- Which language a PDF bookmark carries where a work names a section twice:
          'combined' joins the two titles, 'primary' takes the first column's or the
          division's first head, 'alt' takes the other. See typography.bookmarks.from. -->
-    <xsl:param name="bookmarks-from" as="xs:string">combined</xsl:param>
+    <xsl:param name="bookmarks-from" as="xs:string" required="yes"/>
     <!-- Which column's heading is set on the page where a work titles a section twice.
          'combined' prints one heading where the two columns agree and both where they do
          not; 'primary' and 'alt' always print the one named. Same vocabulary as
          bookmarks-from, and for the same reason: it is the same question about the same
          pair of titles, asked of the page rather than of the outline.
          See typography.headings.from. -->
-    <xsl:param name="headings-from" as="xs:string">combined</xsl:param>
+    <xsl:param name="headings-from" as="xs:string" required="yes"/>
     <!-- The same question asked of a rubric rather than a heading. A rubric is never
          hoisted out of the columns: it stands mid-flow, and a parallel block cannot be
          interrupted partway through, so the one that is kept stays in its column.
@@ -114,9 +113,9 @@
          Anything but 'both' therefore requires that every rubric fall on an alignment
          boundary. Where it does not, the column that gave up its copy has no rubric near
          the passage it is about, and a reader of that column loses it — which is why
-         'both' is the default here where 'combined' is the default for a heading. See
+         'both' is typography.py's default where 'combined' is a heading's. See
          typography.instructions.from, which says so at more length. -->
-    <xsl:param name="instructions-from" as="xs:string">both</xsl:param>
+    <xsl:param name="instructions-from" as="xs:string" required="yes"/>
 
     <!-- ====================================================================
          Document scaffolding
@@ -140,36 +139,7 @@
         <xsl:text>\setdefaultlanguage{english}&#10;</xsl:text>
         <xsl:text>\setotherlanguage{hebrew}&#10;</xsl:text>
 
-        <!-- The default faces. A settings file that names its own fonts overrides
-             these from $typography-preamble below, where the chain has already
-             been checked against the installed fonts; these are the fallback for
-             a document that asks for nothing. -->
-        <!-- Latin font: try the default, otherwise let LaTeX pick its own. -->
-        <xsl:text>\IfFontExistsTF{Linux Libertine O}{&#10;</xsl:text>
-        <xsl:text>  \setmainfont{Linux Libertine O}&#10;</xsl:text>
-        <xsl:text>}{}&#10;</xsl:text>
-
-        <!-- Hebrew font: try the requested one, with fallbacks for systems that don't have it.
-             HarfBuzz shaping handles Hebrew vowels/cantillation correctly. -->
-        <!-- The Hebrew faces we ship against (Frank Ruehl CLM, Ezra SIL, SBL Hebrew) have
-             no bold companion, so \bfseries would silently do nothing and headings would
-             be indistinguishable from body text. BoldFont={*},AutoFakeBold synthesizes one. -->
-        <xsl:text>\IfFontExistsTF{Frank Ruehl CLM}{&#10;</xsl:text>
-        <xsl:text>  \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{Frank Ruehl CLM}&#10;</xsl:text>
-        <xsl:text>}{&#10;</xsl:text>
-        <xsl:text>  \IfFontExistsTF{Ezra SIL}{&#10;</xsl:text>
-        <xsl:text>    \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{Ezra SIL}&#10;</xsl:text>
-        <xsl:text>  }{&#10;</xsl:text>
-        <xsl:text>    \IfFontExistsTF{SBL Hebrew}{&#10;</xsl:text>
-        <xsl:text>      \newfontfamily\hebrewfont[Renderer=HarfBuzz,Script=Hebrew,BoldFont={*},AutoFakeBold=2]{SBL Hebrew}&#10;</xsl:text>
-        <xsl:text>    }{&#10;</xsl:text>
-        <xsl:text>      \newfontfamily\hebrewfont[Script=Hebrew,BoldFont={*},AutoFakeBold=2]{FreeSerif}&#10;</xsl:text>
-        <xsl:text>    }&#10;</xsl:text>
-        <xsl:text>  }&#10;</xsl:text>
-        <xsl:text>}&#10;</xsl:text>
-        <!-- Polyglossia expects \hebrewfontsf if anything uses \sffamily inside Hebrew;
-             alias to \hebrewfont so we need not duplicate font paths. -->
-        <xsl:text>\let\hebrewfontsf\hebrewfont&#10;</xsl:text>
+        <!-- The faces, \hebrewfont included, are declared by $typography-preamble. -->
 
         <!-- reledmac/reledpar provide critical-edition apparatus and parallel-stream
              synchronization. Series A/B/C/D/E are predefined; we use:
@@ -284,36 +254,18 @@
              configures a running head or foot. -->
         <xsl:value-of select="$page-style-preamble"/>
 
-        <!-- Verse numbers rendered as superscripts at the start of each verse.
-             Force LTR for digits even inside Hebrew RTL contexts. -->
-        <xsl:text>\newcommand{\vno}[1]{\textsuperscript{{\textdir TLT\foreignlanguage{english}{#1}}}\,}&#10;</xsl:text>
-        <!-- Chapter number, inline at the start of a chapter. Only emitted inside
-             tei:div[@type='book'] (Bible exports), where the chapter exists solely as a
-             milestone and would otherwise be invisible. -->
-        <xsl:text>\newcommand{\chno}[1]{{\large\bfseries{\textdir TLT\foreignlanguage{english}{#1}}}\,}&#10;</xsl:text>
-        <!-- A scriptural citation ("<book> <chapter>:<verse>-..."), on a line of its own:
-             either the source of a haftarah/festival reading the humash otherwise never
-             states (see tei:milestone[@unit='citation'] below), or where a reading resumes
-             after a backward jump or a skip. Centred like \OSheadA-D but italic, not bold,
-             so it reads as a caption on the reading rather than another level of heading. -->
-        <xsl:text>\newcommand{\OScitation}[1]{\mbox{}\hfill{\normalfont\normalsize\itshape #1}\hfill\mbox{}}&#10;</xsl:text>
-        <!-- Aliyah and maftir markers, inline at the verse the reading division begins on.
-             Deliberately inline rather than a break: the maftir opens *inside* the seventh
-             aliyah rather than after it, and the weekday and triennial divisions cut across
-             the Shabbat ones, so a marker that ended a paragraph would assert a break that is
-             not there. Staying inline also keeps \pstart counts identical on both sides of a
-             reledpar pairing, which a block-level marker would desynchronise. -->
-        <xsl:text>\newcommand{\OSaliyah}[1]{{\bfseries[#1]}\,}&#10;</xsl:text>
+        <!-- Everything a typography setting controls is defined in $typography-preamble
+             (tex/typography_tex.py), at the value typography.py resolves: the faces, the
+             paragraph lengths, every role's macro (\vno, \chno, \OScitation, \OSaliyah,
+             \OSParsha, \OSheadA-D, \OSheadTranslation, the title-page macros,
+             \instructionnote, \notenote, \OSSectionSeparatorStyle, \OSListLabelStyle), the
+             note marks, the conditional markers, the line numbering, the column geometry
+             and the interleaved layout's macros. None of them has a copy here, so there is
+             nothing for the two to disagree about.
 
-        <!-- Parsha name, run-in at the head of the text the parsha opens. A parsha is a
-             division containing the chapters and verses that follow it, so it is marked
-             once, here, and deliberately not doubled with an apparatus entry: a page
-             carrying a boundary would otherwise announce it twice.
-
-             Callers who want a different treatment redefine the macro through the
-             additional-preamble parameter — the emitted \OSParsha{name} is the only thing
-             this stylesheet produces for a boundary. For an apparatus entry instead of a
-             visible header:
+             Callers who want a treatment no setting gives redefine the macro through the
+             additional-preamble parameter, which follows the typography block. For an
+             apparatus entry instead of a visible parsha header, for instance:
 
                \renewcommand{\OSParsha}[1]{\leavevmode{\OSRTLfalse%
                  \edtext{\mbox{}}{\Bfootnote{Parsha: #1}}}}
@@ -322,33 +274,15 @@
              reledmac drop surrounding text or corrupt its .1 aux file, hence the explicit
              zero-width \mbox{} lemma), or to suppress the boundary entirely:
 
-               \renewcommand{\OSParsha}[1]{} -->
-        <xsl:text>\newcommand{\OSParsha}[1]{{\normalfont\large\bfseries #1}\quad}&#10;</xsl:text>
+               \renewcommand{\OSParsha}[1]{}
 
-        <!-- Section headings (tei:head).
-             reledmac's \eledchapter/\eledsection/\eledsubsection are deliberately NOT used:
-             they typeset their argument as ordinary inline text and defer the real heading
-             to a later pass via an aux file keyed on the enclosing \pstart number, which is
-             fragile and drags in book-class section numbering. These macros are plain
-             paragraph content inside a \pstart \skipnumbering, so they are unnumbered,
-             single-pass and fully under our control.
-
-             Centering uses symmetric \hfill inside the line rather than
-             {\centering ...\par} or a \parbox. reledmac captures numbered text one
-             \par-delimited line at a time, so a \par inside a group escapes that capture —
-             under reledpar's \Columns the heading then lands outside its column. A
-             \parbox is \par-free but sizes itself from \linewidth, which is wider than a
-             reledpar column and overflows it. reledmac sets every line to the current
-             measure, so balanced fill glue centers correctly in single-text and in either
-             reledpar column alike. -->
-        <xsl:text>\newcommand{\OSheadA}[1]{\mbox{}\hfill{\normalfont\LARGE\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSheadB}[1]{\mbox{}\hfill{\normalfont\Large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSheadC}[1]{\mbox{}\hfill{\normalfont\large\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSheadD}[1]{\mbox{}\hfill{\normalfont\normalsize\bfseries #1}\hfill\mbox{}}&#10;</xsl:text>
-        <!-- A division titled twice in two languages. The translated title is set under
-             the first, lighter and a size down, so that it reads as naming the same
-             section again rather than opening one of its own. -->
-        <xsl:text>\newcommand{\OSheadTranslation}[1]{\par\nobreak\mbox{}\hfill{\normalfont\normalsize\itshape #1}\hfill\mbox{}}&#10;</xsl:text>
+             Section headings (tei:head) are \OSheadA-D rather than reledmac's
+             \eledchapter/\eledsection/\eledsubsection, which typeset their argument as
+             ordinary inline text and defer the real heading to a later pass via an aux
+             file keyed on the enclosing \pstart number, which is fragile and drags in
+             book-class section numbering. The macros are plain paragraph content inside a
+             \pstart \skipnumbering, so they are unnumbered, single-pass and fully under
+             our control. -->
 
         <!-- Keeping a heading with what follows it (#198). A heading is a \pstart of its
              own, and nothing ties one \pstart to the next: the \vspace the next one opens
@@ -385,30 +319,14 @@
         <xsl:text>\newcommand{\OSKeepHeadEnd}{\unsetattribute\OSKeepAttr}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSKeepSep}{\mbox{\OSKeepAttr=2\relax\vrule width 0pt height\ht\strutbox depth\dp\strutbox}}&#10;</xsl:text>
 
-        <!-- Title page (tei:titlePage).
-             Unlike \OSheadA/B/C, these are never emitted inside a reledmac \pstart — a
-             title page is set outside all numbering — so an ordinary {\centering ...\par}
-             is safe here and gives real centred paragraphs with line breaking.
-             Sizes are the defaults for a printed title leaf: the main title dominates,
-             subtitle and byline step down from it, the imprint sits at the foot. -->
-        <xsl:text>\newcommand{\OSTitleMain}[1]{{\centering\normalfont\Huge\bfseries #1\par}\vspace{1.5ex}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSTitleSub}[1]{\vspace{1.5ex}{\centering\normalfont\Large #1\par}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSTitleAlt}[1]{{\centering\normalfont\large #1\par}\vspace{1ex}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSByline}[1]{\vspace{3ex}{\centering\normalfont\large #1\par}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSDocEdition}[1]{\vspace{2ex}{\centering\normalfont\normalsize #1\par}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSDocImprint}[1]{\vspace{4ex}{\centering\normalfont\normalsize #1\par}}&#10;</xsl:text>
+        <!-- One line of the imprint, inside \OSDocImprint. -->
         <xsl:text>\newcommand{\OSImprintLine}[1]{{\centering #1\par}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSEpigraph}[1]{\vspace{2ex}{\centering\normalfont\small\itshape #1\par}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSImprimatur}[1]{\vspace{2ex}{\centering\normalfont\small\itshape #1\par}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSTitlePageBlock}[1]{{\centering\normalfont\normalsize #1\par}}&#10;</xsl:text>
 
         <!-- Notes styling.
              - All notes must force direction/language using the xml:lang-derived wrappers
                emitted by note-content (\texthebrew{...} / \textenglish{...}).
-             - Styling lives in macros so it can be changed in one place.
              - Use {{\bfseries ...}} (regular braces) not \begingroup/\endgroup — the latter
                can prematurely close reledmac's internal groups inside \edtext/\Bfootnote. -->
-        <xsl:text>\newcommand{\instructionnote}[1]{{\bfseries #1}}&#10;</xsl:text>
         <!-- An instruction running against the direction of the text it introduces cannot
              share a line with it: the two runs would be laid out from opposite margins and
              read as one jumbled line. Birnbaum sets his English rubrics on their own line
@@ -462,18 +380,8 @@
              rubric does not cross ITS direction — so the two copies of one rubric land on
              different rows and take four between them where two would do. -->
         <xsl:text>\newcommand{\OSInstructionLine}[1]{\ifhmode\unskip\strut\newline\fi{\OSKeepAttr=3\relax\bfseries #1}\newline\ignorespaces}&#10;</xsl:text>
-        <xsl:text>\newcommand{\notenote}[1]{{\bfseries #1}}&#10;</xsl:text>
-        <!-- Conditional passages. Only markers whose condition could not be decided survive
-             compilation: a decided condition is resolved away, its text either kept outright
-             or dropped. So a marker in the output means "say this only if ...", and the
-             reader has to be able to see where that passage starts and stops. Inline runs
-             take brackets, standing in for the parentheses the sources print; whole
-             paragraphs take a short centred rule, since brackets around a block of text
-             several lines long do not read as a pair. -->
-        <xsl:text>\newcommand{\OSCondStartInline}{{\bfseries[}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSCondEndInline}{{\bfseries]}}&#10;</xsl:text>
-        <!-- A full-width box rather than \par-separated material: these rules sit inside
-             reledmac \pstart groups, where \par does not reliably break the line.
+        <!-- The measure of the current line, for a box as wide as the line it sits in,
+             such as the conditional marker's rule (\OSCondRule).
              \hsize, not \linewidth, for the reason given above \OSInstructionBlock:
              reledpar sets \hsize to the column width inside a parallel column but leaves
              \linewidth at the page, so a \linewidth box is twice the width it has to fit
@@ -483,17 +391,6 @@
              paragraph — the interleaved layout's translation, a list item — but not
              \hsize: a box as wide as \hsize there overruns the right margin by the indent. -->
         <xsl:text>\newcommand{\OSMeasure}{\dimexpr\hsize-\leftskip-\rightskip\relax}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSCondRule}{\leavevmode\hbox to \OSMeasure{\hss\rule{0.25\hsize}{0.4pt}\hss}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSCondStartBlock}{\OSCondRule}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSCondEndBlock}{\OSCondRule}&#10;</xsl:text>
-        <!-- Editorial marks: raised, zero-width, centered on the anchor so the glyph
-             sits in the interlinear band (not a letter-attached superscript). -->
-        <xsl:text>\newcommand{\OSInterlinearNotemark}[1]{%&#10;</xsl:text>
-        <xsl:text>  \leavevmode\hbox to 0pt{\hss{\textdir TLT\raisebox{1.5ex}{\foreignlanguage{english}{\kern0.05em\normalfont\scriptsize\sffamily #1\kern0.05em}}}\hss}%&#10;</xsl:text>
-        <xsl:text>}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSFootnotemark}[1]{%&#10;</xsl:text>
-        <xsl:text>  {\textdir TLT\foreignlanguage{english}{\scriptsize\sffamily #1}}\space&#10;</xsl:text>
-        <xsl:text>}&#10;</xsl:text>
         <!-- B-series apparatus: no line numbers; lemma text is not repeated in the
              footnote (\Xwraplemma[B]{\@gobble}) — only \OSFootnotemark + \notenote. -->
         <xsl:text>\Xnonumber[B]&#10;</xsl:text>
@@ -506,8 +403,8 @@
              right whatever the column runs in.
 
              The right series is the asymmetric one — reledpar's \l@dlinenumR carries no
-             such switch — which is why \linenumrepR and \sublinenumrepR are redefined
-             below, and why that pair has to stay.
+             such switch — which is why the typography preamble always redefines
+             \linenumrepR and \sublinenumrepR.
 
              There was a \renewcommand*{\linenumberstyle} here, and it never did anything.
              \linenumberstyle is a declaration, not a formatter: its argument is a style
@@ -516,21 +413,11 @@
              it the way reledmac does, it would have set the word "arabic" in the margin.
              reledpar's \linenumberstyle* (which forwards to both series) makes that a live
              trap rather than merely dead code, so it is gone. Settings that choose numerals
-             write \linenumrep, the macro actually consulted; see tex/typography_tex.py. -->
-        <!-- Line numbering by page. \lineation sets the MAIN series only: reledpar keeps
-             a separate \bypage@R which defaults to false, i.e. the right column falls back
-             to numbering by section and runs on unbroken through the whole document. So the
-             R twin has to be asked for by name. Both must stay in the preamble; either one
-             aborts with \led@err@LineationInNumbered if called once numbering is open. -->
-        <xsl:text>\lineation{page}&#10;</xsl:text>
-        <xsl:if test="$has-parallel">
-            <!-- Put line numbers on the outer margins by default. -->
-            <xsl:text>\linenummargin{outer}&#10;</xsl:text>
-        </xsl:if>
+             write \linenumrep, the macro actually consulted; see tex/typography_tex.py.
+
+             How lines are counted (\lineation, \linenummargin and the rest, and their
+             reledpar R twins) is in the typography preamble too. -->
         <xsl:if test="$uses-reledpar">
-            <!-- reledpar-only: \lineationR does not exist when reledpar is not loaded. -->
-            <xsl:text>\lineationR{page}&#10;</xsl:text>
-            <xsl:text>\linenummarginR{outer}&#10;</xsl:text>
             <xsl:if test="$layout = 'pairs'">
                 <!-- In \Columns mode reledpar maps \begin{Leftside} to the physical LEFT column
                      and \begin{Rightside} to the physical RIGHT column (regardless of
@@ -542,14 +429,8 @@
                      flush-right Hebrew occupies on every line. -->
                 <xsl:text>\linenummarginColumns{left}&#10;</xsl:text>
                 <xsl:text>\linenummarginColumnsR{right}&#10;</xsl:text>
-                <!-- By default reledpar aligns the two-column block to the right edge of the
-                     type area, which can leave essentially no right margin for right-side line
-                     numbers. Center the columns so both outer margins have room. -->
-                <xsl:text>\columnsposition{C}&#10;</xsl:text>
-                <!-- Also slightly shrink column widths to guarantee usable outer margins for
-                     line numbers (especially with A4 + 11pt defaults). -->
-                <xsl:text>\setlength{\Lcolwidth}{0.43\textwidth}&#10;</xsl:text>
-                <xsl:text>\setlength{\Rcolwidth}{0.43\textwidth}&#10;</xsl:text>
+                <!-- The columns' width and position are typography settings
+                     (typography.parallel), in the typography preamble. -->
                 <!-- Polyglossia Hebrew uses TRT; if \pardir stays RTL when \Columns runs,
                      LuaTeX lays out the two-column \hbox right-to-left and Leftside (Hebrew)
                      lands in the physical right column.  Force LTR for assembly only. -->
@@ -580,9 +461,6 @@
         <!-- reledmac/reledpar use @ in internal bidi helpers; expose a public wrapper
              so emitted document content doesn't depend on \makeatletter being in scope. -->
         <xsl:text>\newcommand*{\OSRTLfalse}{\@RTLfalse}&#10;</xsl:text>
-        <!-- Space between the line number and the text block. If too small, right-side
-             line numbers will collide with the right column in pairs layout. -->
-        <xsl:text>\setlength{\linenumsep}{1em}&#10;</xsl:text>
         <!-- Lap the number outward whichever way the column runs.
 
              reledmac hangs the number off the measure with \llap (or \rlap), and a lap is
@@ -624,23 +502,12 @@
         <xsl:if test="$uses-reledpar">
             <xsl:text>\renewcommand*{\leftlinenumR}{\hbox dir TLT to \z@{\hss\l@dlinenumR\kern\linenumsep}}&#10;</xsl:text>
             <xsl:text>\renewcommand*{\rightlinenumR}{\hbox dir TLT to \z@{\kern\linenumsep\l@dlinenumR\hss}}&#10;</xsl:text>
-            <!-- \linenumrepR, \sublinenumrepR, and \setRlineflag are reledpar-only;
-                 they do not exist when reledpar is not loaded. -->
-            <!-- Use an \hbox group to localize \textdir; these tokens can be written
-                 to auxiliary files by reledpar, so keep them simple/robust. -->
-            <xsl:text>\renewcommand*{\linenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
-            <xsl:text>\renewcommand*{\sublinenumrepR}[1]{\hbox{\textdir TLT\@arabic{#1}}}&#10;</xsl:text>
-            <!-- Empty flag: no "R" prefix on right-side line numbers. The spatial separation
+            <!-- \setRlineflag is reledpar-only; it does not exist when reledpar is not
+                 loaded. Empty flag: no "R" prefix on right-side line numbers. The spatial separation
                  of the two column margins already distinguishes left from right numbers. -->
             <xsl:text>\setRlineflag{}&#10;</xsl:text>
         </xsl:if>
         <xsl:text>\makeatother&#10;</xsl:text>
-
-        <xsl:text>\setlength{\parindent}{0pt}&#10;</xsl:text>
-        <!-- The default of typography.paragraphs.spacing (ParagraphConfig), which the
-             typography preamble writes only when a settings file sets it; the two must
-             agree, and a test holds them to it. -->
-        <xsl:text>\setlength{\parskip}{0.5em}&#10;</xsl:text>
 
         <!-- Let a line be loose rather than long. A parallel column is around half the
              measure of a single-column page, and at that width TeX regularly finds no break
@@ -673,8 +540,8 @@
              runs it once per page, so facing pages take it whole.
 
              A macro rather than a length so it is read when a \pstart is set, not here:
-             typography.paragraphs.spacing rewrites \parskip further down the preamble,
-             and this has to follow it. -->
+             typography.paragraphs.spacing sets \parskip further down the preamble, and
+             this has to follow it. -->
         <xsl:text>\newcommand{\OSPstartSkip}{</xsl:text>
         <xsl:value-of select="if ($uses-reledpar and not($facing-pages))
                               then '0.5\parskip' else '\parskip'"/>
@@ -692,24 +559,14 @@
             <xsl:call-template name="column-keep-preamble"/>
         </xsl:if>
 
-        <!-- Font switches applied to the whole body, from typography.styles.body.
-             Empty unless configured; emitted at the top of the document, where it
-             is in force for everything that follows. -->
-        <xsl:text>\newcommand{\OSBodyStyle}{}&#10;</xsl:text>
-
-        <!-- Separator between sections that carry no heading. Split in two so a
-             settings file can change the mark and its appearance independently. -->
-        <xsl:text>\newcommand{\OSSectionSeparatorStyle}[1]{\begin{center}#1\end{center}}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSSectionSeparator}{\OSSectionSeparatorStyle{* * * *}}&#10;</xsl:text>
-
-        <!-- Labelled lists (tei:list, tei:label, tei:item). Split in two the way the
-             section separator is, so a settings file can restyle the label without
-             knowing how it is placed.
+        <!-- Labelled lists (tei:list, tei:label, tei:item). The label's appearance
+             (\OSListLabelStyle) and the item's indent (\OSListIndent) are typography
+             settings; how they are placed is here.
 
              The label is set inside a \pstart, so it follows \OSheadA-\OSheadD rather
              than \OSSectionSeparatorStyle: no {\centering ...\par} and no \parbox. See
-             the comment above \OSheadA for why a \par inside a group escapes reledmac's
-             per-line capture, and \OSCondRule for why a box sized from \linewidth
+             tex/typography_tex.py's _INLINE_ALIGNMENT for why a \par inside a group
+             escapes reledmac's per-line capture, and \OSCondRule for why a box sized from \linewidth
              overhangs a reledpar column.
 
              The item's indent is a pair of skips rather than a box or a list
@@ -719,8 +576,6 @@
              without either being asked for. \leftskip is read at \par time and
              \pstart...\pend is a group, so setting it at the head of the paragraph
              indents the whole of that paragraph and nothing after it. -->
-        <xsl:text>\newcommand{\OSListIndent}{2em}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSListLabelStyle}[1]{{\normalfont\scshape #1}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSListLabel}[1]{\OSListLabelStyle{#1}}&#10;</xsl:text>
         <xsl:text>\newcommand{\OSListItemPar}{\leftskip=\OSListIndent\relax\rightskip=\OSListIndent\relax}&#10;</xsl:text>
 
@@ -737,10 +592,9 @@
             <xsl:text>\makeatother&#10;</xsl:text>
         </xsl:if>
 
-        <!-- Everything the settings file asked for, overriding the defaults above.
-             Empty when it asked for nothing. Last, so that it wins; but before
-             $additional-preamble, which carries the bibliography and is not
-             typography. -->
+        <!-- Every typography setting, at its resolved value. After the packages it
+             configures; before $additional-preamble, which carries the bibliography
+             and may redefine what this defines. -->
         <xsl:value-of select="$typography-preamble"/>
 
         <xsl:value-of select="$additional-preamble"/>
@@ -1757,16 +1611,17 @@
          Interleaved: one numbered stream, each block followed by its translation.
          ==================================================================== -->
 
-    <!-- The preamble the interleaved layout adds. The defaults here are the settings
-         model's (InterleavedConfig in typography.py); tex/typography_tex.py overrides
-         each one a settings file names.
+    <!-- The preamble the interleaved layout adds. \OSInterleavedSize, \OSInterleavedIndent,
+         \OSInterleavedSpacing and \OSInterleavedNumbering are typography settings
+         (InterleavedConfig in typography.py), defined by tex/typography_tex.py.
 
          The translation goes in an environment, i.e. a group, and that is where its
          settings take effect. It has to be outside the \pstart: \pstart gathers the
          paragraph in a group of its own and \pend closes it before the lines are set, so
          a \numberlinefalse inside would be gone by the time a line is counted. Inside the
          group \skipnumbering must be disarmed as well, or the heading or citation it
-         precedes would pull back the count of the numbered text around it.
+         precedes would pull back the count of the numbered text around it, which is why
+         \OSInterleavedNumbering does both.
 
          \leftskip and \rightskip are advanced rather than set, keeping the stretch
          \raggedright puts in \rightskip.
@@ -1776,10 +1631,6 @@
          \OSInterleavedSpacing instead. A flag rather than a skip emitted in place, so
          the hook still runs exactly once per \pstart. -->
     <xsl:template name="interleaved-preamble">
-        <xsl:text>\newcommand{\OSInterleavedSize}{\small}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSInterleavedIndent}{1em}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSInterleavedSpacing}{0.25em}&#10;</xsl:text>
-        <xsl:text>\newcommand{\OSInterleavedNumbering}{\numberlinefalse\let\skipnumbering\relax}&#10;</xsl:text>
         <xsl:text>\newenvironment{OSInterleavedTranslation}{\OSInterleavedNumbering\OSInterleavedSize\advance\leftskip\OSInterleavedIndent\relax\advance\rightskip\OSInterleavedIndent\relax}{}&#10;</xsl:text>
         <xsl:text>\newif\ifOSInterleavedSeam&#10;</xsl:text>
         <xsl:text>\newcommand{\OSInterleavedSeam}{\global\OSInterleavedSeamtrue}&#10;</xsl:text>
