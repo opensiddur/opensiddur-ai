@@ -151,9 +151,10 @@ class TestBooks(unittest.TestCase):
 
     # ── build ───────────────────────────────────────────────────────────────
 
-    def _build(self, path: Path, suffix=None) -> books.BookResult:
+    def _build(self, path: Path, suffix=None, formats=("pdf",)) -> books.BookResult:
         self.output_dir.mkdir(exist_ok=True)
-        return books.build(path, self.settings_dir, self.project_dir, self.output_dir, suffix)
+        return books.build(path, self.settings_dir, self.project_dir, self.output_dir, suffix,
+                           formats)
 
     def test_build_runs_compiler_then_pdf(self):
         path = self._book("a/one")
@@ -245,7 +246,8 @@ class TestBooks(unittest.TestCase):
         returncodes = iter([1, 0, 0])
         with patch.object(books.subprocess, "run",
                           side_effect=lambda *a, **k: subprocess.CompletedProcess([], next(returncodes))):
-            code, out = self._main("-o", str(self.output_dir), "--suffix", "v1")
+            code, out = self._main("-o", str(self.output_dir), "--suffix", "v1",
+                                   "--format", "pdf")
         self.assertEqual(code, 1)
         self.assertIn("FAILED  a/one: compilation failed", out)
         self.assertIn("ok      b/one: proj-b/index.xml -> ", out)
@@ -268,6 +270,66 @@ class TestBooks(unittest.TestCase):
         self.assertEqual([c.args[0][2] for c in run.call_args_list],
                          ["opensiddur.exporter.compiler", "opensiddur.exporter.html.html"])
         self.assertIn("a-one.html", out)
+
+    def test_check_records_formats(self):
+        self.assertEqual(self._check(self._book("a/one")).formats, ("html", "pdf"))
+        self.assertEqual(self._check(self._book("a/two", formats=["html"])).formats, ("html",))
+
+    def test_build_defaults_to_the_books_formats(self):
+        with patch.object(books.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)) as run:
+            result = self._build(self._book("a/one"), formats=None)
+        self.assertEqual((result.output_html.name, result.output_pdf.name),
+                         ("a-one.html", "a-one.pdf"))
+        self.assertEqual([c.args[0][2] for c in run.call_args_list],
+                         ["opensiddur.exporter.compiler", "opensiddur.exporter.html.html",
+                          "opensiddur.exporter.compiler", "opensiddur.exporter.pdf.pdf"])
+
+    def test_build_electronic_only_book_has_no_pdf(self):
+        with patch.object(books.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)) as run:
+            result = self._build(self._book("a/one", formats=["html"]), formats=None)
+        self.assertTrue(result.ok)
+        self.assertIsNone(result.output_pdf)
+        self.assertEqual(result.skipped, ())
+        self.assertNotIn("opensiddur.exporter.pdf.pdf", [c.args[0][2] for c in run.call_args_list])
+
+    def test_build_skips_a_format_the_book_does_not_list(self):
+        with patch.object(books.subprocess, "run") as run:
+            result = self._build(self._book("a/one", formats=["html"]), formats=("pdf",))
+        run.assert_not_called()
+        self.assertTrue(result.ok)
+        self.assertIsNone(result.output_pdf)
+        self.assertEqual(result.skipped, ("pdf",))
+
+    def test_main_format_not_listed_is_skipped_not_failed(self):
+        self._book("a/one", formats=["html"])
+        with patch.object(books.subprocess, "run") as run:
+            code, out = self._main("-o", str(self.output_dir), "--format", "pdf")
+        run.assert_not_called()
+        self.assertEqual(code, 0)
+        self.assertIn("ok      a/one: proj-a/index.xml (not built in pdf)", out)
+        self.assertEqual(list(self.output_dir.glob("*.pdf")), [])
+
+    def test_main_formats(self):
+        self._book("a/one")
+        self._book("b/one", formats=["html"])
+        self.assertEqual(self._main("--formats", "a/one"), (0, '["html", "pdf"]\n'))
+        self.assertEqual(self._main("--formats", "b/one"), (0, '["html"]\n'))
+
+    def test_main_formats_needs_one_settings_file(self):
+        self._book("a/one")
+        self._book("a/two")
+        for names in ((), ("a",)):
+            with patch("sys.stderr"), self.assertRaises(SystemExit) as cm:
+                self._main("--formats", *names)
+            self.assertEqual(cm.exception.code, 2)
+
+    def test_main_formats_of_an_invalid_book_fails(self):
+        self._settings("a/one", {"priority": {}})
+        with patch("sys.stderr"):
+            code, out = self._main("--formats", "a/one")
+        self.assertEqual((code, out), (1, ""))
 
     def test_main_select_a_book_selects_all_its_settings(self):
         self._book("a/one")

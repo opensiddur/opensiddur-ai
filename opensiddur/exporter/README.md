@@ -193,9 +193,9 @@ change to the calendar derivations needs the same change in `calendar.js`.
 - The device gives the time zone with the place. It does not look up a zone from coordinates,
   as the compiler does with tzfpy.
 
-## Printed books
+## Released books
 
-Printed books are settings files in
+The books a release builds are settings files in
 [`opensiddur-projects/settings/`](https://github.com/opensiddur/opensiddur-projects/tree/main/settings),
 one subdirectory per book holding that book's variants:
 
@@ -210,7 +210,8 @@ Each file names the root file it formats with a `book:` key and says how it diff
 siblings with `description:` (below). When an opensiddur-ai release is published,
 `.github/workflows/release-books.yml` lists them (`books --list`) at the opensiddur-projects
 commit the release pins, and starts a `release-book.yml` job for each, which builds that book
-and attaches it to the release as `<book>-<variant>-<tag>.pdf` (e.g. `humash-annual-v0.5.0.pdf`).
+in the formats its `formats:` lists (below) and attaches them to the release as
+`<book>-<variant>-<tag>.html` and `.pdf` (e.g. `humash-annual-v0.5.0.pdf`).
 
 To build them locally (after syncing the reference database):
 
@@ -220,7 +221,12 @@ uv run python -m opensiddur.exporter.books humash           # every variant of o
 uv run python -m opensiddur.exporter.books humash/annual    # one variant
 uv run python -m opensiddur.exporter.books --check          # validate only, build nothing
 uv run python -m opensiddur.exporter.books --list           # names, as JSON: ["humash/annual", ...]
+uv run python -m opensiddur.exporter.books --format pdf     # only the printed books
+uv run python -m opensiddur.exporter.books humash/annual --formats  # its formats, as JSON
 ```
+
+Each book is built in its own `formats:`. `--format` narrows that to one; a book that does not
+list it is skipped, not failed.
 
 A book that fails is reported and skipped and the rest are still built; the exit status is
 nonzero if any failed. Each book's compiler and LaTeX output goes to
@@ -254,6 +260,14 @@ book:
 book's other variants. `book` is the root file the settings format. With a `book:`, the compiler needs only `-s`; `-p`/`-f`
 still override it. Both the project and the file must exist. Optional, except in
 `opensiddur-projects/settings/`, where every file is a book.
+
+### Release formats
+```yaml
+formats: [html]
+```
+The forms `books` and the release build this book in: `html`, the electronic book, and `pdf`,
+the printed one. Both, unless the settings say otherwise. A book whose reader chooses the day
+on the device, and that is not wanted in print, lists only `html`. At least one, each once.
 
 ### Transclusion priority
 ```yaml

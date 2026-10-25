@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A settings file's `formats:` says which forms a release builds the book in, `html` and/or
+  `pdf` (both by default). `books --formats <book>/<variant>` prints them; `release-book.yml`
+  builds only those, and skips installing TeX for a book with no printed form. `books` with no
+  `--format` now builds each book's own formats, not only the PDF.
+
 ## [0.6.0] - 2026-10-24
 
 ### Added

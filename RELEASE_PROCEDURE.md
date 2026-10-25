@@ -84,8 +84,8 @@ What it does, in order:
 
 Publishing the release starts `.github/workflows/release-books.yml`. It lists the settings files
 in `opensiddur-projects/settings/<book>/` at the pinned commit and starts one
-`release-book.yml` job per file. That job builds the book twice and attaches both to the
-release:
+`release-book.yml` job per file. That job builds the book in the formats its settings'
+`formats:` lists, both unless it says otherwise, and attaches them to the release:
 - the electronic book, `<book>-<variant>-vX.Y.Z.html`, first, which takes seconds;
 - then the printed book, `<book>-<variant>-vX.Y.Z.pdf`.
 

@@ -96,7 +96,7 @@ class BookTarget(BaseModel):
     """ The book a settings file formats: the root file it is compiled from.
 
     A settings file that names its book can be compiled without -p/-f, and is what the
-    release builds into a printed book (see opensiddur.exporter.books).
+    release builds into a book (see opensiddur.exporter.books).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -170,6 +170,18 @@ class SettingsYaml(BaseModel):
     typography: TypographyConfig = Field(default_factory=TypographyConfig)
     declarations: dict[str, dict[str, DeclarationFeatureValue]] = Field(default_factory=dict)
     electronic: ElectronicSettings = Field(default_factory=ElectronicSettings)
+    # The forms a release builds this book in: `html`, the electronic book, and `pdf`, the
+    # printed one. A book read only on a device, its day chosen there, lists just `html`.
+    formats: list[Literal["html", "pdf"]] = Field(default_factory=lambda: ["html", "pdf"])
+
+    @field_validator("formats")
+    @classmethod
+    def validate_formats(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("a book must be built in at least one format")
+        if len(set(v)) != len(v):
+            raise ValueError(f"a format is listed twice: {v}")
+        return v
 
     @field_validator("annotations")
     @classmethod

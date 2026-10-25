@@ -1,17 +1,18 @@
-""" Build a printed book (PDF), and optionally an electronic one (HTML), for every settings
-file in a settings directory.
+""" Build the electronic book (HTML) and the printed one (PDF) for every settings file in a
+settings directory.
 
 The settings directory (opensiddur-projects/settings/) has one subdirectory per book, holding
 that book's settings files: settings/humash/annual.yaml, settings/humash/triennial.yaml. Each
 names the root file it formats in its `book:` key and says how it differs from its siblings in
-`description:`. The release builds every one of them and attaches the PDFs to the release
-(.github/workflows/release-books.yml), named <book>-<settings>[-<tag>].pdf, and the electronic
-books beside them as .html.
+`description:`. The release builds every one of them and attaches them to the release
+(.github/workflows/release-books.yml), named <book>-<settings>[-<tag>].pdf and .html.
 
-`--format html` builds the electronic book instead, or as well (`--format pdf --format html`):
-one self-contained <book>-<settings>[-<tag>].html (opensiddur/exporter/html/html.py). It is
-compiled separately, with `--destination electronic`, which leaves the settings a reader
-supplies for the reader's device to decide.
+Each book is built in the formats its settings list in `formats:`, both unless it says
+otherwise. `--format pdf` or `--format html` builds only that one, for the books that list it;
+a book that does not is skipped, not failed. The electronic book is one self-contained
+<book>-<settings>[-<tag>].html (opensiddur/exporter/html/html.py). It is compiled separately,
+with `--destination electronic`, which leaves the settings a reader supplies for the reader's
+device to decide. `--formats` prints the formats one book lists, for the release workflow.
 
 `--check` validates without building: the YAML parses and matches the settings schema, the
 project and file the book names exist, and every font chain the book will be typeset with has
@@ -46,6 +47,9 @@ class BookResult:
     settings_file: Path
     name: str
     book: Optional[BookTarget] = None
+    # The formats its settings say it is built in, and those asked for that it is not.
+    formats: tuple[str, ...] = ()
+    skipped: tuple[str, ...] = ()
     output_pdf: Optional[Path] = None
     output_html: Optional[Path] = None
     error: Optional[str] = None
@@ -122,6 +126,7 @@ def check(settings_file: Path, settings_directory: Path, project_directory: Path
         result.error = "no `book:` key; every file in the settings directory must name its book"
         return result
     result.book = settings.book
+    result.formats = tuple(settings.formats)
     result.error = _check_fonts(settings)
     return result
 
@@ -139,9 +144,10 @@ def build(
     project_directory: Path,
     output_directory: Path,
     suffix: Optional[str] = None,
-    formats: tuple[str, ...] = ("pdf",),
+    formats: Optional[tuple[str, ...]] = None,
 ) -> BookResult:
-    """ Compile and render one book, in each of `formats`.
+    """ Compile and render one book, in each of `formats` its settings list (default: all of
+    those). A format asked for that the settings do not list is skipped, not failed.
 
     The compiler and output stages run as subprocesses: each book gets fresh linear data,
     and a stage that exits outright fails only its own book. Their output goes to
@@ -151,6 +157,8 @@ def build(
     result = check(settings_file, settings_directory, project_directory)
     if not result.ok:
         return result
+    requested = result.formats if formats is None else formats
+    result.skipped = tuple(f for f in requested if f not in result.formats)
 
     log_file = output_directory / output_name(result.name, extension="log")
     common = ["-s", str(settings_file), "--project-directory", str(project_directory)]
@@ -159,7 +167,7 @@ def build(
         "html": (["--destination", "electronic"], "opensiddur.exporter.html.html", "rendering"),
     }
     with tempfile.TemporaryDirectory() as temp, open(log_file, "w") as log:
-        for extension in formats:
+        for extension in (f for f in requested if f in result.formats):
             compile_options, stage, doing = stages[extension]
             compiled = Path(temp) / f"compiled-{extension}.xml"
             output = output_directory / output_name(result.name, suffix, extension)
@@ -180,6 +188,8 @@ def _report(results: list[BookResult]) -> None:
             target = f"{result.book.project}/{result.book.file_name}"
             outputs = [str(o) for o in (result.output_pdf, result.output_html) if o]
             built = f" -> {', '.join(outputs)}" if outputs else ""
+            if result.skipped:
+                built += f" (not built in {', '.join(result.skipped)})"
             print(f"ok      {result.name}: {target}{built}")
         else:
             print(f"FAILED  {result.name}: {result.error}")
@@ -215,16 +225,20 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--output-directory", "-o", type=Path, default=Path("books"),
                         help="Where to write the PDFs and per-book logs (default: ./books).")
     parser.add_argument("--suffix", default=None,
-                        help="Appended to each PDF name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
+                        help="Appended to each output's name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
     parser.add_argument("--format", dest="formats", action="append", choices=FORMATS,
-                        help="What to build: pdf (the default), html (the electronic book). "
-                             "Repeat for both.")
+                        help="Build only this format, pdf or html (the electronic book), for "
+                             "the books whose settings list it. Repeatable. "
+                             "Default: each book's own `formats:`.")
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--check", action="store_true",
                         help="Only validate the settings, the books they name and their fonts; build nothing.")
     action.add_argument("--list", action="store_true",
                         help="Print the names of the settings files (e.g. humash/annual) as a JSON list; "
                              "build nothing. The release workflow builds one book per name.")
+    action.add_argument("--formats", dest="list_formats", action="store_true",
+                        help="Print the formats one settings file lists (e.g. [\"html\"]) as JSON; "
+                             "build nothing. The release workflow builds only those.")
     args = parser.parse_args(argv)
 
     project_directory = args.project_directory.resolve()
@@ -238,6 +252,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.list:
         print(json.dumps([book_name(f, settings_directory) for f in settings_files]))
         return 0
+    if args.list_formats:
+        if len(settings_files) != 1:
+            parser.error("--formats needs exactly one settings file, "
+                         f"not {len(settings_files)}")
+        result = check(settings_files[0], settings_directory, project_directory)
+        if not result.ok:
+            print(f"FAILED  {result.name}: {result.error}", file=sys.stderr)
+            return 1
+        print(json.dumps(list(result.formats)))
+        return 0
     if not settings_files:
         print(f"No settings files in {settings_directory}")
         return 0
@@ -247,7 +271,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         args.output_directory.mkdir(parents=True, exist_ok=True)
         output_directory = args.output_directory.resolve()
-        formats = tuple(dict.fromkeys(args.formats or ["pdf"]))
+        formats = tuple(dict.fromkeys(args.formats)) if args.formats else None
         results = [build(f, settings_directory, project_directory, output_directory, args.suffix,
                          formats)
                    for f in settings_files]
