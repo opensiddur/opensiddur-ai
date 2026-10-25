@@ -1,9 +1,10 @@
 name: Release book
 
 # Builds one book, opensiddur-projects/settings/<book>/<variant>.yaml, at the
-# opensiddur-projects commit a release tag pins, in both its forms, and attaches them to that
-# release: the electronic book as <book>-<variant>-<tag>.html (opensiddur-ai#92) and the printed
-# one as <book>-<variant>-<tag>.pdf (opensiddur-ai#153).
+# opensiddur-projects commit a release tag pins, in the forms its `formats:` lists (both, unless
+# it says otherwise), and attaches them to that release: the electronic book as
+# <book>-<variant>-<tag>.html (opensiddur-ai#92) and the printed one as
+# <book>-<variant>-<tag>.pdf (opensiddur-ai#153). A book with no printed form skips TeX entirely.
 #
 # The electronic book is built first. It takes seconds where the PDF can take hours, and a PDF
 # that fails or times out does not keep it off the release. Each form has its own output
@@ -79,24 +80,33 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Read the forms the book is built in
+        id: forms
+        run: |
+          formats=$(uv run python -m opensiddur.exporter.books "$BOOK" --formats)
+          echo "Formats: $formats"
+          echo "formats=$formats" >> "$GITHUB_OUTPUT"
+
       - name: Build reference database
         run: uv run python -m opensiddur.exporter.refdb
 
       - name: Build the electronic book
+        if: contains(fromJSON(steps.forms.outputs.formats), 'html')
         run: |
           uv run python -m opensiddur.exporter.books "$BOOK" --format html \
             --output-directory "$RUNNER_TEMP/books/html" --suffix "$TAG"
 
       - name: Attach the electronic book to the release
+        if: contains(fromJSON(steps.forms.outputs.formats), 'html')
         run: gh release upload "$TAG" "$RUNNER_TEMP"/books/html/*.html --clobber
 
       - name: Install TeX
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && contains(fromJSON(steps.forms.outputs.formats), 'pdf') }}
         run: sudo bash opensiddur/exporter/tex/install-tex.sh
 
       - name: Build the printed book
         id: pdf
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && contains(fromJSON(steps.forms.outputs.formats), 'pdf') }}
         run: |
           uv run python -m opensiddur.exporter.books "$BOOK" --format pdf \
             --output-directory "$RUNNER_TEMP/books/pdf" --suffix "$TAG"

@@ -84,6 +84,20 @@ class TestBookKey(_BookSettingsCase):
         self.assertEqual(linear_data.project_priority, ["proj-a"])
 
 
+class TestFormats(_BookSettingsCase):
+
+    def test_default_is_both(self):
+        self.assertEqual(self._read({"priority": {}}).formats, ["html", "pdf"])
+
+    def test_electronic_only(self):
+        self.assertEqual(self._read({"priority": {}, "formats": ["html"]}).formats, ["html"])
+
+    def test_refused(self):
+        for formats in ([], ["html", "html"], ["epub"], "html"):
+            with self.subTest(formats=formats), self.assertRaises(ValidationError):
+                self._read({"priority": {}, "formats": formats})
+
+
 class _CompilerCalled(Exception):
     pass
 
