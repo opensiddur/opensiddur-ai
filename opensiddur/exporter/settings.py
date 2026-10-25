@@ -96,7 +96,7 @@ class BookTarget(BaseModel):
     """ The book a settings file formats: the root file it is compiled from.
 
     A settings file that names its book can be compiled without -p/-f, and is what the
-    release builds into a printed book (see opensiddur.exporter.books).
+    release builds into a book (see opensiddur.exporter.books).
     """
 
     model_config = ConfigDict(extra="forbid")

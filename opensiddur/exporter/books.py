@@ -225,7 +225,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--output-directory", "-o", type=Path, default=Path("books"),
                         help="Where to write the PDFs and per-book logs (default: ./books).")
     parser.add_argument("--suffix", default=None,
-                        help="Appended to each PDF name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
+                        help="Appended to each output's name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
     parser.add_argument("--format", dest="formats", action="append", choices=FORMATS,
                         help="Build only this format, pdf or html (the electronic book), for "
                              "the books whose settings list it. Repeatable. "

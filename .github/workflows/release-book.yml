@@ -80,10 +80,15 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      # A tag cut before `formats:` existed (v0.6.0 and earlier) has no --formats: both forms.
       - name: Read the forms the book is built in
         id: forms
         run: |
-          formats=$(uv run python -m opensiddur.exporter.books "$BOOK" --formats)
+          if uv run python -m opensiddur.exporter.books --help | grep -q -- '--formats'; then
+            formats=$(uv run python -m opensiddur.exporter.books "$BOOK" --formats)
+          else
+            formats='["html", "pdf"]'
+          fi
           echo "Formats: $formats"
           echo "formats=$formats" >> "$GITHUB_OUTPUT"
 
