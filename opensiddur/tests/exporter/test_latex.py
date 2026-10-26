@@ -3,7 +3,6 @@
 The driver is responsible for:
 
   - extracting license/credit/source metadata from referenced source files,
-  - loading the optional ``typography`` section of a settings.yaml,
   - and feeding all of those into the XSLT as parameters.
 
 These tests cover those responsibilities. The actual XSLT output is tested
@@ -20,7 +19,7 @@ from pydantic import ValidationError
 
 import opensiddur.exporter.tex.latex as latex_module
 from opensiddur.exporter import typography as typography_module
-from opensiddur.exporter.typography import PaperType, ParallelLayout, TypographyConfig
+from opensiddur.exporter.typography import TypographyConfig
 from opensiddur.exporter.tex.latex import (
     CreditRecord,
     LicenseRecord,
@@ -31,7 +30,6 @@ from opensiddur.exporter.tex.latex import (
     group_credits,
     group_licenses,
     licenses_to_tex,
-    load_typography,
     order_credits,
     sources_to_tex,
     transform_xml_to_tex,
@@ -729,147 +727,6 @@ class TestGetFileReferences(unittest.TestCase):
         self.assertIn(self.project_dir / "b" / "x.xml", result)
         self.assertIn(self.project_dir / "a" / "index.xml", result)
         self.assertIn(self.project_dir / "b" / "index.xml", result)
-
-
-class TestLoadTypography(unittest.TestCase):
-    """Loading the optional `typography` section of a settings.yaml.
-
-    Defaults must apply when the file is missing, the section is missing,
-    or the file is malformed. The PDF stage must not depend on the full
-    SettingsYaml passing validation — the compiler stage already validates
-    the rest, and the PDF stage can run without project paths existing on
-    disk (e.g. against pre-compiled XML).
-    """
-
-    def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp_dir.cleanup)
-        self.test_dir = Path(self.temp_dir.name)
-
-    def test_defaults_when_settings_file_is_none(self):
-        cfg = load_typography(None)
-        self.assertEqual(cfg, TypographyConfig())
-
-    def test_reads_typography_section(self):
-        settings_path = self.test_dir / "settings.yaml"
-        settings_path.write_text(
-            """
-priority:
-  transclusion: [p]
-  instructions: []
-typography:
-  fonts:
-    hebrew: [Ezra SIL, FreeSerif]
-    latin: TeX Gyre Pagella
-  parallel:
-    layout: pairs
-  page:
-    paper: letterpaper
-    base_font_size: 12pt
-  table_of_contents:
-    enabled: true
-    depth: 2
-"""
-        )
-        with _no_fontconfig():
-            cfg = load_typography(settings_path)
-        self.assertEqual(cfg.fonts["hebrew"].names, ["Ezra SIL", "FreeSerif"])
-        self.assertEqual(cfg.fonts["latin"].names, ["TeX Gyre Pagella"])
-        self.assertEqual(cfg.parallel.layout, ParallelLayout.PAIRS)
-        self.assertEqual(cfg.page.paper, PaperType.LETTERPAPER)
-        self.assertEqual(cfg.page.base_font_size, "12pt")
-        self.assertTrue(cfg.table_of_contents.enabled)
-        self.assertEqual(cfg.table_of_contents.depth, 2)
-
-    def test_table_of_contents_defaults_to_disabled(self):
-        cfg = TypographyConfig()
-        self.assertFalse(cfg.table_of_contents.enabled)
-        self.assertEqual(cfg.table_of_contents.depth, 4)
-
-    def test_defaults_when_typography_section_missing(self):
-        settings_path = self.test_dir / "settings.yaml"
-        settings_path.write_text(
-            """
-priority:
-  transclusion: [p]
-  instructions: []
-"""
-        )
-        cfg = load_typography(settings_path)
-        self.assertEqual(cfg, TypographyConfig())
-
-    def test_reads_running_head_settings(self):
-        settings_path = self.test_dir / "settings.yaml"
-        settings_path.write_text(
-            """
-typography:
-  page_header:
-    odd:
-      left: "{book-title}"
-      right: {text: "{page}", language: en}
-  page_footer:
-    all:
-      center: "{page}"
-"""
-        )
-        cfg = load_typography(settings_path)
-        self.assertEqual(cfg.page_header.odd.left.text, "{book-title}")
-        self.assertEqual(cfg.page_header.odd.right.language, "en")
-        self.assertIsNone(cfg.page_header.even)
-        self.assertEqual(cfg.page_footer.all.center.text, "{page}")
-
-    def test_invalid_typography_is_an_error_not_a_silent_default(self):
-        """Substituting defaults for a mistyped running-head code would produce a
-        PDF missing what was asked for, explained only by a warning on stderr."""
-        settings_path = self.test_dir / "settings.yaml"
-        settings_path.write_text(
-            """
-typography:
-  page_header:
-    all:
-      left: "{no-such-code}"
-"""
-        )
-        with self.assertRaises(ValidationError) as ctx:
-            load_typography(settings_path)
-        self.assertIn("Unknown header/footer code", str(ctx.exception))
-
-    def test_all_combined_with_odd_is_an_error(self):
-        settings_path = self.test_dir / "settings.yaml"
-        settings_path.write_text(
-            """
-typography:
-  page_footer:
-    all:
-      center: "{page}"
-    odd:
-      left: "{page}"
-"""
-        )
-        with self.assertRaises(ValidationError):
-            load_typography(settings_path)
-
-    def test_returns_defaults_on_invalid_file(self):
-        f = self.test_dir / "broken.yaml"
-        f.write_text(":\n: not yaml")
-        cfg = load_typography(f)
-        self.assertEqual(cfg, TypographyConfig())
-
-    def test_settings_with_unknown_projects_does_not_block_typography(self):
-        """Project-list validation in the broader settings file (which the
-        compiler does) must not interfere with reading typography here."""
-        settings_path = self.test_dir / "settings.yaml"
-        settings_path.write_text(
-            """
-priority:
-  transclusion: [a-project-that-does-not-exist]
-typography:
-  page:
-    paper: a5paper
-"""
-        )
-        cfg = load_typography(settings_path)
-        self.assertEqual(cfg.page.paper, PaperType.A5PAPER)
 
 
 class TestTransformXmlToTex(unittest.TestCase):

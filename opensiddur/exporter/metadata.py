@@ -1,7 +1,7 @@
 """Metadata a compiled book carries about its sources, whatever it is rendered into.
 
 A book's colophon — the licences of every file it drew on, the people credited in it and the
-sources it cites — and the typography section of its settings file. ``build_colophon`` gathers
+sources it cites. ``build_colophon`` gathers
 the colophon once, in one order, and each output stage only serialises it: the TeX/PDF stage
 (tex/latex.py) and the electronic book (html/html.py).
 """
@@ -13,8 +13,6 @@ from typing import Literal, Optional
 
 from lxml import etree
 from pydantic import BaseModel
-
-from opensiddur.exporter.typography import TypographyConfig
 
 
 class LicenseRecord(BaseModel):
@@ -533,37 +531,3 @@ def build_colophon(compiled_file: Path, project_directory: Path) -> Colophon:
         credits=order_credits(group_credits(extract_credits([compiled_file]))),
         sources=extract_sources(file_references),
     )
-
-
-def load_typography(settings_file: Optional[Path]) -> TypographyConfig:
-    """Load only the ``typography`` section of a settings.yaml.
-
-    Returns sensible defaults when the file is missing or has no typography
-    section. We deliberately validate only the typography section and not
-    the full SettingsYaml — the compiler stage already does that — so that
-    the PDF stage can run even when the settings file references projects
-    not present in this checkout.
-
-    A typography section that is present but invalid is an error, not a
-    fallback: silently substituting defaults for, say, a mistyped running-head
-    code would produce a PDF that is simply missing what was asked for, with
-    nothing but a warning to say why. Only being unable to read or parse the
-    file at all falls back to defaults.
-    """
-    if settings_file is None:
-        return TypographyConfig()
-    import yaml
-
-    try:
-        with open(settings_file, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-    except (OSError, yaml.YAMLError) as e:
-        print(
-            f"Warning: could not load typography from {settings_file}: {e}; "
-            "using defaults",
-            file=sys.stderr,
-        )
-        return TypographyConfig()
-    if not isinstance(data, dict):
-        return TypographyConfig()
-    return TypographyConfig.model_validate(data.get("typography") or {})

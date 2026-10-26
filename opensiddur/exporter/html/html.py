@@ -33,9 +33,16 @@ from typing import Any
 
 import yaml
 from lxml import etree
+from pydantic import ValidationError
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.common.xslt import xslt_transform_string
+from opensiddur.exporter.cli_common import (
+    SettingsError,
+    add_settings_arguments,
+    load_output_settings,
+    prepare_compiled_tree,
+)
 from opensiddur.exporter.calendar.compute import FS_HOLIDAY, FS_PURIM_OBSERVANCE
 from opensiddur.exporter.client_settings import is_reader_supplied, resolve
 from opensiddur.exporter.condition_eval import TriState, condition_features, condition_from_json, value_to_json
@@ -45,9 +52,7 @@ from opensiddur.exporter.html.css import typography_css, xslt_parameters
 from opensiddur.exporter.html.markers import BookConditions, prepare
 from opensiddur.exporter.html.psalms import normalize as normalize_psalm_titles
 from opensiddur.exporter.metadata import ISBN_TYPES, Colophon, SourceRecord, build_colophon
-from opensiddur.exporter.page_references import resolve_page_references
-from opensiddur.exporter.settings import ElectronicSettings
-from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
+from opensiddur.exporter.settings import ElectronicSettings, SettingsYaml
 
 logger = logging.getLogger(__name__)
 
@@ -64,17 +69,7 @@ XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
 # ── Settings ────────────────────────────────────────────────────────────────
 
-def read_settings_data(settings_file: Path | None) -> dict[str, Any]:
-    """The settings file, as YAML. Only its typography is validated: like the PDF stage, this
-    one runs without the projects the file names being checked out."""
-    if settings_file is None:
-        return {}
-    with open(settings_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    return data if isinstance(data, dict) else {}
-
-
-def book_defaults(settings: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def book_defaults(settings: SettingsYaml) -> dict[str, dict[str, Any]]:
     """What the book starts from, for the settings a reader supplies.
 
     The static defaults, overlaid with the settings file's declarations: the values a compile
@@ -85,9 +80,9 @@ def book_defaults(settings: dict[str, Any]) -> dict[str, dict[str, Any]]:
         if is_reader_supplied(fs_type):
             for name, value in features.items():
                 defaults.setdefault(fs_type, {})[name] = value_to_json(value)
-    for fs_type, features in (settings.get("declarations") or {}).items():
+    for fs_type, features in settings.declarations.items():
         if is_reader_supplied(fs_type):
-            for name, value in (features or {}).items():
+            for name, value in features.items():
                 defaults.setdefault(fs_type, {})[name] = value
     return defaults
 
@@ -176,8 +171,8 @@ def calendar_scopes(book: BookConditions) -> int:
 
 # ── About the book ──────────────────────────────────────────────────────────
 
-def book_title(root: etree.ElementBase, settings: dict[str, Any]) -> str:
-    title = ((settings.get("book") or {}).get("title") or "").strip()
+def book_title(root: etree.ElementBase, settings: SettingsYaml) -> str:
+    title = ((settings.book and settings.book.title) or "").strip()
     if title:
         return title
     found = root.find(f".//{{{TEI_NS}}}titleStmt/{{{TEI_NS}}}title")
@@ -320,12 +315,12 @@ def read_basic_settings(spec_file: Path = BASIC_SETTINGS_FILE) -> dict[str, Any]
         return yaml.safe_load(f)
 
 
-def celebrated_purim(settings: dict[str, Any]) -> int | None:
+def celebrated_purim(settings: SettingsYaml) -> int | None:
     """The day of Adar this volume celebrates as Purim: its settings file's, or the default.
 
     None when the settings file leaves it undefined.
     """
-    declared = (settings.get("declarations") or {}).get(FS_PURIM_OBSERVANCE) or {}
+    declared = settings.declarations.get(FS_PURIM_OBSERVANCE) or {}
     if "day" in declared:
         return declared["day"]
     return STATIC_DEFAULTS[FS_PURIM_OBSERVANCE]["day"]
@@ -500,11 +495,9 @@ def build_book(
 ) -> str:
     """The electronic book, as one HTML document."""
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
-    settings = read_settings_data(settings_file)
     # The reader's device chooses the faces, so whether this machine has them is moot.
-    typography = TypographyConfig.model_validate(
-        settings.get("typography") or {}, context={RESOLVE_FONTS: False}
-    )
+    settings = load_output_settings(settings_file, resolve_fonts=False)
+    typography = settings.typography
 
     root = etree.parse(str(compiled_file)).getroot()
     if root.get(P_DESTINATION) != "electronic":
@@ -514,7 +507,7 @@ def build_book(
 
     normalize_psalm_titles(root)
     # The reader's settings can hide the first occurrence of a destination: label them all.
-    resolve_page_references(root, every_occurrence=True)
+    prepare_compiled_tree(root, every_occurrence=True)
     book_columns = columns(root)
     book = prepare(root)
     main = xslt_transform_string(
@@ -534,8 +527,7 @@ def build_book(
         "@@ABOUT@@": about_html(title, compiled_file, project_directory),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
                                 celebrated_purim(settings), book_columns,
-                                ElectronicSettings.model_validate(
-                                    settings.get("electronic") or {}).model_dump()),
+                                settings.electronic.model_dump()),
         "@@CALENDAR_JS@@": _inline(
             (ASSETS / "calendar.js").read_text(encoding="utf-8"), "</script"),
         "@@CONDITION_JS@@": _inline(
@@ -553,12 +545,14 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
         description="Render a compiled JLPTEI file as a self-contained electronic book.")
     parser.add_argument("input_file", type=Path, help="Compiled XML (--destination electronic).")
     parser.add_argument("output_file", type=Path, help="The book, an .html file.")
-    parser.add_argument("-s", "--settings", type=Path, help="The settings file it was compiled with.")
-    parser.add_argument("--project-directory", type=Path, default=PROJECT_DIRECTORY,
-                        help="Where the projects are, for licences and credits.")
+    add_settings_arguments(parser, "The settings file it was compiled with.")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    page = build_book(args.input_file, args.settings, args.project_directory)
+    try:
+        page = build_book(args.input_file, args.settings_file, args.project_directory)
+    except (SettingsError, ValidationError) as e:
+        print(f"Settings error: {e}", file=sys.stderr)
+        sys.exit(1)
     args.output_file.write_text(page, encoding="utf-8")
     print(f"Electronic book written to: {args.output_file}", file=sys.stderr)
 

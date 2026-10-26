@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.constants import JLPTEI_NAMESPACE, PROCESSING_NAMESPACE, TEI_NS
+from opensiddur.exporter.cli_common import SettingsError
 from opensiddur.exporter.html.css import typography_css, xslt_parameters
 from opensiddur.exporter.client_settings import is_reader_supplied
 from opensiddur.exporter.compiler import CompilerProcessor
@@ -32,7 +33,7 @@ from opensiddur.exporter.html.html import (
     scope_css,
 )
 from opensiddur.exporter.html.markers import BookConditions, Feature, prepare
-from opensiddur.exporter.settings import ElectronicSettings
+from opensiddur.exporter.settings import ElectronicSettings, SettingsYaml
 from opensiddur.exporter.linear import get_linear_data, reset_linear_data
 from opensiddur.exporter.page_references import resolve_page_references
 from opensiddur.exporter import typography as typography_module
@@ -744,6 +745,16 @@ class TestBuildBook(unittest.TestCase):
     def test_title_from_the_settings(self):
         self.assertIn("<title>The Settings Title</title>", self._build())
 
+    def test_a_broken_settings_file_is_an_error(self):
+        """The same policy as the PDF stage's: not a book in the default settings."""
+        for text, error in ((":\n: not yaml", SettingsError),
+                            ("typography:\n  page:\n    paper: tabloid\n", ValidationError),
+                            ("electronic:\n  colums: both\n", ValidationError)):
+            with self.subTest(text):
+                self.settings.write_text(text, encoding="utf-8")
+                with self.assertRaises(error):
+                    self._build()
+
     def test_title_from_the_header_without_settings(self):
         self.assertIn("<title>Header Title</title>", self._build(settings=False))
 
@@ -986,11 +997,14 @@ class TestTheDayCelebratedAsPurim(unittest.TestCase):
         self.assertEqual(self._observed(None), [None, None, 0])
 
     def test_the_volume_says_which_day(self):
-        self.assertEqual(celebrated_purim({}), 14)
+        def settings(declarations):
+            return SettingsYaml.model_validate({"declarations": declarations})
+
+        self.assertEqual(celebrated_purim(SettingsYaml()), 14)
         self.assertEqual(celebrated_purim(
-            {"declarations": {"opensiddur:purim-observance": {"day": 15}}}), 15)
+            settings({"opensiddur:purim-observance": {"day": 15}})), 15)
         self.assertIsNone(celebrated_purim(
-            {"declarations": {"opensiddur:purim-observance": {"day": None}}}))
+            settings({"opensiddur:purim-observance": {"day": None}})))
 
 if __name__ == "__main__":
     unittest.main()
