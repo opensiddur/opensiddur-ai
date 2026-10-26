@@ -10,7 +10,8 @@ from lxml import etree as lxml_etree
 
 def prettify_xml(xml_string: str,
                 remove_xml_declaration: bool=False,
-                encoding: str="utf-8") -> str:
+                encoding: str="utf-8",
+                keep_blank_text: bool=False) -> str:
     """
     Prettify an XML string with proper indentation and formatting.
     Uses lxml if available (preserves namespace prefixes), falls back to minidom.
@@ -19,6 +20,10 @@ def prettify_xml(xml_string: str,
         xml_string (str): The XML string to prettify
         remove_xml_declaration (bool): Whether to remove the XML declaration (default: False)
         encoding (str): The encoding to use (default: utf-8)
+        keep_blank_text (bool): Keep whitespace-only text. By default it is removed so that
+            the document can be re-indented, which also removes the space between two
+            adjacent inline elements; a caller whose input has no whitespace between block
+            elements can keep it and still be indented.
     
     Returns:
         str: The prettified XML string
@@ -28,7 +33,7 @@ def prettify_xml(xml_string: str,
     """
     try:
         # lxml preserves namespace prefixes
-        parser = lxml_etree.XMLParser(remove_blank_text=True)
+        parser = lxml_etree.XMLParser(remove_blank_text=not keep_blank_text)
         root = lxml_etree.fromstring(xml_string.encode(encoding), parser)
         
         pretty_xml = lxml_etree.tostring(

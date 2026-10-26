@@ -60,6 +60,7 @@ from opensiddur.importer.util.pages import (
     default_sourcetexts_root,
     feinstein_haggadah_data_directory,
 )
+from opensiddur.importer.util.tei_project import prune_stale_files
 from opensiddur.exporter.validate_urn_references import validate_project_urn_references
 
 INDEX_TITLES: dict[str, str] = {
@@ -114,19 +115,6 @@ def document_header(
 def make_project_directory(project_dir: Path) -> Path:
     project_dir.mkdir(parents=True, exist_ok=True)
     return project_dir
-
-
-def prune_stale_files(project_dir: Path, written: set[str]) -> list[Path]:
-    """Delete generated files that this conversion no longer produces.
-
-    Sections get renamed and split, and a leftover file from an earlier run is not harmless: it
-    still validates, still carries the page breaks and URNs it was written with, and so quietly
-    duplicates them across the project.
-    """
-    stale = [path for path in sorted(project_dir.glob("*.xml")) if path.stem not in written]
-    for path in stale:
-        path.unlink()
-    return stale
 
 
 def convert_project(

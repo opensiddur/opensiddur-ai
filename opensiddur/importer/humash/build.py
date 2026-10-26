@@ -66,7 +66,7 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from opensiddur.importer.feinstein_haggadah.tei_builder import validate_and_write
+from opensiddur.importer.util.tei_project import validate_and_write
 from opensiddur.importer.humash import model
 from opensiddur.importer.humash.aliyot import CombinedParsha, Parsha, parse_readings
 from opensiddur.importer.humash.festival_names import hebrew_name
