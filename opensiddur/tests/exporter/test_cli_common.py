@@ -118,8 +118,9 @@ class TestLoadOutputSettings(unittest.TestCase):
         self.assertEqual(settings.book.project, "a-project-that-does-not-exist")
         self.assertEqual(settings.typography.page.paper, PaperType.A5PAPER)
         # The compiler still checks them.
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as caught:
             read_settings(path, project_directory=self.test_dir, resolve_fonts=False)
+        self.assertIn("does not exist", str(caught.exception))
 
     def test_fonts_are_not_resolved_for_a_stage_that_selects_none(self):
         path = self._settings("typography:\n  fonts:\n    hebrew: [No Such Font At All]\n")

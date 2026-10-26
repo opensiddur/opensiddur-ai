@@ -548,11 +548,13 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
     add_settings_arguments(parser, "The settings file it was compiled with.")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    # Checked first, so that only an error in the settings is reported as one.
     try:
-        page = build_book(args.input_file, args.settings_file, args.project_directory)
+        load_output_settings(args.settings_file, resolve_fonts=False)
     except (SettingsError, ValidationError) as e:
         print(f"Settings error: {e}", file=sys.stderr)
         sys.exit(1)
+    page = build_book(args.input_file, args.settings_file, args.project_directory)
     args.output_file.write_text(page, encoding="utf-8")
     print(f"Electronic book written to: {args.output_file}", file=sys.stderr)
 
