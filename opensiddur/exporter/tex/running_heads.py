@@ -328,20 +328,29 @@ class RunningHeadConfig(BaseModel):
 # nothing keeps its page number where it has always been. Under `page.sides:
 # one` fancyhdr treats every page as odd, so the `odd` slots are the ones that
 # apply.
+# A right-bound book (`page.binding: right`, two-sided) has its binding at the
+# right of an odd page, so the same arrangement is the mirror image of this one.
 # `page_header: {}` in a settings file is the way to ask for no head at all.
 DEFAULT_PAGE_HEADER = {
     "odd": {"left": "{section-title}", "right": "{page}"},
     "even": {"left": "{page}", "right": "{section-title}"},
 }
+DEFAULT_RIGHT_BOUND_PAGE_HEADER = {
+    "odd": {"left": "{page}", "right": "{section-title}"},
+    "even": {"left": "{section-title}", "right": "{page}"},
+}
 
 
-def default_page_header() -> RunningHeadConfig:
+def default_page_header(right_bound: bool = False) -> RunningHeadConfig:
     """The running head a settings file gets when it declares none.
 
-    A fresh instance each time: a shared model would be handed to every
-    ``TypographyConfig`` at once.
+    ``right_bound`` says that recto and verso are laid out for a binding at the
+    right (see ``typography.right_bound_pages``). A fresh instance each time: a
+    shared model would be handed to every ``TypographyConfig`` at once.
     """
-    return RunningHeadConfig.model_validate(DEFAULT_PAGE_HEADER)
+    return RunningHeadConfig.model_validate(
+        DEFAULT_RIGHT_BOUND_PAGE_HEADER if right_bound else DEFAULT_PAGE_HEADER
+    )
 
 
 # ---------------------------------------------------------------------------

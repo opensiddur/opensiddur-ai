@@ -126,7 +126,7 @@ class TestDefaults(unittest.TestCase):
         self.assertEqual(self.config.table_of_contents.depth, 4)
 
     def test_running_head_defaults_to_the_section_title_and_the_foot_to_nothing(self):
-        self.assertEqual(self.config.page_header, default_page_header())
+        self.assertEqual(self.config.page_header, default_page_header(right_bound=True))
         self.assertTrue(self.config.page_footer.is_empty())
 
 

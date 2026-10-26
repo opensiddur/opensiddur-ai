@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--format` now builds each book's own formats, not only the PDF.
 
 ### Changed
+- PDFs are right-bound by default (#265). A new `typography.page.binding` (`right` | `left`,
+  default `right`) sets the reading direction a PDF viewer shows its spreads in (Acrobat's
+  "Binding: Right Edge"). A two-sided book opens as a cover page and then spreads ("Two Up
+  (Cover Page)"). On a two-sided page, the inner margin, the `inner`/`outer` line-number
+  margins and the default running head now sit at the right edge of an odd page, so every
+  book's pages are mirrored. Set `binding: left` to keep the old layout.
 - The output stages (TeX, PDF, electronic book) read the settings file one way, with one
   policy (#251): a file that cannot be read, is not YAML or is not valid settings is an error
   in every stage. The PDF stage used to fall back to the default typography with a warning.

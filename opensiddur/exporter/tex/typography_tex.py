@@ -36,8 +36,10 @@ from opensiddur.exporter.typography import (
     FontVariant,
     FontWeight,
     HEBREW_FAMILY,
+    Binding,
     InterleavedLineNumbers,
     LATIN_FAMILY,
+    LineNumberMargin,
     NamedSize,
     NoteAnchor,
     Numerals,
@@ -49,6 +51,7 @@ from opensiddur.exporter.typography import (
     TypographyConfig,
     Visibility,
     resolve_font,
+    right_bound_pages,
 )
 
 
@@ -431,7 +434,48 @@ def _geometry_section(config: TypographyConfig) -> list[str]:
         if value is not None:
             options.append(f"{option}={value}")
 
-    return [rf"\geometry{{{','.join(options)}}}"] if options else []
+    lines = [rf"\geometry{{{','.join(options)}}}"] if options else []
+    if right_bound_pages(page):
+        lines.extend(_right_binding_lines())
+    return lines
+
+
+def _right_binding_lines() -> list[str]:
+    """Move the binding to the right edge of an odd page.
+
+    The book class and ``geometry`` know only a binding at the left: an odd page
+    takes ``\\oddsidemargin``, with the inner margin (and any ``bindingoffset``)
+    on its left. Under a right binding an odd page is laid out as the class lays
+    out an even one, so the two are exchanged once ``geometry`` has computed them,
+    which it does in its own begin-document hook; ``begindocument/end`` runs after
+    every one of those. Whatever the margins came from — the class, an explicit
+    ``inner``/``outer`` or a binding offset — they arrive at the right edge
+    unchanged.
+
+    ``\\reversemarginpar`` keeps a marginal note in the outer margin, which the
+    class otherwise puts at the right of an odd page.
+    """
+    return [
+        r"\AddToHook{begindocument/end}{%",
+        r"  \dimen0=\oddsidemargin",
+        r"  \oddsidemargin=\evensidemargin",
+        r"  \evensidemargin=\dimen0}",
+        r"\reversemarginpar",
+    ]
+
+
+def _pdf_viewer_section(config: TypographyConfig) -> list[str]:
+    """How a PDF viewer opens the book: its reading direction and page layout.
+
+    A two-sided book opens as a cover page on its own and then spreads
+    (``TwoPageRight``, "Two Up (Cover Page)"), read in the binding's direction
+    (``/Direction``, "Binding: Right Edge"). The stylesheet loads ``hyperref``
+    before the typography preamble, so ``\\hypersetup`` is defined here.
+    """
+    page = config.page
+    direction = "R2L" if page.binding is Binding.RIGHT else "L2R"
+    layout = "TwoPageRight" if page.sides is Sides.TWO else "SinglePage"
+    return [rf"\hypersetup{{pdfdirection={direction},pdfpagelayout={layout}}}"]
 
 
 def _paragraph_section(config: TypographyConfig) -> list[str]:
@@ -624,6 +668,12 @@ def _notes_section(config: TypographyConfig) -> list[str]:
     )
 
 
+_MIRRORED_LINE_NUMBER_MARGIN = {
+    LineNumberMargin.INNER: LineNumberMargin.OUTER,
+    LineNumberMargin.OUTER: LineNumberMargin.INNER,
+}
+
+
 def _line_numbers_section(config: TypographyConfig, uses_reledpar: bool) -> list[str]:
     """Where line numbers go and how they are counted.
 
@@ -634,7 +684,13 @@ def _line_numbers_section(config: TypographyConfig, uses_reledpar: bool) -> list
     """
     line_numbers = config.line_numbers
     unit = line_numbers.unit.value
-    margin = line_numbers.margin.value
+    margin = line_numbers.margin
+    if right_bound_pages(config.page):
+        # reledmac's inner and outer, like the class's, assume the binding is at the
+        # left of an odd page. Its pages are already mirrored (_right_binding_lines),
+        # so each names the other's edge; left and right are physical and stay.
+        margin = _MIRRORED_LINE_NUMBER_MARGIN.get(margin, margin)
+    margin = margin.value
 
     lines = [rf"\lineation{{{unit}}}"]
     if uses_reledpar:
@@ -837,6 +893,7 @@ def build_typography_preamble(
     sections = [
         ("Fonts", _fonts_section(config)),
         ("Page geometry", _geometry_section(config)),
+        ("PDF viewer", _pdf_viewer_section(config)),
         ("Paragraphs", _paragraph_section(config)),
         ("Text styles", _styles_section(config)),
         ("Notes", _notes_section(config)),

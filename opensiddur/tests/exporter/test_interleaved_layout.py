@@ -70,7 +70,9 @@ class TestInterleavedPreamble(unittest.TestCase):
             self.assertNotIn(macro, self.preamble)
 
     def test_numbers_still_default_to_the_outer_margin(self):
-        self.assertIn(r"\linenummargin{outer}", self.preamble)
+        # The book is right-bound by default, which reledmac, assuming a left binding,
+        # calls the inner margin.
+        self.assertIn(r"\linenummargin{inner}", self.preamble)
 
     def test_paragraph_skip_is_not_halved(self):
         """Halving is for \\Columns, which runs the \\pstart hook once per column."""

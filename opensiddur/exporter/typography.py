@@ -165,10 +165,22 @@ class Sides(StrEnum):
     TWO = "two"
 
 
+class Binding(StrEnum):
+    """ Which edge of the book the leaves are bound at.
+
+    A Hebrew-primary book is bound at the right, so it opens from what a Latin-script
+    reader takes for the back, its spreads read right to left, and its recto — an
+    odd page, as in any book — is the left-hand page of a spread.
+    """
+
+    LEFT = "left"
+    RIGHT = "right"
+
+
 class ChapterStart(StrEnum):
     """ Where a new book or chapter is allowed to begin. """
 
-    RECTO = "recto"  # always on a right-hand page, inserting a blank if needed
+    RECTO = "recto"  # always on a recto (odd) page, inserting a blank if needed
     ANY = "any"
 
 
@@ -774,8 +786,18 @@ class PageConfig(ForbidExtra):
     chapter_start: ChapterStart = Field(
         default=ChapterStart.RECTO,
         description=(
-            "recto: a book always opens on a right-hand page, with a blank "
-            "inserted if needed. any: it opens on whichever page comes next."
+            "recto: a book always opens on a recto (odd) page, with a blank "
+            "inserted if needed; under `binding: right` that is the left-hand page "
+            "of a spread. any: it opens on whichever page comes next."
+        ),
+    )
+    binding: Binding = Field(
+        default=Binding.RIGHT,
+        description=(
+            "right | left. The edge the book is bound at. It sets the reading "
+            "direction of the PDF's spreads, and with `sides: two` it puts the inner "
+            "margin, the inner line-number margin and the default running head's "
+            "inner slot at that edge of each page."
         ),
     )
     base_font_size: BaseFontSize = Field(
@@ -805,6 +827,15 @@ class PageConfig(ForbidExtra):
                 f"not `paper: {self.paper.value}`"
             )
         return self
+
+
+def right_bound_pages(page: PageConfig) -> bool:
+    """ Whether recto and verso are laid out for a binding at the right.
+
+    Only a two-sided document has a recto and a verso to mirror; a one-sided one keeps
+    its left and right margins wherever it is bound.
+    """
+    return page.binding is Binding.RIGHT and page.sides is Sides.TWO
 
 
 class ParagraphConfig(ForbidExtra):
@@ -1256,8 +1287,9 @@ class TypographyConfig(ForbidExtra):
         default_factory=default_page_header,
         description=(
             "Running head. Defaults to the current section title on the inner "
-            "edge and the page number on the outer; write `{}` for no head at "
-            "all. See doc/typography.md for the template codes."
+            "edge and the page number on the outer, wherever `page.binding` puts "
+            "them; write `{}` for no head at all. See doc/typography.md for the "
+            "template codes."
         ),
     )
     page_footer: RunningHeadConfig = Field(
@@ -1322,6 +1354,20 @@ class TypographyConfig(ForbidExtra):
                 resolve_font(self.fonts[family].names)
             except ValueError as e:
                 raise ValueError(f"font `{family}`: {e}") from e
+        return self
+
+    @model_validator(mode="after")
+    def bind_default_page_header(self) -> "TypographyConfig":
+        """ The default running head follows the binding.
+
+        Its slots are physical positions, so a right-bound book needs them mirrored to
+        keep the page number on the fore edge. A head the settings file states is its
+        own author's physical positions and is left as written.
+        """
+        if "page_header" not in self.model_fields_set:
+            self.page_header = default_page_header(right_bound=right_bound_pages(self.page))
+            # Assignment marks the field set; it is still the default, not the file's.
+            self.__pydantic_fields_set__.discard("page_header")
         return self
 
     @model_validator(mode="after")

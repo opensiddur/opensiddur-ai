@@ -119,6 +119,15 @@ class TestPreamble(unittest.TestCase):
         self.assertLess(out.index(r"\usepackage{hyperref}"), out.index("fancyhdr"))
         self.assertLess(out.index("fancyhdr"), out.index(r"\begin{document}"))
 
+    def test_pdf_viewer_settings_follow_hyperref(self):
+        """The binding and initial view are \\hypersetup keys, which are undefined
+        until hyperref is loaded."""
+        out = _transform('<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0">'
+                         '<tei:text><tei:body><tei:p>Hi</tei:p></tei:body></tei:text></tei:TEI>')
+        viewer = out.index(r"\hypersetup{pdfdirection=R2L,pdfpagelayout=TwoPageRight}")
+        self.assertLess(out.index(r"\usepackage{hyperref}"), viewer)
+        self.assertLess(viewer, out.index(r"\begin{document}"))
+
     def test_preamble_loads_reledpar_when_parallel(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
         <tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"

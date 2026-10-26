@@ -129,15 +129,16 @@ checks every chain, defaults included.
 | `page.height` | absolute length | — | Sheet height. Same. |
 | `page.orientation` | `portrait` \| `landscape` | `portrait` | |
 | `page.sides` | `one` \| `two` | `two` | `two` mirrors margins and running heads between recto and verso. |
-| `page.chapter_start` | `recto` \| `any` | `recto` | `recto` opens each book on a right-hand page, inserting a blank if needed. |
+| `page.binding` | `right` \| `left` | `right` | The edge the book is bound at. A PDF viewer reads its spreads in that direction (Acrobat's "Binding: Right Edge"), and with `sides: two` the inner margins, the `inner`/`outer` line-number margins and the default running head move to match. Under `right` the recto is the left-hand page of a spread. A two-sided book opens as a cover page and then spreads ("Two Up (Cover Page)"), and a one-sided one a page at a time. |
+| `page.chapter_start` | `recto` \| `any` | `recto` | `recto` opens each book on a recto (odd) page, inserting a blank if needed. Under `binding: right` that is the left-hand page. |
 | `page.base_font_size` | `10pt` \| `11pt` \| `12pt` | `11pt` | The size named sizes are relative to. Only these three exist; anything else would silently become one of them. |
 
 ### `page.margins`
 
 Every margin defaults to the document class's own, which is what the exporter produced before
 margins were configurable. Margins are named for the **binding**, not for the page edge, so
-`inner` and `outer` mean the same thing on a recto and a verso. On a one-sided document
-`inner` is the left margin and `outer` the right.
+`inner` and `outer` mean the same thing on a recto and a verso, whichever edge `page.binding`
+puts the binding at. On a one-sided document `inner` is the left margin and `outer` the right.
 
 | Key | Type | Default | Effect |
 | --- | --- | --- | --- |
@@ -318,7 +319,8 @@ spread.
 each with the full measure. Every aligned unit starts at the same height on both pages: where
 one side runs longer, the other is left blank alongside it until both are done, a page at a
 time if need be. Each run of parallel text starts on a fresh spread, so a recto left over
-before it is left blank — with no running head.
+before it is left blank — with no running head. Under `page.binding: right` the verso is the
+right-hand page of the spread, so the left text, the first stream, is the one on the right.
 
 Left and right are the physical pages. A book bound on the right, as a Hebrew book is, meets
 the right-hand page first, so to put the Hebrew there set `parallel.column_order:

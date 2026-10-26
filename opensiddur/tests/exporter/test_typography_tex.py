@@ -12,6 +12,8 @@ is rendered.
 import unittest
 from unittest.mock import patch
 
+from pydantic import ValidationError
+
 from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.typography import NamedSize, TextStyle, TypographyConfig
 from opensiddur.exporter.tex.typography_tex import (
@@ -119,6 +121,47 @@ class TestGeometry(unittest.TestCase):
 
     def test_no_geometry_call_when_the_page_is_not_configured(self):
         self.assertNotIn(r"\geometry", _tex({"page": {"base_font_size": "12pt"}}))
+
+
+class TestBinding(unittest.TestCase):
+    """A right-bound book is the default (#265)."""
+
+    _SWAP = r"\oddsidemargin=\evensidemargin"
+
+    def test_pdf_opens_right_to_left_with_a_cover_page_by_default(self):
+        self.assertIn(r"\hypersetup{pdfdirection=R2L,pdfpagelayout=TwoPageRight}", _tex({}))
+
+    def test_left_binding_opens_left_to_right(self):
+        self.assertIn(r"\hypersetup{pdfdirection=L2R,pdfpagelayout=TwoPageRight}",
+                      _tex({"page": {"binding": "left"}}))
+
+    def test_one_sided_document_opens_a_page_at_a_time(self):
+        """A one-sided document has no spreads, but still reads in its direction."""
+        self.assertIn(r"\hypersetup{pdfdirection=R2L,pdfpagelayout=SinglePage}",
+                      _tex({"page": {"sides": "one"}}))
+
+    def test_right_binding_swaps_the_side_margins(self):
+        """The class's own margins are asymmetric too, so the swap does not wait
+        for a margin to be configured."""
+        tex = _tex({})
+        self.assertIn(self._SWAP, tex)
+        self.assertIn(r"\evensidemargin=\dimen0", tex)
+        self.assertIn(r"\reversemarginpar", tex)
+        self.assertNotIn(r"\geometry", tex)
+
+    def test_the_swap_runs_after_geometry_has_set_the_margins(self):
+        self.assertIn(r"\AddToHook{begindocument/end}", _tex({"page": {"margins": {"inner": "1in"}}}))
+
+    def test_left_binding_and_one_sided_documents_keep_their_margins(self):
+        for page in ({"binding": "left"}, {"sides": "one"}):
+            with self.subTest(page=page):
+                tex = _tex({"page": page})
+                self.assertNotIn(self._SWAP, tex)
+                self.assertNotIn(r"\reversemarginpar", tex)
+
+    def test_binding_must_be_left_or_right(self):
+        with self.assertRaises(ValidationError):
+            _config({"page": {"binding": "top"}})
 
 
 class TestFonts(unittest.TestCase):
@@ -325,9 +368,25 @@ class TestLineNumbers(unittest.TestCase):
         )
 
     def test_lineation_unit_and_margin(self):
-        tex = _tex({"line_numbers": {"unit": "section", "margin": "inner"}})
+        tex = _tex({"page": {"binding": "left"},
+                    "line_numbers": {"unit": "section", "margin": "inner"}})
         self.assertIn(r"\lineation{section}", tex)
         self.assertIn(r"\linenummargin{inner}", tex)
+
+    def test_inner_and_outer_line_number_margins_follow_a_right_binding(self):
+        """reledmac's inner and outer assume a left binding."""
+        for margin, emitted in (("inner", "outer"), ("outer", "inner"),
+                                ("left", "left"), ("right", "right")):
+            with self.subTest(margin=margin):
+                tex = _tex({"line_numbers": {"margin": margin}}, has_parallel=True)
+                self.assertIn(rf"\linenummargin{{{emitted}}}", tex)
+                self.assertIn(rf"\linenummarginR{{{emitted}}}", tex)
+
+    def test_line_number_margins_are_not_mirrored_without_a_recto_and_verso(self):
+        for page in ({"binding": "left"}, {"sides": "one"}):
+            with self.subTest(page=page):
+                tex = _tex({"page": page, "line_numbers": {"margin": "outer"}})
+                self.assertIn(r"\linenummargin{outer}", tex)
 
     def test_lineation_applies_to_both_series_when_parallel(self):
         r"""\lineation sets the main series only; reledpar keeps a separate \bypage@R.
