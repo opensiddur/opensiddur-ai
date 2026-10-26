@@ -101,7 +101,9 @@ jobs:
                 [ "$(printf '%s\n' "${FIRST_SUPPORTED}" "${ai_tag}" | sort -V | head -1)" != "${FIRST_SUPPORTED}" ]; then
               skip "The latest opensiddur-ai release, ${ai_tag:-none}, predates ${FIRST_SUPPORTED}, the first that can build the books."
             fi
-            sha=$(git rev-parse HEAD)
+            # The default branch, whichever branch the run was started from.
+            default=$(gh repo view "${GH_REPO}" --json defaultBranchRef --jq .defaultBranchRef.name)
+            sha=$(git rev-parse "refs/remotes/origin/${default}")
             prev=$(git tag --list | grep -E '^v[0-9]{8}$' | sort | tail -1 || true)
             if [ -n "${prev}" ] && [ "${FORCE}" != true ]; then
               prev_sha=$(git rev-list -n 1 "refs/tags/${prev}")
@@ -216,11 +218,12 @@ jobs:
       ai_ref: ${{ needs.plan.outputs.ai_tag }}
 
   # Publishing creates the tag, at the commit the books were built from. It waits for every
-  # book, and goes ahead when some fail, as a release with a red job.
+  # book, and goes ahead when some fail, as a release with a red job. A cancelled run leaves
+  # the draft unpublished; finish it by running again with its tag.
   publish:
     needs: [plan, build]
     if: >-
-      always() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true'
+      !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true'
       && (needs.plan.outputs.draft == 'new' || needs.plan.outputs.draft == 'true')
     runs-on: ubuntu-latest
     env:
