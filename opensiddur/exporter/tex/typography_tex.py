@@ -446,9 +446,9 @@ def _right_binding_lines() -> list[str]:
     The book class and ``geometry`` know only a binding at the left: an odd page
     takes ``\\oddsidemargin``, with the inner margin (and any ``bindingoffset``)
     on its left. Under a right binding an odd page is laid out as the class lays
-    out an even one, so the two are exchanged once ``geometry`` has computed them,
-    which it does in its own begin-document hook; ``begindocument/end`` runs after
-    every one of those. Whatever the margins came from — the class, an explicit
+    out an even one. ``\\geometry`` computes the two in the preamble, so they are
+    exchanged in ``begindocument/end``, after every package's own begin-document
+    code (none of which recomputes them). Whatever the margins came from — the class, an explicit
     ``inner``/``outer`` or a binding offset — they arrive at the right edge
     unchanged.
 

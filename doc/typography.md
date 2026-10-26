@@ -146,7 +146,7 @@ puts the binding at. On a one-sided document `inner` is the left margin and `out
 | `page.margins.bottom` | length | class default | Space below the text block. |
 | `page.margins.inner` | length | class default | Margin at the binding edge. |
 | `page.margins.outer` | length | class default | Margin at the fore edge. |
-| `page.margins.binding_offset` | length | class default | Added at the binding edge and taken off the fore edge, for the part of the page a binding swallows. |
+| `page.margins.binding_offset` | length | class default | Added at the binding edge and taken off the fore edge, for the part of the page a binding swallows. On a one-sided document it is added at the left, like `inner`. |
 
 ## `paragraphs`
 
@@ -301,8 +301,8 @@ The geometry of a parallel-text layout.
 | `parallel.interleaved.line_numbers` | `primary` \| `both` | `primary` | `primary` numbers only the primary text's lines, so a line number cites the text being translated; `both` counts every line in one series. |
 
 **Which text goes on which side is not set here.** It is `parallel.column_order` in the
-compiler section of the settings file — `primary_first` puts the primary stream on the left,
-`primary_last` swaps them — because the compiler is what decides the order the streams are
+compiler section of the settings file. `primary_first` puts the primary stream first, in the
+left column or, on facing pages, on the verso. `primary_last` swaps them. The order is set there because the compiler is what decides the order the streams are
 emitted in. In the `interleaved` layout the same setting decides which text comes first.
 
 **A passage with no counterpart is set across the whole page.** Where an aligned unit has text
@@ -315,19 +315,20 @@ spread.
 
 ### Facing pages
 
-`layout: pages` sets the left text on a verso and the right text on the recto facing it,
+`layout: pages` sets the first text on a verso and the second on the recto facing it,
 each with the full measure. Every aligned unit starts at the same height on both pages: where
 one side runs longer, the other is left blank alongside it until both are done, a page at a
 time if need be. Each run of parallel text starts on a fresh spread, so a recto left over
-before it is left blank — with no running head. Under `page.binding: right` the verso is the
-right-hand page of the spread, so the left text, the first stream, is the one on the right.
+before it is left blank — with no running head.
 
-Left and right are the physical pages. A book bound on the right, as a Hebrew book is, meets
-the right-hand page first, so to put the Hebrew there set `parallel.column_order:
-primary_last` with the Hebrew as the primary text. The PDF still pages from left to right.
+Which physical side the verso is on depends on [`page.binding`](#page). A book bound on the
+right (the default, as for a Hebrew book) has its verso on the right of the spread, and the
+reader meets that page first. So with `parallel.column_order: primary_first` and Hebrew as
+the primary text, the Hebrew is on the right-hand page. Under `binding: left` the verso is on
+the left, and the same order puts the Hebrew there.
 
-Line numbers go in each page's outer margin — the left of a verso, the right of a recto —
-whichever language the page is in.
+Line numbers go in each page's outer margin, whichever language the page is in. Under a right
+binding that is the right of a verso and the left of a recto.
 
 Headings are set on the pages themselves, never across the spread; see
 [`headings`](#headings). A running head names a page's own text with `{section-title}` on

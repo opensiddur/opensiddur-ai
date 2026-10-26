@@ -1225,8 +1225,7 @@ class TypographyConfig(ForbidExtra):
     """ Everything about how the exported document looks.
 
     Read by the output stage only; the linear-XML compiler ignores it. Every
-    section is optional and every default reproduces the exporter's long-standing
-    output, so a settings file need only say what it wants changed.
+    section is optional, so a settings file need only say what it wants changed.
 
     See ``doc/typography.md`` for the full reference.
     """
