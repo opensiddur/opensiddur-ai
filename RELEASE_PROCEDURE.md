@@ -134,7 +134,8 @@ month. It calls this repository's `.github/workflows/release-projects.yml`, whic
    settings' `formats:` lists, both unless it says otherwise, and attaches them to the release:
    - the electronic book, `<book>-<variant>-vYYYYMMDD.html`, first, which takes seconds;
    - then the printed book, `<book>-<variant>-vYYYYMMDD.pdf`.
-6. Publishes the release once every book has finished. Publishing creates the tag.
+6. Publishes the release once every book has finished. Publishing creates the tag. A run
+   that is cancelled leaves the draft unpublished; finish it by rebuilding it with its tag.
 
 The books build in parallel, each with its own log and status; a large one (the full humash)
 takes well over an hour. A printed book that fails leaves its electronic book attached, and a
