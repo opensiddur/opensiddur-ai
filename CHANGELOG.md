@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   builds only those, and skips installing TeX for a book with no printed form. `books` with no
   `--format` now builds each book's own formats, not only the PDF.
 
+### Changed
+- The output stages (TeX, PDF, electronic book) read the settings file one way, with one
+  policy (#251): a file that cannot be read, is not YAML or is not valid settings is an error
+  in every stage. The PDF stage used to fall back to the default typography with a warning.
+  Every section is now validated, not only `typography`; the projects the file names are not
+  checked, since the compiler already has. A settings file's `priority:` may be left out.
+
 ## [0.6.0] - 2026-10-24
 
 ### Added

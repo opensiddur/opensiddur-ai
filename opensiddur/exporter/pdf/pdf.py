@@ -28,6 +28,14 @@ from typing import Optional
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+from pydantic import ValidationError  # noqa: E402
+
+from opensiddur.exporter.cli_common import (  # noqa: E402
+    TYPOGRAPHY_SETTINGS_HELP,
+    SettingsError,
+    add_settings_arguments,
+    load_output_settings,
+)
 from opensiddur.exporter.tex.latex import transform_xml_to_tex  # noqa: E402
 from opensiddur.common.constants import PROJECT_DIRECTORY  # noqa: E402
 
@@ -49,12 +57,18 @@ def generate_tex(
     Returns:
         True on success, False otherwise.
     """
+    # Outside the blanket handler below, so that a settings error says which setting and why.
+    try:
+        typography = load_output_settings(settings_file, resolve_fonts=True).typography
+    except (SettingsError, ValidationError) as e:
+        print(f"Settings error: {e}", file=sys.stderr)
+        return False
     try:
         print(f"Generating LuaLaTeX from {input_file}...", file=sys.stderr)
         transform_xml_to_tex(
             str(input_file),
             output_file=str(temp_tex_file),
-            settings_file=settings_file,
+            typography=typography,
             project_directory=project_directory,
         )
         print(f"TeX file generated: {temp_tex_file}", file=sys.stderr)
@@ -372,17 +386,7 @@ Examples:
 
     parser.add_argument("input_file", type=Path, help="Path to the input compiled JLPTEI XML file")
     parser.add_argument("output_pdf", type=Path, help="Path to the output PDF file")
-    parser.add_argument(
-        "-s",
-        "--settings",
-        dest="settings_file",
-        type=Path,
-        default=None,
-        help=(
-            "Path to a settings.yaml whose `typography` section drives "
-            "fonts, layout, paper, and font size. Defaults are used when omitted."
-        ),
-    )
+    add_settings_arguments(parser, TYPOGRAPHY_SETTINGS_HELP)
     parser.add_argument(
         "--keep-tex",
         action="store_true",
@@ -402,12 +406,6 @@ Examples:
         type=Path,
         default=None,
         help="Directory to keep LaTeX build artifacts (.log, .aux, etc.) for debugging.",
-    )
-    parser.add_argument(
-        "--project-directory",
-        type=Path,
-        default=PROJECT_DIRECTORY,
-        help="Base directory containing project subdirectories (default: <repo>/opensiddur-projects/project).",
     )
 
     args = parser.parse_args()

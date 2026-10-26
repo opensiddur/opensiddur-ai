@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch, ANY
 
+from opensiddur.exporter.typography import PaperType, TypographyConfig
 from opensiddur.exporter.pdf.pdf import (
     _have_command,
     LOG_TAIL_LINES,
@@ -50,26 +51,41 @@ class TestGenerateTex(unittest.TestCase):
         mock_transform.assert_called_once_with(
             str(input_file),
             output_file=str(output_file),
-            settings_file=None,
+            typography=TypographyConfig(),
             project_directory=ANY,
         )
 
-    def test_generate_tex_forwards_settings_file(self):
-        """A settings_file argument is forwarded to transform_xml_to_tex unchanged."""
+    def test_generate_tex_reads_the_settings_file(self):
+        """The settings file's typography is what transform_xml_to_tex is given."""
         input_file = self.test_dir / "input.xml"
         output_file = self.test_dir / "output.tex"
         settings_file = self.test_dir / "settings.yaml"
+        settings_file.write_text("typography:\n  page:\n    paper: a5paper\n")
         input_file.write_text("<tei:TEI xmlns:tei='http://www.tei-c.org/ns/1.0'/>")
 
         with patch("opensiddur.exporter.pdf.pdf.transform_xml_to_tex") as mock_transform:
-            generate_tex(input_file, output_file, settings_file=settings_file)
+            self.assertTrue(generate_tex(input_file, output_file, settings_file=settings_file))
 
-        mock_transform.assert_called_once_with(
-            str(input_file),
-            output_file=str(output_file),
-            settings_file=settings_file,
-            project_directory=ANY,
-        )
+        typography = mock_transform.call_args.kwargs["typography"]
+        self.assertEqual(typography.page.paper, PaperType.A5PAPER)
+
+    def test_a_broken_settings_file_fails_before_transforming(self):
+        """An unreadable or invalid settings file is an error, not the default typography."""
+        input_file = self.test_dir / "input.xml"
+        output_file = self.test_dir / "output.tex"
+        input_file.write_text("<tei:TEI xmlns:tei='http://www.tei-c.org/ns/1.0'/>")
+        for name, text in (("unparseable", ":\n: not yaml"),
+                           ("invalid", "typography:\n  page:\n    paper: tabloid\n")):
+            with self.subTest(name):
+                settings_file = self.test_dir / f"{name}.yaml"
+                settings_file.write_text(text)
+                with patch("opensiddur.exporter.pdf.pdf.transform_xml_to_tex") as mock_transform, \
+                        patch("sys.stderr") as stderr:
+                    self.assertFalse(
+                        generate_tex(input_file, output_file, settings_file=settings_file))
+                mock_transform.assert_not_called()
+                printed = "".join(call.args[0] for call in stderr.write.call_args_list)
+                self.assertIn("Settings error", printed)
 
     def test_generate_tex_handles_exception(self):
         """generate_tex returns False when transform_xml_to_tex raises."""

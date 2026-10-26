@@ -8,8 +8,8 @@ TeX, then drives the XSLT transformation that produces a LuaLaTeX document
 ready for ``lualatex`` (``pdf/pdf.py`` runs the passes).
 
 Typography settings (font, paper, layout, fontsize, running heads) are pulled from the same
-``settings.yaml`` the compiler uses; only the ``typography`` section is read
-here. When no settings file is supplied, sensible defaults from
+``settings.yaml`` the compiler uses (``cli_common.load_output_settings``); only the
+``typography`` section is used here. When no settings file is supplied, the defaults from
 ``TypographyConfig`` are used.
 """
 
@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Optional
 
 from lxml import etree
+from pydantic import ValidationError
 
 # Add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent.parent.parent
@@ -35,8 +36,13 @@ from opensiddur.exporter.tex.running_heads import (  # noqa: E402
     build_page_style_tex,
     escape_with_hebrew_runs,
 )
-from opensiddur.exporter.conditional_markers import mark_silent_scopes  # noqa: E402
-from opensiddur.exporter.page_references import resolve_page_references  # noqa: E402
+from opensiddur.exporter.cli_common import (  # noqa: E402
+    TYPOGRAPHY_SETTINGS_HELP,
+    SettingsError,
+    add_settings_arguments,
+    load_output_settings,
+    prepare_compiled_tree,
+)
 from opensiddur.exporter.tex.typography_tex import (  # noqa: E402
     build_typography_preamble,
     documentclass_options,
@@ -53,7 +59,6 @@ from opensiddur.exporter.metadata import (  # noqa: E402
     extract_credits,
     group_credits,
     group_licenses,
-    load_typography,
     order_credits,
 )
 from opensiddur.exporter import metadata  # noqa: E402
@@ -286,13 +291,13 @@ def transform_xml_to_tex(
         The transformed LaTeX content as a string.
 
     Raises:
-        pydantic.ValidationError: if the settings file's typography section is
-            invalid.
+        SettingsError: if the settings file cannot be read.
+        pydantic.ValidationError: if the settings file is invalid.
         Exception: whatever the transformation raised; the command-line entry
             point reports it and exits non-zero, a caller decides for itself.
     """
     if typography is None:
-        typography = load_typography(settings_file)
+        typography = load_output_settings(settings_file, resolve_fonts=True).typography
 
     if project_directory is None:
         project_directory = projects_source_root
@@ -304,10 +309,7 @@ def transform_xml_to_tex(
 
     parsed = etree.parse(input_file)
     root = parsed.getroot()
-    resolve_page_references(root)
-    # Whether a scope prints delimiters is decided here, on the whole document: the
-    # stylesheet meets a scope's two markers in different streams, and in copies.
-    mark_silent_scopes(root)
+    prepare_compiled_tree(root)
     input_xml = etree.tostring(root, encoding="unicode")
 
     result = xslt_transform_string(
@@ -359,28 +361,12 @@ Examples:
         dest="output_file",
         help="Path to the output .tex file (default: output to stdout)",
     )
-    parser.add_argument(
-        "-s",
-        "--settings",
-        dest="settings_file",
-        type=Path,
-        default=None,
-        help=(
-            "Path to a settings.yaml whose `typography` section drives "
-            "fonts, layout, paper, and font size. Defaults are used when omitted."
-        ),
-    )
+    add_settings_arguments(parser, TYPOGRAPHY_SETTINGS_HELP)
     parser.add_argument(
         "--xslt",
         dest="xslt_file",
         default=str(XSLT_FILE),
         help="Path to the XSLT file (default: reledmac.xslt next to this script)",
-    )
-    parser.add_argument(
-        "--project-directory",
-        type=Path,
-        default=PROJECT_DIRECTORY,
-        help="Base directory containing project subdirectories (default: <repo>/opensiddur-projects/project).",
     )
 
     args = parser.parse_args()
@@ -394,15 +380,20 @@ Examples:
         sys.exit(1)
 
     try:
+        typography = load_output_settings(args.settings_file, resolve_fonts=True).typography
+    except (SettingsError, ValidationError) as e:
+        print(f"Settings error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
         transform_xml_to_tex(
             args.input_file,
             xslt_file=Path(args.xslt_file),
             output_file=args.output_file,
-            settings_file=args.settings_file,
+            typography=typography,
             project_directory=args.project_directory,
         )
     except Exception as e:
-        # The whole message: for a typography error it says which setting and why.
         print(f"Transformation error: {e}", file=sys.stderr)
         sys.exit(1)
 

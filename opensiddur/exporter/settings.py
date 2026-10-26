@@ -23,9 +23,18 @@ from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
 
 
+#: Validation context key: False skips checking that the projects and files a settings file
+#: names exist here — for an output stage, which reads a compiled file, not the projects.
+CHECK_PROJECTS = "check_projects"
+
+
 def _project_directory_from_context(info: ValidationInfo) -> Path:
     context = info.context or {}
     return Path(context.get("project_directory") or PROJECT_DIRECTORY)
+
+
+def _checks_projects(info: ValidationInfo) -> bool:
+    return (info.context or {}).get(CHECK_PROJECTS, True)
 
 
 def _validate_project_list(
@@ -39,6 +48,12 @@ def _validate_project_list(
         if not (project_directory / project).exists():
             raise ValueError(f"Project {project} does not exist")
     return project_list
+
+
+def _validate_projects(project_list: list[str], info: ValidationInfo) -> list[str]:
+    if not _checks_projects(info):
+        return project_list
+    return _validate_project_list(project_list, _project_directory_from_context(info))
 
 
 def _apply_project_directory(
@@ -57,12 +72,12 @@ class Prioritizations(BaseModel):
     @field_validator("transclusion")
     @classmethod
     def validate_transclusion(cls, v: list[str], info: ValidationInfo) -> list[str]:
-        return _validate_project_list(v, _project_directory_from_context(info))
+        return _validate_projects(v, info)
 
     @field_validator("instructions")
     @classmethod
     def validate_instructions(cls, v: list[str], info: ValidationInfo) -> list[str]:
-        return _validate_project_list(v, _project_directory_from_context(info))
+        return _validate_projects(v, info)
 
 class ParallelConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -73,7 +88,7 @@ class ParallelConfig(BaseModel):
     @field_validator("projects")
     @classmethod
     def validate_projects(cls, v: list[str], info: ValidationInfo) -> list[str]:
-        return _validate_project_list(v, _project_directory_from_context(info))
+        return _validate_projects(v, info)
 
 
 class PrintOnceSettings(BaseModel):
@@ -108,14 +123,15 @@ class BookTarget(BaseModel):
     @field_validator("project")
     @classmethod
     def validate_project(cls, v: str, info: ValidationInfo) -> str:
-        _validate_project_list([v], _project_directory_from_context(info))
+        _validate_projects([v], info)
         return v
 
     @field_validator("file_name")
     @classmethod
     def validate_file_name(cls, v: str, info: ValidationInfo) -> str:
         project = info.data.get("project")
-        if project is None:  # the project already failed; don't report twice
+        # Without a project, it already failed; don't report twice.
+        if project is None or not _checks_projects(info):
             return v
         if not (_project_directory_from_context(info) / project / v).is_file():
             raise ValueError(f"File {v} does not exist in project {project}")
@@ -162,7 +178,8 @@ class SettingsYaml(BaseModel):
     # (e.g. annual vs. triennial readings for the same humash). Free text, for people.
     description: Optional[str] = None
     book: Optional[BookTarget] = None
-    priority: Prioritizations
+    # Empty, the compiler gives priority to the project of the file it compiles.
+    priority: Prioritizations = Field(default_factory=Prioritizations)
     annotations: list[str] = Field(default_factory=list)
     print_once: PrintOnceSettings = Field(default_factory=PrintOnceSettings)
     parallel: Optional[ParallelConfig] = None
@@ -186,7 +203,7 @@ class SettingsYaml(BaseModel):
     @field_validator("annotations")
     @classmethod
     def validate_annotations(cls, v: list[str], info: ValidationInfo) -> list[str]:
-        return _validate_project_list(v, _project_directory_from_context(info))
+        return _validate_projects(v, info)
 
     @field_validator("declarations")
     @classmethod
@@ -209,18 +226,34 @@ def read_settings(
     settings_file: Path,
     project_directory: Optional[Path] = None,
     resolve_fonts: bool = True,
+    check_projects: bool = True,
 ) -> SettingsYaml:
-    """ Read and validate a settings file, without loading it into linear data.
+    """ Read and validate a settings file, without loading it into linear data. """
+    with open(settings_file, 'r') as f:
+        data = yaml.safe_load(f)
+    return validate_settings(data, project_directory, resolve_fonts, check_projects)
+
+
+def validate_settings(
+    data: object,
+    project_directory: Optional[Path] = None,
+    resolve_fonts: bool = True,
+    check_projects: bool = True,
+) -> SettingsYaml:
+    """ Validate a settings file's contents, as YAML has read them.
 
     ``resolve_fonts=False`` skips checking that the font chains it names are installed
     here — for a reader that never selects a font, such as the compiler.
+    ``check_projects=False`` skips checking that the projects and files it names exist.
     """
     project_directory = Path(project_directory or PROJECT_DIRECTORY).resolve()
-    with open(settings_file, 'r') as f:
-        data = yaml.safe_load(f)
     return SettingsYaml.model_validate(
         data,
-        context={"project_directory": project_directory, RESOLVE_FONTS: resolve_fonts},
+        context={
+            "project_directory": project_directory,
+            RESOLVE_FONTS: resolve_fonts,
+            CHECK_PROJECTS: check_projects,
+        },
     )
 
 
