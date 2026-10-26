@@ -148,6 +148,13 @@ def plan_post(post: Post, context: Context) -> PostPlan:
     return plan
 
 
+def is_rejected(plan: PostPlan) -> bool:
+    """Whether every column with text was rejected, so that nothing of the post is imported."""
+    return not plan.columns and bool(plan.skipped_columns) and all(
+        why.startswith("reject") for why in plan.skipped_columns.values()
+    )
+
+
 def _compact(document: str) -> str:
     """Drop the newlines between tags that the document template puts there, so that the
     pretty-printer can indent while keeping meaningful spaces between inline elements."""
@@ -205,9 +212,16 @@ def register_urns(plans: list[PostPlan], context: Context, registry_directory: P
     added = 0
     for plan in plans:
         urns = context.post_urns[plan.post.post_id]
-        titles = dict(titles_by_language(plan.post))
+        titles: dict[str, str] = {}
+        for lang, title in titles_by_language(plan.post):
+            titles.setdefault(lang, title)
+        imported = [index for index, _, _ in plan.columns]
+        rows_with_text = [
+            n for row_index, n in row_numbers(plan.post).items()
+            if any(not plan.post.rows[row_index].cells[i].is_empty for i in imported)
+        ]
         lines = registry_lines(
-            urns, len(row_numbers(plan.post)),
+            urns, rows_with_text,
             label_en=titles.get("en", ""), label_he=titles.get("he", ""),
         )
         if not lines:
@@ -275,8 +289,21 @@ def main(argv: list[str] | None = None) -> int:
         for lang, why in sorted(plan.skipped_columns.items()):
             print(f"{plan.post.post_id}: {lang} not imported ({why})")
     for plan in plans:
-        if not plan.standard:
-            print(f"{plan.post.post_id}: skipped: {'; '.join(plan.reasons)}")
+        if plan.standard:
+            continue
+        print(f"{plan.post.post_id}: skipped: {'; '.join(plan.reasons)}")
+        existing = sorted(args.project_directory.glob(f"osp-{plan.post.post_id}-*"))
+        if not existing:
+            continue
+        if is_rejected(plan):
+            # A decision not to import the post: what an earlier run wrote must go.
+            if not args.dry_run:
+                for path in existing:
+                    shutil.rmtree(path)
+            print(f"{plan.post.post_id}: removed {', '.join(p.name for p in existing)} (rejected)")
+        else:
+            print(f"{plan.post.post_id}: WARNING: {', '.join(p.name for p in existing)} "
+                  "were converted earlier and are left as they were")
     print(f"{'Would convert' if args.dry_run else 'Converted'} {converted} of {len(plans)} post(s).")
     return 0
 

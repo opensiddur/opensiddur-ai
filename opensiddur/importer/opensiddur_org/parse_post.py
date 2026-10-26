@@ -106,6 +106,8 @@ class Cell:
     lang: str | None
     css_class: str | None
     blocks: list[Block]
+    #: The ``lang`` attribute as written (``jrb-Hebr``), which says whether a script was given.
+    raw_lang: str = ""
 
     @property
     def is_empty(self) -> bool:
@@ -184,16 +186,19 @@ _EMOJI_RE = re.compile(
 _WS_RE = re.compile(r"[ \t\r\n\f\v]+")
 
 
-def clean_text(text: str) -> str:
-    """Decode entities, drop emoji, and normalize to the storage form (NFKD)."""
-    text = html.unescape(text)
+def clean_text(text: str, *, unescape: bool = False) -> str:
+    """Drop emoji and normalize to the storage form (NFKD). ``unescape`` decodes entities, for
+    the export's raw JSON strings; text that lxml parsed is decoded already, and decoding it
+    again would turn a literal ``&lt;`` into ``<``."""
+    if unescape:
+        text = html.unescape(text)
     text = _EMOJI_RE.sub("", text)
     return to_nfkd(text)
 
 
 def split_title(title: str) -> list[str]:
     """The post title's parts. Titles are set "Hebrew | English"."""
-    parts = [_WS_RE.sub(" ", clean_text(part)).strip() for part in title.split("|")]
+    parts = [_WS_RE.sub(" ", clean_text(part, unescape=True)).strip() for part in title.split("|")]
     return [part for part in parts if part]
 
 
@@ -305,9 +310,12 @@ def _wrap(kind: str, inner: list[Node | str]) -> list[Node | str]:
     segment: list[Node | str] = []
 
     def flush() -> None:
-        children = _join_inline(segment)
-        if children:
+        # Spaces at a span's edges are kept: "in<em> Midrash</em>" must not become "inMidrash".
+        children = _join_inline(segment, trim=False)
+        if children and node_text(children).strip() or any(not isinstance(c, Text) for c in children):
             out.append(Span(kind, children))
+        elif children:
+            out.extend(children)  # a span of nothing but space is just the space
         segment.clear()
 
     for node in inner:
@@ -320,8 +328,9 @@ def _wrap(kind: str, inner: list[Node | str]) -> list[Node | str]:
     return out
 
 
-def _join_inline(nodes: list[Node | str]) -> tuple[Node, ...]:
-    """Merge adjacent text, collapse whitespace, and trim. Line breaks become spaces."""
+def _join_inline(nodes: list[Node | str], *, trim: bool = True) -> tuple[Node, ...]:
+    """Merge adjacent text and collapse whitespace, then trim unless ``trim`` is false. Line
+    breaks become spaces."""
     merged: list[Node] = []
     for node in nodes:
         if isinstance(node, str):
@@ -338,19 +347,28 @@ def _join_inline(nodes: list[Node | str]) -> tuple[Node, ...]:
         Text(_WS_RE.sub(" ", n.text.replace(NBSP, " "))) if isinstance(n, Text) else n
         for n in merged
     ]
-    return _trim(tuple(n for n in collapsed if not (isinstance(n, Text) and not n.text)))
+    kept = tuple(n for n in collapsed if not (isinstance(n, Text) and not n.text))
+    return _trim(kept) if trim else kept
 
 
-def _trim(nodes: tuple[Node, ...]) -> tuple[Node, ...]:
+def _trim(nodes: tuple[Node, ...], *, start: bool = True, end: bool = True) -> tuple[Node, ...]:
+    """Trim the whitespace at the edges of a line, inside an edge span too, and the doubled
+    space where a span's edge space meets the text beside it."""
     items = list(nodes)
-    while items and isinstance(items[0], Text) and not items[0].text.strip():
-        items.pop(0)
-    while items and isinstance(items[-1], Text) and not items[-1].text.strip():
-        items.pop()
-    if items and isinstance(items[0], Text):
-        items[0] = Text(items[0].text.lstrip())
-    if items and isinstance(items[-1], Text):
-        items[-1] = Text(items[-1].text.rstrip())
+    if start:
+        while items and isinstance(items[0], Text) and not items[0].text.strip():
+            items.pop(0)
+        if items and isinstance(items[0], Text):
+            items[0] = Text(items[0].text.lstrip())
+        elif items and isinstance(items[0], Span):
+            items[0] = Span(items[0].kind, _trim(items[0].children, end=False))
+    if end:
+        while items and isinstance(items[-1], Text) and not items[-1].text.strip():
+            items.pop()
+        if items and isinstance(items[-1], Text):
+            items[-1] = Text(items[-1].text.rstrip())
+        elif items and isinstance(items[-1], Span):
+            items[-1] = Span(items[-1].kind, _trim(items[-1].children, start=False))
     return tuple(items)
 
 
@@ -447,8 +465,17 @@ def _cell_blocks(div: HtmlElement, footnotes: _Footnotes) -> list[Block]:
 # --------------------------------------------------------------------------------------------
 
 
+#: The footnote plugin's own list of the notes, set after the post. The notes are read from
+#: their inline tooltips instead, so this would only repeat them as garbled text.
+_FOOTNOTE_CONTAINERS = (
+    '//*[contains(@class, "footnote_container_prepare")]'
+    '|//*[contains(@class, "footnote-reference-container")]'
+    '|//*[contains(@class, "footnotes_table")]'
+)
+
+
 def _strip_noise(root: HtmlElement) -> None:
-    for element in root.xpath("//script|//style|//noscript"):
+    for element in root.xpath(f"//script|//style|//noscript|{_FOOTNOTE_CONTAINERS}"):
         tail = element.tail
         parent = element.getparent()
         if parent is None:
@@ -475,6 +502,7 @@ def _cell(td: HtmlElement, footnotes: _Footnotes) -> Cell:
         lang=language_from_lang_attribute(first.get("lang", "")),
         css_class=(first.get("class") or "").strip() or None,
         blocks=blocks,
+        raw_lang=first.get("lang", "").strip(),
     )
 
 
@@ -492,10 +520,12 @@ def _column_language(header: str, cells: list[Cell]) -> tuple[str, str, str]:
         if cell.lang and not cell.is_empty:
             counts[cell.lang] = counts.get(cell.lang, 0) + 1
     markup_lang = max(sorted(counts), key=lambda k: counts[k]) if counts else ""
+    scripts_given = any(len(c.raw_lang.split("-")) > 1 for c in cells if c.raw_lang and not c.is_empty)
     if (
         role == "transliteration"
         and header_lang.endswith("-Latn")
         and markup_lang
+        and not scripts_given
         and same_language(header_lang, f"{markup_lang.split('-')[0]}-Latn")
     ):
         # The markup names the language but not the script; a transliteration is Latin.
@@ -579,10 +609,13 @@ def parse_post(data: dict[str, Any]) -> Post:
     top = _top_level(root)
     tables = root.xpath('//table[contains(@class, "toggleable-table")]')
     post.table_count = len(tables)
-    sources_at = next(
-        (i for i, el in enumerate(top) if el.tag in HEADING_TAGS and "source" in el.text_content().lower()),
-        len(top),
-    )
+    def sources_heading(after: int) -> int:
+        """The "Source(s)" heading that follows the text, not one in the introduction."""
+        return next(
+            (i for i, el in enumerate(top) if i > after and el.tag in HEADING_TAGS
+             and "source" in el.text_content().lower()),
+            len(top),
+        )
 
     if tables:
         table = tables[0]
@@ -590,6 +623,7 @@ def parse_post(data: dict[str, Any]) -> Post:
         while table_top.getparent() is not None and table_top.getparent() is not root:
             table_top = table_top.getparent()
         table_at = top.index(table_top) if table_top in top else 0
+        sources_at = sources_heading(table_at)
         post.intro = _paragraph_lines(top[:table_at], footnotes)
         _parse_table(post, table, footnotes)
         post.notes = _paragraph_lines(top[table_at + 1 : sources_at], footnotes)
@@ -604,7 +638,8 @@ def parse_post(data: dict[str, Any]) -> Post:
             for div in loose
             if div.getparent() is not None and not div.getparent().xpath("ancestor-or-self::div[@lang]")
         ]
-        first_loose = next((i for i, el in enumerate(top) if el.xpath("descendant-or-self::div[@lang]")), sources_at)
+        first_loose = next((i for i, el in enumerate(top) if el.xpath("descendant-or-self::div[@lang]")), len(top))
+        sources_at = sources_heading(first_loose)
         post.intro = _paragraph_lines(top[:first_loose], footnotes)
     post.sources = _source_refs(top[sources_at:])
     return post

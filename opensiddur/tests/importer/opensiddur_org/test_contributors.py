@@ -69,5 +69,14 @@ class TestContributors(unittest.TestCase):
         self.assertEqual(json.loads(candidate_line(missing[0]))["label_en"], "New Person")
 
 
+
+class TestPlaceholderAuthor(unittest.TestCase):
+    def test_unknown_is_not_an_author(self) -> None:
+        contributors = Contributors.load(FIXTURES / "contributors_by_id.json")
+        unknown = {"name": "Unknown", "profile_link": "https://opensiddur.org/profile/unknown"}
+        credits = post_credits(parse_post(make_post(coauthors=[unknown, POET])), contributors)
+        self.assertEqual(credits.authors, ("Yehudah Poet",))
+
+
 if __name__ == "__main__":
     unittest.main()

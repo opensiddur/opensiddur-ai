@@ -192,5 +192,33 @@ class TestOther(unittest.TestCase):
         self.assertEqual({k: v.files for k, v in first.items()}, {k: v.files for k, v in second.items()})
 
 
+
+class TestReviewRegressions(unittest.TestCase):
+    def test_title_scripts(self) -> None:
+        from opensiddur.importer.opensiddur_org.tei_builder import titles_by_language
+
+        post = parse_post(make_post(title="يَا حَنُكَّة | Ya Hanukkah"))
+        self.assertEqual([lang for lang, _ in titles_by_language(post)], ["und-Arab", "en"])
+
+    def test_front_matter_in_a_latin_language_other_than_english(self) -> None:
+        post = parse_post(make_post())
+        self.assertEqual(front_language(post, ["he", "de"]), "de")
+
+    def test_footnote_inside_an_instruction_is_anchored_after_it(self) -> None:
+        body = ('<span class="instruction">Stand<span class="footnote_referrer"><a><sup>[1]</sup></a>'
+                '<span class="footnote_tooltip">Why.</span></span></span> and pray')
+        post, projects = build(make_post(content=table(["Translation (English)"], [[cell("eng-Latn", "english", body)]])))
+        text = tree(projects["en"].files[text_file_stem(post)])
+        line = text.find(".//tei:l", NS)
+        self.assertEqual([etree.QName(c).localname for c in line], ["note", "anchor"])
+        self.assertIsNotNone(text.find("tei:standOff/tei:note[@target='#note_1']", NS))
+
+    def test_heading_keeps_every_line(self) -> None:
+        rows = [[cell("eng-Latn", "english", "<h3>Part One<br />The Beginning</h3>")], [cell("eng-Latn", "english", "Text")]]
+        post, projects = build(make_post(content=table(["Source (English)"], rows)))
+        head = tree(projects["en"].files[text_file_stem(post)]).find(".//tei:div/tei:div/tei:head", NS)
+        self.assertEqual("".join(head.itertext()), "Part One The Beginning")
+
+
 if __name__ == "__main__":
     unittest.main()

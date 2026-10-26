@@ -146,8 +146,9 @@ decision; and the URN proposals.
 
 **Header**
 
-- **Titles:** split from the `Hebrew | English` title. The title in the project's
-  language is `main`; the others are `alt`.
+- **Titles:** split from the `Hebrew | English` title. A part in Hebrew letters is taken as
+  Hebrew, one in Latin letters as English, and one in another script is tagged by script
+  only (`und-Arab`). The title in the project's language is `main`; the others are `alt`.
 - **Licence:** from `licence_decisions.yaml`. An allowed licence that is not the post's own
   says why, as a `tei:p` in `tei:availability`.
 - **Credits:** see [Credits](#credits).
@@ -181,18 +182,21 @@ decision; and the URN proposals.
 | footnotes | `tei:anchor` plus `tei:standOff type="notes"` |
 | intro and notes | the index's `tei:front`, gated on `opensiddur:paratext` |
 
-- The intro and notes go in the project whose language they are written in (else English,
-  else the first).
+- The intro and notes go in the project whose language they are written in: for Latin
+  letters English if the post has it, else another Latin-script language, else the first.
+- The footnote plugin's own list of notes after the post is dropped; notes are read from
+  their tooltips.
 - The index's body transcludes the text by its URN.
 
 **Validation and pruning**
 
 - Every file is validated before it is written.
 - Stale files are pruned, and so are the projects of languages the post no longer has, but
-  only for the posts being converted.
+  only for the posts being converted. A post rejected outright loses the projects an earlier
+  run wrote; any other post that is no longer converted keeps them, with a warning.
 - Then each project's URN and contributor references are checked.
 - `--register` appends the registry records a new post's URNs need, after the post
-  converts.
+  converts: the post, and each row with text in an imported column.
 
 ### Licences
 
@@ -279,8 +283,8 @@ How `match` handles each post:
 
 83 in-scope posts at upstream commit `2420d574f2` (2026-10-01).
 
-- **69 converted**, into 132 projects: Hebrew, English, German, Yiddish, French, Ukrainian,
-  Arabic and Ladino (in Hebrew and Cyrillic letters), with nine transliterations.
+- **68 converted**, into 128 projects: Hebrew, English, German, Yiddish, French, Ukrainian
+  and Ladino (in Hebrew and Cyrillic letters), with seven transliterations.
 - **URNs:** 13 proposals accepted (one with corrections) and one replaced by a new URN.
   - Six versions of Maoz Tsur use its stanzas.
   - The candle-lighting posts share `hadlakat_ner_chanukah/blessing`, `sheasah_nissim` and
@@ -294,7 +298,7 @@ How `match` handles each post:
 - **Rendering:** parallel PDFs of 12322 (Maoz Tsur, including its `he-Latn`
   transliteration), 22916 and 65015 (footnotes) align at every row.
 
-The 14 posts not converted are the worked examples for the skill (stage 6):
+The 15 posts not converted are the worked examples for the skill (stage 6):
 
 | Post | Why |
 |---|---|
@@ -306,6 +310,7 @@ The 14 posts not converted are the worked examples for the skill (stage 6):
 | 41217, 48034 | two English columns |
 | 41025, 59104, 66455 | verse and prose mixed in one column |
 | 47590 | Judeo-Arabic marked as Hebrew |
+| 53572 | a column headed as a Judeo-Arabic transliteration, set in Hebrew letters |
 | 53593 | rejected (a modern work claimed as fair use) |
 
 Post 34548's English translation is not imported until its licence is clarified.

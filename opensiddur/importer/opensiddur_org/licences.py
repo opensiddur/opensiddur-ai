@@ -65,6 +65,8 @@ class LicenceDecisions:
         if post_entry is not None:
             if "reject" in post_entry:
                 return LicenceDecision("reject", basis=str(post_entry["reject"]))
+            if "allow" not in post_entry:
+                raise ValueError(f"licence decision for post {post.post_id} neither allows nor rejects: {post_entry}")
             columns = post_entry.get("columns")
             if columns is None or column.lang in columns:
                 return LicenceDecision(

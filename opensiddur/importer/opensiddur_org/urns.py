@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -99,9 +100,10 @@ def mint(post_id: int, slug: str, tags: list[str], taken: set[str]) -> PostUrns:
 
 
 def registry_lines(
-    record: PostUrns, row_count: int, *, label_en: str, label_he: str = ""
+    record: PostUrns, rows: Iterable[int], *, label_en: str, label_he: str = ""
 ) -> list[dict[str, object]]:
-    """The registry records a ``new`` post's URNs need: the post and each row."""
+    """The registry records a ``new`` post's URNs need: the post and each of ``rows`` (the
+    row numbers that have text in some imported column)."""
     if record.kind != "new":
         return []
     label_en = label_en or record.urn.rsplit(":", 1)[-1]
@@ -109,7 +111,7 @@ def registry_lines(
     if label_he:
         top["label_he"] = label_he
     lines: list[dict[str, object]] = [top]
-    for n in range(1, row_count + 1):
+    for n in sorted(rows):
         if record.rows.get(n):
             continue  # an existing text's URN, registered already
         lines.append(

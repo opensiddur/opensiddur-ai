@@ -20,6 +20,7 @@ import re
 from dataclasses import dataclass
 
 from opensiddur.importer.opensiddur_org.contributors import Credit, Credits
+from opensiddur.importer.opensiddur_org.languages import DEFAULT_SCRIPT, ISO639_1
 from opensiddur.importer.opensiddur_org.licences import LicenceDecision
 from opensiddur.importer.opensiddur_org.parse_post import (
     Block,
@@ -73,9 +74,31 @@ def text_file_stem(post: Post) -> str:
     return stem or f"post-{post.post_id}"
 
 
+#: Scripts a title part may be written in, other than Latin, and the tag it is given. The
+#: site sets titles "Hebrew | English"; a part in another script names no language we can
+#: tell, only its script.
+TITLE_SCRIPTS: tuple[tuple[str, str], ...] = (
+    ("[\u0590-\u05FF]", "he"),
+    ("[\u0600-\u06FF]", "und-Arab"),
+    ("[\u0400-\u04FF]", "und-Cyrl"),
+    ("[\u0370-\u03FF]", "und-Grek"),
+)
+
+
 def _script_language(text: str) -> str:
-    """"he" for a title in Hebrew letters, "en" otherwise."""
-    return "he" if re.search(r"[֐-׿]", text) else "en"
+    """The language a title part is taken to be in: "he" in Hebrew letters, "en" in Latin."""
+    for pattern, lang in TITLE_SCRIPTS:
+        if re.search(pattern, text):
+            return lang
+    return "en"
+
+
+def _is_latin(lang: str) -> bool:
+    primary, *subtags = lang.split("-")
+    if subtags:
+        return "Latn" in subtags
+    iso639_3 = next((k for k, v in ISO639_1.items() if v == primary), primary)
+    return DEFAULT_SCRIPT.get(iso639_3, "Latn") == "Latn"
 
 
 def titles_by_language(post: Post) -> list[tuple[str, str]]:
@@ -114,7 +137,20 @@ def render_inline(nodes: tuple[Node, ...] | Line, notes: _Notes | None, *, in_no
                 continue
             opening, closing = SPAN_MARKUP[node.kind]
             out.append(f"{opening}{inner}{closing}")
+            if node.kind == "instruction" and notes is not None and not in_note:
+                # A note cannot hold an anchor for another note; it follows the instruction.
+                out.extend(notes.anchor(ref) for ref in _footnote_refs(node.children))
     return "".join(out)
+
+
+def _footnote_refs(nodes: tuple[Node, ...]) -> list[FootnoteRef]:
+    found: list[FootnoteRef] = []
+    for node in nodes:
+        if isinstance(node, FootnoteRef):
+            found.append(node)
+        elif isinstance(node, Span):
+            found.extend(_footnote_refs(node.children))
+    return found
 
 
 def _lang_attr(cell_lang: str | None, document_lang: str) -> str:
@@ -169,7 +205,7 @@ def text_body(post: Post, column_index: int, column: Column, urns: PostUrns) -> 
             parts.append("<tei:div>")
             in_section = True
             if not cell.is_empty:
-                heading = render_inline(cell.blocks[0].lines[0], notes)
+                heading = "<tei:lb/>".join(render_inline(line, notes) for line in cell.blocks[0].lines)
                 parts.append(f"<tei:head{_lang_attr(cell.lang, column.lang)}>{heading}</tei:head>")
             continue
         if cell.is_empty:
@@ -339,8 +375,12 @@ def front_language(post: Post, languages: list[str]) -> str | None:
     text = " ".join(node_text(line) for line in post.intro + post.notes)
     if not text.strip():
         return None
-    written = _script_language(text) if not re.search(r"[A-Za-z]", text) else "en"
-    for candidate in (written, "en"):
+    if re.search(r"[A-Za-z]", text):
+        latin = [lang for lang in languages if _is_latin(lang) and not lang.endswith("-Latn")]
+        candidates = (["en"] if "en" in latin else []) + latin
+    else:
+        candidates = [_script_language(text)]
+    for candidate in candidates:
         if candidate in languages:
             return candidate
     return languages[0] if languages else None

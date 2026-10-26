@@ -22,6 +22,7 @@ reviewed (``--accept``).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import re
@@ -236,17 +237,36 @@ def build_incipit_index(project_directory: Path = PROJECT_DIRECTORY) -> IncipitI
     return index
 
 
-def load_incipit_index(cache: Path, project_directory: Path = PROJECT_DIRECTORY) -> IncipitIndex:
-    """The index, from ``cache`` when no project file is newer than it."""
-    newest = max(
-        (f.stat().st_mtime for f in project_directory.glob("*/*.xml") if not f.parent.name.startswith("osp-")),
-        default=0.0,
+#: Bumped whenever the words the index stores are normalized differently.
+INDEX_VERSION = 1
+
+
+def _index_signature(project_directory: Path) -> str:
+    """What the index was built from: the version, the directory, and every file's size and
+    time, so that an added, changed or deleted file, or another directory, rebuilds it."""
+    files = sorted(
+        f"{f.relative_to(project_directory)}:{f.stat().st_size}:{f.stat().st_mtime_ns}"
+        for f in project_directory.glob("*/*.xml")
+        if not f.parent.name.startswith("osp-")
     )
-    if cache.exists() and cache.stat().st_mtime >= newest:
-        return IncipitIndex.from_json(json.loads(cache.read_text(encoding="utf-8")))
+    payload = json.dumps([INDEX_VERSION, str(project_directory.resolve()), files])
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def load_incipit_index(cache: Path, project_directory: Path = PROJECT_DIRECTORY) -> IncipitIndex:
+    """The index, from ``cache`` when it was built from the projects as they are now."""
+    signature = _index_signature(project_directory)
+    if cache.exists():
+        try:
+            cached = json.loads(cache.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            cached = {}
+        if isinstance(cached, dict) and cached.get("signature") == signature:
+            return IncipitIndex.from_json(cached["index"])
     index = build_incipit_index(project_directory)
     cache.parent.mkdir(parents=True, exist_ok=True)
-    cache.write_text(json.dumps(index.to_json(), ensure_ascii=False), encoding="utf-8")
+    cache.write_text(json.dumps({"signature": signature, "index": index.to_json()}, ensure_ascii=False),
+                     encoding="utf-8")
     return index
 
 
@@ -334,7 +354,7 @@ def registry_labels(registry_directory: Path = REGISTRY_DIRECTORY) -> dict[str, 
 
 def _hebrew_column(post: Post) -> int | None:
     for index, column in imported_columns(post):
-        if column.lang.split("-")[0] in HEBREW_LANGUAGES:
+        if column.lang.split("-")[0] in HEBREW_LANGUAGES and not column.lang.endswith("-Latn"):
             return index
     return None
 
@@ -462,6 +482,9 @@ def main(argv: list[str] | None = None) -> int:
                     {int(n): u for n, u in data["rows"].items()}, data["evidence"])
     taken = taken_urns(REGISTRY_DIRECTORY, records)
 
+    unknown = [p for p in args.accept if p not in proposals]
+    if unknown:
+        parser.error(f"no proposal awaits review for post(s) {unknown}")
     for post_id in args.accept:
         post = load_post(data_dir / "posts" / f"{post_id}.json")
         records[post_id] = proposals.pop(post_id).as_post_urns(mint(post.post_id, post.slug, post.tags, taken))

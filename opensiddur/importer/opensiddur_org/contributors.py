@@ -154,11 +154,11 @@ def post_credits(post: Post, contributors: Contributors) -> Credits:
         role = role_key(coauthor.qualifier)
         name = contributors.display_name(coauthor.profile_slug, coauthor.name)
         slug = contributors.person_slug(coauthor.profile_slug)
+        if slug in PLACEHOLDER_SLUGS:
+            continue
         if role is None or contributors.death_date(coauthor.profile_slug):
             if name not in authors:
                 authors.append(name)
-            continue
-        if slug in PLACEHOLDER_SLUGS:
             continue
         key, resp = role
         credit = Credit(key=key, resp=resp, name=name, slug=slug)

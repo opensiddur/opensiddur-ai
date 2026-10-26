@@ -114,5 +114,27 @@ class TestConversion(ConvertTestCase):
         self.assertEqual((lines[0]["label_en"], lines[0]["label_he"]), ("A Song", "שִׁירָה"))
 
 
+
+class TestRejection(ConvertTestCase):
+    def test_a_wholly_rejected_post(self) -> None:
+        from opensiddur.importer.opensiddur_org.convert import is_rejected
+
+        self.assertTrue(is_rejected(self.plan(4)))
+        self.assertFalse(is_rejected(self.plan(3)))  # undecided is not rejected
+        self.assertFalse(is_rejected(self.plan(0)))
+
+    def test_only_rows_with_text_are_registered(self) -> None:
+        from opensiddur.tests.importer.opensiddur_org.support import cell, table
+
+        rows = [[cell("heb-Hebr", "liturgy", "שָׁלוֹם"), cell("eng-Latn", "english", "Peace")],
+                [cell("heb-Hebr", "liturgy", ""), cell("eng-Latn", "english", "")],
+                [cell("heb-Hebr", "liturgy", "עוֹד"), cell("eng-Latn", "english", "More")]]
+        post = make_post(101, content=table(["Source (Hebrew)", "Translation (English)"], rows))
+        plan = plan_post(parse_post(post), self.context)
+        register_urns([plan], self.context, self.registry)
+        urns = [json.loads(l)["urn"] for l in (self.registry / "prayer.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(urns, [f"{URN}_101", f"{URN}_101/1", f"{URN}_101/3"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -37,7 +37,7 @@ class TestRecords(unittest.TestCase):
         record = PostUrns(1, "new", "urn:x-opensiddur:text:prayer:p", {2: "urn:x-opensiddur:text:prayer:shehecheyanu"})
         self.assertEqual(record.row_urn(2), "urn:x-opensiddur:text:prayer:shehecheyanu")
         self.assertEqual(record.row_urn(1), "urn:x-opensiddur:text:prayer:p/1")
-        lines = registry_lines(record, 3, label_en="P")
+        lines = registry_lines(record, [1, 2, 3], label_en="P")
         self.assertEqual([line["urn"] for line in lines], [
             "urn:x-opensiddur:text:prayer:p", "urn:x-opensiddur:text:prayer:p/1", "urn:x-opensiddur:text:prayer:p/3"])
 
@@ -46,10 +46,10 @@ class TestRecords(unittest.TestCase):
                           {1: "urn:x-opensiddur:text:poem:maoz_tzur/1", 2: None})
         self.assertEqual(record.row_urn(1), "urn:x-opensiddur:text:poem:maoz_tzur/1")
         self.assertIsNone(record.row_urn(2))
-        self.assertEqual(registry_lines(record, 2, label_en="x"), [])
+        self.assertEqual(registry_lines(record, [1, 2], label_en="x"), [])
 
     def test_registry_labels(self) -> None:
-        lines = registry_lines(PostUrns(1, "new", "urn:x-opensiddur:text:prayer:p"), 1, label_en="P", label_he="פ")
+        lines = registry_lines(PostUrns(1, "new", "urn:x-opensiddur:text:prayer:p"), [1], label_en="P", label_he="פ")
         self.assertEqual((lines[0]["label_en"], lines[0]["label_he"]), ("P", "פ"))
         self.assertEqual(lines[1]["parent"], "urn:x-opensiddur:text:prayer:p")
 

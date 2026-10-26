@@ -181,5 +181,43 @@ class TestSurroundings(unittest.TestCase):
         self.assertIsInstance(parse_post(make_post()).rows[0].cells[0].blocks[0].lines[0][0], Text)
 
 
+
+class TestReviewRegressions(unittest.TestCase):
+    def english(self, body: str, *, before: str = "", after: str = ""):
+        return parse_post(make_post(content=before + table(["Source (English)"], [[cell("eng-Latn", "english", body)]]) + after))
+
+    def test_spaces_at_span_edges_survive(self) -> None:
+        line = self.english("in<em> Midrash Abkir</em> and <em>dreidel </em>at").rows[0].cells[0].blocks[0].lines[0]
+        self.assertEqual(node_text(line), "in Midrash Abkir and dreidel at")
+
+    def test_space_only_span_is_just_a_space(self) -> None:
+        line = self.english("a<strong> </strong>b").rows[0].cells[0].blocks[0].lines[0]
+        self.assertEqual((node_text(line), kinds(line)), ("a b", []))
+
+    def test_line_edges_are_trimmed_inside_spans(self) -> None:
+        line = self.english("<em> edge </em>").rows[0].cells[0].blocks[0].lines[0]
+        self.assertEqual(node_text(line), "edge")
+
+    def test_footnote_container_is_not_notes(self) -> None:
+        after = ('<hr /><p>A real note.</p><div class="speaker-mute footnotes_reference_container">'
+                 '<div class="footnote_container_prepare"><p>Notes</p></div>'
+                 '<table class="footnotes_table footnote-reference-container"><tr><td>1</td><td>dup</td></tr></table></div>')
+        post = self.english("Text", after=after)
+        self.assertEqual([node_text(line) for line in post.notes], ["A real note."])
+
+    def test_a_sources_heading_in_the_introduction(self) -> None:
+        post = self.english("Text", before="<h3>About the source</h3><p>Intro.</p>", after="<hr /><p>Afterword.</p>")
+        self.assertEqual([node_text(line) for line in post.notes], ["Afterword."])
+
+    def test_entities_are_decoded_once(self) -> None:
+        line = self.english("a &amp;lt;b&amp;gt; c").rows[0].cells[0].blocks[0].lines[0]
+        self.assertEqual(node_text(line), "a &lt;b&gt; c")
+
+    def test_explicit_non_latin_script_under_a_transliteration_header(self) -> None:
+        post = parse_post(make_post(content=table(["Transliteration (Judeo-Arabic)"], [[cell("jrb-Hebr", "judeo-arabic", "שלאם")]])))
+        self.assertEqual(post.columns[0].lang, "jrb-Latn")
+        self.assertTrue(post.columns[0].mismatch)
+
+
 if __name__ == "__main__":
     unittest.main()
