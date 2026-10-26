@@ -1,0 +1,6 @@
+[
+  {"name": "Prayers &amp; Praxes", "id": 1132, "parent_id": 0, "post_ids": [1]},
+  {"name": "Festivals", "id": 200, "parent_id": 1132, "post_ids": [101, 102]},
+  {"name": "Ḥanukkah", "id": 201, "parent_id": 200, "post_ids": [103, 104, 105]},
+  {"name": "Essays", "id": 900, "parent_id": 0, "post_ids": [901]}
+]

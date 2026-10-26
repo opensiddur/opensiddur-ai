@@ -94,6 +94,18 @@ uv run python -m opensiddur.importer.feinstein_haggadah.align_page_breaks
 uv run python -m opensiddur.importer.feinstein_haggadah.convert
 ```
 
+**Import prayers from opensiddur.org** (see `specs/OPENSIDDUR_ORG_IMPORT.md`). The site's monthly GitHub export
+is cloned beside the repositories, at `opensiddur-repos/opensiddur.org/` (`$OPENSIDDUR_ORG_UPSTREAM` overrides).
+```bash
+uv run python -m opensiddur.importer.opensiddur_org.download --category 183   # copy in-scope posts; no-op when unchanged
+uv run python -m opensiddur.importer.opensiddur_org.survey                    # output/opensiddur_org_triage.{json,md}
+uv run python -m opensiddur.importer.opensiddur_org.match                     # URN decisions; proposals for review in output/
+uv run python -m opensiddur.importer.opensiddur_org.convert --register        # standard posts -> osp-<id>-<lang> projects
+```
+Licence decisions live in `opensiddur/importer/opensiddur_org/licence_decisions.yaml`; a licence or post not
+decided there is asked about, then recorded. `convert --emit-contributor-candidates` writes lines for
+unregistered contributors to `output/` for review; they are never registered automatically.
+
 **Download the Birnbaum siddur** — three sources for one book, all writing into
 `sourcetexts/sources/birnbaum_siddur/` keyed by the same scan page number. Needs
 `--contact-email` or `$OPENSIDDUR_CONTACT_EMAIL`; the Archive additionally asks that AI

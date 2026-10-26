@@ -4,7 +4,8 @@ opensiddur.org is a WordPress site of about 4,100 posts. Roughly 3,250 are under
 "Prayers & Praxes". Most are under a free licence and set the source text, a translation
 and sometimes a transliteration side by side. This importer turns the prayers whose text
 is on the site into JLPTEI projects, and keeps them current as the site changes
-(issue #186).
+(issue #186). The code is in `opensiddur/importer/opensiddur_org/`; each module's docstring
+says what it does.
 
 ## The source: the monthly GitHub export
 
@@ -23,15 +24,18 @@ What the export holds:
     already reads.
   - `custom_fields` carries the licence (`open_content_license`, an HTML `<a>`),
     `languages_meta`/`scripts_meta` (ISO 639-3 and ISO 15924 codes) and
-    `date_src_start`/`date_src_end`, the date range of the original work.
-- `posts/posts.json`: an index keyed by post ID. Authors, categories and tags appear as
-  `Name (id)`.
-- `categories and tags/categories.json` (with `parent_id`) and `tags.json`.
+    `date_src_start`/`date_src_end`. Those are the date range of the original work, and a
+    part may be zero (`1440-00-00`).
+- `categories and tags/categories.json`: categories with their `parent_id` and `post_ids`.
 - `contributors/contributors_by_id.json`. Every WordPress user has an `author_slug`, a
-  `display_name` and a `base_name`.
+  `display_name`, a `role_label`, `sibling_ids` and a `status`.
   - One person often has several users, one per role: "Isaac Gantwerk Mayer",
     "Isaac Gantwerk Mayer (translation)", "Isaac Gantwerk Mayer (transcription & naqdanut)".
-  - They share a `base_name`, which is how the importer gives the person a single URN.
+    `sibling_ids` ties them together.
+  - The site also keeps `inactive` profiles for people who never used it, mostly the
+    translators of the printed books it transcribes.
+- `posts/posts.json` and `tags.json` are not needed: a coauthor's `profile_link` names their
+  user directly, and a post carries its own tags.
 - No media. Uploads appear only as `https://opensiddur.org/wp-content/uploads/...` URLs.
 
 How the export changes:
@@ -43,32 +47,27 @@ How the export changes:
 
 ## Decisions
 
-- **One project per post and language**: `osp-<post_id>-<lang>`. The ID is stable, so a
-  later change of title or slug renames nothing.
+- **One project per post and language**: `osp-<post_id>-<lang>`, lowercase
+  (`osp-12322-he-latn`). The ID is stable, so a later change of title or slug renames
+  nothing.
 - **Source-only posts are one project.** An empty "Contribute a translation" column is
-  dropped silently.
+  dropped silently. If that column has text, it usually holds the original of quoted
+  verses, so it is imported as a source column.
 - **Transliteration columns are their own projects**, e.g. `osp-<id>-he-Latn`.
-  - On the site they are written by hand and do not follow one scheme.
+  - On the site they are written by hand and follow no single scheme.
   - Some are historical sources in their own right, such as Leo Wiener's 1898
     romanization of Yiddish.
   - So they are imported as written, not regenerated.
 - **`span.divine-referent` becomes `j:divineName` in every language**, not only Hebrew.
 - **Acrostics are semantic, not typographic.** `span.acrostic` becomes
-  `<tei:seg type="acrostic">`, alongside `seg type="refrain"`.
+  `<tei:seg type="acrostic">`, alongside `seg type="refrain"` (`schema/JLPTEI-3.md`).
 - **Existing URNs come first.** A post that is a version of a text already in the
-  collection uses that text's URNs. Examples are a Psalm, the Birkat Hamazon, or a prayer
-  in Birnbaum or Asher. New URNs are minted only when nothing matches. See
+  collection uses that text's URNs: a psalm, Maoz Tsur, the Ḥanukkah blessings. See
   [URNs](#urns).
 - **`last_updated` decides whether a post needs refreshing.** A post whose `last_updated`
   matches the manifest is not rewritten.
-- **Licences are decided once.**
-  - A licence not on the JLPTEI list is put to the maintainer, who either adds it to the
-    allowed list (and to the table in `schema/JLPTEI-3.md`) or rejects it.
-  - The answer is recorded in `opensiddur/importer/opensiddur_org/licence_decisions.yaml`,
-    together with any individual posts rejected, so the question never comes up again.
-- **Contributors are registered by hand.**
-  - `convert --emit-contributor-candidates` writes candidate `contributor.jsonl` lines.
-  - They are reviewed in the opensiddur-ai pull request, never added automatically.
+- **Licences are decided once, per column.** See [Licences](#licences).
+- **Only people who made the digital text get a contributor URN.** See [Credits](#credits).
 - **Output is deterministic.** The same input gives byte-identical TEI. The access date
   recorded in the TEI is the upstream commit date, not the clock.
 
@@ -82,58 +81,66 @@ How the export changes:
 3. Write `sourcetexts/sources/opensiddur_org/`:
    - `posts/<post_id>.json`: in-scope posts, copied verbatim and stored flat by ID, so a
      category move changes no path here.
-   - `posts.json`, `categories.json`, `tags.json`, `contributors_by_id.json`.
-   - `manifest.json`: the upstream repository, commit and commit date. Per post it records
-     the upstream path, `last_updated` and a sha256.
+   - `categories.json` and `contributors_by_id.json`.
+   - `manifest.json`: the upstream repository, commit and commit date, and the categories
+     selected. Per post it records the upstream path, `last_updated` and a sha256.
 4. Rewrite a post only when its `last_updated` changed. A run at an unchanged upstream
-   commit writes nothing.
-5. `--category ID` restricts which posts are copied. It is used for the pilot.
+   commit, with the same selection, writes nothing.
+5. `--category ID` restricts which posts are copied. The selection is remembered, and
+   posts no longer selected or in scope are removed.
 
-### 2. Scope and triage (`parse_post.py`, `scope.py`, `match.py`, `survey.py`)
+### 2. Scope and triage (`parse_post.py`, `languages.py`, `scope.py`, `survey.py`)
 
 **A post is in scope** when it passes both tests:
 
 - **Category:** it is in category 1132 ("Prayers & Praxes") or a descendant.
 - **Content:** it carries prayer text the site itself sets. That means a
-  `table.toggleable-table` with a non-empty `div[lang]` cell, or a body of liturgy or
-  English `div`s.
+  `table.toggleable-table` with text in a column, or a body of `div[lang]` blocks.
 
 **Out of scope**, with the reason recorded:
 
 - `list-of-*` index posts and essays.
-- Posts whose substance is a file link (`a.mtli_*`), an archive.org or iframe embed, a
-  scan image, or audio.
+- Posts whose substance is a file link (`a.mtli_*`) or an embed.
 
-**The parser** (`lxml.html`, XPath) strips `<script>`, `<style>` and the footnote plugin's
-tooltip noise. It reads:
+**The parser** (`lxml.html`, XPath) strips `<script>`, `<style>` and the iframe plugin's
+boilerplate. It reads:
 
 - **Columns:** each `<th>` names a role and a language, e.g. "Source (Hebrew)" or
-  "Transliteration (romanized Hebrew)". When the `<th>` and the `div@lang` disagree, the
-  `<th>` wins, and the post is marked irregular.
-- **Rows:** one `<tr>` per stanza or block. Lines are split on `<br>`, and `&nbsp;<br>`
-  marks a stanza gap.
-- **Spans:** `divine-referent`, `instruction`, `acrostic`, `citation`.
-- **Footnotes:** from `table.footnotes_table`.
+  "Transliteration (romanized Hebrew)".
+  - Roles are matched forgivingly, because the site has typos such as "Souce" and
+    "Tranlsation".
+  - When the `<th>` and the `div@lang` name different languages, the `<th>` wins and the
+    post is irregular.
+  - They may differ only in precision and still agree: "Aramaic" over `jpa-Hebr`, or a
+    transliteration whose markup leaves out the Latin script.
+- **Rows:** one `<tr>` per stanza or block. Lines are split on `<br>`, and a line holding
+  only `&nbsp;` marks a stanza gap. A cell of `<p>`s is prose. A row whose every cell is a
+  heading opens a section.
+- **Spans:** `divine-referent`, `instruction`, `acrostic`, `citation`, and emphasis.
+- **Footnotes:** taken from the plugin's inline tooltip, numbered through the post.
 - **Sources:** the `<h3>Source(s)</h3>` captions and links, recorded but never downloaded.
-- **Intro and notes:** the HTML before and after the table.
+- **Intro and notes:** the paragraphs before and after the table.
 
 Languages are mapped from ISO 639-3/15924 to BCP 47 (`heb-Hebr` → `he`,
-`yid-Latn` → `yi-Latn`, and so on).
+`yid-Latn` → `yi-Latn`, `lad-Hebr` → `lad`).
 
 **Each in-scope post is classified** as `standard` or `irregular:<reasons>`. The reasons
 are:
 
-- a `<th>`/class/`lang` disagreement
+- a `<th>`/`lang` disagreement
+- an unknown role or language
 - colour-coded word alignment
+- more than one table
 - prose with no table
-- an undecided licence
-- an unregistered contributor
+- verse and prose mixed in one column
+- a heading inside a cell of text
 - two columns in the same language
-- a match to existing URNs whose rows are not all mapped
+- an unregistered contributor
+- no URN decision, or an existing URN with unmapped rows
 
 **`survey`** writes `output/opensiddur_org_triage.{json,md}`, which is untracked. It gives
-counts by scope, class, reason, category, language set and licence, and lists the URN
-proposals.
+counts by irregularity, language set, licence and category; the licences awaiting a
+decision; and the URN proposals.
 
 ### 3. Convert (`tei_builder.py`, `convert.py`)
 
@@ -141,27 +148,27 @@ proposals.
 
 - **Titles:** split from the `Hebrew | English` title. The title in the project's
   language is `main`; the others are `alt`.
-- **Licence:** from `licence_decisions.yaml`.
-- **Credits:**
-  - A role-qualified coauthor made the digital text. They get a `tei:respStmt`:
-    translation → `trl`, transcription or naqdanut → `trc`. The name `ref` is
-    `urn:x-opensiddur:contributor:opensiddur.org/<slug of the person's unqualified user>`.
-  - Unqualified coauthors, and those with a death date, are the original authors. They go
-    in the `tei:bibl`.
+- **Licence:** from `licence_decisions.yaml`. An allowed licence that is not the post's own
+  says why, as a `tei:p` in `tei:availability`.
+- **Credits:** see [Credits](#credits).
 - **`sourceDesc/bibl xml:id="project_source_bibl"`:**
-  - the original authors
-  - the date of the original
+  - the titles and the original authors
   - opensiddur.org as distributor
-  - the permalink
+  - the date of the original
+  - the upstream commit date as the access date
+  - the permalink and post ID
   - the Source(s) captions and links
-  - the upstream commit and its date
+  - the upstream commit, in an encoding note
 
 **Body**
 
-- The post is one `tei:div`, whose `corresp` is the post's URN.
-- Each row opens a `tei:milestone unit="row"` whose `corresp` is the same in every
-  language. That is what aligns the parallel texts.
+- The post is one `tei:div`, whose `corresp` is the post's URN, headed by its title in the
+  project's language.
+- Each row opens a `tei:milestone` (`unit="stanza"`, or `"paragraph"` for prose) whose
+  `corresp` is the same in every language. That is what aligns the parallel texts.
 - Line cells become `lg`/`l`; prose cells become `p`. One text never mixes the two.
+- A cell in another language than its column (Aramaic in a Hebrew column) carries
+  `xml:lang`.
 - Spans and notes map as follows:
 
 | Source | JLPTEI |
@@ -169,15 +176,59 @@ proposals.
 | `instruction` | `tei:note type="instruction"` |
 | `divine-referent` | `j:divineName` |
 | `acrostic` | `tei:seg type="acrostic"` |
-| `citation` | `tei:ref` |
+| `citation` | `tei:bibl` |
+| `em`, `strong`, `sup` | `tei:hi rend="italic"`, `"bold"`, `"superscript"` |
 | footnotes | `tei:anchor` plus `tei:standOff type="notes"` |
-| intro | the index's `tei:front` |
+| intro and notes | the index's `tei:front`, gated on `opensiddur:paratext` |
+
+- The intro and notes go in the project whose language they are written in (else English,
+  else the first).
+- The index's body transcludes the text by its URN.
 
 **Validation and pruning**
 
 - Every file is validated before it is written.
-- Stale files are pruned, but only in the projects of the posts being converted.
-- Then the project's URN and contributor references are checked.
+- Stale files are pruned, and so are the projects of languages the post no longer has, but
+  only for the posts being converted.
+- Then each project's URN and contributor references are checked.
+- `--register` appends the registry records a new post's URNs need, after the post
+  converts.
+
+### Licences
+
+`licence_decisions.yaml` maps each licence URL the site uses to a decision:
+
+- **Allowed:** the six JLPTEI licences (CC0, PD Mark, CC BY 3.0/4.0, CC BY-SA 3.0/4.0).
+- **Allowed as the PD Mark**, with the basis recorded:
+  - United States Government works (17 U.S.C. §105)
+  - edicts of government (Compendium II §206.01)
+- **Fair use (§107) and library reproduction (§108)** are not licences. A source column
+  whose original was published before 1931 is clearly in the public domain and gets the PD
+  Mark. Every other column of such a post, translations of public-domain originals
+  included, waits for a decision about that post.
+- **Anything else, and no licence at all,** is undecided until the maintainer decides. The
+  decision is recorded in the YAML's `posts`, for the whole post or for some of its
+  columns.
+
+`convert` imports allowed columns, skips rejected ones, and reports undecided ones.
+
+### Credits
+
+- **A coauthor with a role who uses the site** made the digital text. That means their
+  account, or one of its siblings, is `active`. They get a `tei:respStmt`:
+  - translation → `trl`, on translation columns
+  - transcription or naqdanut → `trc`, on source and transliteration columns
+  - The name `ref` is `urn:x-opensiddur:contributor:opensiddur.org/<slug of the person's
+    user with no role>`.
+- **A coauthor with a role and only an inactive profile** is credited in the source bibl,
+  with a `respStmt` and no URN. An `opensiddur.org` URN claims that the person contributed
+  to the Open Siddur.
+- **A coauthor without a role, or with a death date,** is an original author, a
+  `tei:author` in the bibl.
+- **"Unknown" and "Anonymous"** are credited with nothing.
+- **New contributors are registered by hand.** `convert --emit-contributor-candidates`
+  writes candidate `contributor.jsonl` lines to `output/`; they are reviewed in the
+  opensiddur-ai pull request.
 
 ### URNs
 
@@ -185,42 +236,79 @@ Each post's URN decision is made once. It is recorded in
 `specs/opensiddur_org/post_urns.jsonl` as one of:
 
 ```json
-{"post_id": 123, "kind": "existing", "urn": "urn:x-opensiddur:text:bible:psalms/29", "rows": {"1": "urn:x-opensiddur:text:bible:psalms/29/1"}}
-{"post_id": 456, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:some_new_prayer"}
+{"post_id": 12322, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "...": "..."}}
+{"post_id": 41025, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessings_over_kindling_the_light_of_hanukkah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing"}}
+{"post_id": 22916, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_hoshekh_lqadesh_we_come_to_sanctify_the_dark_by_david_seidenberg_and_jill_hammer"}
 ```
 
-`match.py` proposes existing URNs, with its evidence:
+- An `existing` post is a version of a text in the collection, and names each row's URN.
+  Its rows must all be mapped before it converts.
+- A `new` post's rows are `<urn>/<n>`, numbered from 1 over rows that are not headings,
+  except where `rows` names an existing text. A post made of existing prayers, like the
+  Ḥanukkah blessings, is new as a whole but shares its parts.
 
-- **Bible:** a Psalm or other chapter named in the slug, title or citation.
-- **Registry labels:** the title matched against `label_en`/`label_he`.
-- **Hebrew incipits:** each row's opening words matched against the openings of the
-  milestone and div scopes in existing Hebrew projects.
+**`match`** proposes existing URNs. It works from an index of the opening words of every
+`@corresp` scope in the collection's Hebrew projects (prayers, poems and the Bible, never
+`siddur:` positions).
 
-How a proposal is used:
+- The index is cached in `output/`.
+- Words are compared as consonant skeletons, with every spelling of the divine name made
+  one and with internal ו and י dropped, so that full and defective spellings agree.
+- A blessing is told apart by the words after its formula.
+- When a lookup finds several candidates:
+  - a part is preferred over the text it opens;
+  - otherwise the candidate whose opening agrees with the row the longest is chosen;
+  - otherwise the work that the unambiguous rows point into decides.
+- A row that runs on into the next unit of its text is left unmapped, because one milestone
+  cannot stand for two units.
+- A URN is never given to two rows of one post.
+- A slug or title naming a psalm restricts candidates to that chapter.
+- The post's title is compared with the registry's labels.
 
-- The proposals are reviewed before they are recorded.
-- A matched post whose rows all map converts automatically.
-- A post with an unmapped row stays irregular.
+How `match` handles each post:
 
-A new URN is `text:poem:<name>` for a post tagged as a piyyut or poem, and
-`text:prayer:<name>` otherwise.
+- A post with no candidate at all is given a new URN at once, `text:poem:<name>` for a post
+  tagged as a piyyut or poem and `text:prayer:<name>` otherwise.
+  - `<name>` is the slug with `-` replaced by `_`.
+  - If that name is taken, `_<post_id>` is appended.
+- Every other post gets a proposal in `output/opensiddur_org_urn_proposals.jsonl`. The
+  proposal is reviewed, and may be edited, then recorded with `match --accept <id>`, or
+  replaced by a new URN with `--new <id>`.
 
-- `<name>` is the slug with `-` replaced by `_`. If that name is taken by an unrelated
-  text, `_<post_id>` is appended.
-- The post URN and its `/<n>` row URNs are registered in `specs/urn_registry/`.
+### 4. Pilot: Ḥanukkah (category 183)
 
-### 4. Pilot
+83 in-scope posts at upstream commit `2420d574f2` (2026-10-01).
 
-Pick one prayer subcategory with about 50–100 in-scope posts that are mostly standard,
-two-column Hebrew/English. Then:
+- **69 converted**, into 132 projects: Hebrew, English, German, Yiddish, French, Ukrainian,
+  Arabic and Ladino (in Hebrew and Cyrillic letters), with nine transliterations.
+- **URNs:** 13 proposals accepted (one with corrections) and one replaced by a new URN.
+  - Six versions of Maoz Tsur use its stanzas.
+  - The candle-lighting posts share `hadlakat_ner_chanukah/blessing`, `sheasah_nissim` and
+    `shehecheyanu`.
+  - A qerovah for the Ḥanukkah Amidah shares the Amidah's blessings.
+- **Contributors:** 13 registered.
+- **Licences decided** in `licence_decisions.yaml`: posts 34548 (the Hebrew only), 47938
+  and 53593.
+- **Checks:** every file validated; `urn_registry --check` has no errors; every URN
+  reference resolves; re-conversion is byte-identical.
+- **Rendering:** parallel PDFs of 12322 (Maoz Tsur, including its `he-Latn`
+  transliteration), 22916 and 65015 (footnotes) align at every row.
 
-1. Settle its licences.
-2. Commit its posts to `sourcetexts`.
-3. Record its URN decisions, and register its URNs and contributors.
-4. Convert it.
-5. Render a few parallel PDFs and measure them.
+The 14 posts not converted are the worked examples for the skill (stage 6):
 
-The pilot's irregular posts become the worked examples for the skill.
+| Post | Why |
+|---|---|
+| 4957 | two tables (Psalm 67 and Ana b'Khoaḥ); proposal pending |
+| 16071 | Psalm 30 in rows of several verses each; proposal pending |
+| 13727, 28623, 53601 | prose with no table |
+| 18267 | more than one table |
+| 18422 | colour-coded alignment; two English columns |
+| 41217, 48034 | two English columns |
+| 41025, 59104, 66455 | verse and prose mixed in one column |
+| 47590 | Judeo-Arabic marked as Hebrew |
+| 53593 | rejected (a modern work claimed as fair use) |
+
+Post 34548's English translation is not imported until its licence is clarified.
 
 ## Later work
 
@@ -235,7 +323,7 @@ This runs monthly, after each upstream export.
 
 | Class | Meaning | Action |
 |---|---|---|
-| `new` | newly published, or entered scope | convert it |
+| `new` | newly published, or entered scope | match and convert it |
 | `changed` | `last_updated` differs | refresh and reconvert it |
 | `left-scope` / `deleted` | gone, or no longer a prayer | report; delete only with `--prune` when nothing references its URNs |
 | `override-stale` | a hand-made override exists and the post changed under it | report; send it back for review |
@@ -244,20 +332,23 @@ This runs monthly, after each upstream export.
    matching pull requests.
 
 Reconverting a post whose content did not change produces no TEI diff, because the output
-is deterministic.
+is deterministic. A post whose rows change after its URNs were registered needs its row
+URNs reviewed.
 
 ### 6. A skill for irregular posts
 
 `.claude/skills/opensiddur-org-post-to-jlptei/`, modelled on `scan-to-jlptei`. It writes a
-per-post override (column relabelling, row-to-URN maps), or a hand-written body when no
-override can describe the post. It is written after the pilot, from the irregular posts
-the pilot actually meets.
+per-post override (column relabelling, row-to-URN maps, verse milestones inside a row), or
+a hand-written body when no override can describe the post. It starts from the pilot's
+irregular posts above.
 
 ## Open questions
 
 - Do any other category trees count as prayers, such as compilations? The first cut is
   1132 only.
-- Does the role heuristic (a qualifier means a digital-text credit; none, or a death date,
-  means original author) hold across the pilot?
+- Is `status` a reliable sign that someone used the site? It separates the pilot's print
+  translators from its contributors, but the export does not document it.
 - How should `seg type="acrostic"` be displayed in the PDF and HTML exports? For now it is
   plain text.
+- Row URNs of new posts are numbered. Named stanzas would be better where a post's stanzas
+  have names.
