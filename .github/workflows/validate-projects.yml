@@ -254,7 +254,7 @@ jobs:
             --project-directory "$GITHUB_WORKSPACE/projects/project"
 
       # Settings files (opensiddur-projects/settings/<book>/<variant>.yaml) are built into printed
-      # books at release (release-books.yml); a broken one should fail here, not at release.
+      # books at release (release-projects.yml); a broken one should fail here, not at release.
       # --check verifies each is in place, parses, matches the schema, names a project and file
       # that exist, and that every font chain it is typeset with has an installed font. The
       # fonts installed here are the ones the release build installs, so the check means the

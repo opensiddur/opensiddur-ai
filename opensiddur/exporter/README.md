@@ -207,11 +207,14 @@ settings/
 ```
 
 Each file names the root file it formats with a `book:` key and says how it differs from its
-siblings with `description:` (below). When an opensiddur-ai release is published,
-`.github/workflows/release-books.yml` lists them (`books --list`) at the opensiddur-projects
-commit the release pins, and starts a `release-book.yml` job for each, which builds that book
-in the formats its `formats:` lists (below) and attaches them to the release as
-`<book>-<variant>-<tag>.html` and `.pdf` (e.g. `humash-annual-v0.5.0.pdf`).
+siblings with `description:` (below). On the first of each month, opensiddur-projects'
+`release.yml` calls this repository's `.github/workflows/release-projects.yml`, which tags
+opensiddur-projects with the date (`vYYYYMMDD`) and builds the books with the latest
+opensiddur-ai release (see [RELEASE_PROCEDURE.md](../../RELEASE_PROCEDURE.md)). It lists them
+(`books --list`, which leaves out a book whose `minimum_version:` that release does not meet)
+and starts a `release-book.yml` job for each, which builds that book in the formats its
+`formats:` lists (below) and attaches them to the release as `<book>-<variant>-<tag>.html` and
+`.pdf` (e.g. `humash-annual-v20261101.pdf`).
 
 To build them locally (after syncing the reference database):
 
@@ -236,10 +239,14 @@ Pull requests to opensiddur-projects run `--check`, so a broken settings file fa
 rather than at release. It checks that each file:
 - is in a book's subdirectory (`settings/<book>/<variant>.yaml`; a file anywhere else is an
   error, not silently left out of the release);
-- parses, and matches the settings schema below, including a `book:` key;
+- parses, and matches the settings schema below, including `book:` and `minimum_version:`
+  keys;
 - names a project and file that exist;
 - can be typeset on that machine: every font chain, the defaults included, has an installed
   font. Without fontconfig this is an error rather than skipped.
+
+A book whose `minimum_version:` is newer than the code checking it is still checked, and
+reported as `skipped` rather than failed.
 
 ## Settings file
 
@@ -268,6 +275,16 @@ formats: [html]
 The forms `books` and the release build this book in: `html`, the electronic book, and `pdf`,
 the printed one. Both, unless the settings say otherwise. A book whose reader chooses the day
 on the device, and that is not wanted in print, lists only `html`. At least one, each once.
+
+### Minimum version
+```yaml
+minimum_version: 0.6.0
+```
+The earliest opensiddur-ai release that can build this book, as `major.minor.patch`. Books are
+released with the latest opensiddur-ai release; one that needs a newer release is left out of
+the release until there is one, and `books` refuses to build it. Raise it when the book starts
+using a setting or feature that a release has not yet shipped. Optional, except in
+`opensiddur-projects/settings/`, where every file is a book.
 
 ### Transclusion priority
 ```yaml

@@ -1,8 +1,8 @@
 name: Release book
 
-# Builds one book, opensiddur-projects/settings/<book>/<variant>.yaml, at the
-# opensiddur-projects commit a release tag pins, in the forms its `formats:` lists (both, unless
-# it says otherwise), and attaches them to that release: the electronic book as
+# Builds one book, opensiddur-projects/settings/<book>/<variant>.yaml, at an opensiddur-projects
+# commit with an opensiddur-ai release, in the forms its `formats:` lists (both, unless it says
+# otherwise), and attaches them to the caller's release of `tag`: the electronic book as
 # <book>-<variant>-<tag>.html (opensiddur-ai#92) and the printed one as
 # <book>-<variant>-<tag>.pdf (opensiddur-ai#153). A book with no printed form skips TeX entirely.
 #
@@ -10,28 +10,29 @@ name: Release book
 # that fails or times out does not keep it off the release. Each form has its own output
 # directory, so each keeps its own log.
 #
-# release-books.yml runs this once per settings file. Run it by hand to rebuild a single book
-# for a tag; the new files replace the old ones.
+# release-projects.yml runs this once per settings file, for a release of opensiddur-projects
+# (opensiddur-ai#216); the release is the caller's, so this has no workflow_dispatch of its own.
+# To rebuild a single book, run opensiddur-projects' release.yml with its tag and book.
 
 on:
   workflow_call:
     inputs:
       tag:
+        description: The caller's release to attach the book to (e.g. v20261101)
         type: string
         required: true
-      book:
-        type: string
-        required: true
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Release tag to build the book for and attach it to (e.g. v0.5.0)
-        required: true
-        type: string
       book:
         description: The settings file to build, as <book>/<variant> (e.g. humash/annual)
-        required: true
         type: string
+        required: true
+      projects_ref:
+        description: The opensiddur-projects commit to build the book from
+        type: string
+        required: true
+      ai_ref:
+        description: The opensiddur-ai release to build it with (e.g. v0.7.0)
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -45,19 +46,23 @@ jobs:
       TAG: ${{ inputs.tag }}
       BOOK: ${{ inputs.book }}
       GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
 
     steps:
-      - name: Checkout the release
+      - name: Checkout opensiddur-ai ${{ inputs.ai_ref }}
         uses: actions/checkout@v5
         with:
-          ref: refs/tags/${{ inputs.tag }}
+          repository: opensiddur/opensiddur-ai
+          ref: refs/tags/${{ inputs.ai_ref }}
 
-      # .gitmodules uses SSH URLs, which the runner can't use. Only opensiddur-projects is
-      # needed: the books are built from it, not from sourcetexts.
-      - name: Checkout pinned opensiddur-projects
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init --depth 1 opensiddur-projects
+      # Where the submodule would be, so the exporters find it by default. Only
+      # opensiddur-projects is needed: the books are built from it, not from sourcetexts.
+      - name: Checkout opensiddur-projects
+        uses: actions/checkout@v5
+        with:
+          repository: opensiddur/opensiddur-projects
+          ref: ${{ inputs.projects_ref }}
+          path: opensiddur-projects
 
       # Before either build: checking a book's settings checks that its fonts are installed.
       - name: Install fonts
@@ -79,15 +84,10 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      # A tag cut before `formats:` existed (v0.6.0 and earlier) has no --formats: both forms.
       - name: Read the forms the book is built in
         id: forms
         run: |
-          if uv run python -m opensiddur.exporter.books --help | grep -q -- '--formats'; then
-            formats=$(uv run python -m opensiddur.exporter.books "$BOOK" --formats)
-          else
-            formats='["html", "pdf"]'
-          fi
+          formats=$(uv run python -m opensiddur.exporter.books "$BOOK" --formats)
           echo "Formats: $formats"
           echo "formats=$formats" >> "$GITHUB_OUTPUT"
 

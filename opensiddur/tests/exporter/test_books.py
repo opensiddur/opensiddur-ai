@@ -13,6 +13,7 @@ from unittest.mock import patch
 import yaml
 
 from opensiddur.exporter import books, typography
+from opensiddur.release.version import Version
 
 # A machine with one face for each default chain.
 _FONTS = frozenset({"linux libertine o", "freeserif"})
@@ -43,7 +44,8 @@ class TestBooks(unittest.TestCase):
 
     def _book(self, name: str, project: str = "proj-a", **extra) -> Path:
         return self._settings(name, {"book": {"project": project, "file_name": "index.xml"},
-                                     "priority": {"transclusion": [project]}, **extra})
+                                     "priority": {"transclusion": [project]},
+                                     "minimum_version": "0.1.0", **extra})
 
     def _check(self, path: Path) -> books.BookResult:
         return books.check(path, self.settings_dir, self.project_dir)
@@ -96,6 +98,47 @@ class TestBooks(unittest.TestCase):
     def test_check_requires_book(self):
         result = self._check(self._settings("a/one", {"priority": {}}))
         self.assertIn("no `book:` key", result.error)
+
+    def test_check_requires_minimum_version(self):
+        result = self._check(self._settings("a/one", {
+            "book": {"project": "proj-a", "file_name": "index.xml"}, "priority": {}}))
+        self.assertIn("no `minimum_version:` key", result.error)
+
+    def test_check_invalid_minimum_version(self):
+        result = self._check(self._book("a/one", minimum_version="0.7"))
+        self.assertIn("invalid settings", result.error)
+        self.assertIsNone(result.requires_newer)
+
+    def test_check_minimum_version_met(self):
+        for minimum in ("0.6.0", "0.7.0"):
+            with self.subTest(minimum=minimum):
+                result = books.check(self._book("a/one", minimum_version=minimum),
+                                     self.settings_dir, self.project_dir, Version(0, 7, 0))
+                self.assertTrue(result.ok, result.error)
+                self.assertIsNone(result.requires_newer)
+
+    def test_check_minimum_version_newer_is_not_an_error(self):
+        result = books.check(self._book("a/one", minimum_version="0.8.0"),
+                             self.settings_dir, self.project_dir, Version(0, 7, 0))
+        self.assertTrue(result.ok, result.error)
+        self.assertEqual(result.requires_newer, Version(0, 8, 0))
+
+    def test_check_minimum_version_read_before_validation(self):
+        """ A book waiting for a newer release usually uses a key the older code refuses. """
+        result = books.check(self._book("a/one", minimum_version="0.8.0", new_setting=True),
+                             self.settings_dir, self.project_dir, Version(0, 7, 0))
+        self.assertIn("invalid settings", result.error)
+        self.assertEqual(result.requires_newer, Version(0, 8, 0))
+
+    def test_check_defaults_to_the_installed_version(self):
+        with patch.object(books, "code_version", return_value=Version(0, 7, 0)):
+            self.assertIsNone(self._check(self._book("a/one", minimum_version="0.7.0")).requires_newer)
+            self.assertIsNotNone(self._check(self._book("a/two", minimum_version="0.7.1")).requires_newer)
+
+    def test_code_version_is_the_installed_package(self):
+        with patch.object(books.importlib.metadata, "version", return_value="1.2.3") as version:
+            self.assertEqual(books.code_version(), Version(1, 2, 3))
+        version.assert_called_once_with("opensiddur-ai")
 
     def test_check_invalid_settings(self):
         result = self._check(self._settings("a/one", {"priority": {}, "bogus": 1}))
@@ -357,6 +400,40 @@ class TestBooks(unittest.TestCase):
         self.assertEqual(code, 0)
         # Misplaced files are listed too, so their build fails visibly rather than being skipped.
         self.assertEqual(json.loads(out), ["a/one", "b/one", "loose"])
+
+    def test_main_list_leaves_out_books_needing_newer_code(self):
+        self._book("a/one")
+        self._book("b/one", minimum_version="999.0.0")
+        self._book("c/one", minimum_version="999.0.0", new_setting=True)
+        self._settings("d/one", {"priority": {}})
+        code, out = self._main("--list")
+        self.assertEqual(code, 0)
+        # d/one fails its check for another reason, so it stays in and its build fails visibly.
+        self.assertEqual(json.loads(out), ["a/one", "d/one"])
+
+    def test_main_check_skips_books_needing_newer_code(self):
+        self._book("a/one")
+        self._book("b/one", minimum_version="999.0.0")
+        with patch.object(books, "code_version", return_value=Version(0, 7, 0)):
+            code, out = self._main("--check")
+        self.assertEqual(code, 0)
+        self.assertIn("ok      a/one", out)
+        self.assertIn("skipped b/one: proj-a/index.xml: needs opensiddur-ai 999.0.0 or later, "
+                      "this is 0.7.0", out)
+        self.assertIn("1 of 2 books ok, 1 skipped", out)
+
+    def test_main_check_still_validates_books_needing_newer_code(self):
+        self._book("b/one", minimum_version="999.0.0", new_setting=True)
+        code, out = self._main("--check")
+        self.assertEqual(code, 1)
+        self.assertIn("FAILED  b/one: invalid settings", out)
+
+    def test_build_refuses_a_book_needing_newer_code(self):
+        with patch.object(books.subprocess, "run") as run, \
+                patch.object(books, "code_version", return_value=Version(0, 7, 0)):
+            result = self._build(self._book("a/one", minimum_version="999.0.0"))
+        run.assert_not_called()
+        self.assertEqual(result.error, "needs opensiddur-ai 999.0.0 or later, this is 0.7.0")
 
     def test_main_list_empty(self):
         code, out = self._main("--list")

@@ -98,6 +98,21 @@ class TestFormats(_BookSettingsCase):
                 self._read({"priority": {}, "formats": formats})
 
 
+class TestMinimumVersion(_BookSettingsCase):
+
+    def test_optional(self):
+        self.assertIsNone(self._read({"priority": {}}).minimum_version)
+
+    def test_read(self):
+        self.assertEqual(self._read({"priority": {}, "minimum_version": "0.6.0"}).minimum_version,
+                         "0.6.0")
+
+    def test_refused(self):
+        for minimum in ("0.6", "v0.6.0", "abc", 0.6):
+            with self.subTest(minimum=minimum), self.assertRaises(ValidationError):
+                self._read({"priority": {}, "minimum_version": minimum})
+
+
 class _CompilerCalled(Exception):
     pass
 

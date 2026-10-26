@@ -21,6 +21,7 @@ from opensiddur.exporter import feature_registry
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.typography import RESOLVE_FONTS, TypographyConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.release.version import Version
 
 
 #: Validation context key: False skips checking that the projects and files a settings file
@@ -190,6 +191,17 @@ class SettingsYaml(BaseModel):
     # The forms a release builds this book in: `html`, the electronic book, and `pdf`, the
     # printed one. A book read only on a device, its day chosen there, lists just `html`.
     formats: list[Literal["html", "pdf"]] = Field(default_factory=lambda: ["html", "pdf"])
+    # The earliest opensiddur-ai release (major.minor.patch) that can build this book. A
+    # release builds a book with the latest opensiddur-ai release, and leaves out a book whose
+    # minimum is newer than that. Every book's settings declare it (opensiddur.exporter.books).
+    minimum_version: Optional[str] = None
+
+    @field_validator("minimum_version")
+    @classmethod
+    def validate_minimum_version(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            Version.parse(v)
+        return v
 
     @field_validator("formats")
     @classmethod

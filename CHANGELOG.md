@@ -12,8 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `pdf` (both by default). `books --formats <book>/<variant>` prints them; `release-book.yml`
   builds only those, and skips installing TeX for a book with no printed form. `books` with no
   `--format` now builds each book's own formats, not only the PDF.
+- A settings file's `minimum_version:` is the earliest opensiddur-ai release that can build the
+  book (#216). It is required of every file in `opensiddur-projects/settings/`. `books --list`
+  leaves out a book that needs newer code, `books --check` reports it as skipped, and building
+  it is an error.
+- Monthly book releases (#216): on the first of each month, opensiddur-projects is tagged with
+  the date (`vYYYYMMDD`) and its books are built with the latest opensiddur-ai release and
+  attached to that release (`release-projects.yml`, called from opensiddur-projects). A month
+  with no new projects commits and no new opensiddur-ai release is skipped.
 
 ### Changed
+- An opensiddur-ai release no longer builds books; `release-books.yml` is gone, and
+  `release-book.yml` builds one book for an opensiddur-projects release, from a given projects
+  commit with a given opensiddur-ai release.
 - The output stages (TeX, PDF, electronic book) read the settings file one way, with one
   policy (#251): a file that cannot be read, is not YAML or is not valid settings is an error
   in every stage. The PDF stage used to fall back to the default typography with a warning.
