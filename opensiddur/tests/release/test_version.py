@@ -11,7 +11,7 @@ from opensiddur.release.version import (
 
 PYPROJECT = """\
 [project]
-name = "opensiddur-ai"
+name = "opensiddur-processor"
 version = "0.1.0"
 description = "A synthetic pyproject for tests"
 dependencies = [
@@ -75,7 +75,7 @@ class TestPyproject(unittest.TestCase):
 
     def test_read_without_a_version_raises(self):
         with self.assertRaises(ValueError):
-            read_pyproject_version('[project]\nname = "opensiddur-ai"\n')
+            read_pyproject_version('[project]\nname = "opensiddur-processor"\n')
 
     def test_write_changes_only_the_version_line(self):
         written = write_pyproject_version(PYPROJECT, Version(0, 2, 0))

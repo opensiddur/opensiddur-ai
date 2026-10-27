@@ -418,7 +418,7 @@ project hashes remain unchanged after the suite. GitHub tests and code analysis
 also pass at cf7549e; the companion projects PR passes validation.
 
 Visual inspection found a separate generic bibliography issue: Birnbaum's long
-Archive URL and eprint identifier overflow the source-credit page. Separate compiler PR [#236](https://github.com/opensiddur/opensiddur-ai/pull/236)
+Archive URL and eprint identifier overflow the source-credit page. Separate compiler PR [#236](https://github.com/opensiddur/opensiddur-processor/pull/236)
 enables xurl's letter/digit breakpoints after biblatex, preserving
 identifiers and hyperlink destinations. Its real rendering fixture fails without
 the fix and passes with it. The cumulative PDFs above precede that separately
@@ -472,7 +472,7 @@ the registry has 3,701 records, zero errors and zero warnings. Final source
 verification validates all 316 files and all 22 new bilingual units.
 
 Visual inspection then found the bare Hebrew-only pizmon heading stranded before
-its first stanza. Separate compiler PR [#238](https://github.com/opensiddur/opensiddur-ai/pull/238)
+its first stanza. Separate compiler PR [#238](https://github.com/opensiddur/opensiddur-processor/pull/238)
 routes a bare single primary title through the existing spanning-heading path.
 Its 30-section rendering fixture fails against the original stylesheet and
 passes after the repair. The separate branch's full suite passes 3,303 tests and
@@ -511,7 +511,7 @@ positive cases fail against the earlier checker, and the missing prayer remains
 rejected. The original fifth-day target of eleven heritage endings is retained.
 
 
-The final main/master refresh merged opensiddur-ai #237 (calendar corrections)
+The final main/master refresh merged opensiddur-processor #237 (calendar corrections)
 and opensiddur-projects #74 (Birnbaum Minhah fast-day conditions). The post-merge
 full suite passed 3,430 tests and 5,128 subtests, with 21 skips (649.01s); the three
 numeric-marker fixtures also pass against the final checker. Both project URN
@@ -863,7 +863,7 @@ Meaningful automated tests or coverage-instrumented CI checks are needed for
 these paths; passing local checks alone cannot satisfy the coverage gates.
 Thresholds and exclusions have not been changed.
 
-Report: https://app.codecov.io/gh/opensiddur/opensiddur-ai/pull/215
+Report: https://app.codecov.io/gh/opensiddur/opensiddur-processor/pull/215
 
 
 ## Generic scan code and coverage boundary

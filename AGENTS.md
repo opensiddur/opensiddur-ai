@@ -3,7 +3,7 @@ This file provides guidance to coding agents when working with code in this repo
 ## Project Overview
 
 The project derives from 3 repositories:
-opensiddur-ai https://github.com/opensiddur/opensiddur-ai (this repository)
+opensiddur-processor https://github.com/opensiddur/opensiddur-processor (this repository)
 sourcetexts https://github.com/opensiddur/sourcetexts (submodule at sourcetexts/, content in sourcetexts/sources/)
 opensiddur-projects https://github.com/opensiddur/opensiddur-projects (submodule at opensiddur-projects/, content in opensiddur-projects/project/)
 
@@ -13,8 +13,8 @@ source and project commits it was built against. See `RELEASE_PROCEDURE.md`.
 **Paired PRs.** opensiddur-projects PRs are validated by this repository's validators
 (`.github/workflows/validate-projects.yml`). When project XML depends on an unmerged change here
 (registry entries, schema, validators), give both PRs the same branch name: the projects check
-then validates against that opensiddur-ai branch instead of main, and warns that it did. Merge
-the opensiddur-ai PR first, re-run the projects check (it falls back to main once the branch is
+then validates against that opensiddur-processor branch instead of main, and warns that it did. Merge
+the opensiddur-processor PR first, re-run the projects check (it falls back to main once the branch is
 deleted), then merge the projects PR.
 
 This repository has 3 parts: 

@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 USER_AGENT = (
-    "OpenSiddur-AI/1.0 (https://github.com/opensiddur/opensiddur-ai; "
+    "OpenSiddur-Processor/1.0 (https://github.com/opensiddur/opensiddur-processor; "
     "opensiddur@example.com)"
 )
 

@@ -207,7 +207,7 @@ settings/
 ```
 
 Each file names the root file it formats with a `book:` key and says how it differs from its
-siblings with `description:` (below). When an opensiddur-ai release is published,
+siblings with `description:` (below). When an opensiddur-processor release is published,
 `.github/workflows/release-books.yml` lists them (`books --list`) at the opensiddur-projects
 commit the release pins, and starts a `release-book.yml` job for each, which builds that book
 in the formats its `formats:` lists (below) and attaches them to the release as

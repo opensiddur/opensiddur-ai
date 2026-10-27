@@ -33,7 +33,7 @@ EXPORT_XLSX_URL = (
     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=xlsx"
 )
 USER_AGENT = (
-    "OpenSiddur-AI/1.0 (https://github.com/opensiddur/opensiddur-ai; "
+    "OpenSiddur-Processor/1.0 (https://github.com/opensiddur/opensiddur-processor; "
     "opensiddur@example.com)"
 )
 

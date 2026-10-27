@@ -187,9 +187,9 @@ def book_id(root: etree.ElementBase, title: str) -> str:
 
 def generator() -> str:
     try:
-        return f"opensiddur-ai {version('opensiddur-ai')}"
+        return f"opensiddur-processor {version('opensiddur-processor')}"
     except PackageNotFoundError:
-        return "opensiddur-ai"
+        return "opensiddur-processor"
 
 
 def about_html(title: str, compiled_file: Path, project_directory: Path) -> str:
@@ -279,7 +279,7 @@ _TRAILING_STOP = re.compile(r"\.((?:</\w+>)*)$")
 SOFTWARE_NOTICE = (
     "<h2>Software</h2>"
     "<p>The scripts in this book, which choose what it shows, are free software from "
-    '<a href="https://github.com/opensiddur/opensiddur-ai">opensiddur-ai</a>: you can '
+    '<a href="https://github.com/opensiddur/opensiddur-processor">opensiddur-processor</a>: you can '
     "redistribute them and change them under the terms of the "
     '<a href="https://www.gnu.org/licenses/lgpl-3.0.html">GNU Lesser General Public License</a>, '
     "version 3 or any later version. They come with no warranty. Their source is in the book "

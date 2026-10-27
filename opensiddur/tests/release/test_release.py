@@ -1,7 +1,7 @@
 """End-to-end release orchestration, against synthetic git repositories.
 
 Every fixture repo here is created fresh under a TemporaryDirectory and is never the real
-opensiddur-ai/sourcetexts/opensiddur-projects checkouts, per project convention: tests must
+opensiddur-processor/sourcetexts/opensiddur-projects checkouts, per project convention: tests must
 not depend on real project data.
 """
 
@@ -59,7 +59,7 @@ def _commit_all(path: Path, message: str) -> None:
 
 
 class ReleaseSandbox:
-    """A synthetic opensiddur-ai checkout with two synthetic submodules, all local git repos."""
+    """A synthetic opensiddur-processor checkout with two synthetic submodules, all local git repos."""
 
     def __init__(self, tmp: Path):
         self.tmp = tmp

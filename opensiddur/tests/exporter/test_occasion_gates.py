@@ -1,4 +1,4 @@
-"""An occasion's gate around a section, compiled end to end (opensiddur-ai#228).
+"""An occasion's gate around a section, compiled end to end (opensiddur-processor#228).
 
 A running order gates each section said only on some days. A compile dated to another day
 leaves the section out; one with no date keeps it, and prints it with nothing around it, the

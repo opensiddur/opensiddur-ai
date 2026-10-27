@@ -1,6 +1,6 @@
 # Release procedure
 
-A release is a `v<major>.<minor>.<patch>` tag on this repository (`opensiddur-ai`). The tag's
+A release is a `v<major>.<minor>.<patch>` tag on this repository (`opensiddur-processor`). The tag's
 commit pins exact commits of the `sourcetexts` and `opensiddur-projects` submodules, so a given
 release fully identifies the code and the data it was built and tested against. Neither
 `sourcetexts` nor `opensiddur-projects` is tagged itself — the submodule pointers are the record.
@@ -96,7 +96,7 @@ with its own log and status; a large one (the full humash) takes well over an ho
 
 - **Re-lock and push `uv.lock`.** The release script writes the new version into `pyproject.toml`
   (step 4) but never re-locks, so `uv.lock` still records the *previous* version for the
-  `opensiddur-ai` package. Correct it so the two agree:
+  `opensiddur-processor` package. Correct it so the two agree:
 
   ```bash
   uv lock
@@ -111,7 +111,7 @@ with its own log and status; a large one (the full humash) takes well over an ho
   `uv.lock` in their working tree, which collides with the "working tree must be clean" check in
   *Before releasing* and looks like an unrelated change in their branch.
 
-- Check the [releases page](https://github.com/opensiddur/opensiddur-ai/releases) and the pushed
+- Check the [releases page](https://github.com/opensiddur/opensiddur-processor/releases) and the pushed
   tag.
 - Check that the *Release books* workflow finished and the books are attached. A red job means
   that book failed to build: the others are still attached, and the release stands. Its
