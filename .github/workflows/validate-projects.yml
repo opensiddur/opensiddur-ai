@@ -22,13 +22,6 @@ on:
           (a companion PR) is validated against that branch, everything else against main.
         type: string
         default: ''
-      opensiddur_ai_ref:
-        description: >
-          Old name of opensiddur_processor_ref, from before the repository was renamed. Kept so
-          that opensiddur-projects' caller keeps working until its rename PR merges; remove it
-          after that.
-        type: string
-        default: ''
 
 permissions:
   contents: read
@@ -56,7 +49,7 @@ jobs:
       - name: Resolve opensiddur-processor ref
         id: processor_ref
         env:
-          INPUT_REF: ${{ inputs.opensiddur_processor_ref || inputs.opensiddur_ai_ref }}
+          INPUT_REF: ${{ inputs.opensiddur_processor_ref }}
           # Same-repository PRs only: a fork's branch name is not a claim to a companion.
           HEAD_REF: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
         run: |

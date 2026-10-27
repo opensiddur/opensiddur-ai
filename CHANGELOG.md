@@ -16,9 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - The repository is renamed `opensiddur-processor` (was `opensiddur-ai`), and so is the Python
   distribution. Download user-agents now say `OpenSiddur-Processor/1.0`. The reusable
-  `validate-projects.yml` workflow's `opensiddur_ai_ref` input is now `opensiddur_processor_ref`
-  (the old name is still accepted until opensiddur-projects' caller is renamed), and it checks
-  the validators out into `opensiddur-processor/`. Issue numbers are unchanged, so
+  `validate-projects.yml` workflow's `opensiddur_ai_ref` input is now `opensiddur_processor_ref`,
+  and it checks the validators out into `opensiddur-processor/`. Issue numbers are unchanged, so
   `opensiddur-ai#N` in older text means `opensiddur-processor#N`.
 - PDFs are right-bound by default (#265). A new `typography.page.binding` (`right` | `left`,
   default `right`) sets the reading direction a PDF viewer shows its spreads in (Acrobat's
