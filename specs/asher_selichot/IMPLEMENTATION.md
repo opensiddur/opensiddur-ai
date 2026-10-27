@@ -1,6 +1,6 @@
 # Asher selichot encoding and reusable scan workflow
 
-Issue: https://github.com/opensiddur/opensiddur-ai/issues/207
+Issue: https://github.com/opensiddur/opensiddur-processor/issues/207
 
 The skill entrypoint dynamically loads the selected edition subsection. Shared tools
 accept explicit book profiles; Asher uses scan-based identity because both languages
@@ -71,7 +71,7 @@ A regression fixture uses an absent target inside a false scope and checks that
 the documentary text after the scope survives.
 
 The generic conditional/fallback corrections and regression tests were merged in
-opensiddur-ai PR #217. The apparatus paragraph-direction fix and tests were merged
+opensiddur-processor PR #217. The apparatus paragraph-direction fix and tests were merged
 separately in PR #218. The Asher code PR targets main.
 
 The first-day PDF check also groups small Latin apparatus glyphs by font and

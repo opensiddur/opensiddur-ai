@@ -1,25 +1,32 @@
 name: Validate projects
 
-# Reusable workflow (opensiddur-ai#94): validates a PR to opensiddur-projects by running this
+# Reusable workflow (opensiddur-processor#94): validates a PR to opensiddur-projects by running this
 # repository's schema and referential-integrity validators against it. Called from
 # opensiddur-projects/.github/workflows/validate.yml.
 #
 # No `paths:` filter and every stage below always runs, even when the caller's event touches
 # no XML -- a required status check that can be skipped blocks a PR forever, so this job must
-# always run and report (opensiddur-ai#94, design question 5).
+# always run and report (opensiddur-processor#94, design question 5).
 
 on:
   workflow_call:
     inputs:
-      opensiddur_ai_ref:
+      opensiddur_processor_ref:
         description: >
-          Ref (branch, tag, or SHA) of opensiddur-ai to check out the validators from.
+          Ref (branch, tag, or SHA) of opensiddur-processor to check out the validators from.
           Decoupled from this workflow file's own version, which the caller always pins with
-          `uses: opensiddur/opensiddur-ai/.github/workflows/validate-projects.yml@main` --
+          `uses: opensiddur/opensiddur-processor/.github/workflows/validate-projects.yml@main` --
           this input lets a manual run exercise a different branch of the validator code
           without changing which copy of the workflow definition runs. Empty (the default)
-          means auto-detect: a pull_request whose head branch also exists in opensiddur-ai
+          means auto-detect: a pull_request whose head branch also exists in opensiddur-processor
           (a companion PR) is validated against that branch, everything else against main.
+        type: string
+        default: ''
+      opensiddur_ai_ref:
+        description: >
+          Old name of opensiddur_processor_ref, from before the repository was renamed. Kept so
+          that opensiddur-projects' caller keeps working until its rename PR merges; remove it
+          after that.
         type: string
         default: ''
 
@@ -43,13 +50,13 @@ jobs:
 
       # A change that spans both repositories (new registry entries, schema or validator
       # changes, plus the project XML that needs them) is a pair of PRs on the same branch
-      # name. Validating the projects half against opensiddur-ai main would fail until the code
-      # half merges, so a PR's head branch is looked up in opensiddur-ai and used if it exists.
+      # name. Validating the projects half against opensiddur-processor main would fail until the code
+      # half merges, so a PR's head branch is looked up in opensiddur-processor and used if it exists.
       # Once the companion PR merges and its branch is deleted, a re-run falls back to main.
-      - name: Resolve opensiddur-ai ref
-        id: ai_ref
+      - name: Resolve opensiddur-processor ref
+        id: processor_ref
         env:
-          INPUT_REF: ${{ inputs.opensiddur_ai_ref }}
+          INPUT_REF: ${{ inputs.opensiddur_processor_ref || inputs.opensiddur_ai_ref }}
           # Same-repository PRs only: a fork's branch name is not a claim to a companion.
           HEAD_REF: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
         run: |
@@ -58,24 +65,24 @@ jobs:
           if [ -z "${ref}" ]; then
             ref=main
             if [ -n "${HEAD_REF}" ] && git ls-remote --exit-code --heads \
-                https://github.com/opensiddur/opensiddur-ai.git "refs/heads/${HEAD_REF}" >/dev/null; then
+                https://github.com/opensiddur/opensiddur-processor.git "refs/heads/${HEAD_REF}" >/dev/null; then
               ref="${HEAD_REF}"
             fi
           fi
           echo "ref=${ref}" >> "$GITHUB_OUTPUT"
-          echo "opensiddur-ai ref: ${ref}"
+          echo "opensiddur-processor ref: ${ref}"
           if [ "${ref}" != main ]; then
-            msg="Validated against opensiddur-ai ${ref}, not main. Merge the companion opensiddur-ai PR first, then re-run this check before merging."
-            echo "::warning title=Companion opensiddur-ai ref::${msg}"
+            msg="Validated against opensiddur-processor ${ref}, not main. Merge the companion opensiddur-processor PR first, then re-run this check before merging."
+            echo "::warning title=Companion opensiddur-processor ref::${msg}"
             echo "${msg}" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Checkout opensiddur-ai validators (${{ steps.ai_ref.outputs.ref }})
+      - name: Checkout opensiddur-processor validators (${{ steps.processor_ref.outputs.ref }})
         uses: actions/checkout@v5
         with:
-          repository: opensiddur/opensiddur-ai
-          ref: ${{ steps.ai_ref.outputs.ref }}
-          path: opensiddur-ai
+          repository: opensiddur/opensiddur-processor
+          ref: ${{ steps.processor_ref.outputs.ref }}
+          path: opensiddur-processor
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -88,20 +95,20 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: uv sync --all-groups
 
       - name: Cache built schema
         uses: actions/cache@v6
         with:
           path: |
-            opensiddur-ai/schema/*.relaxng
-            opensiddur-ai/schema/*.schematron
-            opensiddur-ai/schema/*.xslt
-          key: schema-${{ steps.ai_ref.outputs.ref }}-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml') }}
+            opensiddur-processor/schema/*.relaxng
+            opensiddur-processor/schema/*.schematron
+            opensiddur-processor/schema/*.xslt
+          key: schema-${{ steps.processor_ref.outputs.ref }}-${{ hashFiles('opensiddur-processor/schema/jlptei.odd.xml') }}
 
       - name: Build schema
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: bash scripts/build-schema.sh
 
       - name: Compute affected projects
@@ -144,13 +151,13 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/schema-validation.json
-          key: schemaval-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml', 'opensiddur-ai/opensiddur/exporter/validate_schema.py', 'opensiddur-ai/opensiddur/importer/util/validation.py') }}-${{ hashFiles('projects/project/**/*.xml') }}
-          restore-keys: schemaval-${{ hashFiles('opensiddur-ai/schema/jlptei.odd.xml', 'opensiddur-ai/opensiddur/exporter/validate_schema.py', 'opensiddur-ai/opensiddur/importer/util/validation.py') }}-
+          key: schemaval-${{ hashFiles('opensiddur-processor/schema/jlptei.odd.xml', 'opensiddur-processor/opensiddur/exporter/validate_schema.py', 'opensiddur-processor/opensiddur/importer/util/validation.py') }}-${{ hashFiles('projects/project/**/*.xml') }}
+          restore-keys: schemaval-${{ hashFiles('opensiddur-processor/schema/jlptei.odd.xml', 'opensiddur-processor/opensiddur/exporter/validate_schema.py', 'opensiddur-processor/opensiddur/importer/util/validation.py') }}-
 
       - name: Validate XML against the schema
         id: schema
         continue-on-error: true
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: |
           uv run python -m opensiddur.exporter.validate_schema \
             --project-directory "$GITHUB_WORKSPACE/projects/project" \
@@ -167,7 +174,7 @@ jobs:
           key: ${{ steps.schema_cache.outputs.cache-primary-key }}
 
       # The reference database is cached between runs so a PR re-indexes only the files it
-      # changed (opensiddur-ai#165). refdb decides what to re-index by content hash, not mtime,
+      # changed (opensiddur-processor#165). refdb decides what to re-index by content hash, not mtime,
       # so the fresh checkout's mtimes don't matter. The key's first part is the indexing code:
       # refdb also stamps the database with a hash of that file's code (comments and docstrings
       # left out) and rebuilds on a mismatch, so restore-keys never hands one version's
@@ -180,11 +187,11 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/reference.db
-          key: refdb-${{ hashFiles('opensiddur-ai/opensiddur/exporter/refdb.py') }}-${{ hashFiles('projects/project/**/*.xml') }}
-          restore-keys: refdb-${{ hashFiles('opensiddur-ai/opensiddur/exporter/refdb.py') }}-
+          key: refdb-${{ hashFiles('opensiddur-processor/opensiddur/exporter/refdb.py') }}-${{ hashFiles('projects/project/**/*.xml') }}
+          restore-keys: refdb-${{ hashFiles('opensiddur-processor/opensiddur/exporter/refdb.py') }}-
 
       - name: Build the reference database
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: |
           uv run python -m opensiddur.exporter.refdb \
             --project-directory "$GITHUB_WORKSPACE/projects/project" \
@@ -201,7 +208,7 @@ jobs:
         id: urn_references
         if: always()
         continue-on-error: true
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         env:
           AFFECTED: ${{ steps.scope.outputs.affected }}
         run: |
@@ -225,7 +232,7 @@ jobs:
         id: urn_registry
         if: always()
         continue-on-error: true
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: |
           uv run python -m opensiddur.common.urn_registry --check \
             --project-directory "$GITHUB_WORKSPACE/projects/project" \
@@ -235,7 +242,7 @@ jobs:
         id: versification
         if: always()
         continue-on-error: true
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: |
           uv run python -m opensiddur.exporter.validate_versification \
             --project-directory "$GITHUB_WORKSPACE/projects/project"
@@ -248,7 +255,7 @@ jobs:
         id: features
         if: always()
         continue-on-error: true
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: |
           uv run python -m opensiddur.exporter.validate_features \
             --project-directory "$GITHUB_WORKSPACE/projects/project"
@@ -270,7 +277,7 @@ jobs:
         id: settings
         if: always()
         continue-on-error: true
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: |
           uv run python -m opensiddur.exporter.books --check \
             --project-directory "$GITHUB_WORKSPACE/projects/project"

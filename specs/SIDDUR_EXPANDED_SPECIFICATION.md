@@ -2,7 +2,7 @@
 
 Status: implemented by `opensiddur.importer.siddur_expanded.build`; generated
 project and reader settings are in opensiddur-projects.
-Motivation: [opensiddur-ai#257](https://github.com/opensiddur/opensiddur-ai/issues/257).
+Motivation: [opensiddur-processor#257](https://github.com/opensiddur/opensiddur-processor/issues/257).
 
 ## Purpose and editorial boundary
 
@@ -240,7 +240,7 @@ the expanded project.
 
 ## Rebuilding
 
-From opensiddur-ai, with the corresponding repositories checked out:
+From opensiddur-processor, with the corresponding repositories checked out:
 
 ```bash
 python -m opensiddur.importer.siddur_expanded.build \

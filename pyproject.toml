@@ -1,5 +1,5 @@
 [project]
-name = "opensiddur-ai"
+name = "opensiddur-processor"
 version = "0.6.0"
 description = "AI-aided conversion and compilation pipeline for Open Siddur liturgical texts (JLPTEI v2)"
 authors = [
@@ -44,8 +44,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://opensiddur.org/"
-Repository = "https://github.com/opensiddur/opensiddur-ai"
-Issues = "https://github.com/opensiddur/opensiddur-ai/issues"
+Repository = "https://github.com/opensiddur/opensiddur-processor"
+Issues = "https://github.com/opensiddur/opensiddur-processor/issues"
 
 [dependency-groups]
 dev = [

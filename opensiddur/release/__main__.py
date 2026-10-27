@@ -43,7 +43,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--repo", type=Path, default=REPO_ROOT,
-        help="The opensiddur-ai checkout to release from (default: this one).",
+        help="The opensiddur-processor checkout to release from (default: this one).",
     )
     parser.add_argument(
         "--no-publish", dest="publish", action="store_false",

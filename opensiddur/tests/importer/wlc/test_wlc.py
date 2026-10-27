@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, call
 from pathlib import Path
 
+from opensiddur.common.constants import SOURCETEXTS_ROOT
 from opensiddur.importer.wlc.wlc import (
     make_project_directory,
     get_source_directory,
@@ -42,11 +43,9 @@ class TestWLCPathFunctions(unittest.TestCase):
         # Verify it returns a Path object
         self.assertIsInstance(result, Path)
         
-        # Verify it points to sources/wlc (should be under opensiddur project)
+        # Verify it points to sources/wlc under the configured sourcetexts root
         self.assertTrue(str(result).endswith('sources/wlc'))
-        
-        # Verify the path contains 'opensiddur-ai' (the project root)
-        self.assertIn('opensiddur-ai', str(result))
+        self.assertEqual(result, SOURCETEXTS_ROOT / 'wlc')
 
     def test_get_source_directory_custom_sourcetexts_root(self):
         custom = Path('/tmp/opensiddur-sourcetexts')

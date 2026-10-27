@@ -4,7 +4,7 @@
 # `settings_shabbat_rosh_chodesh_jerusalem.yaml` names the second day of a two-day one.
 # The two shapes are computed differently -- `compute._rosh_hodesh_day` numbers the sole or
 # first day 1 and the second day 2 -- so both are worth a compile. They were worth more than
-# that before `opensiddur-ai#125`: the two-day shape was broken and this one was not, which
+# that before `opensiddur-processor#125`: the two-day shape was broken and this one was not, which
 # is what made the difference visible.
 #
 # Nothing conditional should survive this compile except the gendered blessings, which have
