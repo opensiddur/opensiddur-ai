@@ -142,7 +142,10 @@ typography:
     orientation: portrait    # portrait | landscape
     sides: two               # two: margins and running heads mirror between
                              # recto and verso. one: printed on one side only.
-    chapter_start: recto     # recto: a book opens on a right-hand page
+    binding: right           # right | left: the edge the book is bound at. Sets
+                             # the PDF's reading direction, and with sides: two
+                             # puts the inner margins at that edge.
+    chapter_start: recto     # recto: a book opens on a recto (odd) page
     base_font_size: "11pt"   # 10pt | 11pt | 12pt — what named sizes scale from
     # Margins are named for the binding, not the page edge, so they mean the same
     # on a recto and a verso. Omitted margins keep the document class's own.
