@@ -135,7 +135,9 @@ def parse_urn(text: str) -> Urn:
 
     rest = text[len(SCHEME) :]
     rest, _, fragment = rest.partition("#")
-    rest, _, project = rest.partition("@")
+    # The project is everything after the *last* `@`, as `opensiddur.exporter.urn.split_project`
+    # reads it.
+    rest, _, project = rest.rpartition("@") if "@" in rest else (rest, "", "")
 
     parts = rest.split(":")
     if len(parts) < 2:

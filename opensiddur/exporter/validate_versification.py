@@ -31,19 +31,25 @@ from typing import Iterable, Optional
 from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.versification import (
+    NUMBERING_COMMON, NUMBERING_LENINGRAD, NUMBERING_MASORAH, NUMBERING_PROJECT,
+)
 
 VERSE_URN = re.compile(
     r"^urn:x-opensiddur:text:bible:(?P<book>[a-z_0-9]+)/(?P<chapter>\d+)/(?P<verse>\d+)$"
 )
 
 #: Projects whose verse URNs must agree, and the numbering each edition follows.
-TANAKH_PROJECTS = ("wlc", "miqra_al_pi_hamasorah", "jps1917")
+TANAKH_PROJECTS = tuple(NUMBERING_PROJECT[n] for n in
+                        (NUMBERING_LENINGRAD, NUMBERING_MASORAH, NUMBERING_COMMON))
+_MASORAH_PROJECT = NUMBERING_PROJECT[NUMBERING_MASORAH]
+_COMMON_PROJECT = NUMBERING_PROJECT[NUMBERING_COMMON]
 
 #: Verses a witness genuinely does not contain. Not a numbering difference: the text is
 #: absent from the edition altogether, so it has no URN there and never should.
 KNOWN_ABSENCES: dict[str, set[tuple[str, int, int]]] = {
     # Joshua 21:36-37 are absent from Miqra al pi ha-Masorah.
-    "miqra_al_pi_hamasorah": {("joshua", 21, 36), ("joshua", 21, 37)},
+    _MASORAH_PROJECT: {("joshua", 21, 36), ("joshua", 21, 37)},
 }
 
 #: Chapters where a project's verse division is known to differ and has not yet been
@@ -51,13 +57,13 @@ KNOWN_ABSENCES: dict[str, set[tuple[str, int, int]]] = {
 #: reported as unresolved rather than as regressions. Each needs the edition's own text
 #: aligned against the canonical division before it can be encoded or fixed.
 UNRESOLVED_CHAPTERS: set[tuple[str, str, int]] = {
-    ("jps1917", "ezra", 2),
-    ("jps1917", "ezra", 4),
-    ("jps1917", "isaiah", 9),
-    ("jps1917", "kings_2", 18),
-    ("jps1917", "leviticus", 14),
-    ("jps1917", "nehemiah", 7),
-    ("jps1917", "psalms", 30),
+    (_COMMON_PROJECT, "ezra", 2),
+    (_COMMON_PROJECT, "ezra", 4),
+    (_COMMON_PROJECT, "isaiah", 9),
+    (_COMMON_PROJECT, "kings_2", 18),
+    (_COMMON_PROJECT, "leviticus", 14),
+    (_COMMON_PROJECT, "nehemiah", 7),
+    (_COMMON_PROJECT, "psalms", 30),
 }
 
 

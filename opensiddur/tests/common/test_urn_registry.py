@@ -60,6 +60,11 @@ class ParseUrnTestCase(unittest.TestCase):
         self.assertEqual(urn.fragment, "bibl")
         self.assertEqual(urn.path, ("avot",))
 
+    def test_the_project_follows_the_last_at_sign(self):
+        urn = parse_urn(PRAYER + "avot@some@project")
+        self.assertEqual(urn.path, ("avot@some",))
+        self.assertEqual(urn.project, "project")
+
     def test_round_trips(self):
         for text in (PRAYER + "amidah/avot",
                      "urn:x-opensiddur:instruction:role/reader",
