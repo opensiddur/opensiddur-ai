@@ -269,6 +269,26 @@ The forms `books` and the release build this book in: `html`, the electronic boo
 the printed one. Both, unless the settings say otherwise. A book whose reader chooses the day
 on the device, and that is not wanted in print, lists only `html`. At least one, each once.
 
+### Distribution notices
+```yaml
+distribution:
+  notice:
+    logo: art/our-logo.png   # relative to this file; `default` or `none`
+    logo_width: 1in
+    position: center
+    text: [Distributed by Our Congregation, https://example.org]
+  back_notice: none
+```
+Every book carries the Open Siddur Project's distribution notice, with its logo, and a statement
+on disposing of sacred texts. Neither needs a setting. The notice is on the verso of the first
+title page; a book with no title page, or whose title pages are not set, has it on a page of its
+own at the start of the front matter. The electronic book has it after its title page. The
+statement is on the last page, after the colophon. `back_notice` has an `electronic` and a
+`print` version: the PDF takes `print`, the electronic book `electronic`. Either part can be
+replaced, or set to `none`. In the PDF, `typography.styles.distribution_notice` and `back_notice` set
+their type. `books --check` reports a logo that is not there. The example settings file
+(`doc/exporter-settings.example.yaml`) gives the defaults in full.
+
 ### Transclusion priority
 ```yaml
 priority:

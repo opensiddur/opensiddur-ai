@@ -34,12 +34,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from PIL import Image
 from pydantic import ValidationError
 import yaml
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
 from opensiddur.exporter.settings import BookTarget, SettingsYaml, read_settings
-from opensiddur.exporter import typography
+from opensiddur.exporter import notices, typography
 
 
 @dataclass
@@ -127,8 +128,25 @@ def check(settings_file: Path, settings_directory: Path, project_directory: Path
         return result
     result.book = settings.book
     result.formats = tuple(settings.formats)
-    result.error = _check_fonts(settings)
+    result.error = _check_fonts(settings) or _check_logo(settings, settings_file)
     return result
+
+
+def _check_logo(settings: SettingsYaml, settings_file: Path) -> Optional[str]:
+    """ Why the distribution notice's logo cannot be set, or None if it can. """
+    notice = notices.distribution_notice(settings.distribution)
+    if notice is None:
+        return None
+    try:
+        logo = notices.resolve_logo(notice, settings_file)
+        if logo is not None:
+            with Image.open(logo) as image:
+                image.verify()
+    except FileNotFoundError as e:
+        return str(e)
+    except (OSError, SyntaxError) as e:
+        return f"distribution notice logo {notice.logo!r} is not a readable image: {e}"
+    return None
 
 
 def _run(command: list[str], log) -> bool:

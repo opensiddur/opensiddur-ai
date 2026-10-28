@@ -20,7 +20,9 @@ for the reader:
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
+import io
 import html
 import json
 import logging
@@ -33,6 +35,7 @@ from typing import Any
 
 import yaml
 from lxml import etree
+from PIL import Image
 from pydantic import ValidationError
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
@@ -48,11 +51,18 @@ from opensiddur.exporter.client_settings import is_reader_supplied, resolve
 from opensiddur.exporter.condition_eval import TriState, condition_features, condition_from_json, value_to_json
 from opensiddur.exporter.constants import PROCESSING_NAMESPACE, TEI_NS
 from opensiddur.exporter.derived_settings import STATIC_DEFAULTS
-from opensiddur.exporter.html.css import typography_css, xslt_parameters
+from opensiddur.exporter.html.css import css_length, typography_css, xslt_parameters
 from opensiddur.exporter.html.markers import BookConditions, prepare
 from opensiddur.exporter.html.psalms import normalize as normalize_psalm_titles
 from opensiddur.exporter.metadata import ISBN_TYPES, Colophon, SourceRecord, build_colophon
-from opensiddur.exporter.settings import ElectronicSettings, SettingsYaml
+from opensiddur.exporter import notices
+from opensiddur.exporter.notices import RunKind
+from opensiddur.exporter.settings import (
+    DistributionNotice,
+    DistributionSettings,
+    ElectronicSettings,
+    SettingsYaml,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -192,12 +202,75 @@ def generator() -> str:
         return "opensiddur-processor"
 
 
-def about_html(title: str, compiled_file: Path, project_directory: Path) -> str:
-    """The book's colophon: what it is, whose work it is under which licences, and from where."""
-    return colophon_to_html(title, build_colophon(compiled_file, project_directory))
+def about_html(
+    title: str,
+    compiled_file: Path,
+    project_directory: Path,
+    distribution: DistributionSettings | None = None,
+) -> str:
+    """The book's colophon: what it is, whose work it is under which licences, and from where;
+    and after it, the back notice."""
+    back = notices.back_notice_items(distribution or DistributionSettings(), "electronic")
+    return colophon_to_html(title, build_colophon(compiled_file, project_directory),
+                            back_notice=back)
 
 
-def colophon_to_html(title: str, colophon: Colophon) -> str:
+def notice_line_html(text: str) -> str:
+    """One line of a distribution or back notice: its text escaped, its URLs and emphasis set."""
+    pieces = []
+    for kind, run in notices.notice_runs(text):
+        if kind is RunKind.URL:
+            pieces.append(_link(run, html.escape(run)))
+        elif kind is RunKind.EMPHASIS:
+            pieces.append(f"<em>{_value(run)}</em>")
+        else:
+            pieces.append(_value(run))
+    return "".join(pieces)
+
+
+def back_notice_html(items: list[str]) -> str:
+    """The statement after the colophon, or nothing."""
+    if not items:
+        return ""
+    entries = "".join(f"<li>{notice_line_html(item)}</li>" for item in items)
+    return f'<ul class="os-back-notice">{entries}</ul>'
+
+
+#: How wide, in pixels, the electronic book carries the logo: twice what a reader sees at the
+#: default width, for a high-density screen, and not the whole print-resolution image.
+LOGO_PIXELS = 400
+
+
+def logo_data_uri(logo: Path) -> str:
+    """The logo as a data: URI, so the book stays one file that opens offline."""
+    with Image.open(logo) as image:
+        image.thumbnail((LOGO_PIXELS, LOGO_PIXELS))
+        # PNG has no CMYK, which a logo made for print often is.
+        image = image.convert("RGBA")
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+
+
+def distribution_notice_html(notice: DistributionNotice | None, logo: Path | None) -> str:
+    """The distribution notice, after the title page; nothing if the book carries none."""
+    if notice is None:
+        return ""
+    parts = ['<aside class="os-distribution">']
+    if logo is not None:
+        parts.append(f'<img src="{logo_data_uri(logo)}" alt="" '
+                     f'style="width: {css_length(notice.logo_width)}">')
+    parts += [f"<p>{notice_line_html(line)}</p>" for line in notice.text]
+    parts.append("</aside>")
+    return "".join(parts)
+
+
+#: Where html.xslt leaves room for the distribution notice: after the first title page, or at
+#: the head of a book without one.
+DISTRIBUTION_PLACEHOLDER = "<!--@@DISTRIBUTION@@-->"
+
+
+def colophon_to_html(title: str, colophon: Colophon, back_notice: list[str] = ()) -> str:
     escape = html.escape
     parts = [f"<h2>{escape(title)}</h2>",
              f"<p>An electronic edition from the Open Siddur Project, built by {escape(generator())}.</p>"]
@@ -214,6 +287,8 @@ def colophon_to_html(title: str, colophon: Colophon) -> str:
         parts += [f"<li>{source_html(source)}</li>" for source in colophon.sources]
         parts.append("</ul>")
     parts.append(SOFTWARE_NOTICE)
+    if back := back_notice_html(list(back_notice)):
+        parts.append(back)
     return "\n".join(parts)
 
 
@@ -510,9 +585,17 @@ def build_book(
     prepare_compiled_tree(root, every_occurrence=True)
     book_columns = columns(root)
     book = prepare(root)
+    notice = notices.distribution_notice(settings.distribution)
     main = xslt_transform_string(
         XSLT_FILE, etree.tostring(root, encoding="unicode"),
-        xslt_params=xslt_parameters(typography))
+        xslt_params={**xslt_parameters(typography), "distribution-notice": notice is not None})
+    if notice is not None:
+        if DISTRIBUTION_PLACEHOLDER not in main:
+            logger.warning("%s: html.xslt left no place for the distribution notice; the book "
+                           "is built without it", compiled_file)
+        main = main.replace(
+            DISTRIBUTION_PLACEHOLDER,
+            distribution_notice_html(notice, notices.resolve_logo(notice, settings_file)), 1)
     defaults = book_defaults(settings)
     title = book_title(root, settings)
 
@@ -524,7 +607,7 @@ def build_book(
             "</style"),
         "@@DEFAULT_CONDITIONS@@": scope_css(book, expression_states(book, defaults)),
         "@@MAIN@@": main,
-        "@@ABOUT@@": about_html(title, compiled_file, project_directory),
+        "@@ABOUT@@": about_html(title, compiled_file, project_directory, settings.distribution),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
                                 celebrated_purim(settings), book_columns,
                                 settings.electronic.model_dump()),

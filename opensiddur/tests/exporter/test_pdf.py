@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch, ANY
 
 from opensiddur.exporter.typography import PaperType, TypographyConfig
+from opensiddur.exporter.settings import DistributionSettings
 from opensiddur.exporter.pdf.pdf import (
     _have_command,
     LOG_TAIL_LINES,
@@ -51,7 +52,9 @@ class TestGenerateTex(unittest.TestCase):
         mock_transform.assert_called_once_with(
             str(input_file),
             output_file=str(output_file),
+            settings_file=None,
             typography=TypographyConfig(),
+            distribution=DistributionSettings(),
             project_directory=ANY,
         )
 
@@ -68,6 +71,21 @@ class TestGenerateTex(unittest.TestCase):
 
         typography = mock_transform.call_args.kwargs["typography"]
         self.assertEqual(typography.page.paper, PaperType.A5PAPER)
+
+    def test_generate_tex_passes_the_distribution_settings(self):
+        """The notices come from the same settings file, which the logo's path is relative to."""
+        input_file = self.test_dir / "input.xml"
+        output_file = self.test_dir / "output.tex"
+        settings_file = self.test_dir / "settings.yaml"
+        settings_file.write_text("distribution:\n  notice: none\n")
+        input_file.write_text("<tei:TEI xmlns:tei='http://www.tei-c.org/ns/1.0'/>")
+
+        with patch("opensiddur.exporter.pdf.pdf.transform_xml_to_tex") as mock_transform:
+            self.assertTrue(generate_tex(input_file, output_file, settings_file=settings_file))
+
+        kwargs = mock_transform.call_args.kwargs
+        self.assertEqual(kwargs["distribution"].notice, "none")
+        self.assertEqual(kwargs["settings_file"], settings_file)
 
     def test_a_broken_settings_file_fails_before_transforming(self):
         """An unreadable or invalid settings file is an error, not the default typography."""

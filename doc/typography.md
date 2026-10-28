@@ -185,8 +185,8 @@ as the surrounding text has it.
 | `weight` | `normal` \| `bold` | |
 | `style` | `normal` \| `italic` | |
 | `variant` | `normal` \| `small-caps` | |
-| `align` | `left` \| `right` \| `center` \| `justify` | Physical positions on the page, so they mean the same in a Hebrew and an English stream. Only on the roles set on a line of their own — the headings, `heading_translation`, `citation`, `list_label`, the title-page roles and `section_separator`; an error on any other. |
-| `space_before` | length | Vertical space above. Only on the title-page roles (`title_main` through `title_page_block`) and `section_separator`, which are paragraphs of their own; an error on any other. |
+| `align` | `left` \| `right` \| `center` \| `justify` | Physical positions on the page, so they mean the same in a Hebrew and an English stream. Only on the roles set on a line of their own — the headings, `heading_translation`, `citation`, `list_label`, the title-page roles, `distribution_notice`, `back_notice` and `section_separator`; an error on any other. |
+| `space_before` | length | Vertical space above. Only on the title-page roles (`title_main` through `title_page_block`), `distribution_notice`, `back_notice` and `section_separator`, which are paragraphs of their own; an error on any other. |
 | `space_after` | length | Vertical space below. The same roles as `space_before`. |
 
 ### Roles
@@ -208,6 +208,8 @@ as the surrounding text has it.
 | `styles.epigraph` | `small`, italic, centered, `2ex` before | An epigraph on the title page. |
 | `styles.imprimatur` | `small`, italic, centered, `2ex` before | An imprimatur or approbation. |
 | `styles.title_page_block` | `normal`, centered | Any other paragraph on the title page. |
+| `styles.distribution_notice` | `small`, centered | The distribution notice on the verso of the title page (see the settings file's `distribution.notice`). |
+| `styles.back_notice` | `small`, `2ex` before | The statement on the book's last page, after the colophon (see the settings file's `distribution.back_notice`). |
 | `styles.citation` | `normal`, italic, centered | A scriptural citation on a line of its own, naming where a reading begins or resumes. |
 | `styles.parsha` | `large`, bold | A parsha name, run in at the head of the text it opens. |
 | `styles.aliyah` | bold | An aliyah or maftir marker, inline at the verse it begins on. |

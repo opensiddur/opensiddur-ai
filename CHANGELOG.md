@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Every book carries a distribution notice and a back-page statement (#269). The notice has the
+  Open Siddur logo and "Distributed by The Open Siddur Project", with the project's web and
+  GitHub addresses. It is set on the verso of the title page, or on its own page at the front of
+  a book without one, and after the title page in the electronic book. The statement, on the
+  last page after the colophon, asks readers not to print (in the electronic book) or not to
+  make unnecessary printed copies (in the PDF), and says to take a worn-out copy to a
+  _genizah_. A new `distribution:` settings section changes the logo (or `none`), its width,
+  the notice's position and text, and both versions of the statement. Either part can be set
+  to `none`. Two new typography roles set their type: `styles.distribution_notice` and
+  `styles.back_notice`.
 - A settings file's `formats:` says which forms a release builds the book in, `html` and/or
   `pdf` (both by default). `books --formats <book>/<variant>` prints them; `release-book.yml`
   builds only those, and skips installing TeX for a book with no printed form. `books` with no

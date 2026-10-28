@@ -14,10 +14,14 @@ from lxml import etree
 
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.tex.latex import XSLT_FILE, typography_parameters
+from opensiddur.exporter.settings import DistributionSettings
 from opensiddur.exporter.typography import TypographyConfig
 
 
 Settings = Optional[Union[TypographyConfig, dict]]
+
+#: For a test whose pages are counted: no distribution notice and no back page.
+NO_NOTICES = DistributionSettings(notice="none", back_notice="none")
 
 
 def _config(typography: Settings) -> TypographyConfig:
