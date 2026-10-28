@@ -199,6 +199,28 @@ class TestReleaseReal(unittest.TestCase):
         ).stdout.strip()
         self.assertEqual(sub_a_pointer, new_head)
 
+    def test_a_release_from_a_development_version_begins_the_next(self):
+        pyproject = self.sandbox.main / "pyproject.toml"
+        pyproject.write_text(PYPROJECT.replace('"0.1.0"', '"0.2.0.dev0"'))
+        _commit_all(self.sandbox.main, "Begin 0.2.0.dev0")
+        plan = release(self.sandbox.repository(dry_run=False), publish=False)
+
+        self.assertEqual(plan.version, Version(0, 2, 0))
+        # The tag is the release; the branch goes on as the development of the next.
+        tagged = subprocess.run(["git", "show", "v0.2.0:pyproject.toml"], cwd=self.sandbox.main,
+                                check=True, capture_output=True, text=True).stdout
+        self.assertIn('version = "0.2.0"', tagged)
+        self.assertIn('version = "0.3.0.dev0"', pyproject.read_text())
+        origin = self.sandbox.tmp / "remotes" / "main.git"
+        pushed = subprocess.run(["git", "show", "main:pyproject.toml"], cwd=origin,
+                                check=True, capture_output=True, text=True).stdout
+        self.assertIn('version = "0.3.0.dev0"', pushed)
+
+    def test_a_release_from_a_release_version_leaves_it(self):
+        """A patch release, cut from the last release's tag, is not followed by development."""
+        release(self.sandbox.repository(dry_run=False), level="patch", publish=False)
+        self.assertIn('version = "0.1.1"', (self.sandbox.main / "pyproject.toml").read_text())
+
     def test_refuses_to_reuse_an_existing_tag(self):
         # Simulate the version the release would compute (0.1.0 -> 0.2.0, the default minor
         # bump) already having a tag, e.g. from a release that was cut and not cleaned up.

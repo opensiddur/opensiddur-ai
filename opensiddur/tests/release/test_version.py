@@ -29,8 +29,21 @@ class TestVersion(unittest.TestCase):
         self.assertEqual(str(Version(1, 2, 3)), "1.2.3")
         self.assertEqual(Version(1, 2, 3).tag, "v1.2.3")
 
+    def test_parse_and_str_a_development_version(self):
+        self.assertEqual(Version.parse("0.7.0.dev0"), Version(0, 7, 0, dev=0))
+        self.assertEqual(str(Version(0, 7, 0, dev=3)), "0.7.0.dev3")
+
+    def test_a_development_version_comes_between_its_release_and_the_last(self):
+        self.assertLess(Version(0, 6, 0), Version(0, 7, 0, dev=0))
+        self.assertLess(Version(0, 7, 0, dev=0), Version(0, 7, 0, dev=1))
+        self.assertLess(Version(0, 7, 0, dev=1), Version(0, 7, 0))
+        self.assertEqual(Version(0, 7, 0, dev=1).release, Version(0, 7, 0))
+
+    def test_the_development_after_a_release_is_of_the_next_minor(self):
+        self.assertEqual(Version(0, 7, 0).development_of_next(), Version(0, 8, 0, dev=0))
+
     def test_parse_rejects_non_versions(self):
-        for text in ("1.2", "v1.2.3", "1.2.3-rc1", "", "one.two.three"):
+        for text in ("1.2", "v1.2.3", "1.2.3-rc1", "1.2.3.dev", "", "one.two.three"):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 Version.parse(text)
 
@@ -69,7 +82,42 @@ class TestNextVersion(unittest.TestCase):
             next_version(Version(0, 1, 0), level="minor", explicit=Version(0, 5, 0))
 
 
+class TestNextVersionFromDevelopment(unittest.TestCase):
+    """Main between releases is the development of the next: 0.7.0.dev0 releases 0.7.0."""
+
+    def test_a_development_version_releases_what_it_names(self):
+        self.assertEqual(next_version(Version(0, 7, 0, dev=0)), Version(0, 7, 0))
+        self.assertEqual(next_version(Version(0, 7, 0, dev=0), level="minor"), Version(0, 7, 0))
+
+    def test_major_jumps_past_it(self):
+        self.assertEqual(next_version(Version(0, 7, 0, dev=0), level="major"), Version(1, 0, 0))
+
+    def test_a_patch_release_is_not_cut_from_it(self):
+        with self.assertRaisesRegex(ValueError, "tag"):
+            next_version(Version(0, 7, 0, dev=0), level="patch")
+
+    def test_at_one_and_above_the_level_is_still_required(self):
+        with self.assertRaises(ValueError):
+            next_version(Version(1, 1, 0, dev=0))
+        self.assertEqual(next_version(Version(1, 1, 0, dev=0), level="minor"), Version(1, 1, 0))
+
+    def test_an_explicit_version_is_not_before_it(self):
+        self.assertEqual(next_version(Version(0, 7, 0, dev=0), explicit=Version(0, 7, 0)),
+                         Version(0, 7, 0))
+        with self.assertRaises(ValueError):
+            next_version(Version(0, 7, 0, dev=0), explicit=Version(0, 6, 1))
+
+    def test_a_release_is_never_a_development_version(self):
+        with self.assertRaises(ValueError):
+            next_version(Version(0, 6, 0), explicit=Version(0, 7, 0, dev=0))
+
+
 class TestPyproject(unittest.TestCase):
+    def test_read_a_development_version(self):
+        self.assertEqual(
+            read_pyproject_version(PYPROJECT.replace('"0.1.0"', '"0.2.0.dev0"')),
+            Version(0, 2, 0, dev=0))
+
     def test_read(self):
         self.assertEqual(read_pyproject_version(PYPROJECT), Version(0, 1, 0))
 

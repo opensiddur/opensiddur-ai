@@ -3,29 +3,57 @@
 Below 1.0.0 a release bumps the minor version by default, or the patch version for a
 release that only fixes bugs, and backwards compatibility is not promised. From 1.0.0 on the project follows semantic versioning strictly, so the bump
 level must be chosen deliberately rather than defaulted.
+
+Between releases, main is the development of the next one: `0.7.0.dev0` after 0.6.0 is
+released. That is what lets a settings file that needs what main has (`requires_processor:
+">=0.7.0"`) be built on main before 0.7.0 is cut, and refused by 0.6.0. A release from a
+development version releases the version it names, and leaves main the development of the
+one after.
 """
 
+import functools
 import re
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 BumpLevel = Literal["major", "minor", "patch"]
 
-VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:\.dev(\d+))?$")
 
 #: `[project] version = "..."` in pyproject.toml. Anchored to the line so that a version
 #: pin inside a dependency specifier cannot match.
-PYPROJECT_VERSION_RE = re.compile(r'^version = "(\d+\.\d+\.\d+)"$', re.MULTILINE)
+PYPROJECT_VERSION_RE = re.compile(r'^version = "(\d+\.\d+\.\d+(?:\.dev\d+)?)"$', re.MULTILINE)
 
 
-@dataclass(frozen=True, order=True)
+@functools.total_ordering
+@dataclass(frozen=True)
 class Version:
     major: int
     minor: int
     patch: int
+    #: The N of X.Y.Z.devN: the development of X.Y.Z, which comes before it.
+    dev: Optional[int] = None
 
     def __str__(self) -> str:
-        return f"{self.major}.{self.minor}.{self.patch}"
+        release = f"{self.major}.{self.minor}.{self.patch}"
+        return release if self.dev is None else f"{release}.dev{self.dev}"
+
+    def _key(self) -> tuple:
+        return (self.major, self.minor, self.patch,
+                0 if self.dev is not None else 1, self.dev or 0)
+
+    def __lt__(self, other: "Version") -> bool:
+        return self._key() < other._key()
+
+    @property
+    def release(self) -> "Version":
+        """The version this is, or is the development of."""
+        return Version(self.major, self.minor, self.patch)
+
+    def development_of_next(self) -> "Version":
+        """What main becomes once this is released: the development of the next minor."""
+        following = self.bump("minor")
+        return Version(following.major, following.minor, following.patch, dev=0)
 
     @property
     def tag(self) -> str:
@@ -35,8 +63,9 @@ class Version:
     def parse(cls, text: str) -> "Version":
         match = VERSION_RE.match(text.strip())
         if match is None:
-            raise ValueError(f"Not a major.minor.patch version: {text!r}")
-        return cls(*(int(g) for g in match.groups()))
+            raise ValueError(f"Not a major.minor.patch[.devN] version: {text!r}")
+        major, minor, patch, dev = match.groups()
+        return cls(int(major), int(minor), int(patch), None if dev is None else int(dev))
 
     def bump(self, level: BumpLevel) -> "Version":
         if level == "major":
@@ -57,7 +86,15 @@ def next_version(
 
     With no level and no explicit version, a 0.x series bumps the minor version. At 1.0.0
     and above there is no safe default: the caller must say which level semver calls for.
+
+    A development version already names its release: X.Y.Z.devN releases X.Y.Z, by default
+    or with the level it was the development of. `major` still jumps past it. `patch` cannot
+    be released from it: a patch release fixes the last release, from that release's tag.
     """
+    if explicit is not None and explicit.dev is not None:
+        raise ValueError(f"{explicit} is a development version; a release is X.Y.Z.")
+    if current.dev is not None:
+        return _release_development(current, level, explicit)
     if explicit is not None:
         if level is not None:
             raise ValueError("Give a bump level or an explicit version, not both.")
@@ -72,6 +109,36 @@ def next_version(
             )
         level = "minor"
     return current.bump(level)
+
+
+def _release_development(
+    current: Version, level: BumpLevel | None, explicit: Version | None
+) -> Version:
+    release = current.release
+    if explicit is not None:
+        if level is not None:
+            raise ValueError("Give a bump level or an explicit version, not both.")
+        if explicit < release:
+            raise ValueError(f"{explicit} is earlier than {release}, which {current} is the "
+                             "development of.")
+        return explicit
+    implied: BumpLevel = "patch" if release.patch else "minor" if release.minor else "major"
+    if level is None:
+        if release.major >= 1:
+            raise ValueError(
+                f"The current version is {current}; at 1.0.0 and above the bump level must be "
+                f"given explicitly (--{implied} releases {release})."
+            )
+        return release
+    if level == implied:
+        return release
+    if level == "major":
+        return Version(release.major + 1, 0, 0)
+    raise ValueError(
+        f"{current} is the development of {release}, a {implied} release; it cannot be "
+        f"released as a {level} release. A patch release is cut from the last release's tag; "
+        "otherwise give --version."
+    )
 
 
 def read_pyproject_version(text: str) -> Version:

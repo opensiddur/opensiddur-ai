@@ -8,12 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- A settings file can require processor versions: `requires_processor: ">=0.7.0"`. A processor
+  that does not meet it refuses the file, in every stage and in `books --check`, instead of
+  building a broken book.
 - A settings file's `formats:` says which forms a release builds the book in, `html` and/or
   `pdf` (both by default). `books --formats <book>/<variant>` prints them; `release-book.yml`
   builds only those, and skips installing TeX for a book with no printed form. `books` with no
   `--format` now builds each book's own formats, not only the PDF.
 
 ### Changed
+- Between releases, `main` is versioned as the development of the next release: `0.7.0.dev0`
+  now. A release from a development version releases the version it names (`0.7.0`; `--major`
+  jumps past it, and a `--patch` release is cut from the last release's tag), and then commits
+  the development of the next (`0.8.0.dev0`) on the branch it pushes.
 - The repository is renamed `opensiddur-processor` (was `opensiddur-ai`), and so is the Python
   distribution. Download user-agents now say `OpenSiddur-Processor/1.0`. The reusable
   `validate-projects.yml` workflow's `opensiddur_ai_ref` input is now `opensiddur_processor_ref`,

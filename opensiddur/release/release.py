@@ -193,6 +193,14 @@ def release(
     repo.run("git", "commit", "-m", f"Release {version.tag}")
     with _notes_file(repo, version, rolled.notes) as notes_path:
         repo.run("git", "tag", "-a", version.tag, "-F", str(notes_path))
+        if current.dev is not None:
+            # Main goes on as the development of the next release, so that a settings file
+            # can require what main has (`requires_processor`) before it is released.
+            following = version.development_of_next()
+            repo.write("pyproject.toml",
+                       write_pyproject_version(repo.read("pyproject.toml"), following))
+            repo.run("git", "add", "pyproject.toml")
+            repo.run("git", "commit", "-m", f"Begin {following}")
         repo.run("git", "push", "origin", branch)
         repo.run("git", "push", "origin", version.tag)
         if publish:

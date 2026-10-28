@@ -21,6 +21,12 @@ book:
   file_name: index.xml
   title: Westminster Leningrad Codex   # optional
 
+# The opensiddur-processor versions that build this book as it should be, as PEP 440 writes
+# them. Optional. An older processor refuses the file instead of building a broken book. Main
+# between releases is the development of the next (0.7.0.dev0 after 0.6.0), and meets a
+# requirement of that release: `>=0.7.0` builds on main before 0.7.0 is cut.
+requires_processor: ">=0.7.0"
+
 # The forms the release (and `python -m opensiddur.exporter.books`) builds the book in: `html`,
 # the electronic book, and `pdf`, the printed one. Optional; both by default.
 formats:

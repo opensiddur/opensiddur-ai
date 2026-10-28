@@ -401,3 +401,14 @@ streams are emitted in.
 ## Settings file versioning
 Note that this file is likely to change slightly in format as more output
 formats are introduced.
+
+A settings file can say which processor versions build its book:
+```yaml
+requires_processor: ">=0.7.0"
+```
+A PEP 440 requirement (`>=0.7.0`, `>=0.7,<0.9`). A processor that does not meet it refuses
+the file, in the compiler, the output stages and `books --check`, instead of building a broken
+book. The settings live in opensiddur-projects and the processor here, and a release pairs a
+book with one processor: a book that needs a fix should say so. Between releases `main` is the
+development of the next one (`0.7.0.dev0` after 0.6.0), which meets a requirement of that
+release, so a book can require a fix as soon as it is merged.
