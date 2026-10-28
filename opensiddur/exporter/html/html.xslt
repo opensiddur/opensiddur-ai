@@ -33,6 +33,9 @@
          surround it, so the link shows a symbol where print shows the number. -->
     <xsl:param name="page-ref-text" as="xs:string" select="'→'"/>
     <xsl:param name="page-ref-label" as="xs:string" select="'Go to the passage'"/>
+    <!-- Whether the book carries a distribution notice. html.py sets it where the placeholder
+         comment is left: after the first title page, or at the head of a book with none. -->
+    <xsl:param name="distribution-notice" as="xs:boolean" select="false()"/>
 
     <!-- The first element to carry a URN gets it as its id, so #urn:x-opensiddur:... links
          to it; the parallel column's copy, and every later one, does not, ids being unique. -->
@@ -122,6 +125,9 @@
     <xsl:template match="tei:text">
         <div class="text">
             <xsl:call-template name="attributes"/>
+            <xsl:if test="$distribution-notice and empty(//tei:titlePage)">
+                <xsl:comment>@@DISTRIBUTION@@</xsl:comment>
+            </xsl:if>
             <xsl:apply-templates/>
         </div>
     </xsl:template>
@@ -251,6 +257,9 @@
             </xsl:call-template>
             <xsl:apply-templates/>
         </header>
+        <xsl:if test="$distribution-notice and . is (//tei:titlePage)[1]">
+            <xsl:comment>@@DISTRIBUTION@@</xsl:comment>
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="tei:docTitle">

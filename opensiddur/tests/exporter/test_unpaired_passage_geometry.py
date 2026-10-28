@@ -17,6 +17,7 @@ import unittest
 from pathlib import Path
 
 from opensiddur.exporter.tex.latex import transform_xml_to_tex
+from opensiddur.tests.exporter.stylesheet_helpers import NO_NOTICES
 from opensiddur.exporter.typography import TypographyConfig
 
 
@@ -63,6 +64,7 @@ class TestUnpairedPassageGeometry(unittest.TestCase):
                 work / "in.xml", output_file=str(work / "t.tex"),
                 typography=TypographyConfig.model_validate({"parallel": {"layout": "pairs"}}),
                 project_directory=work,
+                distribution=NO_NOTICES,
             )
             for _ in range(3):  # reledpar needs the earlier passes' line counts to pair
                 done = subprocess.run(

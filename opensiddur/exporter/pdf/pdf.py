@@ -52,14 +52,15 @@ def generate_tex(
         input_file: Path to the compiled JLPTEI XML file.
         temp_tex_file: Path to the temporary .tex file to create.
         settings_file: Optional settings.yaml whose ``typography`` section
-            drives the LuaLaTeX preamble.
+            drives the LuaLaTeX preamble, and whose ``distribution`` section the
+            notices on the title page's verso and the last page.
 
     Returns:
         True on success, False otherwise.
     """
     # Outside the blanket handler below, so that a settings error says which setting and why.
     try:
-        typography = load_output_settings(settings_file, resolve_fonts=True).typography
+        settings = load_output_settings(settings_file, resolve_fonts=True)
     except (SettingsError, ValidationError) as e:
         print(f"Settings error: {e}", file=sys.stderr)
         return False
@@ -68,7 +69,9 @@ def generate_tex(
         transform_xml_to_tex(
             str(input_file),
             output_file=str(temp_tex_file),
-            typography=typography,
+            settings_file=settings_file,
+            typography=settings.typography,
+            distribution=settings.distribution,
             project_directory=project_directory,
         )
         print(f"TeX file generated: {temp_tex_file}", file=sys.stderr)

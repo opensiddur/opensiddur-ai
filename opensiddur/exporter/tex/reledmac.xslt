@@ -41,6 +41,11 @@
     <!-- Optional pre-built additions to the preamble/postamble (license/bib/credits) -->
     <xsl:param name="additional-preamble" as="xs:string?"/>
     <xsl:param name="additional-postamble" as="xs:string?"/>
+    <!-- The distribution notice, set on the verso of the title page, and the statement on
+         the book's last page, after the colophon: both pre-built by tex/latex.py from the
+         settings' `distribution` section, and empty when the book carries none. -->
+    <xsl:param name="distribution-notice" as="xs:string" select="''"/>
+    <xsl:param name="back-notice" as="xs:string" select="''"/>
 
     <!-- Typography (driven by settings.yaml `typography` section).
 
@@ -162,6 +167,8 @@
         <!-- xurl must follow biblatex so its URL/eprint letter and digit break
              penalties are enabled; Archive identifiers can exceed a full line. -->
         <xsl:text>\usepackage{xurl}&#10;</xsl:text>
+        <!-- For the logo in the distribution notice. -->
+        <xsl:text>\usepackage{graphicx}&#10;</xsl:text>
         <xsl:text>\usepackage{hyperref}&#10;</xsl:text>
         <!-- Headings go four deep (index > section > haftarah > rite), and f:heading-toc-level
              emits the fourth as \addcontentsline{toc}{paragraph}. The book class stops the
@@ -615,6 +622,8 @@
         <!-- Metadata appendix (licenses, credits, sources). -->
         <xsl:value-of select="$additional-postamble"/>
         <xsl:text>&#10;</xsl:text>
+        <!-- The last page, after the colophon. -->
+        <xsl:value-of select="$back-notice"/>
 
         <xsl:text>\end{document}&#10;</xsl:text>
     </xsl:template>
@@ -626,10 +635,15 @@
              front matter, restarting at arabic for the body). Emit them when there is front
              matter to number, or when a table of contents needs the roman-numeral front-matter
              pagination, so a document without either is unaffected. -->
-        <xsl:variable name="needs-frontmatter" select="exists(tei:front) or $table-of-contents"/>
+        <xsl:variable name="needs-frontmatter"
+                      select="exists(tei:front) or $table-of-contents or $distribution-notice != ''"/>
         <xsl:if test="$needs-frontmatter">
             <xsl:text>\frontmatter&#10;</xsl:text>
             <xsl:apply-templates select="tei:front"/>
+            <!-- A book with no front matter has its distribution notice on the first page. -->
+            <xsl:if test="empty(tei:front)">
+                <xsl:call-template name="distribution-notice-page"/>
+            </xsl:if>
             <xsl:if test="$table-of-contents">
                 <!-- Scoped in a TeX group so tocdepth reverts afterward and does not affect
                      \hypersetup{bookmarksdepth=4} or the global tocdepth set in the preamble. -->
@@ -673,10 +687,23 @@
         <xsl:variable name="items" as="node()*"
                       select="$flow[not(self::text() and not(normalize-space(.)))]"/>
         <xsl:variable name="keys" as="xs:string*" select="f:stream-keys($items)"/>
+        <!-- The distribution notice is on the verso of the first title page, before any
+             other (a source's own copyright page is a second tei:titlePage). A book with no
+             title page, or whose title pages are not set, has it on its first page. -->
+        <xsl:variable name="first-title-page" as="element(tei:titlePage)?"
+                      select="$items[self::tei:titlePage][1]"/>
+        <xsl:if test="empty($first-title-page)">
+            <xsl:call-template name="distribution-notice-page"/>
+        </xsl:if>
         <xsl:for-each-group select="$items" group-adjacent="subsequence($keys, position(), 1)">
             <xsl:choose>
                 <xsl:when test="current-grouping-key() = 'titlePage'">
-                    <xsl:apply-templates select="current-group()"/>
+                    <xsl:for-each select="current-group()">
+                        <xsl:apply-templates select="."/>
+                        <xsl:if test=". is $first-title-page">
+                            <xsl:call-template name="distribution-notice-page"/>
+                        </xsl:if>
+                    </xsl:for-each>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:call-template name="numbered-stream">
@@ -739,6 +766,20 @@
     <!-- A title page is a transcription of a printed page, not part of the edited text:
          it gets its own page and no line numbers, so it is emitted directly rather than
          through numbered-stream. -->
+    <!-- The distribution notice's page, with no running head. It follows the title page's
+         own \end{titlepage}, which ends that page and no more, so in a two-sided book it is
+         the title page's verso. It is not a titlepage environment itself: that resets the
+         page counter to 1, and a verso counted as page 1 is laid out as a recto, with every
+         page after it on the wrong side too. -->
+    <xsl:template name="distribution-notice-page">
+        <xsl:if test="$distribution-notice != ''">
+            <xsl:text>\clearpage&#10;</xsl:text>
+            <xsl:text>\thispagestyle{empty}&#10;</xsl:text>
+            <xsl:value-of select="$distribution-notice"/>
+            <xsl:text>\clearpage&#10;</xsl:text>
+        </xsl:if>
+    </xsl:template>
+
     <xsl:template match="tei:titlePage">
         <xsl:variable name="is-hebrew" select="f:is-hebrew-lang(f:in-scope-lang(.))"/>
 

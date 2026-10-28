@@ -603,6 +603,20 @@ class Styles(ForbidExtra):
         default_factory=lambda: TextStyle(size=NamedSize.NORMAL, align=Alignment.CENTER),
         description="Any other paragraph on the title page.",
     )
+    distribution_notice: TextStyle = Field(
+        default_factory=lambda: TextStyle(size=NamedSize.SMALL, align=Alignment.CENTER),
+        description=(
+            "The distribution notice on the verso of the title page: who distributes the "
+            "book, and where (see the settings file's `distribution.notice`)."
+        ),
+    )
+    back_notice: TextStyle = Field(
+        default_factory=lambda: TextStyle(size=NamedSize.SMALL, space_before="2ex"),
+        description=(
+            "The statement on the book's last page, after the colophon (see the settings "
+            "file's `distribution.back_notice`)."
+        ),
+    )
     citation: TextStyle = Field(
         default_factory=lambda: TextStyle(
             size=NamedSize.NORMAL, style=FontStyle.ITALIC, align=Alignment.CENTER
@@ -699,6 +713,8 @@ SPACED_ROLES: tuple[str, ...] = (
     "epigraph",
     "imprimatur",
     "title_page_block",
+    "distribution_notice",
+    "back_notice",
     "section_separator",
 )
 

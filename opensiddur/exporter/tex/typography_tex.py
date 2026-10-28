@@ -554,6 +554,9 @@ def _styles_section(config: TypographyConfig) -> list[str]:
         ("epigraph", r"\OSEpigraph"),
         ("imprimatur", r"\OSImprimatur"),
         ("title_page_block", r"\OSTitlePageBlock"),
+        # The distribution notice and the back page are as far outside the numbering.
+        ("distribution_notice", r"\OSDistributionNotice"),
+        ("back_notice", r"\OSBackNotice"),
     ):
         define(
             role,
