@@ -34,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `validate-projects.yml`, advisory until the corpus is renamed.
 - `electronic.psalm_titles: uniform` gives every whole psalm in an electronic book one
   bilingual heading in place of its edition's. It was applied to the project named
-  `siddur_expanded` and no other; that book's settings now ask for it.
+  `siddur_expanded` and no other; that book's settings now ask for it, and built without
+  them it keeps its printed titles.
 
 ### Changed
 - Between releases, `main` is versioned as the development of the next release: `0.7.0.dev0`

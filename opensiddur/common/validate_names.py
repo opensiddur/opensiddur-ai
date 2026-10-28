@@ -47,9 +47,13 @@ PROJECT_ID_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*(?:-[a-z0-9]+(?:_[a-z0-9]+
 
 FILE_STEM_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
-# Everything up to the end of an attribute value or a list separator, so that a malformed
-# component -- `(mincha,_traditional)` -- is read whole and reported rather than cut short.
-_URN_IN_TEXT = re.compile(re.escape(SCHEME) + r"text:[^\s\"'<>]+")
+# The URNs whose path components are names: a text, or an instruction. Read up to the end
+# of the attribute value or to whitespace, so that a malformed component --
+# `(mincha,_traditional)` -- is read whole and reported rather than cut short.
+_URN_IN_TEXT = re.compile(re.escape(SCHEME) + r"(?P<type>text|instruction):[^\s\"'<>]+")
+
+# Punctuation that ends a sentence rather than a URN, when a URN is cited in prose.
+_TRAILING_PUNCTUATION = ".,;:"
 
 _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
@@ -91,7 +95,7 @@ def project_id_problem(name: str, language: str | None) -> str | None:
         return ("not a project identifier: lowercase <title>-<author>-<date>-<lang>, fields "
                 "joined by '-' and words by '_'")
     if language is None:
-        return None
+        return "has no language to end with: its index.xml has no xml:lang"
     suffix = language.lower()
     if not (name.endswith("-" + suffix) and len(name) > len(suffix) + 1):
         return f"does not end with its language, -{suffix} (the xml:lang of index.xml)"
@@ -104,27 +108,33 @@ def project_language(project_path: Path) -> str | None:
         root = etree.parse(str(project_path / "index.xml")).getroot()
     except (OSError, etree.XMLSyntaxError):
         return None
-    return root.get(_XML_LANG)
+    return root.get(_XML_LANG) or None
 
 
 def urn_paths(text: str) -> Iterator[str]:
-    """The path of each ``text:`` URN in ``text``: no type, namespace, project or fragment.
+    """The path of each text and instruction URN in ``text``.
 
-    A range contributes both of its ends.
+    The path leaves out the type, a text URN's namespace, the project and the fragment. A
+    range contributes both of its ends.
     """
     from opensiddur.exporter.urn import split_project, split_range
 
     for match in _URN_IN_TEXT.finditer(text):
-        urn = match.group(0).split("#", 1)[0]
-        urn, _ = split_project(urn)
+        urn = match.group(0)
+        if text[match.end():match.end() + 1].isspace() or match.end() == len(text):
+            urn = urn.rstrip(_TRAILING_PUNCTUATION)
+        urn, _ = split_project(urn.split("#", 1)[0])
         try:
-            start, end = split_range(urn)
-        except Exception:  # a malformed range is validate_urn_references's to report
-            start, end = urn, None
+            ends = split_range(urn)
+        except ValueError:  # a malformed range is validate_urn_references's to report
+            ends = None
+        start, end = ends or (urn, None)
+        # text:<namespace>:<path>, but instruction:<path>
+        skip = 2 if match.group("type") == "text" else 1
         for one in (start, end) if end else (start,):
-            parts = one[len(SCHEME):].split(":", 2)
-            if len(parts) == 3:
-                yield parts[2]
+            parts = one[len(SCHEME):].split(":", skip)
+            if len(parts) == skip + 1:
+                yield parts[skip]
 
 
 class _Findings:
@@ -203,6 +213,7 @@ def check_projects(project_directory: Path, spellings: Spellings,
 def check_settings(settings_directory: Path) -> Iterator[Problem]:
     """Every settings file lives under the directory of the project it builds."""
     directory = Path(settings_directory)
+    # One level only: a file anywhere else is misplaced, which books --check reports.
     for path in sorted(directory.glob("*/*.yaml")):
         where = str(path.relative_to(directory))
         try:

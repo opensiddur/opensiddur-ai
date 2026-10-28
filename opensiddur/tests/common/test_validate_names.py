@@ -110,6 +110,21 @@ class WordsTestCase(unittest.TestCase):
                 '<c ref="urn:x-opensiddur:contributor:opensiddur.org/someone"/>')
         self.assertEqual(list(urn_paths(text)), ["amidah/avot", "genesis/1/1", "genesis/2/3"])
 
+    def test_absolute_and_malformed_ranges(self):
+        self.assertEqual(list(urn_paths(f'"{TEXT}bible:nahum/2/2/b-/2/5"')),
+                         ["nahum/2/2/b", "nahum/2/5"])
+        # A range with no end is read as written, for validate_urn_references to report.
+        self.assertEqual(list(urn_paths(f'"{TEXT}prayer:amidah/avot-"')), ["amidah/avot-"])
+
+    def test_instruction_urns_are_read_and_condition_urns_are_not(self):
+        text = ('"urn:x-opensiddur:instruction:amidah/birkat_kohanim" '
+                '"urn:x-opensiddur:condition:bible:taam-elyon"')
+        self.assertEqual(list(urn_paths(text)), ["amidah/birkat_kohanim"])
+
+    def test_a_urn_cited_in_prose_leaves_its_full_stop(self):
+        self.assertEqual(list(urn_paths(f"see {TEXT}prayer:amidah/avot. And {TEXT}prayer:aleinu")),
+                         ["amidah/avot", "aleinu"])
+
     def test_a_malformed_component_is_read_whole(self):
         self.assertEqual(list(urn_paths(f'"{TEXT}bible:reading/yom_kippur_(mincha,_x)"')),
                          ["reading/yom_kippur_(mincha,_x)"])
@@ -160,6 +175,17 @@ class ProjectChecksTestCase(unittest.TestCase):
         self.assertIn("'hanukkah' should be spelled 'chanukah' (2 use(s)", messages)
         self.assertIn("'tsom' should be spelled 'tzom'", messages)
 
+    def test_a_project_with_no_language(self):
+        path = self.corpus.project("selichot-asher-1912-he")
+        (path / "index.xml").write_text('<TEI xml:lang=""/>', encoding="utf-8")
+        (problem,) = errors(self.corpus.validate())
+        self.assertIn("no xml:lang", problem.message)
+
+    def test_a_misspelt_project_identifier(self):
+        self.corpus.project("tsom_gedaliah-asher-1912-he")
+        (problem,) = errors(self.corpus.validate())
+        self.assertIn("'tsom' should be spelled 'tzom'", problem.message)
+
     def test_only_the_named_projects_are_checked(self):
         self.corpus.project("old_name")
         self.corpus.project("tanakh-wlc-he")
@@ -185,6 +211,15 @@ class SettingsCheckTestCase(unittest.TestCase):
         self.assertEqual(problem.where, "humash/annual.yaml")
         self.assertIn("belongs in chumash-opensiddur-he/annual.yaml", problem.message)
 
+    def test_settings_without_a_book_or_unreadable(self):
+        (self.corpus.settings / "humash").mkdir()
+        (self.corpus.settings / "humash" / "nobook.yaml").write_text("formats: [html]\n",
+                                                                     encoding="utf-8")
+        (self.corpus.settings / "humash" / "broken.yaml").write_text(":\n: [", encoding="utf-8")
+        (problem,) = errors(self.corpus.validate())
+        self.assertEqual(problem.where, "humash/broken.yaml")
+        self.assertIn("not readable YAML", problem.message)
+
     def test_a_missing_settings_directory_warns(self):
         problems = validate(self.corpus.projects, self.corpus.root / "nowhere", None,
                             spellings=SPELLINGS)
@@ -205,6 +240,11 @@ class RegistryCheckTestCase(unittest.TestCase):
         (problem,) = errors(self.corpus.validate())
         self.assertEqual(problem.where, "registry")
         self.assertIn("'hanukkah'", problem.message)
+
+    def test_an_unreadable_registry_is_an_error(self):
+        (self.corpus.registry / "prayer.jsonl").write_text("not json\n", encoding="utf-8")
+        (problem,) = errors(self.corpus.validate())
+        self.assertEqual(problem.where, "registry")
 
 
 class SpellingsTestCase(unittest.TestCase):
@@ -258,7 +298,9 @@ class MainTestCase(unittest.TestCase):
 
     def test_settings_and_registry_can_be_skipped(self):
         self.corpus.settings_file("elsewhere", "annual", "tanakh-wlc-he")
-        self.assertEqual(self.run_main("--check"), 1)
+        self.corpus.registry_records({"urn": f"{TEXT}prayer:tsom", "status": "canonical"})
+        self.assertEqual(self.run_main("--check", "--no-registry"), 1)
+        self.assertEqual(self.run_main("--check", "--no-settings"), 1)
         self.assertEqual(self.run_main("--check", "--no-settings", "--no-registry"), 0)
 
     def test_an_inconsistent_spellings_list_is_an_error(self):

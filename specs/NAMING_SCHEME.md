@@ -116,8 +116,8 @@ diacritics. Where the opensiddur.org style guide's simple forms differ, this tab
 
 `specs/naming/spellings.yaml` holds two lists:
 
-- `exceptions`: words with a common spelling that wins over the table (`shabbat`, `kaddish`,
-  `chanukah`). Only words with a spelling of their own in English belong here, not every word a
+- `exceptions`: words with a common spelling that wins over the table (`kaddish`, `chanukah`,
+  `chumash`). Only words with a spelling of their own in English belong here, not every word a
   book happens to print in English.
 - `variants`: a non-standard spelling, mapped to its standard one (`hanukkah: chanukah`,
   `kedushah: qedushah`). `validate_names` reports every variant it finds in a file name, a URN

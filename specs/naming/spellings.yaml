@@ -5,9 +5,10 @@
 # record the decisions the table does not make by itself.
 
 # Words whose common spelling wins over the table. Only a word with a spelling of its own in
-# English belongs here.
+# English belongs here: kaddish and kiddush are English words, kedushah and qadosh are not.
 exceptions:
   - chanukah    # the table gives chanukkah
+  - chumash     # chummash
   - kaddish     # qaddish
   - kiddush     # qiddush
 
@@ -18,6 +19,7 @@ variants:
   # Common spellings
   chanukkah: chanukah
   hanukkah: chanukah
+  humash: chumash
   qaddish: kaddish
   qiddush: kiddush
   # Het is ch, never h or kh
@@ -26,7 +28,6 @@ variants:
   ehad: echad
   hayyim: chayyim
   hodesh: chodesh
-  khol: chol
   menuhah: menuchah
   minhat: minchat
   pahdekha: pachdekha
@@ -44,7 +45,6 @@ variants:
   baruch: barukh
   bechol: bekhol
   birchot: birkhot
-  lecha: lekha
   melech: melekh
   # Qof is q, not k
   kadosh: qadosh
@@ -63,13 +63,11 @@ variants:
   tsom: tzom
   tsur: tzur
   yotser: yotzer
-  # Dagesh hazak doubles
+  # Dagesh hazak doubles within a word
   amekha: ammekha
   atah: attah
-  bameh: bammeh
   chayim: chayyim
-  hakahal: haqqahal
-  haqahal: haqqahal
+  hakahal: haqahal
   hateh: hatteh
   imanu: immanu
   imekha: immekha
@@ -77,8 +75,6 @@ variants:
   kamah: kammah
   kiviti: qivviti
   makot: makkot
-  mikol: mikkol
-  miqedem: miqqedem
   nekadesh: neqaddesh
   neqadesh: neqaddesh
   ribono: ribbono
@@ -89,6 +85,13 @@ variants:
   tsadiq: tzaddiq
   tzadiqim: tzaddiqim
   tzaddikim: tzaddiqim
+  # but not after a prefix
+  bammeh: bameh
+  mikkol: mikol
+  miqqedem: miqedem
+  # Segol + yod is ei
+  vetechezenah: vetechezeinah
+  vetehezena: vetechezeinah
   # A final heh is written
   avoda: avodah
   hashana: hashanah
@@ -96,5 +99,4 @@ variants:
   moshe: mosheh
   retze: retzeh
   shuva: shuvah
-  vetehezena: vetechezenah
   yehuda: yehudah
