@@ -11,10 +11,11 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from pydantic import ValidationError
 
-from opensiddur.exporter import books, notices
+from opensiddur.exporter import books, notices, typography
 from opensiddur.exporter.html.html import build_book, colophon_to_html, notice_line_html
 from opensiddur.exporter.metadata import Colophon
 from opensiddur.exporter.notices import RunKind
@@ -155,6 +156,13 @@ class TestHelpers(unittest.TestCase):
             notices.resolve_logo(DistributionNotice(logo="missing.png"),
                                  self.base / "settings.yaml")
 
+    def _check(self, settings_file: Path, settings_directory: Path) -> books.BookResult:
+        # Whatever fonts this machine has: the default chains' fonts are checked first, and a
+        # machine without them (as CI is) would report those instead of the logo.
+        with patch.object(typography, "_installed_font_families",
+                          return_value=frozenset({"linux libertine o", "freeserif"})):
+            return books.check(settings_file, settings_directory, self.base)
+
     def test_checking_a_book_reports_a_missing_logo(self):
         settings_directory = self.base / "settings"
         (settings_directory / "book").mkdir(parents=True)
@@ -164,7 +172,7 @@ class TestHelpers(unittest.TestCase):
         settings_file.write_text(
             "book:\n  project: proj\n  file_name: index.xml\n"
             "distribution:\n  notice:\n    logo: missing.png\n")
-        result = books.check(settings_file, settings_directory, self.base)
+        result = self._check(settings_file, settings_directory)
         self.assertIsNotNone(result.error)
         self.assertIn("missing.png", result.error)
 
@@ -178,7 +186,7 @@ class TestHelpers(unittest.TestCase):
         settings_file.write_text(
             "book:\n  project: proj\n  file_name: index.xml\n"
             "distribution:\n  notice:\n    logo: logo.png\n")
-        result = books.check(settings_file, settings_directory, self.base)
+        result = self._check(settings_file, settings_directory)
         self.assertIn("not a readable image", result.error or "")
 
 
