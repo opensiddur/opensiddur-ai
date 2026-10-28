@@ -1,0 +1,300 @@
+"""Check project, settings, file and URN names against ``specs/NAMING_SCHEME.md``.
+
+Four things are checked:
+
+- a project's directory name is an identifier, ``<title>-<author>-<date>-<lang>``, whose last
+  field is the language of its ``index.xml``;
+- a settings file lives under the directory of the project it builds,
+  ``settings/<book.project>/<variant>.yaml``, since that is what names the book;
+- a project file's stem, and every path component of a URN a project or the registry carries,
+  is lowercase ASCII words joined by ``_``;
+- none of their words is a known misspelling, listed in ``specs/naming/spellings.yaml``.
+
+Whether a word follows the transliteration table cannot be decided without its Hebrew, so the
+last check finds only the misspellings already recorded.
+
+Run as::
+
+    uv run python -m opensiddur.common.validate_names --check
+"""
+
+from __future__ import annotations
+
+import argparse
+import collections
+import logging
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, Iterator
+
+import yaml
+from lxml import etree
+
+from opensiddur.common.constants import PROJECT_DIRECTORY, REPO_ROOT, SETTINGS_DIRECTORY
+from opensiddur.common.urn_registry import (
+    COMPONENT_RE, ERROR, REGISTRY_DIRECTORY, SCHEME, STATUS_ALIAS, WARNING, Problem,
+    RegistryError, load_registry,
+)
+
+logger = logging.getLogger(__name__)
+
+SPELLINGS_FILE = REPO_ROOT / "specs" / "naming" / "spellings.yaml"
+
+#: Fields joined by `-`, the words of a field by `_`; at least two fields.
+PROJECT_ID_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*(?:-[a-z0-9]+(?:_[a-z0-9]+)*)+$")
+
+FILE_STEM_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
+
+# Everything up to the end of an attribute value or a list separator, so that a malformed
+# component -- `(mincha,_traditional)` -- is read whole and reported rather than cut short.
+_URN_IN_TEXT = re.compile(re.escape(SCHEME) + r"text:[^\s\"'<>]+")
+
+_XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+
+
+@dataclass(frozen=True)
+class Spellings:
+    """Common spellings that win over the table, and known misspellings of other words."""
+
+    exceptions: frozenset[str]
+    variants: dict[str, str]
+
+
+def load_spellings(path: Path = SPELLINGS_FILE) -> Spellings:
+    """Read the spellings list, raising ``ValueError`` if it contradicts itself."""
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    exceptions = frozenset(data.get("exceptions") or ())
+    variants = dict(data.get("variants") or {})
+    for variant, standard in variants.items():
+        if variant in exceptions:
+            raise ValueError(f"{path}: {variant!r} is both a common spelling and a variant")
+        if standard in variants:
+            raise ValueError(f"{path}: {variant!r} maps to {standard!r}, which is itself a "
+                             "variant; map it to the standard spelling directly")
+        if variant == standard:
+            raise ValueError(f"{path}: {variant!r} is listed as a variant of itself")
+    return Spellings(exceptions, variants)
+
+
+def words(name: str) -> Iterator[str]:
+    """The words of a project identifier, file stem or URN path, leaving out numbers."""
+    for word in re.split(r"[-_/]", name):
+        if word and not word.isdigit():
+            yield word
+
+
+def project_id_problem(name: str, language: str | None) -> str | None:
+    """Why ``name`` is not a project identifier for a project in ``language``, or None."""
+    if not PROJECT_ID_RE.match(name):
+        return ("not a project identifier: lowercase <title>-<author>-<date>-<lang>, fields "
+                "joined by '-' and words by '_'")
+    if language is None:
+        return None
+    suffix = language.lower()
+    if not (name.endswith("-" + suffix) and len(name) > len(suffix) + 1):
+        return f"does not end with its language, -{suffix} (the xml:lang of index.xml)"
+    return None
+
+
+def project_language(project_path: Path) -> str | None:
+    """The ``xml:lang`` of a project's ``index.xml``, or None if it has none to read."""
+    try:
+        root = etree.parse(str(project_path / "index.xml")).getroot()
+    except (OSError, etree.XMLSyntaxError):
+        return None
+    return root.get(_XML_LANG)
+
+
+def urn_paths(text: str) -> Iterator[str]:
+    """The path of each ``text:`` URN in ``text``: no type, namespace, project or fragment.
+
+    A range contributes both of its ends.
+    """
+    from opensiddur.exporter.urn import split_project, split_range
+
+    for match in _URN_IN_TEXT.finditer(text):
+        urn = match.group(0).split("#", 1)[0]
+        urn, _ = split_project(urn)
+        try:
+            start, end = split_range(urn)
+        except Exception:  # a malformed range is validate_urn_references's to report
+            start, end = urn, None
+        for one in (start, end) if end else (start,):
+            parts = one[len(SCHEME):].split(":", 2)
+            if len(parts) == 3:
+                yield parts[2]
+
+
+class _Findings:
+    """Misspellings and malformed names found in one place, gathered to report once each."""
+
+    def __init__(self, spellings: Spellings):
+        self.spellings = spellings
+        self.variants: dict[str, list[str]] = collections.defaultdict(list)
+        self.malformed: dict[str, list[str]] = collections.defaultdict(list)
+
+    def stem(self, stem: str, where: str) -> None:
+        if not FILE_STEM_RE.match(stem):
+            self.malformed[stem].append(where)
+        self.spelling(stem, where)
+
+    def urn_path(self, path: str, where: str) -> None:
+        for component in path.split("/"):
+            if component and not COMPONENT_RE.match(component):
+                self.malformed[component].append(where)
+        self.spelling(path, where)
+
+    def spelling(self, name: str, where: str) -> None:
+        for word in words(name):
+            if word in self.spellings.variants:
+                self.variants[word].append(where)
+
+    def problems(self, where: str, what: str) -> Iterator[Problem]:
+        for component, places in sorted(self.malformed.items()):
+            yield Problem(ERROR, f"{what} {component!r} is not lowercase ASCII words joined by "
+                                 f"'_' ({_places(places)})", where)
+        for word, places in sorted(self.variants.items()):
+            yield Problem(ERROR, f"{word!r} should be spelled "
+                                 f"{self.spellings.variants[word]!r} ({_places(places)})", where)
+
+
+def _places(places: list[str]) -> str:
+    distinct = sorted(set(places))
+    shown = ", ".join(distinct[:3])
+    more = f" and {len(distinct) - 3} more" if len(distinct) > 3 else ""
+    return f"{len(places)} use(s): {shown}{more}"
+
+
+def check_project(project_path: Path, spellings: Spellings) -> Iterator[Problem]:
+    """Every naming problem in one project directory."""
+    project = project_path.name
+    if (reason := project_id_problem(project, project_language(project_path))) is not None:
+        yield Problem(ERROR, f"project {project!r} {reason}", project)
+
+    identifier = _Findings(spellings)
+    identifier.spelling(project, project)
+    yield from identifier.problems(project, "project identifier")
+
+    stems = _Findings(spellings)
+    urns = _Findings(spellings)
+    for xml_file in sorted(project_path.glob("*.xml")):
+        stems.stem(xml_file.stem, xml_file.name)
+        for path in urn_paths(xml_file.read_text(encoding="utf-8")):
+            urns.urn_path(path, xml_file.name)
+    yield from stems.problems(project, "file name")
+    yield from urns.problems(project, "URN component")
+
+
+def check_projects(project_directory: Path, spellings: Spellings,
+                   projects: Iterable[str] | None = None) -> Iterator[Problem]:
+    directory = Path(project_directory)
+    names = list(projects) if projects else sorted(
+        p.name for p in directory.iterdir() if p.is_dir())
+    for name in names:
+        project_path = directory / name
+        if not project_path.is_dir():
+            yield Problem(ERROR, "no such project directory", name)
+            continue
+        yield from check_project(project_path, spellings)
+
+
+def check_settings(settings_directory: Path) -> Iterator[Problem]:
+    """Every settings file lives under the directory of the project it builds."""
+    directory = Path(settings_directory)
+    for path in sorted(directory.glob("*/*.yaml")):
+        where = str(path.relative_to(directory))
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as exc:
+            yield Problem(ERROR, f"not readable YAML: {exc}", where)
+            continue
+        book = data.get("book") if isinstance(data, dict) else None
+        project = book.get("project") if isinstance(book, dict) else None
+        if not project:
+            continue  # a settings file with no book is books --check's to report
+        if path.parent.name != project:
+            yield Problem(ERROR, f"builds {project!r}, so it belongs in {project}/{path.name}",
+                          where)
+
+
+def check_registry(registry_directory: Path | None, spellings: Spellings) -> Iterator[Problem]:
+    """Every URN the registry records, alias or not, is spelled by the table.
+
+    An alias is a name being retired, so its misspellings are expected; it is the canonical
+    and context records that must be right.
+    """
+    registry, _ = load_registry(registry_directory)
+    findings = _Findings(spellings)
+    for record in registry.records.values():
+        if record.status == STATUS_ALIAS:
+            continue
+        for path in urn_paths(record.urn):
+            findings.urn_path(path, record.where)
+    yield from findings.problems("registry", "URN component")
+
+
+def validate(
+    project_directory: Path = PROJECT_DIRECTORY,
+    settings_directory: Path | None = SETTINGS_DIRECTORY,
+    registry_directory: Path | None = REGISTRY_DIRECTORY,
+    *,
+    projects: Iterable[str] | None = None,
+    spellings: Spellings | None = None,
+) -> list[Problem]:
+    """Every naming problem found, by place. ``None`` for a directory skips its check."""
+    spellings = spellings or load_spellings()
+    problems = list(check_projects(project_directory, spellings, projects))
+    if settings_directory is not None:
+        if Path(settings_directory).is_dir():
+            problems.extend(check_settings(settings_directory))
+        else:
+            problems.append(Problem(WARNING, f"no settings directory at {settings_directory}"))
+    if registry_directory is not None:
+        try:
+            problems.extend(check_registry(registry_directory, spellings))
+        except RegistryError as exc:
+            problems.append(Problem(ERROR, str(exc), "registry"))
+    return sorted(problems, key=lambda p: (p.where, p.severity, p.message))
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("projects", nargs="*", help="Check only these projects. Default: all.")
+    parser.add_argument("--project-directory", type=Path, default=PROJECT_DIRECTORY,
+                        help="Base directory containing project subdirectories.")
+    parser.add_argument("--settings-directory", type=Path, default=SETTINGS_DIRECTORY,
+                        help="Directory of book settings files (<project>/<variant>.yaml).")
+    parser.add_argument("--registry", type=Path, default=REGISTRY_DIRECTORY,
+                        help="URN registry directory.")
+    parser.add_argument("--spellings", type=Path, default=SPELLINGS_FILE,
+                        help="Common spellings and known variants.")
+    parser.add_argument("--no-settings", action="store_true", help="Skip the settings check.")
+    parser.add_argument("--no-registry", action="store_true", help="Skip the registry check.")
+    parser.add_argument("--check", action="store_true",
+                        help="Exit non-zero if anything is wrong. For CI.")
+    args = parser.parse_args(argv)
+
+    try:
+        spellings = load_spellings(args.spellings)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        logger.error("%s", exc)
+        return 1
+    problems = validate(
+        args.project_directory,
+        None if args.no_settings else args.settings_directory,
+        None if args.no_registry else args.registry,
+        projects=args.projects,
+        spellings=spellings,
+    )
+    for problem in problems:
+        logger.info("%s", problem)
+    errors = sum(1 for p in problems if p.severity == ERROR)
+    logger.info("%d naming error(s); see specs/NAMING_SCHEME.md", errors)
+    return 1 if (args.check and errors) else 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main())

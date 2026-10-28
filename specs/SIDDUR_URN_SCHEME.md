@@ -445,9 +445,11 @@ witness is routinely coarser than its Hebrew.
 ## Naming
 
 Common spelling wins where a text has one in English: `aleinu`, `ashrei`, `kaddish`,
-`yishtabach`, `birkat_hamazon`. Otherwise transliterate per the table in JLPTEI-3, spaces
-becoming `_`. The registry is the tiebreaker and the record; the transliterator only
-seeds it.
+`yishtabach`, `birkat_hamazon`. Otherwise transliterate per the
+[table in JLPTEI-3](../schema/JLPTEI-3.md#transliteration), spaces becoming `_`. The common
+spellings, and known misspellings of other words, are listed in `specs/naming/spellings.yaml`
+and checked by `validate_names`; see [NAMING_SCHEME.md](NAMING_SCHEME.md). The registry is the
+tiebreaker and the record; the transliterator only seeds it.
 
 Names are lowercase ASCII. A name may not contain `-`, which marks a range, nor `@`, `#`
 or `:`, which delimit URN parts.

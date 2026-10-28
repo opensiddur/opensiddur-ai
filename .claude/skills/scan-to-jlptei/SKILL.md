@@ -64,6 +64,8 @@ Do not load other editions as a source of defaults for its glyphs or pagination.
   `urn:x-opensiddur:text:prayer:ashrei`); the edition belongs in the publication
   URN's `@project` suffix and source metadata. Do not put a scan name, experimental
   phase such as “pilot”, or a service position into a reusable text's identity.
+  Name the project, its files and its URNs by `specs/NAMING_SCHEME.md`, and check
+  them with `python -m opensiddur.common.validate_names <project>`.
   Reuse existing registry identities for common prayers and their parts; do not
   identify a single petition as an entire longer prayer. Keep service-order files
   as assemblies of URN transclusions and printed rubrics. `index.xml` is the book
