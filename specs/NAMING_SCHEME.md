@@ -25,7 +25,7 @@ Fields are joined by `-`; the words within a field are joined by `_`. Formally,
 
 | Field | What it holds | Required |
 |---|---|---|
-| `title` | The work's title: its common English name where it has one (`tanakh`, `siddur_expanded`), otherwise the title page's Hebrew romanized by the [table](#transliteration). Leading articles and prepositions join their word (`hasiddur_hashalem`, `haggadah_leleil_shimmurim`). | yes |
+| `title` | The work's title: its common English name where it has one (`tanakh`, `siddur_expanded`); else the source's own romanization of its name, if it gives one ([below](#a-source-that-romanizes-its-own-name)); else the title page's Hebrew romanized by the [table](#transliteration). Leading articles and prepositions join their word (`hasiddur_hashalem`, `haggadah_leleil_shimmurim`). | yes |
 | `author` | The surname of the author, editor or translator who makes this edition what it is (`birnbaum`, `asher`, `jps`, `wlc`). `opensiddur` for an Open Siddur compilation. | when there is one |
 | `date` | The year of the edition. Left out for an undated or continuously revised work. | when there is one |
 | `lang` | The `xml:lang` of the project's `index.xml`, lowercased: a BCP 47 tag, so `he-latn` is two fields. Always last. | yes |
@@ -46,8 +46,8 @@ The projects are renamed to these identifiers in one change (issue #266, phase 2
 
 | Current | Identifier |
 |---|---|
-| `asher_selichot_he_1912` | `selichot-asher-1912-he` |
-| `asher_selichot_en_1912` | `selichot-asher-1912-en` |
+| `asher_selichot_he_1912` | `selichoth-asher-1912-he` |
+| `asher_selichot_en_1912` | `selichoth-asher-1912-en` |
 | `birnbaum_ashkenaz_he_1949` | `hasiddur_hashalem-birnbaum-1949-he` |
 | `birnbaum_ashkenaz_en_1949` | `hasiddur_hashalem-birnbaum-1949-en` |
 | `heidenheim_haggadah_1822` | `haggadah_leleil_shimmurim-heidenheim-1822-he` |
@@ -60,8 +60,24 @@ The projects are renamed to these identifiers in one change (issue #266, phase 2
 | `original-example` | `example_original-he` |
 | `translation-example` | `example_translation-en` |
 
-The Heidenheim title follows its title page, סדר ההגדה לליל שמורים, which `index.xml` gives as
-*Haggadah le-Leil Shimurim*: "the haggadah *for* the night of vigil", not the construct
+### A source that romanizes its own name
+
+When a source gives its own name in Latin letters, that romanization is the title, not the
+table's: the name is the source's, and a reader looking for the book looks for it as printed. It
+is folded to the identifier's alphabet and nothing more: lowercased, diacritics stripped, hyphens
+and apostrophes dropped with the parts joined, and spaces made `_`.
+
+| The source prints | Title field |
+|---|---|
+| *Selichoth for the Propitiatory and Penitential Days* (Asher, 1912) | `selichoth` (the table gives `selichot`) |
+| *ha-Siddur ha-Shalem* (Birnbaum, 1949) | `hasiddur_hashalem` |
+| *Miqra al pi ha-Masorah* | `miqra_al_pi_hamasorah` |
+
+The exception is for the project's title only. The texts inside the book, its file names and
+URNs follow the table, so that one prayer is spelled one way in every book.
+
+The 1822 Heidenheim haggadah prints its title only in Hebrew, so the table applies. The title
+page reads סדר ההגדה לליל שמורים, which our `index.xml` gives as *Haggadah le-Leil Shimurim*: "the haggadah *for* the night of vigil", not the construct
 *haggadat leil*. The mem of שִׁמֻּרִים carries a dagesh, so it doubles: `shimmurim`.
 
 ### Projects imported from opensiddur.org

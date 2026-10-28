@@ -228,7 +228,9 @@ and Hebrew/English alignment after regeneration.
 **Naming** (`specs/NAMING_SCHEME.md`):
 - A project is named `<title>-<author>-<date>-<lang>`, lowercase ASCII, with `-` between fields
   and `_` between the words of a field: `hasiddur_hashalem-birnbaum-1949-he`. The last field is
-  the `xml:lang` of its `index.xml`. A translation shares its original's title.
+  the `xml:lang` of its `index.xml`. A translation shares its original's title. A source that
+  romanizes its own name keeps that romanization as its title (Asher's *Selichoth* is
+  `selichoth`), folded to lowercase ASCII.
 - A book's settings live at `settings/<book.project>/<variant>.yaml`, so its release files are
   named after its project: `<project>-<variant>-<tag>.pdf`.
 - File stems and URN path components are lowercase ASCII words joined by `_`. Hebrew words in

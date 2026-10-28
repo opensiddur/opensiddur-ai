@@ -91,7 +91,8 @@ transliterated Hebrew, by the [transliteration](#transliteration) scheme below.
 
 Hebrew words in URNs, project names and file names are romanized in plain ASCII: digraphs,
 never diacritics. Words are joined by `_`. A word with a common English spelling keeps it
-(`kaddish`, `chumash`); those spellings, and the known misspellings of other words, are listed in [`specs/naming/spellings.yaml`](../specs/naming/spellings.yaml). Otherwise:
+(`kaddish`, `chumash`), and a project titled by a source that romanizes its own name keeps the
+source's spelling (see [NAMING_SCHEME.md](../specs/NAMING_SCHEME.md)); the common spellings, and the known misspellings of other words, are listed in [`specs/naming/spellings.yaml`](../specs/naming/spellings.yaml). Otherwise:
 
 | Letter/Vowel | Transliteration    |
 |--------------|--------------------|
