@@ -19,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Between releases, `main` is versioned as the development of the next release: `0.7.0.dev0`
   now. A release from a development version releases the version it names (`0.7.0`; `--major`
-  jumps past it, and a `--patch` release is cut from the last release's tag), and then commits
-  the development of the next (`0.8.0.dev0`) on the branch it pushes.
+  jumps past it, and `--patch` fixes the last release tagged, `0.6.1`), and then commits the
+  development of the next (`0.8.0.dev0`, or back to `0.7.0.dev0` after a patch release) on the
+  branch it pushes.
 - The repository is renamed `opensiddur-processor` (was `opensiddur-ai`), and so is the Python
   distribution. Download user-agents now say `OpenSiddur-Processor/1.0`. The reusable
   `validate-projects.yml` workflow's `opensiddur_ai_ref` input is now `opensiddur_processor_ref`,

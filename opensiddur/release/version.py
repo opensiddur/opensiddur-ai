@@ -8,7 +8,8 @@ Between releases, main is the development of the next one: `0.7.0.dev0` after 0.
 released. That is what lets a settings file that needs what main has (`requires_processor:
 ">=0.7.0"`) be built on main before 0.7.0 is cut, and refused by 0.6.0. A release from a
 development version releases the version it names, and leaves main the development of the
-one after.
+one after. A patch release from it fixes the last release (0.6.0 -> 0.6.1), and leaves main
+the development it was.
 """
 
 import functools
@@ -81,6 +82,7 @@ def next_version(
     current: Version,
     level: BumpLevel | None = None,
     explicit: Version | None = None,
+    last_release: Version | None = None,
 ) -> Version:
     """The version to release, given the current one and what the caller asked for.
 
@@ -88,13 +90,14 @@ def next_version(
     and above there is no safe default: the caller must say which level semver calls for.
 
     A development version already names its release: X.Y.Z.devN releases X.Y.Z, by default
-    or with the level it was the development of. `major` still jumps past it. `patch` cannot
-    be released from it: a patch release fixes the last release, from that release's tag.
+    or with the level it was the development of. `major` still jumps past it. `patch` fixes
+    `last_release`, the latest release tagged, which it needs; so does an explicit version
+    before X.Y.Z, which must still be after `last_release`.
     """
     if explicit is not None and explicit.dev is not None:
         raise ValueError(f"{explicit} is a development version; a release is X.Y.Z.")
     if current.dev is not None:
-        return _release_development(current, level, explicit)
+        return _release_development(current, level, explicit, last_release)
     if explicit is not None:
         if level is not None:
             raise ValueError("Give a bump level or an explicit version, not both.")
@@ -112,16 +115,24 @@ def next_version(
 
 
 def _release_development(
-    current: Version, level: BumpLevel | None, explicit: Version | None
+    current: Version,
+    level: BumpLevel | None,
+    explicit: Version | None,
+    last_release: Version | None,
 ) -> Version:
     release = current.release
     if explicit is not None:
         if level is not None:
             raise ValueError("Give a bump level or an explicit version, not both.")
-        if explicit < release:
-            raise ValueError(f"{explicit} is earlier than {release}, which {current} is the "
-                             "development of.")
+        if explicit < release and (last_release is None or explicit <= last_release):
+            raise ValueError(f"{explicit} is not later than the last release "
+                             f"{last_release or '(none tagged)'}.")
         return explicit
+    if level == "patch" and release.patch == 0:
+        if last_release is None:
+            raise ValueError(f"{current} is the development of {release}; a patch release "
+                             "fixes the last release, and none is tagged.")
+        return last_release.bump("patch")
     implied: BumpLevel = "patch" if release.patch else "minor" if release.minor else "major"
     if level is None:
         if release.major >= 1:
@@ -136,8 +147,7 @@ def _release_development(
         return Version(release.major + 1, 0, 0)
     raise ValueError(
         f"{current} is the development of {release}, a {implied} release; it cannot be "
-        f"released as a {level} release. A patch release is cut from the last release's tag; "
-        "otherwise give --version."
+        f"released as a {level} release. Give --version instead."
     )
 
 

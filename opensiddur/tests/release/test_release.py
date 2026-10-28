@@ -216,6 +216,19 @@ class TestReleaseReal(unittest.TestCase):
                                 check=True, capture_output=True, text=True).stdout
         self.assertIn('version = "0.3.0.dev0"', pushed)
 
+    def test_a_patch_release_from_a_development_version_leaves_it(self):
+        _git("tag", "v0.1.0", cwd=self.sandbox.main)
+        pyproject = self.sandbox.main / "pyproject.toml"
+        pyproject.write_text(PYPROJECT.replace('"0.1.0"', '"0.2.0.dev0"'))
+        _commit_all(self.sandbox.main, "Begin 0.2.0.dev0")
+        plan = release(self.sandbox.repository(dry_run=False), level="patch", publish=False)
+
+        self.assertEqual(plan.version, Version(0, 1, 1))
+        tagged = subprocess.run(["git", "show", "v0.1.1:pyproject.toml"], cwd=self.sandbox.main,
+                                check=True, capture_output=True, text=True).stdout
+        self.assertIn('version = "0.1.1"', tagged)
+        self.assertIn('version = "0.2.0.dev0"', pyproject.read_text())
+
     def test_a_release_from_a_release_version_leaves_it(self):
         """A patch release, cut from the last release's tag, is not followed by development."""
         release(self.sandbox.repository(dry_run=False), level="patch", publish=False)

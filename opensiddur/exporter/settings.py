@@ -212,7 +212,8 @@ class SettingsYaml(BaseModel):
         if not satisfies(v, installed):
             raise ValueError(
                 f"this settings file requires opensiddur-processor {v}; this is {installed}. "
-                "Build it with a later processor")
+                "Build it with a later processor (in a checkout of main, `uv sync` updates "
+                "the version installed)")
         return v
 
     @field_validator("formats")

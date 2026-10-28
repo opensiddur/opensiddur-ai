@@ -116,6 +116,17 @@ class Repository:
             )
         return modules
 
+    def last_release(self) -> Version | None:
+        """The latest release tagged here, vX.Y.Z; None before the first."""
+        for tag in self.capture("git", "tag", "--list", "v*", "--sort=-v:refname").splitlines():
+            try:
+                found = Version.parse(tag.removeprefix("v"))
+            except ValueError:
+                continue
+            if found.dev is None:
+                return found
+        return None
+
     def tag_exists(self, tag: str) -> bool:
         if self.capture("git", "tag", "--list", tag):
             return True
@@ -171,7 +182,8 @@ def release(
 ) -> ReleasePlan:
     """Cut a release from the checkout `repo` points at, and return what it did."""
     current = read_pyproject_version(repo.read("pyproject.toml"))
-    version = next_version(current, level=level, explicit=explicit)
+    version = next_version(current, level=level, explicit=explicit,
+                           last_release=repo.last_release())
     if repo.tag_exists(version.tag):
         raise ReleaseError(f"{version.tag} already exists locally or on origin.")
 
@@ -195,8 +207,10 @@ def release(
         repo.run("git", "tag", "-a", version.tag, "-F", str(notes_path))
         if current.dev is not None:
             # Main goes on as the development of the next release, so that a settings file
-            # can require what main has (`requires_processor`) before it is released.
-            following = version.development_of_next()
+            # can require what main has (`requires_processor`) before it is released. A patch
+            # release of the last one leaves it the development it was.
+            following = (version.development_of_next() if version >= current.release
+                         else current)
             repo.write("pyproject.toml",
                        write_pyproject_version(repo.read("pyproject.toml"), following))
             repo.run("git", "add", "pyproject.toml")

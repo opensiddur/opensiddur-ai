@@ -92,8 +92,10 @@ class TestNextVersionFromDevelopment(unittest.TestCase):
     def test_major_jumps_past_it(self):
         self.assertEqual(next_version(Version(0, 7, 0, dev=0), level="major"), Version(1, 0, 0))
 
-    def test_a_patch_release_is_not_cut_from_it(self):
-        with self.assertRaisesRegex(ValueError, "tag"):
+    def test_a_patch_release_fixes_the_last_release(self):
+        self.assertEqual(next_version(Version(0, 7, 0, dev=0), level="patch",
+                                     last_release=Version(0, 6, 0)), Version(0, 6, 1))
+        with self.assertRaisesRegex(ValueError, "none is tagged"):
             next_version(Version(0, 7, 0, dev=0), level="patch")
 
     def test_at_one_and_above_the_level_is_still_required(self):
@@ -101,11 +103,15 @@ class TestNextVersionFromDevelopment(unittest.TestCase):
             next_version(Version(1, 1, 0, dev=0))
         self.assertEqual(next_version(Version(1, 1, 0, dev=0), level="minor"), Version(1, 1, 0))
 
-    def test_an_explicit_version_is_not_before_it(self):
+    def test_an_explicit_version_is_after_the_last_release(self):
         self.assertEqual(next_version(Version(0, 7, 0, dev=0), explicit=Version(0, 7, 0)),
                          Version(0, 7, 0))
-        with self.assertRaises(ValueError):
-            next_version(Version(0, 7, 0, dev=0), explicit=Version(0, 6, 1))
+        self.assertEqual(next_version(Version(0, 7, 0, dev=0), explicit=Version(0, 6, 1),
+                                      last_release=Version(0, 6, 0)), Version(0, 6, 1))
+        for last in (Version(0, 6, 1), None):
+            with self.subTest(last=last), self.assertRaises(ValueError):
+                next_version(Version(0, 7, 0, dev=0), explicit=Version(0, 6, 1),
+                             last_release=last)
 
     def test_a_release_is_never_a_development_version(self):
         with self.assertRaises(ValueError):
