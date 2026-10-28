@@ -72,7 +72,9 @@ says how it knows the day:
 **How a book starts** is its settings file's, in a section of its own for the electronic book,
 `electronic` (`settings.ElectronicSettings`, documented in `doc/exporter-settings.example.yaml`):
 `day: now | none`, and `columns: both | primary | parallel`. A haggadah, read ahead of the seder
-as well as at it, starts with no particular day. The reader's own choices, once made, are
+as well as at it, starts with no particular day. `psalm_titles: uniform` gives every whole psalm
+one bilingual heading in place of its edition's (`html/psalms.py`), for a book compiled from
+editions that title psalms differently. The reader's own choices, once made, are
 remembered and win; Clear all goes back to the book's.
 
 The place is the reader's: a city from `html/places.yaml`, the device's location, or

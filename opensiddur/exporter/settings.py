@@ -163,6 +163,10 @@ class ElectronicSettings(BaseModel):
     day: Literal["now", "none"] = "now"
     #: Which columns of parallel text it shows: `both`, or `primary` or `parallel` alone.
     columns: Literal["both", "primary", "parallel"] = "both"
+    #: How a whole psalm is titled: `printed`, as the edition titles it; or `uniform`, one
+    #: "Psalm 23" / "תהלים כג" heading per psalm, replacing the edition's own -- for a book
+    #: compiled from editions that title their psalms differently.
+    psalm_titles: Literal["printed", "uniform"] = "printed"
 
 
 #: `logo` names the Open Siddur Project's logo, which the exporter carries with it.
