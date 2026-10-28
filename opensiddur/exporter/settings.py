@@ -21,6 +21,7 @@ from opensiddur.exporter import feature_registry
 from opensiddur.exporter.derived_settings import SettingChangeTrigger, recalculate_derived_settings
 from opensiddur.exporter.typography import RESOLVE_FONTS, NonNegativeLength, TypographyConfig
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.version import parse_requirement, processor_version, satisfies
 
 
 #: Validation context key: False skips checking that the projects and files a settings file
@@ -286,6 +287,11 @@ class SettingsYaml(BaseModel):
     # What this settings file makes and how it differs from the book's other settings files
     # (e.g. annual vs. triennial readings for the same humash). Free text, for people.
     description: Optional[str] = None
+    # The processor versions that build this book as it should be, as PEP 440 writes them
+    # (`>=0.7.0`). An older processor refuses the file rather than build a broken book: the
+    # settings and the processor that reads them are released separately, and a release
+    # can pair a book with a processor that predates a fix it depends on.
+    requires_processor: Optional[str] = None
     book: Optional[BookTarget] = None
     # Empty, the compiler gives priority to the project of the file it compiles.
     priority: Prioritizations = Field(default_factory=Prioritizations)
@@ -300,6 +306,25 @@ class SettingsYaml(BaseModel):
     # The forms a release builds this book in: `html`, the electronic book, and `pdf`, the
     # printed one. A book read only on a device, its day chosen there, lists just `html`.
     formats: list[Literal["html", "pdf"]] = Field(default_factory=lambda: ["html", "pdf"])
+
+    @field_validator("requires_processor")
+    @classmethod
+    def validate_requires_processor(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        parse_requirement(v)
+        installed = processor_version()
+        if installed is None:
+            raise ValueError(
+                f"this settings file requires opensiddur-processor {v}, and this "
+                "opensiddur-processor is not installed, so its version is unknown "
+                "(uv sync installs it)")
+        if not satisfies(v, installed):
+            raise ValueError(
+                f"this settings file requires opensiddur-processor {v}; this is {installed}. "
+                "Build it with a later processor (in a checkout of main, `uv sync` updates "
+                "the version installed)")
+        return v
 
     @field_validator("formats")
     @classmethod

@@ -29,7 +29,6 @@ import logging
 import re
 import sys
 from collections import Counter
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +38,7 @@ from PIL import Image
 from pydantic import ValidationError
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.version import processor_version
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.exporter.cli_common import (
     SettingsError,
@@ -196,10 +196,8 @@ def book_id(root: etree.ElementBase, title: str) -> str:
 
 
 def generator() -> str:
-    try:
-        return f"opensiddur-processor {version('opensiddur-processor')}"
-    except PackageNotFoundError:
-        return "opensiddur-processor"
+    installed = processor_version()
+    return f"opensiddur-processor {installed}" if installed else "opensiddur-processor"
 
 
 def about_html(
