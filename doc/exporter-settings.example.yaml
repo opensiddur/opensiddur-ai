@@ -113,6 +113,40 @@ electronic:
                   # read ahead of the seder)
   columns: both   # both | primary | parallel: the columns of parallel text shown
 
+# Who distributes the book, and how to treat it once read. Every book carries the Open Siddur
+# Project's notice and statement unless its settings say otherwise; either part is `none` to
+# leave it out. A line that is a URL is a link, and `_words_` are emphasised.
+distribution:
+  # On the verso of the title page (a book with no title page: its own page at the front).
+  # In the electronic book, after the title page.
+  notice:
+    logo: default         # default: the Open Siddur logo | none | a .png/.jpg, relative to
+                          # this file
+    logo_width: 1.25in
+    position: bottom      # top | center | bottom of its page
+    text:
+      - Distributed by The Open Siddur Project
+      - https://opensiddur.org
+      - https://github.com/opensiddur
+  # A bulleted list on the book's last page, after the colophon: `print` in the PDF,
+  # `electronic` in the electronic book. The PDF sets it in typography.styles.back_notice, as
+  # it does the notice in styles.distribution_notice.
+  back_notice:
+    electronic:
+      - We strongly advise against printing sacred texts and art containing divine names as
+        these copies must be regarded with reverence, complicating their casual treatment and
+        disposal.
+      - If you must dispose of a printed sacred text (one containing Divine Names), please
+        locate the closest _genizah_ (often established by a synagogue) and contact its
+        custodians for further instructions.
+    print:
+      - We strongly advise against making unnecessary printed copies of sacred texts and art
+        containing divine names as these copies must be regarded with reverence, complicating
+        their casual treatment and disposal.
+      - If you must dispose of a printed sacred text (one containing Divine Names), please
+        locate the closest _genizah_ (often established by a synagogue) and contact its
+        custodians for further instructions.
+
 # Output-format settings, read by the output stages: all of them by the TeX/PDF stage, and the
 # ones a reflowing page can use by the electronic book (see doc/typography.md).
 typography:

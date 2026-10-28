@@ -303,6 +303,8 @@ _ROLES: dict[str, tuple[str, Optional[str]]] = {
     "epigraph": (r"\OSEpigraph", _BLOCK),
     "imprimatur": (r"\OSImprimatur", _BLOCK),
     "title_page_block": (r"\OSTitlePageBlock", _BLOCK),
+    "distribution_notice": (r"\OSDistributionNotice", _BLOCK),
+    "back_notice": (r"\OSBackNotice", _BLOCK),
     "citation": (r"\OScitation", _INLINE),
     "parsha": (r"\OSParsha", None),
     "aliyah": (r"\OSaliyah", None),

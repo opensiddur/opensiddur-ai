@@ -62,6 +62,13 @@ from opensiddur.exporter.metadata import (  # noqa: E402
     order_credits,
 )
 from opensiddur.exporter import metadata  # noqa: E402
+from opensiddur.exporter import notices  # noqa: E402
+from opensiddur.exporter.notices import RunKind  # noqa: E402
+from opensiddur.exporter.settings import (  # noqa: E402
+    TEX_UNSAFE_PATH_CHARACTERS,
+    DistributionNotice,
+    DistributionSettings,
+)
 
 XSLT_FILE = Path(__file__).parent / "reledmac.xslt"
 
@@ -96,6 +103,80 @@ def licenses_to_tex(licenses: list[LicenseRecord]) -> str:
         "\\begin{itemize}\n"
         f"{items}\n"
         "\\end{itemize}\n"
+    )
+
+
+def notice_line_to_tex(text: str) -> str:
+    """One line of a distribution or back notice: its text escaped, its URLs and emphasis set."""
+    tex = ""
+    for kind, run in notices.notice_runs(text):
+        if kind is RunKind.URL:
+            # The URL is set inside a macro's argument, where \url reads it already tokenized:
+            # % and # have to be escaped there to survive at all (url.sty documents this),
+            # and a brace, backslash or caret cannot be read as part of it at all, so those
+            # are percent-encoded (the same address). In the notice's own type, not \url's
+            # typewriter.
+            url = "".join(f"%{ord(c):02X}" if c in _URL_UNREADABLE else c for c in run)
+            tex += ("{\\urlstyle{same}\\url{" + url.replace("%", "\\%").replace("#", "\\#")
+                    + "}}")
+        elif kind is RunKind.EMPHASIS:
+            tex += "\\emph{" + escape_with_hebrew_runs(run) + "}"
+        else:
+            tex += escape_with_hebrew_runs(run)
+    return tex
+
+
+#: What \url cannot read in a macro's argument, even escaped.
+_URL_UNREADABLE = set("{}\\^")
+
+#: Where the notice stands on its page: the fills above and below it.
+_NOTICE_FILLS = {
+    "top": ("", "\\vfill"),
+    "center": ("\\vfill", "\\vfill"),
+    "bottom": ("\\vfill", ""),
+}
+
+
+def distribution_notice_to_tex(notice: Optional[DistributionNotice], logo: Optional[Path]) -> str:
+    """The body of the distribution notice's page, or nothing if the book carries none.
+
+    The stylesheet sets it on a page of its own, on the verso of the title page.
+    """
+    if notice is None:
+        return ""
+    lines = []
+    if logo is not None:
+        # The path the settings gave was checked; the directory it is relative to was not.
+        if unsafe := sorted(TEX_UNSAFE_PATH_CHARACTERS.intersection(logo.resolve().as_posix())):
+            raise ValueError(f"the logo's path {logo.resolve()} has characters TeX cannot take "
+                             f"in a file name: {' '.join(unsafe)}")
+        # A path in braces, and with / separators whatever the platform: TeX reads a
+        # backslash in a file name as a macro.
+        lines.append(
+            f"\\includegraphics[width={notice.logo_width}]{{{logo.resolve().as_posix()}}}"
+        )
+    lines += [notice_line_to_tex(line) for line in notice.text]
+    above, below = _NOTICE_FILLS[notice.position]
+    # A page that is all fills and no box would be dropped: \null holds the top of it.
+    return (
+        "\\null" + above + "\n"
+        # `\\{}`: a bare \\ would read a line beginning with [ or * as its own argument.
+        + "\\OSDistributionNotice{" + "\\\\{}\n".join(lines) + "}\n"
+        + below + "\n"
+    )
+
+
+def back_notice_to_tex(items: list[str]) -> str:
+    """The book's last page, after the colophon: the back notice, at the foot of the page."""
+    if not items:
+        return ""
+    # `\\item{}`: a bare \\item would read a statement beginning with [ as its label.
+    entries = "\n".join(f"\\item{{}} {notice_line_to_tex(item)}" for item in items)
+    return (
+        "\\clearpage\n"
+        "\\thispagestyle{empty}\n"
+        "\\null\\vfill\n"
+        "\\OSBackNotice{\\begin{itemize}\n" + entries + "\n\\end{itemize}}\n"
     )
 
 
@@ -276,6 +357,7 @@ def transform_xml_to_tex(
     settings_file: Optional[Path] = None,
     typography: Optional[TypographyConfig] = None,
     project_directory: Path | None = None,
+    distribution: Optional[DistributionSettings] = None,
 ) -> str:
     """Transform a compiled JLPTEI XML file into a LuaLaTeX document.
 
@@ -285,6 +367,8 @@ def transform_xml_to_tex(
         output_file: If given, write to this path; otherwise return the string.
         settings_file: Optional path to a settings.yaml to read typography from.
         typography: Pre-loaded TypographyConfig (takes precedence over settings_file).
+        distribution: Pre-loaded distribution notices (takes precedence over
+            settings_file). A notice's logo path is relative to settings_file all the same.
         project_directory: Base directory containing project subdirectories.
 
     Returns:
@@ -296,8 +380,16 @@ def transform_xml_to_tex(
         Exception: whatever the transformation raised; the command-line entry
             point reports it and exits non-zero, a caller decides for itself.
     """
-    if typography is None:
-        typography = load_output_settings(settings_file, resolve_fonts=True).typography
+    if typography is None or distribution is None:
+        settings = load_output_settings(settings_file, resolve_fonts=typography is None)
+        typography = typography or settings.typography
+        distribution = distribution or settings.distribution
+    notice = notices.distribution_notice(distribution)
+    notice_tex = distribution_notice_to_tex(
+        notice, notices.resolve_logo(notice, settings_file) if notice else None
+    )
+    # PDF is the printed book.
+    back_notice_tex = back_notice_to_tex(notices.back_notice_items(distribution, "print"))
 
     if project_directory is None:
         project_directory = projects_source_root
@@ -327,6 +419,8 @@ def transform_xml_to_tex(
                 + "\n"
                 + sources_postamble_tex
             ),
+            "distribution-notice": notice_tex,
+            "back-notice": back_notice_tex,
             **typography_parameters(typography, root),
         },
     )
@@ -380,7 +474,7 @@ Examples:
         sys.exit(1)
 
     try:
-        typography = load_output_settings(args.settings_file, resolve_fonts=True).typography
+        settings = load_output_settings(args.settings_file, resolve_fonts=True)
     except (SettingsError, ValidationError) as e:
         print(f"Settings error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -390,7 +484,9 @@ Examples:
             args.input_file,
             xslt_file=Path(args.xslt_file),
             output_file=args.output_file,
-            typography=typography,
+            settings_file=args.settings_file,
+            typography=settings.typography,
+            distribution=settings.distribution,
             project_directory=args.project_directory,
         )
     except Exception as e:
