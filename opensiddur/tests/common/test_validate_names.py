@@ -23,7 +23,7 @@ from opensiddur.common.validate_names import (
     words,
 )
 
-SPELLINGS = Spellings(frozenset({"kaddish"}), {"chanukah": "hanukkah", "tsom": "tzom"})
+SPELLINGS = Spellings(frozenset({"kaddish"}), {"hanukkah": "chanukah", "tsom": "tzom"})
 
 TEXT = "urn:x-opensiddur:text:"
 
@@ -102,7 +102,7 @@ class ProjectIdTestCase(unittest.TestCase):
 
 class WordsTestCase(unittest.TestCase):
     def test_numbers_are_not_words(self):
-        self.assertEqual(list(words("hanukkah_day_4/1")), ["hanukkah", "day"])
+        self.assertEqual(list(words("chanukah_day_4/1")), ["chanukah", "day"])
 
     def test_urn_paths_drop_project_fragment_and_split_ranges(self):
         text = (f'<a corresp="{TEXT}prayer:amidah/avot@p-he#x"/>'
@@ -136,8 +136,8 @@ class ProjectChecksTestCase(unittest.TestCase):
         self.addCleanup(self.corpus.close)
 
     def test_a_clean_project_has_no_problems(self):
-        self.corpus.project("selichoth-asher-1912-he", files={
-            "kaddish_hatzi": index("he", f"{TEXT}prayer:kaddish/hatzi@selichoth-asher-1912-he")})
+        self.corpus.project("selichot-asher-1912-he", files={
+            "kaddish_chatzi": index("he", f"{TEXT}prayer:kaddish/chatzi@selichot-asher-1912-he")})
         self.assertEqual(self.corpus.validate(), [])
 
     def test_a_project_named_the_old_way(self):
@@ -147,36 +147,36 @@ class ProjectChecksTestCase(unittest.TestCase):
         self.assertIn("not a project identifier", problem.message)
 
     def test_a_project_whose_name_and_language_disagree(self):
-        self.corpus.project("selichoth-asher-1912-en", lang="he")
+        self.corpus.project("selichot-asher-1912-en", lang="he")
         (problem,) = errors(self.corpus.validate())
         self.assertIn("-he", problem.message)
 
     def test_a_file_name_with_punctuation(self):
-        self.corpus.project("humash-opensiddur-he", files={"reading_fast_(afternoon)": index("he")})
+        self.corpus.project("chumash-opensiddur-he", files={"reading_fast_(afternoon)": index("he")})
         (problem,) = errors(self.corpus.validate())
         self.assertIn("file name 'reading_fast_(afternoon)'", problem.message)
 
     def test_a_malformed_urn_component(self):
-        self.corpus.project("humash-opensiddur-he", files={
+        self.corpus.project("chumash-opensiddur-he", files={
             "fast": index("he", f"{TEXT}bible:reading/fast_(afternoon)")})
         (problem,) = errors(self.corpus.validate())
         self.assertIn("URN component 'fast_(afternoon)'", problem.message)
 
     def test_a_variant_is_reported_once_with_its_standard_spelling(self):
         self.corpus.project("hasiddur_hashalem-birnbaum-1949-he", files={
-            "chanukah_candles": index("he", f"{TEXT}prayer:chanukah/candles",
-                                      f"{TEXT}prayer:chanukah/maoz_tzur"),
+            "hanukkah_candles": index("he", f"{TEXT}prayer:hanukkah/candles",
+                                      f"{TEXT}prayer:hanukkah/maoz_tzur"),
             "tsom_gedaliah": index("he")})
         found = errors(self.corpus.validate())
         self.assertEqual(len(found), 3, found)
         messages = " | ".join(p.message for p in found)
-        self.assertIn("'chanukah' should be spelled 'hanukkah' (1 use(s): chanukah_candles.xml)",
+        self.assertIn("'hanukkah' should be spelled 'chanukah' (1 use(s): hanukkah_candles.xml)",
                       messages)
-        self.assertIn("'chanukah' should be spelled 'hanukkah' (2 use(s)", messages)
+        self.assertIn("'hanukkah' should be spelled 'chanukah' (2 use(s)", messages)
         self.assertIn("'tsom' should be spelled 'tzom'", messages)
 
     def test_a_project_with_no_language(self):
-        path = self.corpus.project("selichoth-asher-1912-he")
+        path = self.corpus.project("selichot-asher-1912-he")
         (path / "index.xml").write_text('<TEI xml:lang=""/>', encoding="utf-8")
         (problem,) = errors(self.corpus.validate())
         self.assertIn("no xml:lang", problem.message)
@@ -202,14 +202,14 @@ class SettingsCheckTestCase(unittest.TestCase):
         self.addCleanup(self.corpus.close)
 
     def test_settings_under_their_project(self):
-        self.corpus.settings_file("humash-opensiddur-he", "annual", "humash-opensiddur-he")
+        self.corpus.settings_file("chumash-opensiddur-he", "annual", "chumash-opensiddur-he")
         self.assertEqual(self.corpus.validate(), [])
 
     def test_settings_under_another_name(self):
-        self.corpus.settings_file("humash", "annual", "humash-opensiddur-he")
+        self.corpus.settings_file("humash", "annual", "chumash-opensiddur-he")
         (problem,) = errors(self.corpus.validate())
         self.assertEqual(problem.where, "humash/annual.yaml")
-        self.assertIn("belongs in humash-opensiddur-he/annual.yaml", problem.message)
+        self.assertIn("belongs in chumash-opensiddur-he/annual.yaml", problem.message)
 
     def test_settings_without_a_book_or_unreadable(self):
         (self.corpus.settings / "humash").mkdir()
@@ -233,13 +233,13 @@ class RegistryCheckTestCase(unittest.TestCase):
 
     def test_canonical_records_are_held_to_the_spelling_list(self):
         self.corpus.registry_records(
-            {"urn": f"{TEXT}prayer:chanukah", "status": "canonical"},
+            {"urn": f"{TEXT}prayer:hanukkah", "status": "canonical"},
             {"urn": f"{TEXT}prayer:tsom", "status": "alias",
              "canonical": f"{TEXT}prayer:tzom"},
             {"urn": f"{TEXT}prayer:tzom", "status": "canonical"})
         (problem,) = errors(self.corpus.validate())
         self.assertEqual(problem.where, "registry")
-        self.assertIn("'chanukah'", problem.message)
+        self.assertIn("'hanukkah'", problem.message)
 
     def test_an_unreadable_registry_is_an_error(self):
         (self.corpus.registry / "prayer.jsonl").write_text("not json\n", encoding="utf-8")
@@ -268,7 +268,7 @@ class SpellingsTestCase(unittest.TestCase):
 
     def test_a_variant_maps_to_a_standard_spelling(self):
         with self.assertRaisesRegex(ValueError, "itself a variant"):
-            self.load("variants:\n  chanukah: chanukkah\n  chanukkah: hanukkah\n")
+            self.load("variants:\n  hanukkah: chanukkah\n  chanukkah: chanukah\n")
 
     def test_a_word_is_not_its_own_variant(self):
         with self.assertRaisesRegex(ValueError, "itself"):

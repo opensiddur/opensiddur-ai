@@ -234,7 +234,7 @@ and Hebrew/English alignment after regeneration.
 - A book's settings live at `settings/<book.project>/<variant>.yaml`, so its release files are
   named after its project: `<project>-<variant>-<tag>.pdf`.
 - File stems and URN path components are lowercase ASCII words joined by `_`. Hebrew words in
-  any of these follow the transliteration table in `schema/JLPTEI-3.md` (het `h`, khaf `kh`,
+  any of these follow the transliteration table in `schema/JLPTEI-3.md` (het `ch`, khaf `kh`,
   qof `q`, tzadi `tz`, dagesh hazak doubled, final heh written), unless they have a common
   spelling listed in `specs/naming/spellings.yaml`. A file and a URN for the same text spell
   its words the same way.
