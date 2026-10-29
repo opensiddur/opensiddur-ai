@@ -91,7 +91,7 @@ transliterated Hebrew, by the [transliteration](#transliteration) scheme below.
 
 Hebrew words in URNs, project names and file names are romanized in plain ASCII: digraphs,
 never diacritics. Words are joined by `_`. A word with a common English spelling keeps it
-(`kaddish`, `chumash`), and a project titled by a source that romanizes its own name keeps the
+(`kaddish`, `humash`), and a project titled by a source that romanizes its own name keeps the
 source's spelling (see [NAMING_SCHEME.md](../specs/NAMING_SCHEME.md)); the common spellings, and the known misspellings of other words, are listed in [`specs/naming/spellings.yaml`](../specs/naming/spellings.yaml). Otherwise:
 
 | Letter/Vowel | Transliteration    |
@@ -104,7 +104,7 @@ source's spelling (see [NAMING_SCHEME.md](../specs/NAMING_SCHEME.md)); the commo
 | Heh          | h                  |
 | Vav          | v                  |
 | Zayin        | z                  |
-| Het          | ch                 |
+| Het          | h                  |
 | Tet          | t                  |
 | Yod          | y                  |
 | Kaf          | k                  |
@@ -139,14 +139,14 @@ source's spelling (see [NAMING_SCHEME.md](../specs/NAMING_SCHEME.md)); the commo
 And:
 
 - **Dagesh hazak doubles** its letter within a word: `tefillah`, `ahavah_rabbah`, `attah`,
-  `chayyim`, `kammah`. The dagesh a prefix brings to the next letter does not: `hasiddur`,
+  `hayyim`, `kammah`. The dagesh a prefix brings to the next letter does not: `hasiddur`,
   `hamasorah`, `birkat_hamazon`, `mikol`, `bameh`. A letter written with two characters (`sh`,
-  `ch`, `kh`, `tz`) is never doubled: `mitratzeh`, not `mitratztzeh`.
-- **A final heh is written** after its vowel: `minchah`, `retzeh`, `mosheh`. So is a mappiq heh.
+  `kh`, `tz`) is never doubled: `mitratzeh`, not `mitratztzeh`.
+- **A final heh is written** after its vowel: `minhah`, `retzeh`, `mosheh`. So is a mappiq heh.
 - **Prefixes join their word**: the article and the prepositions (`ha`, `ve`/`u`, `be`, `le`,
   `ke`, `mi`, `she`) are written as part of the word they precede, with nothing between:
   `hashalem`, `bekhol`, `leleil`.
-- **Nothing marks a dropped aleph or ayin**, not `_` and not an apostrophe: `vaanachnu`,
+- **Nothing marks a dropped aleph or ayin**, not `_` and not an apostrophe: `vaanahnu`,
   `haaretz`, `asher_gealanu`.
 
 

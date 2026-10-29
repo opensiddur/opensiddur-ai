@@ -52,7 +52,7 @@ The projects are renamed to these identifiers in one change (issue #266, phase 2
 | `birnbaum_ashkenaz_en_1949` | `hasiddur_hashalem-birnbaum-1949-en` |
 | `heidenheim_haggadah_1822` | `haggadah_leleil_shimmurim-heidenheim-1822-he` |
 | `feinstein_haggadah_translation_2009` | `haggadah_leleil_shimmurim-feinstein-2009-en` |
-| `humash` | `chumash-opensiddur-he` |
+| `humash` | `humash-opensiddur-he` |
 | `siddur_expanded` | `siddur_expanded-opensiddur-he` |
 | `jps1917` | `tanakh-jps-1917-en` |
 | `miqra_al_pi_hamasorah` | `tanakh-miqra_al_pi_hamasorah-he` |
@@ -69,7 +69,7 @@ and apostrophes dropped with the parts joined, and spaces made `_`.
 
 | The source prints | Title field |
 |---|---|
-| *Selichoth for the Propitiatory and Penitential Days* (Asher, 1912) | `selichoth` (the table gives `selichot`) |
+| *Selichoth for the Propitiatory and Penitential Days* (Asher, 1912) | `selichoth` (the table gives `selihot`) |
 | *ha-Siddur ha-Shalem* (Birnbaum, 1949) | `hasiddur_hashalem` |
 | *Miqra al pi ha-Masorah* | `miqra_al_pi_hamasorah` |
 
@@ -86,7 +86,7 @@ Projects imported from the opensiddur.org export follow the same format; they ar
 after the post that carried them.
 
 - `title`: the post's title folded to ASCII. The style guide's romanization is mapped onto the
-  table's digraphs (`ḥ`→`ch`, `ẓ`→`tz`, `ƙ`→`kh`, `š`→`sh`), `ʼ` and `ȝ` are dropped and any
+  table's letters (`ḥ`→`h`, `ẓ`→`tz`, `ƙ`→`kh`, `š`→`sh`), `ʼ` and `ȝ` are dropped and any
   other diacritic is stripped. Cut at a word boundary to at most 60 characters.
 - `author`: the primary contributor's surname, or the original author of a historical work.
 - `date`: the year of the original work, else the year of the post.
@@ -125,21 +125,24 @@ spelling; the registry check reports any project still emitting it.
 
 Hebrew words in identifiers, file names and URNs are romanized by the table in
 [JLPTEI-3.md](../schema/JLPTEI-3.md#transliteration). It is ASCII-only: digraphs, never
-diacritics. Where the opensiddur.org style guide's simple forms differ, this table wins: het is
-`ch`, never `h`, so that it stays distinct from heh; tsadi is `tz`, not `ts`.
+diacritics. Het is `h`, the opensiddur.org style guide's `ḥ` without its dot, as the site's own
+slugs write it (`aqedat-yitshaq`); it is not distinguished from heh. Where the style guide's
+simple forms differ otherwise, this table wins: tsadi is `tz`, not `ts`.
 
 ### Common spellings and known variants
 
 `specs/naming/spellings.yaml` holds two lists:
 
-- `exceptions`: words with a common spelling that wins over the table (`kaddish`, `chanukah`,
-  `chumash`). Only words with a spelling of their own in English belong here, not every word a
+- `exceptions`: words with a common spelling that wins over the table (`kaddish`, `kiddush`,
+  `humash`). Only words with a spelling of their own in English belong here, not every word a
   book happens to print in English.
-- `variants`: a non-standard spelling, mapped to its standard one (`hanukkah: chanukah`,
+- `variants`: a non-standard spelling, mapped to its standard one (`chanukah: hanukkah`,
   `kedushah: qedushah`). `validate_names` reports every variant it finds in a file name, a URN
   path component or the registry.
 
 The variant list catches known misspellings, not every one. A word is only a variant if it
-cannot be another word: `selah` (סֶלָה) and `selach` (סְלַח) are both correct, so neither is
-listed. Spellings are settled from the Hebrew, a family of books at a time, and each new
+cannot be another word: `lecha` could be לְךָ (`lekha`) or לְכָה (`lekhah`), so it is not listed.
+Since het and heh are both `h`, some different words are now spelled alike: סֶלָה and סְלַח
+are both `selah`, וַיְהִי and וַיְחִי both `vayehi`. That is accepted; where two such texts
+need different URNs, the registry tells them apart by more of their words. Spellings are settled from the Hebrew, a family of books at a time, and each new
 decision is added here so the next book is held to it.

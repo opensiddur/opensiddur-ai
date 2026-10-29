@@ -7,39 +7,41 @@
 # Words whose common spelling wins over the table. Only a word with a spelling of its own in
 # English belongs here: kaddish and kiddush are English words, kedushah and qadosh are not.
 exceptions:
-  - chanukah    # the table gives chanukkah
-  - chumash     # chummash
+  - humash      # the table gives hummash
   - kaddish     # qaddish
   - kiddush     # qiddush
 
 # A spelling that is not standard, and the standard spelling of the same word. List a word
-# only if it cannot be another word: `selah` (סֶלָה) and `selach` (סְלַח) are both right, so
-# neither is a variant of the other.
+# only if it cannot be another word: `lecha` could be לְךָ (`lekha`) or לְכָה (`lekhah`), so
+# it is not a variant of either.
 variants:
   # Common spellings
-  chanukkah: chanukah
-  hanukkah: chanukah
-  humash: chumash
+  chumash: humash
+  chummash: humash
   qaddish: kaddish
   qiddush: kiddush
-  # Het is ch, never h or kh
-  anahnu: anachnu
-  berahamim: berachamim
-  ehad: echad
-  hayyim: chayyim
-  hodesh: chodesh
-  menuhah: menuchah
-  minhat: minchat
-  pahdekha: pachdekha
-  rahamekha: rachamekha
-  rahamim: rachamim
-  rahem: rachem
-  rahum: rachum
-  selihah: selichah
-  selihot: selichot
-  tahanun: tachanun
-  vaanahnu: vaanachnu
-  vehartanu: vechartanu
+  # Het is h, never ch
+  anachnu: anahnu
+  berachamim: berahamim
+  chanukah: hanukkah
+  chanukkah: hanukkah
+  chayim: hayyim
+  chayyim: hayyim
+  chodesh: hodesh
+  chol: hol
+  echad: ehad
+  menuchah: menuhah
+  minchat: minhat
+  pachdekha: pahdekha
+  rachamekha: rahamekha
+  rachamim: rahamim
+  rachem: rahem
+  rachum: rahum
+  selichah: selihah
+  selichot: selihot
+  tachanun: tahanun
+  vaanachnu: vaanahnu
+  vechartanu: vehartanu
   # Khaf is kh, not ch
   barech: barekh
   baruch: barukh
@@ -66,7 +68,6 @@ variants:
   # Dagesh hazak doubles within a word
   amekha: ammekha
   atah: attah
-  chayim: chayyim
   hakahal: haqahal
   hateh: hatteh
   imanu: immanu
@@ -90,12 +91,12 @@ variants:
   mikkol: mikol
   miqqedem: miqedem
   # Segol + yod is ei
-  vetechezenah: vetechezeinah
-  vetehezena: vetechezeinah
+  vetechezenah: vetehezeinah
+  vetehezena: vetehezeinah
   # A final heh is written
   avoda: avodah
   hashana: hashanah
-  menucha: menuchah
+  menucha: menuhah
   moshe: mosheh
   retze: retzeh
   shuva: shuvah
