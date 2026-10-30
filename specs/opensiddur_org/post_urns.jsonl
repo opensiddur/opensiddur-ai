@@ -47,7 +47,7 @@
 {"post_id": 49029, "kind": "new", "urn": "urn:x-opensiddur:text:poem:chanukah_in_santa_monica_lehrer"}
 {"post_id": 51689, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessing_for_chanukah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "3": "urn:x-opensiddur:text:prayer:sheasah_nissim"}}
 {"post_id": 53553, "kind": "new", "urn": "urn:x-opensiddur:text:poem:the_many_and_the_few_guthrie"}
-{"post_id": 53567, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tzur_after_7_october_baruch"}
+{"post_id": 53567, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tzur_after_7_october_barukh"}
 {"post_id": 53572, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ya_chanukka"}
 {"post_id": 53581, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ayde_selebramos"}
 {"post_id": 53593, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tzur_for_the_charvot_barzel_war_varady"}
@@ -68,13 +68,13 @@
 {"post_id": 65011, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanza_to_maoz_tzur_with_regard_to_the_present_yirmiyah"}
 {"post_id": 65015, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanzas_to_maoz_tzur_with_regard_to_the_present_shmuel"}
 {"post_id": 65021, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanzas_to_maoz_tzur_with_regard_to_the_present_ashkenazi"}
-{"post_id": 65026, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashorer_shirim_naim_tsur"}
-{"post_id": 65034, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_amdu_qamu_tsur"}
-{"post_id": 65041, "kind": "new", "urn": "urn:x-opensiddur:text:poem:todot_nitnah_tsur"}
-{"post_id": 65052, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashir_bizmirim_tsur"}
-{"post_id": 65058, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_tzur_b_af_tsur"}
-{"post_id": 65061, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yedidekha_el_yelidei_ish_tam_tsur"}
-{"post_id": 65066, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yom_yom_eftach_pi_tsur"}
+{"post_id": 65026, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashorer_shirim_naim_tzur"}
+{"post_id": 65034, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_amdu_qamu_tzur"}
+{"post_id": 65041, "kind": "new", "urn": "urn:x-opensiddur:text:poem:todot_nitnah_tzur"}
+{"post_id": 65052, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashir_bizmirim_tzur"}
+{"post_id": 65058, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_tzur_b_af_tzur"}
+{"post_id": 65061, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yedidekha_el_yelidei_ish_tam_tzur"}
+{"post_id": 65066, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yom_yom_eftach_pi_tzur"}
 {"post_id": 65459, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:yotzer_for_shabbat_rosh_chodesh_chanukah_from_nusach_candia", "rows": {"1": "urn:x-opensiddur:text:prayer:yotzer_or/opening", "33": "urn:x-opensiddur:text:prayer:yotzer_or/hakol_yodukha"}}
 {"post_id": 66445, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:reliance_central"}
 {"post_id": 66452, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:rock_of_ages_gottheil"}

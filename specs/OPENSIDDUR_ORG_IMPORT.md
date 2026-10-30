@@ -336,7 +336,8 @@ How `match` handles each post:
     name cut at 60 characters does not end on a word like "of" or "the". The original
     author's name follows, as the project's author field gives it, or as the title's "by"
     gives it when no one else is credited (`chanukah_wise`, `rock_of_ages_gottheil`), since a
-    new text on the site is someone's. The slug is not used: the bibliography's link still
+    new text on the site is someone's. It is respelled by the list like the rest (Yaaqov ibn
+    Tsur gives `_tzur`); the person's own spelling stays in the label and the credits. The slug is not used: the bibliography's link still
     leads to the post on the site.
   - If that name is taken, `_<post_id>` is appended.
 - Every other post gets a proposal in `output/opensiddur_org_urn_proposals.jsonl`. The

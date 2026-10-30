@@ -35,6 +35,11 @@ class TestMinting(unittest.TestCase):
         record = mint(post("שירה", slug="shirah-by-someone"), set(), VARIANTS)
         self.assertEqual(record.urn, f"{PREFIX}prayer:shirah_poet")
 
+    def test_the_author_is_respelled_too(self) -> None:
+        tsur = {"name": "Yaaqov ibn Tsur", "profile_link": "https://opensiddur.org/profile/yaaqov-ibn-tsur"}
+        p = parse_post(make_post(7, title="A Piyyut", coauthors=[tsur]))
+        self.assertEqual(mint(p, set(), VARIANTS).urn, f"{PREFIX}prayer:a_piyyut_tzur")
+
     def test_an_author_credited_only_by_the_title(self) -> None:
         unknown = {"name": "Unknown", "profile_link": "https://opensiddur.org/profile/unknown"}
         p = parse_post(make_post(7, title="A Stanza, by Rabbi Yirmiyah of Würzburg", coauthors=[unknown]))

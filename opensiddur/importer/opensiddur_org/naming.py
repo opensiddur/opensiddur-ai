@@ -149,7 +149,9 @@ def text_name(post: Post, variants: Mapping[str, str]) -> str:
     project title keeps the post's own romanization; then its author's name, since a new text
     on the site is someone's (``chanukah_wise``, not ``chanukah``)."""
     name = _joined([variants.get(word, word) for word in title_words(post)], TITLE_LENGTH)
-    author = original_author(post)
+    # The author is respelled too: a URN is spelled by the table throughout, and the person's
+    # own spelling stays in the registry's label and the credits (ibn Tsur -> `tzur`).
+    author = "_".join(variants.get(word, word) for word in original_author(post).split("_") if word)
     return f"{name}_{author}" if author else name
 
 
