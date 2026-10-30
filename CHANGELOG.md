@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Each book release lists its downloads in opensiddur-projects' `DOWNLOADS.md` (#275): every
+  book's title and description from its settings file, with links to the electronic and printed
+  books attached to the release. `release-projects.yml` rewrites it after publishing the newest
+  release, through a pull request it merges itself; a change to `DOWNLOADS.md` alone does not
+  make a new release. `python -m opensiddur.release.downloads` writes it.
 - A settings file can require processor versions: `requires_processor: ">=0.7.0"`. A processor
   that does not meet it refuses the file, in every stage and in `books --check`, instead of
   building a broken book.

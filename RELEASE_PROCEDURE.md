@@ -137,8 +137,9 @@ month. It calls this repository's `.github/workflows/release-projects.yml`, whic
 
 1. Finds the latest code release (the newest `vX.Y.Z` tag here) and the last book release (the
    newest `vYYYYMMDD` tag on opensiddur-projects).
-2. Stops if there is nothing new: opensiddur-projects `main` is at the commit of the last book
-   release, and that release was built with the same code release. Each book release's notes
+2. Stops if there is nothing new: opensiddur-projects `main` has not changed since the last book
+   release, other than its `DOWNLOADS.md` (step 7), and that release was built with the same code
+   release. Each book release's notes
    record it in a `Built with opensiddur-processor vX.Y.Z` line, which this step reads.
 3. Lists the settings files in `opensiddur-projects/settings/<book>/` with that code release
    (`books --list`). A settings file's `requires_processor:` says which code releases can
@@ -151,6 +152,13 @@ month. It calls this repository's `.github/workflows/release-projects.yml`, whic
    - then the printed book, `<book>-<variant>-vYYYYMMDD.pdf`.
 6. Publishes the release once every book has finished. Publishing creates the tag. A run
    that is cancelled leaves the draft unpublished; finish it by rebuilding it with its tag.
+7. Rewrites `DOWNLOADS.md` in opensiddur-projects, the list of the newest release's books: each
+   book's title and description, from its settings file at the release's commit, and links to its
+   electronic and printed books on the release. `main` takes changes only by pull request, so
+   the workflow pushes a `downloads/vYYYYMMDD` branch, opens its pull request and merges it.
+   Rebuilding the newest release rewrites the list too; rebuilding an older one leaves it alone.
+   If the merge is refused (for instance, because the branch protection changed), merge the
+   leftover `downloads/vYYYYMMDD` pull request by hand.
 
 The books build in parallel, each with its own log and status; a large one (the full humash)
 takes well over an hour. A printed book that fails leaves its electronic book attached, and a
