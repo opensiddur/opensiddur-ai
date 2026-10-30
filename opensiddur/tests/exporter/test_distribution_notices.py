@@ -170,6 +170,7 @@ class TestHelpers(unittest.TestCase):
         (self.base / "proj" / "index.xml").write_text("<x/>")
         settings_file = settings_directory / "book" / "edition.yaml"
         settings_file.write_text(
+            "requires_processor: \">=0.1.0\"\n"
             "book:\n  project: proj\n  file_name: index.xml\n"
             "distribution:\n  notice:\n    logo: missing.png\n")
         result = self._check(settings_file, settings_directory)
@@ -184,6 +185,7 @@ class TestHelpers(unittest.TestCase):
         (settings_directory / "book" / "logo.png").write_text("not a picture")
         settings_file = settings_directory / "book" / "edition.yaml"
         settings_file.write_text(
+            "requires_processor: \">=0.1.0\"\n"
             "book:\n  project: proj\n  file_name: index.xml\n"
             "distribution:\n  notice:\n    logo: logo.png\n")
         result = self._check(settings_file, settings_directory)

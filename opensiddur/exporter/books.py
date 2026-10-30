@@ -4,8 +4,15 @@ settings directory.
 The settings directory (opensiddur-projects/settings/) has one subdirectory per book, holding
 that book's settings files: settings/humash/annual.yaml, settings/humash/triennial.yaml. Each
 names the root file it formats in its `book:` key and says how it differs from its siblings in
-`description:`. The release builds every one of them and attaches them to the release
-(.github/workflows/release-books.yml), named <book>-<settings>[-<tag>].pdf and .html.
+`description:`. Each month, opensiddur-projects is tagged with a date (vYYYYMMDD) and every book
+is built and attached to that release (.github/workflows/release-projects.yml), named
+<book>-<settings>[-<tag>].pdf and .html.
+
+The books are built with the latest opensiddur-processor release. Each settings file declares in
+`requires_processor:` the processor versions that build it; `--list`, which is what the release
+builds, leaves out a book whose requirement the processor running it does not meet. The
+requirement is read before the rest of the file is validated, because a book waiting for a newer
+release usually uses a key an older processor does not know.
 
 Each book is built in the formats its settings list in `formats:`, both unless it says
 otherwise. `--format pdf` or `--format html` builds only that one, for the books that list it;
@@ -14,8 +21,9 @@ a book that does not is skipped, not failed. The electronic book is one self-con
 with `--destination electronic`, which leaves the settings a reader supplies for the reader's
 device to decide. `--formats` prints the formats one book lists, for the release workflow.
 
-`--check` validates without building: the YAML parses and matches the settings schema, the
-project and file the book names exist, and every font chain the book will be typeset with has
+`--check` validates without building: the YAML parses and matches the settings schema, it
+declares `requires_processor:` and this processor meets it, the project and file the book names
+exist, and every font chain the book will be typeset with has
 an installed font. Pull requests to opensiddur-projects run it.
 
 A book that fails is reported and skipped; the others are still built. The exit status is
@@ -39,6 +47,7 @@ from pydantic import ValidationError
 import yaml
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.version import processor_version, satisfies
 from opensiddur.exporter.settings import BookTarget, SettingsYaml, read_settings
 from opensiddur.exporter import notices, typography
 
@@ -126,10 +135,31 @@ def check(settings_file: Path, settings_directory: Path, project_directory: Path
     if settings.book is None:
         result.error = "no `book:` key; every file in the settings directory must name its book"
         return result
+    if settings.requires_processor is None:
+        result.error = ("no `requires_processor:` key; every book must declare the "
+                        "opensiddur-processor versions that build it, such as `>=0.7.0`")
+        return result
     result.book = settings.book
     result.formats = tuple(settings.formats)
     result.error = _check_fonts(settings) or _check_logo(settings, settings_file)
     return result
+
+
+def buildable(settings_file: Path) -> bool:
+    """ Whether this processor meets the `requires_processor:` a settings file declares.
+
+    Read from the YAML before it is validated: a book that waits for a newer processor usually
+    uses a key this one refuses. A file whose requirement cannot be read counts as buildable,
+    so that its build fails and shows why.
+    """
+    try:
+        with open(settings_file, "r") as f:
+            data = yaml.safe_load(f)
+        requirement = data["requires_processor"]
+        installed = processor_version()
+        return installed is None or satisfies(requirement, installed)
+    except (OSError, yaml.YAMLError, KeyError, TypeError, ValueError):
+        return True
 
 
 def _check_logo(settings: SettingsYaml, settings_file: Path) -> Optional[str]:
@@ -252,7 +282,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     action.add_argument("--check", action="store_true",
                         help="Only validate the settings, the books they name and their fonts; build nothing.")
     action.add_argument("--list", action="store_true",
-                        help="Print the names of the settings files (e.g. humash/annual) as a JSON list; "
+                        help="Print the names of the settings files (e.g. humash/annual) as a JSON list, "
+                             "leaving out those whose requires_processor this processor does not meet; "
                              "build nothing. The release workflow builds one book per name.")
     action.add_argument("--formats", dest="list_formats", action="store_true",
                         help="Print the formats one settings file lists (e.g. [\"html\"]) as JSON; "
@@ -268,7 +299,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         except LookupError as e:
             parser.error(f"no book or settings file named {e.args[0]} in {settings_directory}")
     if args.list:
-        print(json.dumps([book_name(f, settings_directory) for f in settings_files]))
+        print(json.dumps([book_name(f, settings_directory) for f in settings_files
+                          if buildable(f)]))
         return 0
     if args.list_formats:
         if len(settings_files) != 1:

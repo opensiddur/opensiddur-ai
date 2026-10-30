@@ -1,9 +1,13 @@
 # Release procedure
 
-A release is a `v<major>.<minor>.<patch>` tag on this repository (`opensiddur-processor`). The tag's
-commit pins exact commits of the `sourcetexts` and `opensiddur-projects` submodules, so a given
-release fully identifies the code and the data it was built and tested against. Neither
-`sourcetexts` nor `opensiddur-projects` is tagged itself — the submodule pointers are the record.
+There are two kinds of release, versioned separately:
+
+- **Code releases** are `v<major>.<minor>.<patch>` tags on this repository (`opensiddur-processor`),
+  cut by hand as described below. The tag's commit pins exact commits of the `sourcetexts` and
+  `opensiddur-projects` submodules: a record of the data the code was tested against.
+- **Book releases** are date tags, `vYYYYMMDD`, on `opensiddur-projects`, made monthly by a
+  workflow. The books (electronic and printed) are built from that commit with the latest code
+  release and attached to it. See [Book releases](#book-releases).
 
 ## Versioning policy
 
@@ -96,15 +100,8 @@ What it does, in order:
 10. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
    with `--no-publish`).
 
-Publishing the release starts `.github/workflows/release-books.yml`. It lists the settings files
-in `opensiddur-projects/settings/<book>/` at the pinned commit and starts one
-`release-book.yml` job per file. That job builds the book in the formats its settings'
-`formats:` lists, both unless it says otherwise, and attaches them to the release:
-- the electronic book, `<book>-<variant>-vX.Y.Z.html`, first, which takes seconds;
-- then the printed book, `<book>-<variant>-vX.Y.Z.pdf`.
-
-A printed book that fails leaves its electronic book attached. The books build in parallel, each
-with its own log and status; a large one (the full humash) takes well over an hour.
+A code release builds no books. The next book release builds them with it, even when
+opensiddur-projects has not changed.
 
 ## After releasing
 
@@ -128,18 +125,60 @@ with its own log and status; a large one (the full humash) takes well over an ho
 
 - Check the [releases page](https://github.com/opensiddur/opensiddur-processor/releases) and the pushed
   tag.
-- Check that the *Release books* workflow finished and the books are attached. A red job means
-  that book failed to build: the others are still attached, and the release stands. Its
-  `book-log-<book>-<variant>-vX.Y.Z` artifact has the compiler and LaTeX output, under
-  `html/` and `pdf/`. Rebuild one book
-  for the tag with `gh workflow run release-book.yml -f tag=vX.Y.Z -f book=<book>/<variant>`,
-  or all of them with `gh workflow run release-books.yml -f tag=vX.Y.Z`; either replaces the
-  assets.
-  The rerun builds the code and projects the tag pins, so a fix that lands in a later commit
-  ships with the next release instead.
+- If the books should not wait for the first of the month, start a book release now (below).
 - Confirm `git submodule status` on the tag shows the commits you expected.
 - If a downstream worktree needs the release, `git fetch --tags` and check out the tag, then
   `git submodule update --init`.
+
+## Book releases
+
+`opensiddur-projects/.github/workflows/release.yml` runs at 00:00 UTC on the first of each
+month. It calls this repository's `.github/workflows/release-projects.yml`, which:
+
+1. Finds the latest code release (the newest `vX.Y.Z` tag here) and the last book release (the
+   newest `vYYYYMMDD` tag on opensiddur-projects).
+2. Stops if there is nothing new: opensiddur-projects `main` is at the commit of the last book
+   release, and that release was built with the same code release. Each book release's notes
+   record it in a `Built with opensiddur-processor vX.Y.Z` line, which this step reads.
+3. Lists the settings files in `opensiddur-projects/settings/<book>/` with that code release
+   (`books --list`). A settings file's `requires_processor:` says which code releases can
+   build it; a book that release does not meet is left out until one does.
+4. Creates a draft release `vYYYYMMDD` (today's UTC date) at the `main` commit, with notes that
+   list the opensiddur-projects commits since the last book release.
+5. Starts one `release-book.yml` job per settings file. It builds the book in the formats its
+   settings' `formats:` lists, both unless it says otherwise, and attaches them to the release:
+   - the electronic book, `<book>-<variant>-vYYYYMMDD.html`, first, which takes seconds;
+   - then the printed book, `<book>-<variant>-vYYYYMMDD.pdf`.
+6. Publishes the release once every book has finished. Publishing creates the tag. A run
+   that is cancelled leaves the draft unpublished; finish it by rebuilding it with its tag.
+
+The books build in parallel, each with its own log and status; a large one (the full humash)
+takes well over an hour. A printed book that fails leaves its electronic book attached, and a
+book that fails is not attached at all. Its job is red, but the release is still published.
+Its `book-log-<book>-<variant>-vYYYYMMDD` artifact has the compiler and LaTeX output, under
+`html/` and `pdf/`.
+
+The first code release that can build books is v0.7.0: v0.6.0 and earlier refuse the
+`requires_processor:` key. Until it exists, the monthly run does nothing.
+
+Run it by hand from opensiddur-projects:
+
+```bash
+# A book release now, if there is anything new:
+gh workflow run release.yml -R opensiddur/opensiddur-projects
+# ...even if there is nothing new:
+gh workflow run release.yml -R opensiddur/opensiddur-projects -f force=true
+# Rebuild every book of an existing release, or one, replacing its assets:
+gh workflow run release.yml -R opensiddur/opensiddur-projects -f tag=vYYYYMMDD
+gh workflow run release.yml -R opensiddur/opensiddur-projects -f tag=vYYYYMMDD -f book=<book>/<variant>
+```
+
+A rebuild uses the projects commit and the code release that the release records. A fix that
+lands later ships with the next book release. A second release on the same day is refused:
+rebuild that day's release instead.
+
+GitHub turns off scheduled workflows in a repository with no activity for 60 days. If the
+monthly run stops, turn it back on from opensiddur-projects' Actions tab.
 
 ## Undoing a bad release
 

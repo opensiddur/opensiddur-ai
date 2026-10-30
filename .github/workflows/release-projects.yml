@@ -1,0 +1,235 @@
+name: Release projects
+
+# Reusable workflow (opensiddur-processor#216): tags opensiddur-projects with the date (vYYYYMMDD),
+# builds every book in its settings/<book>/ with the latest opensiddur-processor release, and attaches
+# them to a release of that tag. Called monthly, and by hand, from
+# opensiddur-projects/.github/workflows/release.yml, so the release and the tag belong to
+# opensiddur-projects and its own GITHUB_TOKEN writes them.
+#
+# A new release is made only when there is something new to build: opensiddur-projects main
+# has moved since the last date tag, or opensiddur-processor has released since the books were last
+# built. `force` builds anyway. The release body records the opensiddur-processor release the books
+# were built with, in a `Built with opensiddur-processor vX.Y.Z` line that the next run reads.
+#
+# A book whose `requires_processor:` that release does not meet is left out (books --list). The
+# release starts as a draft and is published once every book has finished, built or not: a
+# book that fails is not attached and its job fails, so a release with missing books shows red.
+#
+# `tag` rebuilds an existing release instead, with the commit and the opensiddur-processor release
+# it records; `book` narrows that to one settings file. The new files replace the old ones.
+
+on:
+  workflow_call:
+    inputs:
+      force:
+        description: Make a new release even when nothing has changed since the last one
+        type: boolean
+        default: false
+      tag:
+        description: Rebuild this existing release (e.g. v20261101) instead of making a new one
+        type: string
+        default: ''
+      book:
+        description: With `tag`, rebuild only this settings file, as <book>/<variant>
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      # v0.6.0 and earlier refuse the `requires_processor:` key every settings file now has.
+      FIRST_SUPPORTED: v0.7.0
+    outputs:
+      skip: ${{ steps.decide.outputs.skip || steps.list.outputs.skip }}
+      tag: ${{ steps.decide.outputs.tag }}
+      sha: ${{ steps.decide.outputs.sha }}
+      processor_tag: ${{ steps.decide.outputs.processor_tag }}
+      draft: ${{ steps.decide.outputs.draft }}
+      books: ${{ steps.list.outputs.books }}
+
+    steps:
+      - name: Checkout opensiddur-projects
+        uses: actions/checkout@v5
+        with:
+          # Full history and tags: the last date tag, and what changed since it.
+          fetch-depth: 0
+          path: projects
+
+      - name: Decide what to build
+        id: decide
+        working-directory: projects
+        env:
+          FORCE: ${{ inputs.force }}
+          TAG_INPUT: ${{ inputs.tag }}
+          BOOK: ${{ inputs.book }}
+        run: |
+          set -euo pipefail
+          skip() {
+            echo "::notice title=No release::$1"
+            echo "$1" >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+          built_with() {
+            gh release view "$1" --json body --jq .body \
+              | sed -n 's/^Built with opensiddur-processor \(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' | head -1
+          }
+
+          if [ -n "${TAG_INPUT}" ]; then
+            tag="${TAG_INPUT}"
+            sha=$(gh release view "${tag}" --json targetCommitish --jq .targetCommitish)
+            draft=$(gh release view "${tag}" --json isDraft --jq .isDraft)
+            processor_tag=$(built_with "${tag}")
+            if [ -z "${processor_tag}" ]; then
+              echo "::error::Release ${tag} does not record the opensiddur-processor release it was built with"
+              exit 1
+            fi
+          else
+            if [ -n "${BOOK}" ]; then
+              echo "::error::Rebuilding one book needs the release it belongs to: set tag as well"
+              exit 1
+            fi
+            processor_tag=$(git ls-remote --tags --refs https://github.com/opensiddur/opensiddur-processor.git \
+              | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
+            if [ -z "${processor_tag}" ] || \
+                [ "$(printf '%s\n' "${FIRST_SUPPORTED}" "${processor_tag}" | sort -V | head -1)" != "${FIRST_SUPPORTED}" ]; then
+              skip "The latest opensiddur-processor release, ${processor_tag:-none}, predates ${FIRST_SUPPORTED}, the first that can build the books."
+            fi
+            # The default branch, whichever branch the run was started from.
+            default=$(gh repo view "${GH_REPO}" --json defaultBranchRef --jq .defaultBranchRef.name)
+            sha=$(git rev-parse "refs/remotes/origin/${default}")
+            prev=$(git tag --list | grep -E '^v[0-9]{8}$' | sort | tail -1 || true)
+            if [ -n "${prev}" ] && [ "${FORCE}" != true ]; then
+              prev_sha=$(git rev-list -n 1 "refs/tags/${prev}")
+              prev_processor=$(built_with "${prev}" || true)
+              if [ "${prev_sha}" = "${sha}" ] && [ "${prev_processor}" = "${processor_tag}" ]; then
+                skip "Nothing new since ${prev}: opensiddur-projects is at the same commit, built with ${processor_tag}."
+              fi
+            fi
+            tag="v$(date -u +%Y%m%d)"
+            if gh release view "${tag}" >/dev/null 2>&1 || git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "::error::${tag} already exists. Rebuild it by running this workflow with tag=${tag}."
+              exit 1
+            fi
+            draft=new
+            {
+              echo "Books built from opensiddur-projects ${sha}."
+              echo
+              echo "Built with opensiddur-processor ${processor_tag} (https://github.com/opensiddur/opensiddur-processor/releases/tag/${processor_tag})"
+              if [ -n "${prev}" ]; then
+                echo
+                echo "## Changes since ${prev}"
+                echo
+                git log --no-merges --max-count=200 --format='- %s' "${prev}..${sha}"
+              fi
+            } > "${RUNNER_TEMP}/notes.md"
+          fi
+          {
+            echo "tag=${tag}"
+            echo "sha=${sha}"
+            echo "processor_tag=${processor_tag}"
+            echo "draft=${draft}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Release ${tag}: opensiddur-projects ${sha}, opensiddur-processor ${processor_tag}" | tee -a "$GITHUB_STEP_SUMMARY"
+          git checkout -q "${sha}"
+
+      - name: Checkout opensiddur-processor ${{ steps.decide.outputs.processor_tag }}
+        if: steps.decide.outputs.skip != 'true'
+        uses: actions/checkout@v5
+        with:
+          repository: opensiddur/opensiddur-processor
+          ref: refs/tags/${{ steps.decide.outputs.processor_tag }}
+          path: opensiddur-processor
+
+      - name: Set up Python
+        if: steps.decide.outputs.skip != 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        if: steps.decide.outputs.skip != 'true'
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: opensiddur-processor/uv.lock
+
+      - name: Install dependencies
+        if: steps.decide.outputs.skip != 'true'
+        working-directory: opensiddur-processor
+        run: uv sync
+
+      # The settings files the release builds: those whose requires_processor the
+      # opensiddur-processor release meets.
+      - name: List settings files
+        id: list
+        if: steps.decide.outputs.skip != 'true'
+        working-directory: opensiddur-processor
+        env:
+          BOOK: ${{ inputs.book }}
+          DRAFT: ${{ steps.decide.outputs.draft }}
+        run: |
+          set -euo pipefail
+          books=$(uv run python -m opensiddur.exporter.books --list \
+            --project-directory "$GITHUB_WORKSPACE/projects/project")
+          if [ -n "${BOOK}" ]; then
+            books=$(jq -c --arg book "${BOOK}" 'map(select(. == $book))' <<< "${books}")
+            if [ "${books}" = '[]' ]; then
+              echo "::error::${BOOK} is not a settings file this release can build"
+              exit 1
+            fi
+          fi
+          echo "Books: ${books}"
+          if [ "${books}" = '[]' ] && [ "${DRAFT}" = new ]; then
+            echo "::notice title=No release::No settings file can be built with ${{ steps.decide.outputs.processor_tag }}."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "books=${books}" >> "$GITHUB_OUTPUT"
+
+      - name: Create the draft release
+        if: steps.decide.outputs.draft == 'new' && steps.list.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.decide.outputs.tag }}
+          SHA: ${{ steps.decide.outputs.sha }}
+        run: |
+          gh release create "${TAG}" --draft --target "${SHA}" --title "${TAG}" \
+            --notes-file "${RUNNER_TEMP}/notes.md"
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.skip != 'true' && needs.plan.outputs.books != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        book: ${{ fromJSON(needs.plan.outputs.books) }}
+    name: ${{ matrix.book }}
+    # In a workflow called from another repository, ./ would mean that repository.
+    uses: opensiddur/opensiddur-processor/.github/workflows/release-book.yml@main
+    with:
+      tag: ${{ needs.plan.outputs.tag }}
+      book: ${{ matrix.book }}
+      projects_ref: ${{ needs.plan.outputs.sha }}
+      processor_ref: ${{ needs.plan.outputs.processor_tag }}
+
+  # Publishing creates the tag, at the commit the books were built from. It waits for every
+  # book, and goes ahead when some fail, as a release with a red job. A cancelled run leaves
+  # the draft unpublished; finish it by running again with its tag.
+  publish:
+    needs: [plan, build]
+    if: >-
+      !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true'
+      && (needs.plan.outputs.draft == 'new' || needs.plan.outputs.draft == 'true')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.plan.outputs.tag }}
+    steps:
+      - name: Publish the release
+        run: gh release edit "${TAG}" --draft=false

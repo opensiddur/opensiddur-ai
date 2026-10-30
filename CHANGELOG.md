@@ -36,8 +36,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bilingual heading in place of its edition's. It was applied to the project named
   `siddur_expanded` and no other; that book's settings now ask for it, and built without
   them it keeps its printed titles.
+- Monthly book releases (#216): on the first of each month, opensiddur-projects is tagged with
+  the date (`vYYYYMMDD`) and its books are built with the latest opensiddur-processor release
+  and attached to that release (`release-projects.yml`, called from opensiddur-projects). A
+  month with no new projects commits and no new processor release is skipped.
+- `books --list` leaves out a book whose `requires_processor:` the processor does not meet,
+  so a release builds only the books its processor can (#216). Every file in
+  `opensiddur-projects/settings/` must now declare `requires_processor:`.
 
 ### Changed
+- An opensiddur-processor release no longer builds books; `release-books.yml` is gone, and
+  `release-book.yml` builds one book for an opensiddur-projects release, from a given projects
+  commit with a given processor release.
 - Between releases, `main` is versioned as the development of the next release: `0.7.0.dev0`
   now. A release from a development version releases the version it names (`0.7.0`; `--major`
   jumps past it, and `--patch` fixes the last release tagged, `0.6.1`), and then commits the

@@ -209,11 +209,15 @@ settings/
 ```
 
 Each file names the root file it formats with a `book:` key and says how it differs from its
-siblings with `description:` (below). When an opensiddur-processor release is published,
-`.github/workflows/release-books.yml` lists them (`books --list`) at the opensiddur-projects
-commit the release pins, and starts a `release-book.yml` job for each, which builds that book
-in the formats its `formats:` lists (below) and attaches them to the release as
-`<book>-<variant>-<tag>.html` and `.pdf` (e.g. `humash-annual-v0.5.0.pdf`).
+siblings with `description:` (below). On the first of each month, opensiddur-projects'
+`release.yml` calls this repository's `.github/workflows/release-projects.yml`, which tags
+opensiddur-projects with the date (`vYYYYMMDD`) and builds the books with the latest
+opensiddur-processor release (see [RELEASE_PROCEDURE.md](../../RELEASE_PROCEDURE.md)). It lists them
+(`books --list`, which leaves out a book whose `requires_processor:` that release
+does not meet)
+and starts a `release-book.yml` job for each, which builds that book in the formats its
+`formats:` lists (below) and attaches them to the release as `<book>-<variant>-<tag>.html` and
+`.pdf` (e.g. `humash-annual-v20261101.pdf`).
 
 To build them locally (after syncing the reference database):
 
@@ -238,10 +242,15 @@ Pull requests to opensiddur-projects run `--check`, so a broken settings file fa
 rather than at release. It checks that each file:
 - is in a book's subdirectory (`settings/<book>/<variant>.yaml`; a file anywhere else is an
   error, not silently left out of the release);
-- parses, and matches the settings schema below, including a `book:` key;
+- parses, and matches the settings schema below, including `book:` and `requires_processor:`
+  keys;
 - names a project and file that exist;
 - can be typeset on that machine: every font chain, the defaults included, has an installed
   font. Without fontconfig this is an error rather than skipped.
+
+A processor that does not meet a book's `requires_processor:` fails its check. Between releases
+`main` is the development of the next release, which meets a requirement of that release (see
+[Settings file versioning](#settings-file-versioning)).
 
 ## Settings file
 
@@ -434,3 +443,9 @@ book. The settings live in opensiddur-projects and the processor here, and a rel
 book with one processor: a book that needs a fix should say so. Between releases `main` is the
 development of the next one (`0.7.0.dev0` after 0.6.0), which meets a requirement of that
 release, so a book can require a fix as soon as it is merged.
+
+Every book in `opensiddur-projects/settings/` must declare it (`books --check`). The monthly
+book release builds with the latest processor release and leaves out (`books --list`) a book
+whose requirement that release does not meet, until one does. The requirement is read before
+the rest of the file is validated, since a book waiting for a newer processor usually uses a
+key an older one does not know.

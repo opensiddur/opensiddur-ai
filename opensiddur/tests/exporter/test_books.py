@@ -43,7 +43,8 @@ class TestBooks(unittest.TestCase):
 
     def _book(self, name: str, project: str = "proj-a", **extra) -> Path:
         return self._settings(name, {"book": {"project": project, "file_name": "index.xml"},
-                                     "priority": {"transclusion": [project]}, **extra})
+                                     "priority": {"transclusion": [project]},
+                                     "requires_processor": ">=0.1.0", **extra})
 
     def _check(self, path: Path) -> books.BookResult:
         return books.check(path, self.settings_dir, self.project_dir)
@@ -96,6 +97,45 @@ class TestBooks(unittest.TestCase):
     def test_check_requires_book(self):
         result = self._check(self._settings("a/one", {"priority": {}}))
         self.assertIn("no `book:` key", result.error)
+
+    def test_check_requires_requires_processor(self):
+        result = self._check(self._settings("a/one", {
+            "book": {"project": "proj-a", "file_name": "index.xml"}, "priority": {}}))
+        self.assertIn("no `requires_processor:` key", result.error)
+
+    def test_check_unmet_requirement_fails(self):
+        with patch("opensiddur.exporter.settings.processor_version", return_value="0.6.0"):
+            result = self._check(self._book("a/one", requires_processor=">=0.7.0"))
+        self.assertIn("requires opensiddur-processor >=0.7.0; this is 0.6.0", result.error)
+
+    def test_buildable(self):
+        cases = {">=0.7.0": True, ">=0.6.0,<0.7": False, ">=0.8.0": False}
+        for requirement, expected in cases.items():
+            with self.subTest(requirement=requirement), \
+                    patch.object(books, "processor_version", return_value="0.7.0"):
+                self.assertEqual(
+                    books.buildable(self._book("a/one", requires_processor=requirement)), expected)
+
+    def test_buildable_dev_version_is_its_release(self):
+        with patch.object(books, "processor_version", return_value="0.8.0.dev0"):
+            self.assertTrue(books.buildable(self._book("a/one", requires_processor=">=0.8.0")))
+
+    def test_buildable_reads_the_requirement_before_validation(self):
+        """ A book waiting for a newer processor usually uses a key this one refuses. """
+        path = self._book("a/one", requires_processor=">=0.8.0", new_setting=True)
+        with patch.object(books, "processor_version", return_value="0.7.0"):
+            self.assertFalse(books.buildable(path))
+
+    def test_buildable_when_the_requirement_cannot_be_read(self):
+        """ Its build is left to fail, and to say why. """
+        unreadable = self.settings_dir / "a" / "bad.yaml"
+        unreadable.parent.mkdir(parents=True)
+        unreadable.write_text("priority: [unclosed\n")
+        with patch.object(books, "processor_version", return_value="0.7.0"):
+            for path in (unreadable, self._settings("a/none", {"priority": {}}),
+                         self._book("a/malformed", requires_processor="0.7")):
+                with self.subTest(path=path.name):
+                    self.assertTrue(books.buildable(path))
 
     def test_check_invalid_settings(self):
         result = self._check(self._settings("a/one", {"priority": {}, "bogus": 1}))
@@ -357,6 +397,16 @@ class TestBooks(unittest.TestCase):
         self.assertEqual(code, 0)
         # Misplaced files are listed too, so their build fails visibly rather than being skipped.
         self.assertEqual(json.loads(out), ["a/one", "b/one", "loose"])
+
+    def test_main_list_leaves_out_books_needing_another_processor(self):
+        self._book("a/one")
+        self._book("b/one", requires_processor=">=999.0.0")
+        self._book("c/one", requires_processor=">=999.0.0", new_setting=True)
+        self._settings("d/one", {"priority": {}})
+        code, out = self._main("--list")
+        self.assertEqual(code, 0)
+        # d/one fails its check for another reason, so it stays in and its build fails visibly.
+        self.assertEqual(json.loads(out), ["a/one", "d/one"])
 
     def test_main_list_empty(self):
         code, out = self._main("--list")

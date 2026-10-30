@@ -13,7 +13,9 @@ This is a work in progress to convert the Open Siddur Project to use AI to aid i
 
 The source texts and the derived JLPTEI projects live in two other repositories, both attached
 here as git submodules — `sourcetexts/` and `opensiddur-projects/`. A release tag of this
-repository therefore names the exact commits of both (see `RELEASE_PROCEDURE.md`).
+repository therefore names the exact commits of both that the code was tested against. The
+books are released separately, as monthly date tags (`vYYYYMMDD`) of opensiddur-projects, each
+built with the latest release of this repository (see `RELEASE_PROCEDURE.md`).
 
 ```bash
 git clone git@github.com:opensiddur/opensiddur-processor.git
@@ -26,7 +28,7 @@ A new git worktree starts with empty submodule directories; run `git submodule u
 there too.
 
 See [RELEASE_PROCEDURE.md](RELEASE_PROCEDURE.md) for how a version of this repository is tagged
-and how it pins `sourcetexts`/`opensiddur-projects` commits.
+and how it pins `sourcetexts`/`opensiddur-projects` commits, and how the books are released.
 
 ## Schema
 To compile the schema:
