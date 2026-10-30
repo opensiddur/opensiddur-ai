@@ -292,6 +292,11 @@ def _date_of_original(post: Post) -> str:
     return f'<tei:date when="{attr(when)}">{esc(when)}</tei:date>'
 
 
+def post_url(post: Post) -> str:
+    """The post's address by ID, which WordPress redirects to wherever the post is filed."""
+    return f"{SITE_URL}/?p={post.post_id}"
+
+
 def source_bibl(
     post: Post, credits: Credits, *, upstream_commit: str, upstream_commit_date: str
 ) -> str:
@@ -315,8 +320,12 @@ def source_bibl(
         f'<tei:distributor><tei:ref target="{SITE_URL}">{SITE_NAME}</tei:ref></tei:distributor>'
         f"{_date_of_original(post)}"
         f'<tei:date type="accessed" when="{attr(upstream_commit_date)}">{esc(upstream_commit_date)}</tei:date>'
-        f'<tei:idno type="url">{esc(post.permalink)}</tei:idno>'
+        # The link by post ID comes first: the exporter's bibliography links an entry to its
+        # first URL, and this one reaches the post wherever it is filed. The permalink
+        # changes whenever the post moves category.
+        f'<tei:idno type="url">{esc(post_url(post))}</tei:idno>'
         f'<tei:idno type="opensiddur.org">{post.post_id}</tei:idno>'
+        f'<tei:idno type="permalink">{esc(post.permalink)}</tei:idno>'
         f"{sources}"
         '<tei:note type="encoding">Converted from the export of opensiddur.org at '
         f'<tei:ref target="{UPSTREAM_REPOSITORY}/tree/{attr(upstream_commit)}">{esc(upstream_commit[:10])}</tei:ref>.'
@@ -348,8 +357,11 @@ def header(
 
 
 def front(post: Post, lang: str, id_prefix: str) -> tuple[str, str]:
-    """The introduction and notes, as paratext, and the standOff of their footnotes. They are
-    set in the project whose language they are written in (see :func:`front_language`)."""
+    """The post's own words, the paragraphs before and after its table, as colophon divisions
+    gated on paratext, and the standOff of their footnotes. They are about the digital edition,
+    not part of the source, so ``type="colophon"`` keeps them apart from front matter a source
+    printed; the exporter sets them after its own colophon. They go in the project whose
+    language they are written in (see :func:`front_language`)."""
     notes = _Notes([])
     sections = []
     for name, lines in (("introduction", post.intro), ("notes", post.notes)):
@@ -360,7 +372,7 @@ def front(post: Post, lang: str, id_prefix: str) -> tuple[str, str]:
         sections.append(
             f'<j:conditional xml:id="{cond_id}"><tei:fs type="opensiddur:paratext">'
             '<tei:f name="include"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
-            f'<tei:div type="{name}">{paragraphs}</tei:div>'
+            f'<tei:div type="colophon" subtype="{name}">{paragraphs}</tei:div>'
             f'<j:endConditional target="#{cond_id}"/>'
         )
     if not sections:

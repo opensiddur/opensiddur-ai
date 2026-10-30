@@ -24,6 +24,7 @@ from opensiddur.tests.importer.opensiddur_org.support import (
     cell,
     make_post,
     table,
+    two_column_content,
 )
 
 NS = {"tei": "http://www.tei-c.org/ns/1.0", "j": "http://jewishliturgy.org/ns/jlptei/2"}
@@ -111,7 +112,11 @@ class TestDocuments(unittest.TestCase):
         index = tree(self.projects["en"].files["index"])
         bibl = index.find(".//tei:bibl[@{http://www.w3.org/XML/1998/namespace}id='project_source_bibl']", NS)
         self.assertEqual(bibl.find("tei:author", NS).text, "Yehudah Poet")
-        self.assertEqual(bibl.find("tei:idno[@type='url']", NS).text, "https://opensiddur.org/prayers/festivals/a-song/")
+        # Cited by post ID first, so the bibliography's link survives a category move.
+        self.assertEqual(bibl.find("tei:idno[@type='url']", NS).text, "https://opensiddur.org/?p=101")
+        self.assertEqual(bibl.find("tei:idno[@type='opensiddur.org']", NS).text, "101")
+        self.assertEqual(bibl.find("tei:idno[@type='permalink']", NS).text,
+                         "https://opensiddur.org/prayers/festivals/a-song/")
         self.assertEqual(bibl.find("tei:date[@type='accessed']", NS).get("when"), "2026-10-01")
         transclude = index.find(".//j:transclude", NS)
         self.assertEqual(transclude.get("target"), URN)
@@ -125,6 +130,12 @@ class TestDocuments(unittest.TestCase):
         condition = index.find(".//tei:front/j:conditional//tei:fs", NS)
         self.assertEqual(condition.get("type"), "opensiddur:paratext")
         self.assertIsNone(tree(self.projects["he"].files["index"]).find(".//tei:front", NS))
+
+    def test_the_posts_own_words_are_a_colophon(self) -> None:
+        post, projects = build(make_post(content=two_column_content(notes="<p>First published in 1842.</p>")))
+        divs = tree(projects["en"].files["index"]).findall(".//tei:front/tei:div", NS)
+        self.assertEqual([(d.get("type"), d.get("subtype")) for d in divs],
+                         [("colophon", "introduction"), ("colophon", "notes")])
 
 
 class TestCredits(unittest.TestCase):
