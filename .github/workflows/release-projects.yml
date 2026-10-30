@@ -17,6 +17,12 @@ name: Release projects
 #
 # `tag` rebuilds an existing release instead, with the commit and the opensiddur-processor release
 # it records; `book` narrows that to one settings file. The new files replace the old ones.
+#
+# Once the newest release is published, its downloads list, DOWNLOADS.md in opensiddur-projects,
+# is rewritten with the title, description and download links of each book (opensiddur-processor#275).
+# opensiddur-projects main takes changes only by pull request, so the list is committed on a
+# downloads/<tag> branch and its pull request merged here. A change to DOWNLOADS.md alone is not
+# something new to build.
 
 on:
   workflow_call:
@@ -36,6 +42,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   plan:
@@ -70,6 +77,8 @@ jobs:
           BOOK: ${{ inputs.book }}
         run: |
           set -euo pipefail
+          # Every path but the downloads list, which each release commits after it is built.
+          NOT_DOWNLOADS=(. ':(exclude)DOWNLOADS.md')
           skip() {
             echo "::notice title=No release::$1"
             echo "$1" >> "$GITHUB_STEP_SUMMARY"
@@ -106,10 +115,16 @@ jobs:
             sha=$(git rev-parse "refs/remotes/origin/${default}")
             prev=$(git tag --list | grep -E '^v[0-9]{8}$' | sort | tail -1 || true)
             if [ -n "${prev}" ] && [ "${FORCE}" != true ]; then
-              prev_sha=$(git rev-list -n 1 "refs/tags/${prev}")
               prev_processor=$(built_with "${prev}" || true)
-              if [ "${prev_sha}" = "${sha}" ] && [ "${prev_processor}" = "${processor_tag}" ]; then
-                skip "Nothing new since ${prev}: opensiddur-projects is at the same commit, built with ${processor_tag}."
+              # 0: the same, 1: changed; anything else is an error, not a change.
+              changed=0
+              git diff --quiet "refs/tags/${prev}" "${sha}" -- "${NOT_DOWNLOADS[@]}" || changed=$?
+              if [ "${changed}" -gt 1 ]; then
+                echo "::error::Could not compare ${prev} with ${sha}"
+                exit 1
+              fi
+              if [ "${changed}" = 0 ] && [ "${prev_processor}" = "${processor_tag}" ]; then
+                skip "Nothing new since ${prev}: opensiddur-projects has not changed, other than its downloads list, and is built with ${processor_tag}."
               fi
             fi
             tag="v$(date -u +%Y%m%d)"
@@ -126,7 +141,7 @@ jobs:
                 echo
                 echo "## Changes since ${prev}"
                 echo
-                git log --no-merges --max-count=200 --format='- %s' "${prev}..${sha}"
+                git log --no-merges --max-count=200 --format='- %s' "${prev}..${sha}" -- "${NOT_DOWNLOADS[@]}"
               fi
             } > "${RUNNER_TEMP}/notes.md"
           fi
@@ -233,3 +248,108 @@ jobs:
     steps:
       - name: Publish the release
         run: gh release edit "${TAG}" --draft=false
+
+  # The downloads list of the newest published release, rewritten after any run that built it.
+  # Its settings are read at the release's commit, with opensiddur-processor main: the module that
+  # writes the list may be newer than the release the books were built with.
+  record:
+    needs: [plan, build, publish]
+    if: >-
+      !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true'
+      && needs.publish.result != 'failure'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.plan.outputs.tag }}
+      SHA: ${{ needs.plan.outputs.sha }}
+    steps:
+      - name: Check that it is the newest published release
+        id: newest
+        run: |
+          set -euo pipefail
+          newest=$(gh release list --exclude-drafts --limit 100 --json tagName --jq '.[].tagName' \
+            | grep -E '^v[0-9]{8}$' | sort | tail -1 || true)
+          if [ "${newest}" != "${TAG}" ]; then
+            echo "::notice title=Downloads list unchanged::${TAG} is not the newest published release (${newest:-none})."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout opensiddur-projects
+        if: steps.newest.outputs.skip != 'true'
+        uses: actions/checkout@v5
+        with:
+          # A scheduled run's event has no repository; it runs on the default branch.
+          ref: ${{ github.event.repository.default_branch || github.ref_name }}
+          fetch-depth: 0
+          path: projects
+
+      - name: Checkout opensiddur-processor main
+        if: steps.newest.outputs.skip != 'true'
+        uses: actions/checkout@v5
+        with:
+          repository: opensiddur/opensiddur-processor
+          ref: main
+          path: opensiddur-processor
+
+      - name: Set up Python
+        if: steps.newest.outputs.skip != 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        if: steps.newest.outputs.skip != 'true'
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: opensiddur-processor/uv.lock
+
+      - name: Install dependencies
+        if: steps.newest.outputs.skip != 'true'
+        working-directory: opensiddur-processor
+        run: uv sync
+
+      - name: Write the downloads list
+        if: steps.newest.outputs.skip != 'true'
+        working-directory: opensiddur-processor
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/release"
+          git -C "${GITHUB_WORKSPACE}/projects" archive "${SHA}" settings | tar -x -C "${RUNNER_TEMP}/release"
+          gh release view "${TAG}" --json tagName,url,publishedAt,body,assets > "${RUNNER_TEMP}/release.json"
+          uv run python -m opensiddur.release.downloads "${RUNNER_TEMP}/release.json" \
+            --settings-directory "${RUNNER_TEMP}/release/settings" \
+            --output "${GITHUB_WORKSPACE}/projects/DOWNLOADS.md"
+
+      - name: Commit the downloads list
+        if: steps.newest.outputs.skip != 'true'
+        working-directory: projects
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- DOWNLOADS.md)" ]; then
+            echo "DOWNLOADS.md already lists ${TAG}."
+            exit 0
+          fi
+          default=$(gh repo view "${GH_REPO}" --json defaultBranchRef --jq .defaultBranchRef.name)
+          branch="downloads/${TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${branch}"
+          git add DOWNLOADS.md
+          git commit -m "List the downloads of ${TAG}"
+          git push --force origin "${branch}"
+          if [ -z "$(gh pr list --head "${branch}" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base "${default}" --head "${branch}" \
+              --title "List the downloads of ${TAG}" \
+              --body "DOWNLOADS.md for the book release ${TAG}, written by release-projects.yml."
+          fi
+          # GitHub decides whether a new pull request can be merged after it is opened.
+          for attempt in 1 2 3 4 5; do
+            if gh pr merge "${branch}" --squash --delete-branch; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "::error::Could not merge the pull request for ${branch}; merge it by hand."
+          exit 1

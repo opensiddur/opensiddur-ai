@@ -145,6 +145,16 @@ def check(settings_file: Path, settings_directory: Path, project_directory: Path
     return result
 
 
+def read_raw(settings_file: Path) -> dict:
+    """ A settings file's YAML, unvalidated. Raises OSError or yaml.YAMLError if it cannot be
+    read, and TypeError if it is not a mapping. """
+    with open(settings_file, "r") as f:
+        data = yaml.safe_load(f)
+    if not isinstance(data, dict):
+        raise TypeError(f"{settings_file} is not a mapping")
+    return data
+
+
 def buildable(settings_file: Path) -> bool:
     """ Whether this processor meets the `requires_processor:` a settings file declares.
 
@@ -153,9 +163,7 @@ def buildable(settings_file: Path) -> bool:
     so that its build fails and shows why.
     """
     try:
-        with open(settings_file, "r") as f:
-            data = yaml.safe_load(f)
-        requirement = data["requires_processor"]
+        requirement = read_raw(settings_file)["requires_processor"]
         installed = processor_version()
         return installed is None or satisfies(requirement, installed)
     except (OSError, yaml.YAMLError, KeyError, TypeError, ValueError):
