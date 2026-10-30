@@ -40,6 +40,7 @@ NUMBERINGS = (NUMBERING_MASORAH, NUMBERING_LENINGRAD, NUMBERING_COMMON)
 #: The numbering the canonical URN space uses. ``wlc`` needs no mapping at all.
 CANONICAL_NUMBERING = NUMBERING_LENINGRAD
 
+#: The project that follows each numbering: the only place the Tanakh projects are named.
 NUMBERING_PROJECT = {
     NUMBERING_MASORAH: "miqra_al_pi_hamasorah",
     NUMBERING_LENINGRAD: "wlc",

@@ -118,6 +118,9 @@ electronic:
                   # every passage that turns on the day shown with its rubric (a haggadah,
                   # read ahead of the seder)
   columns: both   # both | primary | parallel: the columns of parallel text shown
+  psalm_titles: printed  # printed: as the edition titles them | uniform: one "Psalm 23" /
+                        # "תהלים כג" heading per whole psalm, for a book compiled from
+                        # editions that title their psalms differently
 
 # Who distributes the book, and how to treat it once read. Every book carries the Open Siddur
 # Project's notice and statement unless its settings say otherwise; either part is `none` to

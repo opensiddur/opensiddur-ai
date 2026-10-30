@@ -578,7 +578,8 @@ def build_book(
             "%s was not compiled with --destination electronic: the settings a reader would "
             "choose were decided when it was compiled", compiled_file)
 
-    normalize_psalm_titles(root)
+    if settings.electronic.psalm_titles == "uniform":
+        normalize_psalm_titles(root)
     # The reader's settings can hide the first occurrence of a destination: label them all.
     prepare_compiled_tree(root, every_occurrence=True)
     book_columns = columns(root)
@@ -608,7 +609,7 @@ def build_book(
         "@@ABOUT@@": about_html(title, compiled_file, project_directory, settings.distribution),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
                                 celebrated_purim(settings), book_columns,
-                                settings.electronic.model_dump()),
+                                settings.electronic.model_dump(include={"day", "columns"})),
         "@@CALENDAR_JS@@": _inline(
             (ASSETS / "calendar.js").read_text(encoding="utf-8"), "</script"),
         "@@CONDITION_JS@@": _inline(

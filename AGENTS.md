@@ -225,6 +225,22 @@ and Hebrew/English alignment after regeneration.
 
 **Project layout**: Every `project/<name>/` directory must have `index.xml` as its entry point. Individual text files refer back to the index via `tei:sourceDesc/tei:p/tei:ref` or a `tei:bibl/tei:ptr`.
 
+**Naming** (`specs/NAMING_SCHEME.md`):
+- A project is named `<title>-<author>-<date>-<lang>`, lowercase ASCII, with `-` between fields
+  and `_` between the words of a field: `hasiddur_hashalem-birnbaum-1949-he`. The last field is
+  the `xml:lang` of its `index.xml`. A translation shares its original's title. A source that
+  romanizes its own name keeps that romanization as its title (Asher's *Selichoth* is
+  `selichoth`), folded to lowercase ASCII.
+- A book's settings live at `settings/<book.project>/<variant>.yaml`, so its release files are
+  named after its project: `<project>-<variant>-<tag>.pdf`.
+- File stems and URN path components are lowercase ASCII words joined by `_`. Hebrew words in
+  any of these follow the transliteration table in `schema/JLPTEI-3.md` (het `ch`, khaf `kh`,
+  qof `q`, tzadi `tz`, dagesh hazak doubled, final heh written), unless they have a common
+  spelling listed in `specs/naming/spellings.yaml`. A file and a URN for the same text spell
+  its words the same way.
+- When you settle a spelling the table did not decide, add it to `spellings.yaml`. Check with
+  `uv run python -m opensiddur.common.validate_names [project ...]`.
+
 ### Testing Conventions
 
 - Tests live in `opensiddur/tests/`, mirroring the package structure.

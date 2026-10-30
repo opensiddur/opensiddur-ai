@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `pdf` (both by default). `books --formats <book>/<variant>` prints them; `release-book.yml`
   builds only those, and skips installing TeX for a book with no printed form. `books` with no
   `--format` now builds each book's own formats, not only the PDF.
+- A naming scheme for projects, settings, files and URNs (#266, `specs/NAMING_SCHEME.md`).
+  Projects are to be named `<title>-<author>-<date>-<lang>`, a book's settings to live at
+  `settings/<project>/<variant>.yaml`, and Hebrew words to follow one transliteration table,
+  now completed in `schema/JLPTEI-3.md` (dagesh, final heh, tsere, prefixes). Common spellings
+  that win over the table, and known misspellings, are listed in `specs/naming/spellings.yaml`.
+  `python -m opensiddur.common.validate_names` checks a corpus against all of it; it runs in
+  `validate-projects.yml`, advisory until the corpus is renamed.
+- `electronic.psalm_titles: uniform` gives every whole psalm in an electronic book one
+  bilingual heading in place of its edition's. It was applied to the project named
+  `siddur_expanded` and no other; that book's settings now ask for it, and built without
+  them it keeps its printed titles.
 
 ### Changed
 - Between releases, `main` is versioned as the development of the next release: `0.7.0.dev0`
@@ -32,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   jumps past it, and `--patch` fixes the last release tagged, `0.6.1`), and then commits the
   development of the next (`0.8.0.dev0`, or back to `0.7.0.dev0` after a patch release) on the
   branch it pushes.
+- The URN registry check reads a URN's `@project` as everything after the last `@`, as the
+  resolver always has; it read from the first.
 - The repository is renamed `opensiddur-processor` (was `opensiddur-ai`), and so is the Python
   distribution. Download user-agents now say `OpenSiddur-Processor/1.0`. The reusable
   `validate-projects.yml` workflow's `opensiddur_ai_ref` input is now `opensiddur_processor_ref`,
