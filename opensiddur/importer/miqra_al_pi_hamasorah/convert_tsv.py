@@ -590,7 +590,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help=(
-            "Output project directory (default: <repo>/opensiddur-projects/project/miqra_al_pi_hamasorah)."
+            f"Output project directory (default: <repo>/opensiddur-projects/project/{MIQRA_PROJECT})."
         ),
     )
     parser.add_argument(

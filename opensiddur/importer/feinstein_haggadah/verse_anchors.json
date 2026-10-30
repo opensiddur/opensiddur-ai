@@ -1,7 +1,7 @@
 {
   "_comment": [
     "Verse boundaries for the complete biblical units in the haggadah, derived from",
-    "project/wlc/psalms.xml, whose text these transcriptions were taken from.",
+    "project/tanakh-wlc-he/psalms.xml, whose text these transcriptions were taken from.",
     "",
     "Anchors are two-sided and written as bare consonants, matched by",
     "page_breaks.find_break_offset. Verse 1 has no anchor: it opens its section.",

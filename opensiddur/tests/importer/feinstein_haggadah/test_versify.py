@@ -17,12 +17,14 @@ from opensiddur.importer.feinstein_haggadah.versify import (
     read_wlc_chapter,
     verse_offsets,
 )
+from opensiddur.common.versification import WLC_PROJECT
+from opensiddur.importer.feinstein_haggadah.convert import EN_PROJECT, HE_PROJECT
 from opensiddur.importer.util.hebrew import normalize_hebrew
 from opensiddur.tests.importer.feinstein_haggadah import support
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
-WLC_PSALMS = Path("project/wlc/psalms.xml")
-PROJECT = Path("project/heidenheim_haggadah_1822")
+WLC_PSALMS = Path("project") / WLC_PROJECT / "psalms.xml"
+PROJECT = Path("project") / HE_PROJECT
 
 #: Masoretic verse counts, as a check independent of whatever the WLC reader returns.
 VERSE_COUNTS = {113: 9, 114: 8, 115: 18, 116: 19, 117: 2, 118: 29, 126: 6, 136: 26}
@@ -205,10 +207,10 @@ class TestGeneratedPsalms(unittest.TestCase):
             with self.subTest(slug=slug):
                 if slug in printed:
                     self.assertNotIn(
-                        'target="urn:x-opensiddur:text:bible:psalms@wlc"', text
+                        f'target="urn:x-opensiddur:text:bible:psalms@{WLC_PROJECT}"', text
                     )
                     continue
-                self.assertIn('target="urn:x-opensiddur:text:bible:psalms@wlc"', text)
+                self.assertIn(f'target="urn:x-opensiddur:text:bible:psalms@{WLC_PROJECT}"', text)
                 self.assertIn(
                     f'<tei:biblScope unit="chapter" from="{chapter}" to="{chapter}"/>', text
                 )
@@ -238,7 +240,7 @@ class TestGeneratedPsalms(unittest.TestCase):
 
     def test_barech_keeps_its_english_instructions_interleaved(self) -> None:
         """The regression a trailing-content hack would have caused in the translation."""
-        english = Path("project/feinstein_haggadah_translation_2009/barech.xml")
+        english = Path("project") / EN_PROJECT / "barech.xml"
         support.require_path(english, "translation project not generated")
         body = english.read_text("utf-8")
         body = body[body.index("<tei:body>") :]

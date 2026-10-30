@@ -377,7 +377,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Validate that compilation-relevant URN references are resolvable using refdb (post-conversion)."
     )
-    parser.add_argument("project", help="Project name under project/ (e.g., wlc, jps1917)")
+    parser.add_argument("project", help="Project name under project/ (e.g., tanakh-wlc-he, tanakh-jps-1917-en)")
     parser.add_argument(
         "--project-directory",
         default=str(PROJECT_DIRECTORY),

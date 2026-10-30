@@ -730,7 +730,7 @@ def index_file(
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Convert JPS 1917 Wikisource page dumps to JLPTEI under "
-                    "opensiddur-projects/project/jps1917."
+                    f"opensiddur-projects/project/{JPS_PROJECT}."
     )
     parser.add_argument(
         "--project-dir",
@@ -738,7 +738,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=_default_project_directory(),
         help=(
             "Output directory for generated JLPTEI "
-            "(default: <repo>/opensiddur-projects/project/jps1917)."
+            f"(default: <repo>/opensiddur-projects/project/{JPS_PROJECT})."
         ),
     )
     parser.add_argument(

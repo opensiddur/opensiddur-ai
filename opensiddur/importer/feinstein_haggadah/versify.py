@@ -6,7 +6,7 @@ the transcription is already divided into verses — see :func:`load_printed_psa
 
 The rest keep the Open Siddur compilation's wording, which is close enough to the Westminster
 Leningrad Codex that their verse boundaries are recoverable: align the section text against
-``project/wlc/psalms.xml`` and record, for each verse, the words on either side of its opening.
+``project/tanakh-wlc-he/psalms.xml`` and record, for each verse, the words on either side of its opening.
 ``psalm_126`` is the only such section left, the 1822 print having no Shir haMaalot before
 Birkat haMazon.
 
@@ -278,7 +278,7 @@ def write_verse_anchors(sections: list[BiblicalSection], path: Path | None = Non
     payload = {
         "_comment": [
             "Verse boundaries for the complete biblical units in the haggadah, derived from",
-            "project/wlc/psalms.xml, whose text these transcriptions were taken from.",
+            f"project/{WLC_PROJECT}/psalms.xml, whose text these transcriptions were taken from.",
             "",
             "Anchors are two-sided and written as bare consonants, matched by",
             "page_breaks.find_break_offset. Verse 1 has no anchor: it opens its section.",

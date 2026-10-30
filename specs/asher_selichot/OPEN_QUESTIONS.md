@@ -5,7 +5,7 @@ did, and the options, with the decision on its `answer:` line. All 19 were answe
 2026-10-16: misprints are in sourcetexts `scan_reading/corrections.json`, and editorial notes in
 `scan_reading/editorial_notes.json`, each beginning "Editor:". Scan pages are `s<N>`
 (the Archive leaf is `n<N-1>`); printed pages are the book's own numbers. Files are in
-opensiddur-projects `project/asher_selichot_{he,en}_1912/`; evidence is in sourcetexts
+opensiddur-projects `project/selichoth-asher-1912-{he,en}/`; evidence is in sourcetexts
 `sources/asher_selichot/`.
 
 Clear misprints are not here: they are corrected as `tei:sic`/`tei:corr`, listed in sourcetexts

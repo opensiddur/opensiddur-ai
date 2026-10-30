@@ -218,7 +218,7 @@ def verse_anchors(section: BiblicalSection) -> list[InlineAnchor]:
     """Chapter and verse milestones for a section that is a complete biblical unit.
 
     The canonical URNs go on the milestones, not on ``tei:div/@corresp``, exactly as
-    ``project/wlc/psalms.xml`` does: the div keeps its haggadah identity for transclusion while
+    ``project/tanakh-wlc-he/psalms.xml`` does: the div keeps its haggadah identity for transclusion while
     the milestones are what alignment against WLC and JPS1917 keys off.
     """
     reference = f"{section.book} {section.chapter}"
