@@ -10,7 +10,7 @@ import re
 import unicodedata
 from collections import defaultdict
 from lxml import etree
-from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
+from .build import TEI, XML, PRAYER, document, element, pb, marker, choice, spelled_name, spelled_urn
 from .first_day import poetic_lines, words_with_notes, mixed_words, expansion_scope, append_words, verify_half_kaddish
 from .erev_rosh_hashanah import printed as ordinary_printed, targets
 from .identities import project_name
@@ -204,17 +204,17 @@ def verify_readings(source,project_directory):
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]
         if len(nodes)!=len(units):raise ValueError('Gedaliah source order changed')
         for reading,node in zip(units,nodes):
-            context=reading.get('urn',GEDALIAH+'/'+reading['id'])
+            context=spelled_urn(reading.get('urn',GEDALIAH+'/'+reading['id']))
             if reading.get('filename'):
                 if node.get('target')!=context:raise ValueError('Gedaliah module order changed')
-                node=etree.parse(str(project/(reading['filename']+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+                node=etree.parse(str(project/(spelled_name(reading['filename'])+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
             elif node.get('corresp')!=context:raise ValueError('Gedaliah inline order changed')
             node=copy.deepcopy(node)
             scopes=node.findall(f'{{{J}}}conditional')
             if scopes:
                 if [s.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary').get('value') for s in scopes]!=(['false'] if reading.get('refrain_instruction') else ['false','true']):raise ValueError('Gedaliah expansion polarity changed')
                 if len(scopes)==2:
-                    if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=targets(reading,lang):raise ValueError('Gedaliah expansion range changed')
+                    if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=[spelled_urn(t) for t in targets(reading,lang)]:raise ValueError('Gedaliah expansion range changed')
                     if reading.get('supply_kaddish'):
                         declaration=node.find(f'{{{J}}}declare')
                         if [n.get('value') for n in declaration.findall(f'.//{{{TEI}}}binary')]!=['false','true']:raise ValueError('Gedaliah Kaddish must use Ten Days context')

@@ -122,7 +122,7 @@ class TestExpandedBuild(unittest.TestCase):
                 'chol-hamoed': False, 'minor-fast': False, 'motzaei-shabbat': False},
             'opensiddur:holiday': {n: 0 for n in ['rosh-hashana', 'yom-kippur',
                 'pesah', 'shavuot', 'sukkot', 'shmini-atzeret', 'rosh-hodesh',
-                'chanukah', 'tisha-bav', 'purim-observed']},
+                'hanukkah', 'tisha-bav', 'purim-observed']},
             'opensiddur:quorum': {'minyan': quorum},
             'opensiddur:hallel': {'recite': hallel},
         }

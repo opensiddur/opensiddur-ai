@@ -7,7 +7,7 @@ import re
 import unicodedata
 from collections import defaultdict
 from lxml import etree
-from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
+from .build import TEI, XML, PRAYER, document, element, pb, marker, choice, spelled_name, spelled_urn
 from .first_day import poetic_lines, words_with_notes, mixed_words, expansion_scope, append_words, verify_half_kaddish
 from .erev_rosh_hashanah import printed as ordinary_printed, targets
 from .penitential_second_day import wrap_hebrew
@@ -249,10 +249,10 @@ def verify_readings(source,project_directory,day):
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]
         if len(nodes)!=len(units):raise ValueError('penitential day source order changed')
         for reading,node in zip(units,nodes):
-            context=reading.get('urn',context_urn+'/'+reading['id'])
+            context=spelled_urn(reading.get('urn',context_urn+'/'+reading['id']))
             if reading.get('filename'):
                 if node.get('target')!=context:raise ValueError('penitential day module order changed')
-                node=etree.parse(str(project/(reading['filename']+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+                node=etree.parse(str(project/(spelled_name(reading['filename'])+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
             elif node.get('corresp')!=context:raise ValueError('penitential day inline order changed')
             node=copy.deepcopy(node)
             for item in reading.get('interleaved_rubrics',[]):
@@ -264,13 +264,13 @@ def verify_readings(source,project_directory,day):
                 if embedded is None:raise ValueError('Missing interleaved source rubric')
                 printed_note=embedded.find(f'.//{{{TEI}}}note[@type="instruction"]')
                 if normalize(printed_text(printed_note))!=normalize(words):raise ValueError('Interleaved rubric wording changed')
-                if [n.get('target') for n in embedded.findall(f'.//{{{J}}}transclude')]!=targets(rubric,lang):raise ValueError('Interleaved expansion targets changed')
+                if [n.get('target') for n in embedded.findall(f'.//{{{J}}}transclude')]!=[spelled_urn(t) for t in targets(rubric,lang)]:raise ValueError('Interleaved expansion targets changed')
                 node.remove(embedded)
             scopes=node.findall(f'{{{J}}}conditional')
             if scopes:
                 if [s.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary').get('value') for s in scopes]!=(['false'] if reading.get('refrain_instruction') else ['false','true']):raise ValueError('penitential day expansion polarity changed')
                 if len(scopes)==2:
-                    if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=targets(reading,lang):raise ValueError('penitential day expansion range changed')
+                    if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=[spelled_urn(t) for t in targets(reading,lang)]:raise ValueError('penitential day expansion range changed')
                     if reading.get('supply_kaddish'):
                         declaration=node.find(f'{{{J}}}declare')
                         if [n.get('value') for n in declaration.findall(f'.//{{{TEI}}}binary')]!=['false','false' if day in FAST_SERVICES else 'true']:raise ValueError('Service Kaddish seasonal context changed')

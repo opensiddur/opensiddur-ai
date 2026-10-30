@@ -193,7 +193,7 @@ class TestConditional(unittest.TestCase):
 
     def test_a_feature_can_carry_a_value_other_than_a_binary(self):
         element = fragment(common.feature(
-            common.HOL, "chanukah", '<tei:numeric value="1" max="8"/>'))[0]
+            common.HOL, "hanukkah", '<tei:numeric value="1" max="8"/>'))[0]
         numeric = element.find("tei:f/tei:numeric", NS)
         self.assertEqual((numeric.get("value"), numeric.get("max")), ("1", "8"))
 

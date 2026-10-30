@@ -2,7 +2,7 @@
 from opensiddur.importer.scan.authoring import printed_text
 import json
 import re
-from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
+from .build import TEI, XML, PRAYER, document, element, pb, marker, choice, spelled_name, spelled_urn
 from .first_day import (poetic_lines, words_with_notes, mixed_words, expansion_scope,
                         EXPANSION_TARGETS)
 from .identities import text_urn, project_name
@@ -155,13 +155,13 @@ def verify_numbered_readings(source, project_directory, day_name):
             raise ValueError('Numbered-day boundary or source order changed')
         for reading, unit in zip(data['units'], units):
             if reading.get('filename'):
-                if unit.tag != '{http://jewishliturgy.org/ns/jlptei/2}transclude' or unit.get('target') != reading['urn']:
+                if unit.tag != '{http://jewishliturgy.org/ns/jlptei/2}transclude' or unit.get('target') != spelled_urn(reading['urn']):
                     raise ValueError('Numbered-day independent poems must follow printed order')
-                module = etree.parse(str(project/(reading['filename']+'.xml')))
-                if module.find(f'.//{{{TEI}}}idno[@type="urn"]').text != reading['urn']+'@'+project.name:
+                module = etree.parse(str(project/(spelled_name(reading['filename'])+'.xml')))
+                if module.find(f'.//{{{TEI}}}idno[@type="urn"]').text != spelled_urn(reading['urn'])+'@'+project.name:
                     raise ValueError('Numbered-day canonical module identity changed')
                 unit = module.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
-            elif unit.get('corresp') != day_urn+'/'+reading['id']:
+            elif unit.get('corresp') != spelled_urn(day_urn+'/'+reading['id']):
                 raise ValueError('Numbered-day inline units are out of source order')
             unit = copy.deepcopy(unit)
             if reading['kind'] == 'rubric':
@@ -175,7 +175,7 @@ def verify_numbered_readings(source, project_directory, day_name):
                     if end is None:raise ValueError('Unclosed numbered-day expansion')
                     if reading['id'] != 'conclusion_instruction':
                         expected_targets = reading.get('expansion_targets', OPENING if reading['id']=='opening_instruction' else VERSES if reading['id']=='verses_instruction' else PRAYERS)
-                        if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != expected_targets:
+                        if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != [spelled_urn(t) for t in expected_targets]:
                             raise ValueError('Numbered-day referenced prayer range changed')
                     else:
                         closing = json.loads((source/'first-day-continuation.json').read_text())['sections']['closing']
@@ -184,7 +184,7 @@ def verify_numbered_readings(source, project_directory, day_name):
                             if group['id'] == 'reader_kaddish':continue
                             expected_targets.extend(EXPANSION_TARGETS[group['id']] if group['kind']=='rubric' else [text_urn(group['id'])])
                         expected_targets.append(PRAYER+'kaddish/shalem')
-                        if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != expected_targets:
+                        if [n.get('target') for n in unit.findall('{http://jewishliturgy.org/ns/jlptei/2}transclude')] != [spelled_urn(t) for t in expected_targets]:
                             raise ValueError('Numbered-day closing prayer range changed')
                         declaration = unit.find('{http://jewishliturgy.org/ns/jlptei/2}declare')
                         for typ, feature in [('asher:selichot','first_day'), ('opensiddur:holiday-aggregate','aseret-ymei-tshuva')]:

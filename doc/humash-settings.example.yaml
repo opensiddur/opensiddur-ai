@@ -7,7 +7,7 @@
 priority:
   # The humash itself must be listed, even though it supplies no words. It is the project that
   # mints the structural URNs the volume is built out of — index.xml transcludes
-  # humash/<book>, each of which transcludes parsha/<name> — and a URN no listed project mints
+  # chumash/<book>, each of which transcludes parsha/<name> — and a URN no listed project mints
   # cannot be resolved at all, so leaving it out fails at the first parsha.
   #
   # Then Miqra al pi ha-Masorah, since the aliyah and maftir divisions were taken from MAM.

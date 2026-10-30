@@ -1,6 +1,6 @@
 """Scan readings, printed 709–730 (IA n733–n754).
 
-Initial readings and adjudications: sourcetexts scan_reading/chanukah_purim.
+Initial readings and adjudications: sourcetexts scan_reading/hanukkah_purim.
 """
 ROWS = [{'key': 'lights_blessing',
   'page': 709,

@@ -188,6 +188,16 @@ def build(source_root,project_directory):
     return write_documents(documents, validator=validate, obsolete_paths=obsolete)
 
 
+def spelled_name(name):
+    """The name a file the readings know as ``name`` has in the book (see :func:`respelled`)."""
+    return respell(name)
+
+
+def spelled_urn(urn):
+    """The URN a text the readings know as ``urn`` has in the book (see :func:`respelled`)."""
+    return respell_urns(urn)
+
+
 def respelled(documents):
     """The documents with their file names and URNs spelled by specs/naming/spellings.yaml, and
     the paths they were renamed from.
