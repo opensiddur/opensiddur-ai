@@ -73,6 +73,9 @@ _HONORIFICS = frozenset({
 #: names the person: "Yosef ben Shlomo of Carcassonne".
 _PATRONYMIC = frozenset({"ben", "bar", "bat", "of"})
 #: An epithet that ends a name the same way: "Mordekhai ben Yitsḥaq ha-Levi".
+#: An organization's own abbreviation, given beside its name: "Central Conference of American
+#: Rabbis [CCAR]".
+_ABBREVIATION = re.compile(r"[\[(]\s*([A-Z][A-Z0-9.&]*[A-Z0-9])\s*[\])]")
 _LAST_EPITHET = re.compile(r"^ha-|^halevi$|^hakohen$")
 
 #: The parts of a title that credit someone: split at commas, brackets and dashes.
@@ -165,8 +168,8 @@ def original_author(post: Post) -> str:
 
 
 def _name_words(name: str) -> list[str]:
-    """A name's words, without honorifics."""
-    words = [w for w in re.split(r"\s+", re.sub(r"[.,]", " ", name)) if w]
+    """A name's words, without honorifics or anything in brackets."""
+    words = [w for w in re.split(r"\s+", re.sub(r"[.,]", " ", _BRACKETED.sub(" ", name))) if w]
     return [w for w in words if fold(w) and "".join(fold(w)) not in _HONORIFICS]
 
 
@@ -175,7 +178,11 @@ def name_field(name: str) -> str:
 
     The first name, for a patronymic or an epithet; otherwise the last word. An initial is not
     a patronymic: "Lieba B. Ruth" is `ruth`. A hyphenated name is one word: "Bat-Sheva Cohen".
+    An organization that gives its own abbreviation is named by it: `ccar`.
     """
+    abbreviation = _ABBREVIATION.search(name)
+    if abbreviation and sum(c.isupper() for c in abbreviation.group(1)) >= 2:
+        return _joined(fold(abbreviation.group(1)))
     words = _name_words(name)
     if not words:
         return ""

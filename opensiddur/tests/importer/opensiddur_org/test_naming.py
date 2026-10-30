@@ -96,7 +96,13 @@ class NameTestCase(unittest.TestCase):
                                ("Dan Bar-Lev", "bar_lev"),
                                # An epithet in the middle is not the end of the name.
                                ("Meïr haLevi Letteris", "letteris"),
-                               ("Conan O'Brien", "obrien")):
+                               ("Conan O'Brien", "obrien"),
+                               # An organization's own abbreviation names it.
+                               ("Central Conference of American Rabbis [CCAR]", "ccar"),
+                               ("Union of American Hebrew Congregations (UAHC)", "uahc"),
+                               # A bracketed year or initial is not one.
+                               ("Sara Levi-Tanai (1960)", "levi_tanai"),
+                               ("Moshe (M.) Cohen", "cohen")):
             with self.subTest(name=name):
                 self.assertEqual(name_field(name), expected)
 
