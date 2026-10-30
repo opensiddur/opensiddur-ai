@@ -622,6 +622,13 @@
         <!-- Metadata appendix (licenses, credits, sources). -->
         <xsl:value-of select="$additional-postamble"/>
         <xsl:text>&#10;</xsl:text>
+        <!-- What the digital editions say about themselves (tei:div type="colophon", gathered
+             here by cli_common.relocate_colophons), after the book's own colophon and set as
+             the body is. -->
+        <xsl:if test="tei:TEI/tei:text/tei:back[@p:colophon][normalize-space()]">
+            <xsl:text>\clearpage&#10;</xsl:text>
+            <xsl:apply-templates select="tei:TEI/tei:text/tei:back[@p:colophon]"/>
+        </xsl:if>
         <!-- The last page, after the colophon. -->
         <xsl:value-of select="$back-notice"/>
 
@@ -662,9 +669,9 @@
         <xsl:apply-templates select="tei:body"/>
         <!-- Back matter (an afterword, an index, or a parallel appendix) is set after the
              body, and as the body is. -->
-        <xsl:if test="tei:back[normalize-space()]">
+        <xsl:if test="tei:back[not(@p:colophon)][normalize-space()]">
             <xsl:text>\backmatter&#10;</xsl:text>
-            <xsl:apply-templates select="tei:back"/>
+            <xsl:apply-templates select="tei:back[not(@p:colophon)]"/>
         </xsl:if>
     </xsl:template>
 

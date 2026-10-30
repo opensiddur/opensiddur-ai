@@ -2527,6 +2527,33 @@ class TestParshaMilestones(unittest.TestCase):
         ))
         self.assertIn("\\OSParsha{\\texthebrew{נֹח}}", body)
 
+class TestEditionColophons(unittest.TestCase):
+    """A digital edition's colophon divisions are set after the book's own colophon and
+    before the last page."""
+
+    XML = """<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0" xml:lang="en"><tei:text>
+      <tei:front><tei:div type="preface"><tei:p>A printed preface.</tei:p></tei:div>
+        <tei:div type="colophon" subtype="notes"><tei:p>First published in 1842.</tei:p></tei:div>
+      </tei:front>
+      <tei:body><tei:p>In the beginning.</tei:p></tei:body></tei:text></tei:TEI>"""
+
+    def test_after_the_colophon_and_before_the_last_page(self):
+        from opensiddur.exporter.cli_common import relocate_colophons
+
+        root = etree.fromstring(self.XML)
+        relocate_colophons(root)
+        out = _transform(etree.tostring(root, encoding="unicode"),
+                         **{"additional-postamble": "OSPOSTAMBLE", "back-notice": "OSBACKNOTICE"})
+        preface, body = out.index("A printed preface."), out.index("In the beginning.")
+        postamble, colophon, back = (out.index("OSPOSTAMBLE"), out.index("First published in 1842."),
+                                     out.index("OSBACKNOTICE"))
+        self.assertLess(preface, body)
+        self.assertLess(body, postamble)
+        self.assertLess(postamble, colophon)
+        self.assertLess(colophon, back)
+        # Not set as back matter of the text.
+        self.assertNotIn("\\backmatter", out[body:postamble])
+
 
 if __name__ == "__main__":
     unittest.main()
