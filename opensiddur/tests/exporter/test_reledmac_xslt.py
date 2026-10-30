@@ -2551,8 +2551,19 @@ class TestEditionColophons(unittest.TestCase):
         self.assertLess(body, postamble)
         self.assertLess(postamble, colophon)
         self.assertLess(colophon, back)
-        # Not set as back matter of the text.
         self.assertNotIn("\\backmatter", out[body:postamble])
+
+    def test_notes_in_a_colophon_are_footnotes_even_as_endnotes(self):
+        """The colophon is set after the endnotes are printed, so an endnote there would be
+        lost."""
+        from opensiddur.exporter.cli_common import relocate_colophons
+
+        xml = self.XML.replace("First published in 1842.",
+                               "First published in 1842.<tei:note>A remark.</tei:note>")
+        root = etree.fromstring(xml)
+        relocate_colophons(root)
+        out = _transform(etree.tostring(root, encoding="unicode"), **{"notes-placement": "endnote"})
+        self.assertIn("\\Bfootnote", out[out.index("First published in 1842."):])
 
 
 if __name__ == "__main__":

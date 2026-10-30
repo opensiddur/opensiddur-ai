@@ -223,12 +223,14 @@ COLOPHON_END = "<!--@@COLOPHON-END@@-->"
 def split_colophons(main: str) -> tuple[str, str]:
     """The book's text without its colophon divisions, and the divisions, which are set after
     the book's own colophon."""
-    start = main.find(COLOPHON_START)
-    end = main.find(COLOPHON_END, start)
-    if start < 0 or end < 0:
-        return main, ""
-    editions = main[start + len(COLOPHON_START):end]
-    return main[:start] + main[end + len(COLOPHON_END):], editions
+    editions: list[str] = []
+    while (start := main.find(COLOPHON_START)) >= 0:
+        end = main.find(COLOPHON_END, start)
+        if end < 0:
+            break
+        editions.append(main[start + len(COLOPHON_START):end])
+        main = main[:start] + main[end + len(COLOPHON_END):]
+    return main, "".join(editions)
 
 
 def notice_line_html(text: str) -> str:

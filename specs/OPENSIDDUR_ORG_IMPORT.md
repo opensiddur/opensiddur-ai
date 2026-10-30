@@ -74,7 +74,7 @@ How the export changes:
 - **A post is cited by its post ID.** The source bibliography links to
   `https://opensiddur.org/?p=<post_id>`, which WordPress redirects to the post wherever it is
   filed, so the bibliography of an edition always leads back to the right page. The permalink
-  is kept, but changes whenever the post moves category. See [Header](#3-convert-tei_builderpy-convertpy).
+  is not kept: it changes whenever the post moves category. See [Header](#3-convert-tei_builderpy-convertpy).
 - **What the post says about itself is a colophon, not front matter of the source.** See
   [The post's own words](#the-posts-own-words-colophon).
 
@@ -170,7 +170,6 @@ decision; and the URN proposals.
     entry to its first URL (`exporter/metadata.py`, `_url`), and a link by post ID still
     reaches the post after it moves category, where the permalink would not.
   - `<tei:idno type="opensiddur.org">` with the post ID
-  - the permalink, as `<tei:idno type="permalink">`, after the link by post ID
   - the Source(s) captions and links
   - the upstream commit, in an encoding note
 

@@ -320,12 +320,11 @@ def source_bibl(
         f'<tei:distributor><tei:ref target="{SITE_URL}">{SITE_NAME}</tei:ref></tei:distributor>'
         f"{_date_of_original(post)}"
         f'<tei:date type="accessed" when="{attr(upstream_commit_date)}">{esc(upstream_commit_date)}</tei:date>'
-        # The link by post ID comes first: the exporter's bibliography links an entry to its
-        # first URL, and this one reaches the post wherever it is filed. The permalink
+        # The post is cited by its ID: the exporter's bibliography links an entry to its URL,
+        # and this one reaches the post wherever it is filed. The permalink is not kept: it
         # changes whenever the post moves category.
         f'<tei:idno type="url">{esc(post_url(post))}</tei:idno>'
         f'<tei:idno type="opensiddur.org">{post.post_id}</tei:idno>'
-        f'<tei:idno type="permalink">{esc(post.permalink)}</tei:idno>'
         f"{sources}"
         '<tei:note type="encoding">Converted from the export of opensiddur.org at '
         f'<tei:ref target="{UPSTREAM_REPOSITORY}/tree/{attr(upstream_commit)}">{esc(upstream_commit[:10])}</tei:ref>.'

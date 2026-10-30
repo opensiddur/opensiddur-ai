@@ -3822,7 +3822,10 @@
         <xsl:text>\leavevmode{\OSRTLfalse\edtext{\OSInterlinearNotemark{</xsl:text>
         <xsl:value-of select="f:note-mark($serial)"/>
         <xsl:text>}}{\</xsl:text>
-        <xsl:value-of select="if ($notes-placement = 'endnote') then 'Bendnote' else 'Bfootnote'"/>
+        <!-- A colophon division is set after the endnotes have been printed (see the root
+             template), so its notes are footnotes whatever the placement. -->
+        <xsl:value-of select="if ($notes-placement = 'endnote' and not(ancestor::tei:back[@p:colophon]))
+                              then 'Bendnote' else 'Bfootnote'"/>
         <xsl:text>{\OSFootnotemark{</xsl:text>
         <xsl:value-of select="f:note-mark($serial)"/>
         <xsl:text>}\notenote{</xsl:text>

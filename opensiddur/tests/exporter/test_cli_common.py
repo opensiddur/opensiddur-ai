@@ -284,6 +284,24 @@ class TestRelocateColophons(unittest.TestCase):
         self.assertIsNone(relocate_colophons(root))
         self.assertEqual(etree.tostring(root), before)
 
+    def test_one_gate_around_two_colophons_moves_whole(self):
+        root = self._document(
+            '<j:conditional xml:id="c1"/><tei:div type="colophon"><tei:p>A</tei:p></tei:div>'
+            '<tei:div type="colophon"><tei:p>B</tei:p></tei:div><j:endConditional target="#c1"/>')
+        back = relocate_colophons(root)
+        self.assertEqual(self._names(back), ["conditional", "div[colophon]", "div[colophon]", "endConditional"])
+
+    def test_a_colophon_leaving_a_transclusion_keeps_its_language_and_project(self):
+        root = self._document(
+            '<p:transclude xml:lang="en" p:project="osp"><tei:div type="colophon"><tei:p>A</tei:p>'
+            '</tei:div></p:transclude>')
+        back = relocate_colophons(root)
+        div = back[0]
+        self.assertEqual(div.get("{http://www.w3.org/XML/1998/namespace}lang"), "en")
+        self.assertEqual(div.get(f"{{{P}}}project"), "osp")
+        # The emptied wrapper, and the front matter with it, are gone.
+        self.assertEqual(self._names(root[0]), ["body", "back"])
+
     def test_every_stage_relocates_them(self):
         root = self._document('<tei:div type="colophon"><tei:p>Ours</tei:p></tei:div>')
         prepare_compiled_tree(root)

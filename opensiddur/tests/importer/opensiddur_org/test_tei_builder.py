@@ -115,8 +115,9 @@ class TestDocuments(unittest.TestCase):
         # Cited by post ID first, so the bibliography's link survives a category move.
         self.assertEqual(bibl.find("tei:idno[@type='url']", NS).text, "https://opensiddur.org/?p=101")
         self.assertEqual(bibl.find("tei:idno[@type='opensiddur.org']", NS).text, "101")
-        self.assertEqual(bibl.find("tei:idno[@type='permalink']", NS).text,
-                         "https://opensiddur.org/prayers/festivals/a-song/")
+        # The permalink changes when the post moves category, so it is not kept.
+        self.assertIsNone(bibl.find("tei:idno[@type='permalink']", NS))
+        self.assertEqual(len(bibl.findall("tei:idno[@type='url']", NS)), 1)
         self.assertEqual(bibl.find("tei:date[@type='accessed']", NS).get("when"), "2026-10-01")
         transclude = index.find(".//j:transclude", NS)
         self.assertEqual(transclude.get("target"), URN)
