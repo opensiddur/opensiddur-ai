@@ -495,12 +495,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"no proposal awaits review for post(s) {unknown}")
     for post_id in args.accept:
         post = load_post(data_dir / "posts" / f"{post_id}.json")
-        records[post_id] = proposals.pop(post_id).as_post_urns(mint(post.post_id, post.slug, post.tags, taken))
+        records[post_id] = proposals.pop(post_id).as_post_urns(mint(post, taken))
         taken.add(records[post_id].urn)
     for post_id in args.new:
         post = load_post(data_dir / "posts" / f"{post_id}.json")
         proposals.pop(post_id, None)
-        records[post_id] = mint(post.post_id, post.slug, post.tags, taken)
+        records[post_id] = mint(post, taken)
         taken.add(records[post_id].urn)
 
     index = load_incipit_index(OUTPUT_DIRECTORY / "opensiddur_org_incipits.json", args.project_directory)
@@ -514,7 +514,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         proposal = propose(post, index, labels)
         if proposal is None:
-            records[post_id] = mint(post.post_id, post.slug, post.tags, taken)
+            records[post_id] = mint(post, taken)
             taken.add(records[post_id].urn)
             minted += 1
         else:

@@ -80,6 +80,9 @@ _TRANSLATED = re.compile(r"\b(?:trans(?!lit)|adapt|interpret|render)", re.IGNORE
 
 TRANSLATION_ROLES = frozenset({"translation", "adaptation"})
 
+#: A post's original, as a column, for the author of the text as a whole.
+ORIGINAL = Column(header="", role="source", lang="")
+
 
 def fold(text: str) -> list[str]:
     """``text``'s words in the identifier alphabet: lowercase ASCII letters and digits."""
@@ -107,7 +110,8 @@ def latin_title(post: Post) -> str | None:
     return next((title for lang, title in titles_by_language(post) if lang == "en"), None)
 
 
-def title_field(post: Post) -> str:
+def title_words(post: Post) -> list[str]:
+    """The words that name the post: its Latin title up to the attribution, folded."""
     title = latin_title(post)
     if title is not None:
         name = _BRACKETED.sub(" ", title)
@@ -119,7 +123,18 @@ def title_field(post: Post) -> str:
         # The site's slug is already romanized; its attribution starts at "by".
         slug = re.split(r"-by-", post.slug, 1)[0]
         words = fold(slug.replace("-", " ")) or ["post"]
-    return _joined(words, TITLE_LENGTH)
+    return words
+
+
+def title_field(post: Post) -> str:
+    return _joined(title_words(post), TITLE_LENGTH)
+
+
+def text_name(post: Post, variants: Mapping[str, str]) -> str:
+    """The name of the text a post publishes, for its URN: its title words, each respelled by
+    the spelling list (``specs/naming/spellings.yaml``), since a URN follows the table where a
+    project title keeps the post's own romanization."""
+    return _joined([variants.get(word, word) for word in title_words(post)], TITLE_LENGTH)
 
 
 def _name_words(name: str) -> list[str]:

@@ -20,12 +20,15 @@ the existing text; such a post is irregular until every row is mapped.
 from __future__ import annotations
 
 import json
-import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from opensiddur.common.constants import REPO_ROOT
+
+if TYPE_CHECKING:
+    from opensiddur.importer.opensiddur_org.parse_post import Post
 
 POST_URNS_PATH = REPO_ROOT / "specs" / "opensiddur_org" / "post_urns.jsonl"
 TEXT_PREFIX = "urn:x-opensiddur:text:"
@@ -74,29 +77,33 @@ def save_post_urns(records: dict[int, PostUrns], path: Path = POST_URNS_PATH) ->
         path.write_text(text, encoding="utf-8")
 
 
-def urn_component(text: str) -> str:
-    """A registry path component: lowercase ASCII letters, digits and underscores."""
-    component = re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-    return re.sub(r"_+", "_", component)
-
-
 def is_poem(tags: list[str]) -> bool:
     lowered = " ".join(tags).lower()
     return any(tag in lowered for tag in POEM_TAGS)
 
 
-def mint(post_id: int, slug: str, tags: list[str], taken: set[str]) -> PostUrns:
+def mint(post: "Post", taken: set[str], variants: Mapping[str, str] | None = None) -> PostUrns:
     """A new URN for a post that matches nothing in the collection.
 
-    The name is the post's slug. If that name is already taken (by an unrelated text, since
-    a related one would have matched), the post ID is appended.
+    The name is the post's title, by ``specs/NAMING_SCHEME.md``: its Latin part up to the
+    attribution, folded to ASCII, each word respelled by the spelling list (``variants``,
+    by default ``specs/naming/spellings.yaml``). The site still finds the post by the
+    bibliography's link to it, so the URN need not repeat its slug. If that name is already
+    taken (by an unrelated text, since a related one would have matched), the original
+    author's name is appended, and failing that the post ID.
     """
-    namespace = "poem" if is_poem(tags) else "prayer"
-    name = urn_component(slug) or f"post_{post_id}"
-    urn = f"{TEXT_PREFIX}{namespace}:{name}"
-    if urn in taken:
-        urn = f"{urn}_{post_id}"
-    return PostUrns(post_id=post_id, kind="new", urn=urn)
+    from opensiddur.importer.opensiddur_org.naming import ORIGINAL, author_field, text_name
+
+    if variants is None:
+        from opensiddur.common.validate_names import load_spellings
+
+        variants = load_spellings().variants
+    namespace = "poem" if is_poem(post.tags) else "prayer"
+    name = text_name(post, variants) or f"post_{post.post_id}"
+    author = author_field(post, ORIGINAL)
+    names = [name] + ([f"{name}_{author}"] if author else []) + [f"{name}_{post.post_id}"]
+    urn = next(u for u in (f"{TEXT_PREFIX}{namespace}:{n}" for n in names) if u not in taken)
+    return PostUrns(post_id=post.post_id, kind="new", urn=urn)
 
 
 def registry_lines(

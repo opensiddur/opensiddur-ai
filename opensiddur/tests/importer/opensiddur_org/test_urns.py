@@ -2,30 +2,47 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from opensiddur.importer.opensiddur_org.parse_post import parse_post
 from opensiddur.importer.opensiddur_org.urns import (
     PostUrns,
     load_post_urns,
     mint,
     registry_lines,
     save_post_urns,
-    urn_component,
 )
+from opensiddur.tests.importer.opensiddur_org.support import make_post
+
+PREFIX = "urn:x-opensiddur:text:"
+#: A spelling list of the tests' own, so that these do not change with the real one.
+VARIANTS = {"tsur": "tzur", "chanukkah": "chanukah"}
+POET = {"name": "Yehudah Poet", "profile_link": "https://opensiddur.org/profile/yehudah-poet"}
+
+
+def post(title: str, *, slug: str = "a-slug-the-urn-does-not-use", tags=None, post_id: int = 7):
+    return parse_post(make_post(post_id, title=title, slug=slug, tags=tags, coauthors=[POET]))
 
 
 class TestMinting(unittest.TestCase):
-    def test_prayer_from_slug(self) -> None:
-        record = mint(7, "a-prayer-for-rain", [], set())
-        self.assertEqual(record.urn, "urn:x-opensiddur:text:prayer:a_prayer_for_rain")
+    def test_named_from_the_title_not_the_slug(self) -> None:
+        record = mint(post("A Prayer for Rain, by Yehudah Poet"), set(), VARIANTS)
+        self.assertEqual(record.urn, f"{PREFIX}prayer:a_prayer_for_rain")
+
+    def test_respelled_by_the_spelling_list(self) -> None:
+        record = mint(post("מעוז צור | Maoz Tsur for Ḥanukkah"), set(), VARIANTS)
+        self.assertEqual(record.urn, f"{PREFIX}prayer:maoz_tzur_for_chanukah")
+
+    def test_a_hebrew_only_title_is_named_from_the_slug(self) -> None:
+        record = mint(post("שירה", slug="shirah-by-someone"), set(), VARIANTS)
+        self.assertEqual(record.urn, f"{PREFIX}prayer:shirah")
 
     def test_poem_from_tags(self) -> None:
-        self.assertIn(":poem:", mint(7, "x", ["פיוטים piyyuṭim"], set()).urn)
+        self.assertIn(":poem:", mint(post("A Song", tags=["פיוטים piyyuṭim"]), set(), VARIANTS).urn)
 
-    def test_taken_name_gets_the_post_id(self) -> None:
-        taken = {"urn:x-opensiddur:text:prayer:kaddish"}
-        self.assertEqual(mint(7, "kaddish", [], taken).urn, "urn:x-opensiddur:text:prayer:kaddish_7")
-
-    def test_component(self) -> None:
-        self.assertEqual(urn_component("Ma'oz Tsur -- 1893!"), "ma_oz_tsur_1893")
+    def test_a_taken_name_gets_the_author_then_the_post_id(self) -> None:
+        taken = {f"{PREFIX}prayer:kaddish"}
+        self.assertEqual(mint(post("Kaddish"), taken, VARIANTS).urn, f"{PREFIX}prayer:kaddish_poet")
+        taken.add(f"{PREFIX}prayer:kaddish_poet")
+        self.assertEqual(mint(post("Kaddish"), taken, VARIANTS).urn, f"{PREFIX}prayer:kaddish_7")
 
 
 class TestRecords(unittest.TestCase):
