@@ -1,0 +1,102 @@
+# Spellings of Hebrew words in project names, file names and URN path components.
+# See specs/NAMING_SCHEME.md. Checked by `python -m opensiddur.common.validate_names`.
+#
+# The table in schema/JLPTEI-3.md#transliteration decides a word's spelling. These lists
+# record the decisions the table does not make by itself.
+
+# Words whose common spelling wins over the table. Only a word with a spelling of its own in
+# English belongs here: kaddish and kiddush are English words, kedushah and qadosh are not.
+exceptions:
+  - chanukah    # the table gives chanukkah
+  - chumash     # chummash
+  - kaddish     # qaddish
+  - kiddush     # qiddush
+
+# A spelling that is not standard, and the standard spelling of the same word. List a word
+# only if it cannot be another word: `selah` (סֶלָה) and `selach` (סְלַח) are both right, so
+# neither is a variant of the other.
+variants:
+  # Common spellings
+  chanukkah: chanukah
+  hanukkah: chanukah
+  humash: chumash
+  qaddish: kaddish
+  qiddush: kiddush
+  # Het is ch, never h or kh
+  anahnu: anachnu
+  berahamim: berachamim
+  ehad: echad
+  hayyim: chayyim
+  hodesh: chodesh
+  menuhah: menuchah
+  minhat: minchat
+  pahdekha: pachdekha
+  rahamekha: rachamekha
+  rahamim: rachamim
+  rahem: rachem
+  rahum: rachum
+  selihah: selichah
+  selihot: selichot
+  tahanun: tachanun
+  vaanahnu: vaanachnu
+  vehartanu: vechartanu
+  # Khaf is kh, not ch
+  barech: barekh
+  baruch: barukh
+  bechol: bekhol
+  birchot: birkhot
+  melech: melekh
+  # Qof is q, not k
+  kadosh: qadosh
+  kedem: qedem
+  kedoshekha: qedoshekha
+  kedushah: qedushah
+  kedushat: qedushat
+  kolenu: qolenu
+  pesukim: pesuqim
+  # Tzadi is tz, not ts
+  haarets: haaretz
+  mitratseh: mitratzeh
+  ratson: ratzon
+  tsaddiq: tzaddiq
+  tsarah: tzarah
+  tsom: tzom
+  tsur: tzur
+  yotser: yotzer
+  # Dagesh hazak doubles within a word
+  amekha: ammekha
+  atah: attah
+  chayim: chayyim
+  hakahal: haqahal
+  hateh: hatteh
+  imanu: immanu
+  imekha: immekha
+  kama: kammah
+  kamah: kammah
+  kiviti: qivviti
+  makot: makkot
+  nekadesh: neqaddesh
+  neqadesh: neqaddesh
+  ribono: ribbono
+  tefilah: tefillah
+  tefilat: tefillat
+  tikanta: tiqqanta
+  tiqanta: tiqqanta
+  tsadiq: tzaddiq
+  tzadiqim: tzaddiqim
+  tzaddikim: tzaddiqim
+  # but not after a prefix
+  bammeh: bameh
+  mikkol: mikol
+  miqqedem: miqedem
+  # Segol + yod is ei
+  vetechezenah: vetechezeinah
+  vetehezena: vetechezeinah
+  # A final heh is written
+  avoda: avodah
+  hashana: hashanah
+  menucha: menuchah
+  moshe: mosheh
+  retze: retzeh
+  shuva: shuvah
+  yehuda: yehudah

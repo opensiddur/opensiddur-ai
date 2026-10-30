@@ -98,21 +98,6 @@ class TestFormats(_BookSettingsCase):
                 self._read({"priority": {}, "formats": formats})
 
 
-class TestMinimumVersion(_BookSettingsCase):
-
-    def test_optional(self):
-        self.assertIsNone(self._read({"priority": {}}).minimum_version)
-
-    def test_read(self):
-        self.assertEqual(self._read({"priority": {}, "minimum_version": "0.6.0"}).minimum_version,
-                         "0.6.0")
-
-    def test_refused(self):
-        for minimum in ("0.6", "v0.6.0", "abc", 0.6):
-            with self.subTest(minimum=minimum), self.assertRaises(ValidationError):
-                self._read({"priority": {}, "minimum_version": minimum})
-
-
 class _CompilerCalled(Exception):
     pass
 
@@ -176,6 +161,46 @@ class TestFontsAreNotTheCompilersQuestion(_BookSettingsCase):
     def test_load_settings_does_not_resolve_fonts(self):
         with self._no_fonts_installed():
             load_settings(self._write_yaml(self.SETTINGS), project_directory=self.project_dir)
+
+
+
+class TestRequiresProcessor(_BookSettingsCase):
+    """A book names the processor versions that build it; an older one refuses it."""
+
+    def _read_as(self, installed, requirement):
+        with patch("opensiddur.exporter.settings.processor_version", return_value=installed):
+            return self._read({"requires_processor": requirement})
+
+    def test_it_is_optional(self):
+        self.assertIsNone(self._read({}).requires_processor)
+
+    def test_a_processor_that_meets_it_reads_the_file(self):
+        for installed in ("0.7.0", "0.7.1", "0.8.0.dev0", "1.0.0"):
+            with self.subTest(installed):
+                self.assertEqual(self._read_as(installed, ">=0.7.0").requires_processor,
+                                 ">=0.7.0")
+
+    def test_main_between_releases_meets_the_release_it_is_the_development_of(self):
+        self.assertEqual(self._read_as("0.7.0.dev0", ">=0.7.0").requires_processor, ">=0.7.0")
+
+    def test_an_older_processor_refuses_the_file(self):
+        for installed in ("0.6.0", "0.6.1", "0.6.0.dev3"):
+            with self.subTest(installed), self.assertRaisesRegex(
+                    ValidationError, f"requires opensiddur-processor >=0.7.0; this is {installed}"):
+                self._read_as(installed, ">=0.7.0")
+
+    def test_an_upper_bound_is_honoured(self):
+        with self.assertRaises(ValidationError):
+            self._read_as("0.9.0", ">=0.7,<0.9")
+
+    def test_a_malformed_requirement_is_refused(self):
+        for requirement in ("0.7.0", "newer", ""):
+            with self.subTest(requirement), self.assertRaises(ValidationError):
+                self._read_as("0.7.0", requirement)
+
+    def test_an_uninstalled_processor_cannot_say_whether_it_meets_it(self):
+        with self.assertRaisesRegex(ValidationError, "not installed"):
+            self._read_as(None, ">=0.7.0")
 
 
 if __name__ == "__main__":

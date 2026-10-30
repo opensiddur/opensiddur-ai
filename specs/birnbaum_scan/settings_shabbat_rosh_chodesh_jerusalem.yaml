@@ -7,7 +7,7 @@
 # the unit was filed under `chol` it could not have fired on any date whatever.
 #
 # It earns a second keep now. 18 April is 1 Iyar, the **second day of a two-day Rosh
-# Ḥodesh** -- the case `opensiddur-ai#125` had computing as "not Rosh Ḥodesh at all". Until
+# Ḥodesh** -- the case `opensiddur-processor#125` had computing as "not Rosh Ḥodesh at all". Until
 # that was fixed this file showed the Sabbath passage appearing and the Rosh Ḥodesh passage
 # not, which is how the calendar defect surfaced.
 #

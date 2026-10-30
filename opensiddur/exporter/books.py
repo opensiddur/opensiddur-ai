@@ -8,13 +8,11 @@ names the root file it formats in its `book:` key and says how it differs from i
 is built and attached to that release (.github/workflows/release-projects.yml), named
 <book>-<settings>[-<tag>].pdf and .html.
 
-The books are built with the latest opensiddur-ai release. Each settings file declares in
-`minimum_version:` the earliest release that can build it; a book whose minimum is newer than
-the code building it is left out of `--list`, which is what the release builds, and refuses to
-build. `--check` reports it as skipped, not failed, and still validates it: on `main`, the
-version in pyproject.toml is the last release's, though the code may already have what the book
-needs. The minimum is read before the rest of the file is validated, because the newer feature a
-book waits for is usually a key older code does not know.
+The books are built with the latest opensiddur-processor release. Each settings file declares in
+`requires_processor:` the processor versions that build it; `--list`, which is what the release
+builds, leaves out a book whose requirement the processor running it does not meet. The
+requirement is read before the rest of the file is validated, because a book waiting for a newer
+release usually uses a key an older processor does not know.
 
 Each book is built in the formats its settings list in `formats:`, both unless it says
 otherwise. `--format pdf` or `--format html` builds only that one, for the books that list it;
@@ -23,8 +21,9 @@ a book that does not is skipped, not failed. The electronic book is one self-con
 with `--destination electronic`, which leaves the settings a reader supplies for the reader's
 device to decide. `--formats` prints the formats one book lists, for the release workflow.
 
-`--check` validates without building: the YAML parses and matches the settings schema, the
-project and file the book names exist, and every font chain the book will be typeset with has
+`--check` validates without building: the YAML parses and matches the settings schema, it
+declares `requires_processor:` and this processor meets it, the project and file the book names
+exist, and every font chain the book will be typeset with has
 an installed font. Pull requests to opensiddur-projects run it.
 
 A book that fails is reported and skipped; the others are still built. The exit status is
@@ -35,7 +34,6 @@ the compiler reads it from its default location.
 """
 
 import argparse
-import importlib.metadata
 import json
 import subprocess
 import sys
@@ -44,13 +42,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from PIL import Image
 from pydantic import ValidationError
 import yaml
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
-from opensiddur.exporter.settings import BookTarget, SettingsYaml, validate_settings
-from opensiddur.exporter import typography
-from opensiddur.release.version import Version
+from opensiddur.common.version import processor_version, satisfies
+from opensiddur.exporter.settings import BookTarget, SettingsYaml, read_settings
+from opensiddur.exporter import notices, typography
 
 
 @dataclass
@@ -61,8 +60,6 @@ class BookResult:
     # The formats its settings say it is built in, and those asked for that it is not.
     formats: tuple[str, ...] = ()
     skipped: tuple[str, ...] = ()
-    # The `minimum_version:` it declares, when that is newer than the code checking it.
-    requires_newer: Optional[Version] = None
     output_pdf: Optional[Path] = None
     output_html: Optional[Path] = None
     error: Optional[str] = None
@@ -70,11 +67,6 @@ class BookResult:
     @property
     def ok(self) -> bool:
         return self.error is None
-
-
-def code_version() -> Version:
-    """ The version of opensiddur-ai installed: at a release tag, that release's. """
-    return Version.parse(importlib.metadata.version("opensiddur-ai"))
 
 
 def default_settings_directory(project_directory: Path) -> Path:
@@ -124,25 +116,8 @@ def _check_fonts(settings: SettingsYaml) -> Optional[str]:
     return None
 
 
-def _minimum_version(data: object) -> Optional[Version]:
-    """ The `minimum_version:` a settings file declares, read before the file is validated.
-
-    None if it declares none or one that is not a version; validation reports either.
-    """
-    if not isinstance(data, dict) or not isinstance(data.get("minimum_version"), str):
-        return None
-    try:
-        return Version.parse(data["minimum_version"])
-    except ValueError:
-        return None
-
-
-def check(settings_file: Path, settings_directory: Path, project_directory: Path,
-          version: Optional[Version] = None) -> BookResult:
-    """ Validate a settings file and the book it names, without building anything.
-
-    `version` is the opensiddur-ai version checking it (default: the one installed).
-    """
+def check(settings_file: Path, settings_directory: Path, project_directory: Path) -> BookResult:
+    """ Validate a settings file and the book it names, without building anything. """
     name = book_name(settings_file, settings_directory)
     result = BookResult(settings_file=settings_file, name=name)
     if name.count("/") != 1:
@@ -150,30 +125,58 @@ def check(settings_file: Path, settings_directory: Path, project_directory: Path
                         "settings/<book>/<settings>.yaml")
         return result
     try:
-        with open(settings_file, "r") as f:
-            data = yaml.safe_load(f)
-    except (OSError, yaml.YAMLError) as e:
-        result.error = f"unreadable settings: {e}"
-        return result
-    minimum = _minimum_version(data)
-    if minimum is not None and minimum > (version or code_version()):
-        result.requires_newer = minimum
-    try:
-        settings = validate_settings(data, project_directory=project_directory)
+        settings = read_settings(settings_file, project_directory=project_directory)
     except ValidationError as e:
         result.error = f"invalid settings: {e}"
+        return result
+    except (OSError, yaml.YAMLError) as e:
+        result.error = f"unreadable settings: {e}"
         return result
     if settings.book is None:
         result.error = "no `book:` key; every file in the settings directory must name its book"
         return result
-    if settings.minimum_version is None:
-        result.error = ("no `minimum_version:` key; every book must declare the earliest "
-                        "opensiddur-ai release that can build it")
+    if settings.requires_processor is None:
+        result.error = ("no `requires_processor:` key; every book must declare the "
+                        "opensiddur-processor versions that build it, such as `>=0.7.0`")
         return result
     result.book = settings.book
     result.formats = tuple(settings.formats)
-    result.error = _check_fonts(settings)
+    result.error = _check_fonts(settings) or _check_logo(settings, settings_file)
     return result
+
+
+def buildable(settings_file: Path) -> bool:
+    """ Whether this processor meets the `requires_processor:` a settings file declares.
+
+    Read from the YAML before it is validated: a book that waits for a newer processor usually
+    uses a key this one refuses. A file whose requirement cannot be read counts as buildable,
+    so that its build fails and shows why.
+    """
+    try:
+        with open(settings_file, "r") as f:
+            data = yaml.safe_load(f)
+        requirement = data["requires_processor"]
+        installed = processor_version()
+        return installed is None or satisfies(requirement, installed)
+    except (OSError, yaml.YAMLError, KeyError, TypeError, ValueError):
+        return True
+
+
+def _check_logo(settings: SettingsYaml, settings_file: Path) -> Optional[str]:
+    """ Why the distribution notice's logo cannot be set, or None if it can. """
+    notice = notices.distribution_notice(settings.distribution)
+    if notice is None:
+        return None
+    try:
+        logo = notices.resolve_logo(notice, settings_file)
+        if logo is not None:
+            with Image.open(logo) as image:
+                image.verify()
+    except FileNotFoundError as e:
+        return str(e)
+    except (OSError, SyntaxError) as e:
+        return f"distribution notice logo {notice.logo!r} is not a readable image: {e}"
+    return None
 
 
 def _run(command: list[str], log) -> bool:
@@ -201,10 +204,6 @@ def build(
     """
     result = check(settings_file, settings_directory, project_directory)
     if not result.ok:
-        return result
-    if result.requires_newer is not None:
-        result.error = (f"needs opensiddur-ai {result.requires_newer} or later, "
-                        f"this is {code_version()}")
         return result
     requested = result.formats if formats is None else formats
     result.skipped = tuple(f for f in requested if f not in result.formats)
@@ -239,17 +238,11 @@ def _report(results: list[BookResult]) -> None:
             built = f" -> {', '.join(outputs)}" if outputs else ""
             if result.skipped:
                 built += f" (not built in {', '.join(result.skipped)})"
-            if result.requires_newer is not None:
-                print(f"skipped {result.name}: {target}: needs opensiddur-ai "
-                      f"{result.requires_newer} or later, this is {code_version()}")
-                continue
             print(f"ok      {result.name}: {target}{built}")
         else:
             print(f"FAILED  {result.name}: {result.error}")
     failed = sum(not r.ok for r in results)
-    skipped = sum(r.ok and r.requires_newer is not None for r in results)
-    print(f"{len(results) - failed - skipped} of {len(results)} books ok"
-          + (f", {skipped} skipped" if skipped else ""))
+    print(f"{len(results) - failed} of {len(results)} books ok")
 
 
 def _select(settings_files: list[Path], settings_directory: Path, names: list[str]) -> list[Path]:
@@ -290,8 +283,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="Only validate the settings, the books they name and their fonts; build nothing.")
     action.add_argument("--list", action="store_true",
                         help="Print the names of the settings files (e.g. humash/annual) as a JSON list, "
-                             "leaving out those that need a newer opensiddur-ai; build nothing. "
-                             "The release workflow builds one book per name.")
+                             "leaving out those whose requires_processor this processor does not meet; "
+                             "build nothing. The release workflow builds one book per name.")
     action.add_argument("--formats", dest="list_formats", action="store_true",
                         help="Print the formats one settings file lists (e.g. [\"html\"]) as JSON; "
                              "build nothing. The release workflow builds only those.")
@@ -306,10 +299,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         except LookupError as e:
             parser.error(f"no book or settings file named {e.args[0]} in {settings_directory}")
     if args.list:
-        # A file that fails its check for any other reason stays in, so that its release job
-        # fails and shows it.
         print(json.dumps([book_name(f, settings_directory) for f in settings_files
-                          if check(f, settings_directory, project_directory).requires_newer is None]))
+                          if buildable(f)]))
         return 0
     if args.list_formats:
         if len(settings_files) != 1:

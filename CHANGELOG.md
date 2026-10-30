@@ -8,23 +8,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- A settings file can require processor versions: `requires_processor: ">=0.7.0"`. A processor
+  that does not meet it refuses the file, in every stage and in `books --check`, instead of
+  building a broken book.
+- Every book carries a distribution notice and a back-page statement (#269). The notice has the
+  Open Siddur logo and "Distributed by The Open Siddur Project", with the project's web and
+  GitHub addresses. It is set on the verso of the title page, or on its own page at the front of
+  a book without one, and after the title page in the electronic book. The statement, on the
+  last page after the colophon, asks readers not to print (in the electronic book) or not to
+  make unnecessary printed copies (in the PDF), and says to take a worn-out copy to a
+  _genizah_. A new `distribution:` settings section changes the logo (or `none`), its width,
+  the notice's position and text, and both versions of the statement. Either part can be set
+  to `none`. Two new typography roles set their type: `styles.distribution_notice` and
+  `styles.back_notice`.
 - A settings file's `formats:` says which forms a release builds the book in, `html` and/or
   `pdf` (both by default). `books --formats <book>/<variant>` prints them; `release-book.yml`
   builds only those, and skips installing TeX for a book with no printed form. `books` with no
   `--format` now builds each book's own formats, not only the PDF.
-- A settings file's `minimum_version:` is the earliest opensiddur-ai release that can build the
-  book (#216). It is required of every file in `opensiddur-projects/settings/`. `books --list`
-  leaves out a book that needs newer code, `books --check` reports it as skipped, and building
-  it is an error.
+- A naming scheme for projects, settings, files and URNs (#266, `specs/NAMING_SCHEME.md`).
+  Projects are to be named `<title>-<author>-<date>-<lang>`, a book's settings to live at
+  `settings/<project>/<variant>.yaml`, and Hebrew words to follow one transliteration table,
+  now completed in `schema/JLPTEI-3.md` (dagesh, final heh, tsere, prefixes). Common spellings
+  that win over the table, and known misspellings, are listed in `specs/naming/spellings.yaml`.
+  `python -m opensiddur.common.validate_names` checks a corpus against all of it; it runs in
+  `validate-projects.yml`, advisory until the corpus is renamed.
+- `electronic.psalm_titles: uniform` gives every whole psalm in an electronic book one
+  bilingual heading in place of its edition's. It was applied to the project named
+  `siddur_expanded` and no other; that book's settings now ask for it, and built without
+  them it keeps its printed titles.
 - Monthly book releases (#216): on the first of each month, opensiddur-projects is tagged with
-  the date (`vYYYYMMDD`) and its books are built with the latest opensiddur-ai release and
-  attached to that release (`release-projects.yml`, called from opensiddur-projects). A month
-  with no new projects commits and no new opensiddur-ai release is skipped.
+  the date (`vYYYYMMDD`) and its books are built with the latest opensiddur-processor release
+  and attached to that release (`release-projects.yml`, called from opensiddur-projects). A
+  month with no new projects commits and no new processor release is skipped.
+- `books --list` leaves out a book whose `requires_processor:` the processor does not meet,
+  so a release builds only the books its processor can (#216). Every file in
+  `opensiddur-projects/settings/` must now declare `requires_processor:`.
 
 ### Changed
-- An opensiddur-ai release no longer builds books; `release-books.yml` is gone, and
+- An opensiddur-processor release no longer builds books; `release-books.yml` is gone, and
   `release-book.yml` builds one book for an opensiddur-projects release, from a given projects
-  commit with a given opensiddur-ai release.
+  commit with a given processor release.
+- Between releases, `main` is versioned as the development of the next release: `0.7.0.dev0`
+  now. A release from a development version releases the version it names (`0.7.0`; `--major`
+  jumps past it, and `--patch` fixes the last release tagged, `0.6.1`), and then commits the
+  development of the next (`0.8.0.dev0`, or back to `0.7.0.dev0` after a patch release) on the
+  branch it pushes.
+- The URN registry check reads a URN's `@project` as everything after the last `@`, as the
+  resolver always has; it read from the first.
+- The repository is renamed `opensiddur-processor` (was `opensiddur-ai`), and so is the Python
+  distribution. Download user-agents now say `OpenSiddur-Processor/1.0`. The reusable
+  `validate-projects.yml` workflow's `opensiddur_ai_ref` input is now `opensiddur_processor_ref`,
+  and it checks the validators out into `opensiddur-processor/`. Issue numbers are unchanged, so
+  `opensiddur-ai#N` in older text means `opensiddur-processor#N`.
+- PDFs are right-bound by default (#265). A new `typography.page.binding` (`right` | `left`,
+  default `right`) sets the reading direction a PDF viewer shows its spreads in (Acrobat's
+  "Binding: Right Edge"). A two-sided book opens as a cover page and then spreads ("Two Up
+  (Cover Page)"). On a two-sided page, the inner margin, the `inner`/`outer` line-number
+  margins and the default running head now sit at the right edge of an odd page, so every
+  book's pages are mirrored. Set `binding: left` to keep the old layout.
 - The output stages (TeX, PDF, electronic book) read the settings file one way, with one
   policy (#251): a file that cannot be read, is not YAML or is not valid settings is an error
   in every stage. The PDF stage used to fall back to the default typography with a warning.

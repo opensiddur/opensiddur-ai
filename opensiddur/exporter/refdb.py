@@ -53,7 +53,7 @@ def _code_version(source: str) -> str:
 #: Identifies the indexing code that built a database. A database is only valid for the code
 #: that wrote it: a change to how elements are indexed, or to the tables, makes every stored
 #: row suspect. Hashing this module's own code means no one has to remember to bump a number
-#: (opensiddur-ai#165); comments and docstrings are left out of the hash. All of the indexing
+#: (opensiddur-processor#165); comments and docstrings are left out of the hash. All of the indexing
 #: logic lives in this module.
 REFDB_VERSION = _code_version(Path(__file__).read_text(encoding="utf-8"))
 

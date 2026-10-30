@@ -1,17 +1,17 @@
 name: Release book
 
 # Builds one book, opensiddur-projects/settings/<book>/<variant>.yaml, at an opensiddur-projects
-# commit with an opensiddur-ai release, in the forms its `formats:` lists (both, unless it says
+# commit with an opensiddur-processor release, in the forms its `formats:` lists (both, unless it says
 # otherwise), and attaches them to the caller's release of `tag`: the electronic book as
-# <book>-<variant>-<tag>.html (opensiddur-ai#92) and the printed one as
-# <book>-<variant>-<tag>.pdf (opensiddur-ai#153). A book with no printed form skips TeX entirely.
+# <book>-<variant>-<tag>.html (opensiddur-processor#92) and the printed one as
+# <book>-<variant>-<tag>.pdf (opensiddur-processor#153). A book with no printed form skips TeX entirely.
 #
 # The electronic book is built first. It takes seconds where the PDF can take hours, and a PDF
 # that fails or times out does not keep it off the release. Each form has its own output
 # directory, so each keeps its own log.
 #
 # release-projects.yml runs this once per settings file, for a release of opensiddur-projects
-# (opensiddur-ai#216); the release is the caller's, so this has no workflow_dispatch of its own.
+# (opensiddur-processor#216); the release is the caller's, so this has no workflow_dispatch of its own.
 # To rebuild a single book, run opensiddur-projects' release.yml with its tag and book.
 
 on:
@@ -29,8 +29,8 @@ on:
         description: The opensiddur-projects commit to build the book from
         type: string
         required: true
-      ai_ref:
-        description: The opensiddur-ai release to build it with (e.g. v0.7.0)
+      processor_ref:
+        description: The opensiddur-processor release to build it with (e.g. v0.7.0)
         type: string
         required: true
 
@@ -49,11 +49,11 @@ jobs:
       GH_REPO: ${{ github.repository }}
 
     steps:
-      - name: Checkout opensiddur-ai ${{ inputs.ai_ref }}
+      - name: Checkout opensiddur-processor ${{ inputs.processor_ref }}
         uses: actions/checkout@v5
         with:
-          repository: opensiddur/opensiddur-ai
-          ref: refs/tags/${{ inputs.ai_ref }}
+          repository: opensiddur/opensiddur-processor
+          ref: refs/tags/${{ inputs.processor_ref }}
 
       # Where the submodule would be, so the exporters find it by default. Only
       # opensiddur-projects is needed: the books are built from it, not from sourcetexts.

@@ -51,12 +51,11 @@ def heading_number(heading):
 def normalize(root):
     """Add one bilingual title per whole psalm, retaining passages and scope markers.
 
-    Only the expanded siddur opts in. Other editions retain their printed titles.
-    Verse-range references and composite prayers such as Ashrei keep their own
+    Only a book whose settings ask for `electronic.psalm_titles: uniform` is normalized;
+    others retain their printed titles. Verse-range references and composite prayers such as Ashrei keep their own
     titles. Wrapper headings inherit the transclusion's conditional position.
     """
     report={'wrapped':0,'normalized':0,'redundant':0,'chapter_labels':0}
-    if root.get(P+'project')!='siddur_expanded':return report
     for reference in list(root.iter(P+'transclude')):
         number=psalm_number(reference.get('target'))
         if number is None or reference.get('targetEnd') or any(a.tag==T+'note' for a in reference.iterancestors()):continue

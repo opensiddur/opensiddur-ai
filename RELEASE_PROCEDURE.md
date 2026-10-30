@@ -2,7 +2,7 @@
 
 There are two kinds of release, versioned separately:
 
-- **Code releases** are `v<major>.<minor>.<patch>` tags on this repository (`opensiddur-ai`),
+- **Code releases** are `v<major>.<minor>.<patch>` tags on this repository (`opensiddur-processor`),
   cut by hand as described below. The tag's commit pins exact commits of the `sourcetexts` and
   `opensiddur-projects` submodules: a record of the data the code was tested against.
 - **Book releases** are date tags, `vYYYYMMDD`, on `opensiddur-projects`, made monthly by a
@@ -18,6 +18,15 @@ There are two kinds of release, versioned separately:
 - **1.0.0 and above**: strict [Semantic Versioning](https://semver.org/). Choose the bump level
   deliberately — major for incompatible changes, minor for backwards-compatible features, patch
   for backwards-compatible fixes.
+- **Between releases** `main` is the *development* of the next release: after `0.6.0`,
+  `pyproject.toml` says `0.7.0.dev0`. That is the version a settings file's `requires_processor`
+  is checked against, as the release it is the development of: main meets `>=0.7.0`, and the
+  `v0.6.0` tag does not. A release from a development version releases the version it names
+  (the default, or the level it names); `--major` jumps past it. `--patch` releases a fix of
+  the last release tagged (`0.6.0 -> 0.6.1`), and leaves `main` the development it was.
+  The check compares the release a development version leads to, so every `main` since 0.6.0
+  meets `>=0.7.0`, whether or not the fix a book needs has been merged yet: the requirement
+  tells released processors apart, not one `main` from another.
 
 ## Before releasing
 
@@ -82,8 +91,13 @@ What it does, in order:
    appends the pinned submodule commits to it, and leaves a fresh empty `[Unreleased]` above it.
 6. Commits `pyproject.toml`, `CHANGELOG.md`, and the two submodule pointers as `Release vX.Y.Z`.
 7. Creates an annotated tag `vX.Y.Z` with the new changelog section as its message.
-8. Pushes the branch and the tag to `origin`.
-9. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
+8. If the version it started from was a development version, writes the development of the
+   next release (`0.8.0.dev0` after `0.7.0`) into `pyproject.toml` and commits it as
+   `Begin 0.8.0.dev0`, after the tag, so the tag is the release and the branch goes on. After
+   a patch release it writes back the development it started from (`0.7.0.dev0` after
+   `0.6.1`).
+9. Pushes the branch and the tag to `origin`.
+10. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
    with `--no-publish`).
 
 A code release builds no books. The next book release builds them with it, even when
@@ -91,9 +105,10 @@ opensiddur-projects has not changed.
 
 ## After releasing
 
-- **Re-lock and push `uv.lock`.** The release script writes the new version into `pyproject.toml`
-  (step 4) but never re-locks, so `uv.lock` still records the *previous* version for the
-  `opensiddur-ai` package. Correct it so the two agree:
+- **Re-lock and push `uv.lock`.** The release script writes the new versions into `pyproject.toml`
+  (steps 4 and 8) but never re-locks, so `uv.lock` still records the *previous* version for the
+  `opensiddur-processor` package. Correct it so the two agree (on `main`, that is the next
+  development version):
 
   ```bash
   uv lock
@@ -108,7 +123,7 @@ opensiddur-projects has not changed.
   `uv.lock` in their working tree, which collides with the "working tree must be clean" check in
   *Before releasing* and looks like an unrelated change in their branch.
 
-- Check the [releases page](https://github.com/opensiddur/opensiddur-ai/releases) and the pushed
+- Check the [releases page](https://github.com/opensiddur/opensiddur-processor/releases) and the pushed
   tag.
 - If the books should not wait for the first of the month, start a book release now (below).
 - Confirm `git submodule status` on the tag shows the commits you expected.
@@ -124,10 +139,10 @@ month. It calls this repository's `.github/workflows/release-projects.yml`, whic
    newest `vYYYYMMDD` tag on opensiddur-projects).
 2. Stops if there is nothing new: opensiddur-projects `main` is at the commit of the last book
    release, and that release was built with the same code release. Each book release's notes
-   record it in a `Built with opensiddur-ai vX.Y.Z` line, which this step reads.
+   record it in a `Built with opensiddur-processor vX.Y.Z` line, which this step reads.
 3. Lists the settings files in `opensiddur-projects/settings/<book>/` with that code release
-   (`books --list`). A settings file's `minimum_version:` is the earliest code release that can
-   build it; a book that needs a newer one is left out until there is one.
+   (`books --list`). A settings file's `requires_processor:` says which code releases can
+   build it; a book that release does not meet is left out until one does.
 4. Creates a draft release `vYYYYMMDD` (today's UTC date) at the `main` commit, with notes that
    list the opensiddur-projects commits since the last book release.
 5. Starts one `release-book.yml` job per settings file. It builds the book in the formats its
@@ -144,7 +159,7 @@ Its `book-log-<book>-<variant>-vYYYYMMDD` artifact has the compiler and LaTeX ou
 `html/` and `pdf/`.
 
 The first code release that can build books is v0.7.0: v0.6.0 and earlier refuse the
-`minimum_version:` key. Until it exists, the monthly run does nothing.
+`requires_processor:` key. Until it exists, the monthly run does nothing.
 
 Run it by hand from opensiddur-projects:
 

@@ -1,21 +1,21 @@
 name: Release projects
 
-# Reusable workflow (opensiddur-ai#216): tags opensiddur-projects with the date (vYYYYMMDD),
-# builds every book in its settings/<book>/ with the latest opensiddur-ai release, and attaches
+# Reusable workflow (opensiddur-processor#216): tags opensiddur-projects with the date (vYYYYMMDD),
+# builds every book in its settings/<book>/ with the latest opensiddur-processor release, and attaches
 # them to a release of that tag. Called monthly, and by hand, from
 # opensiddur-projects/.github/workflows/release.yml, so the release and the tag belong to
 # opensiddur-projects and its own GITHUB_TOKEN writes them.
 #
 # A new release is made only when there is something new to build: opensiddur-projects main
-# has moved since the last date tag, or opensiddur-ai has released since the books were last
-# built. `force` builds anyway. The release body records the opensiddur-ai release the books
-# were built with, in a `Built with opensiddur-ai vX.Y.Z` line that the next run reads.
+# has moved since the last date tag, or opensiddur-processor has released since the books were last
+# built. `force` builds anyway. The release body records the opensiddur-processor release the books
+# were built with, in a `Built with opensiddur-processor vX.Y.Z` line that the next run reads.
 #
-# A book whose `minimum_version:` is newer than that release is left out (books --list). The
+# A book whose `requires_processor:` that release does not meet is left out (books --list). The
 # release starts as a draft and is published once every book has finished, built or not: a
 # book that fails is not attached and its job fails, so a release with missing books shows red.
 #
-# `tag` rebuilds an existing release instead, with the commit and the opensiddur-ai release
+# `tag` rebuilds an existing release instead, with the commit and the opensiddur-processor release
 # it records; `book` narrows that to one settings file. The new files replace the old ones.
 
 on:
@@ -43,13 +43,13 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      # v0.6.0 and earlier refuse the `minimum_version:` key every settings file now has.
+      # v0.6.0 and earlier refuse the `requires_processor:` key every settings file now has.
       FIRST_SUPPORTED: v0.7.0
     outputs:
       skip: ${{ steps.decide.outputs.skip || steps.list.outputs.skip }}
       tag: ${{ steps.decide.outputs.tag }}
       sha: ${{ steps.decide.outputs.sha }}
-      ai_tag: ${{ steps.decide.outputs.ai_tag }}
+      processor_tag: ${{ steps.decide.outputs.processor_tag }}
       draft: ${{ steps.decide.outputs.draft }}
       books: ${{ steps.list.outputs.books }}
 
@@ -78,16 +78,16 @@ jobs:
           }
           built_with() {
             gh release view "$1" --json body --jq .body \
-              | sed -n 's/^Built with opensiddur-ai \(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' | head -1
+              | sed -n 's/^Built with opensiddur-processor \(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' | head -1
           }
 
           if [ -n "${TAG_INPUT}" ]; then
             tag="${TAG_INPUT}"
             sha=$(gh release view "${tag}" --json targetCommitish --jq .targetCommitish)
             draft=$(gh release view "${tag}" --json isDraft --jq .isDraft)
-            ai_tag=$(built_with "${tag}")
-            if [ -z "${ai_tag}" ]; then
-              echo "::error::Release ${tag} does not record the opensiddur-ai release it was built with"
+            processor_tag=$(built_with "${tag}")
+            if [ -z "${processor_tag}" ]; then
+              echo "::error::Release ${tag} does not record the opensiddur-processor release it was built with"
               exit 1
             fi
           else
@@ -95,11 +95,11 @@ jobs:
               echo "::error::Rebuilding one book needs the release it belongs to: set tag as well"
               exit 1
             fi
-            ai_tag=$(git ls-remote --tags --refs https://github.com/opensiddur/opensiddur-ai.git \
+            processor_tag=$(git ls-remote --tags --refs https://github.com/opensiddur/opensiddur-processor.git \
               | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
-            if [ -z "${ai_tag}" ] || \
-                [ "$(printf '%s\n' "${FIRST_SUPPORTED}" "${ai_tag}" | sort -V | head -1)" != "${FIRST_SUPPORTED}" ]; then
-              skip "The latest opensiddur-ai release, ${ai_tag:-none}, predates ${FIRST_SUPPORTED}, the first that can build the books."
+            if [ -z "${processor_tag}" ] || \
+                [ "$(printf '%s\n' "${FIRST_SUPPORTED}" "${processor_tag}" | sort -V | head -1)" != "${FIRST_SUPPORTED}" ]; then
+              skip "The latest opensiddur-processor release, ${processor_tag:-none}, predates ${FIRST_SUPPORTED}, the first that can build the books."
             fi
             # The default branch, whichever branch the run was started from.
             default=$(gh repo view "${GH_REPO}" --json defaultBranchRef --jq .defaultBranchRef.name)
@@ -107,9 +107,9 @@ jobs:
             prev=$(git tag --list | grep -E '^v[0-9]{8}$' | sort | tail -1 || true)
             if [ -n "${prev}" ] && [ "${FORCE}" != true ]; then
               prev_sha=$(git rev-list -n 1 "refs/tags/${prev}")
-              prev_ai=$(built_with "${prev}" || true)
-              if [ "${prev_sha}" = "${sha}" ] && [ "${prev_ai}" = "${ai_tag}" ]; then
-                skip "Nothing new since ${prev}: opensiddur-projects is at the same commit, built with ${ai_tag}."
+              prev_processor=$(built_with "${prev}" || true)
+              if [ "${prev_sha}" = "${sha}" ] && [ "${prev_processor}" = "${processor_tag}" ]; then
+                skip "Nothing new since ${prev}: opensiddur-projects is at the same commit, built with ${processor_tag}."
               fi
             fi
             tag="v$(date -u +%Y%m%d)"
@@ -121,7 +121,7 @@ jobs:
             {
               echo "Books built from opensiddur-projects ${sha}."
               echo
-              echo "Built with opensiddur-ai ${ai_tag} (https://github.com/opensiddur/opensiddur-ai/releases/tag/${ai_tag})"
+              echo "Built with opensiddur-processor ${processor_tag} (https://github.com/opensiddur/opensiddur-processor/releases/tag/${processor_tag})"
               if [ -n "${prev}" ]; then
                 echo
                 echo "## Changes since ${prev}"
@@ -133,19 +133,19 @@ jobs:
           {
             echo "tag=${tag}"
             echo "sha=${sha}"
-            echo "ai_tag=${ai_tag}"
+            echo "processor_tag=${processor_tag}"
             echo "draft=${draft}"
           } >> "$GITHUB_OUTPUT"
-          echo "Release ${tag}: opensiddur-projects ${sha}, opensiddur-ai ${ai_tag}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Release ${tag}: opensiddur-projects ${sha}, opensiddur-processor ${processor_tag}" | tee -a "$GITHUB_STEP_SUMMARY"
           git checkout -q "${sha}"
 
-      - name: Checkout opensiddur-ai ${{ steps.decide.outputs.ai_tag }}
+      - name: Checkout opensiddur-processor ${{ steps.decide.outputs.processor_tag }}
         if: steps.decide.outputs.skip != 'true'
         uses: actions/checkout@v5
         with:
-          repository: opensiddur/opensiddur-ai
-          ref: refs/tags/${{ steps.decide.outputs.ai_tag }}
-          path: opensiddur-ai
+          repository: opensiddur/opensiddur-processor
+          ref: refs/tags/${{ steps.decide.outputs.processor_tag }}
+          path: opensiddur-processor
 
       - name: Set up Python
         if: steps.decide.outputs.skip != 'true'
@@ -158,19 +158,19 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           enable-cache: true
-          cache-dependency-glob: opensiddur-ai/uv.lock
+          cache-dependency-glob: opensiddur-processor/uv.lock
 
       - name: Install dependencies
         if: steps.decide.outputs.skip != 'true'
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         run: uv sync
 
-      # The settings files the release builds: those whose minimum_version the opensiddur-ai
-      # release meets.
+      # The settings files the release builds: those whose requires_processor the
+      # opensiddur-processor release meets.
       - name: List settings files
         id: list
         if: steps.decide.outputs.skip != 'true'
-        working-directory: opensiddur-ai
+        working-directory: opensiddur-processor
         env:
           BOOK: ${{ inputs.book }}
           DRAFT: ${{ steps.decide.outputs.draft }}
@@ -187,7 +187,7 @@ jobs:
           fi
           echo "Books: ${books}"
           if [ "${books}" = '[]' ] && [ "${DRAFT}" = new ]; then
-            echo "::notice title=No release::No settings file can be built with ${{ steps.decide.outputs.ai_tag }}."
+            echo "::notice title=No release::No settings file can be built with ${{ steps.decide.outputs.processor_tag }}."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
           echo "books=${books}" >> "$GITHUB_OUTPUT"
@@ -210,12 +210,12 @@ jobs:
         book: ${{ fromJSON(needs.plan.outputs.books) }}
     name: ${{ matrix.book }}
     # In a workflow called from another repository, ./ would mean that repository.
-    uses: opensiddur/opensiddur-ai/.github/workflows/release-book.yml@main
+    uses: opensiddur/opensiddur-processor/.github/workflows/release-book.yml@main
     with:
       tag: ${{ needs.plan.outputs.tag }}
       book: ${{ matrix.book }}
       projects_ref: ${{ needs.plan.outputs.sha }}
-      ai_ref: ${{ needs.plan.outputs.ai_tag }}
+      processor_ref: ${{ needs.plan.outputs.processor_tag }}
 
   # Publishing creates the tag, at the commit the books were built from. It waits for every
   # book, and goes ahead when some fail, as a release with a red job. A cancelled run leaves

@@ -61,7 +61,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 USER_AGENT_TEMPLATE = (
-    "OpenSiddur-AI/1.0 (https://github.com/opensiddur/opensiddur-ai; {contact_email})"
+    "OpenSiddur-Processor/1.0 (https://github.com/opensiddur/opensiddur-processor; {contact_email})"
 )
 CONTACT_EMAIL_ENV_VAR = "OPENSIDDUR_CONTACT_EMAIL"
 

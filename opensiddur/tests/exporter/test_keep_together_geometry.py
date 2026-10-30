@@ -36,6 +36,7 @@ import unittest
 from pathlib import Path
 
 from opensiddur.exporter.tex.latex import transform_xml_to_tex
+from opensiddur.tests.exporter.stylesheet_helpers import NO_NOTICES
 from opensiddur.exporter.typography import TypographyConfig
 
 _SECTIONS = 30
@@ -143,6 +144,7 @@ def _typeset(parallel: bool, typography: dict, protected: bool = True,
             work / "in.xml", output_file=str(work / "t.tex"),
             typography=TypographyConfig.model_validate(typography),
             project_directory=work,
+            distribution=NO_NOTICES,
         )
         tex = (work / "t.tex").read_text()
         if not protected:

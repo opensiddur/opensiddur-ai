@@ -21,6 +21,12 @@ book:
   file_name: index.xml
   title: Westminster Leningrad Codex   # optional
 
+# The opensiddur-processor versions that build this book as it should be, as PEP 440 writes
+# them. Optional. An older processor refuses the file instead of building a broken book. Main
+# between releases is the development of the next (0.7.0.dev0 after 0.6.0), and meets a
+# requirement of that release: `>=0.7.0` builds on main before 0.7.0 is cut.
+requires_processor: ">=0.7.0"
+
 # The forms the release (and `python -m opensiddur.exporter.books`) builds the book in: `html`,
 # the electronic book, and `pdf`, the printed one. Optional; both by default.
 formats:
@@ -112,6 +118,43 @@ electronic:
                   # every passage that turns on the day shown with its rubric (a haggadah,
                   # read ahead of the seder)
   columns: both   # both | primary | parallel: the columns of parallel text shown
+  psalm_titles: printed  # printed: as the edition titles them | uniform: one "Psalm 23" /
+                        # "תהלים כג" heading per whole psalm, for a book compiled from
+                        # editions that title their psalms differently
+
+# Who distributes the book, and how to treat it once read. Every book carries the Open Siddur
+# Project's notice and statement unless its settings say otherwise; either part is `none` to
+# leave it out. A line that is a URL is a link, and `_words_` are emphasised.
+distribution:
+  # On the verso of the title page (a book with no title page: its own page at the front).
+  # In the electronic book, after the title page.
+  notice:
+    logo: default         # default: the Open Siddur logo | none | a .png/.jpg, relative to
+                          # this file
+    logo_width: 1.25in
+    position: bottom      # top | center | bottom of its page
+    text:
+      - Distributed by The Open Siddur Project
+      - https://opensiddur.org
+      - https://github.com/opensiddur
+  # A bulleted list on the book's last page, after the colophon: `print` in the PDF,
+  # `electronic` in the electronic book. The PDF sets it in typography.styles.back_notice, as
+  # it does the notice in styles.distribution_notice.
+  back_notice:
+    electronic:
+      - We strongly advise against printing sacred texts and art containing divine names as
+        these copies must be regarded with reverence, complicating their casual treatment and
+        disposal.
+      - If you must dispose of a printed sacred text (one containing Divine Names), please
+        locate the closest _genizah_ (often established by a synagogue) and contact its
+        custodians for further instructions.
+    print:
+      - We strongly advise against making unnecessary printed copies of sacred texts and art
+        containing divine names as these copies must be regarded with reverence, complicating
+        their casual treatment and disposal.
+      - If you must dispose of a printed sacred text (one containing Divine Names), please
+        locate the closest _genizah_ (often established by a synagogue) and contact its
+        custodians for further instructions.
 
 # Output-format settings, read by the output stages: all of them by the TeX/PDF stage, and the
 # ones a reflowing page can use by the electronic book (see doc/typography.md).
@@ -142,7 +185,10 @@ typography:
     orientation: portrait    # portrait | landscape
     sides: two               # two: margins and running heads mirror between
                              # recto and verso. one: printed on one side only.
-    chapter_start: recto     # recto: a book opens on a right-hand page
+    binding: right           # right | left: the edge the book is bound at. Sets
+                             # the PDF's reading direction, and with sides: two
+                             # puts the inner margins at that edge.
+    chapter_start: recto     # recto: a book opens on a recto (odd) page
     base_font_size: "11pt"   # 10pt | 11pt | 12pt — what named sizes scale from
     # Margins are named for the binding, not the page edge, so they mean the same
     # on a recto and a verso. Omitted margins keep the document class's own.

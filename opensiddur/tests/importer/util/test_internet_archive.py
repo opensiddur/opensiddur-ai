@@ -59,7 +59,7 @@ class UserAgentTestCase(unittest.TestCase):
 
     def test_plain_user_agent_for_a_human_run(self):
         agent = user_agent("someone@example.net")
-        self.assertIn("OpenSiddur-AI/", agent)
+        self.assertIn("OpenSiddur-Processor/", agent)
         self.assertIn("someone@example.net", agent)
         self.assertTrue(agent.endswith(")"))
 

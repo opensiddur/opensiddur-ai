@@ -1,7 +1,7 @@
 """End-to-end release orchestration, against synthetic git repositories.
 
 Every fixture repo here is created fresh under a TemporaryDirectory and is never the real
-opensiddur-ai/sourcetexts/opensiddur-projects checkouts, per project convention: tests must
+opensiddur-processor/sourcetexts/opensiddur-projects checkouts, per project convention: tests must
 not depend on real project data.
 """
 
@@ -59,7 +59,7 @@ def _commit_all(path: Path, message: str) -> None:
 
 
 class ReleaseSandbox:
-    """A synthetic opensiddur-ai checkout with two synthetic submodules, all local git repos."""
+    """A synthetic opensiddur-processor checkout with two synthetic submodules, all local git repos."""
 
     def __init__(self, tmp: Path):
         self.tmp = tmp
@@ -198,6 +198,41 @@ class TestReleaseReal(unittest.TestCase):
             cwd=self.sandbox.main, check=True, capture_output=True, text=True,
         ).stdout.strip()
         self.assertEqual(sub_a_pointer, new_head)
+
+    def test_a_release_from_a_development_version_begins_the_next(self):
+        pyproject = self.sandbox.main / "pyproject.toml"
+        pyproject.write_text(PYPROJECT.replace('"0.1.0"', '"0.2.0.dev0"'))
+        _commit_all(self.sandbox.main, "Begin 0.2.0.dev0")
+        plan = release(self.sandbox.repository(dry_run=False), publish=False)
+
+        self.assertEqual(plan.version, Version(0, 2, 0))
+        # The tag is the release; the branch goes on as the development of the next.
+        tagged = subprocess.run(["git", "show", "v0.2.0:pyproject.toml"], cwd=self.sandbox.main,
+                                check=True, capture_output=True, text=True).stdout
+        self.assertIn('version = "0.2.0"', tagged)
+        self.assertIn('version = "0.3.0.dev0"', pyproject.read_text())
+        origin = self.sandbox.tmp / "remotes" / "main.git"
+        pushed = subprocess.run(["git", "show", "main:pyproject.toml"], cwd=origin,
+                                check=True, capture_output=True, text=True).stdout
+        self.assertIn('version = "0.3.0.dev0"', pushed)
+
+    def test_a_patch_release_from_a_development_version_leaves_it(self):
+        _git("tag", "v0.1.0", cwd=self.sandbox.main)
+        pyproject = self.sandbox.main / "pyproject.toml"
+        pyproject.write_text(PYPROJECT.replace('"0.1.0"', '"0.2.0.dev0"'))
+        _commit_all(self.sandbox.main, "Begin 0.2.0.dev0")
+        plan = release(self.sandbox.repository(dry_run=False), level="patch", publish=False)
+
+        self.assertEqual(plan.version, Version(0, 1, 1))
+        tagged = subprocess.run(["git", "show", "v0.1.1:pyproject.toml"], cwd=self.sandbox.main,
+                                check=True, capture_output=True, text=True).stdout
+        self.assertIn('version = "0.1.1"', tagged)
+        self.assertIn('version = "0.2.0.dev0"', pyproject.read_text())
+
+    def test_a_release_from_a_release_version_leaves_it(self):
+        """A patch release, cut from the last release's tag, is not followed by development."""
+        release(self.sandbox.repository(dry_run=False), level="patch", publish=False)
+        self.assertIn('version = "0.1.1"', (self.sandbox.main / "pyproject.toml").read_text())
 
     def test_refuses_to_reuse_an_existing_tag(self):
         # Simulate the version the release would compute (0.1.0 -> 0.2.0, the default minor

@@ -13,7 +13,6 @@ from unittest.mock import patch
 import yaml
 
 from opensiddur.exporter import books, typography
-from opensiddur.release.version import Version
 
 # A machine with one face for each default chain.
 _FONTS = frozenset({"linux libertine o", "freeserif"})
@@ -45,7 +44,7 @@ class TestBooks(unittest.TestCase):
     def _book(self, name: str, project: str = "proj-a", **extra) -> Path:
         return self._settings(name, {"book": {"project": project, "file_name": "index.xml"},
                                      "priority": {"transclusion": [project]},
-                                     "minimum_version": "0.1.0", **extra})
+                                     "requires_processor": ">=0.1.0", **extra})
 
     def _check(self, path: Path) -> books.BookResult:
         return books.check(path, self.settings_dir, self.project_dir)
@@ -99,46 +98,44 @@ class TestBooks(unittest.TestCase):
         result = self._check(self._settings("a/one", {"priority": {}}))
         self.assertIn("no `book:` key", result.error)
 
-    def test_check_requires_minimum_version(self):
+    def test_check_requires_requires_processor(self):
         result = self._check(self._settings("a/one", {
             "book": {"project": "proj-a", "file_name": "index.xml"}, "priority": {}}))
-        self.assertIn("no `minimum_version:` key", result.error)
+        self.assertIn("no `requires_processor:` key", result.error)
 
-    def test_check_invalid_minimum_version(self):
-        result = self._check(self._book("a/one", minimum_version="0.7"))
-        self.assertIn("invalid settings", result.error)
-        self.assertIsNone(result.requires_newer)
+    def test_check_unmet_requirement_fails(self):
+        with patch("opensiddur.exporter.settings.processor_version", return_value="0.6.0"):
+            result = self._check(self._book("a/one", requires_processor=">=0.7.0"))
+        self.assertIn("requires opensiddur-processor >=0.7.0; this is 0.6.0", result.error)
 
-    def test_check_minimum_version_met(self):
-        for minimum in ("0.6.0", "0.7.0"):
-            with self.subTest(minimum=minimum):
-                result = books.check(self._book("a/one", minimum_version=minimum),
-                                     self.settings_dir, self.project_dir, Version(0, 7, 0))
-                self.assertTrue(result.ok, result.error)
-                self.assertIsNone(result.requires_newer)
+    def test_buildable(self):
+        cases = {">=0.7.0": True, ">=0.6.0,<0.7": False, ">=0.8.0": False}
+        for requirement, expected in cases.items():
+            with self.subTest(requirement=requirement), \
+                    patch.object(books, "processor_version", return_value="0.7.0"):
+                self.assertEqual(
+                    books.buildable(self._book("a/one", requires_processor=requirement)), expected)
 
-    def test_check_minimum_version_newer_is_not_an_error(self):
-        result = books.check(self._book("a/one", minimum_version="0.8.0"),
-                             self.settings_dir, self.project_dir, Version(0, 7, 0))
-        self.assertTrue(result.ok, result.error)
-        self.assertEqual(result.requires_newer, Version(0, 8, 0))
+    def test_buildable_dev_version_is_its_release(self):
+        with patch.object(books, "processor_version", return_value="0.8.0.dev0"):
+            self.assertTrue(books.buildable(self._book("a/one", requires_processor=">=0.8.0")))
 
-    def test_check_minimum_version_read_before_validation(self):
-        """ A book waiting for a newer release usually uses a key the older code refuses. """
-        result = books.check(self._book("a/one", minimum_version="0.8.0", new_setting=True),
-                             self.settings_dir, self.project_dir, Version(0, 7, 0))
-        self.assertIn("invalid settings", result.error)
-        self.assertEqual(result.requires_newer, Version(0, 8, 0))
+    def test_buildable_reads_the_requirement_before_validation(self):
+        """ A book waiting for a newer processor usually uses a key this one refuses. """
+        path = self._book("a/one", requires_processor=">=0.8.0", new_setting=True)
+        with patch.object(books, "processor_version", return_value="0.7.0"):
+            self.assertFalse(books.buildable(path))
 
-    def test_check_defaults_to_the_installed_version(self):
-        with patch.object(books, "code_version", return_value=Version(0, 7, 0)):
-            self.assertIsNone(self._check(self._book("a/one", minimum_version="0.7.0")).requires_newer)
-            self.assertIsNotNone(self._check(self._book("a/two", minimum_version="0.7.1")).requires_newer)
-
-    def test_code_version_is_the_installed_package(self):
-        with patch.object(books.importlib.metadata, "version", return_value="1.2.3") as version:
-            self.assertEqual(books.code_version(), Version(1, 2, 3))
-        version.assert_called_once_with("opensiddur-ai")
+    def test_buildable_when_the_requirement_cannot_be_read(self):
+        """ Its build is left to fail, and to say why. """
+        unreadable = self.settings_dir / "a" / "bad.yaml"
+        unreadable.parent.mkdir(parents=True)
+        unreadable.write_text("priority: [unclosed\n")
+        with patch.object(books, "processor_version", return_value="0.7.0"):
+            for path in (unreadable, self._settings("a/none", {"priority": {}}),
+                         self._book("a/malformed", requires_processor="0.7")):
+                with self.subTest(path=path.name):
+                    self.assertTrue(books.buildable(path))
 
     def test_check_invalid_settings(self):
         result = self._check(self._settings("a/one", {"priority": {}, "bogus": 1}))
@@ -401,39 +398,15 @@ class TestBooks(unittest.TestCase):
         # Misplaced files are listed too, so their build fails visibly rather than being skipped.
         self.assertEqual(json.loads(out), ["a/one", "b/one", "loose"])
 
-    def test_main_list_leaves_out_books_needing_newer_code(self):
+    def test_main_list_leaves_out_books_needing_another_processor(self):
         self._book("a/one")
-        self._book("b/one", minimum_version="999.0.0")
-        self._book("c/one", minimum_version="999.0.0", new_setting=True)
+        self._book("b/one", requires_processor=">=999.0.0")
+        self._book("c/one", requires_processor=">=999.0.0", new_setting=True)
         self._settings("d/one", {"priority": {}})
         code, out = self._main("--list")
         self.assertEqual(code, 0)
         # d/one fails its check for another reason, so it stays in and its build fails visibly.
         self.assertEqual(json.loads(out), ["a/one", "d/one"])
-
-    def test_main_check_skips_books_needing_newer_code(self):
-        self._book("a/one")
-        self._book("b/one", minimum_version="999.0.0")
-        with patch.object(books, "code_version", return_value=Version(0, 7, 0)):
-            code, out = self._main("--check")
-        self.assertEqual(code, 0)
-        self.assertIn("ok      a/one", out)
-        self.assertIn("skipped b/one: proj-a/index.xml: needs opensiddur-ai 999.0.0 or later, "
-                      "this is 0.7.0", out)
-        self.assertIn("1 of 2 books ok, 1 skipped", out)
-
-    def test_main_check_still_validates_books_needing_newer_code(self):
-        self._book("b/one", minimum_version="999.0.0", new_setting=True)
-        code, out = self._main("--check")
-        self.assertEqual(code, 1)
-        self.assertIn("FAILED  b/one: invalid settings", out)
-
-    def test_build_refuses_a_book_needing_newer_code(self):
-        with patch.object(books.subprocess, "run") as run, \
-                patch.object(books, "code_version", return_value=Version(0, 7, 0)):
-            result = self._build(self._book("a/one", minimum_version="999.0.0"))
-        run.assert_not_called()
-        self.assertEqual(result.error, "needs opensiddur-ai 999.0.0 or later, this is 0.7.0")
 
     def test_main_list_empty(self):
         code, out = self._main("--list")

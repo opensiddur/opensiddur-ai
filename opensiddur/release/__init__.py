@@ -1,1 +1,1 @@
-"""Release tooling for opensiddur-ai. See RELEASE_PROCEDURE.md."""
+"""Release tooling for opensiddur-processor. See RELEASE_PROCEDURE.md."""

@@ -72,7 +72,9 @@ says how it knows the day:
 **How a book starts** is its settings file's, in a section of its own for the electronic book,
 `electronic` (`settings.ElectronicSettings`, documented in `doc/exporter-settings.example.yaml`):
 `day: now | none`, and `columns: both | primary | parallel`. A haggadah, read ahead of the seder
-as well as at it, starts with no particular day. The reader's own choices, once made, are
+as well as at it, starts with no particular day. `psalm_titles: uniform` gives every whole psalm
+one bilingual heading in place of its edition's (`html/psalms.py`), for a book compiled from
+editions that title psalms differently. The reader's own choices, once made, are
 remembered and win; Clear all goes back to the book's.
 
 The place is the reader's: a city from `html/places.yaml`, the device's location, or
@@ -210,8 +212,9 @@ Each file names the root file it formats with a `book:` key and says how it diff
 siblings with `description:` (below). On the first of each month, opensiddur-projects'
 `release.yml` calls this repository's `.github/workflows/release-projects.yml`, which tags
 opensiddur-projects with the date (`vYYYYMMDD`) and builds the books with the latest
-opensiddur-ai release (see [RELEASE_PROCEDURE.md](../../RELEASE_PROCEDURE.md)). It lists them
-(`books --list`, which leaves out a book whose `minimum_version:` that release does not meet)
+opensiddur-processor release (see [RELEASE_PROCEDURE.md](../../RELEASE_PROCEDURE.md)). It lists them
+(`books --list`, which leaves out a book whose `requires_processor:` that release
+does not meet)
 and starts a `release-book.yml` job for each, which builds that book in the formats its
 `formats:` lists (below) and attaches them to the release as `<book>-<variant>-<tag>.html` and
 `.pdf` (e.g. `humash-annual-v20261101.pdf`).
@@ -239,14 +242,15 @@ Pull requests to opensiddur-projects run `--check`, so a broken settings file fa
 rather than at release. It checks that each file:
 - is in a book's subdirectory (`settings/<book>/<variant>.yaml`; a file anywhere else is an
   error, not silently left out of the release);
-- parses, and matches the settings schema below, including `book:` and `minimum_version:`
+- parses, and matches the settings schema below, including `book:` and `requires_processor:`
   keys;
 - names a project and file that exist;
 - can be typeset on that machine: every font chain, the defaults included, has an installed
   font. Without fontconfig this is an error rather than skipped.
 
-A book whose `minimum_version:` is newer than the code checking it is still checked, and
-reported as `skipped` rather than failed.
+A processor that does not meet a book's `requires_processor:` fails its check. Between releases
+`main` is the development of the next release, which meets a requirement of that release (see
+[Settings file versioning](#settings-file-versioning)).
 
 ## Settings file
 
@@ -276,15 +280,25 @@ The forms `books` and the release build this book in: `html`, the electronic boo
 the printed one. Both, unless the settings say otherwise. A book whose reader chooses the day
 on the device, and that is not wanted in print, lists only `html`. At least one, each once.
 
-### Minimum version
+### Distribution notices
 ```yaml
-minimum_version: 0.6.0
+distribution:
+  notice:
+    logo: art/our-logo.png   # relative to this file; `default` or `none`
+    logo_width: 1in
+    position: center
+    text: [Distributed by Our Congregation, https://example.org]
+  back_notice: none
 ```
-The earliest opensiddur-ai release that can build this book, as `major.minor.patch`. Books are
-released with the latest opensiddur-ai release; one that needs a newer release is left out of
-the release until there is one, and `books` refuses to build it. Raise it when the book starts
-using a setting or feature that a release has not yet shipped. Optional, except in
-`opensiddur-projects/settings/`, where every file is a book.
+Every book carries the Open Siddur Project's distribution notice, with its logo, and a statement
+on disposing of sacred texts. Neither needs a setting. The notice is on the verso of the first
+title page; a book with no title page, or whose title pages are not set, has it on a page of its
+own at the start of the front matter. The electronic book has it after its title page. The
+statement is on the last page, after the colophon. `back_notice` has an `electronic` and a
+`print` version: the PDF takes `print`, the electronic book `electronic`. Either part can be
+replaced, or set to `none`. In the PDF, `typography.styles.distribution_notice` and `back_notice` set
+their type. `books --check` reports a logo that is not there. The example settings file
+(`doc/exporter-settings.example.yaml`) gives the defaults in full.
 
 ### Transclusion priority
 ```yaml
@@ -418,3 +432,20 @@ streams are emitted in.
 ## Settings file versioning
 Note that this file is likely to change slightly in format as more output
 formats are introduced.
+
+A settings file can say which processor versions build its book:
+```yaml
+requires_processor: ">=0.7.0"
+```
+A PEP 440 requirement (`>=0.7.0`, `>=0.7,<0.9`). A processor that does not meet it refuses
+the file, in the compiler, the output stages and `books --check`, instead of building a broken
+book. The settings live in opensiddur-projects and the processor here, and a release pairs a
+book with one processor: a book that needs a fix should say so. Between releases `main` is the
+development of the next one (`0.7.0.dev0` after 0.6.0), which meets a requirement of that
+release, so a book can require a fix as soon as it is merged.
+
+Every book in `opensiddur-projects/settings/` must declare it (`books --check`). The monthly
+book release builds with the latest processor release and leaves out (`books --list`) a book
+whose requirement that release does not meet, until one does. The requirement is read before
+the rest of the file is validated, since a book waiting for a newer processor usually uses a
+key an older one does not know.

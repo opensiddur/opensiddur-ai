@@ -529,8 +529,8 @@ hand, or by a rule invented on the spot, is the step that is wrong.**
 
 ## The apparatus renders (was: a parallel compile dropped it)
 
-**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124), fixed in
-[#126](https://github.com/opensiddur/opensiddur-ai/pull/126).** Kept here because the
+**[opensiddur-processor#124](https://github.com/opensiddur/opensiddur-processor/issues/124), fixed in
+[#126](https://github.com/opensiddur/opensiddur-processor/pull/126).** Kept here because the
 symptom is worth recognising again: while it stood, a single-column compile carried all 61
 notes of this unit and a two-column compile carried none, and everything else was green --
 the apparatus validated, `refdb` indexed it, every target resolved, the registry was clean.
@@ -561,8 +561,8 @@ Hebrew page in the print, and in the rendered PDF it is in the English column.
 
 ## Rosh Ḥodesh is computed correctly (was: wrong on most Rosh Ḥodesh days)
 
-**[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125), fixed in
-[#127](https://github.com/opensiddur/opensiddur-ai/pull/127).** Kept here for how it was
+**[opensiddur-processor#125](https://github.com/opensiddur/opensiddur-processor/issues/125), fixed in
+[#127](https://github.com/opensiddur/opensiddur-processor/pull/127).** Kept here for how it was
 found rather than for what it was.
 
 While it stood, `opensiddur:holiday/rosh-hodesh` was right on 5 of the 17 days that are
@@ -622,8 +622,8 @@ hand, or by a rule invented on the spot, is the step that is wrong.**
 
 ## The apparatus renders (was: a parallel compile dropped it)
 
-**[opensiddur-ai#124](https://github.com/opensiddur/opensiddur-ai/issues/124), fixed in
-[#126](https://github.com/opensiddur/opensiddur-ai/pull/126).** Kept here because the
+**[opensiddur-processor#124](https://github.com/opensiddur/opensiddur-processor/issues/124), fixed in
+[#126](https://github.com/opensiddur/opensiddur-processor/pull/126).** Kept here because the
 symptom is worth recognising again: while it stood, a single-column compile carried all 61
 notes of this unit and a two-column compile carried none, and everything else was green --
 the apparatus validated, `refdb` indexed it, every target resolved, the registry was clean.
@@ -654,7 +654,7 @@ Hebrew page in the print, and in the rendered PDF it is in the English column.
 
 ## Known defect in the calendar: `rosh-hodesh` is wrong on most Rosh Ḥodesh days
 
-**[opensiddur-ai#125](https://github.com/opensiddur/opensiddur-ai/issues/125)**. Not caused
+**[opensiddur-processor#125](https://github.com/opensiddur/opensiddur-processor/issues/125)**. Not caused
 by this work and not fixed by it, but found by it and load-bearing for anything conditioned
 on Rosh Ḥodesh — which in this book is Ya'aleh v'Yavo in the Amidah as well as the musaf
 passage on printed 35.

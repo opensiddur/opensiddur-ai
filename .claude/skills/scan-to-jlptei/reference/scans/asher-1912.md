@@ -2,7 +2,7 @@
 
 Load for Archive item `selichothdavidasher1912`: David Asher’s Selichoth,
 Vallentine & Sons, London, 1912–5672 reprint (first published in 1866).
-This is the edition linked by opensiddur-ai issue 207.
+This is the edition linked by opensiddur-processor issue 207.
 
 ## Evidence and pagination
 

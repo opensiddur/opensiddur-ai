@@ -275,8 +275,24 @@ class TestRunningHeadModels(unittest.TestCase):
 
     def test_typography_defaults_to_a_section_title_head_and_no_foot(self):
         typography = TypographyConfig()
-        self.assertEqual(typography.page_header, default_page_header())
+        self.assertEqual(typography.page_header, default_page_header(right_bound=True))
         self.assertTrue(typography.page_footer.is_empty())
+
+    def test_default_head_follows_the_binding(self):
+        for page, right_bound in (({}, True), ({"binding": "left"}, False),
+                                  ({"sides": "one"}, False)):
+            with self.subTest(page=page):
+                typography = TypographyConfig.model_validate({"page": page})
+                self.assertEqual(typography.page_header,
+                                 default_page_header(right_bound=right_bound))
+                # Still the default, not something the settings file said.
+                self.assertNotIn("page_header", typography.model_fields_set)
+
+    def test_a_stated_head_is_not_mirrored(self):
+        """Its left and right are the settings file's own physical positions."""
+        head = {"odd": {"left": "{page}"}, "even": {"right": "{page}"}}
+        typography = TypographyConfig.model_validate({"page_header": head})
+        self.assertEqual(typography.page_header, RunningHeadConfig.model_validate(head))
 
     def test_settings_can_ask_for_no_head_at_all(self):
         """An empty mapping is a real choice, distinct from saying nothing."""
@@ -304,6 +320,16 @@ class TestDefaultPageHeader(unittest.TestCase):
         self.assertIn(r"\fancyhead[LO]{{\textdir TRT\foreignlanguage{hebrew}{\LastMark{OSheadAny}}}}", out)
         self.assertIn(r"\fancyhead[RE]{{\textdir TRT\foreignlanguage{hebrew}{\LastMark{OSheadAny}}}}", out)
         self.assertEqual(out.count(r"\thepage"), 4)  # RO and LE, once per page style
+
+    def test_right_bound_default_is_the_mirror_image(self):
+        """The page number stays on the fore edge, which a right binding moves to
+        the left of an odd page."""
+        out = build_page_style_tex(default_page_header(right_bound=True), None, "he")
+        self.assertIn(r"\fancyhead[RO]{{\textdir TRT\foreignlanguage{hebrew}{\LastMark{OSheadAny}}}}", out)
+        self.assertIn(r"\fancyhead[LE]{{\textdir TRT\foreignlanguage{hebrew}{\LastMark{OSheadAny}}}}", out)
+        for slot in ("LO", "RE"):
+            with self.subTest(slot=slot):
+                self.assertRegex(out, r"\\fancyhead\[%s\]\{.*\\thepage" % slot)
 
     def test_default_never_reads_the_class_marks(self):
         """\\leftmark/\\rightmark are what carried "CONTENTS" through the book."""

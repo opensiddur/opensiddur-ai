@@ -1,7 +1,7 @@
 # Open Siddur Project (AI aided version)
 
-[![Tests](https://github.com/opensiddur/opensiddur-ai/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/opensiddur/opensiddur-ai/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/github/opensiddur/opensiddur-ai/branch/main/graph/badge.svg?token=S4DAU7F6VY)](https://codecov.io/github/opensiddur/opensiddur-ai)
+[![Tests](https://github.com/opensiddur/opensiddur-processor/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/opensiddur/opensiddur-processor/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/github/opensiddur/opensiddur-processor/branch/main/graph/badge.svg?token=S4DAU7F6VY)](https://codecov.io/github/opensiddur/opensiddur-processor)
 
 This is a work in progress to convert the Open Siddur Project to use AI to aid in the conversion of the liturgical texts.
 
@@ -18,8 +18,8 @@ books are released separately, as monthly date tags (`vYYYYMMDD`) of opensiddur-
 built with the latest release of this repository (see `RELEASE_PROCEDURE.md`).
 
 ```bash
-git clone git@github.com:opensiddur/opensiddur-ai.git
-cd opensiddur-ai
+git clone git@github.com:opensiddur/opensiddur-processor.git
+cd opensiddur-processor
 git submodule update --init
 uv sync --all-groups
 ```
