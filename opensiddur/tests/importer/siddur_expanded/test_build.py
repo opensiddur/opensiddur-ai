@@ -28,7 +28,7 @@ class TestExpandedBuild(unittest.TestCase):
         sources = {
             'siddur:siddur': Author().gate(feature('holiday', 'rosh-hashana', 1),
                 transclude(TEXT+'siddur:rosh_hashanah/tashlikh')),
-            'siddur:all/shacharit/birchot_hashachar':
+            'siddur:all/shacharit/birkhot_hashachar':
                 '<tei:head xml:lang="he">מסכת ברכות יא, א; ס, ב</tei:head>'
                 '<tei:head xml:lang="en">Talmud Berakhoth 11a; 60b</tei:head>'
                 + transclude(TEXT+'prayer:fixture/morning_blessings'),
@@ -122,7 +122,7 @@ class TestExpandedBuild(unittest.TestCase):
                 'chol-hamoed': False, 'minor-fast': False, 'motzaei-shabbat': False},
             'opensiddur:holiday': {n: 0 for n in ['rosh-hashana', 'yom-kippur',
                 'pesah', 'shavuot', 'sukkot', 'shmini-atzeret', 'rosh-hodesh',
-                'hanukkah', 'tisha-bav', 'purim-observed']},
+                'chanukah', 'tisha-bav', 'purim-observed']},
             'opensiddur:quorum': {'minyan': quorum},
             'opensiddur:hallel': {'recite': hallel},
         }

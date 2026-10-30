@@ -219,8 +219,8 @@ class TestSectionOrder(unittest.TestCase):
             INDEX_CHILDREN["magid"][-2:], ["asher_ge_alanu", "hagafen_second_cup"]
         )
 
-    def test_barech_transcludes_psalm_126(self) -> None:
-        self.assertEqual(INDEX_CHILDREN["barech"], ["psalm_126"])
+    def test_barekh_transcludes_psalm_126(self) -> None:
+        self.assertEqual(INDEX_CHILDREN["barekh"], ["psalm_126"])
 
     def test_every_parsed_hallel_subsection_is_transcluded_somewhere(self) -> None:
         placed = set(document_order_slugs())
@@ -278,7 +278,7 @@ class TestPageRanges(unittest.TestCase):
         """Barech transcludes Psalm 126 and then runs on for another thirty paragraphs."""
         ranges = page_ranges(load_page_breaks())
         self.assertEqual(ranges["psalm_126"], ("27r", "27r"))
-        self.assertEqual(ranges["barech"], ("27r", "30v"))
+        self.assertEqual(ranges["barekh"], ("27r", "30v"))
 
     def test_hallel_needs_no_override(self) -> None:
         """The override existed only because the fourth-cup blessings were stuck inside Hallel."""

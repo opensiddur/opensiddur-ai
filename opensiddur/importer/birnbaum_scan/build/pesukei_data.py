@@ -107,7 +107,7 @@ PASSAGES = {'hodu': [('chronicles_1/16/8',
              '{reader}רוֹמְמוּ יְיָ אֱלֹהֵֽינוּ, וְהִשְׁתַּחֲווּ לְהַר קָדְשׁוֹ, כִּי קָדוֹשׁ יְיָ '
              'אֱלֹהֵֽינוּ.',
              'Exalt the Lord our God, and worship at his holy mountain, for holy is the Lord our God.')],
- 'vehu_rahum': [('psalms/78/38',
+ 'vehu_rachum': [('psalms/78/38',
                  'וְהוּא רַחוּם, יְכַפֵּר עָוֹן וְלֹא יַשְׁחִית, וְהִרְבָּה לְהָשִׁיב אַפּוֹ, וְלֹא יָעִיר '
                  'כָּל חֲמָתוֹ.',
                  'He, being merciful, forgives iniquity, and does not destroy; frequently he turns his anger '
@@ -146,7 +146,7 @@ PASSAGES = {'hodu': [('chronicles_1/16/8',
                 ('psalms/20/10',
                  'יְיָ, הוֹשִֽׁיעָה; הַמֶּלֶךְ יַעֲנֵֽנוּ בְיוֹם קָרְאֵֽנוּ.',
                  'O Lord, save us; may the King answer us when we call.')],
- 'hoshia_et_amekha': [('psalms/28/9',
+ 'hoshia_et_ammekha': [('psalms/28/9',
                        'הוֹשִֽׁיעָה אֶת עַמֶּֽךָ, וּבָרֵךְ אֶת נַחֲלָתֶֽךָ, וּרְעֵם וְנַשְּׂאֵם עַד '
                        'הָעוֹלָם.',
                        'Save thy people and bless thy heritage; tend them and sustain them forever.'),

@@ -22,8 +22,8 @@ TAMID = 'urn:x-opensiddur:text:mishnah:tamid/7/4'
 TANA = 'urn:x-opensiddur:text:talmud:megillah/28b/tana_devei_eliyahu'
 PITTUM = PRAYER+'pittum_haketoret_hatzori'
 RASHBAG = PRAYER+'pittum_haketoret_hatzori/rashbag'
-TIKANTA = PRAYER+'amidah/tikanta_shabbat'
-YATZARTA = PRAYER+'amidah/atah_yatzarta'
+TIKANTA = PRAYER+'amidah/tiqqanta_shabbat'
+YATZARTA = PRAYER+'amidah/attah_yatzarta'
 YISMECHU = PRAYER+'amidah/yismechu_vemalkhutkha'
 RC_END = PRAYER+'amidah/retzeh_vechadesh'
 URNS = {key:PRAYER+'amidah/qedushah/'+key for key,_,_,_ in data.KEDUSHAH}
@@ -34,7 +34,7 @@ RANGES = {
  'amidah_hodaah':[(399,401)],'amidah_hodaah_modim_derabbanan':[(399,401)],
  'amidah_hodaah_ukhtov':[(401,401)],'al_hanissim_chanukah':[(401,401)],
  'amidah_birkat_kohanim':[(403,403)],'amidah_shalom':[(403,403)],
- 'amidah_shalom_hamevarekh':[(403,403)],'amidah_shalom_besefer_chayim':[(403,403)],
+ 'amidah_shalom_hamevarekh':[(403,403)],'amidah_shalom_besefer_chayyim':[(403,403)],
  'amidah_elohai_netzor':[(403,403)],'amidah_yehi_ratzon':[(405,405)],
  'conclusion_titkabal':[(405,405)],'shabbat_arvit_retzeh_text':[(395,395)],
  'conclusion_aleinu':[(413,413)],'conclusion_al_tira':[(415,415)],
@@ -87,12 +87,12 @@ def prayers(lang,earlier):
     for key,page,he,en in data.KEDUSHAH:
         value=text_xml((he,en)[side],SIGIL)
         if key=='ani':value=f'<tei:seg source="{BIBLE}numbers/15/41">'+value+'</tei:seg>'
-        add('kedushah_'+key,URNS[key],page,page,'<tei:p>'+value+'</tei:p>')
+        add('qedushah_'+key,URNS[key],page,page,'<tei:p>'+value+'</tei:p>')
     # This translation differs from the previously printed complete Shema verse.
-    add('kedushah_shema',ROOT+'/amidah/kedushah/shema',393,393,paragraph((
+    add('qedushah_shema',ROOT+'/amidah/qedushah/shema',393,393,paragraph((
       'שְׁמַע, יִשְׂרָאֵל, יְיָ אֱלֹהֵינוּ, יְיָ אֶחָד.',
       '“Hear, O Israel, the Lord is our God, the Lord is One.”')).replace('<tei:p>',f'<tei:p><tei:seg source="{BIBLE}deuteronomy/6/4">').replace('</tei:p>','</tei:seg></tei:p>'))
-    for name,urn,page,pair in [('tikanta',TIKANTA,395,data.TIKANTA),('yatzarta',YATZARTA,397,data.ATAH_YATZARTA),
+    for name,urn,page,pair in [('tiqqanta',TIKANTA,395,data.TIKANTA),('yatzarta',YATZARTA,397,data.ATAH_YATZARTA),
           ('uminchatam',PRAYER+'amidah/uminchatam_veniskehem',397,data.UMINCHATAM),('yismechu',YISMECHU,395,data.YISMECHU),
           ('pittum',PITTUM,407,data.PITTUM),('rashbag',RASHBAG,407,data.RASHBAG)]:
         add(name,urn,page,page,paragraph(pair))
@@ -157,7 +157,7 @@ def prayers(lang,earlier):
 def kedushah():
     def p(key):return transclude(PRAYER+'amidah/qedushah/'+key)
     body=p('naaritz')+p('qadosh')+p('kevodo')+p('barukh_kevod')+p('mimkomo')
-    body+=transclude(ROOT+'/amidah/kedushah/shema')+p('hu')+p('ani')+p('uvdivrei')+p('yimlokh')+instruction('Reader:')+p('ledor_vador')
+    body+=transclude(ROOT+'/amidah/qedushah/shema')+p('hu')+p('ani')+p('uvdivrei')+p('yimlokh')+instruction('Reader:')+p('ledor_vador')
     for key,negate in [('haeil_haqadosh',True),('hamelekh_haqadosh',False)]:
         body+=conditional(key,'Except during the Ten Days of Repentance:' if negate else 'Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,p(key),negate=negate)
     return body
@@ -173,20 +173,20 @@ def units(project,by_name):
         if not key:
             head=cond('shabbat_musaf_heading', fs=OCCASION)+head+endcond('shabbat_musaf_heading')
         result.append(dict(name='shabbat_musaf'+('_'+key.replace('/','_') if key else ''),urn=urn,title_he=he,title_en=en,pages=(first+side,last+side),body=f'<tei:div corresp="{urn}">'+head+pb(first+side,sigil=SIGIL)+body+'</tei:div>'))
-    add('amidah/kedushah','קדושה','KEDUSHAH',393,393,kedushah())
-    add('amidah/ordinary','תכנת שבת','Ordinary Sabbath blessing',395,395,p('amidah/tikanta_shabbat')+transclude(BIBLE+'numbers/28/9')+transclude(BIBLE+'numbers/28/10')+transclude(YISMECHU)+transclude(ARVIT['retzeh']))
+    add('amidah/qedushah','קדושה','KEDUSHAH',393,393,kedushah())
+    add('amidah/ordinary','תכנת שבת','Ordinary Sabbath blessing',395,395,p('amidah/tiqqanta_shabbat')+transclude(BIBLE+'numbers/28/9')+transclude(BIBLE+'numbers/28/10')+transclude(YISMECHU)+transclude(ARVIT['retzeh']))
     add('amidah/rosh_chodesh','אתה יצרת','Sabbath–Rosh Hodesh blessing',397,399,transclude(YATZARTA)+transclude(BIBLE+'numbers/28/9')+transclude(BIBLE+'numbers/28/10')+transclude(BIBLE+'numbers/28/11')+p('amidah/uminchatam_veniskehem')+pb(399+side,sigil=SIGIL)+transclude(YISMECHU)+transclude(RC_END))
     body=instruction('The Amidah is recited in silent devotion while standing, facing east.')+instruction('The Reader repeats the Amidah aloud when a minyan holds service.')
     body+=''.join(tr(n) for n in ('minchah_ki_shem','amidah_adonai_sefatai','amidah_avot','amidah_gevurot'))
-    body+=conditional('kedushah','When the Reader repeats the Amidah, the following Kedushah is said:',READER,transclude(ROOT+'/amidah/kedushah'))
+    body+=conditional('qedushah','When the Reader repeats the Amidah, the following Kedushah is said:',READER,transclude(ROOT+'/amidah/qedushah'))
     body+=conditional('silent','In silent devotion:',READER,p('amidah/qedushat_hashem'),negate=True)
     body+=conditional('ordinary','On regular Sabbaths:',RC,transclude(ROOT+'/amidah/ordinary'),negate=True)
     body+=conditional('rosh_chodesh','On Sabbath–Rosh Ḥodesh:',RC,transclude(ROOT+'/amidah/rosh_chodesh'))
     # No Yaaleh Veyavo in Musaf, even on Rosh Hodesh.
-    body+=p('amidah/avodah/retzeh')+p('amidah/avodah/vetechezenah')
+    body+=p('amidah/avodah/retzeh')+p('amidah/avodah/vetechezeinah')
     body+=conditional('modim','When the Reader repeats the Amidah, the Congregation responds here by saying:',READER,p('amidah/hodaah/modim_derabbanan'))
     body+=p('amidah/hodaah/modim')
-    body+=conditional('hanukkah','On Ḥanukkah add:',holiday('hanukkah',8),p('al_hanissim/chanukah'))
+    body+=conditional('chanukah','On Ḥanukkah add:',holiday('hanukkah',8),p('al_hanissim/chanukah'))
     body+=p('amidah/hodaah/veal_kulam')+conditional('ukhtov','Between Rosh Hashanah and Yom Kippur add:',TEN_DAYS,p('amidah/hodaah/ukhtov'))+p('amidah/hodaah/hatov_shimkha')
     body+=conditional('kohanim','During the Reader’s repetition:',READER,p('amidah/birkat_kohanim'))+p('amidah/shalom')
     body+=conditional('meditation','After the Amidah add the following meditation:',READER,f'<tei:div corresp="{ROOT}/amidah/meditation">'+p('amidah/elohai_netzor/text')+'</tei:div>',negate=True)+p('amidah/yehi_ratzon')

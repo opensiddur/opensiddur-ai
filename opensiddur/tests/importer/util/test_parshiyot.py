@@ -121,13 +121,13 @@ class TestSkeletonMapJson(unittest.TestCase):
 
 class TestSlugifyReadingName(unittest.TestCase):
     def test_festival_names(self):
-        self.assertEqual("rosh_hashana_i", slugify_reading_name("Rosh Hashana I"))
+        self.assertEqual("rosh_hashanah_i", slugify_reading_name("Rosh Hashana I"))
         self.assertEqual("shabbat_chol_hamoed", slugify_reading_name("Shabbat Chol Hamoed"))
 
     def test_apostrophes_are_dropped_not_replaced(self):
         self.assertEqual("sukkot_shabbat_chol_hamoed", slugify_reading_name(
             "Sukkot Shabbat Chol Hamoed"))
-        self.assertEqual("erev_rosh_hashana", slugify_reading_name("Erev Rosh Hashana"))
+        self.assertEqual("erev_rosh_hashanah", slugify_reading_name("Erev Rosh Hashana"))
         self.assertEqual("shmini_atzeret", slugify_reading_name("Shmini Atzeret"))
         self.assertEqual("reeh", slugify_reading_name("Re'eh"))
 

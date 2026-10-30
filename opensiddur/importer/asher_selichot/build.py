@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT, PROJECT_DIRECTORY
+from opensiddur.common.urn_registry import SCHEME
+from opensiddur.common.validate_names import load_spellings, respell, respell_urns
 from opensiddur.importer.util.validation import validate
 from .identities import project_name
 
@@ -180,9 +182,35 @@ def build(source_root,project_directory):
     editorial = readings/'editorial_notes.json'
     if editorial.exists():
         apply_editorial_notes(by_path, json.loads(editorial.read_text())['notes'])
+    documents, renamed = respelled(documents)
     obsolete = [Path(project_directory)/project_name(lang)/(name+'.xml')
-                for lang in ['he', 'en'] for name in OBSOLETE_ASSEMBLIES]
+                for lang in ['he', 'en'] for name in OBSOLETE_ASSEMBLIES] + renamed
     return write_documents(documents, validator=validate, obsolete_paths=obsolete)
+
+
+def respelled(documents):
+    """The documents with their file names and URNs spelled by specs/naming/spellings.yaml, and
+    the paths they were renamed from.
+
+    The readings' IDs and file names are evidence, and keep the spelling they were made under;
+    the book's names are respelled here, once everything else has located its files by them.
+    """
+    spellings = load_spellings()
+    out, renamed = [], []
+    for path, root in documents:
+        new = path.with_name(respell(path.stem, spellings) + path.suffix)
+        if new != path:
+            renamed.append(path)
+        for node in root.iter():
+            if not isinstance(node.tag, str):
+                continue
+            for key, value in node.attrib.items():
+                if SCHEME in value:
+                    node.set(key, respell_urns(value, spellings))
+            if node.text and SCHEME in node.text:
+                node.text = respell_urns(node.text, spellings)
+        out.append((new, root))
+    return out, renamed
 
 
 def main(argv=None):

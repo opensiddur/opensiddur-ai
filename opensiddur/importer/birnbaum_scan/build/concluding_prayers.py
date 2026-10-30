@@ -32,7 +32,7 @@ URNS.update({'mi_adir':POEM+'mi_adir','erusin':PRAYER+'birkat_erusin',
  'bed_rigzu':BIBLE+'psalms/4/5'})
 for k in ('shehakol_bara','yotzer_haadam','asher_yatzar_haadam','sos_tasis','sameach_tesamach','asher_bara'):URNS[k]=SEVEN+'/'+k
 for k,suffix in {'hazan':'hazan','nodeh':'nodeh','veal_hakol':'veal_hakol','rachem':'rachem',
- 'retze_grace':'retzeh_vehachalitzenu','uvneh':'uvneh_yerushalayim','hatov':'hatov_vehametiv',
+ 'retzeh_grace':'retzeh_vehachalitzenu','uvneh':'uvneh_yerushalayim','hatov':'hatov_vehametiv',
  'bamarom':'bamarom','barukh_hu':'zimmun/barukh_hu','zimmun_leader':'zimmun/nevarekh',
  'zimmun_response':'zimmun/barukh_she_akhalnu','harachaman_reign':'harachaman/yimlokh',
  'harachaman_worship':'harachaman/yitbarakh','harachaman_praise':'harachaman/yishtabach',
@@ -142,7 +142,7 @@ def quotations(key,raw,lang):
 
 
 def raw_xml(key,raw,lang):
- if key in ('grace_hanukkah','grace_purim','retze_grace','grace_yaaleh_open','grace_yaaleh_end'):raw=raw.removeprefix('(').removesuffix(')')
+ if key in ('grace_chanukah','grace_purim','retzeh_grace','grace_yaaleh_open','grace_yaaleh_end'):raw=raw.removeprefix('(').removesuffix(')')
  if key in VERSE_STARTS:return verse_parts(key,raw,lang)
  if key in QUOTATIONS:return quotations(key,raw,lang)
  if key=='magdil' and lang=='he':
@@ -230,8 +230,8 @@ def units(project):
  yaaleh+=p('grace_yaaleh_end',True)+'</tei:p>'
  add('grace_yaaleh_veyavo',GRACE+'/yaaleh_veyavo','יעלה ויבא','Ya’aleh Veyavo',765,765,yaaleh,False)
  core=p('hazan')+p('nodeh')
- for k,expr in [('hanukkah',holiday('hanukkah',8)),('purim',holiday('purim-observed'))]:core+=opt('grace_'+k,RUBRICS[k],expr,p('grace_'+k))
- core+=p('veal_hakol')+p('rachem')+opt('retze',RUBRICS['retze'],SHABBAT,p('retze_grace'))
+ for k,expr in [('chanukah',holiday('hanukkah',8)),('purim',holiday('purim-observed'))]:core+=opt('grace_'+k,RUBRICS[k],expr,p('grace_'+k))
+ core+=p('veal_hakol')+p('rachem')+opt('retzeh',RUBRICS['retzeh'],SHABBAT,p('retzeh_grace'))
  core+=opt('yaaleh',RUBRICS['yaaleh'],'<j:any>'+RC+RH+FESTIVAL+'</j:any>',transclude(GRACE+'/yaaleh_veyavo'))+p('uvneh')+p('hatov')
  add('grace_four_blessings',GRACE+'/four_blessings','ברכות המזון','The four blessings',759,765,core,False)
  har=''.join(p('harachaman_'+k) for k in ('reign','worship','praise','livelihood','yoke','house','elijah'))

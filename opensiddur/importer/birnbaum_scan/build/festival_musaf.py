@@ -25,11 +25,11 @@ REPEAT = feature('opensiddur:practice','uminchatam-after-each-day')
 URNS = {r['key']:ROOT+'/text/'+r['key'] for r in ROWS}
 REUSE = {
  'veneeman':PRAYER+'amidah/gevurot/mechayeh_hametim',
- 'nekadesh':SIDDUR+'shabbat/shacharit/amidah/kedushah/neqadesh',
+ 'neqaddesh':SIDDUR+'shabbat/shacharit/amidah/qedushah/neqaddesh',
  'ledor':SIDDUR+'regalim/text/ledor',
- 'atah_kadosh':SIDDUR+'regalim/text/atah_kadosh',
+ 'attah_qadosh':SIDDUR+'regalim/text/attah_qadosh',
  **{'amidah_'+k:SIDDUR+'regalim/text/amidah_'+k for k in ('pesach','shavuot','sukkot','shemini')},
- 'vetechezenah':PRAYER+'amidah/avodah/vetechezenah',
+ 'vetechezeinah':PRAYER+'amidah/avodah/vetechezeinah',
  'veal_kulam':PRAYER+'amidah/hodaah/veal_kulam',
  'hatov':PRAYER+'amidah/hodaah/hatov_shimkha',
  'wine':PRAYER+'borei_pri_hagafen',
@@ -48,7 +48,7 @@ def shared(lang, prayers_):
 
 # Repeating response units are bounded milestones, not hierarchical segments.
 BIBLICAL = {'ki_shem':'deuteronomy/32/3','sefatai':'psalms/51/17',
- 'kadosh_major':'isaiah/6/3','kadosh_chol':'isaiah/6/3',
+ 'qadosh_major':'isaiah/6/3','qadosh_chol':'isaiah/6/3',
  'barukh_major':'ezekiel/3/12','barukh_chol':'ezekiel/3/12',
  'shema':'deuteronomy/6/4','ani':'numbers/15/41',
  'yimlokh_major':'psalms/146/10','yimlokh_chol':'psalms/146/10',
@@ -94,8 +94,8 @@ def prayers(lang):
         if key in ('vatiten','mikra','musaf_intro','vehasi'):
             n=iter(range(20))
             value=re.sub(r'\(([^()]*)\)',lambda m:c(key+str(next(n)),'On the Sabbath:',SHABBAT,m[1]),value)
-        if key in ('gevurot','atah_vechartanu'):
-            source=PRAYER+('amidah/gevurot/atah_gibor' if key=='gevurot' else 'amidah/atah_vechartanu_mikol')
+        if key in ('gevurot','attah_vechartanu'):
+            source=PRAYER+('amidah/gevurot/attah_gibor' if key=='gevurot' else 'amidah/attah_vechartanu_mikol')
             value=f'<tei:seg source="{source}">'+value+'</tei:seg>'
         if key in VERSE_GROUPS:
             chunks=re.split(r'(?<=\.)\s+',raw)
@@ -129,9 +129,9 @@ def units(project):
     def add(name,urn,he,en,first,last,body,printed=False):
         head='<tei:head>'+((he,en)[side])+'</tei:head>' if printed else editorial_head(lang,he,en)
         out.append(dict(name='festival_musaf_'+name,urn=urn,title_he=he,title_en=en,pages=(first+side,last+side),body=f'<tei:div corresp="{urn}">'+head+body+'</tei:div>'))
-    major=('naaritzkha','kadosh_major','kevodo','barukh_major','mimkomo','shema','hu_elohenu','ani','adir','uvdivrei','yimlokh_major')
-    add('kedushah_major',AMIDAH+'/kedushah/major','קדושה לימים טובים','KEDUSHAH FOR MAJOR FESTIVALS',609,611,seq(*major[:8])+instruction('Reader:')+seq(*major[8:]),True)
-    add('kedushah_chol',AMIDAH+'/kedushah/chol_hamoed','קדושה לחול המועד','KEDUSHAH FOR ḤOL HA-MO‘ED',611,613,seq('nekadesh','kadosh_chol','leumatam','barukh_chol','uvdivrei_chol','yimlokh_chol'),True)
+    major=('naaritzkha','qadosh_major','kevodo','barukh_major','mimkomo','shema','hu_elohenu','ani','adir','uvdivrei','yimlokh_major')
+    add('qedushah_major',AMIDAH+'/qedushah/major','קדושה לימים טובים','KEDUSHAH FOR MAJOR FESTIVALS',609,611,seq(*major[:8])+instruction('Reader:')+seq(*major[8:]),True)
+    add('qedushah_chol',AMIDAH+'/qedushah/chol_hamoed','קדושה לחול המועד','KEDUSHAH FOR ḤOL HA-MO‘ED',611,613,seq('neqaddesh','qadosh_chol','leumatam','barukh_chol','uvdivrei_chol','yimlokh_chol'),True)
     def alternatives(prefix):
         return ''.join(c(prefix+key,label,holiday(name,last),p(prefix+'_'+key)) for key,label,name,last in HOLIDAYS)
     offerings=c('shabbat_offering','On Sabbath:',SHABBAT,p('shabbat_offering'))
@@ -150,12 +150,12 @@ def units(project):
             offerings+=c('diaspora_sukkot_'+str(d),'In the diaspora, '+('Hoshana Rabbah:' if d==7 else 'day '+str(d-2)+' of Ḥol ha-Mo‘ed Sukkoth:'),'<j:all>'+DIASPORA+today+'</j:all>',body)
     offerings+=c('shemini_offer','On Shemini Atsereth and Simḥath Torah:',holiday('shmini-atzeret',2),p('shemini_offering'))+p('uminchatam')
     add('offerings',AMIDAH+'/offerings','קרבנות המועדים','Festival offerings',615,619,offerings)
-    middle=seq('atah_vechartanu','vatiten')+alternatives('amidah')+seq('mikra','umipnei','avinu_malkenu','musaf_intro')+alternatives('musaf')+p('naaseh')+transclude(AMIDAH+'/offerings')+c('yismechu','On Sabbath:',SHABBAT,p('yismechu'))+seq('melech_rachaman','shalosh_peamim','vehasi')
-    add('kedushat_hayom',AMIDAH+'/kedushat_hayom','קדושת היום','Sanctification of the festival',613,621,middle)
+    middle=seq('attah_vechartanu','vatiten')+alternatives('amidah')+seq('mikra','umipnei','avinu_malkenu','musaf_intro')+alternatives('musaf')+p('naaseh')+transclude(AMIDAH+'/offerings')+c('yismechu','On Sabbath:',SHABBAT,p('yismechu'))+seq('melekh_rachaman','shalosh_peamim','vehasi')
+    add('qedushat_hayom',AMIDAH+'/qedushat_hayom','קדושת היום','Sanctification of the festival',613,621,middle)
     modim=c('modim','When the Reader repeats the Amidah, the Congregation responds here by saying:',READER,p('modim_derabbanan'))+seq('modim','veal_kulam','hatov')
     add('hodaah',AMIDAH+'/hodaah','הודאה','Thanksgiving',623,623,modim)
     add('kohanim_retzeh',KOHANIM+'/avodah','ותערב','The priestly blessing: conclusion of Retzeh',625,627,instruction('Congregation:')+p('veteerav')+instruction('Reader:')+p('sheotekha'))
-    ceremony=instruction('Congregation:')+p('kohanim_yehi')+instruction('Reader:')+p('kohanim_intro')+instruction('Congregation:')+p('am_kedoshekha')+instruction('Kohanim:')+p('kohanim_berakhah')
+    ceremony=instruction('Congregation:')+p('kohanim_yehi')+instruction('Reader:')+p('kohanim_intro')+instruction('Congregation:')+p('am_qedoshekha')+instruction('Kohanim:')+p('kohanim_berakhah')
     for group,count in ((1,3),(2,5),(3,7)):
         ceremony+=''.join(p(f'kohanim_response_{group}_{i}') for i in range(1,count+1))
         if group==1:ceremony+=p('dream')
@@ -168,11 +168,11 @@ def units(project):
     body+=c('geshem','On Shemini Atsereth, during the Reader’s repetition:',GESHEM_OCCASION,transclude(GESHEM))
     normal=seq('avot','melekh','gevurot')+c('rain','On Shemini Atsereth and Simḥath Torah add:',holiday('shmini-atzeret',2),p('rain'))
     body+=c('ordinary_opening','Except during the prayers for dew and rain:','<j:any>'+TAL_OCCASION+GESHEM_OCCASION+'</j:any>',normal,True)+seq('mekhalkel','veneeman')
-    body+=c('kedushah_major','During the Reader’s repetition on major festivals and Sabbaths:','<j:all>'+READER+MAJOR+'</j:all>',transclude(AMIDAH+'/kedushah/major'))
-    body+=c('kedushah_chol','During the Reader’s repetition on weekday Ḥol ha-Mo‘ed:','<j:all>'+READER+CHOL+'<j:none>'+SHABBAT+'</j:none></j:all>',transclude(AMIDAH+'/kedushah/chol_hamoed'))
-    body+=c('ledor','Reader:',READER,p('ledor'))+c('atah_kadosh','In silent devotion:',READER,p('atah_kadosh'),True)
-    body+=transclude(AMIDAH+'/kedushat_hayom')+p('retzeh')
-    body+=c('duchen_retzeh','When the Kohanim bless the congregation:',DUCHEN,transclude(KOHANIM+'/avodah'))+c('ordinary_retzeh','When the Kohanim do not bless the congregation:',DUCHEN,p('vetechezenah'),True)
+    body+=c('qedushah_major','During the Reader’s repetition on major festivals and Sabbaths:','<j:all>'+READER+MAJOR+'</j:all>',transclude(AMIDAH+'/qedushah/major'))
+    body+=c('qedushah_chol','During the Reader’s repetition on weekday Ḥol ha-Mo‘ed:','<j:all>'+READER+CHOL+'<j:none>'+SHABBAT+'</j:none></j:all>',transclude(AMIDAH+'/qedushah/chol_hamoed'))
+    body+=c('ledor','Reader:',READER,p('ledor'))+c('attah_qadosh','In silent devotion:',READER,p('attah_qadosh'),True)
+    body+=transclude(AMIDAH+'/qedushat_hayom')+p('retzeh')
+    body+=c('duchen_retzeh','When the Kohanim bless the congregation:',DUCHEN,transclude(KOHANIM+'/avodah'))+c('ordinary_retzeh','When the Kohanim do not bless the congregation:',DUCHEN,p('vetechezeinah'),True)
     body+=transclude(AMIDAH+'/hodaah')+c('duchen','When the Kohanim bless the congregation:',DUCHEN,transclude(KOHANIM))
     body+=c('reader_blessing','Priestly blessing recited by the Reader:','<j:all>'+READER+'<j:none>'+feature('opensiddur:practice','birkat-kohanim')+'</j:none></j:all>',p('kohanim_reader'))+p('sim_shalom')
     body+=c('meditation','After the Amidah add the following meditation:',READER,p('elohai_netzor'),True)+p('yehi_ratzon')

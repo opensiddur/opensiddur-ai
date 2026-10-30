@@ -9,7 +9,7 @@ from . import leil_shabbat_data as data
 
 ROOT = SIDDUR+'shabbat/leil_shabbat'
 SIGIL = '1949 shabbat/leil_shabbat'
-URNS = {key: POEM+key for key in ('shalom_aleichem','kol_mekadesh','menucha_vesimcha','yah_ribbon','tzur_mishelo')}
+URNS = {key: POEM+key for key in ('shalom_aleichem','kol_mekadesh','menuchah_vesimcha','yah_ribbon','tzur_mishelo')}
 # This is a different prayer from the morning Ribbon kol ha‘olamim.
 URNS['ribbon'] = PRAYER+'ribbon_kol_haolamim_adon_kol_haneshamot'
 URNS['eshet'] = ROOT+'/eshet_chayil'
@@ -70,7 +70,7 @@ def prayers(lang,earlier):
     eshet+=''.join(paragraph(BIBLE+'proverbs/31/'+str(i),row[side],unit='verse') for i,row in enumerate(data.ESHET,10))
     add('eshet','אשת חיל','Eshet Ḥayil',287,289,eshet)
     add('kol_mekadesh','כל מקדש','Kol Mekadesh',291,293,stanzas('kol_mekadesh',data.KOL))
-    add('menucha_vesimcha','מנוחה ושמחה','Menuḥah Vesimḥah',293,293,stanzas('menucha_vesimcha',data.MENUCHA))
+    add('menuchah_vesimcha','מנוחה ושמחה','Menuḥah Vesimḥah',293,293,stanzas('menuchah_vesimcha',data.MENUCHA))
     add('yah_ribbon','יה רבון','Yah Ribbon',295,295,stanzas('yah_ribbon',data.YAH,refrain=data.YAH_REFRAIN))
     add('tzur_mishelo','צור משלו','Tzur Mishelo',297,297,
         paragraph(URNS['tzur_mishelo']+'/refrain',data.TZUR_REFRAIN[side],unit='stanza')
@@ -93,7 +93,7 @@ def units(project):
     kiddush+=transclude(ARVIT['wine'])+transclude(ARVIT['kiddush'])
     add('kiddush','קִדּוּשׁ','KIDDUSH',289,289,kiddush)
     add('zemirot','זְמִירוֹת לְלֵיל שַׁבָּת','SABBATH EVE HYMNS',291,297,
-        instruction('Chanted at the table')+''.join(transclude(URNS[k]) for k in ('kol_mekadesh','menucha_vesimcha','yah_ribbon','tzur_mishelo')))
+        instruction('Chanted at the table')+''.join(transclude(URNS[k]) for k in ('kol_mekadesh','menuchah_vesimcha','yah_ribbon','tzur_mishelo')))
     add('','לליל שבת','FOR SABBATH EVE',283,297,
         instruction('Upon returning from synagogue:')
         +''.join(transclude(URNS[k]) for k in ('shalom_aleichem','guard','ribbon','eshet'))

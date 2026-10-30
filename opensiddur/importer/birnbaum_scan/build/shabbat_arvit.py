@@ -17,7 +17,7 @@ SHABBAT_AMIDAH = '<j:all>'+SHABBAT+'<j:none>'+FESTIVAL+'</j:none></j:all>'
 REGALIM = '<j:all>'+FESTIVAL+'<j:any>'+holiday('pesah',8)+holiday('shavuot',2)+holiday('sukkot',7)+holiday('shmini-atzeret',2)+'</j:any></j:all>'
 URNS = {'hashkivenu': PRAYER+'hashkivenu/hapores_sukkat_shalom',
         'veshamru':ROOT+'/verses/veshamru', 'vaydaber':BIBLE+'leviticus/23/44',
-        'tiku':ROOT+'/verses/tiku', 'atah':PRAYER+'amidah/atah_qidashta_et',
+        'tiku':ROOT+'/verses/tiku', 'attah':PRAYER+'amidah/attah_qidashta_et',
         'vaykhulu':ROOT+'/vaykhulu', 'retzeh':PRAYER+'amidah/retzay_vimnuchataynu',
         'mein':PRAYER+'me_ein_sheva', 'kiddush':PRAYER+'kiddush/asher_kiddeshanu',
         'wine':PRAYER+'borei_pri_hagafen'}
@@ -56,7 +56,7 @@ def prayers(lang,earlier):
     add('veshamru','ושמרו','The children of Israel shall keep the Sabbath',263,263,verses('veshamru',data.VESHAMRU))
     add('vaydaber','וידבר משה','Moses announced the festivals',263,263,verses('vaydaber',data.VAYDABER))
     add('tiku','תקעו בחדש שופר','Sound the Shofar',263,263,verses('tiku',data.TIKU))
-    add('atah','אתה קדשת','Thou hast sanctified',267,267,para('atah',data.ATAH_KIDASHTA[side]))
+    add('attah','אתה קדשת','Thou hast sanctified',267,267,para('attah',data.ATAH_KIDASHTA[side]))
     add('vaykhulu','ויכלו','Thus the heavens and the earth were finished',267,267,verses('vaykhulu',data.VAYKHULU))
     result[-1]['printings']=((273+side,273+side),)
     add('retzeh','רצה במנוחתנו','Be pleased with our rest',267,267,para('retzeh',(data.RETZEH_HE,data.RETZEH_EN)[side]))
@@ -115,12 +115,12 @@ def amidah(lang,by_name):
     text=instruction('The Amidah is recited in silent devotion while standing, facing east.')
     for name in ('amidah_adonai_sefatai','amidah_avot','amidah_gevurot','amidah_qedushat_hashem'):
         text+=transclude(by_name[name]['urn'])
-    text+=''.join(transclude(URNS[k]) for k in ('atah','vaykhulu','retzeh'))
+    text+=''.join(transclude(URNS[k]) for k in ('attah','vaykhulu','retzeh'))
     text+=transclude(PRAYER+'amidah/avodah')
     # The Shabbat printing has only the Hanukkah insert, not the weekday Purim
     # insert; assemble its thanksgiving from the shared parts accordingly.
     text+=transclude(PRAYER+'amidah/hodaah/modim')
-    text+=conditional('hanukkah','On Ḥanukkah add:',holiday('hanukkah',8),transclude(PRAYER+'al_hanissim/chanukah'))
+    text+=conditional('chanukah','On Ḥanukkah add:',holiday('hanukkah',8),transclude(PRAYER+'al_hanissim/chanukah'))
     text+=transclude(PRAYER+'amidah/hodaah/veal_kulam')
     text+=conditional('ukhtov','Between Rosh Hashanah and Yom Kippur add:',TEN_DAYS,transclude(PRAYER+'amidah/hodaah/ukhtov'))
     # The printed English here says “O God” where the shared weekday text says
@@ -133,7 +133,7 @@ def amidah(lang,by_name):
     text+='<tei:p>'+marked(ROOT+'/amidah/hatov_shimkha',f'<tei:seg source="{target}">{value}</tei:seg>')+'</tei:p>'
     text+=transclude(PRAYER+'amidah/shalom_rav_al')
     text+=conditional('peace_seal','Except during the Ten Days of Repentance:',TEN_DAYS,transclude(PRAYER+'amidah/shalom/hamevarekh'),negate=True)
-    text+=conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,transclude(PRAYER+'amidah/shalom/besefer_chayim'))
+    text+=conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,transclude(PRAYER+'amidah/shalom/besefer_chayyim'))
     text+=instruction('After the Amidah add the following meditation:')
     text+=f'<tei:div corresp="{ROOT}/amidah/meditation">'+transclude(PRAYER+'amidah/elohai_netzor/text')+'</tei:div>'+transclude(PRAYER+'amidah/yehi_ratzon')
     return text
@@ -150,7 +150,7 @@ def units(project,by_name):
     unit('blessings_before_shema','ברכות לפני קריאת שמע','Blessings before Shema',257,257,
          conditional('barekhu','When a minyan holds service:',MINYAN,transclude(PRAYER+'barekhu'))+transclude(ARVIT['maariv'])+transclude(ARVIT['ahavat']))
     unit('shema','קריאת שמע','Shema',257,261,transclude(PRAYER+'shema'))
-    after=''.join(transclude(ARVIT['emet']+'/'+part) for part in ('opening','moshe','mi_khamokha','malkhutkha','yimlokh'))
+    after=''.join(transclude(ARVIT['emet']+'/'+part) for part in ('opening','mosheh','mi_khamokha','malkhutkha','yimlokh'))
     # This printing corrects the numbered Jeremiah citation to 31:11. Isolate
     # its occurrence so the earlier 31:10 apparatus does not follow it here.
     seal_urn=ARVIT['emet']+'/seal'

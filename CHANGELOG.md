@@ -50,6 +50,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `opensiddur-projects/settings/` must now declare `requires_processor:`.
 
 ### Changed
+- **URNs and file names are respelled** by the spelling list, `specs/naming/spellings.yaml` (#266):
+  386 URNs and 383 file names, in every project at once, since many URNs are shared between
+  books (Birnbaum's are transcluded by the expanded siddur, Asher and the opensiddur.org posts).
+  `amidah/kedushah` is now `amidah/qedushah`, `tachanun/shomer_goy_kadosh` is
+  `tachanun/shomer_goy_qadosh`, and so on. Each old URN is recorded in the registry as an alias of
+  its new spelling; a text or settings file that names an old URN must use the new one. The
+  registry's duplicate `amidah/qadosh_atah_venora` and `amidah/kadosh_atah_venora` are merged.
+  Importers that name things from a source's own words respell them as they do
+  (`validate_names.respell` and `respell_urns`): the Humash's reading names from hebcal, and the
+  Asher book, whose readings keep their evidence IDs while the book's names are respelled.
 - **The projects are renamed** by `specs/NAMING_SCHEME.md` (#266), and so are the books built
   from them, whose release files are now `<project>-<variant>-<tag>.pdf`
   (`chumash-opensiddur-he-annual-…`, was `humash-annual-…`):

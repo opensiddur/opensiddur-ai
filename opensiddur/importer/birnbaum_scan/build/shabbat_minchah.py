@@ -15,7 +15,7 @@ from . import shabbat_minchah_data as data
 
 ROOT = SIDDUR+'shabbat/minchah'
 SIGIL = '1949 shabbat/minchah'
-ATAH = PRAYER+'amidah/atah_echad'
+ATAH = PRAYER+'amidah/attah_echad'
 SHABBAT = feature(AGG,'shabbat')
 YOM_TOV = feature(AGG,'yom-tov')
 WINTER = '<j:any>'+date(7,24,30)+'<j:all>'+date(7,23)+ISRAEL+'</j:all>'+''.join(date(m,1,30) for m in (8,9,10,11,12,13))+date(1,1,14)+'</j:any>'
@@ -32,7 +32,7 @@ def shared(lang,prayers):
     side=int(lang=='en');result=[dict(p) for p in prayers];by_name={p['name']:p for p in result}
     # The weekday Kedushah owns a weekday gate. Detach the remaining common
     # sentences so Mincha can reuse them without inheriting that gate.
-    for part in ('neqadesh','leumatam','uvdivrey'):
+    for part in ('neqaddesh','leumatam','uvdivrey'):
         result.append(detach_division(by_name['amidah_qedushah'],PRAYER+'amidah/qedushah/'+part,
             'amidah_qedushah_'+part,first=83+side,last=83+side))
     ranges={'ashrei':(437,439),'conclusion_uva_letzion':(439,441),
@@ -41,7 +41,7 @@ def shared(lang,prayers):
       'amidah_avodah':(453,455),'yaaleh_veyavo':(453,455),'amidah_hodaah':(455,457),
       'amidah_hodaah_modim_derabbanan':(455,455),'amidah_hodaah_ukhtov':(457,457),
       'al_hanissim_chanukah':(457,457),'amidah_shalom_rav':(457,457),
-      'amidah_shalom_hamevarekh':(457,457),'amidah_shalom_besefer_chayim':(459,459),
+      'amidah_shalom_hamevarekh':(457,457),'amidah_shalom_besefer_chayyim':(459,459),
       'amidah_elohai_netzor':(459,459),'amidah_yehi_ratzon':(459,459),
       'conclusion_titkabal':(461,461),'conclusion_aleinu':(461,463),'conclusion_al_tira':(463,465)}
     for k in ('vayehi_binsoa','berikh_shemeh'):ranges['torah_'+k]=(443,443)
@@ -80,7 +80,7 @@ def prayers(lang,earlier):
         result.append(dict(name='shabbat_minchah_'+key+'_text',urn=urn,title=title or key.replace('_',' '),
           first=first+side,last=last+side,body=f'<tei:div corresp="{urn}">'+pb(first+side,sigil=SIGIL)+body+'</tei:div>'))
     def paragraph(value):return '<tei:p>'+text_xml(value,SIGIL)+'</tei:p>'
-    add('atah_echad',ATAH,453,453,paragraph(data.ATAH_ECHAD[side]),'Atah Eḥad')
+    add('attah_echad',ATAH,453,453,paragraph(data.ATAH_ECHAD[side]),'Atah Eḥad')
     # Psalm 69:14 was quoted earlier but has no canonical realization yet.
     source=BIBLE+'psalms/69/14';urn=ROOT+'/vaani_tefilati'
     add('vaani',urn,443,443,'<tei:p>'+marked(source,text_xml(data.VAANI[side],SIGIL),unit='verse')+'</tei:p>')
@@ -123,15 +123,15 @@ def amidah(lang):
     tr=lambda k:transclude(PRAYER+'amidah/'+k)
     text=instruction('The Amidah is recited in silent devotion while standing, facing east.')+instruction('The Reader repeats the Amidah aloud when a minyan holds service.')
     text+=transclude(SIDDUR+'chol/minchah/ki_shem')+''.join(tr(k) for k in ('adonai_sefatai','avot','gevurot'))
-    text+=conditional('kedushah','When the Reader repeats the Amidah, the following Kedushah is said:',READER,transclude(ROOT+'/amidah/kedushah'))
+    text+=conditional('qedushah','When the Reader repeats the Amidah, the following Kedushah is said:',READER,transclude(ROOT+'/amidah/qedushah'))
     text+=conditional('silent','In silent devotion:',READER,tr('qedushat_hashem'),negate=True)
     text+=transclude(ATAH)+transclude(ARVIT['retzeh'])+tr('avodah')
     text+=conditional('modim','When the Reader repeats the Amidah, the Congregation responds here by saying:',READER,transclude(ROOT+'/amidah/modim_derabbanan'))+transclude(ROOT+'/amidah/modim')
-    text+=conditional('hanukkah','On Ḥanukkah add:',holiday('hanukkah',8),transclude(ROOT+'/amidah/hanukkah'))+tr('hodaah/veal_kulam')
+    text+=conditional('chanukah','On Ḥanukkah add:',holiday('hanukkah',8),transclude(ROOT+'/amidah/chanukah'))+tr('hodaah/veal_kulam')
     text+=conditional('ukhtov','Between Rosh Hashanah and Yom Kippur add:',TEN_DAYS,tr('hodaah/ukhtov'))+tr('hodaah/hatov_shimkha')
     text+=transclude(SHALOM)
     text+=conditional('peace_seal','Except during the Ten Days of Repentance:',TEN_DAYS,tr('shalom/hamevarekh'),negate=True)
-    text+=conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,tr('shalom/besefer_chayim'))
+    text+=conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,tr('shalom/besefer_chayyim'))
     text+=conditional('meditation','After the Amidah add the following meditation:',READER,tr('elohai_netzor/text'),negate=True)+tr('yehi_ratzon')
     return text
 
@@ -192,11 +192,11 @@ def units(project,by_name):
         transclude(BIBLE+'psalms/132/10')+
         variant('uvnucho','ki_lekach','I give you good instruction; forsake not my Torah.')+
         passage_range(TORAH['uvnucho']+'/etz',BIBLE+'lamentations/5/21'),449,449)
-    ked=''.join(transclude(PRAYER+'amidah/qedushah/'+k) for k in ('neqadesh','qadosh','leumatam','barukh_kevod','uvdivrey','yimlokh','ledor_vador'))
+    ked=''.join(transclude(PRAYER+'amidah/qedushah/'+k) for k in ('neqaddesh','qadosh','leumatam','barukh_kevod','uvdivrey','yimlokh','ledor_vador'))
     for key,negate,rubric in [('haeil_haqadosh',True,'Except during the Ten Days of Repentance:'),('hamelekh_haqadosh',False,'Between Rosh Hashanah and Yom Kippur say:')]:
-        ked+=conditional('kedushah_'+key,rubric,TEN_DAYS,transclude(PRAYER+'amidah/qedushah/'+key),negate=negate)
-    add('amidah/kedushah','קדושה','KEDUSHAH',451,453,ked)
-    for key,source,page in [('modim',PRAYER+'amidah/hodaah/modim',455),('modim_derabbanan',PRAYER+'amidah/hodaah/modim_derabbanan',455),('hanukkah',PRAYER+'al_hanissim/chanukah',457)]:
+        ked+=conditional('qedushah_'+key,rubric,TEN_DAYS,transclude(PRAYER+'amidah/qedushah/'+key),negate=negate)
+    add('amidah/qedushah','קדושה','KEDUSHAH',451,453,ked)
+    for key,source,page in [('modim',PRAYER+'amidah/hodaah/modim',455),('modim_derabbanan',PRAYER+'amidah/hodaah/modim_derabbanan',455),('chanukah',PRAYER+'al_hanissim/chanukah',457)]:
         # Occurrence anchors attach this printing's own commentary.
         urn=ROOT+'/amidah/'+key
         result.append(dict(name='shabbat_minchah_amidah_'+key,urn=urn,title_he=key,title_en=key,

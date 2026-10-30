@@ -24,7 +24,7 @@ INDEX_CHILDREN: dict[str, list[str]] = {
         "korech",
         "shulchan_orech",
         "tzafun",
-        "barech",
+        "barekh",
         "hallel",
         "nirtzah",
     ],
@@ -48,7 +48,7 @@ H3_SLUGS: dict[str, str] = {
     "Eating the “Hillel Sandwich&#8221;": "korech",
     "Eating a festive meal": "shulchan_orech",
     "Eating the Afikoman": "tzafun",
-    "Blessing After Meals": "barech",
+    "Blessing After Meals": "barekh",
     "Songs of Praise": "hallel",
     "Concluding Songs": "nirtzah",
     "Sefirat HaOmer": "sefirat_haomer",
@@ -61,15 +61,15 @@ MAGID_SUBSECTION_PREFIXES: list[tuple[str, str]] = [
     ("עֲבָדִים הָיִינוּ", "avadim_hayinu"),
     ("מַעֲשֶׂה", "maaseh_be_rabbi_eliezer"),
     ("אָמַר רַבִּי אֶלְעָזָר בֶּן עֲזַרְיָה", "amar_rabbi_elazar_ben_azariah"),
-    ("בָּרוּךְ הַמָּקוֹם", "baruch_hamakom"),
+    ("בָּרוּךְ הַמָּקוֹם", "barukh_hamakom"),
     ("כְּנֶגֶד אַרְבָּעָה בָנִים", "arba_banim"),
     ("חָכָם מַה הוּא אוֹמֵר", "chacham"),
     ("רָשָׁע מַה הוּא אוֹמֵר", "rashaa"),
     ("תָּם מַה הוּא אוֹמֵר", "tam"),
     ("וְשֶׁאֵינוֹ יוֹדֵעַ לִשְׁאוֹל", "she_eino_yodea_lishol"),
-    ("יָכוֹל מֵרֹאשׁ חֹדֶשׁ", "yachol_meros_hodesh"),
+    ("יָכוֹל מֵרֹאשׁ חֹדֶשׁ", "yachol_meros_chodesh"),
     ("מִתְּחִלָּה", "matchil_b_genut"),
-    ("בָּרוּךְ שׁוֹמֵר", "baruch_shomer"),
+    ("בָּרוּךְ שׁוֹמֵר", "barukh_shomer"),
     ("וְהִיא שֶׁעָמְדָה", "vehi_sheamda"),
     ("צֵא וּלְמַד", "arami_oved_avi"),
     ("וַיֵּ֣רֶד מִצְרַ֔יְמָה", "vayered_mitsraymah"),
@@ -81,7 +81,7 @@ MAGID_SUBSECTION_PREFIXES: list[tuple[str, str]] = [
     ("וַיָּרֵ֧עוּ אֹתָ֛נוּ הַמִּצְרִ֖ים וַיְעַנּ֑וּנוּ", "mitzrim_ra_v_inyu"),
     ("וַיָּרֵ֧עוּ אֹתָ֛נוּ הַמִּצְרִ֖ים", "mitzrim_ra"),
     ("וַיְעַנּ֑וּנוּ", "vay_inyunu"),
-    ("וַיִּתְּנ֥וּ עָלֵ֖ינוּ עֲבֹדָ֥ה קָשָֽׁה", "avoda_kasha"),
+    ("וַיִּתְּנ֥וּ עָלֵ֖ינוּ עֲבֹדָ֥ה קָשָֽׁה", "avodah_kasha"),
     ("וַנִּצְעַ֕ק אֶל־יְהוָ֖ה", "vanitzak_hashem"),
     ("וַנִּצְעַ֕ק אֶל־יְהוָ֖ה אֱלֹהֵ֣י אֲבֹתֵ֑ינוּ", "vanitzak_elohai_avot"),
     ("וַיִּשְׁמַ֤ע יְהוָה֙", "vayishma_hashem"),
@@ -97,18 +97,18 @@ MAGID_SUBSECTION_PREFIXES: list[tuple[str, str]] = [
     ("וּבְאֹת֖וֹת", "u_votot"),
     ("וּבְמֹפְתִֽים", "u_v_moftim"),
     ("דָּבָר אַחֵר", "davar_acher"),
-    ("אֵלּוּ עֶשֶׂר מַכּוֹת", "elu_eser_makot"),
-    ("רַבִּי יְהוּדָה", "rabbi_yehuda_makot"),
+    ("אֵלּוּ עֶשֶׂר מַכּוֹת", "elu_eser_makkot"),
+    ("רַבִּי יְהוּדָה", "rabbi_yehudah_makkot"),
     ("רַבִּי יוֹסֵי הַגְּלִילִי", "rabbi_yossi_hagalili"),
     ("רַבִּי אֱלִיעֶזֶר אוֹמֵר", "rabbi_eliezer_omar"),
     ("רַבִּי עֲקִיבָא אוֹמֵר", "rabbi_akiva_omar"),
-    ("כַּמָּה מַעֲלוֹת טוֹבוֹת", "kama_maalot_tovot"),
-    ("עַל אַחַת כַּמָּה וְכַמָּה", "al_achat_kamah"),
+    ("כַּמָּה מַעֲלוֹת טוֹבוֹת", "kammah_maalot_tovot"),
+    ("עַל אַחַת כַּמָּה וְכַמָּה", "al_achat_kammah"),
     ("רַבָּן גַּמְלִיאֵל הָיָה אוֹמֵר", "rabban_gamliel"),
     ("פֶּסַח", "pesach_mitzvah"),
     ("מַצָּה זוּ", "matzah_zu"),
     ("מָרוֹר זֶה", "maror_zeh"),
-    ("בְּכָׇל דּוֹר וָדוֹר", "bechol_dor_vador"),
+    ("בְּכָׇל דּוֹר וָדוֹר", "bekhol_dor_vador"),
     ("לְפִיכָךְ", "lefikach"),
     ("הַ֥לֲלוּ יָ֨הּ", "psalm_113"),
     ("בְּצֵ֣את יִ֭שְׂרָאֵ֖ל", "psalm_114"),
@@ -162,7 +162,7 @@ INDEX_CHILDREN["hallel"] = [
     # The fourth-cup blessings are printed on 38r, among the Nirtzah songs, not with Hallel.
     if slug not in ("hagafen_fourth_cup", "al_hagefen")
 ]
-INDEX_CHILDREN["barech"] = [slug for _, slug in BARECH_SUBSECTION_PREFIXES]
+INDEX_CHILDREN["barekh"] = [slug for _, slug in BARECH_SUBSECTION_PREFIXES]
 
 # Transclusion order for nirtzah follows the 1822 print, which differs from the order of the Open
 # Siddur compilation, all verified against the facsimile:
@@ -196,7 +196,7 @@ INDEX_NODES = frozenset(INDEX_CHILDREN.keys())
 #: Index nodes that keep text of their own *after* their transclusions. Birkat HaMazon transcludes
 #: Psalm 126 and then continues with its own thirty paragraphs, which run from folio 27v to 30v, so
 #: unlike the other index nodes it holds page breaks and takes a place of its own in document order.
-CONTENT_BEARING_INDEX_NODES = frozenset({"barech"})
+CONTENT_BEARING_INDEX_NODES = frozenset({"barekh"})
 
 
 @dataclass
@@ -242,7 +242,7 @@ def urn_for_section(slug: str, *, paragraph: int | None = None) -> str:
         base = "urn:x-opensiddur:text:haggadah:haggadah"
     else:
         parent = parent_index_slug(slug)
-        if parent in ("magid", "nirtzah", "hallel", "barech"):
+        if parent in ("magid", "nirtzah", "hallel", "barekh"):
             base = f"urn:x-opensiddur:text:haggadah:{parent}/{slug}"
         else:
             base = f"urn:x-opensiddur:text:haggadah:{slug}"

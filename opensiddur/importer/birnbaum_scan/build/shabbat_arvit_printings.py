@@ -8,7 +8,7 @@ RANGES = {
  'amidah_gevurot':(265,265),'amidah_qedushat_hashem':(267,267),
  'amidah_avodah':(267,269),'yaaleh_veyavo':(267,269),'amidah_hodaah':(269,271),
  'al_hanissim_chanukah':(269,271),'amidah_shalom_rav':(271,271),
- 'amidah_shalom_hamevarekh':(271,271),'amidah_shalom_besefer_chayim':(271,271),
+ 'amidah_shalom_hamevarekh':(271,271),'amidah_shalom_besefer_chayyim':(271,271),
  'amidah_elohai_netzor':(271,273),'amidah_yehi_ratzon':(273,273),
  'conclusion_titkabal':(275,275),'conclusion_aleinu':(277,279),
  'conclusion_al_tira':(279,279),'conclusion_psalm_27':(281,281),'poem_adon_olam':(281,283),

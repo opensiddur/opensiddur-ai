@@ -144,20 +144,20 @@ prayer("ashrenu", "Happy are we who, early and late", "lefikhakh/ashrenu", 26, 2
          "Happy are we who, early and late, morning and evening, twice every day, "
          "proclaim:"))
 
-prayer("atah_hu_ad", "Thou wast the same before the world was created", "atah_hu/ad_shelo", 26, 26,
-       d(U + "atah_hu/ad_shelo",
+prayer("attah_hu_ad", "Thou wast the same before the world was created", "attah_hu/ad_shelo", 26, 26,
+       d(U + "attah_hu/ad_shelo",
          "Thou wast the same before the world was created; thou hast been the same "
          "since the world has been created; thou art the same in this world, and "
          "thou wilt be the same in the world to come. Reveal thy holiness to those "
          "who sanctify thy name; manifest thy holiness throughout thy world."))
 
-prayer("atah_hu_uvishuatkha", "May our strength rise", "atah_hu/uvishuatkha", 26, 26,
-       d(U + "atah_hu/uvishuatkha",
+prayer("attah_hu_uvishuatkha", "May our strength rise", "attah_hu/uvishuatkha", 26, 26,
+       d(U + "attah_hu/uvishuatkha",
          "May our strength rise and be exalted through thy deliverance. Blessed art "
          "thou, O Lord, who sanctifiest thy name in the presence of all men."))
 
-prayer("atah_hu_bashamayim", "Thou, Lord our God, art in heaven", "atah_hu/bashamayim", 26, 26,
-       d(U + "atah_hu/bashamayim",
+prayer("attah_hu_bashamayim", "Thou, Lord our God, art in heaven", "attah_hu/bashamayim", 26, 26,
+       d(U + "attah_hu/bashamayim",
          "Thou, Lord our God, art in heaven and on earth and in the highest heavens. "
          "Truly, thou art the first and thou art the last; besides thee there is no "
          "God. O gather those who yearn for thee from the four corners of the earth. "

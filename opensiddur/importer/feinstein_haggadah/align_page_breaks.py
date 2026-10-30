@@ -86,15 +86,15 @@ HEADER_ANCHORS: dict[str, list[str]] = {
     # under its standard name urechatz, the second רחץ here. Neither fragment may be given to
     # both, or _subseq_ratio cannot choose between them.
     "rachtzah": ["רחץ"],
-    "barech": ["ברך"],
+    "barekh": ["ברך"],
     "hallel": ["הלל"],
     "chasal_siddur_pesach": ["חסלסידור"],
     "it_happened_at_midnight": ["ויהיבחצי"],
     "echad_mi_yodea": ["אחדמייודע"],
     "chad_gadya": ["חדגדיא"],
     "sefirat_haomer": ["ספירתהעומר"],
-    "elu_eser_makot": ["אלועשרמכות"],
-    "rabbi_yehuda_makot": ["יהודההיהנותן"],
+    "elu_eser_makkot": ["אלועשרמכות"],
+    "rabbi_yehudah_makkot": ["יהודההיהנותן"],
     "psalm_113": ["הללויה"],
     "lefikach": ["לפיכך"],
     "you_shall_say_pesach": ["ואמרתם"],

@@ -63,7 +63,7 @@ class TestMeditations(unittest.TestCase):
                 ('Shabbat Musaf', 'musaf', shabbat_musaf.units(project, leaves), 'shabbat_musaf_amidah'),
                 ('festival', 'shaharit', festival.units(project), 'festival_amidah'),
                 ('festival Musaf', 'musaf', festival_musaf.units(project), 'festival_musaf_amidah'),
-                ('Rosh Chodesh Musaf', 'musaf', rosh_hodesh_musaf.units(project), 'rosh_hodesh_musaf_amidah'),
+                ('Rosh Chodesh Musaf', 'musaf', rosh_hodesh_musaf.units(project), 'rosh_chodesh_musaf_amidah'),
                 ('Rosh Hashanah afternoon', 'minha', rosh_hashanah.units(project), 'rh_amidah'),
             ]:
                 bodies.append((label, service, next(u['body'] for u in units if u['name'] == name)))

@@ -30,7 +30,7 @@ PASSAGES = {'vayomer': {'he': 'וַיֹּֽאמֶר דָּוִד אֶל גָּד
                             'the Lord is One.”',
                       'first': 105,
                       'last': 115},
- 'shomer_goy_kadosh': {'he': 'שׁוֹמֵר גּוֹי קָדוֹשׁ, שְׁמוֹר שְׁאֵרִית עַם קָדוֹשׁ, וְאַל יֹאבַד גּוֹי '
+ 'shomer_goy_qadosh': {'he': 'שׁוֹמֵר גּוֹי קָדוֹשׁ, שְׁמוֹר שְׁאֵרִית עַם קָדוֹשׁ, וְאַל יֹאבַד גּוֹי '
                              'קָדוֹשׁ, הַמְשַׁלְּשִׁים בְּשָׁלֹשׁ קְדֻשּׁוֹת לְקָדוֹשׁ.',
                        'en': 'Guardian of a holy people, preserve the remnant of a holy people; let not a '
                              'holy people perish, who repeat the threefold sanctification to the Holy One.',
@@ -92,7 +92,7 @@ PASSAGES = {'vayomer': {'he': 'וַיֹּֽאמֶר דָּוִד אֶל גָּד
                             'וְלֹא יָעִיר כָּל חֲמָתוֹ. ',
                       'en': 'He, being merciful, forgives iniquity, and does not destroy; frequently he '
                             'turns his anger away, and does not stir up all his wrath.{p}'},
-                     {'anchor': 'atah',
+                     {'anchor': 'attah',
                       'source': 'psalms/40/12',
                       'he': 'אַתָּה יְיָ לֹא תִכְלָא רַחֲמֶֽיךָ מִמֶּֽנּוּ; חַסְדְּךָ וַאֲמִתְּךָ תָּמִיד '
                             'יִצְּרֽוּנוּ. ',
@@ -108,7 +108,7 @@ PASSAGES = {'vayomer': {'he': 'וַיֹּֽאמֶר דָּוִד אֶל גָּד
                       'source': 'psalms/130/3',
                       'he': 'אִם עֲוֹנוֹת תִּשְׁמָר־יָהּ, אֲדֹנָי, מִי יַעֲמֹד. ',
                       'en': 'If thou, O Lord, shouldst record iniquities—O Lord, who could live on? '},
-                     {'anchor': 'ki_imekha',
+                     {'anchor': 'ki_immekha',
                       'source': 'psalms/130/4',
                       'he': 'כִּי עִמְּךָ הַסְּלִיחָה, לְמַֽעַן תִּוָּרֵא. ',
                       'en': 'But with thee there is forgiveness, that thou mayest be revered. '},
@@ -167,9 +167,9 @@ PASSAGES = {'vayomer': {'he': 'וַיֹּֽאמֶר דָּוִד אֶל גָּד
                             'וְהָאֵר פָּנֶֽיךָ עַל מִקְדָּשְׁךָ הַשָּׁמֵם, לְמַֽעַן אֲדֹנָי.',
                       'en': 'And now, our God, listen to thy servant’s prayer and supplications, and let thy '
                             'favor shine upon thy desolate sanctuary for thy own sake, O Lord.'}]},
- 'hateh': {'first': 107,
+ 'hatteh': {'first': 107,
            'last': 109,
-           'chunks': [{'anchor': 'hateh',
+           'chunks': [{'anchor': 'hatteh',
                        'source': 'daniel/9/18',
                        'he': 'הַטֵּה אֱלֹהַי אָזְנְךָ וּשְׁמָע; פְּקַח עֵינֶֽיךָ וּרְאֵה שׁוֹמְמוֹתֵֽינוּ, '
                              'וְהָעִיר אֲשֶׁר נִקְרָא שִׁמְךָ עָלֶֽיהָ; כִּי לֹא עַל צִדְקוֹתֵֽינוּ '
@@ -391,7 +391,7 @@ PASSAGES = {'vayomer': {'he': 'וַיֹּֽאמֶר דָּוִד אֶל גָּד
                   'kindly with us, and delay not.',
             'first': 115,
             'last': 115},
- 'kolenu': {'he': 'קוֹלֵֽנוּ תִשְׁמַע וְתָחֹן, וְאַל תִּטְּשֵֽׁנוּ בְּיַד אוֹיְבֵֽינוּ לִמְחוֹת אֶת '
+ 'qolenu': {'he': 'קוֹלֵֽנוּ תִשְׁמַע וְתָחֹן, וְאַל תִּטְּשֵֽׁנוּ בְּיַד אוֹיְבֵֽינוּ לִמְחוֹת אֶת '
                   'שְׁמֵֽנוּ. זְכוֹר אֲשֶׁר נִשְׁבַּֽעְתָּ לַאֲבוֹתֵֽינוּ: כְּכוֹכְבֵי הַשָּׁמַֽיִם אַרְבֶּה '
                   'אֶת זַרְעֲכֶם; וְעַתָּה נִשְׁאַֽרְנוּ מְעַט מֵהַרְבֵּה.',
             'en': 'Hear our voice and have pity; leave us not in the power of our enemies to blot out our '

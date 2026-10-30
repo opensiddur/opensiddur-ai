@@ -1,17 +1,17 @@
 {"urn": "urn:x-opensiddur:instruction:amidah", "status": "canonical"}
 {"urn": "urn:x-opensiddur:instruction:amidah/acharay_sheotkha_levaraykh", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אחרי שאותך לבדך"}
-{"urn": "urn:x-opensiddur:instruction:amidah/acharay_tefilat_haamidah_bearvit_bemotzaay_shabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אחרי תפילת העמידה בערבית במוצאי שבת"}
+{"urn": "urn:x-opensiddur:instruction:amidah/acharay_tefillat_haamidah_bearvit_bemotzaay_shabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אחרי תפילת העמידה בערבית במוצאי שבת"}
 {"urn": "urn:x-opensiddur:instruction:amidah/adir_adiraynu_horaah_leshatz", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אדיר אדירנו הוראה לש\"ץ"}
 {"urn": "urn:x-opensiddur:instruction:amidah/adir_bamarom", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אדיר במרום"}
-{"urn": "urn:x-opensiddur:instruction:amidah/al_halel_acharay_tefilat_haamidah_shel_shacharit_bechol_veshabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "על הלל אחרי תפילת העמידה של שחרית בחול ושבת"}
+{"urn": "urn:x-opensiddur:instruction:amidah/al_halel_acharay_tefillat_haamidah_shel_shacharit_bekhol_veshabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "על הלל אחרי תפילת העמידה של שחרית בחול ושבת"}
 {"urn": "urn:x-opensiddur:instruction:amidah/al_hanisim_leshushan_purim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "על הניסים לשושן פורים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/al_qedushat_hashem_leyachid_bitfilat_halachash", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "על ברכת קדושה ליחיד בתפילת הלחש"}
 {"urn": "urn:x-opensiddur:instruction:amidah/am_qedoshekha_kaamur", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "עַם קְדוֹשֶֽׁךָ, כָּאָמוּר."}
 {"urn": "urn:x-opensiddur:instruction:amidah/anaynu_bevirkat_hageulah", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "עננו בברכת הגאולה"}
-{"urn": "urn:x-opensiddur:instruction:amidah/anaynu_bevirkat_shomaya_tefilah", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "עננו בברכת שומע תפילה"}
-{"urn": "urn:x-opensiddur:instruction:amidah/atah_chonantanu", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אתה חוננתנו"}
-{"urn": "urn:x-opensiddur:instruction:amidah/barukh_atah_hashem", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "בָּרוּךְ אַתָּה, יְיָ,"}
-{"urn": "urn:x-opensiddur:instruction:amidah/besayfer_chayim_berakhah", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "בְּסֵֽפֶר חַיִּים, בְּרָכָה"}
+{"urn": "urn:x-opensiddur:instruction:amidah/anaynu_bevirkat_shomaya_tefillah", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "עננו בברכת שומע תפילה"}
+{"urn": "urn:x-opensiddur:instruction:amidah/attah_chonantanu", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "אתה חוננתנו"}
+{"urn": "urn:x-opensiddur:instruction:amidah/barukh_attah_hashem", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "בָּרוּךְ אַתָּה, יְיָ,"}
+{"urn": "urn:x-opensiddur:instruction:amidah/besayfer_chayyim_berakhah", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "בְּסֵֽפֶר חַיִּים, בְּרָכָה"}
 {"urn": "urn:x-opensiddur:instruction:amidah/beshavuot", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "בשבועות"}
 {"urn": "urn:x-opensiddur:instruction:amidah/betachanun_leshacharit", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "בתחנון לשחרית"}
 {"urn": "urn:x-opensiddur:instruction:amidah/birkat_hamitzvah_shel_hakohanim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ברכת המצווה של הכהנים"}
@@ -37,7 +37,7 @@
 {"urn": "urn:x-opensiddur:instruction:amidah/mashiv_haruach_bemusaf_lishlosh_regalim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "משיב הרוח במוסף לשלוש רגלים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/mashiv_haruach_beshalosh_regalim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "משיב הרוח בשלוש רגלים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/mashiv_haruach_umorid_hageshem", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "משיב הרוח ומוריד הגשם"}
-{"urn": "urn:x-opensiddur:instruction:amidah/mekhalkayl_chayim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "מְכַלְכֵּל חַיִּים"}
+{"urn": "urn:x-opensiddur:instruction:amidah/mekhalkayl_chayyim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "מְכַלְכֵּל חַיִּים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/mi_khamokha_av", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "מִי כָמֽוֹךָ, אָב"}
 {"urn": "urn:x-opensiddur:instruction:amidah/modim_derabanan", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "מוֹדִים אֲנַֽחְנוּ לָךְ"}
 {"urn": "urn:x-opensiddur:instruction:amidah/morid_hatal", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "מוריד הטל"}
@@ -49,27 +49,27 @@
 {"urn": "urn:x-opensiddur:instruction:amidah/qorban_leshabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "קרבן לשבת"}
 {"urn": "urn:x-opensiddur:instruction:amidah/retzay_vimnuchataynu_horaah_leshatz", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "רצה במנוחתנו הוראה לש\"ץ"}
 {"urn": "urn:x-opensiddur:instruction:amidah/retzayh", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "\"רְצֵה\""}
-{"urn": "urn:x-opensiddur:instruction:amidah/ribono_shel_olam_lakohanim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ריבונו של עולם לכהנים"}
+{"urn": "urn:x-opensiddur:instruction:amidah/ribbono_shel_olam_lakohanim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ריבונו של עולם לכהנים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/rishon_shel_pesach", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ראשון של פסח"}
 {"urn": "urn:x-opensiddur:instruction:amidah/rosh_hashanah_bemotzaay_shabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ראש השנה במוצאי שבת"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shabat_rosh_chodesh", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "שבת ראש חודש"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shalom_rav_beminchah_vearvit", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "שלום רב במנחה וערבית"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shalom_rav_sim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "שלום רב במנחה של חול"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shatz_bamoadim_im_ayn_kohanim_haolim_ladukhan", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ש\"ץ במועדים עם אין כהנים העולים לדוכן"}
-{"urn": "urn:x-opensiddur:instruction:amidah/shatz_bemusaf_shel_moadim_vetechezenah_aynaynu", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ש\"ץ במוסף של מועדים ותחזינה עינינו"}
+{"urn": "urn:x-opensiddur:instruction:amidah/shatz_bemusaf_shel_moadim_vetechezeinah_aynaynu", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ש\"ץ במוסף של מועדים ותחזינה עינינו"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shatz_lehamshikh_besim_shalom", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ש\"ץ להמשיך בשים שלום"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shatz_lifnay_birkat_kohanim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ש\"ץ לפני ברכת כהנים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shatz_lifnay_tefilot_tal_vegeshem", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ש\"ץ לפני תפילות טל וגשם"}
 {"urn": "urn:x-opensiddur:instruction:amidah/shemini_atzeret_vesimchat_torah", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "שמיני עצרת ושמחת תורה"}
 {"urn": "urn:x-opensiddur:instruction:amidah/sheotekha_levadekha", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "שאותך לבדך"}
 {"urn": "urn:x-opensiddur:instruction:amidah/sim_shalom_beshacharit", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "שים שלום בשחרית"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tefilat_geshem", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תְּפִלַּת גֶּֽשֶׁם"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tefilat_haamidah_1", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה א"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tefilat_haamidah_2", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה ב"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tefilat_haamidah_3", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה ג"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tefilat_haamidah_4", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה ד"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tefilat_tal", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תְּפִלַּת טַל"}
-{"urn": "urn:x-opensiddur:instruction:amidah/tiqanta_shabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תיקנת שבת"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tefillat_geshem", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תְּפִלַּת גֶּֽשֶׁם"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tefillat_haamidah_1", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה א"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tefillat_haamidah_2", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה ב"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tefillat_haamidah_3", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה ג"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tefillat_haamidah_4", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תפילת העמידה ד"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tefillat_tal", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תְּפִלַּת טַל"}
+{"urn": "urn:x-opensiddur:instruction:amidah/tiqqanta_shabat", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "תיקנת שבת"}
 {"urn": "urn:x-opensiddur:instruction:amidah/ukhetov_lechayim_tovim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "וכתוב לחיים טובים"}
 {"urn": "urn:x-opensiddur:instruction:amidah/uminchatam", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "ומנחתם"}
 {"urn": "urn:x-opensiddur:instruction:amidah/uvayom_hachamishi_parim", "status": "canonical", "parent": "urn:x-opensiddur:instruction:amidah", "label_he": "וּבַיּוֹם הַחֲמִישִׁי, פָּרִים"}

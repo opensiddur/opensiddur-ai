@@ -46,19 +46,19 @@ for key, number, citation in (
     ('vehu', '2', 'Psalm 78:38.'),
     ('vehu', '1', 'Psalms 40:12; 106:47; 130:3–4; 103:10; Jeremiah 14:7; Psalms 25:6; 20:2, 10.'),
     ('vehu', '2', 'Daniel 9:15–17.'),
-    ('hateh', '3', 'Daniel 9:18–19.'),
-    ('hateh', '4', 'Isaiah 64:7.'),
-    ('hateh', '5', 'Joel 2:17.'),
+    ('hatteh', '3', 'Daniel 9:18–19.'),
+    ('hatteh', '4', 'Isaiah 64:7.'),
+    ('hatteh', '5', 'Joel 2:17.'),
     ('hapoteach', '1', 'Deuteronomy 6:4.'),
 ):
     anchor = {
         ('vehu', 'Psalm 78:38.'): 'vehu_rachum',
         ('vehu', 'Daniel 9:15–17.'): 'veatah',
-        ('hateh', 'Daniel 9:18–19.'): 'hateh',
-        ('hateh', 'Isaiah 64:7.'): 'veatah',
-        ('hateh', 'Joel 2:17.'): 'chusah',
+        ('hatteh', 'Daniel 9:18–19.'): 'hatteh',
+        ('hatteh', 'Isaiah 64:7.'): 'veatah',
+        ('hatteh', 'Joel 2:17.'): 'chusah',
     }.get((key, citation))
     if key == 'vehu' and number == '1':
-        anchor = 'atah'
+        anchor = 'attah'
     target = URNS[key] + '/' + anchor if anchor else text(key)
     NOTES.append(dict(kind='citation', target=target, n=number, paras=[dict(text=citation)]))

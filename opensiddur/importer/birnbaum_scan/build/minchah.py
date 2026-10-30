@@ -39,7 +39,7 @@ def shared(lang, prayers):
     for name, urn, boundary in (
         ('amidah_yerushalayim', PRAYER + 'amidah/yerushalayim',
          'בָּרוּךְ אַתָּה' if lang == 'he' else 'Blessed art thou'),
-        ('amidah_tefilah', PRAYER + 'amidah/tefilah',
+        ('amidah_tefillah', PRAYER + 'amidah/tefillah',
          'כִּי אַתָּה שׁוֹמֵֽעַ' if lang == 'he' else 'for thou hearest in mercy'),
         ('amidah_geulah', PRAYER + 'amidah/aneinu',
          'בָּרוּךְ אַתָּה' if lang == 'he' else 'Blessed art thou'),
@@ -48,7 +48,7 @@ def shared(lang, prayers):
     for parent, urn, name in (
         ('amidah_geulah', PRAYER+'amidah/aneinu', 'amidah_aneinu'),
         ('amidah_shalom', PRAYER+'amidah/shalom/hamevarekh', 'amidah_shalom_hamevarekh'),
-        ('amidah_shalom', PRAYER+'amidah/shalom/besefer_chayim', 'amidah_shalom_besefer_chayim'),
+        ('amidah_shalom', PRAYER+'amidah/shalom/besefer_chayyim', 'amidah_shalom_besefer_chayyim'),
     ):
         detached = detach_division(by_name[parent], urn, name)
         detached['body'] = detached['body'].replace('<tei:p>(', '<tei:p>').replace(')</tei:p>', '</tei:p>')
@@ -112,12 +112,12 @@ def amidah(lang, by_name):
             parts += [passage('yerushalayim/opening'),
                 conditional('jerusalem_seal', 'Except on Tish‘ah b’Av:', TISHA, passage('yerushalayim/seal'), negate=True),
                 conditional('nachem', 'On Tish‘ah b’Av say:', TISHA, transclude(NACHEM))]
-        elif name == 'amidah_tefilah':
+        elif name == 'amidah_tefillah':
             # Anenu is inserted before the common conclusion, which prints once.
-            parts += [passage('tefilah/opening'),
+            parts += [passage('tefillah/opening'),
                 conditional('silent_aneinu', 'On fast days, the Congregation recites here:',
                     '<j:all>'+FAST_DAY+feature(RECITATION, 'repetition', '<tei:binary value="false"/>')+'</j:all>',
-                    passage('aneinu/opening')), passage('tefilah/seal')]
+                    passage('aneinu/opening')), passage('tefillah/seal')]
         elif name == 'amidah_birkat_kohanim':
             # The surrounding rubric is English even in the Hebrew project.
             # Mark the Hebrew title explicitly so its words render right to left.
@@ -133,14 +133,14 @@ def amidah(lang, by_name):
             parts += [conditional('sim_shalom', 'On fast days:', FAST_DAY, passage('shalom/sim_shalom')),
                 conditional('shalom_rav', 'Except on fast days:', FAST_DAY, transclude(SHALOM), negate=True),
                 conditional('peace_seal', 'Except during the Ten Days of Repentance:', TEN_DAYS, passage('shalom/hamevarekh'), negate=True),
-                conditional('peace_ten_days', 'Between Rosh Hashanah and Yom Kippur say:', TEN_DAYS, passage('shalom/besefer_chayim'))]
+                conditional('peace_ten_days', 'Between Rosh Hashanah and Yom Kippur say:', TEN_DAYS, passage('shalom/besefer_chayyim'))]
         else:
             if name == 'amidah_qedushah':
-                parts.append(cond('weekday_kedushah', fs='<j:all>'+REPETITION+MINYAN+'</j:all>')
-                    +'<tei:div>'+head(lang, 'קְדֻשָּׁה', 'KEDUSHAH')+transclude(by_name[name]['urn'])+'</tei:div>'+endcond('weekday_kedushah'))
+                parts.append(cond('weekday_qedushah', fs='<j:all>'+REPETITION+MINYAN+'</j:all>')
+                    +'<tei:div>'+head(lang, 'קְדֻשָּׁה', 'KEDUSHAH')+transclude(by_name[name]['urn'])+'</tei:div>'+endcond('weekday_qedushah'))
             elif name == 'amidah_qedushat_hashem':
-                parts.append(cond('weekday_silent_kedushat_hashem', fs='<j:none><j:all>'+REPETITION+MINYAN+'</j:all></j:none>')
-                    +transclude(by_name[name]['urn'])+endcond('weekday_silent_kedushat_hashem'))
+                parts.append(cond('weekday_silent_qedushat_hashem', fs='<j:none><j:all>'+REPETITION+MINYAN+'</j:all></j:none>')
+                    +transclude(by_name[name]['urn'])+endcond('weekday_silent_qedushat_hashem'))
             elif name == 'amidah_elohai_netzor':
                 parts.append(cond('weekday_silent_meditation', fs='<j:none><j:all>'+REPETITION+MINYAN+'</j:all></j:none>')+transclude(by_name[name]['urn'])+endcond('weekday_silent_meditation'))
             elif name == 'amidah_yehi_ratzon':

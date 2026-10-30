@@ -29,7 +29,7 @@ PESUKEI_NOTES += [
     dict(kind="commentary", target=ROOT + "romemu", paras=[dict(text=(
         'The passage beginning with <tei:foreign xml:lang="he">רוממו</tei:foreign> '
         'is composed of a variety of biblical verses.'))]),
-    dict(kind="commentary", target=ROOT + "hoshia_et_amekha", paras=[dict(text=(
+    dict(kind="commentary", target=ROOT + "hoshia_et_ammekha", paras=[dict(text=(
         '<tei:hi rend="italic">Psalms</tei:hi> 99:5, 9; 78:38; 40:12; 25:6; 68:35–36; '
         '94:1–2; 3:9; 46:8; 84:13; 20:10; 28:9; 33:20–22; 85:8; 44:27; 81:11; 144:15; 13:6.'))]),
     dict(kind="commentary", target=BIBLE + "psalms/100", lemma="מזמור לתודה", paras=[dict(text=(

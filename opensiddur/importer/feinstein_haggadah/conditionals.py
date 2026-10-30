@@ -320,8 +320,8 @@ CONDITIONALS: tuple[Conditional, ...] = (
     ),
     # Retzeh vehachalitzenu in birkat hamazon.
     Conditional(
-        slug="barech",
-        cond_id="barech_retzeh",
+        slug="barekh",
+        cond_id="barekh_retzeh",
         condition="shabbat",
         scope_he=Paragraphs(12),
         scope_en=Paragraphs(12),
@@ -329,8 +329,8 @@ CONDITIONALS: tuple[Conditional, ...] = (
     ),
     # Harachaman … yom shekulo shabbat.
     Conditional(
-        slug="barech",
-        cond_id="barech_harachaman_shabbat",
+        slug="barekh",
+        cond_id="barekh_harachaman_shabbat",
         condition="shabbat",
         scope_he=Paragraphs(25),
         scope_en=Paragraphs(25),
@@ -419,8 +419,8 @@ CONDITIONALS: tuple[Conditional, ...] = (
     # -- Quorum --------------------------------------------------------------------------
     # The zimmun: the invitation to bless, said only when three have eaten together.
     Conditional(
-        slug="barech",
-        cond_id="barech_zimmun",
+        slug="barekh",
+        cond_id="barekh_zimmun",
         condition="zimmun",
         scope_he=Paragraphs(1, 6),
         scope_en=Paragraphs(1, 6),
@@ -428,16 +428,16 @@ CONDITIONALS: tuple[Conditional, ...] = (
     ),
     # Elohenu, added to the invitation when ten are present. Nested inside the zimmun.
     Conditional(
-        slug="barech",
-        cond_id="barech_minyan_nevarech",
+        slug="barekh",
+        cond_id="barekh_minyan_nevarech",
         condition="minyan",
         scope_he=Inline(
             "נְבָרֵךְ", "אֱלֹהֵֽינוּ", "נְבָרֵךְ אֱלֹהֵֽינוּ", "שֶׁאָכַֽלְנוּ"
         ),
     ),
     Conditional(
-        slug="barech",
-        cond_id="barech_minyan_baruch",
+        slug="barekh",
+        cond_id="barekh_minyan_barukh",
         condition="minyan",
         scope_he=Inline(
             "מִשֶּׁלּוֹ בָּרוּךְ", "אֱלֹהֵֽינוּ",
@@ -446,8 +446,8 @@ CONDITIONALS: tuple[Conditional, ...] = (
     ),
     # The response of those present who have not eaten.
     Conditional(
-        slug="barech",
-        cond_id="barech_not_eaten",
+        slug="barekh",
+        cond_id="barekh_not_eaten",
         condition="present_not_eaten",
         scope_he=Paragraphs(5, bracketed=True),
         # The English carries its own rubric for this one, so its scope is derived from the
@@ -456,14 +456,14 @@ CONDITIONALS: tuple[Conditional, ...] = (
     ),
     # -- Household -----------------------------------------------------------------------
     Conditional(
-        slug="barech",
-        cond_id="barech_avi",
+        slug="barekh",
+        cond_id="barekh_avi",
         condition="at_fathers_home",
         scope_he=Inline("הוּא יְבָרֵךְ אֶת", "אָבִי", "אָבִי", "מוֹרִי"),
     ),
     Conditional(
-        slug="barech",
-        cond_id="barech_imi",
+        slug="barekh",
+        cond_id="barekh_imi",
         condition="at_mothers_home",
         scope_he=Inline("הַזֶּה וְאֶת", "אִמִּי", "אִמִּי", "מוֹרָתִי"),
     ),
@@ -524,7 +524,7 @@ class Alternate:
 
 ALTERNATES: tuple[Alternate, ...] = (
     Alternate(
-        slug="barech",
+        slug="barekh",
         lang="he",
         paragraph=1,
         options=(

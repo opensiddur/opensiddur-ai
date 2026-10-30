@@ -68,13 +68,13 @@ ROWS = [{'page': 585,
   'he': 'וְנֶאֱמָן אַתָּה לְהַחֲיוֹת מֵתִים. בָּרוּךְ אַתָּה, יְיָ, מְחַיֵּה הַמֵּתִים.',
   'en': 'Thou art faithful to revive the dead. Blessed art thou, O Lord, who revivest the dead.'},
  {'page': 587,
-  'key': 'neqadesh_shacharit',
+  'key': 'neqaddesh_shacharit',
   'he': 'נְקַדֵּשׁ אֶת שִׁמְךָ בָּעוֹלָם כְּשֵׁם שֶׁמַּקְדִּישִׁים אוֹתוֹ בִּשְׁמֵי מָרוֹם, כַּכָּתוּב עַל '
         'יַד נְבִיאֶֽךָ: וְקָרָא זֶה אֶל זֶה וְאָמַר:',
   'en': 'We sanctify thy name in the world even as they sanctify it in the highest heavens, as it is written '
         'by thy prophet: “They keep calling to one another:'},
  {'page': 587,
-  'key': 'kadosh_shacharit',
+  'key': 'qadosh_shacharit',
   'he': 'קָדוֹשׁ, קָדוֹשׁ, קָדוֹשׁ יְיָ צְבָאוֹת; מְלֹא כָל הָאָֽרֶץ כְּבוֹדוֹ.',
   'en': 'Holy, holy, holy is the Lord of hosts;\nThe whole earth is full of his glory.”'},
  {'page': 587,
@@ -102,13 +102,13 @@ ROWS = [{'page': 585,
   'he': 'יִמְלֹךְ יְיָ לְעוֹלָם, אֱלֹהַֽיִךְ צִיּוֹן לְדֹר וָדֹר; הַלְלוּיָהּ.',
   'en': 'The Lord shall reign forever,\nYour God, O Zion, for all generations.\nPraise the Lord!'},
  {'page': 589,
-  'key': 'neqadesh_minchah',
+  'key': 'neqaddesh_minchah',
   'he': 'נְקַדֵּשׁ אֶת שִׁמְךָ בָּעוֹלָם כְּשֵׁם שֶׁמַּקְדִּישִׁים אוֹתוֹ בִּשְׁמֵי מָרוֹם, כַּכָּתוּב עַל '
         'יַד נְבִיאֶֽךָ: וְקָרָא זֶה אֶל זֶה וְאָמַר:',
   'en': 'We sanctify thy name in the world even as they sanctify it in the highest heavens, as it is written '
         'by thy prophet: “They keep calling to one another:'},
  {'page': 589,
-  'key': 'kadosh_minchah',
+  'key': 'qadosh_minchah',
   'he': 'קָדוֹשׁ, קָדוֹשׁ, קָדוֹשׁ יְיָ צְבָאוֹת; מְלֹא כָל הָאָֽרֶץ כְּבוֹדוֹ.',
   'en': 'Holy, holy, holy is the Lord of hosts;\nThe whole earth is full of his glory.”'},
  {'page': 589,
@@ -136,13 +136,13 @@ ROWS = [{'page': 585,
         'holiness; thy praise, our God, shall never depart from our mouth, for thou art a great and holy God '
         'and King. Blessed art thou, O Lord, holy God.'},
  {'page': 589,
-  'key': 'atah_kadosh',
+  'key': 'attah_qadosh',
   'he': 'אַתָּה קָדוֹשׁ וְשִׁמְךָ קָדוֹשׁ, וּקְדוֹשִׁים בְּכָל יוֹם יְהַלְלֽוּךָ סֶּֽלָה. בָּרוּךְ אַתָּה, '
         'יְיָ, הָאֵל הַקָּדוֹשׁ.',
   'en': 'Thou art holy and thy name is holy, and holy beings praise thee daily. Blessed art thou, O Lord, '
         'holy God.'},
  {'page': 589,
-  'key': 'atah_vechartanu',
+  'key': 'attah_vechartanu',
   'he': 'אַתָּה בְחַרְתָּֽנוּ מִכָּל הָעַמִּים, אָהַֽבְתָּ אוֹתָֽנוּ וְרָצִֽיתָ בָּֽנוּ, וְרוֹמַמְתָּֽנוּ '
         'מִכָּל הַלְּשׁוֹנוֹת, וְקִדַּשְׁתָּֽנוּ בְּמִצְוֹתֶֽיךָ, וְקֵרַבְתָּֽנוּ מַלְכֵּֽנוּ '
         'לַעֲבוֹדָתֶֽךָ, וְשִׁמְךָ הַגָּדוֹל וְהַקָּדוֹשׁ עָלֵֽינוּ קָרָֽאתָ.',
@@ -248,7 +248,7 @@ ROWS = [{'page': 585,
         'most holy sanctuary; accept Israel’s offerings and prayer with gracious love. May the worship of '
         'thy people Israel be ever pleasing to thee.'},
  {'page': 593,
-  'key': 'vetechezenah',
+  'key': 'vetechezeinah',
   'he': 'וְתֶחֱזֶֽינָה עֵינֵֽינוּ בְּשׁוּבְךָ לְצִיּוֹן בְּרַחֲמִים. בָּרוּךְ אַתָּה, יְיָ, הַמַּחֲזִיר '
         'שְׁכִינָתוֹ לְצִיּוֹן.',
   'en': 'May our eyes behold thy return in mercy to Zion. Blessed art thou, O Lord, who restorest thy divine '

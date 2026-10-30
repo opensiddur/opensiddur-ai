@@ -71,7 +71,7 @@ def units(project):
     add('omer_counting',OMER+'/counting','ספירת היום','Counting the day',637,643,counts)
     closing=instruction('After the counting:')+transclude(URNS['harachaman'])
     closing+='<tei:div>'+('<tei:head>Psalm 67</tei:head>' if side else '<tei:head>תהלים סז</tei:head>')+transclude(URNS['psalm_67'])+'</tei:div>'
-    closing+=''.join(transclude(URNS[k]) for k in ('ana_bekoach','baruch_shem','ribbono'))
+    closing+=''.join(transclude(URNS[k]) for k in ('ana_bekoach','barukh_shem','ribbono'))
     add('omer_after_counting',OMER+'/after_counting','לאחר הספירה','After the counting',643,645,closing,heading=False)
     body=transclude(URNS['preparation'])+transclude(URNS['blessing'])+transclude(OMER+'/counting')+transclude(OMER+'/after_counting')
     add('sefirat_haomer',OMER,'סְפִירַת הָעֹמֶר','COUNTING OF THE OMER',637,645,body,True)

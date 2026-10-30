@@ -30,7 +30,7 @@
 {"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/9", "status": "canonical", "label_en": "Lecha Dodi — refrain after stanza 9", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:lecha_dodi/refrain/opening_repeat", "status": "canonical", "label_en": "Lecha Dodi — repeated opening refrain", "parent": "urn:x-opensiddur:text:poem:lecha_dodi/refrain"}
 {"urn": "urn:x-opensiddur:text:poem:kol_mekadesh", "status": "canonical", "label_en": "Kol Mekadesh"}
-{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha", "status": "canonical", "label_en": "Menuḥah Vesimḥah"}
+{"urn": "urn:x-opensiddur:text:poem:menuchah_vesimcha", "status": "canonical", "label_en": "Menuḥah Vesimḥah"}
 {"urn": "urn:x-opensiddur:text:poem:shalom_aleichem", "status": "canonical", "label_en": "Shalom Aleichem"}
 {"urn": "urn:x-opensiddur:text:poem:tzur_mishelo", "status": "canonical", "label_en": "Tzur Mishelo"}
 {"urn": "urn:x-opensiddur:text:poem:yah_ribbon", "status": "canonical", "label_en": "Yah Ribbon"}
@@ -41,11 +41,11 @@
 {"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/5", "status": "canonical", "label_en": "Kol Mekadesh — 5", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
 {"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/6", "status": "canonical", "label_en": "Kol Mekadesh — 6", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
 {"urn": "urn:x-opensiddur:text:poem:kol_mekadesh/7", "status": "canonical", "label_en": "Kol Mekadesh — 7", "parent": "urn:x-opensiddur:text:poem:kol_mekadesh"}
-{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/1", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 1", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
-{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/2", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 2", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
-{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/3", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 3", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
-{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/4", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 4", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
-{"urn": "urn:x-opensiddur:text:poem:menucha_vesimcha/5", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 5", "parent": "urn:x-opensiddur:text:poem:menucha_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menuchah_vesimcha/1", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 1", "parent": "urn:x-opensiddur:text:poem:menuchah_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menuchah_vesimcha/2", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 2", "parent": "urn:x-opensiddur:text:poem:menuchah_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menuchah_vesimcha/3", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 3", "parent": "urn:x-opensiddur:text:poem:menuchah_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menuchah_vesimcha/4", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 4", "parent": "urn:x-opensiddur:text:poem:menuchah_vesimcha"}
+{"urn": "urn:x-opensiddur:text:poem:menuchah_vesimcha/5", "status": "canonical", "label_en": "Menuḥah Vesimḥah — 5", "parent": "urn:x-opensiddur:text:poem:menuchah_vesimcha"}
 {"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/1", "status": "canonical", "label_en": "Shalom Aleichem — 1", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
 {"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/2", "status": "canonical", "label_en": "Shalom Aleichem — 2", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
 {"urn": "urn:x-opensiddur:text:poem:shalom_aleichem/3", "status": "canonical", "label_en": "Shalom Aleichem — 3", "parent": "urn:x-opensiddur:text:poem:shalom_aleichem"}
@@ -110,7 +110,7 @@
 {"urn": "urn:x-opensiddur:text:poem:anim_zemirot/yitpaer", "status": "canonical", "label_en": "Anim zemirot — yitpaer", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
 {"urn": "urn:x-opensiddur:text:poem:anim_zemirot/ziknah", "status": "canonical", "label_en": "Anim zemirot — ziknah", "parent": "urn:x-opensiddur:text:poem:anim_zemirot"}
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu", "status": "canonical", "label_en": "Ein kelohenu"}
-{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/atah", "status": "canonical", "label_en": "Ein kelohenu — atah", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
+{"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/attah", "status": "canonical", "label_en": "Ein kelohenu — atah", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/barukh", "status": "canonical", "label_en": "Ein kelohenu — barukh", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/ein", "status": "canonical", "label_en": "Ein kelohenu — ein", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
 {"urn": "urn:x-opensiddur:text:poem:ein_kelohenu/incense", "status": "canonical", "label_en": "Ein kelohenu — incense", "parent": "urn:x-opensiddur:text:poem:ein_kelohenu"}
@@ -181,17 +181,17 @@
 {"urn": "urn:x-opensiddur:text:poem:amar_adonai_leyaakov/9", "status": "canonical", "label_en": "amar adonai leyaakov — 9"}
 {"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_gilah", "status": "canonical", "label_en": "bemotzaei yom gilah"}
 {"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_gilah/1", "status": "canonical", "label_en": "bemotzaei yom gilah — 1"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah", "status": "canonical", "label_en": "bemotzaei yom menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/1", "status": "canonical", "label_en": "bemotzaei yom menuhah — 1"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/10", "status": "canonical", "label_en": "bemotzaei yom menuhah — 10"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/2", "status": "canonical", "label_en": "bemotzaei yom menuhah — 2"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/3", "status": "canonical", "label_en": "bemotzaei yom menuhah — 3"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/4", "status": "canonical", "label_en": "bemotzaei yom menuhah — 4"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/5", "status": "canonical", "label_en": "bemotzaei yom menuhah — 5"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/6", "status": "canonical", "label_en": "bemotzaei yom menuhah — 6"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/7", "status": "canonical", "label_en": "bemotzaei yom menuhah — 7"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/8", "status": "canonical", "label_en": "bemotzaei yom menuhah — 8"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuhah/9", "status": "canonical", "label_en": "bemotzaei yom menuhah — 9"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah", "status": "canonical", "label_en": "bemotzaei yom menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/1", "status": "canonical", "label_en": "bemotzaei yom menuhah — 1"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/10", "status": "canonical", "label_en": "bemotzaei yom menuhah — 10"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/2", "status": "canonical", "label_en": "bemotzaei yom menuhah — 2"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/3", "status": "canonical", "label_en": "bemotzaei yom menuhah — 3"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/4", "status": "canonical", "label_en": "bemotzaei yom menuhah — 4"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/5", "status": "canonical", "label_en": "bemotzaei yom menuhah — 5"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/6", "status": "canonical", "label_en": "bemotzaei yom menuhah — 6"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/7", "status": "canonical", "label_en": "bemotzaei yom menuhah — 7"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/8", "status": "canonical", "label_en": "bemotzaei yom menuhah — 8"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_yom_menuchah/9", "status": "canonical", "label_en": "bemotzaei yom menuhah — 9"}
 {"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol", "status": "canonical", "label_en": "hamavdil bein kodesh lechol"}
 {"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/1", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 1"}
 {"urn": "urn:x-opensiddur:text:poem:hamavdil_bein_kodesh_lechol/2", "status": "canonical", "label_en": "hamavdil bein kodesh lechol — 2"}
@@ -309,25 +309,25 @@
 {"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_hayah", "status": "canonical", "label_en": "adon olam/vehu hayah"}
 {"urn": "urn:x-opensiddur:text:poem:adon_olam/vehu_nisi", "status": "canonical", "label_en": "adon olam/vehu nisi"}
 {"urn": "urn:x-opensiddur:text:poem:adon_olam/veim_ruchi", "status": "canonical", "label_en": "adon olam/veim ruchi"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah", "status": "canonical", "label_en": "bemotzaei menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/rubric", "status": "canonical", "label_en": "bemotzaei menuhah/rubric", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/conclusion", "status": "canonical", "label_en": "bemotzaei menuhah/conclusion", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/1", "status": "canonical", "label_en": "bemotzaei menuhah/1", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/2", "status": "canonical", "label_en": "bemotzaei menuhah/2", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/3", "status": "canonical", "label_en": "bemotzaei menuhah/3", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/4", "status": "canonical", "label_en": "bemotzaei menuhah/4", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/5", "status": "canonical", "label_en": "bemotzaei menuhah/5", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/6", "status": "canonical", "label_en": "bemotzaei menuhah/6", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/7", "status": "canonical", "label_en": "bemotzaei menuhah/7", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
-{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuhah/8", "status": "canonical", "label_en": "bemotzaei menuhah/8", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah", "status": "canonical", "label_en": "bemotzaei menuhah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/rubric", "status": "canonical", "label_en": "bemotzaei menuhah/rubric", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/conclusion", "status": "canonical", "label_en": "bemotzaei menuhah/conclusion", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/1", "status": "canonical", "label_en": "bemotzaei menuhah/1", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/2", "status": "canonical", "label_en": "bemotzaei menuhah/2", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/3", "status": "canonical", "label_en": "bemotzaei menuhah/3", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/4", "status": "canonical", "label_en": "bemotzaei menuhah/4", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/5", "status": "canonical", "label_en": "bemotzaei menuhah/5", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/6", "status": "canonical", "label_en": "bemotzaei menuhah/6", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/7", "status": "canonical", "label_en": "bemotzaei menuhah/7", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
+{"urn": "urn:x-opensiddur:text:poem:bemotzaei_menuchah/8", "status": "canonical", "label_en": "bemotzaei menuhah/8", "parent": "urn:x-opensiddur:text:poem:bemotzaei_menuchah"}
 {"urn": "urn:x-opensiddur:text:poem:eikh_niftah_peh", "status": "canonical", "label_en": "eikh niftah peh"}
 {"urn": "urn:x-opensiddur:text:poem:ein_mi_yiqra_betsedeq", "status": "canonical", "label_en": "ein mi yiqra betsedeq"}
 {"urn": "urn:x-opensiddur:text:poem:im_avoneinu_rabu_lehagdil", "status": "canonical", "label_en": "im avoneinu rabu lehagdil"}
 {"urn": "urn:x-opensiddur:text:poem:tavo_lefanekha_shavat_hinnun", "status": "canonical", "label_en": "tavo lefanekha shavat hinnun"}
 {"urn": "urn:x-opensiddur:text:poem:ashamnu_mikol_am", "status": "canonical", "label_en": "ashamnu mikol am"}
 {"urn": "urn:x-opensiddur:text:poem:leenenu_ashuqu_amalenu", "status": "canonical", "label_en": "leenenu ashuqu amalenu"}
-{"urn": "urn:x-opensiddur:text:poem:el_rahum_shimkha", "status": "canonical", "label_en": "el rahum shimkha"}
-{"urn": "urn:x-opensiddur:text:poem:makhnise_rahamim", "status": "canonical", "label_en": "makhnise rahamim"}
+{"urn": "urn:x-opensiddur:text:poem:el_rachum_shimkha", "status": "canonical", "label_en": "el rahum shimkha"}
+{"urn": "urn:x-opensiddur:text:poem:makhnise_rachamim", "status": "canonical", "label_en": "makhnise rahamim"}
 {"urn": "urn:x-opensiddur:text:poem:maran_divishmaya", "status": "canonical", "label_en": "maran divishmaya"}
 {"urn": "urn:x-opensiddur:text:poem:maran_divishmaya/captive", "status": "canonical", "label_en": "maran divishmaya/captive", "parent": "urn:x-opensiddur:text:poem:maran_divishmaya"}
 {"urn": "urn:x-opensiddur:text:poem:maran_divishmaya/slave", "status": "canonical", "label_en": "maran divishmaya/slave", "parent": "urn:x-opensiddur:text:poem:maran_divishmaya"}
@@ -373,7 +373,7 @@
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "status": "canonical", "label_he": "חוקר הכל וסוקר"}
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/hoqer", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "hoqer"}
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/yotsri_asher_bazeret", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "yotsri asher bazeret"}
-{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/tsur_leshimkha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "tsur leshimkha"}
+{"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/tzur_leshimkha", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "tsur leshimkha"}
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/hasin_qarov", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "hasin qarov"}
 {"urn": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer/lo_ish_el", "status": "canonical", "parent": "urn:x-opensiddur:text:poem:hoqer_hakol_vesoqer", "label_en": "lo ish el"}
 {"urn": "urn:x-opensiddur:text:poem:ein_teliyah_lerosh", "status": "canonical", "label_he": "אין תליה לראש"}
@@ -400,15 +400,15 @@
 {"urn": "urn:x-opensiddur:text:poem:adam_eikh_yizkeh", "status": "canonical", "label_en": "adam eikh yizkeh"}
 {"urn": "urn:x-opensiddur:text:poem:adon_din_im_yiddeqen", "status": "canonical", "label_en": "adon din im yiddeqen"}
 {"urn": "urn:x-opensiddur:text:poem:shomamti_berov_yegoni", "status": "canonical", "label_en": "shomamti berov yegoni"}
-{"urn": "urn:x-opensiddur:text:poem:melekh_ehad_yihyeh", "status": "canonical", "label_en": "melekh ehad yihyeh"}
+{"urn": "urn:x-opensiddur:text:poem:melekh_echad_yihyeh", "status": "canonical", "label_en": "melekh ehad yihyeh"}
 {"urn": "urn:x-opensiddur:text:poem:shelosh_esreh_middot", "status": "canonical", "label_en": "shelosh esreh middot"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets", "status": "canonical", "label_en": "shofet kol haarets"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets/stanza_1", "status": "canonical", "label_en": "shofet kol haarets/stanza 1", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haarets"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets/stanza_2", "status": "canonical", "label_en": "shofet kol haarets/stanza 2", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haarets"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets/stanza_3", "status": "canonical", "label_en": "shofet kol haarets/stanza 3", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haarets"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets/stanza_4", "status": "canonical", "label_en": "shofet kol haarets/stanza 4", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haarets"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets/stanza_5", "status": "canonical", "label_en": "shofet kol haarets/stanza 5", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haarets"}
-{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haarets/stanza_6", "status": "canonical", "label_en": "shofet kol haarets/stanza 6", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haarets"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz", "status": "canonical", "label_en": "shofet kol haarets"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz/stanza_1", "status": "canonical", "label_en": "shofet kol haarets/stanza 1", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haaretz"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz/stanza_2", "status": "canonical", "label_en": "shofet kol haarets/stanza 2", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haaretz"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz/stanza_3", "status": "canonical", "label_en": "shofet kol haarets/stanza 3", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haaretz"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz/stanza_4", "status": "canonical", "label_en": "shofet kol haarets/stanza 4", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haaretz"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz/stanza_5", "status": "canonical", "label_en": "shofet kol haarets/stanza 5", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haaretz"}
+{"urn": "urn:x-opensiddur:text:poem:shofet_kol_haaretz/stanza_6", "status": "canonical", "label_en": "shofet kol haarets/stanza 6", "parent": "urn:x-opensiddur:text:poem:shofet_kol_haaretz"}
 {"urn": "urn:x-opensiddur:text:poem:az_behar_mor", "status": "canonical", "label_en": "az behar mor"}
 {"urn": "urn:x-opensiddur:text:poem:zekhor_berit_avraham", "status": "canonical", "label_en": "zekhor berit avraham"}
 {"urn": "urn:x-opensiddur:text:poem:zekhor_berit_avraham/stanza_1", "status": "canonical", "label_en": "zekhor berit avraham/stanza 1", "parent": "urn:x-opensiddur:text:poem:zekhor_berit_avraham"}
@@ -419,8 +419,8 @@
 {"urn": "urn:x-opensiddur:text:poem:zekhor_berit_avraham/stanza_6", "status": "canonical", "label_en": "zekhor berit avraham/stanza 6", "parent": "urn:x-opensiddur:text:poem:zekhor_berit_avraham"}
 {"urn": "urn:x-opensiddur:text:poem:zekhor_berit_avraham/stanza_7", "status": "canonical", "label_en": "zekhor berit avraham/stanza 7", "parent": "urn:x-opensiddur:text:poem:zekhor_berit_avraham"}
 {"urn": "urn:x-opensiddur:text:poem:zekhor_berit_avraham/stanza_8", "status": "canonical", "label_en": "zekhor berit avraham/stanza 8", "parent": "urn:x-opensiddur:text:poem:zekhor_berit_avraham"}
-{"urn": "urn:x-opensiddur:text:poem:el_rahum_shimkha/extended", "status": "canonical", "label_en": "el rahum shimkha/extended"}
-{"urn": "urn:x-opensiddur:text:poem:tefillah_teqah_tahanun_tivhar", "status": "canonical", "label_en": "tefillah teqah tahanun tivhar"}
+{"urn": "urn:x-opensiddur:text:poem:el_rachum_shimkha/extended", "status": "canonical", "label_en": "el rahum shimkha/extended"}
+{"urn": "urn:x-opensiddur:text:poem:tefillah_teqah_tachanun_tivhar", "status": "canonical", "label_en": "tefillah teqah tahanun tivhar"}
 {"urn": "urn:x-opensiddur:text:poem:ish_anav_hillah_fanekha", "status": "canonical", "label_en": "ish anav hillah fanekha"}
 {"urn": "urn:x-opensiddur:text:poem:amanta_meaz_areshet_sefatayim", "status": "canonical", "label_en": "amanta meaz areshet sefatayim"}
 {"urn": "urn:x-opensiddur:text:poem:avelah_nafshi_vehashakh_toari", "status": "canonical", "label_en": "avelah nafshi vehashakh toari"}
@@ -439,7 +439,7 @@
 {"urn": "urn:x-opensiddur:text:poem:im_afes_rova_haqen", "status": "canonical", "label_en": "im afes rova haqen"}
 {"urn": "urn:x-opensiddur:text:poem:tashuv_terahamenu_shuv_shevitenu", "status": "canonical", "label_en": "tashuv terahamenu shuv shevitenu"}
 {"urn": "urn:x-opensiddur:text:poem:torah_haqedoshah_hithaneni", "status": "canonical", "label_en": "torah haqedoshah hithaneni"}
-{"urn": "urn:x-opensiddur:text:poem:anahnu_hahomer_veatah_yotserenu", "status": "canonical", "label_en": "anahnu hahomer veatah yotserenu"}
+{"urn": "urn:x-opensiddur:text:poem:anachnu_hahomer_veatah_yotserenu", "status": "canonical", "label_en": "anahnu hahomer veatah yotserenu"}
 {"urn": "urn:x-opensiddur:text:poem:ashem_baalei_ashmah_haqarta_miqedem", "status": "canonical", "label_en": "ashem baalei ashmah haqarta miqedem"}
 {"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor", "status": "canonical", "label_en": "bein keseh leasor"}
 {"urn": "urn:x-opensiddur:text:poem:bein_keseh_leasor/stanza_1", "status": "canonical", "label_en": "bein keseh leasor/stanza 1", "parent": "urn:x-opensiddur:text:poem:bein_keseh_leasor"}
@@ -453,14 +453,14 @@
 {"urn": "urn:x-opensiddur:text:poem:elohai_boshti_venikhlamti_leharim_panai", "status": "canonical", "label_en": "elohai boshti venikhlamti leharim panai"}
 {"urn": "urn:x-opensiddur:text:poem:orkha_vaamitkha_shelah", "status": "canonical", "label_en": "orkha vaamitkha shelah"}
 {"urn": "urn:x-opensiddur:text:poem:shaarei_shamayim_belulei_esh_umayim", "status": "canonical", "label_en": "shaarei shamayim belulei esh umayim"}
-{"urn": "urn:x-opensiddur:text:poem:shiharnukha_biqshanukha_yotser_harim", "status": "canonical", "label_en": "shiharnukha biqshanukha yotser harim"}
+{"urn": "urn:x-opensiddur:text:poem:shiharnukha_biqshanukha_yotzer_harim", "status": "canonical", "label_en": "shiharnukha biqshanukha yotser harim"}
 {"urn": "urn:x-opensiddur:text:poem:tohelet_yisrael_hesed_lo_neezav", "status": "canonical", "label_en": "tohelet yisrael hesed lo neezav"}
 {"urn": "urn:x-opensiddur:text:poem:eleikha_lev_venefesh_nishpokh_kamayim", "status": "canonical", "label_en": "eleikha lev venefesh nishpokh kamayim"}
 {"urn": "urn:x-opensiddur:text:poem:enosh_ad_dakka_tashev", "status": "canonical", "label_en": "enosh ad dakka tashev"}
-{"urn": "urn:x-opensiddur:text:poem:enosh_bammeh_yitsdaq_beyom_din", "status": "canonical", "label_en": "enosh bammeh yitsdaq beyom din"}
+{"urn": "urn:x-opensiddur:text:poem:enosh_bameh_yitsdaq_beyom_din", "status": "canonical", "label_en": "enosh bammeh yitsdaq beyom din"}
 {"urn": "urn:x-opensiddur:text:poem:elekhah_veashuvah_el_ishi_harishon", "status": "canonical", "label_en": "elekhah veashuvah el ishi harishon"}
 {"urn": "urn:x-opensiddur:text:poem:ezaaq_el_elohim_qoli", "status": "canonical", "label_en": "ezaaq el elohim qoli"}
-{"urn": "urn:x-opensiddur:text:poem:taharot_rogez_taniah_vetizkor_rahem", "status": "canonical", "label_en": "taharot rogez taniah vetizkor rahem"}
+{"urn": "urn:x-opensiddur:text:poem:taharot_rogez_taniah_vetizkor_rachem", "status": "canonical", "label_en": "taharot rogez taniah vetizkor rahem"}
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon"}
 {"urn": "urn:x-opensiddur:text:poem:eitan_limed_daat", "status": "canonical", "label_en": "eitan limed daat"}
 {"urn": "urn:x-opensiddur:text:poem:shevat_hakisse", "status": "canonical", "label_en": "shevat hakisse"}
@@ -470,9 +470,9 @@
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_4", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 4", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_5", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 5", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon/stanza_6", "status": "canonical", "label_en": "shemaenu selihati yoshev beseter elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:shemaenu_selihati_yoshev_beseter_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:adonai_elohei_yisrael_atah_tsaddiq", "status": "canonical", "label_en": "adonai elohei yisrael atah tsaddiq"}
+{"urn": "urn:x-opensiddur:text:poem:adonai_elohei_yisrael_attah_tzaddiq", "status": "canonical", "label_en": "adonai elohei yisrael atah tsaddiq"}
 {"urn": "urn:x-opensiddur:text:poem:amarnu_nigzarnu_lanu_veein_doresh", "status": "canonical", "label_en": "amarnu nigzarnu lanu veein doresh"}
-{"urn": "urn:x-opensiddur:text:poem:atah_elohai_malki_miqqedem", "status": "canonical", "label_en": "atah elohai malki miqqedem"}
+{"urn": "urn:x-opensiddur:text:poem:attah_elohai_malki_miqedem", "status": "canonical", "label_en": "atah elohai malki miqqedem"}
 {"urn": "urn:x-opensiddur:text:poem:eleikha_adonai_shivaati", "status": "canonical", "label_en": "eleikha adonai shivaati"}
 {"urn": "urn:x-opensiddur:text:poem:elohim_adonai_heli_yotseri_umeholeli", "status": "canonical", "label_en": "elohim adonai heli yotseri umeholeli"}
 {"urn": "urn:x-opensiddur:text:poem:eshet_neurim_haahuvah", "status": "canonical", "label_en": "eshet neurim haahuvah"}
@@ -489,8 +489,8 @@
 {"urn": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati/stanza_8", "status": "canonical", "label_en": "yoshev beseter elyon magenni vetsinnati/stanza 8", "parent": "urn:x-opensiddur:text:poem:yoshev_beseter_elyon_magenni_vetsinnati"}
 {"urn": "urn:x-opensiddur:text:poem:ahavat_oz_vetoqef_hafekh", "status": "canonical", "label_en": "ahavat oz vetoqef hafekh"}
 {"urn": "urn:x-opensiddur:text:poem:am_adonai_hizqu_venithazzaqah", "status": "canonical", "label_en": "am adonai hizqu venithazzaqah"}
-{"urn": "urn:x-opensiddur:text:poem:atah_haroeh_beelbon_neelamim", "status": "canonical", "label_en": "atah haroeh beelbon neelamim"}
-{"urn": "urn:x-opensiddur:text:poem:atah_helqi_vetsur_levavi", "status": "canonical", "label_en": "atah helqi vetsur levavi"}
+{"urn": "urn:x-opensiddur:text:poem:attah_haroeh_beelbon_neelamim", "status": "canonical", "label_en": "atah haroeh beelbon neelamim"}
+{"urn": "urn:x-opensiddur:text:poem:attah_helqi_vetsur_levavi", "status": "canonical", "label_en": "atah helqi vetsur levavi"}
 {"urn": "urn:x-opensiddur:text:poem:azon_tehin_vehasqat_atirah", "status": "canonical", "label_en": "azon tehin vehasqat atirah"}
 {"urn": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah", "status": "canonical", "label_en": "ezkerah elohim veehemayah"}
 {"urn": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah/stanza_1", "status": "canonical", "label_en": "ezkerah elohim veehemayah/stanza 1", "parent": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah"}
@@ -498,31 +498,31 @@
 {"urn": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah/stanza_3", "status": "canonical", "label_en": "ezkerah elohim veehemayah/stanza 3", "parent": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah"}
 {"urn": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah/stanza_4", "status": "canonical", "label_en": "ezkerah elohim veehemayah/stanza 4", "parent": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah"}
 {"urn": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah/stanza_5", "status": "canonical", "label_en": "ezkerah elohim veehemayah/stanza 5", "parent": "urn:x-opensiddur:text:poem:ezkerah_elohim_veehemayah"}
-{"urn": "urn:x-opensiddur:text:poem:miqveh_yisrael_moshio_beet_tsarah", "status": "canonical", "label_en": "miqveh yisrael moshio beet tsarah"}
+{"urn": "urn:x-opensiddur:text:poem:miqveh_yisrael_moshio_beet_tzarah", "status": "canonical", "label_en": "miqveh yisrael moshio beet tsarah"}
 {"urn": "urn:x-opensiddur:text:poem:omets_yosif_tahor_yadayim", "status": "canonical", "label_en": "omets yosif tahor yadayim"}
 {"urn": "urn:x-opensiddur:text:poem:oznekha_hatteh_vehaqshev_leheqer_ranen", "status": "canonical", "label_en": "oznekha hatteh vehaqshev leheqer ranen"}
 {"urn": "urn:x-opensiddur:text:poem:teshuvah_hashuvah_qedumah_meaz_lehetiv", "status": "canonical", "label_en": "teshuvah hashuvah qedumah meaz lehetiv"}
 {"urn": "urn:x-opensiddur:text:poem:adon_befaqdekha_enosh_labbeqarim", "status": "canonical", "label_en": "adon befaqdekha enosh labbeqarim"}
 {"urn": "urn:x-opensiddur:text:poem:adon_din_im_tedaqdeq", "status": "canonical", "label_en": "adon din im tedaqdeq"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha", "status": "canonical", "label_en": "yertseh tsom ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_1", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 1", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_2", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 2", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_3", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 3", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_4", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 4", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_5", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 5", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_6", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 6", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
-{"urn": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha/stanza_7", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:yertseh_tsom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha", "status": "canonical", "label_en": "yertseh tsom ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_1", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 1", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_2", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 2", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_3", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 3", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_4", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 4", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_5", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 5", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_6", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 6", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
+{"urn": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha/stanza_7", "status": "canonical", "label_en": "yertseh tsom ammekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:yertseh_tzom_ammekha"}
 {"urn": "urn:x-opensiddur:text:poem:elohim_beyisrael_gadol_nodata", "status": "canonical", "label_en": "elohim beyisrael gadol nodata"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon"}
 {"urn": "urn:x-opensiddur:text:poem:yisrael_ammekha_tehinnah_orkhim", "status": "canonical", "label_en": "yisrael ammekha tehinnah orkhim"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_1", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 1", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_2", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 2", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_3", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 3", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_4", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 4", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_5", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 5", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_6", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_7", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 7", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
-{"urn": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon/stanza_8", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 8", "parent": "urn:x-opensiddur:text:poem:malakhei_rahamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_1", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 1", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_2", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 2", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_3", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 3", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_4", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 4", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_5", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 5", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_6", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 6", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_7", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 7", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
+{"urn": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon/stanza_8", "status": "canonical", "label_en": "malakhei rahamim meshartei elyon/stanza 8", "parent": "urn:x-opensiddur:text:poem:malakhei_rachamim_meshartei_elyon"}
 {"urn": "urn:x-opensiddur:text:poem:anshei_amanah_avadu", "status": "canonical", "label_en": "anshei amanah avadu"}
 {"urn": "urn:x-opensiddur:text:poem:taanit_tsibbur_qaveu", "status": "canonical", "label_en": "taanit tsibbur qaveu"}
 {"urn": "urn:x-opensiddur:text:poem:yisrael_nosha/fast_day_recension", "status": "canonical", "label_en": "yisrael nosha/fast day recension", "parent": "urn:x-opensiddur:text:poem:yisrael_nosha"}
@@ -569,7 +569,7 @@
 {"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_7", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 7", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
 {"urn": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha/stanza_8", "status": "canonical", "label_en": "bematei mispar hillinu fanekha/stanza 8", "parent": "urn:x-opensiddur:text:poem:bematei_mispar_hillinu_fanekha"}
 {"urn": "urn:x-opensiddur:text:poem:amerer_bivekhi_mippenei_yad_shalehah", "status": "canonical", "label_en": "amerer bivekhi mippenei yad shalehah"}
-{"urn": "urn:x-opensiddur:text:poem:etonen_lekha_yotser_ruhot", "status": "canonical", "label_en": "etonen lekha yotser ruhot"}
+{"urn": "urn:x-opensiddur:text:poem:etonen_lekha_yotzer_ruhot", "status": "canonical", "label_en": "etonen lekha yotser ruhot"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar", "status": "canonical", "label_en": "sheeh neessar"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_1", "status": "canonical", "label_en": "sheeh neessar/stanza 1", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
 {"urn": "urn:x-opensiddur:text:poem:sheeh_neessar/stanza_2", "status": "canonical", "label_en": "sheeh neessar/stanza 2", "parent": "urn:x-opensiddur:text:poem:sheeh_neessar"}
@@ -578,7 +578,7 @@
 {"urn": "urn:x-opensiddur:text:poem:al_taas_immanu_khalah", "status": "canonical", "label_en": "al taas immanu khalah"}
 {"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh", "status": "canonical", "label_en": "bat ammi lo tehesheh"}
 {"urn": "urn:x-opensiddur:text:poem:elohei_besar_ammekha_samar", "status": "canonical", "label_en": "elohei besar ammekha samar"}
-{"urn": "urn:x-opensiddur:text:poem:masat_kappai_minhat_erev", "status": "canonical", "label_en": "masat kappai minhat erev"}
+{"urn": "urn:x-opensiddur:text:poem:masat_kappai_minchat_erev", "status": "canonical", "label_en": "masat kappai minhat erev"}
 {"urn": "urn:x-opensiddur:text:poem:yom_zeh_yehi_mishqal_kol_hattotai", "status": "canonical", "label_en": "yom zeh yehi mishqal kol hattotai"}
 {"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_1", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 1", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}
 {"urn": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh/stanza_2", "status": "canonical", "label_en": "bat ammi lo tehesheh/stanza 2", "parent": "urn:x-opensiddur:text:poem:bat_ammi_lo_tehesheh"}

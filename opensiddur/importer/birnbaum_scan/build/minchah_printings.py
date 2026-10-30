@@ -12,19 +12,19 @@ RANGES = {
     'amidah_binah': (163,163), 'amidah_teshuvah': (163,163),
     'amidah_selichah': (163,163), 'amidah_geulah': (163,163),
     'amidah_aneinu': (163,169),
-    'amidah_shalom_hamevarekh': (173,173), 'amidah_shalom_besefer_chayim': (173,173),
+    'amidah_shalom_hamevarekh': (173,173), 'amidah_shalom_besefer_chayyim': (173,173),
     'amidah_refuah': (163,165), 'amidah_shanim': (165,165),
     'amidah_qibbutz_galuyot': (165,165), 'amidah_mishpat': (165,165),
-    'amidah_minim': (165,165), 'amidah_tzadiqim': (165,165),
+    'amidah_minim': (165,165), 'amidah_tzaddiqim': (165,165),
     'amidah_yerushalayim': (167,167), 'amidah_david': (167,167),
-    'amidah_tefilah': (167,169), 'amidah_avodah': (169,169),
+    'amidah_tefillah': (167,169), 'amidah_avodah': (169,169),
     'yaaleh_veyavo': (169,169), 'amidah_hodaah': (171,173),
     'al_hanissim_chanukah': (171,173), 'al_hanissim_purim': (173,173),
     'amidah_elohai_netzor': (175,175), 'amidah_yehi_ratzon': (175,175),
     'avinu_malkenu': (175,179),
     'tachanun_vayomer': (181,181), 'tachanun_rachum': (181,181),
     'tachanun_psalm6': (181,181), 'tachanun_shomer_yisrael': (181,181),
-    'tachanun_shomer_goy_echad': (181,181), 'tachanun_shomer_goy_kadosh': (181,181),
+    'tachanun_shomer_goy_echad': (181,181), 'tachanun_shomer_goy_qadosh': (181,181),
     'tachanun_mitratzeh': (183,183), 'tachanun_vaanachnu': (183,183),
     'conclusion_titkabal': (183,183), 'conclusion_aleinu': (185,185),
     'conclusion_al_tira': (187,187),
@@ -52,7 +52,7 @@ def apply(lang, prayers):
     p = by_name['amidah_hodaah']
     p['body'] = p['body'].replace('amidah/hodaah">', 'amidah/hodaah">'+pb(171+side, sigil='1949 chol/minchah/amidah'), 1)
     before('al_hanissim_chanukah','בְּחַצְרוֹת קָדְשֶֽׁךָ' if not side else 'sanctuary,',173)
-    before('amidah_aneinu','מִתְּחִנָּתֵֽנוּ' if not side else 'presence from us',169,'amidah/tefilah')
+    before('amidah_aneinu','מִתְּחִנָּתֵֽנוּ' if not side else 'presence from us',169,'amidah/tefillah')
     before('amidah_elohai_netzor','אֱלֹהַי, נְצֹר' if not side else 'My God, guard',175)
     before('avinu_malkenu','כַּלֵּה כָל צַר' if not side else 'rid us of every oppressor',177,'avinu_malkenu')
     before('avinu_malkenu','הָרֵם קֶֽרֶן מְשִׁיחֶֽךָ' if not side else 'raise the strength of thy anointed',179,'avinu_malkenu')

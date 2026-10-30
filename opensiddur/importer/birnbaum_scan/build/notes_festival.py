@@ -4,7 +4,7 @@ from .festival_data import PAGES
 from .notes_motzaei_shabbat import xml
 
 NOTES=[]
-for page,key,continuation in [(585,'eruv',586),(589,'atah_vechartanu',None),
+for page,key,continuation in [(585,'eruv',586),(589,'attah_vechartanu',None),
                               (590,'vatodienu',None),(592,'mikra',None),
                               (597,'savri',598),(599,'kiddush_close',None)]:
     note=PAGES[str(page)]['notes'][0]

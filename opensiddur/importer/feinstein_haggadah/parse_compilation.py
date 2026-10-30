@@ -28,7 +28,7 @@ from opensiddur.importer.util.pages import feinstein_haggadah_data_directory
 #: them.
 SCOPED_SUBSECTION_PREFIXES: dict[str, list[tuple[str, str]]] = {
     "hallel": HALLEL_SUBSECTION_PREFIXES,
-    "barech": BARECH_SUBSECTION_PREFIXES,
+    "barekh": BARECH_SUBSECTION_PREFIXES,
 }
 
 #: Subsections the compilation runs together with the passage before them in a single table cell, so

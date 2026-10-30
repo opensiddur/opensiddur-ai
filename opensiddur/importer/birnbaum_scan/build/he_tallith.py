@@ -47,7 +47,7 @@ def passage(slug, text):
     return marked(U + slug, text)
 
 
-prayer("birchot_mah_tovu", "מַה טֹּֽבוּ", "mah_tovu", 3, 3, "\n".join([
+prayer("birkhot_mah_tovu", "מַה טֹּֽבוּ", "mah_tovu", 3, 3, "\n".join([
     f'        <tei:div corresp="{U}mah_tovu">',
     '          <tei:p>'
     + passage("mah_tovu/mah_tovu",

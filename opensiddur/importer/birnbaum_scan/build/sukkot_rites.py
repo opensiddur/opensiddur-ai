@@ -30,7 +30,7 @@ BIBLICAL = {
  'hoshanot_adam_add':'psalms/8/2','hoshanot_adamah_add':'psalms/145/17',
  'hakafot_ata_horeta':'deuteronomy/4/35','hakafot_leoseh':'psalms/136/4',
  'hakafot_ein_kamokha':'psalms/86/8','hakafot_yehi_khevod':'psalms/104/31',
- 'hakafot_yehi_shem':'psalms/113/2','hakafot_yehi_imanu':'kings_1/8/57',
+ 'hakafot_yehi_shem':'psalms/113/2','hakafot_yehi_immanu':'kings_1/8/57',
  'hakafot_veimru':'chronicles_1/16/35','hakafot_strength':'psalms/29/11',
  'hakafot_vayehi':'numbers/10/35','hakafot_kuma':'psalms/132/8',
  'hakafot_kohanim':'psalms/132/9','hakafot_david':'psalms/132/10',
@@ -38,7 +38,7 @@ BIBLICAL = {
  'hakafot_zion':'isaiah/2/3','hakafot_shema':'deuteronomy/6/4','hakafot_exalt':'psalms/34/4'}
 SOURCES = {'lulav_shehecheyanu':PRAYER+'shehecheyanu',
  'geshem_avot':PRAYER+'amidah/avot', 'geshem_avot_close':PRAYER+'amidah/avot/magen_avraham',
- 'geshem_gevurot':PRAYER+'amidah/gevurot/atah_gibor',
+ 'geshem_gevurot':PRAYER+'amidah/gevurot/attah_gibor',
  'hakafot_father':PRAYER+'av_harachamim/heytivah/text','hakafot_one':PRAYER+'echad_elohenu/text'}
 # The same verse has distinct punctuation/pointing and apparatus in these
 # printings. Occurrence addresses retain that evidence; source is canonical.
@@ -95,7 +95,7 @@ def prayers(lang):
         if key in ('geshem_blessing','geshem_life','geshem_plenty'):
             a,b=raw.split('\t');value=instruction('Congregation and Reader:')+xml(a)+' '+instruction('Congregation:')+xml(b)
         if key=='lulav_lulav_intent':value=lulav_quotations(raw,lang,key)
-        if key=='hoshanot_lekha' or key.startswith('hoshanot_hoshia_et_amekha'):
+        if key=='hoshanot_lekha' or key.startswith('hoshanot_hoshia_et_ammekha'):
             value=anthology(raw,key) if raw else ''
         # Hoshanot has no facing English translation: the English document
         # provides matching empty anchors for Birnbaum's explanatory apparatus.
@@ -155,8 +155,8 @@ def units(project):
         (4,'אדון המושיע','Adon hamoshia',680,682,hp('hoshia_start')+star('hoshia_add')+hp('adam')+star('adam_add')+hp('adamah')+star('adamah_add')+hseq('lemaan_eitan','lekha')),
         (5,'אערוך שועי','E‘erokh shu‘i',682,683,hp('eerokh_start')),
         (6,'אל למושעות','El lemosha‘ot',683,683,hp('el_lemoshaot')),
-        (7,'אני והו — לחול','Ani vaho — weekdays',683,684,hseq('ani_vaho_1','kehosha_start','ani_vaho_2','hoshia_et_amekha')),
-        (8,'אם נצורה — לשבת','Om netzurah — Sabbath',684,686,hseq('om_netsurah_start','ani_vaho_3','kehosha_adam_start','ani_vaho_4','hoshia_et_amekha_repeat'))]
+        (7,'אני והו — לחול','Ani vaho — weekdays',683,684,hseq('ani_vaho_1','kehosha_start','ani_vaho_2','hoshia_et_ammekha')),
+        (8,'אם נצורה — לשבת','Om netzurah — Sabbath',684,686,hseq('om_netsurah_start','ani_vaho_3','kehosha_adam_start','ani_vaho_4','hoshia_et_ammekha_repeat'))]
     for n,he,en,first,last,body in sections:
         letter='אבגדהוזח'[n-1]
         add('hoshana_'+str(n),HOSHANOT+'/'+str(n),letter+' — '+he,'<tei:foreign xml:lang="he">'+letter+'</tei:foreign> — '+en,first,last,body)

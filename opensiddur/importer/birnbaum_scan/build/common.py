@@ -37,7 +37,7 @@ IA = "https://archive.org/download/PhilipBirnbaumHaSiddurHaShalemTheDailyPrayerB
 #: its own sigil once, at import, so no call site carries it.
 SIGIL_AMIDAH = "1949 chol/shacharit/amidah"
 SIGIL_YELADIM = "1949 all/shacharit/yeladim"
-SIGIL_BIRCHOT = "1949 all/shacharit/birchot_hashachar"
+SIGIL_BIRCHOT = "1949 all/shacharit/birkhot_hashachar"
 SIGIL_PESUKEI = "1949 chol/shacharit/pesukei_dezimra"
 SIGIL_SHEMA = "1949 chol/shacharit/shema"
 FRONT_SIGIL = "1949"

@@ -12,7 +12,7 @@ BIBLE = 'urn:x-opensiddur:text:bible:'
 SIGIL = '1949 chol/shacharit/tachanun'
 READER = '<tei:note type="instruction" xml:lang="en">Reader</tei:note>'
 # Mixed biblical/liturgical paragraphs belong to the edition's service sequence.
-AGGREGATES = {'vehu', 'hateh', 'vaanachnu', 'psalm6'}
+AGGREGATES = {'vehu', 'hatteh', 'vaanachnu', 'psalm6'}
 URNS = {key: (ROOT + '/' + key if key in AGGREGATES else PRAYER + 'tachanun/' + key)
         for key in PASSAGES}
 URNS['vayomer'] = BIBLE + 'samuel_2/24/14'
@@ -29,10 +29,10 @@ EL_RUBRIC = ('The following paragraph is said on Mondays and Thursdays, except o
     'Rosh Ḥodesh, Erev Pesaḥ, Tish‘ah b’Av, Erev Yom Kippur, Ḥanukkah, '
     'the 14th and 15th of Adar and Adar Sheni.')
 NEFILAH = ('vayomer', 'rachum', 'psalm6')
-CLOSING = ('shomer_yisrael', 'shomer_goy_echad', 'shomer_goy_kadosh', 'mitratzeh', 'vaanachnu')
-LONG_OPENING = ('vehu', 'hateh', 'habet_na', 'ana_melekh', 'el_rachum', 'ein_kamokha', 'hapoteach')
+CLOSING = ('shomer_yisrael', 'shomer_goy_echad', 'shomer_goy_qadosh', 'mitratzeh', 'vaanachnu')
+LONG_OPENING = ('vehu', 'hatteh', 'habet_na', 'ana_melekh', 'el_rachum', 'ein_kamokha', 'hapoteach')
 LONG_ENDING = ('adonai_elohei', 'habet_mishamayim', 'uvekhol', 'zarim',
-    'ana_shuv', 'chusah', 'ana_shuv', 'kolenu',
+    'ana_shuv', 'chusah', 'ana_shuv', 'qolenu',
     'uvekhol', 'ozrenu', 'adonai_elohei')
 
 
@@ -117,7 +117,7 @@ def unit_body(project):
             parts.append(pb(115 + side, sigil=SIGIL))
         parts.append(transclude(key))
     for key in CLOSING:
-        if key == 'shomer_goy_kadosh':
+        if key == 'shomer_goy_qadosh':
             parts.append(pb(117 + side, sigil=SIGIL))
         parts.append(transclude(key))
     parts += [endcond('tachanun_long'), '<j:endDeclare target="#unit_service"/>', '</tei:div>']
