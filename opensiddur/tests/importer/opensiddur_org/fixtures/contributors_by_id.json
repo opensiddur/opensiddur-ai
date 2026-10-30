@@ -1,0 +1,9 @@
+{
+  "10": {"display_name": "Rivka Translator", "author_slug": "rivka-translator", "role_label": "", "status": "active", "death_date": "", "sibling_ids": "[11, 12]"},
+  "11": {"display_name": "Rivka Translator (translation)", "author_slug": "rivka-translator-translation", "role_label": "translation", "status": "active", "death_date": "", "sibling_ids": "[10, 12]"},
+  "12": {"display_name": "Rivka Translator (transcription &amp; naqdanut)", "author_slug": "rivka-translator-transcription", "role_label": "transcription & naqdanut", "status": "active", "death_date": "", "sibling_ids": "[10, 11]"},
+  "20": {"display_name": "Yehudah Poet", "author_slug": "yehudah-poet", "role_label": "", "status": "inactive", "death_date": "1141", "sibling_ids": "[]"},
+  "30": {"display_name": "Old Print Translator (translation)", "author_slug": "old-print-translator", "role_label": "translation", "status": "inactive", "death_date": "", "sibling_ids": "[]"},
+  "40": {"display_name": "Unknown", "author_slug": "unknown", "role_label": "", "status": "inactive", "death_date": "", "sibling_ids": "[]"},
+  "50": {"display_name": "New Person (transcription)", "author_slug": "new-person-transcription", "role_label": "transcription", "status": "active", "death_date": "", "sibling_ids": "[]"}
+}

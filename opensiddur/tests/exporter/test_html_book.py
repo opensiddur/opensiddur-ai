@@ -834,6 +834,21 @@ class TestBuildBook(unittest.TestCase):
                       '<a href="https://example.org/book">https://example.org/book</a>.</li>',
                       about)
 
+    def test_edition_colophons_follow_the_colophon(self):
+        front = ('<tei:front><j:conditional xml:id="cc1"><tei:fs type="opensiddur:paratext">'
+                 '<tei:f name="include"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>'
+                 '<tei:div type="colophon" subtype="notes"><tei:p>First published in 1842.</tei:p>'
+                 '</tei:div><j:endConditional target="#cc1"/></tei:front>')
+        self.compiled.write_bytes(_compiled(BODY, credits=SOME_ONE).replace(
+            b"<tei:text><tei:body>", b"<tei:text>" + front.encode() + b"<tei:body>"))
+        page = build_book(self.compiled, self.settings, self.base)
+        about = self._between(page, '<footer class="os-about">', "</footer>")
+        main = page.split('<footer class="os-about">', 1)[0]
+        self.assertNotIn("First published in 1842.", main)
+        self.assertIn("First published in 1842.", about)
+        self.assertLess(about.index("GNU Lesser General Public License"), about.index("First published in 1842."))
+        self.assertNotIn("@@COLOPHON", page)
+
     def test_colophon_has_the_software_notice(self):
         about = self._between(self._build(), '<footer class="os-about">', "</footer>")
         self.assertIn("GNU Lesser General Public License", about)

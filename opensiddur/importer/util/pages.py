@@ -281,3 +281,13 @@ def get_birnbaum_ia_ocr(
     separates the regions.
     """
     return _read_page(birnbaum_siddur_ia_ocr_directory(sourcetexts_root), page_number, 3)
+
+
+def opensiddur_org_data_directory(sourcetexts_root: Path | None = None) -> Path:
+    """opensiddur.org posts from the site's GitHub export: <sourcetexts-root>/opensiddur_org."""
+    root = (
+        sourcetexts_root.resolve()
+        if sourcetexts_root is not None
+        else default_sourcetexts_root()
+    )
+    return root / "opensiddur_org"

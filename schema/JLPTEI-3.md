@@ -739,6 +739,14 @@ contradict each other (Do not include `small` and `large` on the same text).
 
 Larger inline units (words, multiple words) with special rendering are indicated with the `tei:hi` element with a `rend` attribute.
 
+The letters or words that spell out an acrostic are marked by what they are, not by how a source happened to set
+them: `<tei:seg type="acrostic">`. A source that prints them in bold or large type is describing the acrostic, and
+the rendering is left to the exporter.
+
+```xml
+<tei:l><tei:seg type="acrostic">מָ</tei:seg>עוֹז צוּר יְשׁוּעָתִי</tei:l>
+```
+
 #### Front matter
 
 Material that precedes the main text — a title page, a preface, a translator's note — goes in `tei:front`, a

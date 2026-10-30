@@ -85,16 +85,32 @@ page reads סדר ההגדה לליל שמורים, which our `index.xml` gives 
 Projects imported from the opensiddur.org export follow the same format; they are not named
 after the post that carried them.
 
-- `title`: the post's title folded to ASCII. The style guide's romanization is mapped onto the
-  table's digraphs (`ḥ`→`ch`, `ẓ`→`tz`, `ƙ`→`kh`, `š`→`sh`), `ʼ` and `ȝ` are dropped and any
-  other diacritic is stripped. Cut at a word boundary to at most 60 characters.
-- `author`: the primary contributor's surname, or the original author of a historical work.
-- `date`: the year of the original work, else the year of the post.
-- Should two posts produce the same identifier, the post ID is added as a field before `lang`.
-  The importer checks uniqueness across the whole export, not one post at a time.
+- `title`: the Latin-script part of the post's title, up to its first comma or "by", with
+  anything in brackets left out: *Maoz Tsur (Rock of Ages), singing translation by…* is
+  `maoz_tsur`. A post that romanizes its own name keeps its romanization, folded to ASCII: the
+  style guide's letters are mapped onto the table's (`ḥ`→`ch`, `ẓ`→`tz`, `ƙ`→`kh`, `š`→`sh`,
+  `ḳ`→`q`), `ʼ` and `ȝ` are dropped and any other diacritic is stripped. Cut at a word
+  boundary to at most 60 characters. A title with no Latin part is taken from the post's slug.
+- `author`: a translation's translator, or none when the translator is unknown; for any
+  other column, the original author. The title's "by" settles which credited name is which
+  (*…a hymn by Penina Moïse*, *trans. by Frederick de Sola Mendes*), since the site's credits
+  do not always say. A name with a patronymic or a place is given by its first name
+  (`mordekhai` for Mordekhai ben Yitsḥaq ha-Levi), any other by its surname.
+- `date`: for any column but a translation, the year of the original work, else of the post;
+  `515bce` for a year before the common era. A translation has none: when it was made is
+  rarely recorded.
+- Should two posts produce the same identifier, the newer post, by ID, adds its post ID as a
+  field before `lang`, so adding a post never renames an older one. The importer assigns
+  identifiers across the whole export, whichever posts a run converts.
 
-The post ID stays recorded in `index.xml`. Retitling a post renames its project, and the importer
-says so.
+The post ID stays recorded in `index.xml`, and is how the importer finds a post's projects
+again. Retitling a post renames its project, and the importer removes the old one and says so.
+
+A post that matches no text in the collection is given a URN named the same way as the
+project's title, but with each word respelled by the spelling list (`maoz_tzur`, where the
+project keeps the post's `maoz_tsur`), and followed by the original author's name
+(`rock_of_ages_gottheil`). The text file of such a project is named from the post's
+URN, its path components joined by `_`.
 
 ## Settings files and book names
 
@@ -137,7 +153,8 @@ diacritics. Where the opensiddur.org style guide's simple forms differ, this tab
   book happens to print in English.
 - `variants`: a non-standard spelling, mapped to its standard one (`hanukkah: chanukah`,
   `kedushah: qedushah`). `validate_names` reports every variant it finds in a file name, a URN
-  path component or the registry.
+  path component or the registry. It does not check a project identifier's spelling: its title
+  may be the source's own romanization, and its author is a person's name.
 
 The variant list catches known misspellings, not every one. A word is only a variant if it
 cannot be another word: `selah` (סֶלָה) and `selach` (סְלַח) are both correct, so neither is

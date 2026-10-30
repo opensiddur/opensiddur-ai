@@ -266,17 +266,23 @@ def source_to_bibtex(source: SourceRecord) -> str:
         fields.append(("url", source.url))
     add("urldate", source.urldate)
     # A site-specific identifier (archive.org, hebrewbooks) becomes an eprint keyed by the
-    # site that issued it, which biblatex prints as "archive.org: <id>".
+    # site that issued it, which biblatex prints as "archive.org: <id>". An entry has one
+    # eprint and one isbn: a repeated field is an error to biber, so any further identifier
+    # is a remark in the addendum.
+    notes = list(source.notes)
     for kind, value in source.identifiers:
-        if kind in ISBN_TYPES:
+        field = "isbn" if kind in ISBN_TYPES else "eprint"
+        if any(name == field for name, _ in fields):
+            notes.append(f"{kind}: {value}" if kind else value)
+        elif field == "isbn":
             add("isbn", value)
         else:
             add("eprinttype", kind)
             add("eprint", value)
     # Everything explanatory is one addendum: it prints after the publication data and the
-    # URL, where a remark on a citation belongs, and a repeated field is an error to biber.
-    if source.notes:
-        fields.append(("addendum", " ".join(map(_bibliography_text, source.notes))))
+    # URL, where a remark on a citation belongs.
+    if notes:
+        fields.append(("addendum", " ".join(map(_bibliography_text, notes))))
     body = "".join(f"  {name} = {{{value}}},\n" for name, value in fields)
     return f"@{source.entry_type}{{{source.key},\n{body}}}\n\n"
 

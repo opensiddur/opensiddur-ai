@@ -1,0 +1,19 @@
+licences:
+  https://creativecommons.org/licenses/by-sa/4.0/:
+    allow: cc-by-sa-4.0
+  https://creativecommons.org/publicdomain/zero/1.0/:
+    allow: cc0-1.0
+  https://www.law.cornell.edu/uscode/text/17/105:
+    allow: pd-mark-1.0
+    basis: United States Government work (17 U.S.C. §105)
+  https://www.law.cornell.edu/uscode/text/17/107:
+    public_domain_sources_before: 1931
+  https://example.org/not-free:
+    reject: Not a free licence.
+posts:
+  501:
+    allow: pd-mark-1.0
+    columns: [he]
+    reason: The original is in the public domain.
+  502:
+    reject: Rejected after review.

@@ -1,0 +1,63 @@
+# Which opensiddur.org licences may be imported, and how.
+#
+# A post's licence is the URL its open_content_license links to. Each URL here is either
+# allowed, mapped onto one of the JLPTEI licences in licences.py, or rejected. A URL that is
+# not here is undecided: `survey` lists it, the maintainer decides, and the decision is
+# recorded here so that the question never comes up again. See
+# specs/OPENSIDDUR_ORG_IMPORT.md.
+#
+#   allow: <licence id>        every column of the post is under this licence
+#   basis: <text>              why, when the post's own licence is not the JLPTEI one
+#   reject: <reason>           no column of the post is imported
+#   public_domain_sources_before: <year>
+#                              a source column whose original was published before this
+#                              year is public domain (PD Mark); every other column of the
+#                              post needs a decision under `posts`
+#
+# `posts` records decisions about single posts, keyed by post ID:
+#
+#   <post_id>:
+#     reject: <reason>         the whole post is skipped
+#     allow: <licence id>      every column, or only `columns` when given
+#     columns: [<lang>, ...]
+#     reason: <text>
+
+licences:
+  https://creativecommons.org/publicdomain/zero/1.0/:
+    allow: cc0-1.0
+  https://creativecommons.org/publicdomain/mark/1.0/:
+    allow: pd-mark-1.0
+  https://creativecommons.org/licenses/by/3.0/:
+    allow: cc-by-3.0
+  https://creativecommons.org/licenses/by/4.0/:
+    allow: cc-by-4.0
+  https://creativecommons.org/licenses/by-sa/3.0/:
+    allow: cc-by-sa-3.0
+  https://creativecommons.org/licenses/by-sa/4.0/:
+    allow: cc-by-sa-4.0
+  # Decided 2026-10-25.
+  https://www.law.cornell.edu/uscode/text/17/105:
+    allow: pd-mark-1.0
+    basis: United States Government work (17 U.S.C. §105)
+  https://web.archive.org/web/20110211214553/http://ipmall.info/hosted_resources/CopyrightCompendium/chapter_0200.asp:
+    allow: pd-mark-1.0
+    basis: Edict of government (Compendium II, Copyright Office Practices, §206.01)
+  # Fair use and library reproduction are not licences. Where the original is clearly in the
+  # public domain its source text is; everything else in these posts, translations of
+  # public-domain originals included, needs a decision per post.
+  https://www.law.cornell.edu/uscode/text/17/107:
+    public_domain_sources_before: 1931
+  https://www.law.cornell.edu/uscode/text/17/108:
+    public_domain_sources_before: 1931
+
+posts:
+  # Decided 2026-10-26.
+  34548:
+    allow: pd-mark-1.0
+    columns: [he]
+    reason: The piyyut was written in the 15th century and is in the public domain. The English translation is held until its licence is clarified.
+  47938:
+    allow: pd-mark-1.0
+    reason: John Keble's poem was published in 1834 and is in the public domain.
+  53593:
+    reject: A modern work posted under a claim of fair use.

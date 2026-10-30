@@ -33,7 +33,13 @@ from opensiddur.importer.feinstein_haggadah.sections import (
 )
 from opensiddur.importer.feinstein_haggadah.versify import BiblicalSection, PrintedPsalm
 from opensiddur.importer.util.hebrew import normalize_hebrew
-from opensiddur.importer.util.prettify import prettify_xml
+from opensiddur.importer.util.tei_project import (  # noqa: F401  (re-exported)
+    PROJECT_SOURCE_BIBL_ID,
+    tei_document,
+    validate_and_write,
+    validate_project_directory,
+    xml_id_ref,
+)
 from opensiddur.importer.util.validation import validate
 
 def _xml_escape(text: str) -> str:
@@ -43,23 +49,6 @@ def _xml_escape(text: str) -> str:
 #: A page break milestone. See :func:`page_breaks.pb_markup`, which is the single place
 #: ``tei:pb`` is serialised so the inline psalm transcriptions cannot drift from it.
 _pb = pb_markup
-
-
-def tei_document(
-    header_xml: str,
-    body_xml: str,
-    *,
-    lang: str,
-    front_xml: str = "",
-) -> str:
-    front = f"{front_xml}\n" if front_xml else ""
-    return f"""<tei:TEI xml:lang="{lang}" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">
-{header_xml}
-<tei:text>
-{front}{body_xml}
-</tei:text>
-</tei:TEI>
-"""
 
 
 def _paragraph_spans(text: str) -> list[tuple[int, int]]:
@@ -676,40 +665,6 @@ def index_body(
     )
 
 
-def validate_and_write(tei_content: str, file_name: str, project_dir: Path) -> Path:
-    out_path = project_dir / f"{file_name}.xml"
-    pretty_xml = prettify_xml(tei_content, remove_xml_declaration=True)
-    is_valid, errors = validate(pretty_xml)
-    if not is_valid:
-        raise RuntimeError(f"JLPTEI validation failed for {file_name}: {errors}")
-    out_path.write_text(pretty_xml, encoding="utf-8")
-    is_valid_on_disk, disk_errors = validate(out_path)
-    if not is_valid_on_disk:
-        raise RuntimeError(f"JLPTEI validation failed after write for {file_name}: {disk_errors}")
-    return out_path
-
-
-def validate_project_directory(project_dir: Path) -> None:
-    """Validate every XML file in a project directory against RelaxNG and Schematron."""
-    xml_files = sorted(project_dir.glob("*.xml"))
-    if not xml_files:
-        raise RuntimeError(f"No XML files found in {project_dir}")
-
-    failures: dict[str, list[str]] = {}
-    for path in xml_files:
-        is_valid, errors = validate(path)
-        if not is_valid:
-            failures[path.name] = errors
-
-    if failures:
-        summary = "; ".join(
-            f"{name}: {errs[0]}" for name, errs in sorted(failures.items())
-        )
-        raise RuntimeError(
-            f"JLPTEI validation failed for {len(failures)} file(s) in {project_dir.name}: {summary}"
-        )
-
-
 def validate_header_stub(stub_name: str, *, lang: str) -> None:
     """Validate a header stub as part of a well-formed TEI document."""
     header = read_header_stub(stub_name)
@@ -736,21 +691,6 @@ def read_front_stub(stub_name: str) -> str:
     over elements and raises on a comment node, so no comment may reach the project data.
     """
     return _LEADING_COMMENT_RE.sub("", read_header_stub(stub_name)).strip()
-
-
-PROJECT_SOURCE_BIBL_ID = "project_source_bibl"
-
-
-def xml_id_ref(project_id: str, file_stem: str, fragment: str) -> str:
-    """A project-root-relative pointer to one ``xml:id`` in one file: ``/{project}/{file}#{id}``.
-
-    Use this, not a ``urn:x-opensiddur:`` URN, when the thing referenced is a single, constant
-    position in a single file with no notion of "which variant" — e.g. the one specific
-    ``tei:bibl`` entry a project's documents cite as their source, which will never be swapped
-    for an alternate source. URNs are for the opposite case: referencing *a text* that may have
-    several variant representations, where ``@project`` selects one of those possibilities.
-    """
-    return f"/{project_id}/{file_stem}#{fragment}"
 
 
 def require_project_source_bibl_id(header_xml: str, *, header_stub: str) -> None:

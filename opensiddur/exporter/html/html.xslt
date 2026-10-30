@@ -132,6 +132,20 @@
         </div>
     </xsl:template>
 
+    <!-- What the digital editions say about themselves (tei:div type="colophon", gathered by
+         cli_common.relocate_colophons). Marked out so that html.py can move it after the
+         book's own colophon, in the footer. -->
+    <xsl:template match="tei:back[@p:colophon]" priority="2">
+        <xsl:comment>@@COLOPHON-START@@</xsl:comment>
+        <section>
+            <xsl:call-template name="attributes">
+                <xsl:with-param name="class" select="'colophon'"/>
+            </xsl:call-template>
+            <xsl:apply-templates/>
+        </section>
+        <xsl:comment>@@COLOPHON-END@@</xsl:comment>
+    </xsl:template>
+
     <xsl:template match="tei:front | tei:body | tei:back">
         <section>
             <xsl:call-template name="attributes">

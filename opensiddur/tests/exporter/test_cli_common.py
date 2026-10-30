@@ -14,8 +14,10 @@ from opensiddur.exporter import typography as typography_module
 from opensiddur.exporter.cli_common import (
     SettingsError,
     add_settings_arguments,
+    COLOPHON_BACK,
     load_output_settings,
     prepare_compiled_tree,
+    relocate_colophons,
 )
 from opensiddur.exporter.settings import SettingsYaml, read_settings
 from opensiddur.exporter.typography import PaperType, ParallelLayout, TypographyConfig
@@ -245,6 +247,65 @@ class TestPrepareCompiledTree(unittest.TestCase):
         closers = root.findall(f".//{{{J}}}endConditional")
         self.assertEqual([e.get(silent) for e in openers], ["true", "false"])
         self.assertEqual([e.get(silent) for e in closers], ["true", "false"])
+
+
+class TestRelocateColophons(unittest.TestCase):
+    """A digital edition's colophon divisions leave the front matter for the end."""
+
+    def _document(self, front: str):
+        return etree.fromstring(f'''<tei:TEI xmlns:tei="http://www.tei-c.org/ns/1.0"
+            xmlns:p="{P}" xmlns:j="{J}"><tei:text><tei:front>{front}</tei:front>
+            <tei:body><tei:p>Text</tei:p></tei:body></tei:text></tei:TEI>''')
+
+    def _names(self, element):
+        return [etree.QName(child).localname + (f"[{child.get('type')}]" if child.get("type") else "")
+                for child in element]
+
+    def test_a_gated_colophon_moves_with_its_markers(self):
+        root = self._document(
+            '<tei:div type="preface"><tei:p>Preface</tei:p></tei:div>'
+            '<j:conditional xml:id="c1"/><tei:div type="colophon"><tei:p>Ours</tei:p></tei:div>'
+            '<j:endConditional target="#c1"/>')
+        back = relocate_colophons(root)
+        text = root.find("{http://www.tei-c.org/ns/1.0}text")
+        self.assertEqual(self._names(text), ["front", "body", "back"])
+        self.assertEqual(back.get(COLOPHON_BACK), "true")
+        self.assertEqual(self._names(back), ["conditional", "div[colophon]", "endConditional"])
+        self.assertEqual(self._names(text[0]), ["div[preface]"])
+
+    def test_front_matter_left_empty_is_removed(self):
+        root = self._document('<tei:div type="colophon"><tei:p>Ours</tei:p></tei:div>')
+        relocate_colophons(root)
+        self.assertEqual(self._names(root[0]), ["body", "back"])
+
+    def test_without_colophons_nothing_changes(self):
+        root = self._document('<tei:div type="preface"><tei:p>Preface</tei:p></tei:div>')
+        before = etree.tostring(root)
+        self.assertIsNone(relocate_colophons(root))
+        self.assertEqual(etree.tostring(root), before)
+
+    def test_one_gate_around_two_colophons_moves_whole(self):
+        root = self._document(
+            '<j:conditional xml:id="c1"/><tei:div type="colophon"><tei:p>A</tei:p></tei:div>'
+            '<tei:div type="colophon"><tei:p>B</tei:p></tei:div><j:endConditional target="#c1"/>')
+        back = relocate_colophons(root)
+        self.assertEqual(self._names(back), ["conditional", "div[colophon]", "div[colophon]", "endConditional"])
+
+    def test_a_colophon_leaving_a_transclusion_keeps_its_language_and_project(self):
+        root = self._document(
+            '<p:transclude xml:lang="en" p:project="osp"><tei:div type="colophon"><tei:p>A</tei:p>'
+            '</tei:div></p:transclude>')
+        back = relocate_colophons(root)
+        div = back[0]
+        self.assertEqual(div.get("{http://www.w3.org/XML/1998/namespace}lang"), "en")
+        self.assertEqual(div.get(f"{{{P}}}project"), "osp")
+        # The emptied wrapper, and the front matter with it, are gone.
+        self.assertEqual(self._names(root[0]), ["body", "back"])
+
+    def test_every_stage_relocates_them(self):
+        root = self._document('<tei:div type="colophon"><tei:p>Ours</tei:p></tei:div>')
+        prepare_compiled_tree(root)
+        self.assertEqual(self._names(root[0]), ["body", "back"])
 
 
 if __name__ == "__main__":

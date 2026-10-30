@@ -205,12 +205,32 @@ def about_html(
     compiled_file: Path,
     project_directory: Path,
     distribution: DistributionSettings | None = None,
+    editions: str = "",
 ) -> str:
     """The book's colophon: what it is, whose work it is under which licences, and from where;
-    and after it, the back notice."""
+    then what its digital editions say about themselves (``editions``, see
+    :func:`split_colophons`); and after it all, the back notice."""
     back = notices.back_notice_items(distribution or DistributionSettings(), "electronic")
     return colophon_to_html(title, build_colophon(compiled_file, project_directory),
-                            back_notice=back)
+                            back_notice=back, editions=editions)
+
+
+#: Where html.xslt marks out the colophon divisions it set (see cli_common.relocate_colophons).
+COLOPHON_START = "<!--@@COLOPHON-START@@-->"
+COLOPHON_END = "<!--@@COLOPHON-END@@-->"
+
+
+def split_colophons(main: str) -> tuple[str, str]:
+    """The book's text without its colophon divisions, and the divisions, which are set after
+    the book's own colophon."""
+    editions: list[str] = []
+    while (start := main.find(COLOPHON_START)) >= 0:
+        end = main.find(COLOPHON_END, start)
+        if end < 0:
+            break
+        editions.append(main[start + len(COLOPHON_START):end])
+        main = main[:start] + main[end + len(COLOPHON_END):]
+    return main, "".join(editions)
 
 
 def notice_line_html(text: str) -> str:
@@ -268,7 +288,9 @@ def distribution_notice_html(notice: DistributionNotice | None, logo: Path | Non
 DISTRIBUTION_PLACEHOLDER = "<!--@@DISTRIBUTION@@-->"
 
 
-def colophon_to_html(title: str, colophon: Colophon, back_notice: list[str] = ()) -> str:
+def colophon_to_html(
+    title: str, colophon: Colophon, back_notice: list[str] = (), editions: str = ""
+) -> str:
     escape = html.escape
     parts = [f"<h2>{escape(title)}</h2>",
              f"<p>An electronic edition from the Open Siddur Project, built by {escape(generator())}.</p>"]
@@ -285,6 +307,8 @@ def colophon_to_html(title: str, colophon: Colophon, back_notice: list[str] = ()
         parts += [f"<li>{source_html(source)}</li>" for source in colophon.sources]
         parts.append("</ul>")
     parts.append(SOFTWARE_NOTICE)
+    if editions.strip():
+        parts.append(editions)
     if back := back_notice_html(list(back_notice)):
         parts.append(back)
     return "\n".join(parts)
@@ -595,6 +619,7 @@ def build_book(
         main = main.replace(
             DISTRIBUTION_PLACEHOLDER,
             distribution_notice_html(notice, notices.resolve_logo(notice, settings_file)), 1)
+    main, editions = split_colophons(main)
     defaults = book_defaults(settings)
     title = book_title(root, settings)
 
@@ -606,7 +631,8 @@ def build_book(
             "</style"),
         "@@DEFAULT_CONDITIONS@@": scope_css(book, expression_states(book, defaults)),
         "@@MAIN@@": main,
-        "@@ABOUT@@": about_html(title, compiled_file, project_directory, settings.distribution),
+        "@@ABOUT@@": about_html(title, compiled_file, project_directory, settings.distribution,
+                                editions),
         "@@BOOK@@": book_json(book, book_id(root, title), defaults, basic_settings,
                                 celebrated_purim(settings), book_columns,
                                 settings.electronic.model_dump(include={"day", "columns"})),

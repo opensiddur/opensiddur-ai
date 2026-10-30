@@ -223,6 +223,17 @@ class TestSerialisers(unittest.TestCase):
                          "  addendum = {Folio 2\\_40.},\n"
                          "}\n\n")
 
+    def test_each_field_is_written_once(self):
+        """A repeated field is an error to biber: a second identifier becomes a remark."""
+        source = SourceRecord(key="k", entry_type="online", notes=["A note."],
+                              identifiers=[("opensiddur.org", "101"), ("archive.org", "book"),
+                                           ("ISBN", "1"), ("ISBN", "2")])
+        bibtex = source_to_bibtex(source)
+        names = [line.split(" = ")[0].strip() for line in bibtex.splitlines()[1:-1]]
+        self.assertEqual(len(names), len(set(names)), bibtex)
+        self.assertIn("  eprinttype = {opensiddur.org},\n  eprint = {101},\n", bibtex)
+        self.assertIn("  addendum = {A note. archive.org: book ISBN: 2},\n", bibtex)
+
     def test_a_display_date_is_a_year(self):
         source = SourceRecord(key="k", entry_type="misc", date="March 3, 1822")
         self.assertIn("  year = {March 3, 1822},\n", source_to_bibtex(source))
