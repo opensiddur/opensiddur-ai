@@ -329,8 +329,13 @@ How `match` handles each post:
 
 - A post with no candidate at all is given a new URN at once, `text:poem:<name>` for a post
   tagged as a piyyut or poem and `text:prayer:<name>` otherwise.
-  - `<name>` is the slug with `-` replaced by `_`.
-  - If that name is taken, `_<post_id>` is appended.
+  - `<name>` is the post's title, as `specs/NAMING_SCHEME.md` names a project's: its Latin
+    part up to the attribution, folded to ASCII. Each word is then respelled by
+    `specs/naming/spellings.yaml`, since a URN follows the transliteration table where a
+    project title keeps the post's own romanization (`maoz_tzur_…`, not `maoz_tsur_…`). The
+    slug is not used: the bibliography's link still leads to the post on the site.
+  - If that name is taken, the original author's name is appended (`_<author>`), and failing
+    that `_<post_id>`.
 - Every other post gets a proposal in `output/opensiddur_org_urn_proposals.jsonl`. The
   proposal is reviewed, and may be edited, then recorded with `match --accept <id>`, or
   replaced by a new URN with `--new <id>`.

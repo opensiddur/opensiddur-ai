@@ -1,81 +1,81 @@
-{"post_id": 1530, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hanukah_madrikh_by_chajm_guski", "rows": {"2": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "3": "urn:x-opensiddur:text:prayer:sheasah_nissim", "5": "urn:x-opensiddur:text:prayer:shehecheyanu", "8": "urn:x-opensiddur:text:poem:maoz_tzur/1"}}
-{"post_id": 1658, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_hoshekh_lgaresh_by_sara_levi_tanai"}
-{"post_id": 5580, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanah_for_the_mitsvah_of_kindling_the_hanukkah_lights_by_rebbe_tsvi_elimelech_spira_of_dinov"}
-{"post_id": 5595, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessing_for_dreidel_spinning"}
-{"post_id": 5637, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanah_for_hanukkiah_lighting"}
-{"post_id": 7746, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_thanksgivukah_by_david_seidenberg_neohasid_org"}
-{"post_id": 10313, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_new_moon_tevet_hanukkah_solstice"}
+{"post_id": 1530, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:die_segensspruche_beim_anzunden_der_chanukah_lichter", "rows": {"2": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "3": "urn:x-opensiddur:text:prayer:sheasah_nissim", "5": "urn:x-opensiddur:text:prayer:shehecheyanu", "8": "urn:x-opensiddur:text:poem:maoz_tzur/1"}}
+{"post_id": 1658, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_choshekh_lgaresh"}
+{"post_id": 5580, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanah_for_the_mitsvah_of_kindling_the_chanukah_lights"}
+{"post_id": 5595, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:a_blessing_for_dreidel_spinning"}
+{"post_id": 5637, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanah_for_chanukkiah_lighting"}
+{"post_id": 7746, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_when_thanksgiving_day_falls_during_chanukah"}
+{"post_id": 10313, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_new_moon_of_tevet_on_chanukah_occurring_on"}
 {"post_id": 12322, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "2": "urn:x-opensiddur:text:poem:maoz_tzur/2", "3": "urn:x-opensiddur:text:poem:maoz_tzur/3", "4": "urn:x-opensiddur:text:poem:maoz_tzur/4", "5": "urn:x-opensiddur:text:poem:maoz_tzur/5", "6": "urn:x-opensiddur:text:poem:maoz_tzur/6"}}
-{"post_id": 12347, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:tsaar_baalei_hayyim_it_is_forbidden_to_cause_suffering_to_a_living_creature"}
-{"post_id": 13727, "kind": "new", "urn": "urn:x-opensiddur:text:poem:odekha_ki_anafta_hymn_first_shabbat_of_hanukkah_yosef_bar_shlomo_of_carcassone_circa_11th_c"}
-{"post_id": 18257, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:partisaner_lid_the_partisan_song_by_hirsh_glik_vilna_ghetto_1943"}
-{"post_id": 18267, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:on_kislev_from_the_poem_touchstone_by_kalonymus_b_kalonymus_ben_meir"}
-{"post_id": 18296, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_kislev_through_hanukkah"}
+{"post_id": 12347, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:tsaar_baalei_chayyim_suffering_to_a_living_creature"}
+{"post_id": 13727, "kind": "new", "urn": "urn:x-opensiddur:text:poem:odekha_ki_anafta_bi"}
+{"post_id": 18257, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:partisaner_lid"}
+{"post_id": 18267, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:on_kislev"}
+{"post_id": 18296, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_month_of_kislev_through_the_end_of_chanukah"}
 {"post_id": 18422, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "2": "urn:x-opensiddur:text:poem:maoz_tzur/2", "3": "urn:x-opensiddur:text:poem:maoz_tzur/3", "4": "urn:x-opensiddur:text:poem:maoz_tzur/4", "5": "urn:x-opensiddur:text:poem:maoz_tzur/5"}}
-{"post_id": 22916, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_hoshekh_lqadesh_we_come_to_sanctify_the_dark_by_david_seidenberg_and_jill_hammer"}
-{"post_id": 28623, "kind": "new", "urn": "urn:x-opensiddur:text:poem:al_hanisim_for_the_banners_by_kohenet_ilana_joy_streit"}
-{"post_id": 28713, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanot_and_blessings_over_lighting_the_hanukkah_candles_huc_jir_klau_library_mss_281_italy_1793", "rows": {"8": "urn:x-opensiddur:text:bible:psalms/90/17"}}
-{"post_id": 28759, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hanukkah_visualization_on_infinite_light_by_daniel_raphael_silverstein"}
-{"post_id": 32141, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_feast_of_dedication_hanukkah_by_marcus_heinrich_bresslau_1852"}
-{"post_id": 34548, "kind": "new", "urn": "urn:x-opensiddur:text:poem:shabbat_and_hanukkah_met_and_fought_by_shlomoh_sharvit_hazahav"}
-{"post_id": 39557, "kind": "new", "urn": "urn:x-opensiddur:text:poem:arise_let_the_souls_of_the_hebrews_rejoice_a_hymn_by_cordelia_moise_cohen_k_k_beit_elohim_1856"}
-{"post_id": 40431, "kind": "new", "urn": "urn:x-opensiddur:text:poem:great_arbiter_of_human_fate_a_hymn_for_hanukkah_by_penina_moise_k_k_beth_elohim_1842"}
-{"post_id": 40607, "kind": "new", "urn": "urn:x-opensiddur:text:poem:god_dwells_in_light_a_hymn_for_hanukkah_by_moritz_mayer_k_k_beth_elohim_1856"}
-{"post_id": 41025, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessings_over_kindling_the_light_of_hanukkah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "2": "urn:x-opensiddur:text:prayer:sheasah_nissim", "3": "urn:x-opensiddur:text:prayer:shehecheyanu"}}
-{"post_id": 41033, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hanukkah_oy_hanukkah_a_zemer_for_hanukkah"}
+{"post_id": 22916, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_choshekh_lqadesh"}
+{"post_id": 28623, "kind": "new", "urn": "urn:x-opensiddur:text:poem:al_hanisim_for_the_banners"}
+{"post_id": 28713, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanot_and_blessings_over_kindling_the_chanukah_lights", "rows": {"8": "urn:x-opensiddur:text:bible:psalms/90/17"}}
+{"post_id": 28759, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:chanukah_visualization_on_infinite_light"}
+{"post_id": 32141, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_feast_of_dedication_chanukah"}
+{"post_id": 34548, "kind": "new", "urn": "urn:x-opensiddur:text:poem:shabbat_and_chanukah_met_and_fought"}
+{"post_id": 39557, "kind": "new", "urn": "urn:x-opensiddur:text:poem:arise_let_the_souls_of_the_hebrews_rejoice"}
+{"post_id": 40431, "kind": "new", "urn": "urn:x-opensiddur:text:poem:great_arbiter_of_human_fate"}
+{"post_id": 40607, "kind": "new", "urn": "urn:x-opensiddur:text:poem:god_dwells_in_light"}
+{"post_id": 41025, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:the_blessings_over_kindling_the_light_of_chanukah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "2": "urn:x-opensiddur:text:prayer:sheasah_nissim", "3": "urn:x-opensiddur:text:prayer:shehecheyanu"}}
+{"post_id": 41033, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:oy_chanukah"}
 {"post_id": 41059, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "2": "urn:x-opensiddur:text:poem:maoz_tzur/2", "3": "urn:x-opensiddur:text:poem:maoz_tzur/3", "4": "urn:x-opensiddur:text:poem:maoz_tzur/5"}}
 {"post_id": 41065, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "2": "urn:x-opensiddur:text:poem:maoz_tzur/2", "3": "urn:x-opensiddur:text:poem:maoz_tzur/3", "4": "urn:x-opensiddur:text:poem:maoz_tzur/4", "5": "urn:x-opensiddur:text:poem:maoz_tzur/5"}}
-{"post_id": 41083, "kind": "new", "urn": "urn:x-opensiddur:text:poem:hanukkah_a_hymn_by_isaac_mayer_wise_1868"}
-{"post_id": 41087, "kind": "new", "urn": "urn:x-opensiddur:text:poem:hanukkah_a_hymn_by_minna_kleeberg_1868"}
-{"post_id": 41096, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:how_much_light_a_hanukkah_meditation_by_menachem_creditor"}
-{"post_id": 41110, "kind": "new", "urn": "urn:x-opensiddur:text:poem:menorah_by_miriam_del_banco_1886"}
-{"post_id": 41204, "kind": "new", "urn": "urn:x-opensiddur:text:poem:the_feast_of_lights_emma_lazarus_1882"}
-{"post_id": 41217, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hanukkah_lights_a_poem_by_morris_rosenfeld_1897"}
-{"post_id": 41591, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:birkat_hamazon_for_hanukkah_reconstructed_from_multiple_cairo_geniza_manuscripts"}
-{"post_id": 43273, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:fur_chanuka_for_hanukkah_a_tehinah_by_yehoshua_heshil_miro_1829"}
-{"post_id": 46248, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_united_states_on_thanksgiving_day_by_sabato_morais_28_november_1861"}
-{"post_id": 46388, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:childrens_prayer_for_hanukkah_by_lilian_helen_montagu_5_december_1942"}
-{"post_id": 47590, "kind": "new", "urn": "urn:x-opensiddur:text:poem:agda_ngowaidna_a_moroccan_jewish_song_for_the_conclusion_of_hanukkah"}
-{"post_id": 47938, "kind": "new", "urn": "urn:x-opensiddur:text:poem:lights_in_the_temple_a_poem_by_john_keble_1834"}
-{"post_id": 47976, "kind": "new", "urn": "urn:x-opensiddur:text:poem:avnei_yqar_a_hanukkah_piyyut_attributed_to_abraham_ibn_ezra"}
-{"post_id": 47988, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:gebet_am_lichtfeste_by_max_emanuel_stern_1841"}
+{"post_id": 41083, "kind": "new", "urn": "urn:x-opensiddur:text:poem:chanukah"}
+{"post_id": 41087, "kind": "new", "urn": "urn:x-opensiddur:text:poem:chanukah_kleeberg"}
+{"post_id": 41096, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:how_much_light_a_chanukah_meditation"}
+{"post_id": 41110, "kind": "new", "urn": "urn:x-opensiddur:text:poem:the_menorah"}
+{"post_id": 41204, "kind": "new", "urn": "urn:x-opensiddur:text:poem:the_feast_of_lights"}
+{"post_id": 41217, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:chanukah_lichter"}
+{"post_id": 41591, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:poetic_birkat_hamazon_for_chanukah"}
+{"post_id": 43273, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:fur_chanuka"}
+{"post_id": 46248, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_united_states_on_thanksgiving_day_on_the"}
+{"post_id": 46388, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_chanukah"}
+{"post_id": 47590, "kind": "new", "urn": "urn:x-opensiddur:text:poem:agda_owaidna"}
+{"post_id": 47938, "kind": "new", "urn": "urn:x-opensiddur:text:poem:lights_in_the_temple"}
+{"post_id": 47976, "kind": "new", "urn": "urn:x-opensiddur:text:poem:avnei_yqar"}
+{"post_id": 47988, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:gebet_am_lichtfeste"}
 {"post_id": 48000, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "2": "urn:x-opensiddur:text:poem:maoz_tzur/2", "3": "urn:x-opensiddur:text:poem:maoz_tzur/3", "4": "urn:x-opensiddur:text:poem:maoz_tzur/4", "5": "urn:x-opensiddur:text:poem:maoz_tzur/5", "6": "urn:x-opensiddur:text:poem:maoz_tzur/6"}}
-{"post_id": 48034, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yah_hatsel_yonah_shelter_god_the_dove"}
-{"post_id": 48043, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:priere_pour_la_fete_de_hanouka_by_jonas_ennery_and_arnaud_aron_1848"}
-{"post_id": 48050, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:gebet_fur_die_tage_der_tempelweihe_by_meir_letteris_1846"}
-{"post_id": 48076, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:gebet_am_lichtfeste_by_fanny_schmiedl_neuda_1855"}
-{"post_id": 49029, "kind": "new", "urn": "urn:x-opensiddur:text:poem:im_spending_hanukkah_in_santa_monica_by_tom_lehrer_1990"}
-{"post_id": 51689, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessing_for_hanukkah_a_rhyming_translation_by_jessie_ethel_sampter_1919", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "3": "urn:x-opensiddur:text:prayer:sheasah_nissim"}}
-{"post_id": 53553, "kind": "new", "urn": "urn:x-opensiddur:text:poem:the_many_and_the_few_by_woody_guthrie_hebrew_adaptation_by_isaac_gantwerk_mayer"}
-{"post_id": 53567, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tsur_after_7_october_by_aryeh_baruch"}
-{"post_id": 53572, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ya_hanukkat_a_judeo_arabic_adaptation_of_mordkhe_rivesemans_oy_khanike_by_isaac_gantwerk_mayer"}
-{"post_id": 53581, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ayde_selebramos_a_ladino_adaptation_of_mordkhe_rivesmans_oy_khanike_by_isaac_gantwerk_mayer"}
-{"post_id": 53593, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tsur_for_the_harvot_barzel_war_by_dana_pearl"}
-{"post_id": 53601, "kind": "new", "urn": "urn:x-opensiddur:text:poem:al_hanisim_hanukkah_5784_by_ilana_joy_streit"}
-{"post_id": 53636, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanah_and_prayer_for_zot_hanukkah_5784_by_david_seidenberg_neohasid_org", "rows": {"24": "urn:x-opensiddur:text:bible:psalms/33/22"}}
-{"post_id": 53679, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_of_the_guest_chaplain_of_the_us_senate_peter_s_berg_on_12_december_2023"}
-{"post_id": 54805, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hanukkah_the_feast_of_light_and_dedication_a_prayer_by_abraham_cronbach_1924"}
+{"post_id": 48034, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yah_hatsel_yonah"}
+{"post_id": 48043, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:priere_pour_la_fete_de_hanouka"}
+{"post_id": 48050, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_days_of_the_dedication_of_the_temple"}
+{"post_id": 48076, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_on_the_festival_of_light"}
+{"post_id": 49029, "kind": "new", "urn": "urn:x-opensiddur:text:poem:chanukah_in_santa_monica"}
+{"post_id": 51689, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessing_for_chanukah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing", "3": "urn:x-opensiddur:text:prayer:sheasah_nissim"}}
+{"post_id": 53553, "kind": "new", "urn": "urn:x-opensiddur:text:poem:the_many_and_the_few"}
+{"post_id": 53567, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tzur_after_7_october"}
+{"post_id": 53572, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ya_chanukka"}
+{"post_id": 53581, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ayde_selebramos"}
+{"post_id": 53593, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tzur_for_the_charvot_barzel_war"}
+{"post_id": 53601, "kind": "new", "urn": "urn:x-opensiddur:text:poem:making_peace_with_al_hanisim"}
+{"post_id": 53636, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:kavvanah_and_prayer_for_zot_chanukah", "rows": {"24": "urn:x-opensiddur:text:bible:psalms/33/22"}}
+{"post_id": 53679, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_of_the_guest_chaplain_of_the_u_s_senate_rabbi_peter_s"}
+{"post_id": 54805, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:the_feast_of_light_and_dedication"}
 {"post_id": 58924, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "2": "urn:x-opensiddur:text:poem:maoz_tzur/2", "3": "urn:x-opensiddur:text:poem:maoz_tzur/3", "4": "urn:x-opensiddur:text:poem:maoz_tzur/4", "5": "urn:x-opensiddur:text:poem:maoz_tzur/5"}}
-{"post_id": 59104, "kind": "new", "urn": "urn:x-opensiddur:text:poem:mi_khamokhah_lshabbat_shel_hanukkah_by_israel_najara"}
-{"post_id": 59347, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hakhrazah_liymei_hahodayah_announcement_for_days_of_miraculous_thanksgiving_purim_and_hanukkah"}
-{"post_id": 59374, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_all_eight_nights_of_hanukkah_by_david_seidenberg_neohasid_2024"}
-{"post_id": 59384, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tsur_for_hanukkah_2024_by_eitan_meshullam_chai"}
-{"post_id": 59400, "kind": "new", "urn": "urn:x-opensiddur:text:poem:aadif_kol_shmona_qerovot_and_qedushtah_for_hanukkah_by_elazar_qallir", "rows": {"1": "urn:x-opensiddur:text:prayer:amidah/avot", "30": "urn:x-opensiddur:text:prayer:amidah/qedushah/ledor_vador", "32": "urn:x-opensiddur:text:prayer:amidah/qedushah/haeil_haqadosh", "33": "urn:x-opensiddur:text:prayer:amidah/binah", "36": "urn:x-opensiddur:text:prayer:amidah/teshuvah", "39": "urn:x-opensiddur:text:prayer:amidah/selichah", "45": "urn:x-opensiddur:text:prayer:amidah/refuah", "51": "urn:x-opensiddur:text:prayer:amidah/qibbutz_galuyot", "54": "urn:x-opensiddur:text:prayer:amidah/mishpat", "56": "urn:x-opensiddur:text:prayer:amidah/mishpat/melekh_ohev_tzedaqah", "63": "urn:x-opensiddur:text:prayer:amidah/yerushalayim", "65": "urn:x-opensiddur:text:prayer:amidah/yerushalayim/seal", "67": "urn:x-opensiddur:text:prayer:amidah/tefilah", "70": "urn:x-opensiddur:text:prayer:amidah/avodah", "72": "urn:x-opensiddur:text:prayer:amidah/avodah/vetechezenah", "75": "urn:x-opensiddur:text:prayer:amidah/hodaah", "86": "urn:x-opensiddur:text:bible:numbers/6/25", "87": "urn:x-opensiddur:text:bible:numbers/6/26", "92": "urn:x-opensiddur:text:prayer:amidah/shalom", "94": "urn:x-opensiddur:text:prayer:amidah/shalom/hamevarekh"}}
-{"post_id": 59422, "kind": "new", "urn": "urn:x-opensiddur:text:poem:shnei_zeitim_two_olive_branches_a_meorah_piyyut_for_shabbat_hanukkah_by_shlomo_ibn_gabirol"}
-{"post_id": 59427, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_people_of_israel_and_the_captives_while_kindling_the_hanukkah_lights_by_yuval_cherlow_tzohar_atid_leotef_2024"}
-{"post_id": 64990, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashira_ltsur_nora_a_piyyut_for_hanukkah_by_salomon_berdugo_of_meknes"}
-{"post_id": 65006, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanza_to_maoz_tsur_with_regard_to_the_present_exile_by_mosheh_isserlis"}
-{"post_id": 65011, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanza_to_maoz_tsur_with_regard_to_the_present_exile_by_jeremiah_av_beit_din_of_wurzburg"}
-{"post_id": 65015, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanzas_to_maoz_tsur_with_regard_to_the_present_exile_by_shmuel_ben_david_moshe_halevi_of_mezeritch"}
-{"post_id": 65021, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanzas_to_maoz_tsur_with_regard_to_the_present_exile_by_yehiel_michel_segal_epstein_ashkenazi"}
-{"post_id": 65026, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashorer_shirim_naim_a_piyyut_before_nishmat_on_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65034, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_amdu_qamu_a_piyyut_before_yishtabah_on_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65041, "kind": "new", "urn": "urn:x-opensiddur:text:poem:todot_nitnah_a_piyyut_before_yishtabah_on_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65052, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashir_bizmirim_a_piyyut_before_qaddish_after_yishtabah_on_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65058, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_tsur_baf_a_piyyut_before_qaddish_after_the_amidah_on_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65061, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yedidekha_el_yelidei_ish_tam_a_piyyut_before_qaddish_after_the_torah_reading_of_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65066, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yom_yom_eftah_pi_a_piyyut_before_nishmat_of_shabbat_hanukkah_by_yaaqov_ibn_tsur"}
-{"post_id": 65459, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:yotser_for_shabbat_rosh_hodesh_hanukkah_from_nusah_candia_crete_translated_by_yitzchak_dickman", "rows": {"1": "urn:x-opensiddur:text:prayer:yotzer_or/opening", "33": "urn:x-opensiddur:text:prayer:yotzer_or/hakol_yodukha"}}
-{"post_id": 66445, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:reliance_a_prayer_in_the_face_of_insecurity_ccar_1923"}
-{"post_id": 66452, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:rock_of_ages_a_hanukkah_hymn_by_gustav_gottheil_1894"}
-{"post_id": 66455, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hanukkah_the_festival_of_light_a_prayer_against_anti_jewish_oppression_ccar_1923"}
+{"post_id": 59104, "kind": "new", "urn": "urn:x-opensiddur:text:poem:mi_khamokhah_lshabbat_shel_chanukah"}
+{"post_id": 59347, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:hakhrazah_li_ymei_ha_hodayah"}
+{"post_id": 59374, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:a_prayer_for_all_eight_nights_of_chanukah"}
+{"post_id": 59384, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:supplemental_stanza_to_maoz_tzur_for_chanukah_2024"}
+{"post_id": 59400, "kind": "new", "urn": "urn:x-opensiddur:text:poem:aadif_kol_shmona", "rows": {"1": "urn:x-opensiddur:text:prayer:amidah/avot", "30": "urn:x-opensiddur:text:prayer:amidah/qedushah/ledor_vador", "32": "urn:x-opensiddur:text:prayer:amidah/qedushah/haeil_haqadosh", "33": "urn:x-opensiddur:text:prayer:amidah/binah", "36": "urn:x-opensiddur:text:prayer:amidah/teshuvah", "39": "urn:x-opensiddur:text:prayer:amidah/selichah", "45": "urn:x-opensiddur:text:prayer:amidah/refuah", "51": "urn:x-opensiddur:text:prayer:amidah/qibbutz_galuyot", "54": "urn:x-opensiddur:text:prayer:amidah/mishpat", "56": "urn:x-opensiddur:text:prayer:amidah/mishpat/melekh_ohev_tzedaqah", "63": "urn:x-opensiddur:text:prayer:amidah/yerushalayim", "65": "urn:x-opensiddur:text:prayer:amidah/yerushalayim/seal", "67": "urn:x-opensiddur:text:prayer:amidah/tefilah", "70": "urn:x-opensiddur:text:prayer:amidah/avodah", "72": "urn:x-opensiddur:text:prayer:amidah/avodah/vetechezenah", "75": "urn:x-opensiddur:text:prayer:amidah/hodaah", "86": "urn:x-opensiddur:text:bible:numbers/6/25", "87": "urn:x-opensiddur:text:bible:numbers/6/26", "92": "urn:x-opensiddur:text:prayer:amidah/shalom", "94": "urn:x-opensiddur:text:prayer:amidah/shalom/hamevarekh"}}
+{"post_id": 59422, "kind": "new", "urn": "urn:x-opensiddur:text:poem:shnei_zeitim"}
+{"post_id": 59427, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:prayer_for_the_people_of_israel_and_the_captives_while"}
+{"post_id": 64990, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashira_l_tzur_nora"}
+{"post_id": 65006, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanza_to_maoz_tzur_with_regard_to_the_present"}
+{"post_id": 65011, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanza_to_maoz_tzur_with_regard_to_the_present_65011"}
+{"post_id": 65015, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanzas_to_maoz_tzur_with_regard_to_the_present"}
+{"post_id": 65021, "kind": "new", "urn": "urn:x-opensiddur:text:poem:supplemental_stanzas_to_maoz_tzur_with_regard_to_the_present_ashkenazi"}
+{"post_id": 65026, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashorer_shirim_naim"}
+{"post_id": 65034, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_amdu_qamu"}
+{"post_id": 65041, "kind": "new", "urn": "urn:x-opensiddur:text:poem:todot_nitnah"}
+{"post_id": 65052, "kind": "new", "urn": "urn:x-opensiddur:text:poem:ashir_bizmirim"}
+{"post_id": 65058, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yevanim_tzur_b_af"}
+{"post_id": 65061, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yedidekha_el_yelidei_ish_tam"}
+{"post_id": 65066, "kind": "new", "urn": "urn:x-opensiddur:text:poem:yom_yom_eftach_pi"}
+{"post_id": 65459, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:yotzer_for_shabbat_rosh_chodesh_chanukah_from_nusach_candia", "rows": {"1": "urn:x-opensiddur:text:prayer:yotzer_or/opening", "33": "urn:x-opensiddur:text:prayer:yotzer_or/hakol_yodukha"}}
+{"post_id": 66445, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:reliance"}
+{"post_id": 66452, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:rock_of_ages"}
+{"post_id": 66455, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:chanukah_the_festival_of_light"}
