@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from opensiddur.common.versification import WLC_PROJECT
+from opensiddur.importer.feinstein_haggadah.convert import EN_PROJECT, HE_PROJECT
 from opensiddur.importer.feinstein_haggadah.convert import (
     convert_all,
     document_header,
@@ -98,13 +100,13 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
             convert_all(sourcetexts_root=sources, project_root=project_root)
 
             self._assert_psalms_follow_the_1822_print(
-                project_root / "heidenheim_haggadah_1822"
+                project_root / HE_PROJECT
             )
             self._assert_only_the_index_holds_the_bibliography(
-                project_root / "heidenheim_haggadah_1822"
+                project_root / HE_PROJECT
             )
 
-            for project in ("heidenheim_haggadah_1822", "feinstein_haggadah_translation_2009"):
+            for project in (HE_PROJECT, EN_PROJECT):
                 project_dir = project_root / project
                 self.assertTrue(project_dir.is_dir())
                 xml_files = list(project_dir.glob("*.xml"))
@@ -127,7 +129,7 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
 
         kadesh = (project_dir / "kadesh.xml").read_text(encoding="utf-8")
         self.assertIn(
-            '<tei:ptr target="/heidenheim_haggadah_1822/index#project_source_bibl"/>',
+            f'<tei:ptr target="/{HE_PROJECT}/index#project_source_bibl"/>',
             kadesh,
         )
         # The pointer replaces the bibliography; it does not sit alongside a copy of it.
@@ -146,11 +148,11 @@ class TestConvertProducesValidJlptei(unittest.TestCase):
                 self.assertNotIn("יְהֹוָה", written)
                 self.assertNotIn("יהוה", written)
                 # WLC cites itself as the text source; these no longer come from it.
-                self.assertNotIn("text:bible:psalms@wlc", written)
+                self.assertNotIn(f"text:bible:psalms@{WLC_PROJECT}", written)
 
         # Psalm 126 is not in the print and keeps the compilation's text and its WLC citation.
         psalm_126 = (project_dir / "psalm_126.xml").read_text(encoding="utf-8")
-        self.assertIn("text:bible:psalms@wlc", psalm_126)
+        self.assertIn(f"text:bible:psalms@{WLC_PROJECT}", psalm_126)
         self.assertNotIn("<j:divineName>", psalm_126)
 
 
@@ -231,7 +233,7 @@ class TestDocumentHeaders(unittest.TestCase):
                 )
             },
         )
-        self.assertIn('<tei:ptr target="urn:x-opensiddur:text:bible:psalms@wlc"/>', header)
+        self.assertIn(f'<tei:ptr target="urn:x-opensiddur:text:bible:psalms@{WLC_PROJECT}"/>', header)
         self.assertIn('<tei:biblScope unit="chapter" from="126" to="126"/>', header)
 
     def test_minimal_index_header_cites_the_project_by_pointer(self) -> None:
@@ -295,7 +297,7 @@ class TestTitlePage(unittest.TestCase):
         self.assertNotIn("<tei:front", document)
 
     def test_1822_title_page_stub_is_valid_and_transcribes_the_leaf(self) -> None:
-        stub = read_front_stub("heidenheim_haggadah_1822_title_page.xml")
+        stub = read_front_stub(f"{HE_PROJECT}_title_page.xml")
         self.assertIn("<tei:titlePage>", stub)
         self.assertIn("ההגדה לליל שמורים", stub)
         self.assertIn("רעדלהיים", stub)

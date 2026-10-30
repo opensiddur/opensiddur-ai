@@ -36,7 +36,7 @@ on:
         type: string
         default: ''
       book:
-        description: With `tag`, rebuild only this settings file, as <book>/<variant>
+        description: With `tag`, rebuild only this settings file, as <project>/<variant>
         type: string
         default: ''
 

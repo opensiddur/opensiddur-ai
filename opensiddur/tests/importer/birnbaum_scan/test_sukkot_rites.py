@@ -2,6 +2,7 @@
 import unittest
 from opensiddur.exporter.condition_eval import TriState
 from opensiddur.importer.birnbaum_scan.build import sukkot_rites as r
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_EN
 from .test_tachanun_conditions import evaluate, fragment, NS
 
 class TestSukkotRites(unittest.TestCase):
@@ -41,7 +42,7 @@ class TestSukkotRites(unittest.TestCase):
         self.assertNotIn('opensiddur:hebrew-date',units[r.LULAV])
 
     def test_printed_occasion_rubrics_are_not_duplicated(self):
-        for project in (r.PROJECT_HE,'birnbaum_ashkenaz_en_1949'):
+        for project in (r.PROJECT_HE,PROJECT_EN):
             units={u['urn']:u['body'] for u in r.units(project)}
             combined=units[r.ROOT+'/rites']+units[r.GESHEM]+units[r.HOSHANOT]
             self.assertEqual(combined.count('Chanted on the eighth day of Sukkoth during Musaf'),1)

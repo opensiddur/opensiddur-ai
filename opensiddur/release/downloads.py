@@ -1,7 +1,7 @@
 """The downloads list of a book release: opensiddur-projects/DOWNLOADS.md (opensiddur-processor#275).
 
 Each book release attaches its books to a release of opensiddur-projects, named with the release's
-tag (<book>-<variant>-vYYYYMMDD.html and .pdf), so no download URL stays the same from one release
+tag (<project>-<variant>-vYYYYMMDD.html and .pdf), so no download URL stays the same from one release
 to the next. After a release is published, release-projects.yml rewrites DOWNLOADS.md with this
 module: one section per settings file, with the book's title and description and links to the
 forms the release has of it.
@@ -33,7 +33,7 @@ BUILT_WITH_RE = re.compile(r"^Built with opensiddur-processor (v\d+\.\d+\.\d+)",
 @dataclass(frozen=True)
 class BookEntry:
     name: str
-    """<book>/<variant>, as books --list gives it."""
+    """<project>/<variant>, as books --list gives it."""
 
     title: str
     """The settings file's `book.title`, or its name if it has none."""

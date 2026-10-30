@@ -9,7 +9,7 @@ import unicodedata
 from lxml import etree
 from pathlib import Path
 from .build import TEI, XML, PRAYER, POEM, document, element, pb
-from .identities import TEXTS, text_urn
+from .identities import TEXTS, text_urn, project_name
 
 FIRST_DAY = 'urn:x-opensiddur:text:siddur:selichot/first_day'
 OBSOLETE_ASSEMBLIES = ('first_day_opening', 'first_day_preface',
@@ -195,7 +195,7 @@ def documents(source):
     reading = json.loads((source/'first-day-opening.json').read_text())
     continuation = json.loads((source/'first-day-continuation.json').read_text())['sections']
     for lang in ['he','en']:
-        project = f'asher_selichot_{lang}_1912'
+        project = project_name(lang)
         yield project, 'index.xml', entry(lang, project, title_data, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists(), penitential_days=tuple(d for d in ['third','fourth','fifth'] if (source/('penitential-'+d+'-day.json')).exists()), include_erev_yom_kippur=(source/'erev-yom-kippur.json').exists(), remaining_services=tuple(d for d in ['monday-fast','thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast','yom-kippur-katan','circumcision'] if (source/(d+'.json')).exists()))
         yield project, 'expanded.xml', entry(lang, project, title_data, expanded=True, book=True, include_second_day=include_second_day, include_third_day=include_third_day, additional_days=additional_days, include_erev=(source/'erev-rosh-hashanah.json').exists(), include_gedaliah=(source/'tzom-gedaliah.json').exists(), include_penitential_second=(source/'penitential-second-day.json').exists(), penitential_days=tuple(d for d in ['third','fourth','fifth'] if (source/('penitential-'+d+'-day.json')).exists()), include_erev_yom_kippur=(source/'erev-yom-kippur.json').exists(), remaining_services=tuple(d for d in ['monday-fast','thursday-fast','last-monday-fast','tenth-tevet','esther-fast','tammuz-fast','yom-kippur-katan','circumcision'] if (source/(d+'.json')).exists()))
         service = entry(lang, project, title_data)

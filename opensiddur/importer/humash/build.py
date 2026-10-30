@@ -66,6 +66,7 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
+from opensiddur.common.versification import MIQRA_PROJECT
 from opensiddur.importer.util.tei_project import validate_and_write
 from opensiddur.importer.humash import model
 from opensiddur.importer.humash.aliyot import CombinedParsha, Parsha, parse_readings
@@ -110,7 +111,7 @@ from opensiddur.importer.humash.refs import (
 
 logger = logging.getLogger(__name__)
 
-PROJECT = "humash"
+PROJECT = "chumash-opensiddur-he"
 URN_PREFIX = "urn:x-opensiddur:text:bible"
 
 TEI_NS = "http://www.tei-c.org/ns/1.0"
@@ -953,7 +954,7 @@ def index_file(sections: dict[str, list[str]]) -> tuple[str, str]:
     <tei:sourceDesc>
       <tei:bibl xml:id="source_mam">
         <tei:title>Miqra al pi ha-Masorah</tei:title>
-        <tei:ptr target="{URN_PREFIX}:index@miqra_al_pi_hamasorah"/>
+        <tei:ptr target="{URN_PREFIX}:index@{MIQRA_PROJECT}"/>
         <tei:note>Source of the weekly parshah, aliyah and maftir divisions.</tei:note>
       </tei:bibl>
       <tei:bibl xml:id="source_hebcal">

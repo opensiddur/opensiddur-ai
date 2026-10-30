@@ -10,6 +10,9 @@
     
     <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
 
+    <!-- The project these files belong to, for the @project of their URNs. -->
+    <xsl:param name="project" as="xs:string" required="yes"/>
+
     <!-- Identity transform as default -->
     <xsl:mode on-no-match="fail"/>
 
@@ -71,7 +74,7 @@
 
     <xsl:template match="editionStmt">
         <tei:editionStmt>
-            <tei:p>See <tei:ref target="urn:x-opensiddur:text:bible:tanakh@wlc">WLC Tanakh header for version information</tei:ref></tei:p>
+            <tei:p>See <tei:ref target="urn:x-opensiddur:text:bible:tanakh@{$project}">WLC Tanakh header for version information</tei:ref></tei:p>
         </tei:editionStmt>
     </xsl:template>
 
@@ -80,7 +83,7 @@
             <tei:distributor>
                 <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
             </tei:distributor>
-            <tei:idno type="urn"><xsl:value-of select="concat('urn:x-opensiddur:text:bible:', $urn-book-name, '@wlc')"/></tei:idno>
+            <tei:idno type="urn"><xsl:value-of select="concat('urn:x-opensiddur:text:bible:', $urn-book-name, '@', $project)"/></tei:idno>
             <tei:availability status="free">
                 <tei:licence target="http://www.creativecommons.org/publicdomain/zero/1.0/">Creative Commons Zero Public Domain Declaration (CC0)</tei:licence>
             </tei:availability>
@@ -89,7 +92,7 @@
 
     <xsl:template match="sourceDesc">
         <tei:sourceDesc>
-            <tei:p>See <tei:ref target="urn:x-opensiddur:text:bible:tanakh@wlc">WLC Tanakh header for source information</tei:ref></tei:p>
+            <tei:p>See <tei:ref target="urn:x-opensiddur:text:bible:tanakh@{$project}">WLC Tanakh header for source information</tei:ref></tei:p>
         </tei:sourceDesc>
     </xsl:template>
 

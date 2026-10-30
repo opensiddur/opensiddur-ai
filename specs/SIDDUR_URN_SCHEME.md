@@ -62,10 +62,10 @@ exactly what a siddur's table of contents is. It is the skeleton: `siddur:` file
 headings, pagination and transclusions, and as little text of their own as possible.
 
 ```
-urn:x-opensiddur:text:siddur:siddur@birnbaum_ashkenaz_he_1949
-urn:x-opensiddur:text:siddur:chol@birnbaum_ashkenaz_he_1949
-urn:x-opensiddur:text:siddur:chol/shacharit@birnbaum_ashkenaz_he_1949
-urn:x-opensiddur:text:siddur:chol/shacharit/amidah@birnbaum_ashkenaz_he_1949
+urn:x-opensiddur:text:siddur:siddur@hasiddur_hashalem-birnbaum-1949-he
+urn:x-opensiddur:text:siddur:chol@hasiddur_hashalem-birnbaum-1949-he
+urn:x-opensiddur:text:siddur:chol/shacharit@hasiddur_hashalem-birnbaum-1949-he
+urn:x-opensiddur:text:siddur:chol/shacharit/amidah@hasiddur_hashalem-birnbaum-1949-he
 ```
 
 `<occasion>` and `<service>` come from closed lists, so two siddurim agree:
@@ -200,7 +200,7 @@ cup, a note, a conditional — and reaches the shared words in one of two ways:
   inside the context's division. Right when the context adds nothing to the words.
 - **Declare partial correspondence with milestones.** The outer division carries the
   context URN; milestones inside it identify the shared text independently of paragraphs. This is the pattern
-  `heidenheim_haggadah_1822/psalm_126.xml` already uses, where a `tei:div` with the
+  `haggadah_leleil_shimmurim-heidenheim-1822-he/psalm_126.xml` already uses, where a `tei:div` with the
   haggadah's URN contains milestones with canonical `bible:` URNs.
 
 ```xml
@@ -264,7 +264,7 @@ liturgy, and every later unit would have to defer to an accident.
 Conditioning a transclusion from outside it is the established convention, not something
 this scheme introduces — see [Conditional text](../schema/JLPTEI-3.md#conditional-text),
 the `Transclusion` scope in `feinstein_haggadah/conditionals.py`, and the existing usage
-in `heidenheim_haggadah_1822/pre_seder.xml` and `humash/parashat_chukat_balak.xml`.
+in `haggadah_leleil_shimmurim-heidenheim-1822-he/pre_seder.xml` and `chumash-opensiddur-he/parashat_chukat_balak.xml`.
 
 It is restated here only because sharing depends on it. A Harachaman paragraph said on
 Shabbat is the same words as one said any other day; what differs is whether it is said.
@@ -562,7 +562,7 @@ now and the projects rewritten later; deferring the edit does not defer the deci
 Two notes on the harder ones. **`barech/13` is Ya'aleh v'yavo**, an ordinal rather than a
 name; it is renamed to `prayer:yaaleh_veyavo` like any other alias, and that its haggadah
 copy carries only the Pesach wording is not a reason to re-encode it — see *Partial
-witnesses are normal*. **`prayer:ashrei`**, which already exists in `original-example`,
+witnesses are normal*. **`prayer:ashrei`**, which already exists in `example_original-he`,
 is correct as it stands: Ashrei is said at several services, so it is top-level and needs
 no change.
 

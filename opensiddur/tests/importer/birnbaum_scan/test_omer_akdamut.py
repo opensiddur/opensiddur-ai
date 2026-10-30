@@ -3,6 +3,7 @@ import unittest
 from lxml import etree as E
 from opensiddur.exporter.condition_eval import TriState
 from opensiddur.importer.birnbaum_scan.build import omer_akdamut as o
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_EN
 from .test_tachanun_conditions import evaluate, fragment, NS
 
 class TestOmerAkdamut(unittest.TestCase):
@@ -28,7 +29,7 @@ class TestOmerAkdamut(unittest.TestCase):
         for day in (0,1,2):
             self.assertEqual(evaluate(o.holiday('shavuot'),{('opensiddur:holiday','shavuot'):day}),TriState.TRUE if day==1 else TriState.FALSE)
     def test_poem_complete_aligned_and_bounded(self):
-        for project in (o.PROJECT_HE,'birnbaum_ashkenaz_en_1949'):
+        for project in (o.PROJECT_HE,PROJECT_EN):
             body=next(u['body'] for u in o.units(project) if u['urn']==o.AKDAMUT_URN)
             doc=fragment(body)
             self.assertEqual(len(doc.xpath('.//tei:l',namespaces=NS)),90)

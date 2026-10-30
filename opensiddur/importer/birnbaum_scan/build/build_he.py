@@ -582,7 +582,7 @@ def units(project, pages, by_name, amidah_body):
     from .torah import unit_body as torah_body
     from .conclusion import unit_body as conclusion_body, psalms_body
     from .shacharit_end import service_body, unit_body as final_body, editorial_head
-    side = 0 if project == "birnbaum_ashkenaz_he_1949" else 1
+    side = 0 if project == PROJECT_HE else 1
     lang = "he" if side == 0 else "en"
     result = (
         dict(name="all_shacharit_yeladim",

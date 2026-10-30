@@ -230,8 +230,8 @@ and ACKNOWLEDGMENTS printed on top of the dedicatee's name.
 
 | project | holds |
 |---|---|
-| `birnbaum_ashkenaz_he_1949` | the Hebrew of the 1949 print |
-| `birnbaum_ashkenaz_en_1949` | Birnbaum's own English, from the facing pages |
+| `hasiddur_hashalem-birnbaum-1949-he` | the Hebrew of the 1949 print |
+| `hasiddur_hashalem-birnbaum-1949-en` | Birnbaum's own English, from the facing pages |
 
 Three tiers: `index.xml`, a unit file holding document order and no words of its own, and
 one file per prayer holding the words, the conditionals and the `tei:pb`. Both projects
@@ -304,10 +304,10 @@ because both are also said in Birkat HaMazon — nest only what lives in one pla
 
 ```bash
 W=opensiddur-projects/project
-uv run python -m opensiddur.importer.util.validation "$W/birnbaum_ashkenaz_he_1949/amidah_avot.xml"
+uv run python -m opensiddur.importer.util.validation "$W/hasiddur_hashalem-birnbaum-1949-he/amidah_avot.xml"
 uv run python -m opensiddur.exporter.refdb --project-directory "$W"
-uv run python -m opensiddur.exporter.validate_urn_references birnbaum_ashkenaz_he_1949 --project-directory "$W"
-uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
+uv run python -m opensiddur.exporter.validate_urn_references hasiddur_hashalem-birnbaum-1949-he --project-directory "$W"
+uv run python -m opensiddur.exporter.compiler -p hasiddur_hashalem-birnbaum-1949-he \
     -f chol_shacharit_amidah.xml -s specs/birnbaum_scan/settings_undecided.yaml \
     -o output/amidah.xml --project-directory "$W"
 uv run python -m opensiddur.exporter.pdf.pdf output/amidah.xml output/amidah.pdf \
@@ -463,7 +463,7 @@ is **his**, and is set as printed — see `readings/english_28_48.md`, "A slip o
 Three ways were available, and the choice is not obvious:
 
 1. **An `xml:id` in the annotated file, with the apparatus in that same file.** This is
-   what `jps1917` and `miqra_al_pi_hamasorah` do, and it is forced rather than chosen:
+   what `tanakh-jps-1917-en` and `tanakh-miqra_al_pi_hamasorah-he` do, and it is forced rather than chosen:
    `refdb.get_references_to` matches an `#id` target only within the one project and file
    that declares it, so an id cannot reach across a file boundary at all. It also welds
    the apparatus to the text, and a note set that cannot be detached cannot be exchanged.
@@ -837,7 +837,7 @@ O=../../output/birnbaum_shacharit_opening
 uv run python -m opensiddur.importer.birnbaum_scan.build.build_he --project-directory "$W"
 uv run python -m opensiddur.importer.birnbaum_scan.build.build_en --project-directory "$W"
 uv run python -m opensiddur.exporter.refdb --project-directory "$W"
-uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
+uv run python -m opensiddur.exporter.compiler -p hasiddur_hashalem-birnbaum-1949-he \
   -f chol_shacharit_pesukei_dezimra.xml -s specs/birnbaum_scan/settings_undecided.yaml \
   --project-directory "$W" -o "$O/parallel.xml"
 uv run python -m opensiddur.exporter.pdf.pdf "$O/parallel.xml" "$O/parallel.pdf" \
@@ -921,7 +921,7 @@ O=../../output/birnbaum_hodu
 uv run python -m opensiddur.importer.birnbaum_scan.build.build_he --project-directory "$W"
 uv run python -m opensiddur.importer.birnbaum_scan.build.build_en --project-directory "$W"
 uv run python -m opensiddur.exporter.refdb --project-directory "$W"
-uv run python -m opensiddur.exporter.compiler -p birnbaum_ashkenaz_he_1949 \
+uv run python -m opensiddur.exporter.compiler -p hasiddur_hashalem-birnbaum-1949-he \
   -f chol_shacharit_pesukei_dezimra.xml -s specs/birnbaum_scan/settings_undecided.yaml \
   --project-directory "$W" -o "$O/parallel.xml"
 uv run python -m opensiddur.exporter.pdf.pdf "$O/parallel.xml" "$O/parallel.pdf" \

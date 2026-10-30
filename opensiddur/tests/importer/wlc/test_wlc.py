@@ -3,6 +3,7 @@ from unittest.mock import patch, call
 from pathlib import Path
 
 from opensiddur.common.constants import SOURCETEXTS_ROOT
+from opensiddur.common.versification import WLC_PROJECT
 from opensiddur.importer.wlc.wlc import (
     make_project_directory,
     get_source_directory,
@@ -30,8 +31,8 @@ class TestWLCPathFunctions(unittest.TestCase):
         # Verify mkdir was called with the correct arguments
         mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
         
-        # Verify the returned path ends with project/wlc
-        self.assertTrue(str(result).endswith('project/wlc'))
+        # Verify the returned path is the WLC project's
+        self.assertEqual(result.name, WLC_PROJECT)
         
         # Verify it's a Path object
         self.assertIsInstance(result, Path)
@@ -143,7 +144,7 @@ class TestWLCMain(unittest.TestCase):
             mock_xslt_dir / "transform_index.xslt",
             mock_source_dir / "Books" / "TanachHeader.xml",
             mock_project_dir / "index.xml",
-            xslt_params={"wlc-root-uri": mock_wlc_uri},
+            xslt_params={"wlc-root-uri": mock_wlc_uri, "project": WLC_PROJECT},
         )
         self.assertIn(expected_index_call, mock_xslt_transform.call_args_list)
         
@@ -153,16 +154,19 @@ class TestWLCMain(unittest.TestCase):
                 mock_xslt_dir / "transform_book.xslt",
                 mock_source_dir / "Books" / "Genesis.xml",
                 mock_project_dir / "genesis.xml",
+                xslt_params={"project": WLC_PROJECT},
             ),
             call(
                 mock_xslt_dir / "transform_book.xslt",
                 mock_source_dir / "Books" / "Exodus.xml",
                 mock_project_dir / "exodus.xml",
+                xslt_params={"project": WLC_PROJECT},
             ),
             call(
                 mock_xslt_dir / "transform_book.xslt",
                 mock_source_dir / "Books" / "Leviticus.xml",
                 mock_project_dir / "leviticus.xml",
+                xslt_params={"project": WLC_PROJECT},
             ),
         ]
         
@@ -190,7 +194,7 @@ class TestWLCMain(unittest.TestCase):
         self.assertEqual(
             mock_add_subverse.call_args_list,
             [
-                call(mock_project_dir / book, language="he", project="wlc")
+                call(mock_project_dir / book, language="he", project=WLC_PROJECT)
                 for book in ("genesis.xml", "exodus.xml", "leviticus.xml")
             ],
         )

@@ -6,6 +6,9 @@ from lxml import etree
 
 from opensiddur.common.xslt import xslt_transform
 
+#: The stylesheet names the project it writes; the tests give it one of their own.
+PARAMS = {"project": "a_project-he"}
+
 
 class TestTransformIndexXSLT(unittest.TestCase):
     """Test the transform_index.xslt transformation logic"""
@@ -59,7 +62,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -87,7 +90,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml, encoding='utf-8')
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text(encoding='utf-8')
         
@@ -115,7 +118,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -144,7 +147,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -179,7 +182,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -210,7 +213,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -221,7 +224,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         # Should have new Open Siddur content
         self.assertIn('Open Siddur Project', result)
         self.assertIn('opensiddur.org', result)
-        self.assertIn('urn:x-opensiddur:text:bible:tanakh@wlc', result)
+        self.assertIn('urn:x-opensiddur:text:bible:tanakh@a_project-he', result)
         self.assertIn('Creative Commons Zero', result)
     
     def test_source_desc_augmented_with_uxlc_bibl(self):
@@ -247,7 +250,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -283,7 +286,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -319,7 +322,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -342,7 +345,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -394,7 +397,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -426,7 +429,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         result = output_file.read_text()
         
@@ -454,7 +457,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
 
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
 
         result = etree.parse(str(output_file))
         # The book template's whole output *is* the j:transclude -- there's no wrapper,
@@ -475,7 +478,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
 
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
 
         result = etree.parse(str(output_file))
         transclude = result.getroot()
@@ -506,7 +509,7 @@ class TestTransformIndexXSLT(unittest.TestCase):
         output_file = self.test_dir / "output.xml"
         input_file.write_text(input_xml)
         
-        xslt_transform(self.xslt_path, input_file, output_file)
+        xslt_transform(self.xslt_path, input_file, output_file, xslt_params=PARAMS)
         
         # Parse output to check namespaces properly
         tree = etree.parse(str(output_file))

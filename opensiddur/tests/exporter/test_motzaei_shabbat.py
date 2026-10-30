@@ -3,6 +3,7 @@ import unittest
 from pyluach.dates import HebrewDate
 from opensiddur.exporter.calendar.motzaei_shabbat import omit_vihi_noam, compute_motzaei_shabbat
 from opensiddur.exporter.calendar.compute import SettingSnapshot, FS_HEBREW_DATE, FS_ISRAEL
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_EN, PROJECT_HE
 
 
 class TestMotzaeiShabbat(unittest.TestCase):
@@ -92,7 +93,7 @@ class TestMotzaeiEncoding(unittest.TestCase):
         from opensiddur.importer.birnbaum_scan.build import build_he, build_en
         for module in (build_he, build_en):
             language = 'he' if module is build_he else 'en'
-            project = 'birnbaum_ashkenaz_' + language + '_1949'
+            project = {'he': PROJECT_HE, 'en': PROJECT_EN}[language]
             from opensiddur.importer.birnbaum_scan.build.motzaei_shabbat import units
             names = [p['name'] for p in module.PRAYERS]
             names += [p['name'] for p in units(project, module.BY_NAME)]
@@ -107,7 +108,7 @@ class TestMotzaeiEncoding(unittest.TestCase):
             ('he', build_he, 'תִּתְקַבַּל'),
             ('en', build_en, 'whole household of Israel'),
         ):
-            project = 'birnbaum_ashkenaz_' + language + '_1949'
+            project = {'he': PROJECT_HE, 'en': PROJECT_EN}[language]
             body = next(u['body'] for u in units(project, module.BY_NAME)
                         if u['urn'] == ROOT + '/kaddish')
             root = etree.fromstring(('<root xmlns:tei="http://www.tei-c.org/ns/1.0" '

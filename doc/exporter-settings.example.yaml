@@ -17,7 +17,7 @@ description: >
 # needs only `-s`. Every settings file in opensiddur-projects/settings/<book>/ must have one,
 # since each is built into a book at release.
 book:
-  project: wlc
+  project: tanakh-wlc-he
   file_name: index.xml
   title: Westminster Leningrad Codex   # optional
 
@@ -38,19 +38,19 @@ priority:
   # The first entry will typically be the project you are compiling.
   # The lower priority projects can be used when the first project wants to import from others (eg, a siddur that borrows Tanach text from another source)
   transclusion:
-    - wlc
-    - jps1917
+    - tanakh-wlc-he
+    - tanakh-jps-1917-en
 
   # Project priority for resolving `urn:x-opensiddur:` references to *instructions*
   instructions:
-    - wlc
-    - jps1917
+    - tanakh-wlc-he
+    - tanakh-jps-1917-en
 
 # Projects from which to include annotations
 # *All* annotations from the given projects will be included.
 annotations:
-  - wlc
-  - jps1917
+  - tanakh-wlc-he
+  - tanakh-jps-1917-en
 
 # Optional. Set the notes of each type only at the first occurrence of their target,
 # instead of at every place its text is transcluded. The note's @type selects the flag.
@@ -63,8 +63,8 @@ print_once:
 parallel:
   # Projects to search for parallel text content (in priority order)
   projects:
-    - wlc
-    - jps1917
+    - tanakh-wlc-he
+    - tanakh-jps-1917-en
   # Column order for parallel text display in printed output
   column_order: primary_first
 

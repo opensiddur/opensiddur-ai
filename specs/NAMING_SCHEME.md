@@ -40,11 +40,13 @@ in a URN, a romanized title carries diacritics, mixed case collides on case-inse
 filesystems, and parentheses, commas and spaces break the tooling. The publisher is left out
 because it rarely tells two editions apart that the author and date do not.
 
-### Current and proposed identifiers
+### Former names
 
-The projects are renamed to these identifiers in one change (issue #266, phase 2).
+The projects took these identifiers in one change (issue #266, phase 2), as did their
+books' settings directories. An older processor, or text written before then, may still use
+the former name.
 
-| Current | Identifier |
+| Former name | Identifier |
 |---|---|
 | `asher_selichot_he_1912` | `selichoth-asher-1912-he` |
 | `asher_selichot_en_1912` | `selichoth-asher-1912-en` |

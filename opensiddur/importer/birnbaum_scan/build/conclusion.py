@@ -6,7 +6,7 @@ repeated verses retain source spans rather than duplicate canonical corresponden
 import re
 from html import escape
 
-from .common import PRAYER, SIDDUR, PROJECT_HE, QUORUM, AGG, cond, endcond, feature, pb
+from .common import PRAYER, SIDDUR, PROJECT_EN, PROJECT_HE, QUORUM, AGG, cond, endcond, feature, pb
 from .conclusion_data import PASSAGES
 from .milestones import Correspondences
 from .tachanun_conditions import date, holiday, DIASPORA
@@ -226,7 +226,7 @@ def psalms_body(project):
 
 def full_kaddish(lang):
     """Reusable complete prayer, bound to this edition rather than caller priorities."""
-    project = 'birnbaum_ashkenaz_'+lang+'_1949'
+    project = PROJECT_HE if lang == 'he' else PROJECT_EN
     urn = PRAYER+'kaddish/shalem'
     parts = ('yitgadal', 'yehe_shmeh', 'yitbarakh', 'titkabal',
              'yatom/yehe_shlama', 'yatom/oseh_shalom')

@@ -45,7 +45,7 @@ class MondayFastTests(unittest.TestCase):
         for project,name,root in authored:
             milestones=root.findall('.//{'+TEI+'}milestone[@corresp]')
             self.assertEqual([n.get('corresp')for n in milestones],['urn:x-opensiddur:text:siddur:selichot/last_monday_fast/verses_after_haazinah/expanded'])
-            self.assertEqual(len(root.findall('.//{'+service.J+'}transclude')),1 if '_he_'in project else 0)
+            self.assertEqual(len(root.findall('.//{'+service.J+'}transclude')),1 if project.endswith('-he') else 0)
             self.assertEqual(len(root.findall('.//{'+service.J+'}conditional')),2)
 
     def test_attributes_before_poem_remain_prose(self):

@@ -9,6 +9,7 @@ from lxml import etree
 from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
 from .first_day import (poetic_lines, words_with_notes, mixed_words,
                         append_words, expansion_scope)
+from .identities import project_name
 
 EREV = 'urn:x-opensiddur:text:siddur:selichot/erev_rosh_hashanah'
 EXTRA = PRAYER+'selichot/rahamekha_rabbim'
@@ -205,7 +206,7 @@ def expanded_rubric(parent, reading, lang):
 def documents(source):
     manifest, units=readings(source)
     for lang in ['he','en']:
-        project=f'asher_selichot_{lang}_1912'
+        project=project_name(lang)
         root,text=document(lang,project,manifest['heading'][lang],EREV)
         service=element(element(text,'body'),'div',corresp=EREV)
         first=units[0]['fragments'][0][lang];pb(service,first['scan'],first['printed_page'])
@@ -253,7 +254,7 @@ def verify_readings(source, project_directory):
     manifest,read=readings(source)
     verify_evidence(source,read)
     for lang in ['he','en']:
-        project=project_directory/f'asher_selichot_{lang}_1912'
+        project=project_directory/project_name(lang)
         service=etree.parse(str(project/'erev_rosh_hashanah.xml')).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         if normalize(service.find(f'{{{TEI}}}head').text)!=normalize(manifest['heading'][lang]):raise ValueError('Missing Erev heading')
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]

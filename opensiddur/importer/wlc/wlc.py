@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from opensiddur.common.constants import PROJECT_DIRECTORY, SOURCETEXTS_ROOT
+from opensiddur.common.versification import WLC_PROJECT
 from opensiddur.common.subverse import add_subverse_milestones_to_file
 from opensiddur.common.xslt import xslt_transform
 from opensiddur.importer.util.validation import validate
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 def make_project_directory(project_dir: Path | None = None) -> Path:
     """Create the WLC project directory if missing; return its path."""
     directory = (
-        project_dir.resolve() if project_dir is not None else PROJECT_DIRECTORY / "wlc"
+        project_dir.resolve() if project_dir is not None else PROJECT_DIRECTORY / WLC_PROJECT
     )
     directory.mkdir(parents=True, exist_ok=True)
     return directory
@@ -48,10 +49,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--project-dir",
         type=Path,
-        default=PROJECT_DIRECTORY / "wlc",
+        default=PROJECT_DIRECTORY / WLC_PROJECT,
         help=(
             "Output directory for generated JLPTEI "
-            "(default: <repo>/opensiddur-projects/project/wlc)."
+            f"(default: <repo>/opensiddur-projects/project/{WLC_PROJECT})."
         ),
     )
     parser.add_argument(
@@ -76,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         xslt_directory / "transform_index.xslt",
         wlc_directory / "Books" / "TanachHeader.xml",
         project_directory / "index.xml",
-        xslt_params={"wlc-root-uri": _wlc_directory_uri(wlc_directory)},
+        xslt_params={"wlc-root-uri": _wlc_directory_uri(wlc_directory), "project": WLC_PROJECT},
     )
     for book in os.listdir(wlc_directory / "Books"):
         if book not in ["TanachHeader.xml", "TanachIndex.xml"] and not book.endswith(".DH.xml"):
@@ -85,9 +86,10 @@ def main(argv: list[str] | None = None) -> int:
                 xslt_directory / "transform_book.xslt",
                 wlc_directory / "Books" / book,
                 project_directory / book.lower(),
+                xslt_params={"project": WLC_PROJECT},
             )
             add_subverse_milestones_to_file(
-                project_directory / book.lower(), language="he", project="wlc"
+                project_directory / book.lower(), language="he", project=WLC_PROJECT
             )
 
     for book in os.listdir(project_directory):

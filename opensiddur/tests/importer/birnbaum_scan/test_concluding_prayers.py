@@ -3,11 +3,12 @@ import unittest
 from lxml import etree
 from opensiddur.exporter.condition_eval import TriState
 from opensiddur.importer.birnbaum_scan.build import concluding_prayers as r
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_EN
 from .test_tachanun_conditions import evaluate, fragment, NS
 
 class TestConcludingPrayers(unittest.TestCase):
     def test_wedding_wine_order(self):
-        for project in (r.PROJECT_HE,'birnbaum_ashkenaz_en_1949'):
+        for project in (r.PROJECT_HE,PROJECT_EN):
             units={u['urn']:fragment(u['body']) for u in r.units(project)}
             ceremony=units[r.SEVEN].xpath('.//j:transclude/@target',namespaces=NS)
             meal=units[r.SEVEN+'/after_meal'].xpath('.//j:transclude/@target',namespaces=NS)
@@ -44,7 +45,7 @@ class TestConcludingPrayers(unittest.TestCase):
     def test_printed_one_sided_alternatives_are_not_translated(self):
         self.assertTrue(all(not r.BY_KEY['meein_begin_'+k]['en'] for k in ('wine','fruit','cake','cake_wine')))
         he=next(u['body'] for u in r.units(r.PROJECT_HE) if u['urn']==r.ABRIDGED)
-        en=next(u['body'] for u in r.units('birnbaum_ashkenaz_en_1949') if u['urn']==r.ABRIDGED)
+        en=next(u['body'] for u in r.units(PROJECT_EN) if u['urn']==r.ABRIDGED)
         self.assertIn('meein-shalosh-food',he)
         self.assertNotIn('meein-shalosh-food',en)  # empty facing anchors, no empty brackets
 

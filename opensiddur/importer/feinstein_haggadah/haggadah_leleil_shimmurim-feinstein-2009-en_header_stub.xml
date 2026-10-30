@@ -16,7 +16,7 @@
       <tei:distributor>
         <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
       </tei:distributor>
-      <tei:idno type="urn">urn:x-opensiddur:text:haggadah:haggadah@feinstein_haggadah_translation_2009</tei:idno>
+      <tei:idno type="urn">urn:x-opensiddur:text:haggadah:haggadah@haggadah_leleil_shimmurim-feinstein-2009-en</tei:idno>
       <tei:availability status="free">
         <tei:licence target="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International</tei:licence>
       </tei:availability>
@@ -26,7 +26,7 @@
         <tei:title>Original work</tei:title>
         <tei:author ref="urn:x-opensiddur:contributor:opensiddur.org/eve-feinstein">Dr. Eve Levavi Feinstein</tei:author>
         <tei:date when="2009">2009</tei:date>
-        <tei:note xml:lang="en">This English text is an original work composed for the Open Siddur Project. It is not a translation of Wolf Heidenheim&apos;s German translation from the 1822 haggadah. The Hebrew source text is published separately as heidenheim_haggadah_1822.</tei:note>
+        <tei:note xml:lang="en">This English text is an original work composed for the Open Siddur Project. It is not a translation of Wolf Heidenheim&apos;s German translation from the 1822 haggadah. The Hebrew source text is published separately as haggadah_leleil_shimmurim-heidenheim-1822-he.</tei:note>
       </tei:bibl>
       <tei:bibl>
         <tei:title>Publication source</tei:title>

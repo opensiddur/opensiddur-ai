@@ -24,7 +24,7 @@ class ThirdDayTest(unittest.TestCase):
             ids=[n.get(XML+'id') for n in root.findall(f'.//{{{J}}}conditional')]
             self.assertEqual(['third_opening_instruction_printed','third_opening_instruction_expanded'],ids)
             self.assertEqual(['#'+id for id in ids],[n.get('target') for n in root.findall(f'.//{{{J}}}endConditional')])
-            expected=['n61.jpg','n65.jpg','n63.jpg','n67.jpg'] if project.startswith('asher_selichot_he') else ['n62.jpg','n66.jpg','n64.jpg','n68.jpg']
+            expected=['n61.jpg','n65.jpg','n63.jpg','n67.jpg'] if project.endswith('-he') else ['n62.jpg','n66.jpg','n64.jpg','n68.jpg']
             self.assertEqual(expected,[n.get('facs').split('/')[-1].replace('_medium','') for n in root.findall(f'.//{{{TEI}}}pb')][-4:])
 
     def test_hebrew_only_rubric_keeps_its_own_language(self):

@@ -1,8 +1,9 @@
 """ Build the electronic book (HTML) and the printed one (PDF) for every settings file in a
 settings directory.
 
-The settings directory (opensiddur-projects/settings/) has one subdirectory per book, holding
-that book's settings files: settings/humash/annual.yaml, settings/humash/triennial.yaml. Each
+The settings directory (opensiddur-projects/settings/) has one subdirectory per book, named for
+the project it is built from, holding that book's settings files:
+settings/chumash-opensiddur-he/annual.yaml, settings/chumash-opensiddur-he/triennial.yaml. Each
 names the root file it formats in its `book:` key and says how it differs from its siblings in
 `description:`. Each month, opensiddur-projects is tagged with a date (vYYYYMMDD) and every book
 is built and attached to that release (.github/workflows/release-projects.yml), named
@@ -87,7 +88,7 @@ def discover(settings_directory: Path) -> list[Path]:
 
 
 def book_name(settings_file: Path, settings_directory: Path) -> str:
-    """ <book>/<settings>, e.g. humash/annual. """
+    """ <book>/<settings>, e.g. chumash-opensiddur-he/annual. """
     return settings_file.relative_to(settings_directory).with_suffix("").as_posix()
 
 
@@ -254,7 +255,8 @@ def _report(results: list[BookResult]) -> None:
 
 
 def _select(settings_files: list[Path], settings_directory: Path, names: list[str]) -> list[Path]:
-    """ The settings files named: a book (humash) selects all its settings, or one (humash/annual). """
+    """ The settings files named: a book (chumash-opensiddur-he) selects all its settings, or one
+    (chumash-opensiddur-he/annual). """
     selected: list[Path] = []
     for name in names:
         matches = [p for p in settings_files
@@ -271,7 +273,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         description="Build a PDF for every settings file in the settings directory. "
                     "The reference database must be built first (python -m opensiddur.exporter.refdb).")
     parser.add_argument("names", nargs="*",
-                        help="Build only these: a book (humash) or one of its settings (humash/annual). "
+                        help="Build only these: a book (chumash-opensiddur-he) or one of its settings (chumash-opensiddur-he/annual). "
                              "Default: all.")
     parser.add_argument("--project-directory", type=Path, default=PROJECT_DIRECTORY,
                         help="Base directory containing project subdirectories "
@@ -281,7 +283,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--output-directory", "-o", type=Path, default=Path("books"),
                         help="Where to write the PDFs and per-book logs (default: ./books).")
     parser.add_argument("--suffix", default=None,
-                        help="Appended to each output's name, e.g. the release tag: humash-annual-v0.5.0.pdf.")
+                        help="Appended to each output's name, e.g. the release tag: chumash-opensiddur-he-annual-v20261201.pdf.")
     parser.add_argument("--format", dest="formats", action="append", choices=FORMATS,
                         help="Build only this format, pdf or html (the electronic book), for "
                              "the books whose settings list it. Repeatable. "
@@ -290,7 +292,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     action.add_argument("--check", action="store_true",
                         help="Only validate the settings, the books they name and their fonts; build nothing.")
     action.add_argument("--list", action="store_true",
-                        help="Print the names of the settings files (e.g. humash/annual) as a JSON list, "
+                        help="Print the names of the settings files (e.g. chumash-opensiddur-he/annual) as a JSON list, "
                              "leaving out those whose requires_processor this processor does not meet; "
                              "build nothing. The release workflow builds one book per name.")
     action.add_argument("--formats", dest="list_formats", action="store_true",

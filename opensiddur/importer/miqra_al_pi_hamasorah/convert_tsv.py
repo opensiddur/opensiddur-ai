@@ -12,6 +12,7 @@ from typing import Any, Iterable, Optional
 import mwparserfromhell
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.versification import MIQRA_PROJECT
 from opensiddur.common.subverse import add_subverse_milestones
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.importer.util.pages import (
@@ -48,14 +49,14 @@ def make_project_directory(project_dir: Path | None = None) -> Path:
     directory = (
         project_dir.resolve()
         if project_dir is not None
-        else PROJECT_DIRECTORY / "miqra_al_pi_hamasorah"
+        else PROJECT_DIRECTORY / MIQRA_PROJECT
     )
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 def _default_project_directory() -> Path:
-    return PROJECT_DIRECTORY / "miqra_al_pi_hamasorah"
+    return PROJECT_DIRECTORY / MIQRA_PROJECT
 
 
 @dataclass(frozen=True)
@@ -178,7 +179,7 @@ def header(
     title_he: Optional[str],
     title_en: str,
     *,
-    project_id: str = "miqra_al_pi_hamasorah",
+    project_id: str = MIQRA_PROJECT,
     namespace: str = "bible",
     entrypoint: str = "tanakh",
     qualifier: str = "",
@@ -253,7 +254,7 @@ def validate_and_write_tei_file(
         # After prettifying, not before: the pass splits text nodes to place its milestones,
         # and re-indenting afterwards would put whitespace inside the words it split.
         pretty_xml = add_subverse_milestones(
-            pretty_xml, language="he", project="miqra_al_pi_hamasorah"
+            pretty_xml, language="he", project=MIQRA_PROJECT
         )
     is_valid, errors = validate(pretty_xml)
     if not is_valid:
@@ -589,7 +590,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help=(
-            "Output project directory (default: <repo>/opensiddur-projects/project/miqra_al_pi_hamasorah)."
+            f"Output project directory (default: <repo>/opensiddur-projects/project/{MIQRA_PROJECT})."
         ),
     )
     parser.add_argument(

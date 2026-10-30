@@ -12,6 +12,7 @@ from pathlib import Path
 from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT, PROJECT_DIRECTORY
 from opensiddur.importer.util.validation import validate
+from .identities import project_name
 
 TEI='http://www.tei-c.org/ns/1.0'
 J='http://jewishliturgy.org/ns/jlptei/2'
@@ -138,7 +139,7 @@ def build(source_root,project_directory):
     data=json.loads((Path(source_root)/'asher_selichot/scan_reading/refrain-and-prayers.json').read_text())
     documents=[]
     for lang in ['he','en']:
-        project=f'asher_selichot_{lang}_1912';out=Path(project_directory)/project
+        project=project_name(lang);out=Path(project_directory)/project
         docs={'bemotzaei_menuhah.xml':poem(lang,project,data[lang]['poem'])}
         for name,pages in data[lang]['prayers'].items():
             docs[name+'.xml']=dependency(lang,project,name,pages)
@@ -179,7 +180,7 @@ def build(source_root,project_directory):
     editorial = readings/'editorial_notes.json'
     if editorial.exists():
         apply_editorial_notes(by_path, json.loads(editorial.read_text())['notes'])
-    obsolete = [Path(project_directory)/f'asher_selichot_{lang}_1912'/(name+'.xml')
+    obsolete = [Path(project_directory)/project_name(lang)/(name+'.xml')
                 for lang in ['he', 'en'] for name in OBSOLETE_ASSEMBLIES]
     return write_documents(documents, validator=validate, obsolete_paths=obsolete)
 

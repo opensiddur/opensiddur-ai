@@ -5,6 +5,7 @@ import unicodedata
 from lxml import etree
 from opensiddur.exporter.condition_eval import TriState
 from opensiddur.importer.birnbaum_scan.build import lifecycle as r
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_EN
 from .test_tachanun_conditions import evaluate, fragment, settings, NS
 
 
@@ -39,7 +40,7 @@ class TestLifecycle(unittest.TestCase):
 
 
     def test_shared_prayers_and_chapel_psalm_are_unconditional(self):
-        for project in (r.PROJECT_HE,'birnbaum_ashkenaz_en_1949'):
+        for project in (r.PROJECT_HE,PROJECT_EN):
             units={u['urn']:fragment(u['body']) for u in r.units(project)}
             for urn in (r.SICK,r.CHAPEL):
                 self.assertFalse(units[urn].xpath('.//j:conditional',namespaces=NS))

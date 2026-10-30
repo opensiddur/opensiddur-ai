@@ -17,7 +17,7 @@ Typical CI use, validating every file in the projects a PR touched::
         --project-directory "$GITHUB_WORKSPACE/projects/project" \\
         --repo-root "$GITHUB_WORKSPACE" --github-annotations \\
         --cache "$RUNNER_TEMP/schema-validation.json" \\
-        --project humash --project wlc
+        --project chumash-opensiddur-he --project tanakh-wlc-he
 
 With no ``--project`` and no ``--files-from`` every project under ``--project-directory``
 is validated.

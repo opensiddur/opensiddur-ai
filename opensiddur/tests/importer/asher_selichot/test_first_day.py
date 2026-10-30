@@ -2,6 +2,7 @@
 import unittest
 from lxml import etree
 from opensiddur.importer.asher_selichot.first_day import section, TEI, XML
+from opensiddur.importer.asher_selichot.identities import project_name
 from opensiddur.importer.scan.reverse import streams
 
 
@@ -138,7 +139,7 @@ class FirstDayTest(unittest.TestCase):
             modules = {(project,filename):root for project,filename,root in documents(source)}
         j = '{http://jewishliturgy.org/ns/jlptei/2}'
         for lang in ('he','en'):
-            project = 'asher_selichot_'+lang+'_1912'
+            project = project_name(lang)
             with self.subTest(lang=lang):
                 index = modules[project,'index.xml']
                 self.assertIsNotNone(index.find(f'.//{{{TEI}}}front/{{{TEI}}}titlePage'))
@@ -273,7 +274,7 @@ class FirstDayTest(unittest.TestCase):
             body = etree.fromstring(('<root xmlns:tei="'+TEI+'" xmlns:j="http://jewishliturgy.org/ns/jlptei/2">'+full_kaddish(lang)['body']+'</root>').encode())
             targets = [node.get('target') for node in body.findall('.//{http://jewishliturgy.org/ns/jlptei/2}transclude')]
             self.assertEqual(6, len(targets))
-            self.assertTrue(all(target.endswith('@birnbaum_ashkenaz_'+lang+'_1949') for target in targets))
+            self.assertTrue(all(target.endswith('@hasiddur_hashalem-birnbaum-1949-'+lang) for target in targets))
             self.assertIn('/titkabal@', targets[3])
             self.assertIn('/oseh_shalom@', targets[-1])
 

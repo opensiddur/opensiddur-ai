@@ -63,6 +63,10 @@ from opensiddur.importer.util.pages import (
 from opensiddur.importer.util.tei_project import prune_stale_files
 from opensiddur.exporter.validate_urn_references import validate_project_urn_references
 
+#: The Heidenheim haggadah and Feinstein's translation of it (specs/NAMING_SCHEME.md).
+HE_PROJECT = "haggadah_leleil_shimmurim-heidenheim-1822-he"
+EN_PROJECT = "haggadah_leleil_shimmurim-feinstein-2009-en"
+
 INDEX_TITLES: dict[str, str] = {
     "index": "Haggadah",
     "pre_seder": "Pre-Seder",
@@ -312,22 +316,22 @@ def convert_all(
 ) -> None:
     root = project_root or PROJECT_DIRECTORY
 
-    he_dir = make_project_directory(root / "heidenheim_haggadah_1822")
+    he_dir = make_project_directory(root / HE_PROJECT)
     convert_project(
-        project_id="heidenheim_haggadah_1822",
+        project_id=HE_PROJECT,
         lang="he",
-        header_stub="heidenheim_haggadah_1822_header_stub.xml",
+        header_stub=f"{HE_PROJECT}_header_stub.xml",
         sourcetexts_root=sourcetexts_root,
         project_dir=he_dir,
         include_page_breaks=True,
-        title_page_stub="heidenheim_haggadah_1822_title_page.xml",
+        title_page_stub=f"{HE_PROJECT}_title_page.xml",
     )
 
-    en_dir = make_project_directory(root / "feinstein_haggadah_translation_2009")
+    en_dir = make_project_directory(root / EN_PROJECT)
     convert_project(
-        project_id="feinstein_haggadah_translation_2009",
+        project_id=EN_PROJECT,
         lang="en",
-        header_stub="feinstein_haggadah_translation_2009_header_stub.xml",
+        header_stub=f"{EN_PROJECT}_header_stub.xml",
         sourcetexts_root=sourcetexts_root,
         project_dir=en_dir,
     )

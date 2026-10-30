@@ -13,6 +13,7 @@ from lxml import etree
 from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
 from .first_day import poetic_lines, words_with_notes, mixed_words, expansion_scope, append_words, verify_half_kaddish
 from .erev_rosh_hashanah import printed as ordinary_printed, targets
+from .identities import project_name
 
 PENITENTIAL_SECOND_DAY = 'urn:x-opensiddur:text:siddur:selichot/penitential_second_day'
 J = 'http://jewishliturgy.org/ns/jlptei/2'
@@ -153,7 +154,7 @@ def expanded_rubric(parent,reading,lang):
 def documents(source):
     manifest,units=readings(source)
     for lang in ['he','en']:
-        project=f'asher_selichot_{lang}_1912'
+        project=project_name(lang)
         root,text=document(lang,project,manifest['heading'][lang],PENITENTIAL_SECOND_DAY)
         service=element(element(text,'body'),'div',corresp=PENITENTIAL_SECOND_DAY)
         first=units[0]['fragments'][0][lang];pb(service,first['scan'],first['printed_page'])
@@ -193,7 +194,7 @@ def verify_readings(source,project_directory):
     normalize=lambda s:' '.join(unicodedata.normalize('NFKD',s).split())
     manifest,units=readings(source);verify_evidence(source,units)
     for lang in ['he','en']:
-        project=project_directory/f'asher_selichot_{lang}_1912'
+        project=project_directory/project_name(lang)
         service=etree.parse(str(project/'penitential_second_day.xml')).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         if normalize(service.find(f'{{{TEI}}}head').text)!=normalize(manifest['heading'][lang]):raise ValueError('second penitential day heading changed')
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]

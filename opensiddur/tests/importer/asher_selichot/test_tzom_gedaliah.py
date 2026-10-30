@@ -64,7 +64,7 @@ class GedaliahTests(unittest.TestCase):
         from opensiddur.importer.asher_selichot.first_day import entry
         title={k:'' for k in ['edition','place','publisher','address','date']}
         title.update(scan='s1',titles=['Test'])
-        root=entry('en','asher_selichot_en_1912',{'he':title,'en':title},book=True,include_gedaliah=True)
+        root=entry('en','selichoth-asher-1912-en',{'he':title,'en':title},book=True,include_gedaliah=True)
         ns={'t':TEI,'j':'http://jewishliturgy.org/ns/jlptei/2'}
         gate=root.find('.//j:conditional[@xml:id="tzom_gedaliah_occasion"]',dict(ns,xml=XML[1:-1]))
         self.assertIsNone(gate.get('type'))

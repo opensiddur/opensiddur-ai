@@ -12,8 +12,8 @@ Open Siddur JLPTEI corpus. It supplements [JLPTEI-3.md](../schema/JLPTEI-3.md).
 | Biblical quotations | `urn:x-opensiddur:text:bible:` | `…/genesis/1/31` |
 
 A `@corresp` carries the URN alone, with no project: the Hebrew and the English carry the
-same URNs, which is what aligns them. A project suffix — `@heidenheim_haggadah_1822`
-(Hebrew) or `@feinstein_haggadah_translation_2009` (English) — belongs only on a
+same URNs, which is what aligns them. A project suffix — `@haggadah_leleil_shimmurim-heidenheim-1822-he`
+(Hebrew) or `@haggadah_leleil_shimmurim-feinstein-2009-en` (English) — belongs only on a
 `j:transclude` target that must name the project it takes the text from.
 
 ## Haggadah namespace
@@ -128,7 +128,7 @@ When verifying, check a page in the middle of the book, not only the ends. The v
 an out-of-range `pgnum` to the last page, so an off-by-one mapping still resolves the final
 folio correctly while every page before it is wrong.
 
-The converter emits `tei:pb` only in the Hebrew (`heidenheim_haggadah_1822`) project. The
+The converter emits `tei:pb` only in the Hebrew (`haggadah_leleil_shimmurim-heidenheim-1822-he`) project. The
 English translation project has no 1822 pagination and omits `tei:pb` milestones.
 
 `@facs` reaches the schema through `<classRef key="att.global.facs"/>` in

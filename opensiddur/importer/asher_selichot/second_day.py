@@ -5,7 +5,7 @@ import re
 from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
 from .first_day import (poetic_lines, words_with_notes, mixed_words, expansion_scope,
                         EXPANSION_TARGETS)
-from .identities import text_urn
+from .identities import text_urn, project_name
 
 SECOND_DAY = 'urn:x-opensiddur:text:siddur:selichot/second_day'
 PRAYERS = [PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor']
@@ -102,7 +102,7 @@ def numbered_documents(source, day_name):
     day_urn = 'urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day'
     data = json.loads((source/(day_name+'-day.json')).read_text())
     for lang in ['he','en']:
-        project = f'asher_selichot_{lang}_1912'
+        project = project_name(lang)
         root, text = document(lang, project, data['heading'][lang], day_urn)
         service = element(element(text,'body'),'div',corresp=day_urn)
         first = data['units'][0]['fragments'][0][lang]
@@ -145,7 +145,7 @@ def verify_numbered_readings(source, project_directory, day_name):
     day_urn = 'urn:x-opensiddur:text:siddur:selichot/'+day_name+'_day'
     data = json.loads((source/(day_name+'-day.json')).read_text())
     for lang in ['he', 'en']:
-        project = project_directory/f'asher_selichot_{lang}_1912'
+        project = project_directory/project_name(lang)
         root = etree.parse(str(project/(day_name+'_day.xml'))).getroot()
         service = root.find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         if service.get('corresp') != day_urn or normalize(service.find(f'{{{TEI}}}head').text) != normalize(data['heading'][lang]):

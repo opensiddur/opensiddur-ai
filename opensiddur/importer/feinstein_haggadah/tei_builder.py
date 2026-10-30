@@ -8,6 +8,7 @@ import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
+from opensiddur.common.versification import WLC_PROJECT
 from opensiddur.importer.feinstein_haggadah.conditionals import (
     Alternate,
     Conditional,
@@ -217,7 +218,7 @@ def verse_anchors(section: BiblicalSection) -> list[InlineAnchor]:
     """Chapter and verse milestones for a section that is a complete biblical unit.
 
     The canonical URNs go on the milestones, not on ``tei:div/@corresp``, exactly as
-    ``project/wlc/psalms.xml`` does: the div keeps its haggadah identity for transclusion while
+    ``project/tanakh-wlc-he/psalms.xml`` does: the div keeps its haggadah identity for transclusion while
     the milestones are what alignment against WLC and JPS1917 keys off.
     """
     reference = f"{section.book} {section.chapter}"
@@ -736,7 +737,7 @@ def transcription_bibl(section: BiblicalSection) -> str:
     """
     return (
         "<tei:bibl>"
-        f'<tei:ptr target="urn:x-opensiddur:text:bible:{section.book}@wlc"/>'
+        f'<tei:ptr target="urn:x-opensiddur:text:bible:{section.book}@{WLC_PROJECT}"/>'
         f'<tei:biblScope unit="chapter" from="{section.chapter}" to="{section.chapter}"/>'
         "</tei:bibl>"
     )

@@ -253,8 +253,19 @@ jobs:
           uv run python -m opensiddur.exporter.validate_features \
             --project-directory "$GITHUB_WORKSPACE/projects/project"
 
-      # Project, settings, file and URN names against specs/NAMING_SCHEME.md. Advisory, and so
-      # left out of the gate, until the corpus has been renamed to it (opensiddur-processor#266).
+      # Project names, and where each book's settings file lives (specs/NAMING_SCHEME.md).
+      - name: Validate project and settings names
+        id: names
+        if: always()
+        continue-on-error: true
+        working-directory: opensiddur-processor
+        run: |
+          uv run python -m opensiddur.common.validate_names --check --names-only \
+            --project-directory "$GITHUB_WORKSPACE/projects/project" \
+            --settings-directory "$GITHUB_WORKSPACE/projects/settings"
+
+      # File names, URNs and their spelling, against the same scheme. Advisory, and so left out
+      # of the gate, until the files and URNs have been respelled (opensiddur-processor#266).
       - name: Validate names (advisory)
         if: always()
         continue-on-error: true
@@ -296,7 +307,8 @@ jobs:
             "urn_registry:${{ steps.urn_registry.outcome }}" \
             "versification:${{ steps.versification.outcome }}" \
             "features:${{ steps.features.outcome }}" \
-            "settings:${{ steps.settings.outcome }}"; do
+            "settings:${{ steps.settings.outcome }}" \
+            "names:${{ steps.names.outcome }}"; do
             name="${outcome%%:*}"
             result="${outcome#*:}"
             if [ "${result}" != "success" ]; then

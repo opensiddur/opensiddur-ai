@@ -22,7 +22,7 @@ on:
         type: string
         required: true
       book:
-        description: The settings file to build, as <book>/<variant> (e.g. humash/annual)
+        description: The settings file to build, as <project>/<variant> (e.g. chumash-opensiddur-he/annual)
         type: string
         required: true
       projects_ref:

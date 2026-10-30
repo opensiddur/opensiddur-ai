@@ -40,11 +40,16 @@ NUMBERINGS = (NUMBERING_MASORAH, NUMBERING_LENINGRAD, NUMBERING_COMMON)
 #: The numbering the canonical URN space uses. ``wlc`` needs no mapping at all.
 CANONICAL_NUMBERING = NUMBERING_LENINGRAD
 
-#: The project that follows each numbering: the only place the Tanakh projects are named.
+#: The Tanakh projects (specs/NAMING_SCHEME.md): the only place they are named.
+MIQRA_PROJECT = "tanakh-miqra_al_pi_hamasorah-he"
+WLC_PROJECT = "tanakh-wlc-he"
+JPS_PROJECT = "tanakh-jps-1917-en"
+
+#: The project that follows each numbering.
 NUMBERING_PROJECT = {
-    NUMBERING_MASORAH: "miqra_al_pi_hamasorah",
-    NUMBERING_LENINGRAD: "wlc",
-    NUMBERING_COMMON: "jps1917",
+    NUMBERING_MASORAH: MIQRA_PROJECT,
+    NUMBERING_LENINGRAD: WLC_PROJECT,
+    NUMBERING_COMMON: JPS_PROJECT,
 }
 
 PROJECT_NUMBERING = {project: numbering for numbering, project in NUMBERING_PROJECT.items()}
