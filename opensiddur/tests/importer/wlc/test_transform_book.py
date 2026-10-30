@@ -5,6 +5,9 @@ from lxml import etree
 
 from opensiddur.common.xslt import xslt_transform_string
 
+#: The stylesheet names the project it writes; the tests give it one of their own.
+PARAMS = {"project": "a_project-he"}
+
 
 class TestTransformBookXSLT(unittest.TestCase):
     """Test the transform_book.xslt transformation logic"""
@@ -44,7 +47,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have TEI root with proper namespace
             self.assertIn('<tei:TEI', result)
@@ -70,7 +73,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have title with type="main" and xml:lang="en"
             self.assertIn('type="main"', result)
@@ -98,7 +101,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have title with type="alt" and xml:lang="he"
             self.assertIn('type="alt"', result)
@@ -128,12 +131,12 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should not have original edition info
             self.assertNotIn('Original edition info', result)
             # Should have reference to WLC
-            self.assertIn('urn:x-opensiddur:text:bible:tanakh@wlc', result)
+            self.assertIn('urn:x-opensiddur:text:bible:tanakh@a_project-he', result)
             self.assertIn('WLC Tanakh header', result)
     
     def test_publication_stmt_with_book_urn(self):
@@ -158,10 +161,10 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have book-specific URN (title is "Test Book" -> "test_book")
-            self.assertIn('urn:x-opensiddur:text:bible:test_book@wlc', result)
+            self.assertIn('urn:x-opensiddur:text:bible:test_book@a_project-he', result)
             # Should have Open Siddur distributor
             self.assertIn('Open Siddur Project', result)
             self.assertIn('opensiddur.org', result)
@@ -190,7 +193,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should not have original source description
             self.assertNotIn('Original source description', result)
@@ -220,7 +223,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have tei:text with Hebrew language
             self.assertIn('<tei:text xml:lang="he">', result)
@@ -253,7 +256,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have div with type="book"
             self.assertIn('type="book"', result)
@@ -291,7 +294,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have milestone for chapter
             self.assertIn('<tei:milestone unit="chapter"', result)
@@ -325,7 +328,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have milestone for verse
             self.assertIn('<tei:milestone unit="verse"', result)
@@ -368,7 +371,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
 
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
 
         for verse in ("13", "14", "26"):
             with self.subTest(verse=verse):
@@ -404,7 +407,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Words should be separated by spaces
             self.assertIn('בְּרֵאשִׁית בָּרָא אֱלֹהִים', result)
@@ -436,7 +439,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Maqaf should connect words without space
             self.assertIn('וַיְהִי־כֵן', result)
@@ -469,7 +472,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have tei:choice with written and read
             self.assertIn('<tei:choice>', result)
@@ -505,7 +508,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have j:written without choice
             self.assertIn('<j:written>', result)
@@ -539,7 +542,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have j:read without choice
             self.assertIn('<j:read>', result)
@@ -573,7 +576,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have tei:anchor with xml:id
             self.assertIn('<tei:anchor', result)
@@ -606,7 +609,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have anchor for note reference
             self.assertIn('xml:id="note-ref-genesis-1-1-1"', result)
@@ -639,7 +642,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have tei:hi with rend attribute
             self.assertIn('<tei:hi rend="large">', result)
@@ -672,7 +675,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have tei:pc with reversed nun (׆)
             self.assertIn('<tei:pc>׆</tei:pc>', result)
@@ -718,7 +721,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # None of the skipped content should appear
             self.assertNotIn('Should be skipped', result)
@@ -758,7 +761,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Parse output to check namespaces properly
             tree = etree.fromstring(result.encode('utf-8'))
@@ -802,7 +805,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # pe creates paragraph breaks
             # Should have multiple tei:p elements due to grouping
@@ -841,7 +844,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # samekh creates paragraph breaks
             # Should have multiple tei:p elements due to grouping
@@ -878,7 +881,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Text should be normalized (extra spaces removed)
             self.assertIn('test with spaces', result)
@@ -911,7 +914,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # Should have three anchors with sequential numbers
             self.assertIn('xml:id="note-ref-genesis-1-1-1"', result)
@@ -948,7 +951,7 @@ class TestTransformBookXSLT(unittest.TestCase):
             f.write(self.xslt_content)
             f.flush()
             
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
             
             # pe should be processed but positioned after the verse content
             # The verse template uses: select="node() except (pe, samekh)[last()]"
@@ -993,7 +996,7 @@ class TestBookUrnName(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xslt') as f:
             f.write(self.xslt_content)
             f.flush()
-            result = xslt_transform_string(Path(f.name), input_xml)
+            result = xslt_transform_string(Path(f.name), input_xml, xslt_params=PARAMS)
         tree = etree.fromstring(result.encode('utf-8'))
         idno = tree.xpath(
             '//tei:idno[@type="urn"]',
@@ -1002,18 +1005,18 @@ class TestBookUrnName(unittest.TestCase):
         return idno.text
 
     def test_a_leading_ordinal_moves_to_the_end(self):
-        self.assertEqual(self._urn("1 Kings"), "urn:x-opensiddur:text:bible:kings_1@wlc")
+        self.assertEqual(self._urn("1 Kings"), "urn:x-opensiddur:text:bible:kings_1@a_project-he")
 
     def test_the_second_of_a_pair_too(self):
-        self.assertEqual(self._urn("2 Samuel"), "urn:x-opensiddur:text:bible:samuel_2@wlc")
+        self.assertEqual(self._urn("2 Samuel"), "urn:x-opensiddur:text:bible:samuel_2@a_project-he")
 
     def test_a_two_word_name_keeps_its_underscore(self):
         self.assertEqual(
-            self._urn("Song of Songs"), "urn:x-opensiddur:text:bible:song_of_songs@wlc"
+            self._urn("Song of Songs"), "urn:x-opensiddur:text:bible:song_of_songs@a_project-he"
         )
 
     def test_a_plain_name_is_unchanged(self):
-        self.assertEqual(self._urn("Genesis"), "urn:x-opensiddur:text:bible:genesis@wlc")
+        self.assertEqual(self._urn("Genesis"), "urn:x-opensiddur:text:bible:genesis@a_project-he")
 
 
 if __name__ == '__main__':

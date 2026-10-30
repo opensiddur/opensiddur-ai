@@ -33,6 +33,7 @@ from pathlib import Path
 from lxml import etree
 
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.versification import WLC_PROJECT
 from opensiddur.importer.feinstein_haggadah.page_breaks import normalize_pb_markup
 from opensiddur.importer.util.hebrew import normalize_hebrew, normalize_with_offsets
 
@@ -252,7 +253,7 @@ def regenerate(project_dir: Path, targets: dict[str, int]) -> list[BiblicalSecti
     and recomputing would corrupt the table, since the print writes the Divine Name as two letters
     where the codex writes four and the consonant skeletons no longer align.
     """
-    wlc = project_dir / "wlc" / "psalms.xml"
+    wlc = project_dir / WLC_PROJECT / "psalms.xml"
     if not wlc.is_file():
         raise SystemExit(f"needs the WLC project to regenerate: {wlc} not found")
     printed = load_printed_psalms()

@@ -64,8 +64,8 @@ python -m opensiddur.importer.asher_selichot.download --source-root "$source_roo
 python -m opensiddur.importer.asher_selichot.build --source-root "$source_root" --project-directory "$project_root"
 python -m opensiddur.importer.asher_selichot.verify --source-root "$source_root" --project-directory "$project_root"
 python -m opensiddur.exporter.refdb --project-directory "$project_root"
-python -m opensiddur.exporter.validate_urn_references asher_selichot_he_1912 --project-directory "$project_root"
-python -m opensiddur.exporter.validate_urn_references asher_selichot_en_1912 --project-directory "$project_root"
+python -m opensiddur.exporter.validate_urn_references selichoth-asher-1912-he --project-directory "$project_root"
+python -m opensiddur.exporter.validate_urn_references selichoth-asher-1912-en --project-directory "$project_root"
 python -m opensiddur.common.urn_registry --check --project-directory "$project_root"
 ```
 

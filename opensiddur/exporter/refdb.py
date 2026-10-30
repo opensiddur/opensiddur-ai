@@ -798,7 +798,7 @@ class ReferenceDatabase:
         """Index all URNs/references from XML files in a project directory.
         
         Args:
-            project: The project name (e.g., 'wlc', 'jps1917')
+            project: The project name (e.g., 'tanakh-wlc-he', 'tanakh-jps-1917-en')
             project_directory: Base directory containing project subdirectories
                               (defaults to PROJECT_DIRECTORY constant)
             

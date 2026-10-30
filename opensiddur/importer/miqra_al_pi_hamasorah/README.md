@@ -58,7 +58,7 @@ On the six biblical-book tabs (Torah, Nevi'im, Ketuvim, etc.), each data row use
 | D | Verse scaffolding (`{{מ:פסוק|…}}`) |
 | E | Pointed Hebrew text and `{{נוסח|…}}` templates |
 
-Content is Hebrew Wikisource-style wikitext, related to the [JPS 1917](../jps1917/) importer pipeline.
+Content is Hebrew Wikisource-style wikitext, related to the [JPS 1917](../tanakh-jps-1917-en/) importer pipeline.
 
 ## Importer status
 

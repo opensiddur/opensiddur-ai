@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from opensiddur.common.versification import JPS_PROJECT as JPS, MIQRA_PROJECT as MIQRA, WLC_PROJECT as WLC
 from opensiddur.exporter.validate_versification import (
     collect_verse_urns,
     validate_versification,
@@ -42,7 +43,7 @@ class VersificationTestCase(unittest.TestCase):
 
 class TestAgreement(VersificationTestCase):
     def test_projects_that_agree_report_nothing(self):
-        for project in ("wlc", "miqra_al_pi_hamasorah", "jps1917"):
+        for project in (WLC, MIQRA, JPS):
             self.write_project(project, "exodus", range(1, 27))
         report = validate_versification(project_directory=self.root)
         self.assertTrue(report.ok)
@@ -50,23 +51,23 @@ class TestAgreement(VersificationTestCase):
         self.assertEqual(report.missing, [])
 
     def test_a_book_only_one_project_has_is_not_a_disagreement(self):
-        self.write_project("wlc", "exodus", range(1, 27))
-        self.write_project("miqra_al_pi_hamasorah", "genesis", range(1, 32), chapter=1)
-        self.write_project("jps1917", "genesis", range(1, 32), chapter=1)
+        self.write_project(WLC, "exodus", range(1, 27))
+        self.write_project(MIQRA, "genesis", range(1, 32), chapter=1)
+        self.write_project(JPS, "genesis", range(1, 32), chapter=1)
         report = validate_versification(project_directory=self.root)
         self.assertTrue(report.ok)
 
 
 class TestDuplicates(VersificationTestCase):
     def test_a_repeated_urn_is_reported(self):
-        self.write_project("wlc", "exodus", [1, 2, 2, 3])
-        self.write_project("miqra_al_pi_hamasorah", "exodus", [1, 2, 3])
-        self.write_project("jps1917", "exodus", [1, 2, 3])
+        self.write_project(WLC, "exodus", [1, 2, 2, 3])
+        self.write_project(MIQRA, "exodus", [1, 2, 3])
+        self.write_project(JPS, "exodus", [1, 2, 3])
         report = validate_versification(project_directory=self.root)
         self.assertFalse(report.ok)
         self.assertEqual(len(report.duplicates), 1)
         duplicate = report.duplicates[0]
-        self.assertEqual(duplicate.project, "wlc")
+        self.assertEqual(duplicate.project, WLC)
         self.assertEqual(duplicate.occurrences, 2)
         self.assertIn("exodus/20/2", duplicate.urn)
 
@@ -74,30 +75,30 @@ class TestDuplicates(VersificationTestCase):
 class TestCoverage(VersificationTestCase):
     def test_a_project_short_of_the_others_is_reported(self):
         # The Decalogue failure mode: one edition stops four verses early.
-        self.write_project("wlc", "exodus", range(1, 27))
-        self.write_project("jps1917", "exodus", range(1, 27))
-        self.write_project("miqra_al_pi_hamasorah", "exodus", range(1, 23))
+        self.write_project(WLC, "exodus", range(1, 27))
+        self.write_project(JPS, "exodus", range(1, 27))
+        self.write_project(MIQRA, "exodus", range(1, 23))
         report = validate_versification(project_directory=self.root)
         self.assertFalse(report.ok)
         self.assertEqual(len(report.missing), 1)
         missing = report.missing[0]
-        self.assertEqual(missing.project, "miqra_al_pi_hamasorah")
+        self.assertEqual(missing.project, MIQRA)
         self.assertEqual(missing.verses, (23, 24, 25, 26))
 
     def test_a_documented_absence_is_not_a_failure(self):
         # Joshua 21:36-37 are genuinely absent from MAM.
         verses = [v for v in range(1, 46) if v not in (36, 37)]
-        self.write_project("miqra_al_pi_hamasorah", "joshua", verses, chapter=21)
-        self.write_project("wlc", "joshua", range(1, 46), chapter=21)
-        self.write_project("jps1917", "joshua", range(1, 46), chapter=21)
+        self.write_project(MIQRA, "joshua", verses, chapter=21)
+        self.write_project(WLC, "joshua", range(1, 46), chapter=21)
+        self.write_project(JPS, "joshua", range(1, 46), chapter=21)
         report = validate_versification(project_directory=self.root)
         self.assertTrue(report.ok, msg=str(report.missing))
 
     def test_an_undocumented_gap_in_the_same_chapter_still_fails(self):
         verses = [v for v in range(1, 46) if v not in (36, 37, 40)]
-        self.write_project("miqra_al_pi_hamasorah", "joshua", verses, chapter=21)
-        self.write_project("wlc", "joshua", range(1, 46), chapter=21)
-        self.write_project("jps1917", "joshua", range(1, 46), chapter=21)
+        self.write_project(MIQRA, "joshua", verses, chapter=21)
+        self.write_project(WLC, "joshua", range(1, 46), chapter=21)
+        self.write_project(JPS, "joshua", range(1, 46), chapter=21)
         report = validate_versification(project_directory=self.root)
         self.assertFalse(report.ok)
         self.assertEqual(report.missing[0].verses, (40,))
@@ -110,20 +111,20 @@ class TestCoverage(VersificationTestCase):
         """
         # haggai 1 stands in for zechariah 4, which is on the documented unresolved list and
         # so would be reported there rather than as a live finding.
-        self.write_project("jps1917", "haggai", range(1, 22), chapter=1)
-        self.write_project("wlc", "haggai", range(1, 15), chapter=1)
-        self.write_project("miqra_al_pi_hamasorah", "haggai", range(1, 15), chapter=1)
+        self.write_project(JPS, "haggai", range(1, 22), chapter=1)
+        self.write_project(WLC, "haggai", range(1, 15), chapter=1)
+        self.write_project(MIQRA, "haggai", range(1, 15), chapter=1)
         report = validate_versification(project_directory=self.root)
         self.assertFalse(report.ok)
         self.assertEqual(report.missing, [])
         self.assertEqual(len(report.extra), 1)
-        self.assertEqual(report.extra[0].project, "jps1917")
+        self.assertEqual(report.extra[0].project, JPS)
         self.assertEqual(report.extra[0].verses, tuple(range(15, 22)))
 
 
 class TestCollectVerseUrns(VersificationTestCase):
     def test_only_verse_urns_are_collected(self):
-        directory = self.root / "wlc"
+        directory = self.root / WLC
         directory.mkdir(parents=True)
         body = (
             milestone("exodus", 20, 1)
@@ -132,7 +133,7 @@ class TestCollectVerseUrns(VersificationTestCase):
         )
         (directory / "exodus.xml").write_text(TEMPLATE.format(milestones=body), encoding="utf-8")
         self.assertEqual(
-            collect_verse_urns("wlc", project_directory=self.root),
+            collect_verse_urns(WLC, project_directory=self.root),
             {("exodus", 20, 1): 1},
         )
 

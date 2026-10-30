@@ -12,6 +12,7 @@ from opensiddur.common.constants import SOURCETEXTS_ROOT, PROJECT_DIRECTORY
 from opensiddur.importer.scan.reverse import streams, check
 from opensiddur.importer.util.validation import validate
 from .build import TEI, J, POEM, PRAYER
+from .identities import project_name
 
 
 def verify(source_root, project_directory):
@@ -22,7 +23,7 @@ def verify(source_root, project_directory):
     data=json.loads((source/'refrain-and-prayers.json').read_text())
     files=0
     for lang in ['he','en']:
-        project=Path(project_directory)/f'asher_selichot_{lang}_1912'
+        project=Path(project_directory)/project_name(lang)
         from .first_day import OBSOLETE_ASSEMBLIES
         if any((project/(name+'.xml')).exists() for name in OBSOLETE_ASSEMBLIES):
             raise ValueError('Obsolete artificial grouping files must not remain')
@@ -212,7 +213,7 @@ def verify_opening(source, project_directory):
     actual={}
     titles=json.loads((source/'title-pages.json').read_text())
     for lang in ['he','en']:
-        project=project_directory/f'asher_selichot_{lang}_1912'
+        project=project_directory/project_name(lang)
         root=opening_documentary(project)
         actual.update(streams(root,include_notes=True))
         urns=[el.get('corresp') for el in root.iter() if el.get('corresp')]
@@ -245,7 +246,7 @@ def verify_continuation(source, project_directory):
     poetry=json.loads((source.parent/'poetry-structure.json').read_text())['units']
     count=0
     for lang in ['he','en']:
-        project=project_directory/f'asher_selichot_{lang}_1912'
+        project=project_directory/project_name(lang)
         for reading,unit in continuation_units(project,groups):
             if lang == 'he' and reading['id'] in poetry:
                 rule = poetry[reading['id']]

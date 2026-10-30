@@ -79,7 +79,7 @@ To use external clones instead of the submodules, pass the paths explicitly:
 ```bash
 uv run python -m opensiddur.importer.jps1917.convert_wikisource \
   --sourcetexts-root /path/to/sourcetexts/sources \
-  --project-dir /path/to/opensiddur-projects/project/jps1917
+  --project-dir /path/to/opensiddur-projects/project/tanakh-jps-1917-en
 ```
 
 ### Complete Workflow (Programmatic)

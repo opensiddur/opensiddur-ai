@@ -14,7 +14,7 @@ from opensiddur.importer.humash.refs import ReadingSpan, VerseRef, UNIT_ALIYAH
 from opensiddur.importer.siddur_expanded import build as edition
 from opensiddur.importer.siddur_expanded.readings import Entry, SHABBAT, FAST
 from opensiddur.importer.siddur_expanded.xml import (
-    T, J, NS, TEXT, ROOT, XID, Author, feature, transclude, parse_fragment,
+    T, J, NS, TEXT, ROOT, XID, PROJECT, Author, feature, transclude, parse_fragment,
 )
 
 
@@ -61,7 +61,7 @@ class TestExpandedBuild(unittest.TestCase):
             'siddur:shabbat/conclusion': transclude(TEXT+'siddur:chol/arvit/amidah'),
             'siddur:meals': transclude(TEXT+'prayer:fixture/meal'),
         }
-        directory = self.base/'birnbaum_ashkenaz_he_1949'
+        directory = self.base/'hasiddur_hashalem-birnbaum-1949-he'
         directory.mkdir()
         directory.joinpath('index.xml').write_text(
             f'<tei:TEI xmlns:tei="{T}" xmlns:j="{J}"><tei:text><tei:body>'
@@ -78,7 +78,7 @@ class TestExpandedBuild(unittest.TestCase):
         self.addCleanup(self.manifest.stop)
         self.builder = edition.build(self.base, self.base/'sources')
         self.documents = {p.stem: E.parse(str(p)).getroot()
-                          for p in (self.base/'siddur_expanded').glob('*.xml')}
+                          for p in (self.base/PROJECT).glob('*.xml')}
 
     def compile_service(self, module, *, service='shaharit', major=False, hallel=False, quorum=True):
         root = E.fromstring(E.tostring(self.documents[module]))
@@ -186,7 +186,7 @@ class TestExpandedBuild(unittest.TestCase):
 
     def test_rebuild_does_not_rewrite_identical_files(self):
         before = {p: (p.read_bytes(), p.stat().st_mtime_ns)
-                  for p in (self.base/'siddur_expanded').glob('*.xml')}
+                  for p in (self.base/PROJECT).glob('*.xml')}
         edition.build(self.base, self.base/'sources')
         self.assertEqual(before, {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in before})
 

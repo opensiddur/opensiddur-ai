@@ -21,6 +21,7 @@ from opensiddur.importer.util.prettify import prettify_xml
 from opensiddur.importer.util.validation import validate
 from opensiddur.common.xslt import xslt_transform_string
 from opensiddur.common.constants import PROJECT_DIRECTORY
+from opensiddur.common.versification import JPS_PROJECT
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,14 @@ def make_project_directory(project_dir: Path | None = None) -> Path:
     directory = (
         project_dir.resolve()
         if project_dir is not None
-        else PROJECT_DIRECTORY / "jps1917"
+        else PROJECT_DIRECTORY / JPS_PROJECT
     )
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 def _default_project_directory() -> Path:
-    return PROJECT_DIRECTORY / "jps1917"
+    return PROJECT_DIRECTORY / JPS_PROJECT
 
 class Book(BaseModel):
     book_name_he: str
@@ -427,7 +428,7 @@ def header(
     namespace: str = "bible",
     entrypoint: str = "tanakh",
     qualifier: str = "",
-    project_id: str = "jps1917",
+    project_id: str = JPS_PROJECT,
     license_url: str = "http://www.creativecommons.org/publicdomain/zero/1.0/",
     license_name: str = "Creative Commons Public Domain Dedication 1.0",
     transcription_credits: Optional[list[str]] = None,

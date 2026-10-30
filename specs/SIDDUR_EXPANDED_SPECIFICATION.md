@@ -6,7 +6,7 @@ Motivation: [opensiddur-processor#257](https://github.com/opensiddur/opensiddur-
 
 ## Purpose and editorial boundary
 
-Create `project/siddur_expanded/` in opensiddur-projects. It is an arrangement of
+Create `project/siddur_expanded-opensiddur-he/` in opensiddur-projects. It is an arrangement of
 existing texts in recitation order, with Birnbaum 1949 as the primary prayer
 source. Like the Humash, it owns structure and editorial instructions, not copies
 of prayer text. Include everything represented in the current Birnbaum projects:
@@ -31,7 +31,7 @@ it is excluded from the passing browser scenario results below.
 
 ## Project and settings interfaces
 
-- Entry point: `project/siddur_expanded/index.xml`; structural root URN:
+- Entry point: `project/siddur_expanded-opensiddur-he/index.xml`; structural root URN:
   `urn:x-opensiddur:text:siddur:expanded`. Mint its descendants for morning,
   afternoon, evening, meals, seasonal rites, and appendices. Do not reuse
   Birnbaum's root URN: that would select a whole Birnbaum counterpart and bypass
@@ -54,7 +54,7 @@ it is excluded from the passing browser scenario results below.
   coherent existing unit that contains neither a different service nor obsolete
   navigational instructions. Where such a unit is missing, expose it in the
   source project without changing the printed text's extent.
-- Add `settings/siddur_expanded/undated.yaml`, naming this index and describing
+- Add `settings/siddur_expanded-opensiddur-he/undated.yaml`, naming this index and describing
   the expanded arrangement. Use the settings below. Do not set a date, place,
   service, minyan or recitation mode globally. Unknown alternatives remain visible.
 
@@ -63,26 +63,26 @@ description: >
   An expanded Ashkenazi siddur in recitation order, using Birnbaum's Hebrew
   and English prayer texts and the Humash's Torah and haftarah readings.
 book:
-  project: siddur_expanded
+  project: siddur_expanded-opensiddur-he
   file_name: index.xml
   title: Expanded Ashkenazi Siddur
 priority:
   transclusion:
-    - siddur_expanded
-    - humash
-    - miqra_al_pi_hamasorah
-    - wlc
-    - birnbaum_ashkenaz_he_1949
-    - birnbaum_ashkenaz_en_1949
-    - jps1917
+    - siddur_expanded-opensiddur-he
+    - chumash-opensiddur-he
+    - tanakh-miqra_al_pi_hamasorah-he
+    - tanakh-wlc-he
+    - hasiddur_hashalem-birnbaum-1949-he
+    - hasiddur_hashalem-birnbaum-1949-en
+    - tanakh-jps-1917-en
   instructions:
-    - siddur_expanded
-    - humash
-    - birnbaum_ashkenaz_he_1949
-    - birnbaum_ashkenaz_en_1949
-annotations: [birnbaum_ashkenaz_en_1949, miqra_al_pi_hamasorah]
+    - siddur_expanded-opensiddur-he
+    - chumash-opensiddur-he
+    - hasiddur_hashalem-birnbaum-1949-he
+    - hasiddur_hashalem-birnbaum-1949-en
+annotations: [hasiddur_hashalem-birnbaum-1949-en, tanakh-miqra_al_pi_hamasorah-he]
 parallel:
-  projects: [jps1917, birnbaum_ashkenaz_en_1949]
+  projects: [tanakh-jps-1917-en, hasiddur_hashalem-birnbaum-1949-en]
 print_once:
   commentary: true
 declarations:
@@ -248,7 +248,7 @@ python -m opensiddur.importer.siddur_expanded.build \
   --sourcetexts-root /path/to/sourcetexts/sources
 python -m opensiddur.exporter.refdb \
   --project-directory /path/to/opensiddur-projects/project
-python -m opensiddur.exporter.books siddur_expanded --format html \
+python -m opensiddur.exporter.books siddur_expanded-opensiddur-he --format html \
   --project-directory /path/to/opensiddur-projects/project \
   --output-directory /path/to/books
 ```

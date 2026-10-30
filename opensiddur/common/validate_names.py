@@ -179,11 +179,14 @@ def _places(places: list[str]) -> str:
     return f"{len(places)} use(s): {shown}{more}"
 
 
-def check_project(project_path: Path, spellings: Spellings) -> Iterator[Problem]:
-    """Every naming problem in one project directory."""
+def check_project(project_path: Path, spellings: Spellings, *,
+                  names_only: bool = False) -> Iterator[Problem]:
+    """Every naming problem in one project directory; with ``names_only``, only its name's."""
     project = project_path.name
     if (reason := project_id_problem(project, project_language(project_path))) is not None:
         yield Problem(ERROR, f"project {project!r} {reason}", project)
+    if names_only:
+        return
 
     stems = _Findings(spellings)
     urns = _Findings(spellings)
@@ -196,7 +199,8 @@ def check_project(project_path: Path, spellings: Spellings) -> Iterator[Problem]
 
 
 def check_projects(project_directory: Path, spellings: Spellings,
-                   projects: Iterable[str] | None = None) -> Iterator[Problem]:
+                   projects: Iterable[str] | None = None, *,
+                   names_only: bool = False) -> Iterator[Problem]:
     directory = Path(project_directory)
     names = list(projects) if projects else sorted(
         p.name for p in directory.iterdir() if p.is_dir())
@@ -205,7 +209,7 @@ def check_projects(project_directory: Path, spellings: Spellings,
         if not project_path.is_dir():
             yield Problem(ERROR, "no such project directory", name)
             continue
-        yield from check_project(project_path, spellings)
+        yield from check_project(project_path, spellings, names_only=names_only)
 
 
 def check_settings(settings_directory: Path) -> Iterator[Problem]:
@@ -251,16 +255,21 @@ def validate(
     *,
     projects: Iterable[str] | None = None,
     spellings: Spellings | None = None,
+    names_only: bool = False,
 ) -> list[Problem]:
-    """Every naming problem found, by place. ``None`` for a directory skips its check."""
+    """Every naming problem found, by place. ``None`` for a directory skips its check.
+
+    ``names_only`` checks the projects' names and the settings' places, and not the files,
+    the URNs or the registry.
+    """
     spellings = spellings or load_spellings()
-    problems = list(check_projects(project_directory, spellings, projects))
+    problems = list(check_projects(project_directory, spellings, projects, names_only=names_only))
     if settings_directory is not None:
         if Path(settings_directory).is_dir():
             problems.extend(check_settings(settings_directory))
         else:
             problems.append(Problem(WARNING, f"no settings directory at {settings_directory}"))
-    if registry_directory is not None:
+    if registry_directory is not None and not names_only:
         try:
             problems.extend(check_registry(registry_directory, spellings))
         except RegistryError as exc:
@@ -282,6 +291,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Common spellings and known variants.")
     parser.add_argument("--no-settings", action="store_true", help="Skip the settings check.")
     parser.add_argument("--no-registry", action="store_true", help="Skip the registry check.")
+    parser.add_argument("--names-only", action="store_true",
+                        help="Check only project names and where settings files are, not file "
+                             "names, URNs or the registry.")
     parser.add_argument("--check", action="store_true",
                         help="Exit non-zero if anything is wrong. For CI.")
     args = parser.parse_args(argv)
@@ -297,6 +309,7 @@ def main(argv: list[str] | None = None) -> int:
         None if args.no_registry else args.registry,
         projects=args.projects,
         spellings=spellings,
+        names_only=args.names_only,
     )
     for problem in problems:
         logger.info("%s", problem)

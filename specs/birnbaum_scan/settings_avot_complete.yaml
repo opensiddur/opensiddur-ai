@@ -14,15 +14,15 @@ typography:
     from: both
 priority:
   transclusion:
-  - birnbaum_ashkenaz_he_1949
-  - birnbaum_ashkenaz_en_1949
+  - hasiddur_hashalem-birnbaum-1949-he
+  - hasiddur_hashalem-birnbaum-1949-en
 annotations:
-- birnbaum_ashkenaz_en_1949
+- hasiddur_hashalem-birnbaum-1949-en
 print_once:
   commentary: true
 parallel:
   projects:
-  - birnbaum_ashkenaz_en_1949
+  - hasiddur_hashalem-birnbaum-1949-en
 declarations:
   opensiddur:pirkei-avot:
     chapter-1: true

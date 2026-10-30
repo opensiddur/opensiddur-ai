@@ -11,6 +11,7 @@ from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
 from .first_day import poetic_lines, words_with_notes, mixed_words, expansion_scope, append_words, verify_half_kaddish
 from .erev_rosh_hashanah import printed as ordinary_printed, targets
 from .penitential_second_day import wrap_hebrew
+from .identities import project_name
 
 SERVICE_PREFIX = 'urn:x-opensiddur:text:siddur:selichot/penitential_'
 DAYS = ('third', 'fourth', 'fifth')
@@ -200,7 +201,7 @@ def documents(source,day):
     manifest,units=readings(source,day)
     context_urn=service_urn(day)
     for lang in ['he','en']:
-        project=f'asher_selichot_{lang}_1912'
+        project=project_name(lang)
         root,text=document(lang,project,manifest['heading'][lang],context_urn)
         service=element(element(text,'body'),'div',corresp=context_urn)
         first=units[0]['fragments'][0][lang];pb(service,first['scan'],first['printed_page'])
@@ -242,7 +243,7 @@ def verify_readings(source,project_directory,day):
     normalize=lambda s:' '.join(unicodedata.normalize('NFKD',s).split())
     manifest,units=readings(source,day);verify_evidence(source,units,day)
     for lang in ['he','en']:
-        project=project_directory/f'asher_selichot_{lang}_1912'
+        project=project_directory/project_name(lang)
         service=etree.parse(str(project/(service_filename(day)))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
         if normalize(service.find(f'{{{TEI}}}head').text)!=normalize(manifest['heading'][lang]):raise ValueError('penitential day heading changed')
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]

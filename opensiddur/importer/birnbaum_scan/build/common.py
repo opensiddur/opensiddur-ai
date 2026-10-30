@@ -9,8 +9,8 @@ from pathlib import Path
 
 from opensiddur.importer.birnbaum_scan import SCAN_PAGE_PREFIX
 
-PROJECT_HE = "birnbaum_ashkenaz_he_1949"
-PROJECT_EN = "birnbaum_ashkenaz_en_1949"
+PROJECT_HE = "hasiddur_hashalem-birnbaum-1949-he"
+PROJECT_EN = "hasiddur_hashalem-birnbaum-1949-en"
 #: Where the TEI is written. The opensiddur-projects submodule by default, so a fresh
 #: checkout writes somewhere that exists; --project-directory overrides it, spelled the way
 #: the compiler and pdf exporters already spell that flag.

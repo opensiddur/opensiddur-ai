@@ -5,12 +5,12 @@ from opensiddur.importer.birnbaum_scan.build.page_references import dynamic_inst
 
 
 class TestDynamicInstructions(unittest.TestCase):
-    def note(self, content, project='birnbaum_ashkenaz_he_1949'):
+    def note(self, content, project='hasiddur_hashalem-birnbaum-1949-he'):
         return dynamic_instructions('<tei:note xmlns:tei="http://www.tei-c.org/ns/1.0" type="instruction">' + content + '</tei:note>', project)
 
     def test_facing_hallel_references_use_their_own_edition(self):
         for lang, number in [('he', 565), ('en', 566)]:
-            project = 'birnbaum_ashkenaz_' + lang + '_1949'
+            project = 'hasiddur_hashalem-birnbaum-1949-' + lang
             out = self.note(f'Hallel (page {number}) is recited here.', project)
             self.assertIn('hallel/blessing@' + project, out)
             self.assertNotIn(str(number), out)
@@ -29,11 +29,11 @@ class TestDynamicInstructions(unittest.TestCase):
 
     def test_commentary_bibliographic_pages_are_unchanged(self):
         xml = '<tei:note type="commentary">Maḥzor Vitry (page 214).</tei:note>'
-        self.assertEqual(dynamic_instructions(xml, 'birnbaum_ashkenaz_he_1949'), xml)
+        self.assertEqual(dynamic_instructions(xml, 'hasiddur_hashalem-birnbaum-1949-he'), xml)
 
     def test_known_misprinted_destination(self):
-        out = self.note('Full-Kaddish by the Reader on page 405, where the service is continued.', 'birnbaum_ashkenaz_en_1949')
-        self.assertIn('siddur:shabbat/musaf/kaddish@birnbaum_ashkenaz_en_1949', out)
+        out = self.note('Full-Kaddish by the Reader on page 405, where the service is continued.', 'hasiddur_hashalem-birnbaum-1949-en')
+        self.assertIn('siddur:shabbat/musaf/kaddish@hasiddur_hashalem-birnbaum-1949-en', out)
 
     def test_musaf_direction_targets_musaf_despite_printed_page_error(self):
         out = self.note('On festivals, continue with Musaf on page 585.')

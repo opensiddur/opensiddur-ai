@@ -199,11 +199,11 @@ change to the calendar derivations needs the same change in `calendar.js`.
 
 The books a release builds are settings files in
 [`opensiddur-projects/settings/`](https://github.com/opensiddur/opensiddur-projects/tree/main/settings),
-one subdirectory per book holding that book's variants:
+one subdirectory per book, named for the project it is built from, holding that book's variants:
 
 ```
 settings/
-  humash/
+  chumash-opensiddur-he/
     annual.yaml       # description: one parsha a week, the annual cycle
     triennial.yaml    # description: a third of each parsha, the triennial cycle
 ```
@@ -216,19 +216,19 @@ opensiddur-processor release (see [RELEASE_PROCEDURE.md](../../RELEASE_PROCEDURE
 (`books --list`, which leaves out a book whose `requires_processor:` that release
 does not meet)
 and starts a `release-book.yml` job for each, which builds that book in the formats its
-`formats:` lists (below) and attaches them to the release as `<book>-<variant>-<tag>.html` and
-`.pdf` (e.g. `humash-annual-v20261101.pdf`).
+`formats:` lists (below) and attaches them to the release as `<project>-<variant>-<tag>.html` and
+`.pdf` (e.g. `chumash-opensiddur-he-annual-v20261201.pdf`).
 
 To build them locally (after syncing the reference database):
 
 ```bash
 uv run python -m opensiddur.exporter.books                  # all books, into ./books/
-uv run python -m opensiddur.exporter.books humash           # every variant of one book
-uv run python -m opensiddur.exporter.books humash/annual    # one variant
+uv run python -m opensiddur.exporter.books chumash-opensiddur-he          # every variant of one book
+uv run python -m opensiddur.exporter.books chumash-opensiddur-he/annual   # one variant
 uv run python -m opensiddur.exporter.books --check          # validate only, build nothing
-uv run python -m opensiddur.exporter.books --list           # names, as JSON: ["humash/annual", ...]
+uv run python -m opensiddur.exporter.books --list           # names, as JSON: ["chumash-opensiddur-he/annual", ...]
 uv run python -m opensiddur.exporter.books --format pdf     # only the printed books
-uv run python -m opensiddur.exporter.books humash/annual --formats  # its formats, as JSON
+uv run python -m opensiddur.exporter.books chumash-opensiddur-he/annual --formats  # its formats, as JSON
 ```
 
 Each book is built in its own `formats:`. `--format` narrows that to one; a book that does not
@@ -263,7 +263,7 @@ description: >
   One parsha a week, the annual cycle. The triennial variant beside it
   reads a third of each parsha.
 book:
-  project: humash
+  project: chumash-opensiddur-he
   file_name: index.xml
   title: Humash   # optional
 ```
@@ -309,7 +309,7 @@ priority:
     - ...
 ```
 
-When a file is transcluded by URN and a project is not specified, take the file from the URNs in this list of projects, in this order (first to last). For example, if I reference: `urn:x-opensiddur:text:bible:genesis/1/1`, and my transclusion priority is `wlc`, then `jps1917`, the text will be derived from the WLC.
+When a file is transcluded by URN and a project is not specified, take the file from the URNs in this list of projects, in this order (first to last). For example, if I reference: `urn:x-opensiddur:text:bible:genesis/1/1`, and my transclusion priority is `tanakh-wlc-he`, then `tanakh-jps-1917-en`, the text will be derived from the WLC.
 
 If no transclusion priority is specified, the project that owns the first file processed is used.
 
@@ -356,7 +356,7 @@ appears is set at the first occurrence where it is in context.
 ```yaml
 parallel:
   projects:
-    - jps1917
+    - tanakh-jps-1917-en
   column_order: primary_first   # or primary_last
 ```
 

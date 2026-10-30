@@ -44,7 +44,8 @@ PAGE = re.compile(r'(\bpages?\s+)(\d+)(?:[–-](\d+))?', re.I)
 def dynamic_instructions(text, project):
     """Replace only rubrics (instructions and descriptions), leaving bibliographic citations
     untouched."""
-    side = int('_en_' in project)
+    # The English facing page is one lower; a project's last field is its language.
+    side = int(project.endswith('-en'))
 
     def ref(urn):
         return f'<tei:ref type="page" target="{PREFIX}{urn}@{project}"/>'

@@ -13,7 +13,7 @@ class TestComposition(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)
         for lang,title in [('he','כותרת'),('en','Heading')]:
-            p=self.root/f'birnbaum_ashkenaz_{lang}_1949';p.mkdir()
+            p=self.root/f'hasiddur_hashalem-birnbaum-1949-{lang}';p.mkdir()
             p.joinpath('index.xml').write_text(f'''<tei:TEI xmlns:tei="{T}" xmlns:j="{J}"><tei:text><tei:body>
             <tei:div corresp="{TEXT}section"><tei:head xml:lang="{lang}">{title}</tei:head>
             <j:conditional xml:id="local"><tei:fs type="opensiddur:recitation"><tei:f name="repetition"><tei:binary value="true"/></tei:f></tei:fs></j:conditional>

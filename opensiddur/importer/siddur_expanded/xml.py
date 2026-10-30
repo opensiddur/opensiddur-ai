@@ -2,13 +2,15 @@
 from html import escape
 from itertools import count
 from lxml import etree as E
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_HE as BIRNBAUM_PROJECT
+from opensiddur.importer.humash.build import PROJECT as HUMASH_PROJECT
 
 T = 'http://www.tei-c.org/ns/1.0'
 J = 'http://jewishliturgy.org/ns/jlptei/2'
 NS = {'tei': T, 'j': J}
 XID = '{http://www.w3.org/XML/1998/namespace}id'
 ROOT = 'urn:x-opensiddur:text:siddur:expanded'
-PROJECT = 'siddur_expanded'
+PROJECT = 'siddur_expanded-opensiddur-he'
 TEXT = 'urn:x-opensiddur:text:'
 
 def feature(group, name, value=True, maximum=None):
@@ -56,7 +58,7 @@ def document(name, he, en, body):
 <tei:respStmt><tei:resp key="mrk">Arrangement and markup</tei:resp><tei:name ref="urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein">Efraim Feinstein</tei:name></tei:respStmt></tei:titleStmt>
 <tei:editionStmt><tei:p>Expanded Ashkenazi siddur: prayers in recitation order. Prayer words are transcluded from their source editions. Birnbaum supplies selected High Holiday services and rites, not a complete mahzor.</tei:p></tei:editionStmt>
 <tei:publicationStmt><tei:distributor><tei:ref target="https://opensiddur.org">Open Siddur Project</tei:ref></tei:distributor><tei:idno type="urn">{urn}@{PROJECT}</tei:idno><tei:availability status="free"><tei:licence target="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0</tei:licence></tei:availability></tei:publicationStmt>
-<tei:sourceDesc>{source}<tei:bibl><tei:title>Birnbaum, ha-Siddur ha-Shalem (1949)</tei:title><tei:ptr target="urn:x-opensiddur:text:siddur:siddur@birnbaum_ashkenaz_he_1949"/></tei:bibl><tei:bibl><tei:title>Humash reading divisions</tei:title><tei:ptr target="urn:x-opensiddur:text:bible:humash@humash"/></tei:bibl></tei:sourceDesc></tei:fileDesc></tei:teiHeader>
+<tei:sourceDesc>{source}<tei:bibl><tei:title>Birnbaum, ha-Siddur ha-Shalem (1949)</tei:title><tei:ptr target="urn:x-opensiddur:text:siddur:siddur@{BIRNBAUM_PROJECT}"/></tei:bibl><tei:bibl><tei:title>Humash reading divisions</tei:title><tei:ptr target="urn:x-opensiddur:text:bible:humash@{HUMASH_PROJECT}"/></tei:bibl></tei:sourceDesc></tei:fileDesc></tei:teiHeader>
 <tei:text><tei:body><tei:div corresp="{urn}">{head(he,en) if name in ['index','appendices'] else ''}{body}</tei:div></tei:body></tei:text></tei:TEI>'''
 
 def parse_fragment(text): return E.fromstring(f'<root xmlns:tei="{T}" xmlns:j="{J}">{text}</root>'.encode())

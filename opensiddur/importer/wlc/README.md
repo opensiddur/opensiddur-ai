@@ -18,12 +18,12 @@ To convert the data to JLPTEI 2:
 uv run python -m opensiddur.importer.wlc.wlc
 ```
 
-The output will be in the `opensiddur-projects/project/wlc` directory (the opensiddur-projects submodule).
+The output will be in the `opensiddur-projects/project/tanakh-wlc-he` directory (the opensiddur-projects submodule).
 
 To use external clones instead of the submodules, pass the paths explicitly:
 
 ```bash
 uv run python -m opensiddur.importer.wlc.wlc \
   --sourcetexts-root /path/to/sourcetexts/sources \
-  --project-dir /path/to/opensiddur-projects/project/wlc
+  --project-dir /path/to/opensiddur-projects/project/tanakh-wlc-he
 ```

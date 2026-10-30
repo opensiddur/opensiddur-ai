@@ -296,6 +296,16 @@ class MainTestCase(unittest.TestCase):
         self.assertEqual(self.run_main("--check"), 1)
         self.assertEqual(self.run_main(), 0)
 
+    def test_names_only_checks_project_names_and_settings_places(self):
+        self.corpus.project("tzom_gedaliah-asher-1912-he", files={"tsom_(fast)": index("he")})
+        self.corpus.registry_records({"urn": f"{TEXT}prayer:tsom", "status": "canonical"})
+        self.assertEqual(self.run_main("--check"), 1)
+        self.assertEqual(self.run_main("--check", "--names-only"), 0)
+        self.corpus.settings_file("elsewhere", "annual", "tzom_gedaliah-asher-1912-he")
+        self.assertEqual(self.run_main("--check", "--names-only"), 1)
+        self.corpus.project("old_name")
+        self.assertEqual(self.run_main("--check", "--names-only", "--no-settings"), 1)
+
     def test_settings_and_registry_can_be_skipped(self):
         self.corpus.settings_file("elsewhere", "annual", "tanakh-wlc-he")
         self.corpus.registry_records({"urn": f"{TEXT}prayer:tsom", "status": "canonical"})

@@ -76,7 +76,7 @@ bash scripts/build-schema.sh
 
 **Validate a JLPTEI file** (requires `jing`: `apt install jing`):
 ```bash
-uv run python -m opensiddur.importer.util.validation opensiddur-projects/project/wlc/ruth.xml
+uv run python -m opensiddur.importer.util.validation opensiddur-projects/project/tanakh-wlc-he/ruth.xml
 ```
 
 **Download Feinstein/Heidenheim haggadah sources** (OSP compilation + HebrewBooks PDF):
@@ -251,7 +251,9 @@ and Hebrew/English alignment after regeneration.
   spelling listed in `specs/naming/spellings.yaml`. A file and a URN for the same text spell
   its words the same way.
 - When you settle a spelling the table did not decide, add it to `spellings.yaml`. Check with
-  `uv run python -m opensiddur.common.validate_names [project ...]`.
+  `uv run python -m opensiddur.common.validate_names [project ...]`. Pull requests to
+  opensiddur-projects must pass its `--names-only` check (project names and settings places);
+  the full check, of file names, URNs and their spelling, is advisory until they are respelled.
 
 ### Testing Conventions
 

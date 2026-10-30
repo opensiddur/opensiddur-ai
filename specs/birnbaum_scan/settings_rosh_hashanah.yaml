@@ -1,15 +1,15 @@
 annotations:
-- birnbaum_ashkenaz_en_1949
+- hasiddur_hashalem-birnbaum-1949-en
 declarations: {}
 parallel:
   projects:
-  - birnbaum_ashkenaz_en_1949
+  - hasiddur_hashalem-birnbaum-1949-en
 print_once:
   commentary: true
 priority:
   transclusion:
-  - birnbaum_ashkenaz_he_1949
-  - birnbaum_ashkenaz_en_1949
+  - hasiddur_hashalem-birnbaum-1949-he
+  - hasiddur_hashalem-birnbaum-1949-en
 typography:
   fonts:
     hebrew:

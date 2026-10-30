@@ -14,22 +14,22 @@ priority:
   # The order decides only which edition's words are set: every project mints URNs in the one
   # canonical verse division, so any order resolves the same verses.
   transclusion:
-    - humash
-    - miqra_al_pi_hamasorah
-    - wlc
-    - jps1917
+    - chumash-opensiddur-he
+    - tanakh-miqra_al_pi_hamasorah-he
+    - tanakh-wlc-he
+    - tanakh-jps-1917-en
   instructions:
-    - humash
-    - miqra_al_pi_hamasorah
+    - chumash-opensiddur-he
+    - tanakh-miqra_al_pi_hamasorah-he
 
 annotations:
-  - miqra_al_pi_hamasorah
+  - tanakh-miqra_al_pi_hamasorah-he
 
 # Hebrew against the JPS 1917 English. Drop this block for a Hebrew-only volume.
 parallel:
   projects:
-    - miqra_al_pi_hamasorah
-    - jps1917
+    - tanakh-miqra_al_pi_hamasorah-he
+    - tanakh-jps-1917-en
   column_order: primary_first
 
 declarations:

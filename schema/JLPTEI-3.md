@@ -61,8 +61,8 @@ plain, project-root-relative file/fragment pointer instead of a URN:
 ```
 
 with no file extension (`.xml` is assumed). For example,
-`/heidenheim_haggadah_1822/index#project_source_bibl` addresses the `tei:bibl` with that
-`xml:id` in `heidenheim_haggadah_1822/index.xml`. `xml:id` is unique within a file, so resolving
+`/haggadah_leleil_shimmurim-heidenheim-1822-he/index#project_source_bibl` addresses the `tei:bibl` with that
+`xml:id` in `haggadah_leleil_shimmurim-heidenheim-1822-he/index.xml`. `xml:id` is unique within a file, so resolving
 this kind of pointer only requires opening the named file — no URN or reference-database lookup.
 
 `condition` URNs name a condition that cannot be calculated — in practice a textual variant,
@@ -77,7 +77,7 @@ urn:x-opensiddur:condition:haggadah:magid/lefikach/shira_chadasha
 
 An example complete Biblical URN is:
 ```urn
-urn:x-opensiddur:text:bible:genesis/1/1@wlc
+urn:x-opensiddur:text:bible:genesis/1/1@tanakh-wlc-he
 ```
 which identifies the verse Genesis 1:1 in the WLC source.
 The URN `urn:x-opensiddur:text:bible:genesis/1` identifies the chapter Genesis 1 in *every* source. A biblical
@@ -241,7 +241,7 @@ each run long. Neither division is a refinement of the other, but their union is
 edition's division is a coarsening of that union. An edition verse is therefore always a whole number of
 consecutive canonical verses, which is what makes a mapping possible at all.
 
-The canonical division is the one the Leningrad Codex numbers, so `wlc` needs no mapping. Exodus 20 has **26**
+The canonical division is the one the Leningrad Codex numbers, so `tanakh-wlc-he` needs no mapping. Exodus 20 has **26**
 canonical verses and Deuteronomy 5 has **33**:
 
 | canonical | text | MAM (ta'am tachton) | JPS 1917 (common) |
@@ -523,7 +523,7 @@ Every document has a TEI header with a standardized structure.
   * `alt-sub` for an alternate version of the subtitle (translation/transliteration)
 * `LANGUAGE` can be any ISO language code
 * `PROJECT_ID` is the project's directory name under `project/` — for example
-  `heidenheim_haggadah_1822`. The `#project_source_bibl` fragment addresses the `tei:bibl` of
+  `haggadah_leleil_shimmurim-heidenheim-1822-he`. The `#project_source_bibl` fragment addresses the `tei:bibl` of
   that name in the project's `index.xml`.
 * `FROM_PAGE` and `TO_PAGE` are page designations as they are printed in the source, not sequence
   numbers in a scan. Where a source is foliated rather than paginated, use recto/verso designations
@@ -2095,7 +2095,7 @@ Use an empty `tei:ref` with `type="page"` and an edition-qualified text URN:
 ```xml
 <tei:note type="instruction" xml:lang="en">
   <tei:seg type="optional-page-reference">Hallel (page
-    <tei:ref type="page" target="urn:x-opensiddur:text:prayer:hallel/blessing@birnbaum_ashkenaz_he_1949"/>)
+    <tei:ref type="page" target="urn:x-opensiddur:text:prayer:hallel/blessing@hasiddur_hashalem-birnbaum-1949-he"/>)
     is recited here on Rosh Ḥodesh, Ḥol ha-Mo‘ed and Ḥanukkah.</tei:seg>
 </tei:note>
 ```

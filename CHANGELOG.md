@@ -50,6 +50,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `opensiddur-projects/settings/` must now declare `requires_processor:`.
 
 ### Changed
+- **The projects are renamed** by `specs/NAMING_SCHEME.md` (#266), and so are the books built
+  from them, whose release files are now `<project>-<variant>-<tag>.pdf`
+  (`chumash-opensiddur-he-annual-…`, was `humash-annual-…`):
+
+  | Was | Is |
+  |---|---|
+  | `asher_selichot_{he,en}_1912` | `selichoth-asher-1912-{he,en}` |
+  | `birnbaum_ashkenaz_{he,en}_1949` | `hasiddur_hashalem-birnbaum-1949-{he,en}` |
+  | `heidenheim_haggadah_1822` | `haggadah_leleil_shimmurim-heidenheim-1822-he` |
+  | `feinstein_haggadah_translation_2009` | `haggadah_leleil_shimmurim-feinstein-2009-en` |
+  | `humash` | `chumash-opensiddur-he` |
+  | `siddur_expanded` | `siddur_expanded-opensiddur-he` |
+  | `jps1917` | `tanakh-jps-1917-en` |
+  | `miqra_al_pi_hamasorah` | `tanakh-miqra_al_pi_hamasorah-he` |
+  | `wlc` | `tanakh-wlc-he` |
+  | `original-example`, `translation-example` | `example_original-he`, `example_translation-en` |
+
+  The importers write the new names, and a URN's `@project` suffix follows. A settings file
+  naming a project the old way no longer finds it. An electronic book's saved settings are
+  kept per book, keyed in part by its project, so its readers start from the book's defaults
+  once.
 - An opensiddur-processor release no longer builds books; `release-books.yml` is gone, and
   `release-book.yml` builds one book for an opensiddur-projects release, from a given projects
   commit with a given processor release.

@@ -76,7 +76,7 @@ JLPTEI sources are compiled into `opensiddur-projects/project`, the
 `--project-directory` overrides it with an external clone.
 
 Its `settings/` directory holds the exporter settings for the released books, one subdirectory
-per book with a settings file per variant (`settings/humash/annual.yaml`). Every release
+per book with a settings file per variant (`settings/chumash-opensiddur-he/annual.yaml`). Every release
 builds them into electronic books (HTML) and PDFs, as each one's `formats:` lists, attached to
 the GitHub release; see
 [`opensiddur/exporter/README.md`](opensiddur/exporter/README.md#released-books).
@@ -106,11 +106,11 @@ resolves transclusions, annotations, and parallel texts,
 and outputs a single “compiled” XML file that can be 
 converted into a final printable format (eg, PDF).
 
-Example (compile `project/wlc/ruth.xml` to `compiled.xml`):
+Example (compile `project/tanakh-wlc-he/ruth.xml` to `compiled.xml`):
 
 ```bash
 uv run python -m opensiddur.exporter.compiler \
-  --project wlc \
+  --project tanakh-wlc-he \
   --file_name ruth.xml \
   --output_file compiled.xml
 ```
@@ -119,7 +119,7 @@ Example with a settings YAML (controls project priorities, annotations, and opti
 
 ```bash
 uv run python -m opensiddur.exporter.compiler \
-  --project wlc \
+  --project tanakh-wlc-he \
   --file_name ruth.xml \
   --settings doc/exporter-settings.example.yaml \
   --output_file compiled.xml

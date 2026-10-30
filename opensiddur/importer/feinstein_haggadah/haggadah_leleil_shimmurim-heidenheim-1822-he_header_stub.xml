@@ -17,7 +17,7 @@
       <tei:distributor>
         <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
       </tei:distributor>
-      <tei:idno type="urn">urn:x-opensiddur:text:haggadah:haggadah@heidenheim_haggadah_1822</tei:idno>
+      <tei:idno type="urn">urn:x-opensiddur:text:haggadah:haggadah@haggadah_leleil_shimmurim-heidenheim-1822-he</tei:idno>
       <tei:availability status="free">
         <tei:licence target="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International</tei:licence>
       </tei:availability>

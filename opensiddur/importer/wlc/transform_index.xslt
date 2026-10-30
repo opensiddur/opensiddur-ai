@@ -12,6 +12,8 @@
 
     <!-- File URI of the WLC root (…/sources/wlc): directory that contains Books/. Trailing / required for resolve-uri; set from wlc.py. -->
     <xsl:param name="wlc-root-uri" as="xs:string" select="''"/>
+    <!-- The project these files belong to, for the @project of their URNs. -->
+    <xsl:param name="project" as="xs:string" required="yes"/>
     <xsl:variable name="tanach-index-books" as="node()*" select="if (normalize-space($wlc-root-uri)) then doc(resolve-uri('Books/TanachIndex.xml', $wlc-root-uri))//book else doc(resolve-uri('../../../sources/wlc/Books/TanachIndex.xml', static-base-uri()))//book"/>
     
     <xsl:mode on-no-match="fail"/>
@@ -115,7 +117,7 @@
             <tei:distributor>
                 <tei:ref target="http://opensiddur.org">Open Siddur Project</tei:ref>
             </tei:distributor>
-            <tei:idno type="urn">urn:x-opensiddur:text:bible:tanakh@wlc</tei:idno>
+            <tei:idno type="urn">urn:x-opensiddur:text:bible:tanakh@<xsl:value-of select="$project"/></tei:idno>
             <tei:availability status="free">
                 <tei:licence target="http://www.creativecommons.org/publicdomain/zero/1.0/">Creative Commons Zero Public Domain Declaration (CC0)</tei:licence>
             </tei:availability>

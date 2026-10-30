@@ -39,19 +39,19 @@ priority:
 # Birnbaum wrote only in English -- his introduction has no Hebrew counterpart
 # to prefer, and without a fallback the transclusion would fail rather than
 # quietly resolve to the one project that carries it.
-  transclusion: [birnbaum_ashkenaz_he_1949, birnbaum_ashkenaz_en_1949]
+  transclusion: [hasiddur_hashalem-birnbaum-1949-he, hasiddur_hashalem-birnbaum-1949-en]
 # Birnbaum's own footnotes. The apparatus is realised in the English project only -- the
 # commentary is English prose about Hebrew words, as his introduction is -- so this names
 # the one project that carries it. In a parallel compile each column narrows this to its
 # own project, which is what keeps a note attached to a text both sides realise from being
 # printed in both columns.
-annotations: [birnbaum_ashkenaz_en_1949]
+annotations: [hasiddur_hashalem-birnbaum-1949-en]
 # The book sets each commentary once, where its text first appears, though the text
 # itself is printed again in every service that uses it.
 print_once:
   commentary: true
 parallel:
-  projects: [birnbaum_ashkenaz_en_1949]
+  projects: [hasiddur_hashalem-birnbaum-1949-en]
 declarations:
   opensiddur:gregorian-date:
     year: 2026

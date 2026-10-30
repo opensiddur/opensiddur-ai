@@ -8,6 +8,7 @@ from itertools import count
 from pathlib import Path
 import unicodedata
 from lxml import etree as E
+from opensiddur.importer.birnbaum_scan.build.common import PROJECT_EN, PROJECT_HE
 from .xml import T, J, NS, XID, TEXT, feature, parse_fragment, transclude, serialize
 
 class Composer:
@@ -15,7 +16,7 @@ class Composer:
         self.directory = Path(project_directory)
         self.units = {}; self.english = {}; self.used = set(); self.depth = 0; self.occurrences = count(1)
         for lang, target in [('he', self.units), ('en', self.english)]:
-            for path in sorted((self.directory/f'birnbaum_ashkenaz_{lang}_1949').glob('*.xml')):
+            for path in sorted((self.directory/{'he': PROJECT_HE, 'en': PROJECT_EN}[lang]).glob('*.xml')):
                 root = E.parse(str(path))
                 for div in root.xpath('//tei:body/tei:div[@corresp]', namespaces=NS):
                     target[div.get('corresp')] = div

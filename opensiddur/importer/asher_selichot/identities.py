@@ -6,6 +6,13 @@ The edition belongs only in the publication URN's @project suffix.
 """
 
 BASE = 'urn:x-opensiddur:text:'
+
+
+def project_name(lang):
+    """The project of Asher's book in ``lang`` (specs/NAMING_SCHEME.md): it prints its own name
+    in Latin letters, Selichoth."""
+    return f'selichoth-asher-1912-{lang}'
+
 # reading ID: (filename stem, canonical text identity)
 TEXTS = {
     'invocation': ('lekha_adonai_hatsedaqah', 'prayer:lekha_adonai_hatsedaqah'),

@@ -8,6 +8,7 @@ from pathlib import Path
 from lxml import etree
 
 from opensiddur.exporter.constants import TEI_NS
+from opensiddur.common.versification import JPS_PROJECT
 from opensiddur.importer.jps1917.convert_wikisource import (
     get_credits_pages, header, tei_file, process_mediawiki, validate_and_write_tei_file,
     book_file, index_file, Book, Index, mediawiki_xml_to_tei, main, make_project_directory,
@@ -172,7 +173,7 @@ class TestHeader(unittest.TestCase):
         self.assertIn("</tei:teiHeader>", result)
         self.assertIn("<tei:title type=\"main\" xml:lang=\"en\">Genesis</tei:title>", result)
         self.assertIn("<tei:title type=\"alt\" xml:lang=\"he\">בראשית</tei:title>", result)
-        self.assertIn("urn:x-opensiddur:text:bible:tanakh@jps1917", result)
+        self.assertIn(f"urn:x-opensiddur:text:bible:tanakh@{JPS_PROJECT}", result)
         
         # Should not contain subtitle elements
         self.assertNotIn("type=\"alt-sub\"", result)
@@ -315,7 +316,7 @@ class TestHeader(unittest.TestCase):
         )
         
         # Should contain custom URN
-        self.assertIn("urn:x-opensiddur:text:custom_namespace:custom_entry:subsection@jps1917", result)
+        self.assertIn(f"urn:x-opensiddur:text:custom_namespace:custom_entry:subsection@{JPS_PROJECT}", result)
         
         # Validate XML structure (namespaces added automatically by validate_with_start)
         is_valid, errors = validate_with_start(result, "tei:teiHeader")
@@ -1049,7 +1050,7 @@ class TestValidateAndWriteTeiFile(unittest.TestCase):
         validate_and_write_tei_file("<tei:TEI>Raw XML</tei:TEI>", "my_book")
         
         # Verify file was opened with correct path
-        expected_path = Path(self.temp_dir) / "jps1917" / "my_book.xml"
+        expected_path = Path(self.temp_dir) / JPS_PROJECT / "my_book.xml"
         mock_file.assert_called_once_with(expected_path, "w")
     
     @patch('opensiddur.importer.jps1917.convert_wikisource.validate')
