@@ -47,13 +47,14 @@ How the export changes:
 
 ## Decisions
 
-- **One project per post and language**: `osp-<post_id>-<lang>`, lowercase
-  (`osp-12322-he-latn`). The ID is stable, so a later change of title or slug renames
-  nothing.
+- **One project per post and language**, named `<title>-<author>-<date>-<lang>` by
+  `specs/NAMING_SCHEME.md` (`maoz_tsur-mordekhai-1240-he-latn`). The post ID is recorded in
+  each project's `index.xml`, which is how a post's projects are found again; a retitled post's
+  project is renamed. The text file is named from the post's URN.
 - **Source-only posts are one project.** An empty "Contribute a translation" column is
   dropped silently. If that column has text, it usually holds the original of quoted
   verses, so it is imported as a source column.
-- **Transliteration columns are their own projects**, e.g. `osp-<id>-he-Latn`.
+- **Transliteration columns are their own projects**, e.g. `maoz_tsur-mordekhai-1240-he-latn`.
   - On the site they are written by hand and follow no single scheme.
   - Some are historical sources in their own right, such as Leo Wiener's 1898
     romanization of Yiddish.

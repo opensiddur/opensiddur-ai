@@ -8,6 +8,7 @@ from opensiddur.importer.opensiddur_org.convert import (
     convert_post,
     load_context,
     plan_post,
+    project_ids,
     register_urns,
     select_posts,
 )
@@ -23,6 +24,12 @@ from opensiddur.tests.importer.opensiddur_org.support import (
 )
 
 URN = "urn:x-opensiddur:text:prayer:a_song"
+
+
+def imported_index(post_id: int) -> str:
+    """An index.xml as a converted post's, as far as finding its projects goes."""
+    return (f'<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader>'
+            f'<idno type="opensiddur.org">{post_id}</idno></teiHeader></TEI>')
 
 
 class ConvertTestCase(unittest.TestCase):
@@ -56,6 +63,11 @@ class ConvertTestCase(unittest.TestCase):
     def plan(self, index: int):
         return plan_post(parse_post(self.posts[index]), self.context)
 
+    def convert(self, index: int) -> list[str]:
+        ids = project_ids([self.plan(i) for i in range(len(self.posts))], self.projects)
+        return convert_post(self.plan(index), self.context, self.projects, ids=ids,
+                            registry_directory=self.registry)
+
 
 class TestPlans(ConvertTestCase):
     def test_standard(self) -> None:
@@ -87,23 +99,31 @@ class TestPlans(ConvertTestCase):
 
 class TestConversion(ConvertTestCase):
     def test_writes_valid_projects(self) -> None:
-        written = convert_post(self.plan(0), self.context, self.projects, registry_directory=self.registry)
-        self.assertEqual(written, ["osp-101-he", "osp-101-en"])
-        self.assertEqual(sorted(p.name for p in (self.projects / "osp-101-en").iterdir()), ["a-song.xml", "index.xml"])
+        written = self.convert(0)
+        # The source is the poet's, of its year; the translation is the translator's.
+        self.assertEqual(written, ["a_song-poet-2020-he", "a_song-translator-en"])
+        self.assertEqual(sorted(p.name for p in (self.projects / "a_song-translator-en").iterdir()),
+                         ["a_song_101.xml", "index.xml"])
 
-    def test_removes_languages_the_post_no_longer_has(self) -> None:
-        stale = self.projects / "osp-101-de"
-        stale.mkdir()
-        (stale / "index.xml").write_text("<x/>", encoding="utf-8")
-        (self.projects / "osp-1010-de").mkdir()  # another post's project is left alone
-        convert_post(self.plan(0), self.context, self.projects, registry_directory=self.registry)
-        self.assertFalse(stale.exists())
-        self.assertTrue((self.projects / "osp-1010-de").exists())
+    def test_removes_projects_the_post_no_longer_makes(self) -> None:
+        # A language it lost, or a name its retitling changed: found by the post ID, not the name.
+        for name, post_id in (("old_title-poet-2020-de", 101), ("a_song-poet-2020-yi", 1010)):
+            (self.projects / name).mkdir()
+            (self.projects / name / "index.xml").write_text(imported_index(post_id), encoding="utf-8")
+        (self.projects / "tanakh-wlc-he").mkdir()  # a project no post made
+        self.convert(0)
+        self.assertFalse((self.projects / "old_title-poet-2020-de").exists())
+        self.assertTrue((self.projects / "a_song-poet-2020-yi").exists())
+        self.assertTrue((self.projects / "tanakh-wlc-he").exists())
+
+    def test_a_name_another_project_has_adds_the_post_id(self) -> None:
+        (self.projects / "a_song-poet-2020-he").mkdir()  # a project no post made
+        self.assertEqual(self.convert(0), ["a_song-poet-2020-101-he", "a_song-translator-en"])
 
     def test_rerun_is_identical(self) -> None:
-        convert_post(self.plan(0), self.context, self.projects, registry_directory=self.registry)
+        self.convert(0)
         before = {p: p.read_bytes() for p in self.projects.rglob("*.xml")}
-        convert_post(self.plan(0), self.context, self.projects, registry_directory=self.registry)
+        self.convert(0)
         self.assertEqual(before, {p: p.read_bytes() for p in self.projects.rglob("*.xml")})
 
     def test_register_new_urns_once(self) -> None:

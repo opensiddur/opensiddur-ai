@@ -11,7 +11,6 @@ from opensiddur.importer.opensiddur_org.tei_builder import (
     build_project,
     front_language,
     iso_date,
-    project_id,
     text_file_stem,
 )
 from opensiddur.importer.opensiddur_org.urns import PostUrns
@@ -32,6 +31,10 @@ URN = "urn:x-opensiddur:text:prayer:a_song"
 ALLOW = LicenceDecision("allow", LICENCES["cc-by-sa-4.0"])
 
 
+def project_id(lang: str) -> str:
+    return f"a_song-poet-2020-{lang.lower()}"
+
+
 def build(post_data=None, *, urns: PostUrns | None = None, licence: LicenceDecision = ALLOW, with_front=None):
     post = parse_post(post_data or make_post())
     contributors = Contributors.load(FIXTURES / "contributors_by_id.json")
@@ -43,6 +46,7 @@ def build(post_data=None, *, urns: PostUrns | None = None, licence: LicenceDecis
             post, index, column, urns=urns, credits=credits, licence=licence,
             upstream_commit="0123456789abcdef", upstream_commit_date="2026-10-01",
             with_front=column.lang == "en" if with_front is None else with_front,
+            project_id=project_id(column.lang),
         )
         out[column.lang] = files
     return post, out
@@ -62,12 +66,16 @@ class TestDocuments(unittest.TestCase):
 
     def text_of(self, lang: str):
         files = self.projects[lang].files
-        return tree(files[text_file_stem(self.post)])
+        return tree(files[text_file_stem(URN)])
 
     def test_project_per_language(self) -> None:
         self.assertEqual(sorted(self.projects), ["en", "he"])
-        self.assertEqual(self.projects["en"].project_id, project_id(101, "en"))
-        self.assertEqual(project_id(1, "he-Latn"), "osp-1-he-latn")
+        self.assertEqual(self.projects["en"].project_id, "a_song-poet-2020-en")
+        self.assertEqual(sorted(self.projects["en"].files), ["a_song", "index"])
+
+    def test_text_file_is_named_from_the_urn(self) -> None:
+        self.assertEqual(text_file_stem(URN), "a_song")
+        self.assertEqual(text_file_stem("urn:x-opensiddur:text:poem:maoz_tzur/1@p-he#x"), "maoz_tzur_1")
 
     def test_every_document_validates(self) -> None:
         for lang, files in self.projects.items():
@@ -97,7 +105,7 @@ class TestDocuments(unittest.TestCase):
 
     def test_header_points_at_the_index(self) -> None:
         ptr = self.text_of("en").find(".//tei:sourceDesc/tei:bibl/tei:ptr", NS)
-        self.assertEqual(ptr.get("target"), "/osp-101-en/index#project_source_bibl")
+        self.assertEqual(ptr.get("target"), "/a_song-poet-2020-en/index#project_source_bibl")
 
     def test_index_bibl(self) -> None:
         index = tree(self.projects["en"].files["index"])
@@ -142,7 +150,7 @@ class TestOther(unittest.TestCase):
         urns = PostUrns(101, "existing", "urn:x-opensiddur:text:poem:song",
                         {1: "urn:x-opensiddur:text:poem:song/1", 2: "urn:x-opensiddur:text:poem:song/2"})
         post, projects = build(urns=urns)
-        text = tree(projects["he"].files[text_file_stem(post)])
+        text = tree(projects["he"].files["song"])
         self.assertEqual(text.find(".//tei:div", NS).get("corresp"), "urn:x-opensiddur:text:poem:song")
         self.assertEqual([m.get("corresp") for m in text.iterfind(".//tei:milestone", NS)],
                          ["urn:x-opensiddur:text:poem:song/1", "urn:x-opensiddur:text:poem:song/2"])
@@ -150,7 +158,7 @@ class TestOther(unittest.TestCase):
     def test_footnotes_are_standoff(self) -> None:
         body = 'You<span class="footnote_referrer"><a><sup>[1]</sup></a><span class="footnote_tooltip">A note.</span></span>'
         post, projects = build(make_post(content=table(["Translation (English)"], [[cell("eng-Latn", "english", body)]])))
-        text = tree(projects["en"].files[text_file_stem(post)])
+        text = tree(projects["en"].files[text_file_stem(URN)])
         self.assertIsNotNone(text.find(".//tei:l/tei:anchor[@{http://www.w3.org/XML/1998/namespace}id='note_1']", NS))
         note = text.find("tei:standOff[@type='notes']/tei:note", NS)
         self.assertEqual((note.get("target"), note.find("tei:p", NS).text), ("#note_1", "A note."))
@@ -158,14 +166,14 @@ class TestOther(unittest.TestCase):
     def test_heading_rows_open_sections(self) -> None:
         rows = [[cell("eng-Latn", "english", "<h3>Part One</h3>")], [cell("eng-Latn", "english", "Text")]]
         post, projects = build(make_post(content=table(["Source (English)"], rows)))
-        text = tree(projects["en"].files[text_file_stem(post)])
+        text = tree(projects["en"].files[text_file_stem(URN)])
         self.assertEqual(text.find(".//tei:div/tei:div/tei:head", NS).text, "Part One")
         self.assertEqual([m.get("corresp") for m in text.iterfind(".//tei:milestone", NS)], [f"{URN}/1"])
 
     def test_prose_uses_paragraph_milestones(self) -> None:
         rows = [[cell("eng-Latn", "english", "<p>One.</p>")]]
         post, projects = build(make_post(content=table(["Source (English)"], rows)))
-        text = tree(projects["en"].files[text_file_stem(post)])
+        text = tree(projects["en"].files[text_file_stem(URN)])
         self.assertEqual(text.find(".//tei:milestone", NS).get("unit"), "paragraph")
 
     def test_licence_basis(self) -> None:
@@ -208,7 +216,7 @@ class TestReviewRegressions(unittest.TestCase):
         body = ('<span class="instruction">Stand<span class="footnote_referrer"><a><sup>[1]</sup></a>'
                 '<span class="footnote_tooltip">Why.</span></span></span> and pray')
         post, projects = build(make_post(content=table(["Translation (English)"], [[cell("eng-Latn", "english", body)]])))
-        text = tree(projects["en"].files[text_file_stem(post)])
+        text = tree(projects["en"].files[text_file_stem(URN)])
         line = text.find(".//tei:l", NS)
         self.assertEqual([etree.QName(c).localname for c in line], ["note", "anchor"])
         self.assertIsNotNone(text.find("tei:standOff/tei:note[@target='#note_1']", NS))
@@ -216,7 +224,7 @@ class TestReviewRegressions(unittest.TestCase):
     def test_heading_keeps_every_line(self) -> None:
         rows = [[cell("eng-Latn", "english", "<h3>Part One<br />The Beginning</h3>")], [cell("eng-Latn", "english", "Text")]]
         post, projects = build(make_post(content=table(["Source (English)"], rows)))
-        head = tree(projects["en"].files[text_file_stem(post)]).find(".//tei:div/tei:div/tei:head", NS)
+        head = tree(projects["en"].files[text_file_stem(URN)]).find(".//tei:div/tei:div/tei:head", NS)
         self.assertEqual("".join(head.itertext()), "Part One The Beginning")
 
 

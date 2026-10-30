@@ -1,9 +1,11 @@
 """Convert opensiddur.org posts from ``sourcetexts`` into JLPTEI projects.
 
 Only standard posts are converted (see :mod:`scope`). For each one, every column with text
-becomes a project ``osp-<post_id>-<lang>``, unless its licence is rejected or undecided.
-Every file is validated before it is written; stale files in the post's projects, and
-projects for languages the post no longer has, are removed.
+becomes a project ``<title>-<author>-<date>-<lang>`` (see :mod:`naming`), unless its licence
+is rejected or undecided. Every file is validated before it is written; stale files in the
+post's projects, and projects the post no longer has -- a language it lost, or a name its
+retitling changed -- are removed. A post's projects are found by the post ID their
+``index.xml`` records.
 
 A post needs a URN decision in ``specs/opensiddur_org/post_urns.jsonl`` (see
 :mod:`match`) and every person it credits registered in
@@ -38,6 +40,7 @@ from opensiddur.importer.opensiddur_org.contributors import (
 )
 from opensiddur.importer.opensiddur_org.download import MANIFEST_NAME, load_manifest
 from opensiddur.importer.opensiddur_org.licences import LicenceDecisions, load_decisions
+from opensiddur.importer.opensiddur_org.naming import Candidate, assign_project_ids, imported_projects
 from opensiddur.importer.opensiddur_org.parse_post import Post, load_post
 from opensiddur.importer.opensiddur_org.scope import (
     content_scope,
@@ -49,7 +52,6 @@ from opensiddur.importer.opensiddur_org.scope import (
 from opensiddur.importer.opensiddur_org.tei_builder import (
     build_project,
     front_language,
-    project_id,
     row_numbers,
     titles_by_language,
 )
@@ -161,10 +163,32 @@ def _compact(document: str) -> str:
     return re.sub(r">\s*\n\s*<", "><", document)
 
 
+def project_ids(plans: list[PostPlan], project_directory: Path,
+                existing: dict[int, list[Path]] | None = None) -> dict[tuple[int, str], str]:
+    """The project each column of the standard ``plans`` is written to, keyed by
+    ``(post_id, lang)``. Pass every post of the export, not only those being converted, so
+    that a name is given the same way whichever posts a run converts."""
+    directory = Path(project_directory)
+    if existing is None:
+        existing = imported_projects(directory)
+    # The names these posts gave before are theirs to give again; any other is taken.
+    named = {plan.post.post_id for plan in plans if plan.standard}
+    theirs = {path.name for post_id, paths in existing.items() if post_id in named for path in paths}
+    taken = ([p.name for p in directory.iterdir() if p.is_dir() and p.name not in theirs]
+             if directory.is_dir() else [])
+    return assign_project_ids(
+        (Candidate(plan.post, column) for plan in plans if plan.standard for _, column, _ in plan.columns),
+        taken,
+    )
+
+
 def convert_post(
-    plan: PostPlan, context: Context, project_directory: Path, *, registry_directory: Path = REGISTRY_DIRECTORY
+    plan: PostPlan, context: Context, project_directory: Path, *,
+    ids: dict[tuple[int, str], str],
+    existing: dict[int, list[Path]] | None = None,
+    registry_directory: Path = REGISTRY_DIRECTORY,
 ) -> list[str]:
-    """Write the post's projects. Returns their IDs."""
+    """Write the post's projects, named by ``ids`` (see :func:`project_ids`). Returns their IDs."""
     post = plan.post
     urns = context.post_urns[post.post_id]
     credits = post_credits(post, context.contributors)
@@ -178,6 +202,7 @@ def convert_post(
             upstream_commit=context.upstream_commit,
             upstream_commit_date=context.upstream_commit_date,
             with_front=column.lang == front_lang,
+            project_id=ids[(post.post_id, column.lang)],
         )
         project_dir = project_directory / files.project_id
         project_dir.mkdir(parents=True, exist_ok=True)
@@ -186,11 +211,14 @@ def convert_post(
         prune_stale_files(project_dir, set(files.files))
         written_projects.append(files.project_id)
 
-    # A language the post no longer has (or may no longer import) leaves no project behind.
-    prefix = f"osp-{post.post_id}-"
-    for stale in sorted(project_directory.glob(f"{prefix}*")):
+    # A language the post no longer has (or may no longer import), or a name its retitling
+    # changed, leaves no project behind.
+    if existing is None:
+        existing = imported_projects(project_directory)
+    for stale in existing.get(post.post_id, []):
         if stale.is_dir() and stale.name not in written_projects:
             shutil.rmtree(stale)
+            logger.info("%s: removed %s, which it no longer makes", post.post_id, stale.name)
 
     for pid in written_projects:
         problems = validate_project_urn_references(pid, project_directory=project_directory, check_urns=False)
@@ -267,11 +295,16 @@ def main(argv: list[str] | None = None) -> int:
 
     data_dir = opensiddur_org_data_directory(args.sourcetexts_root)
     context = load_context(data_dir)
-    plans = [
-        plan_post(load_post(data_dir / "posts" / f"{post_id}.json"), context)
-        for post_id in select_posts(data_dir, posts=args.post, categories=args.category)
-    ]
+    # Every post is planned, so that names are given against the whole export.
+    every_plan = {
+        post_id: plan_post(load_post(data_dir / "posts" / f"{post_id}.json"), context)
+        for post_id in select_posts(data_dir, posts=None, categories=None)
+    }
+    plans = [every_plan[post_id]
+             for post_id in select_posts(data_dir, posts=args.post, categories=args.category)]
     standard = [plan for plan in plans if plan.standard]
+    existing = imported_projects(args.project_directory)
+    ids = project_ids(list(every_plan.values()), args.project_directory, existing)
 
     if args.emit_contributor_candidates:
         lines = sorted({line for plan in plans for line in plan.candidates})
@@ -282,7 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     converted = 0
     for plan in standard:
         if not args.dry_run:
-            convert_post(plan, context, args.project_directory)
+            convert_post(plan, context, args.project_directory, ids=ids, existing=existing)
             if args.register:
                 register_urns([plan], context, REGISTRY_DIRECTORY)
         converted += 1
@@ -292,17 +325,17 @@ def main(argv: list[str] | None = None) -> int:
         if plan.standard:
             continue
         print(f"{plan.post.post_id}: skipped: {'; '.join(plan.reasons)}")
-        existing = sorted(args.project_directory.glob(f"osp-{plan.post.post_id}-*"))
-        if not existing:
+        earlier = sorted(existing.get(plan.post.post_id, []))
+        if not earlier:
             continue
         if is_rejected(plan):
             # A decision not to import the post: what an earlier run wrote must go.
             if not args.dry_run:
-                for path in existing:
+                for path in earlier:
                     shutil.rmtree(path)
-            print(f"{plan.post.post_id}: removed {', '.join(p.name for p in existing)} (rejected)")
+            print(f"{plan.post.post_id}: removed {', '.join(p.name for p in earlier)} (rejected)")
         else:
-            print(f"{plan.post.post_id}: WARNING: {', '.join(p.name for p in existing)} "
+            print(f"{plan.post.post_id}: WARNING: {', '.join(p.name for p in earlier)} "
                   "were converted earlier and are left as they were")
     print(f"{'Would convert' if args.dry_run else 'Converted'} {converted} of {len(plans)} post(s).")
     return 0

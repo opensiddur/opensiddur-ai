@@ -1,11 +1,12 @@
 """Build the JLPTEI of one opensiddur.org post in one language.
 
-Each post and language is a project, ``osp-<post_id>-<lang>``, of two files:
+Each post and language is a project, named by :mod:`naming`, of two files:
 
 - ``index.xml``: the full header, with the source ``tei:bibl``; the post's introduction and
   notes as front matter, in the project whose language they are written in; and a body that
   transcludes the text.
-- ``<slug>.xml``: the text, one ``tei:div`` whose ``corresp`` is the post's URN. Each table
+- ``<urn>.xml``: the text, named from the post's URN, one ``tei:div`` whose ``corresp`` is
+  that URN. Each table
   row opens a ``tei:milestone`` whose ``corresp`` is the same in every language of the post,
   which is what sets the languages side by side.
 
@@ -65,13 +66,11 @@ def attr(text: str) -> str:
     return html.escape(text, quote=True)
 
 
-def project_id(post_id: int, lang: str) -> str:
-    return f"osp-{post_id}-{lang.lower()}"
-
-
-def text_file_stem(post: Post) -> str:
-    stem = re.sub(r"[^a-z0-9]+", "-", post.slug.lower()).strip("-")[:80].strip("-")
-    return stem or f"post-{post.post_id}"
+def text_file_stem(urn: str) -> str:
+    """The text file's name: the path of the post's URN, its components joined by ``_``, so
+    that the file and the URN spell the text's name the same way."""
+    path = urn.split("#", 1)[0].split("@", 1)[0].split(":", 4)[-1]
+    return "_".join(component for component in path.split("/") if component)
 
 
 #: Scripts a title part may be written in, other than Latin, and the tag it is given. The
@@ -409,10 +408,11 @@ def build_project(
     upstream_commit: str,
     upstream_commit_date: str,
     with_front: bool,
+    project_id: str,
 ) -> ProjectFiles:
     lang = column.lang
-    pid = project_id(post.post_id, lang)
-    stem = text_file_stem(post)
+    pid = project_id
+    stem = text_file_stem(urns.urn)
     column_credits = credits.for_column_role(column.role)
 
     body, notes = text_body(post, column_index, column, urns)

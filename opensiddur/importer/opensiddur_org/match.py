@@ -36,6 +36,7 @@ from lxml import etree
 from opensiddur.common.constants import OUTPUT_DIRECTORY, PROJECT_DIRECTORY
 from opensiddur.common.urn_registry import REGISTRY_DIRECTORY
 from opensiddur.importer.opensiddur_org.convert import select_posts
+from opensiddur.importer.opensiddur_org.naming import imported_projects
 from opensiddur.importer.opensiddur_org.parse_post import Post, load_post, node_text, normalize_key
 from opensiddur.importer.opensiddur_org.scope import content_scope, imported_columns
 from opensiddur.importer.opensiddur_org.tei_builder import row_numbers, titles_by_language
@@ -221,10 +222,16 @@ def index_document(index: IncipitIndex, root: etree._Element) -> None:
     flush()
 
 
+def _imported(project_directory: Path) -> set[Path]:
+    """The projects converted from posts, which are not matched against."""
+    return {path for paths in imported_projects(project_directory).values() for path in paths}
+
+
 def build_incipit_index(project_directory: Path = PROJECT_DIRECTORY) -> IncipitIndex:
     index = IncipitIndex()
+    imported = _imported(project_directory)
     for project in sorted(p for p in project_directory.iterdir() if p.is_dir()):
-        if project.name.startswith("osp-"):
+        if project in imported:
             continue
         index_file = project / "index.xml"
         if not index_file.exists():
@@ -244,10 +251,11 @@ INDEX_VERSION = 1
 def _index_signature(project_directory: Path) -> str:
     """What the index was built from: the version, the directory, and every file's size and
     time, so that an added, changed or deleted file, or another directory, rebuilds it."""
+    imported = _imported(project_directory)
     files = sorted(
         f"{f.relative_to(project_directory)}:{f.stat().st_size}:{f.stat().st_mtime_ns}"
         for f in project_directory.glob("*/*.xml")
-        if not f.parent.name.startswith("osp-")
+        if f.parent not in imported
     )
     payload = json.dumps([INDEX_VERSION, str(project_directory.resolve()), files])
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()

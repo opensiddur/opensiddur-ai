@@ -100,7 +100,7 @@ is cloned beside the repositories, at `opensiddur-repos/opensiddur.org/` (`$OPEN
 uv run python -m opensiddur.importer.opensiddur_org.download --category 183   # copy in-scope posts; no-op when unchanged
 uv run python -m opensiddur.importer.opensiddur_org.survey                    # output/opensiddur_org_triage.{json,md}
 uv run python -m opensiddur.importer.opensiddur_org.match                     # URN decisions; proposals for review in output/
-uv run python -m opensiddur.importer.opensiddur_org.convert --register        # standard posts -> osp-<id>-<lang> projects
+uv run python -m opensiddur.importer.opensiddur_org.convert --register        # standard posts -> <title>-<author>-<date>-<lang> projects
 ```
 Licence decisions live in `opensiddur/importer/opensiddur_org/licence_decisions.yaml`; a licence or post not
 decided there is asked about, then recorded. `convert --emit-contributor-candidates` writes lines for

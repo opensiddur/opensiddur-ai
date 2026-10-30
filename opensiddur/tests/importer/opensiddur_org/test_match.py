@@ -83,11 +83,17 @@ class TestIndex(unittest.TestCase):
     def test_build_from_hebrew_projects_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for name, lang in (("songs_he", "he"), ("songs_en", "en"), ("osp-1-he", "he")):
+            for name, lang in (("songs_he", "he"), ("songs_en", "en")):
                 (root / name).mkdir()
                 (root / name / "index.xml").write_text(EXISTING.replace('xml:lang="he"', f'xml:lang="{lang}"'), encoding="utf-8")
+            # A project converted from a post, whatever it is called, is not matched against.
+            (root / "a_song-poet-2020-he").mkdir()
+            (root / "a_song-poet-2020-he" / "index.xml").write_text(
+                EXISTING.replace("<tei:fileDesc>", '<tei:fileDesc><tei:idno type="opensiddur.org">1</tei:idno>')
+                .replace(f"{P}poem:song", f"{P}poem:imported"), encoding="utf-8")
             built = build_incipit_index(root)
         self.assertIn(f"{P}poem:song/1", built.incipit_of)
+        self.assertNotIn(f"{P}poem:imported/1", built.incipit_of)
 
 
 class TestProposals(unittest.TestCase):
