@@ -135,7 +135,7 @@ Both forms.
 class TestHumanSize(unittest.TestCase):
     def test_sizes(self):
         for size, expected in [
-            (0, "0 bytes"), (1023, "1023 bytes"), (1024, "1.0 KB"),
+            (0, "0 bytes"), (1023, "1023 bytes"), (1024, "1.0 KB"), (1024 * 1024 - 1, "1.0 MB"),
             (5 * 1024 * 1024 + 512 * 1024, "5.5 MB"), (3 * 1024 ** 3, "3.0 GB"),
         ]:
             with self.subTest(size=size):

@@ -116,9 +116,15 @@ jobs:
             prev=$(git tag --list | grep -E '^v[0-9]{8}$' | sort | tail -1 || true)
             if [ -n "${prev}" ] && [ "${FORCE}" != true ]; then
               prev_processor=$(built_with "${prev}" || true)
-              if git diff --quiet "refs/tags/${prev}" "${sha}" -- "${NOT_DOWNLOADS[@]}" \
-                  && [ "${prev_processor}" = "${processor_tag}" ]; then
-                skip "Nothing new since ${prev}: opensiddur-projects is at the same commit, built with ${processor_tag}."
+              # 0: the same, 1: changed; anything else is an error, not a change.
+              changed=0
+              git diff --quiet "refs/tags/${prev}" "${sha}" -- "${NOT_DOWNLOADS[@]}" || changed=$?
+              if [ "${changed}" -gt 1 ]; then
+                echo "::error::Could not compare ${prev} with ${sha}"
+                exit 1
+              fi
+              if [ "${changed}" = 0 ] && [ "${prev_processor}" = "${processor_tag}" ]; then
+                skip "Nothing new since ${prev}: opensiddur-projects has not changed, other than its downloads list, and is built with ${processor_tag}."
               fi
             fi
             tag="v$(date -u +%Y%m%d)"
@@ -273,7 +279,8 @@ jobs:
         if: steps.newest.outputs.skip != 'true'
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          # A scheduled run's event has no repository; it runs on the default branch.
+          ref: ${{ github.event.repository.default_branch || github.ref_name }}
           fetch-depth: 0
           path: projects
 
@@ -332,8 +339,17 @@ jobs:
           git add DOWNLOADS.md
           git commit -m "List the downloads of ${TAG}"
           git push --force origin "${branch}"
-          gh pr create --base "${default}" --head "${branch}" \
-            --title "List the downloads of ${TAG}" \
-            --body "DOWNLOADS.md for the book release ${TAG}, written by release-projects.yml." \
-            || echo "A pull request for ${branch} is already open."
-          gh pr merge "${branch}" --squash --delete-branch
+          if [ -z "$(gh pr list --head "${branch}" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base "${default}" --head "${branch}" \
+              --title "List the downloads of ${TAG}" \
+              --body "DOWNLOADS.md for the book release ${TAG}, written by release-projects.yml."
+          fi
+          # GitHub decides whether a new pull request can be merged after it is opened.
+          for attempt in 1 2 3 4 5; do
+            if gh pr merge "${branch}" --squash --delete-branch; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "::error::Could not merge the pull request for ${branch}; merge it by hand."
+          exit 1

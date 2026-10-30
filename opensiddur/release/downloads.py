@@ -69,10 +69,13 @@ def book_entries(settings_directory: Path) -> list[BookEntry]:
 
 def human_size(size: int) -> str:
     """ 1536 -> '1.5 KB'. """
-    value = float(size)
-    for unit in ("bytes", "KB", "MB"):
-        if value < 1024:
-            return f"{size} bytes" if unit == "bytes" else f"{value:.1f} {unit}"
+    if size < 1024:
+        return f"{size} bytes"
+    value = size / 1024
+    for unit in ("KB", "MB"):
+        # Rounded, as it will be printed: 1023.96 KB is 1.0 MB, not 1024.0 KB.
+        if round(value, 1) < 1024:
+            return f"{value:.1f} {unit}"
         value /= 1024
     return f"{value:.1f} GB"
 
