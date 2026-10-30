@@ -70,6 +70,12 @@ How the export changes:
 - **Only people who made the digital text get a contributor URN.** See [Credits](#credits).
 - **Output is deterministic.** The same input gives byte-identical TEI. The access date
   recorded in the TEI is the upstream commit date, not the clock.
+- **A post is cited by its post ID.** The source bibliography links to
+  `https://opensiddur.org/?p=<post_id>`, which WordPress redirects to the post wherever it is
+  filed, so the bibliography of an edition always leads back to the right page. The permalink
+  is kept, but changes whenever the post moves category. See [Header](#3-convert-tei_builderpy-convertpy).
+- **What the post says about itself is a colophon, not front matter of the source.** See
+  [The post's own words](#the-posts-own-words-colophon).
 
 ## Stages
 
@@ -119,7 +125,8 @@ boilerplate. It reads:
 - **Spans:** `divine-referent`, `instruction`, `acrostic`, `citation`, and emphasis.
 - **Footnotes:** taken from the plugin's inline tooltip, numbered through the post.
 - **Sources:** the `<h3>Source(s)</h3>` captions and links, recorded but never downloaded.
-- **Intro and notes:** the paragraphs before and after the table.
+- **Intro and notes:** the paragraphs before and after the table. They are the post's own
+  words, not the source's; see [The post's own words](#the-posts-own-words-colophon).
 
 Languages are mapped from ISO 639-3/15924 to BCP 47 (`heb-Hebr` → `he`,
 `yid-Latn` → `yi-Latn`, `lad-Hebr` → `lad`).
@@ -157,7 +164,12 @@ decision; and the URN proposals.
   - opensiddur.org as distributor
   - the date of the original
   - the upstream commit date as the access date
-  - the permalink and post ID
+  - `<tei:idno type="url">https://opensiddur.org/?p=<post_id></tei:idno>`, the export's
+    `source_link`, as the **first** `idno type="url"`. The exporter's bibliography links each
+    entry to its first URL (`exporter/metadata.py`, `_url`), and a link by post ID still
+    reaches the post after it moves category, where the permalink would not.
+  - `<tei:idno type="opensiddur.org">` with the post ID
+  - the permalink, as `<tei:idno type="permalink">`, after the link by post ID
   - the Source(s) captions and links
   - the upstream commit, in an encoding note
 
@@ -180,10 +192,11 @@ decision; and the URN proposals.
 | `citation` | `tei:bibl` |
 | `em`, `strong`, `sup` | `tei:hi rend="italic"`, `"bold"`, `"superscript"` |
 | footnotes | `tei:anchor` plus `tei:standOff type="notes"` |
-| intro and notes | the index's `tei:front`, gated on `opensiddur:paratext` |
+| intro and notes | `tei:div type="colophon"` in the index's `tei:front`, gated on `opensiddur:paratext` |
 
 - The intro and notes go in the project whose language they are written in: for Latin
   letters English if the post has it, else another Latin-script language, else the first.
+  See [The post's own words](#the-posts-own-words-colophon).
 - The footnote plugin's own list of notes after the post is dropped; notes are read from
   their tooltips.
 - The index's body transcludes the text by its URN.
@@ -197,6 +210,46 @@ decision; and the URN proposals.
 - Then each project's URN and contributor references are checked.
 - `--register` appends the registry records a new post's URNs need, after the post
   converts: the post, and each row with text in an imported column.
+
+### The post's own words (colophon)
+
+A post says things about the text it publishes that are not part of that text, and that no
+JSON field holds apart: they are in `content`, in the paragraphs before and after the table
+(set off from it by `<hr />`), and `excerpt` usually repeats the first of them. Typical
+examples:
+
+- where the text was first published ("first published in *The Union Prayerbook*, CCAR,
+  1918, on page 110");
+- who transcribed or translated it, and from what;
+- what the transcriber changed ("I have replaced 'Adonai' with 'YHVH.' –Aharon Varady");
+- an introduction to the text by the person who posted it.
+
+This is colophon material about the digital edition, so it is front matter of a different
+kind from front matter the source itself printed (a book's own preface, a translator's note
+in the original edition). It is encoded so that the two can be told apart:
+
+```xml
+<tei:front>
+  <j:conditional xml:id="..._introduction">
+    <tei:fs type="opensiddur:paratext"><tei:f name="include"><tei:binary value="true"/></tei:f></tei:fs>
+  </j:conditional>
+  <tei:div type="colophon" subtype="introduction">
+    <tei:p>...</tei:p>
+  </tei:div>
+  <j:endConditional target="#..._introduction"/>
+  <!-- the same for the notes after the table, subtype="notes" -->
+</tei:front>
+```
+
+- `type="colophon"` marks the post's own words; `subtype` says whether they came before the
+  table (`introduction`) or after it (`notes`).
+- Front matter that belongs to the source, if a post ever carries any, keeps an ordinary
+  `tei:div` type (`preface`, `introduction`) without `colophon`. A post sets the source's
+  own text in its table, so the importer does not produce it today.
+- Like all paratext, the colophon is gated on `opensiddur:paratext/include`.
+- `excerpt` is not imported, because it repeats the introduction.
+- The exporter builds its own colophon page from the headers (`exporter/metadata.py`). How it
+  should set a `type="colophon"` division (in front, or with that page) is an open question.
 
 ### Licences
 
@@ -357,3 +410,5 @@ irregular posts above.
   plain text.
 - Row URNs of new posts are numbered. Named stanzas would be better where a post's stanzas
   have names.
+- Should the exporter set a front `tei:div type="colophon"` where it is, or move it to the
+  colophon page it builds from the headers?
