@@ -11,7 +11,9 @@ Four things are checked:
 - none of their words is a known misspelling, listed in ``specs/naming/spellings.yaml``.
 
 Whether a word follows the transliteration table cannot be decided without its Hebrew, so the
-last check finds only the misspellings already recorded.
+last check finds only the misspellings already recorded. A project identifier is not spelled
+by the table: its title may be the source's own romanization of its name, and its author is a
+person's name.
 
 Run as::
 
@@ -182,10 +184,6 @@ def check_project(project_path: Path, spellings: Spellings) -> Iterator[Problem]
     project = project_path.name
     if (reason := project_id_problem(project, project_language(project_path))) is not None:
         yield Problem(ERROR, f"project {project!r} {reason}", project)
-
-    identifier = _Findings(spellings)
-    identifier.spelling(project, project)
-    yield from identifier.problems(project, "project identifier")
 
     stems = _Findings(spellings)
     urns = _Findings(spellings)

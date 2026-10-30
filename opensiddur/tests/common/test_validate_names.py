@@ -181,10 +181,10 @@ class ProjectChecksTestCase(unittest.TestCase):
         (problem,) = errors(self.corpus.validate())
         self.assertIn("no xml:lang", problem.message)
 
-    def test_a_misspelt_project_identifier(self):
-        self.corpus.project("tsom_gedaliah-asher-1912-he")
-        (problem,) = errors(self.corpus.validate())
-        self.assertIn("'tsom' should be spelled 'tzom'", problem.message)
+    def test_a_project_identifier_is_not_held_to_the_spelling_list(self):
+        # A source's own romanization of its name, and a person's name.
+        self.corpus.project("maoz_tsom-tsom-1240-he")
+        self.assertEqual(self.corpus.validate(), [])
 
     def test_only_the_named_projects_are_checked(self):
         self.corpus.project("old_name")
@@ -292,7 +292,7 @@ class MainTestCase(unittest.TestCase):
     def test_check_fails_only_when_something_is_wrong(self):
         self.corpus.project("tzom_gedaliah-asher-1912-he", files={"tzom": index("he")})
         self.assertEqual(self.run_main("--check"), 0)
-        self.corpus.project("tsom-asher-1912-he")
+        self.corpus.project("tzom_asher_1912_he")
         self.assertEqual(self.run_main("--check"), 1)
         self.assertEqual(self.run_main(), 0)
 
