@@ -29,7 +29,8 @@ URN = "urn:x-opensiddur:text:prayer:a_song"
 def imported_index(post_id: int) -> str:
     """An index.xml as a converted post's, as far as finding its projects goes."""
     return (f'<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader>'
-            f'<idno type="opensiddur.org">{post_id}</idno></teiHeader></TEI>')
+            f'<bibl xml:id="project_source_bibl"><idno type="opensiddur.org">{post_id}</idno></bibl>'
+            f'</teiHeader></TEI>')
 
 
 class ConvertTestCase(unittest.TestCase):
@@ -119,6 +120,37 @@ class TestConversion(ConvertTestCase):
     def test_a_name_another_project_has_adds_the_post_id(self) -> None:
         (self.projects / "a_song-poet-2020-he").mkdir()  # a project no post made
         self.assertEqual(self.convert(0), ["a_song-poet-2020-101-he", "a_song-translator-en"])
+
+    def test_a_post_keeps_its_name_from_an_older_post(self) -> None:
+        # Post 900 already has the name; post 101, the same song, becomes convertible later.
+        newer = parse_post(make_post(900))
+        self.context.post_urns[900] = PostUrns(900, "new", f"{URN}_900")
+        (self.projects / "a_song-poet-2020-he").mkdir()
+        (self.projects / "a_song-poet-2020-he" / "index.xml").write_text(imported_index(900), encoding="utf-8")
+        plans = [self.plan(0), plan_post(newer, self.context)]
+        ids = project_ids(plans, self.projects)
+        self.assertEqual(ids[(900, "he")], "a_song-poet-2020-he")
+        self.assertEqual(ids[(101, "he")], "a_song-poet-2020-101-he")
+        for plan in plans:
+            convert_post(plan, self.context, self.projects, ids=ids, registry_directory=self.registry)
+        # Neither held the English name, so the older post has it.
+        self.assertEqual(ids[(101, "en")], "a_song-translator-en")
+        self.assertEqual(sorted(p.name for p in self.projects.iterdir()),
+                         ["a_song-poet-2020-101-he", "a_song-poet-2020-he",
+                          "a_song-translator-900-en", "a_song-translator-en"])
+
+    def test_a_name_another_post_is_given_is_not_removed_as_stale(self) -> None:
+        # Post 900 held the name, but no longer wants it; post 101 is given it and writes there.
+        (self.projects / "a_song-poet-2020-he").mkdir()
+        (self.projects / "a_song-poet-2020-he" / "index.xml").write_text(imported_index(900), encoding="utf-8")
+        newer = parse_post(make_post(900, title="Another Song"))
+        self.context.post_urns[900] = PostUrns(900, "new", f"{URN}_900")
+        plans = [self.plan(0), plan_post(newer, self.context)]
+        ids = project_ids(plans, self.projects)
+        self.assertEqual(ids[(101, "he")], "a_song-poet-2020-he")
+        for plan in plans:
+            convert_post(plan, self.context, self.projects, ids=ids, registry_directory=self.registry)
+        self.assertIn("101", (self.projects / "a_song-poet-2020-he" / "index.xml").read_text(encoding="utf-8"))
 
     def test_rerun_is_identical(self) -> None:
         self.convert(0)

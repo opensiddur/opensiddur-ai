@@ -89,7 +89,8 @@ class TestIndex(unittest.TestCase):
             # A project converted from a post, whatever it is called, is not matched against.
             (root / "a_song-poet-2020-he").mkdir()
             (root / "a_song-poet-2020-he" / "index.xml").write_text(
-                EXISTING.replace("<tei:fileDesc>", '<tei:fileDesc><tei:idno type="opensiddur.org">1</tei:idno>')
+                EXISTING.replace("<tei:fileDesc>", '<tei:fileDesc><tei:bibl xml:id="project_source_bibl">'
+                                                  '<tei:idno type="opensiddur.org">1</tei:idno></tei:bibl>')
                 .replace(f"{P}poem:song", f"{P}poem:imported"), encoding="utf-8")
             built = build_incipit_index(root)
         self.assertIn(f"{P}poem:song/1", built.incipit_of)

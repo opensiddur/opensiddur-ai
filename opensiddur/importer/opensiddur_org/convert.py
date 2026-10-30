@@ -171,14 +171,20 @@ def project_ids(plans: list[PostPlan], project_directory: Path,
     directory = Path(project_directory)
     if existing is None:
         existing = imported_projects(directory)
-    # The names these posts gave before are theirs to give again; any other is taken.
     named = {plan.post.post_id for plan in plans if plan.standard}
-    theirs = {path.name for post_id, paths in existing.items() if post_id in named for path in paths}
-    taken = ([p.name for p in directory.iterdir() if p.is_dir() and p.name not in theirs]
+    rejected = {plan.post.post_id for plan in plans if is_rejected(plan)}
+    # A name a post being named holds stays its own (see assign_project_ids). A rejected post's
+    # projects are about to be removed, so their names are free. Any other name is taken.
+    held = {path.name: post_id for post_id, paths in existing.items() if post_id in named
+            for path in paths}
+    freed = {path.name for post_id, paths in existing.items() if post_id in rejected for path in paths}
+    taken = ([p.name for p in directory.iterdir()
+              if p.is_dir() and p.name not in held and p.name not in freed]
              if directory.is_dir() else [])
     return assign_project_ids(
         (Candidate(plan.post, column) for plan in plans if plan.standard for _, column, _ in plan.columns),
         taken,
+        held,
     )
 
 
@@ -215,8 +221,10 @@ def convert_post(
     # changed, leaves no project behind.
     if existing is None:
         existing = imported_projects(project_directory)
+    # A name another post is given this run is that post's project now, whatever was there.
+    given = set(ids.values())
     for stale in existing.get(post.post_id, []):
-        if stale.is_dir() and stale.name not in written_projects:
+        if stale.is_dir() and stale.name not in given:
             shutil.rmtree(stale)
             logger.info("%s: removed %s, which it no longer makes", post.post_id, stale.name)
 
@@ -295,13 +303,18 @@ def main(argv: list[str] | None = None) -> int:
 
     data_dir = opensiddur_org_data_directory(args.sourcetexts_root)
     context = load_context(data_dir)
-    # Every post is planned, so that names are given against the whole export.
-    every_plan = {
-        post_id: plan_post(load_post(data_dir / "posts" / f"{post_id}.json"), context)
-        for post_id in select_posts(data_dir, posts=None, categories=None)
-    }
-    plans = [every_plan[post_id]
-             for post_id in select_posts(data_dir, posts=args.post, categories=args.category)]
+    # Every post is planned, so that names are given against the whole export. One that cannot
+    # be read is reported, and stops only a run that asked for it.
+    every_plan: dict[int, PostPlan] = {}
+    selected = select_posts(data_dir, posts=args.post, categories=args.category)
+    for post_id in select_posts(data_dir, posts=None, categories=None):
+        try:
+            every_plan[post_id] = plan_post(load_post(data_dir / "posts" / f"{post_id}.json"), context)
+        except Exception:
+            if post_id in selected:
+                raise
+            logger.warning("%s: could not be read; its names are given without it", post_id)
+    plans = [every_plan[post_id] for post_id in selected]
     standard = [plan for plan in plans if plan.standard]
     existing = imported_projects(args.project_directory)
     ids = project_ids(list(every_plan.values()), args.project_directory, existing)
@@ -314,6 +327,9 @@ def main(argv: list[str] | None = None) -> int:
 
     converted = 0
     for plan in standard:
+        if any((plan.post.post_id, column.lang) not in ids for _, column, _ in plan.columns):
+            print(f"{plan.post.post_id}: skipped: a project of it could not be named")
+            continue
         if not args.dry_run:
             convert_post(plan, context, args.project_directory, ids=ids, existing=existing)
             if args.register:

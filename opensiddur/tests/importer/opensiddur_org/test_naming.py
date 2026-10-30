@@ -43,6 +43,9 @@ class FoldTestCase(unittest.TestCase):
     def test_decomposed_text_folds_the_same(self):
         self.assertEqual(fold(unicodedata.normalize("NFKD", "Ḥanukkah Ẓion")), ["chanukkah", "tzion"])
 
+    def test_capitals_and_ligatures(self):
+        self.assertEqual(fold("Ḇet Œuvre Ðan"), ["vet", "oeuvre", "dan"])
+
     def test_punctuation_separates_words(self):
         self.assertEqual(fold("Al HaNisim: For the Banners — Neohasid·org"),
                          ["al", "hanisim", "for", "the", "banners", "neohasid", "org"])
@@ -76,14 +79,22 @@ class NameTestCase(unittest.TestCase):
                                ("R' Joseph H. Hertz", "hertz"),
                                ("Frederick de Sola Mendes", "mendes"),
                                ("Shlomo ibn Gabirol", "gabirol"),
-                               ("Neohasid·org", "neohasid_org")):
+                               ("Neohasid·org", "neohasid_org"),
+                               # An initial is not a patronymic, nor is a hyphenated name.
+                               ("Lieba B. Ruth", "ruth"),
+                               ("Bat-Sheva Cohen", "cohen"),
+                               ("Dan Bar-Lev", "bar_lev"),
+                               # An epithet in the middle is not the end of the name.
+                               ("Meïr haLevi Letteris", "letteris"),
+                               ("Conan O'Brien", "obrien")):
             with self.subTest(name=name):
                 self.assertEqual(name_field(name), expected)
 
     def test_a_patronymic_names_the_person_by_the_first_name(self):
         for name, expected in (("Mordekhai ben Yitsḥaq ha-Levi", "mordekhai"),
                                ("Ḳalonymus b. Ḳalonymus ben Meir", "qalonymus"),
-                               ("Yosef ben Shlomo of Carcassonne", "yosef")):
+                               ("Yosef ben Shlomo of Carcassonne", "yosef"),
+                               ("Avraham haLevi", "avraham")):
             with self.subTest(name=name):
                 self.assertEqual(name_field(name), expected)
 
@@ -111,6 +122,31 @@ class AuthorTestCase(unittest.TestCase):
                  coauthors=[person("Frederick de Sola Mendes"), person("Mordekhai ben Yitsḥaq ha-Levi")])
         self.assertEqual(author_field(p, TRANSLATION), "mendes")
         self.assertEqual(author_field(p, SOURCE), "mordekhai")
+
+    def test_a_clause_naming_a_translation_credits_its_translator(self):
+        p = post("Schirm und Schutz, a German translation of Maoz Tsur by Leopold Stein",
+                 coauthors=[person("Leopold Stein"), person("Mordekhai ben Yitsḥaq ha-Levi")])
+        self.assertEqual(author_field(p, SOURCE), "mordekhai")
+        self.assertEqual(author_field(p, TRANSLATION), "stein")
+
+    def test_trans_without_by(self):
+        p = post("Kavvanah, by Rebbe Tsvi Spira (trans. Moreh Yehudis Fishman)",
+                 coauthors=[person("Yehudis Fishman"), person("Tsvi Spira")])
+        self.assertEqual(author_field(p, SOURCE), "spira")
+        self.assertEqual(author_field(p, TRANSLATION), "fishman")
+
+    def test_a_shared_surname_is_not_a_match(self):
+        p = post("A Hymn, by Moritz Mayer, trans. by Isaac Gantwerk Mayer",
+                 coauthors=[person("Isaac Gantwerk Mayer", "translation"), person("Moritz Mayer")])
+        self.assertEqual(author_field(p, SOURCE), "mayer")
+
+    def test_transliterated_by_is_not_a_translation(self):
+        p = post("A Song, transliterated by Ann Other", coauthors=[person("Ann Other")])
+        self.assertEqual(author_field(p, SOURCE), "other")
+
+    def test_a_name_in_hebrew_is_given_by_the_profile_slug(self):
+        p = post(coauthors=[{"name": "צבי שפירא", "profile_link": "https://opensiddur.org/profile/tsvi-spira"}])
+        self.assertEqual(author_field(p, SOURCE), "spira")
 
     def test_of_several_translators_the_one_the_title_names(self):
         p = post("Prayer for Kislev, by Rabbi Levi Weiman-Kelman",
@@ -142,6 +178,15 @@ class AssignTestCase(unittest.TestCase):
         ids = assign_project_ids(reversed(self.candidates(7, 3)))
         self.assertEqual(ids, {(3, "he"): "a_song-poet-2020-he", (7, "he"): "a_song-poet-2020-7-he"})
 
+    def test_a_post_keeps_the_name_it_has(self):
+        # The newer post has the name on disk: the older one does not take it from it.
+        ids = assign_project_ids(self.candidates(3, 7), held={"a_song-poet-2020-he": 7})
+        self.assertEqual(ids, {(3, "he"): "a_song-poet-2020-3-he", (7, "he"): "a_song-poet-2020-he"})
+
+    def test_a_name_held_by_a_post_that_no_longer_wants_it_is_free(self):
+        ids = assign_project_ids(self.candidates(7), held={"a_song-poet-2020-he": 3})
+        self.assertEqual(ids, {(7, "he"): "a_song-poet-2020-he"})
+
     def test_a_name_already_taken(self):
         ids = assign_project_ids(self.candidates(3), taken=["a_song-poet-2020-he"])
         self.assertEqual(ids, {(3, "he"): "a_song-poet-2020-3-he"})
@@ -157,9 +202,12 @@ class ImportedProjectsTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             tei = '<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader>{}</teiHeader></TEI>'
-            for name, header in (("a_song-poet-2020-he", '<idno type="opensiddur.org">101</idno>'),
-                                 ("a_song-translator-en", '<idno type="opensiddur.org">101</idno>'),
-                                 ("tanakh-wlc-he", '<idno type="url">x</idno>')):
+            own = '<bibl xml:id="project_source_bibl"><idno type="opensiddur.org">{}</idno></bibl>'
+            for name, header in (("a_song-poet-2020-he", own.format(101)),
+                                 ("a_song-translator-en", own.format(101)),
+                                 ("tanakh-wlc-he", '<idno type="url">x</idno>'),
+                                 # A project citing a post among its sources is not that post's.
+                                 ("cites-a-post-he", '<bibl><idno type="opensiddur.org">101</idno></bibl>')):
                 (root / name).mkdir()
                 (root / name / "index.xml").write_text(tei.format(header), encoding="utf-8")
             (root / "broken").mkdir()
