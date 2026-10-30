@@ -249,8 +249,10 @@ in the original edition). It is encoded so that the two can be told apart:
   own text in its table, so the importer does not produce it today.
 - Like all paratext, the colophon is gated on `opensiddur:paratext/include`.
 - `excerpt` is not imported, because it repeats the introduction.
-- The exporter builds its own colophon page from the headers (`exporter/metadata.py`). How it
-  should set a `type="colophon"` division (in front, or with that page) is an open question.
+- The exporter builds its own colophon (the logo and links) from the headers
+  (`exporter/metadata.py`). A book that has `type="colophon"` divisions sets them **after**
+  that colophon, not where they stand in the front matter, in both the PDF and the HTML
+  outputs (decided 2026-10-29). They are still subject to the paratext gate.
 
 ### Licences
 
@@ -411,5 +413,3 @@ irregular posts above.
   plain text.
 - Row URNs of new posts are numbered. Named stanzas would be better where a post's stanzas
   have names.
-- Should the exporter set a front `tei:div type="colophon"` where it is, or move it to the
-  colophon page it builds from the headers?
