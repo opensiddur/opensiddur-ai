@@ -55,7 +55,14 @@ _LETTERS = {
 _DROPPED = "ʼʾʿ'’‘`ʻȝȜŋŊ"
 
 _BRACKETED = re.compile(r"\([^()]*\)|\[[^\[\]]*\]")
-_TITLE_END = re.compile(r",|\s(?:by|von|par|por)\s|\s[–—]\s", re.IGNORECASE)
+#: Where a title's name ends and its attribution begins: a comma, "by", a dash, or a colon
+#: before an honorific ("…of the U.S. Senate: Rabbi Peter S. Berg").
+_TITLE_END = re.compile(
+    r",|\s(?:by|von|par|por)\s|\s[–—]\s|:\s+(?=(?:rabbi|rebbe|kohenet|cantor|dr|rev)\b)",
+    re.IGNORECASE)
+#: Words a name cut short must not end on.
+_DANGLING = frozenset({"a", "an", "the", "of", "on", "in", "at", "to", "for", "and", "or", "by",
+                       "with", "while", "from", "as", "de", "der", "die", "das", "la", "le"})
 
 #: Words before a name that are not part of it.
 _HONORIFICS = frozenset({
@@ -97,9 +104,15 @@ def fold(text: str) -> list[str]:
 
 
 def _joined(words: list[str], limit: int | None = None) -> str:
+    """``words`` joined by ``_``, cut to ``limit`` at a whole word that is not a dangling
+    "of" or "the"."""
     field = "_".join(words)
     if limit is not None and len(field) > limit:
         field = field[: limit + 1].rsplit("_", 1)[0] if "_" in field[:limit] else field[:limit]
+        kept = field.split("_")
+        while len(kept) > 1 and kept[-1] in _DANGLING:
+            kept.pop()
+        field = "_".join(kept)
     return field
 
 
@@ -133,8 +146,20 @@ def title_field(post: Post) -> str:
 def text_name(post: Post, variants: Mapping[str, str]) -> str:
     """The name of the text a post publishes, for its URN: its title words, each respelled by
     the spelling list (``specs/naming/spellings.yaml``), since a URN follows the table where a
-    project title keeps the post's own romanization."""
-    return _joined([variants.get(word, word) for word in title_words(post)], TITLE_LENGTH)
+    project title keeps the post's own romanization; then its author's name, since a new text
+    on the site is someone's (``chanukah_wise``, not ``chanukah``)."""
+    name = _joined([variants.get(word, word) for word in title_words(post)], TITLE_LENGTH)
+    author = original_author(post)
+    return f"{name}_{author}" if author else name
+
+
+def original_author(post: Post) -> str:
+    """The name of whoever wrote the post's original: its credited author, or when no one is
+    credited but a placeholder, the author its title names."""
+    if author := author_field(post, ORIGINAL):
+        return author
+    _, authored = _credited(post)
+    return next((field for name in authored if (field := name_field(name))), "")
 
 
 def _name_words(name: str) -> list[str]:
@@ -176,18 +201,23 @@ def _named(post: Post) -> tuple[list[str], list[str]]:
     return translators, others
 
 
-def _attributions(post: Post) -> tuple[list[set[str]], list[set[str]]]:
-    """The words of each name the title credits: (as translator, as author)."""
-    translated: list[set[str]] = []
-    authored: list[set[str]] = []
+def _credited(post: Post) -> tuple[list[str], list[str]]:
+    """Each name the title credits, as written: (as translator, as author)."""
+    translated: list[str] = []
+    authored: list[str] = []
     for clause in _CLAUSE.split(latin_title(post) or ""):
         if match := _BY.search(clause):
             before = clause[: match.start()]
-            target = translated if _TRANSLATED.search(before) else authored
-            target.append(set(fold(match.group("who"))))
+            (translated if _TRANSLATED.search(before) else authored).append(match.group("who"))
         elif match := _TRANS_NAMED.search(clause):
-            translated.append(set(fold(match.group("who"))))
+            translated.append(match.group("who"))
     return translated, authored
+
+
+def _attributions(post: Post) -> tuple[list[set[str]], list[set[str]]]:
+    """The words of each name the title credits: (as translator, as author)."""
+    translated, authored = _credited(post)
+    return [set(fold(n)) for n in translated], [set(fold(n)) for n in authored]
 
 
 def _in(name: str, attributions: list[set[str]]) -> bool:

@@ -108,7 +108,8 @@ again. Retitling a post renames its project, and the importer removes the old on
 
 A post that matches no text in the collection is given a URN named the same way as the
 project's title, but with each word respelled by the spelling list (`maoz_tzur`, where the
-project keeps the post's `maoz_tsur`). The text file of such a project is named from the post's
+project keeps the post's `maoz_tsur`), and followed by the original author's name
+(`rock_of_ages_gottheil`). The text file of such a project is named from the post's
 URN, its path components joined by `_`.
 
 ## Settings files and book names

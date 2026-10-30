@@ -66,7 +66,17 @@ class TitleTestCase(unittest.TestCase):
     def test_a_long_title_is_cut_at_a_word(self):
         field = title_field(post("Prayer for the new moon of Ṭevet on Ḥanukkah occurring on the winter solstice"))
         self.assertLessEqual(len(field), TITLE_LENGTH)
-        self.assertEqual(field, "prayer_for_the_new_moon_of_tevet_on_chanukkah_occurring_on")
+        self.assertEqual(field, "prayer_for_the_new_moon_of_tevet_on_chanukkah_occurring")
+
+    def test_a_cut_does_not_end_on_a_dangling_word(self):
+        # Cut at 60, it would end "..._day_on_the".
+        field = title_field(post("Prayer for the United States on Thanksgiving Day on the Twenty-eighth of November"))
+        self.assertEqual(field, "prayer_for_the_united_states_on_thanksgiving_day")
+
+    def test_a_colon_before_an_honorific_ends_the_name(self):
+        self.assertEqual(title_field(post("Prayer of the Guest Chaplain: Rabbi Peter S. Berg")),
+                         "prayer_of_the_guest_chaplain")
+        self.assertEqual(title_field(post("Al HaNisim: For the Banners")), "al_hanisim_for_the_banners")
 
     def test_a_hebrew_only_title_is_named_from_the_slug(self):
         self.assertEqual(title_field(post("בָּאנוּ חֹשֶׁךְ לְגָרֵשׁ", slug="banu-hoshekh-by-sara")), "banu_hoshekh")

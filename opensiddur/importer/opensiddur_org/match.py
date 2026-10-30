@@ -35,6 +35,7 @@ from lxml import etree
 
 from opensiddur.common.constants import OUTPUT_DIRECTORY, PROJECT_DIRECTORY
 from opensiddur.common.urn_registry import REGISTRY_DIRECTORY
+from opensiddur.common.validate_names import load_spellings
 from opensiddur.importer.opensiddur_org.convert import select_posts
 from opensiddur.importer.opensiddur_org.naming import imported_projects
 from opensiddur.importer.opensiddur_org.parse_post import Post, load_post, node_text, normalize_key
@@ -489,18 +490,19 @@ def main(argv: list[str] | None = None) -> int:
                     int(data["post_id"]), data["urn"],
                     {int(n): u for n, u in data["rows"].items()}, data["evidence"])
     taken = taken_urns(REGISTRY_DIRECTORY, records)
+    variants = load_spellings().variants
 
     unknown = [p for p in args.accept if p not in proposals]
     if unknown:
         parser.error(f"no proposal awaits review for post(s) {unknown}")
     for post_id in args.accept:
         post = load_post(data_dir / "posts" / f"{post_id}.json")
-        records[post_id] = proposals.pop(post_id).as_post_urns(mint(post, taken))
+        records[post_id] = proposals.pop(post_id).as_post_urns(mint(post, taken, variants))
         taken.add(records[post_id].urn)
     for post_id in args.new:
         post = load_post(data_dir / "posts" / f"{post_id}.json")
         proposals.pop(post_id, None)
-        records[post_id] = mint(post, taken)
+        records[post_id] = mint(post, taken, variants)
         taken.add(records[post_id].urn)
 
     index = load_incipit_index(OUTPUT_DIRECTORY / "opensiddur_org_incipits.json", args.project_directory)
@@ -514,7 +516,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         proposal = propose(post, index, labels)
         if proposal is None:
-            records[post_id] = mint(post, taken)
+            records[post_id] = mint(post, taken, variants)
             taken.add(records[post_id].urn)
             minted += 1
         else:

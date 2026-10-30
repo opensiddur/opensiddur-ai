@@ -23,26 +23,33 @@ def post(title: str, *, slug: str = "a-slug-the-urn-does-not-use", tags=None, po
 
 
 class TestMinting(unittest.TestCase):
-    def test_named_from_the_title_not_the_slug(self) -> None:
+    def test_named_from_the_title_and_author_not_the_slug(self) -> None:
         record = mint(post("A Prayer for Rain, by Yehudah Poet"), set(), VARIANTS)
-        self.assertEqual(record.urn, f"{PREFIX}prayer:a_prayer_for_rain")
+        self.assertEqual(record.urn, f"{PREFIX}prayer:a_prayer_for_rain_poet")
 
     def test_respelled_by_the_spelling_list(self) -> None:
         record = mint(post("מעוז צור | Maoz Tsur for Ḥanukkah"), set(), VARIANTS)
-        self.assertEqual(record.urn, f"{PREFIX}prayer:maoz_tzur_for_chanukah")
+        self.assertEqual(record.urn, f"{PREFIX}prayer:maoz_tzur_for_chanukah_poet")
 
     def test_a_hebrew_only_title_is_named_from_the_slug(self) -> None:
         record = mint(post("שירה", slug="shirah-by-someone"), set(), VARIANTS)
-        self.assertEqual(record.urn, f"{PREFIX}prayer:shirah")
+        self.assertEqual(record.urn, f"{PREFIX}prayer:shirah_poet")
+
+    def test_an_author_credited_only_by_the_title(self) -> None:
+        unknown = {"name": "Unknown", "profile_link": "https://opensiddur.org/profile/unknown"}
+        p = parse_post(make_post(7, title="A Stanza, by Rabbi Yirmiyah of Würzburg", coauthors=[unknown]))
+        self.assertEqual(mint(p, set(), VARIANTS).urn, f"{PREFIX}prayer:a_stanza_yirmiyah")
+
+    def test_no_author_at_all(self) -> None:
+        p = parse_post(make_post(7, title="A Song", coauthors=[]))
+        self.assertEqual(mint(p, set(), VARIANTS).urn, f"{PREFIX}prayer:a_song")
 
     def test_poem_from_tags(self) -> None:
         self.assertIn(":poem:", mint(post("A Song", tags=["פיוטים piyyuṭim"]), set(), VARIANTS).urn)
 
-    def test_a_taken_name_gets_the_author_then_the_post_id(self) -> None:
-        taken = {f"{PREFIX}prayer:kaddish"}
-        self.assertEqual(mint(post("Kaddish"), taken, VARIANTS).urn, f"{PREFIX}prayer:kaddish_poet")
-        taken.add(f"{PREFIX}prayer:kaddish_poet")
-        self.assertEqual(mint(post("Kaddish"), taken, VARIANTS).urn, f"{PREFIX}prayer:kaddish_7")
+    def test_a_taken_name_gets_the_post_id(self) -> None:
+        taken = {f"{PREFIX}prayer:kaddish_poet"}
+        self.assertEqual(mint(post("Kaddish"), taken, VARIANTS).urn, f"{PREFIX}prayer:kaddish_poet_7")
 
 
 class TestRecords(unittest.TestCase):

@@ -297,8 +297,8 @@ Each post's URN decision is made once. It is recorded in
 
 ```json
 {"post_id": 12322, "kind": "existing", "urn": "urn:x-opensiddur:text:poem:maoz_tzur", "rows": {"1": "urn:x-opensiddur:text:poem:maoz_tzur/1", "...": "..."}}
-{"post_id": 41025, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:blessings_over_kindling_the_light_of_hanukkah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing"}}
-{"post_id": 22916, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_hoshekh_lqadesh_we_come_to_sanctify_the_dark_by_david_seidenberg_and_jill_hammer"}
+{"post_id": 41025, "kind": "new", "urn": "urn:x-opensiddur:text:prayer:the_blessings_over_kindling_the_light_of_chanukah", "rows": {"1": "urn:x-opensiddur:text:prayer:hadlakat_ner_chanukah/blessing"}}
+{"post_id": 22916, "kind": "new", "urn": "urn:x-opensiddur:text:poem:banu_choshekh_lqadesh_seidenberg"}
 ```
 
 - An `existing` post is a version of a text in the collection, and names each row's URN.
@@ -332,10 +332,13 @@ How `match` handles each post:
   - `<name>` is the post's title, as `specs/NAMING_SCHEME.md` names a project's: its Latin
     part up to the attribution, folded to ASCII. Each word is then respelled by
     `specs/naming/spellings.yaml`, since a URN follows the transliteration table where a
-    project title keeps the post's own romanization (`maoz_tzur_…`, not `maoz_tsur_…`). The
-    slug is not used: the bibliography's link still leads to the post on the site.
-  - If that name is taken, the original author's name is appended (`_<author>`), and failing
-    that `_<post_id>`.
+    project title keeps the post's own romanization (`maoz_tzur_…`, not `maoz_tsur_…`). A
+    name cut at 60 characters does not end on a word like "of" or "the". The original
+    author's name follows, as the project's author field gives it, or as the title's "by"
+    gives it when no one else is credited (`chanukah_wise`, `rock_of_ages_gottheil`), since a
+    new text on the site is someone's. The slug is not used: the bibliography's link still
+    leads to the post on the site.
+  - If that name is taken, `_<post_id>` is appended.
 - Every other post gets a proposal in `output/opensiddur_org_urn_proposals.jsonl`. The
   proposal is reviewed, and may be edited, then recorded with `match --accept <id>`, or
   replaced by a new URN with `--new <id>`.

@@ -87,22 +87,21 @@ def mint(post: "Post", taken: set[str], variants: Mapping[str, str] | None = Non
 
     The name is the post's title, by ``specs/NAMING_SCHEME.md``: its Latin part up to the
     attribution, folded to ASCII, each word respelled by the spelling list (``variants``,
-    by default ``specs/naming/spellings.yaml``). The site still finds the post by the
-    bibliography's link to it, so the URN need not repeat its slug. If that name is already
-    taken (by an unrelated text, since a related one would have matched), the original
-    author's name is appended, and failing that the post ID.
+    by default ``specs/naming/spellings.yaml``), then its original author's name. The site
+    still finds the post by the bibliography's link to it, so the URN need not repeat its
+    slug. If that name is already taken (by an unrelated text, since a related one would have
+    matched), the post ID is appended.
     """
-    from opensiddur.importer.opensiddur_org.naming import ORIGINAL, author_field, text_name
+    from opensiddur.importer.opensiddur_org.naming import text_name
 
     if variants is None:
         from opensiddur.common.validate_names import load_spellings
 
         variants = load_spellings().variants
     namespace = "poem" if is_poem(post.tags) else "prayer"
-    name = text_name(post, variants) or f"post_{post.post_id}"
-    author = author_field(post, ORIGINAL)
-    names = [name] + ([f"{name}_{author}"] if author else []) + [f"{name}_{post.post_id}"]
-    urn = next(u for u in (f"{TEXT_PREFIX}{namespace}:{n}" for n in names) if u not in taken)
+    urn = f"{TEXT_PREFIX}{namespace}:{text_name(post, variants)}"
+    if urn in taken:
+        urn = f"{urn}_{post.post_id}"
     return PostUrns(post_id=post.post_id, kind="new", urn=urn)
 
 
