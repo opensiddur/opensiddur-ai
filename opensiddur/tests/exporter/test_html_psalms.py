@@ -4,8 +4,8 @@ from lxml import etree as E
 from opensiddur.exporter.html.psalms import normalize,hebrew_number,psalm_number,T,P,J,LANG
 
 
-def fixture(body,project='siddur_expanded'):
-    return E.fromstring(f'<tei:TEI xmlns:tei="{T[1:-1]}" xmlns:p="{P[1:-1]}" xmlns:j="{J[1:-1]}" p:project="{project}"><tei:text><tei:body>{body}</tei:body></tei:text></tei:TEI>')
+def fixture(body):
+    return E.fromstring(f'<tei:TEI xmlns:tei="{T[1:-1]}" xmlns:p="{P[1:-1]}" xmlns:j="{J[1:-1]}"><tei:text><tei:body>{body}</tei:body></tei:text></tei:TEI>')
 
 
 class TestPsalmHeadings(unittest.TestCase):
@@ -33,15 +33,13 @@ class TestPsalmHeadings(unittest.TestCase):
         self.assertEqual([E.tostring(p) for p in root.iter(T+'p')],paragraphs)
         self.assertEqual(normalize(root)['wrapped'],0)
 
-    def test_ranges_composites_and_other_editions_are_preserved(self):
+    def test_ranges_and_composites_are_preserved(self):
         body='''<tei:head xml:lang="en">Psalm 95:1–3</tei:head>
             <p:transclude target="urn:x-opensiddur:text:bible:psalms/95/1" targetEnd="urn:x-opensiddur:text:bible:psalms/95/3"><tei:p>Excerpt</tei:p></p:transclude>
             <p:transclude target="urn:x-opensiddur:text:prayer:ashrei"><tei:p>Composite prayer</tei:p></p:transclude>'''
         root=fixture(body);before=E.tostring(root)
         self.assertEqual(normalize(root)['wrapped'],0)
         self.assertEqual(E.tostring(root),before)
-        root=fixture('<p:transclude target="urn:x-opensiddur:text:bible:psalms/23"/>',project='bible')
-        before=E.tostring(root);normalize(root);self.assertEqual(E.tostring(root),before)
 
     def test_adjacent_old_titles_are_replaced_and_scope_boundaries_preserved(self):
         reference='<p:transclude target="urn:x-opensiddur:text:bible:psalms/23"><tei:p>Prayer</tei:p></p:transclude>'

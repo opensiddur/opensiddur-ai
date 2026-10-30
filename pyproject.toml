@@ -1,6 +1,6 @@
 [project]
-name = "opensiddur-ai"
-version = "0.6.0"
+name = "opensiddur-processor"
+version = "0.7.0.dev0"
 description = "AI-aided conversion and compilation pipeline for Open Siddur liturgical texts (JLPTEI v2)"
 authors = [
     {name = "Efraim Feinstein", email = "efraim.feinstein@gmail.com"}
@@ -40,12 +40,13 @@ dependencies = [
     "pillow>=11.0.0",
     "pyyaml>=6.0.3",
     "pypdf>=6.10.2",
+    "packaging>=24.0",
 ]
 
 [project.urls]
 Homepage = "https://opensiddur.org/"
-Repository = "https://github.com/opensiddur/opensiddur-ai"
-Issues = "https://github.com/opensiddur/opensiddur-ai/issues"
+Repository = "https://github.com/opensiddur/opensiddur-processor"
+Issues = "https://github.com/opensiddur/opensiddur-processor/issues"
 
 [dependency-groups]
 dev = [

@@ -1,4 +1,4 @@
-"""The occasions the Birnbaum running order gates its sections on (opensiddur-ai#228).
+"""The occasions the Birnbaum running order gates its sections on (opensiddur-processor#228).
 
 Each section said only on some days is conditioned where index.py transcludes it. These tests
 read the gates off the generated index, and decide them against what the calendar derives for

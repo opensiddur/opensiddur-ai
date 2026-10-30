@@ -483,14 +483,15 @@ wheels = [
 ]
 
 [[package]]
-name = "opensiddur-ai"
-version = "0.6.0"
+name = "opensiddur-processor"
+version = "0.7.0.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "hdate" },
     { name = "lxml" },
     { name = "mwparserfromhell" },
     { name = "openpyxl" },
+    { name = "packaging" },
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pyluach" },
@@ -516,6 +517,7 @@ requires-dist = [
     { name = "lxml", specifier = ">=5.3.0" },
     { name = "mwparserfromhell", specifier = ">=0.7.2" },
     { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "packaging", specifier = ">=24.0" },
     { name = "pillow", specifier = ">=11.0.0" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pyluach", specifier = ">=2.3.0" },

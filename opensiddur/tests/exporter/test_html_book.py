@@ -680,11 +680,15 @@ class TestElectronicSettings(unittest.TestCase):
     """A settings file's `electronic` section: how the adaptive book starts."""
 
     def test_defaults(self):
-        self.assertEqual(ElectronicSettings().model_dump(), {"day": "now", "columns": "both"})
+        self.assertEqual(ElectronicSettings().model_dump(),
+                         {"day": "now", "columns": "both", "psalm_titles": "printed"})
 
     def test_values(self):
         self.assertEqual(ElectronicSettings.model_validate({"day": "none"}).day, "none")
-        for bad in ({"day": "tomorrow"}, {"columns": "hebrew"}, {"days": "now"}):
+        self.assertEqual(
+            ElectronicSettings.model_validate({"psalm_titles": "uniform"}).psalm_titles, "uniform")
+        for bad in ({"day": "tomorrow"}, {"columns": "hebrew"}, {"days": "now"},
+                    {"psalm_titles": "numbered"}):
             with self.subTest(bad=bad), self.assertRaises(ValidationError):
                 ElectronicSettings.model_validate(bad)
 
@@ -858,6 +862,16 @@ class TestBuildBook(unittest.TestCase):
                                  encoding="utf-8")
         self.assertEqual(self._book(self._build())["start"],
                          {"day": "none", "columns": "primary"})
+
+    def test_psalms_are_retitled_only_when_the_settings_ask(self):
+        with patch("opensiddur.exporter.html.html.normalize_psalm_titles") as normalize:
+            self._build()
+            normalize.assert_not_called()
+            self.settings.write_text(SETTINGS + "electronic:\n  psalm_titles: uniform\n",
+                                     encoding="utf-8")
+            book = self._book(self._build())
+            normalize.assert_called_once()
+        self.assertEqual(book["start"], {"day": "now", "columns": "both"})
 
     def test_places_only_where_the_day_matters(self):
         self.assertEqual(self._book(self._build())["places"], [])

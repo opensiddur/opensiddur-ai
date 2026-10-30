@@ -72,7 +72,9 @@ says how it knows the day:
 **How a book starts** is its settings file's, in a section of its own for the electronic book,
 `electronic` (`settings.ElectronicSettings`, documented in `doc/exporter-settings.example.yaml`):
 `day: now | none`, and `columns: both | primary | parallel`. A haggadah, read ahead of the seder
-as well as at it, starts with no particular day. The reader's own choices, once made, are
+as well as at it, starts with no particular day. `psalm_titles: uniform` gives every whole psalm
+one bilingual heading in place of its edition's (`html/psalms.py`), for a book compiled from
+editions that title psalms differently. The reader's own choices, once made, are
 remembered and win; Clear all goes back to the book's.
 
 The place is the reader's: a city from `html/places.yaml`, the device's location, or
@@ -207,7 +209,7 @@ settings/
 ```
 
 Each file names the root file it formats with a `book:` key and says how it differs from its
-siblings with `description:` (below). When an opensiddur-ai release is published,
+siblings with `description:` (below). When an opensiddur-processor release is published,
 `.github/workflows/release-books.yml` lists them (`books --list`) at the opensiddur-projects
 commit the release pins, and starts a `release-book.yml` job for each, which builds that book
 in the formats its `formats:` lists (below) and attaches them to the release as
@@ -268,6 +270,26 @@ formats: [html]
 The forms `books` and the release build this book in: `html`, the electronic book, and `pdf`,
 the printed one. Both, unless the settings say otherwise. A book whose reader chooses the day
 on the device, and that is not wanted in print, lists only `html`. At least one, each once.
+
+### Distribution notices
+```yaml
+distribution:
+  notice:
+    logo: art/our-logo.png   # relative to this file; `default` or `none`
+    logo_width: 1in
+    position: center
+    text: [Distributed by Our Congregation, https://example.org]
+  back_notice: none
+```
+Every book carries the Open Siddur Project's distribution notice, with its logo, and a statement
+on disposing of sacred texts. Neither needs a setting. The notice is on the verso of the first
+title page; a book with no title page, or whose title pages are not set, has it on a page of its
+own at the start of the front matter. The electronic book has it after its title page. The
+statement is on the last page, after the colophon. `back_notice` has an `electronic` and a
+`print` version: the PDF takes `print`, the electronic book `electronic`. Either part can be
+replaced, or set to `none`. In the PDF, `typography.styles.distribution_notice` and `back_notice` set
+their type. `books --check` reports a logo that is not there. The example settings file
+(`doc/exporter-settings.example.yaml`) gives the defaults in full.
 
 ### Transclusion priority
 ```yaml
@@ -401,3 +423,14 @@ streams are emitted in.
 ## Settings file versioning
 Note that this file is likely to change slightly in format as more output
 formats are introduced.
+
+A settings file can say which processor versions build its book:
+```yaml
+requires_processor: ">=0.7.0"
+```
+A PEP 440 requirement (`>=0.7.0`, `>=0.7,<0.9`). A processor that does not meet it refuses
+the file, in the compiler, the output stages and `books --check`, instead of building a broken
+book. The settings live in opensiddur-projects and the processor here, and a release pairs a
+book with one processor: a book that needs a fix should say so. Between releases `main` is the
+development of the next one (`0.7.0.dev0` after 0.6.0), which meets a requirement of that
+release, so a book can require a fix as soon as it is merged.

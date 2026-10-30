@@ -70,6 +70,7 @@ class TestRenderedFontSizes(unittest.TestCase):
 \setdefaultlanguage{english}
 \setotherlanguage{hebrew}
 \usepackage{reledmac}
+\usepackage{hyperref}
 """ + preamble + r"""
 \makeatletter
 \newcommand{\report}[1]{\typeout{SIZE:#1:\f@size:BASE:\f@baselineskip}}

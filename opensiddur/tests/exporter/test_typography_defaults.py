@@ -158,6 +158,11 @@ def _v(value: object) -> str:
     return str(getattr(value, "value", value))
 
 
+def _bound(margin: object) -> str:
+    """A line-number margin as reledmac names it on a right-bound page."""
+    return {"inner": "outer", "outer": "inner"}.get(_v(margin), _v(margin))
+
+
 def _fraction(percent: object) -> str:
     return f"{float(str(percent).rstrip('%')) / 100:g}"
 
@@ -188,6 +193,7 @@ _EXPECTED: dict[str, list[Expect]] = {
         Expect("documentclass-options", lambda v: "openany", present=False)
     ],
     "page.base_font_size": [Expect("documentclass-options", _v)],
+    "page.binding": [_preamble(lambda v: "pdfdirection=R2L")],
     **{
         f"page.margins.{side}": [_preamble(lambda v: r"\geometry", present=False)]
         for side in ("top", "bottom", "inner", "outer", "binding_offset")
@@ -210,10 +216,12 @@ _EXPECTED: dict[str, list[Expect]] = {
         _preamble(lambda v: rf"\firstlinenum{{{v}}}"),
         _parallel(lambda v: rf"\firstlinenumR{{{v}}}"),
     ],
+    # reledmac assumes a left binding, so on the default right-bound page it calls the
+    # outer margin inner.
     "line_numbers.margin": [
-        _preamble(lambda v: rf"\linenummargin{{{_v(v)}}}"),
-        _parallel(lambda v: rf"\linenummarginR{{{_v(v)}}}"),
-        _interleaved(lambda v: rf"\linenummargin{{{_v(v)}}}"),
+        _preamble(lambda v: rf"\linenummargin{{{_bound(v)}}}"),
+        _parallel(lambda v: rf"\linenummarginR{{{_bound(v)}}}"),
+        _interleaved(lambda v: rf"\linenummargin{{{_bound(v)}}}"),
     ],
     "line_numbers.separation": [_preamble(lambda v: rf"\setlength{{\linenumsep}}{{{v}}}")],
     # Arabic is reledmac's own numeral in the main series; reledpar's right-hand
@@ -295,6 +303,8 @@ _ROLES: dict[str, tuple[str, Optional[str]]] = {
     "epigraph": (r"\OSEpigraph", _BLOCK),
     "imprimatur": (r"\OSImprimatur", _BLOCK),
     "title_page_block": (r"\OSTitlePageBlock", _BLOCK),
+    "distribution_notice": (r"\OSDistributionNotice", _BLOCK),
+    "back_notice": (r"\OSBackNotice", _BLOCK),
     "citation": (r"\OScitation", _INLINE),
     "parsha": (r"\OSParsha", None),
     "aliyah": (r"\OSaliyah", None),

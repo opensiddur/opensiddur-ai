@@ -1,4 +1,4 @@
-"""The occasions the haggadah's running order gates its parts on (opensiddur-ai#228).
+"""The occasions the haggadah's running order gates its parts on (opensiddur-processor#228).
 
 The seder is for the seder nights, and the search for and burning of leaven for the eve of
 Pesah. The gates are read off the index and pre-seder bodies the builder emits, and decided

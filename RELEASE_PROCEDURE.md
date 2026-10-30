@@ -1,6 +1,6 @@
 # Release procedure
 
-A release is a `v<major>.<minor>.<patch>` tag on this repository (`opensiddur-ai`). The tag's
+A release is a `v<major>.<minor>.<patch>` tag on this repository (`opensiddur-processor`). The tag's
 commit pins exact commits of the `sourcetexts` and `opensiddur-projects` submodules, so a given
 release fully identifies the code and the data it was built and tested against. Neither
 `sourcetexts` nor `opensiddur-projects` is tagged itself — the submodule pointers are the record.
@@ -14,6 +14,15 @@ release fully identifies the code and the data it was built and tested against. 
 - **1.0.0 and above**: strict [Semantic Versioning](https://semver.org/). Choose the bump level
   deliberately — major for incompatible changes, minor for backwards-compatible features, patch
   for backwards-compatible fixes.
+- **Between releases** `main` is the *development* of the next release: after `0.6.0`,
+  `pyproject.toml` says `0.7.0.dev0`. That is the version a settings file's `requires_processor`
+  is checked against, as the release it is the development of: main meets `>=0.7.0`, and the
+  `v0.6.0` tag does not. A release from a development version releases the version it names
+  (the default, or the level it names); `--major` jumps past it. `--patch` releases a fix of
+  the last release tagged (`0.6.0 -> 0.6.1`), and leaves `main` the development it was.
+  The check compares the release a development version leads to, so every `main` since 0.6.0
+  meets `>=0.7.0`, whether or not the fix a book needs has been merged yet: the requirement
+  tells released processors apart, not one `main` from another.
 
 ## Before releasing
 
@@ -78,8 +87,13 @@ What it does, in order:
    appends the pinned submodule commits to it, and leaves a fresh empty `[Unreleased]` above it.
 6. Commits `pyproject.toml`, `CHANGELOG.md`, and the two submodule pointers as `Release vX.Y.Z`.
 7. Creates an annotated tag `vX.Y.Z` with the new changelog section as its message.
-8. Pushes the branch and the tag to `origin`.
-9. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
+8. If the version it started from was a development version, writes the development of the
+   next release (`0.8.0.dev0` after `0.7.0`) into `pyproject.toml` and commits it as
+   `Begin 0.8.0.dev0`, after the tag, so the tag is the release and the branch goes on. After
+   a patch release it writes back the development it started from (`0.7.0.dev0` after
+   `0.6.1`).
+9. Pushes the branch and the tag to `origin`.
+10. Creates a GitHub Release for the tag via `gh release create`, using the same notes (skipped
    with `--no-publish`).
 
 Publishing the release starts `.github/workflows/release-books.yml`. It lists the settings files
@@ -94,9 +108,10 @@ with its own log and status; a large one (the full humash) takes well over an ho
 
 ## After releasing
 
-- **Re-lock and push `uv.lock`.** The release script writes the new version into `pyproject.toml`
-  (step 4) but never re-locks, so `uv.lock` still records the *previous* version for the
-  `opensiddur-ai` package. Correct it so the two agree:
+- **Re-lock and push `uv.lock`.** The release script writes the new versions into `pyproject.toml`
+  (steps 4 and 8) but never re-locks, so `uv.lock` still records the *previous* version for the
+  `opensiddur-processor` package. Correct it so the two agree (on `main`, that is the next
+  development version):
 
   ```bash
   uv lock
@@ -111,7 +126,7 @@ with its own log and status; a large one (the full humash) takes well over an ho
   `uv.lock` in their working tree, which collides with the "working tree must be clean" check in
   *Before releasing* and looks like an unrelated change in their branch.
 
-- Check the [releases page](https://github.com/opensiddur/opensiddur-ai/releases) and the pushed
+- Check the [releases page](https://github.com/opensiddur/opensiddur-processor/releases) and the pushed
   tag.
 - Check that the *Release books* workflow finished and the books are attached. A red job means
   that book failed to build: the others are still attached, and the release stands. Its

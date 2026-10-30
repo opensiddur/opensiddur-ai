@@ -3,8 +3,8 @@ name: Release book
 # Builds one book, opensiddur-projects/settings/<book>/<variant>.yaml, at the
 # opensiddur-projects commit a release tag pins, in the forms its `formats:` lists (both, unless
 # it says otherwise), and attaches them to that release: the electronic book as
-# <book>-<variant>-<tag>.html (opensiddur-ai#92) and the printed one as
-# <book>-<variant>-<tag>.pdf (opensiddur-ai#153). A book with no printed form skips TeX entirely.
+# <book>-<variant>-<tag>.html (opensiddur-processor#92) and the printed one as
+# <book>-<variant>-<tag>.pdf (opensiddur-processor#153). A book with no printed form skips TeX entirely.
 #
 # The electronic book is built first. It takes seconds where the PDF can take hours, and a PDF
 # that fails or times out does not keep it off the release. Each form has its own output

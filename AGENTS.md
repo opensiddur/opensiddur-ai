@@ -3,7 +3,7 @@ This file provides guidance to coding agents when working with code in this repo
 ## Project Overview
 
 The project derives from 3 repositories:
-opensiddur-ai https://github.com/opensiddur/opensiddur-ai (this repository)
+opensiddur-processor https://github.com/opensiddur/opensiddur-processor (this repository)
 sourcetexts https://github.com/opensiddur/sourcetexts (submodule at sourcetexts/, content in sourcetexts/sources/)
 opensiddur-projects https://github.com/opensiddur/opensiddur-projects (submodule at opensiddur-projects/, content in opensiddur-projects/project/)
 
@@ -13,8 +13,8 @@ source and project commits it was built against. See `RELEASE_PROCEDURE.md`.
 **Paired PRs.** opensiddur-projects PRs are validated by this repository's validators
 (`.github/workflows/validate-projects.yml`). When project XML depends on an unmerged change here
 (registry entries, schema, validators), give both PRs the same branch name: the projects check
-then validates against that opensiddur-ai branch instead of main, and warns that it did. Merge
-the opensiddur-ai PR first, re-run the projects check (it falls back to main once the branch is
+then validates against that opensiddur-processor branch instead of main, and warns that it did. Merge
+the opensiddur-processor PR first, re-run the projects check (it falls back to main once the branch is
 deleted), then merge the projects PR.
 
 This repository has 3 parts: 
@@ -236,6 +236,22 @@ and Hebrew/English alignment after regeneration.
 **URN/`corresp` scoping**: A `corresp` on a `tei:milestone` scopes from that milestone to the next same-unit milestone, or end of file. This is the basis for parallel-text alignment: two documents share an alignment segment when they carry identical `corresp` values on their milestones.
 
 **Project layout**: Every `project/<name>/` directory must have `index.xml` as its entry point. Individual text files refer back to the index via `tei:sourceDesc/tei:p/tei:ref` or a `tei:bibl/tei:ptr`.
+
+**Naming** (`specs/NAMING_SCHEME.md`):
+- A project is named `<title>-<author>-<date>-<lang>`, lowercase ASCII, with `-` between fields
+  and `_` between the words of a field: `hasiddur_hashalem-birnbaum-1949-he`. The last field is
+  the `xml:lang` of its `index.xml`. A translation shares its original's title. A source that
+  romanizes its own name keeps that romanization as its title (Asher's *Selichoth* is
+  `selichoth`), folded to lowercase ASCII.
+- A book's settings live at `settings/<book.project>/<variant>.yaml`, so its release files are
+  named after its project: `<project>-<variant>-<tag>.pdf`.
+- File stems and URN path components are lowercase ASCII words joined by `_`. Hebrew words in
+  any of these follow the transliteration table in `schema/JLPTEI-3.md` (het `ch`, khaf `kh`,
+  qof `q`, tzadi `tz`, dagesh hazak doubled, final heh written), unless they have a common
+  spelling listed in `specs/naming/spellings.yaml`. A file and a URN for the same text spell
+  its words the same way.
+- When you settle a spelling the table did not decide, add it to `spellings.yaml`. Check with
+  `uv run python -m opensiddur.common.validate_names [project ...]`.
 
 ### Testing Conventions
 

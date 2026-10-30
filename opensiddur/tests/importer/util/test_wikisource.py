@@ -93,7 +93,7 @@ class TestBuildSession(unittest.TestCase):
     def test_identifies_itself_and_requests_compression(self):
         session = build_session("example@opensiddur.org")
         self.assertIn("example@opensiddur.org", session.headers["User-Agent"])
-        self.assertIn("opensiddur-ai", session.headers["User-Agent"])
+        self.assertIn("opensiddur-processor", session.headers["User-Agent"])
         self.assertIn("gzip", session.headers["Accept-Encoding"])
 
 

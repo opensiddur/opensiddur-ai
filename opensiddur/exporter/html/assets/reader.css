@@ -65,6 +65,9 @@ h4.head, h5.head, h6.head { font-size: 1.05em; font-variant: small-caps; }
 .title-page { text-align: center; margin: 3rem 0; }
 .titlePart-main { font-size: 2.2em; }
 .title-page p { text-align: center; }
+.os-distribution { text-align: center; font-size: 0.85em; margin: 2rem 0 3rem; }
+.os-distribution img { display: block; margin: 0 auto 0.75rem; max-width: 100%; height: auto; }
+.os-distribution p { text-align: center; margin: 0.15rem 0; }
 
 .rend-italic { font-style: italic; }
 .rend-bold { font-weight: bold; }
@@ -303,6 +306,7 @@ html { overflow-anchor: none; }
   font: 0.85rem/1.5 system-ui, sans-serif;
 }
 .os-about h2 { font-size: 1rem; color: var(--ink); }
+.os-back-notice { margin-top: 2rem; font-size: 0.85em; }
 
 @media print {
   body { padding: 0; background: none; color: #000; }

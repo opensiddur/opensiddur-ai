@@ -19,6 +19,7 @@ import unittest
 from pathlib import Path
 
 from opensiddur.exporter.tex.latex import transform_xml_to_tex
+from opensiddur.tests.exporter.stylesheet_helpers import NO_NOTICES
 from opensiddur.exporter.typography import TypographyConfig
 
 
@@ -81,6 +82,7 @@ class TestFacingPagesGeometry(unittest.TestCase):
                 work / "in.xml", output_file=str(work / "t.tex"),
                 typography=TypographyConfig.model_validate(_TYPOGRAPHY),
                 project_directory=work,
+                distribution=NO_NOTICES,
             )
             for _ in range(3):  # reledpar needs the earlier passes' line counts to pair
                 done = subprocess.run(
@@ -189,6 +191,7 @@ class TestFacingPagesHebrewLineNumbers(unittest.TestCase):
                 typography=TypographyConfig.model_validate(
                     {"parallel": {"layout": "pages"}, "page_header": {}}),
                 project_directory=work,
+                distribution=NO_NOTICES,
             )
             for _ in range(3):
                 done = subprocess.run(
