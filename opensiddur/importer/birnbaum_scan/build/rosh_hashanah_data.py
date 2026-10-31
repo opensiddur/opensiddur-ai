@@ -49,13 +49,13 @@ ROWS = [{'key': 'ki_shem',
   'page': 655,
   'he': 'וְנֶאֱמָן אַתָּה לְהַחֲיוֹת מֵתִים. בָּרוּךְ אַתָּה, יְיָ, מְחַיֵּה הַמֵּתִים.',
   'en': 'Thou art faithful to revive the dead. Blessed art thou, O Lord, who revivest the dead.'},
- {'key': 'nekadesh',
+ {'key': 'neqaddesh',
   'page': 655,
   'he': 'נְקַדֵּשׁ אֶת שִׁמְךָ בָּעוֹלָם כְּשֵׁם שֶׁמַּקְדִּישִׁים אוֹתוֹ בִּשְׁמֵי מָרוֹם, כַּכָּתוּב עַל '
         'יַד נְבִיאֶֽךָ: וְקָרָא זֶה אֶל זֶה וְאָמַר:',
   'en': 'We sanctify thy name in the world even as they sanctify it in the highest heavens, as it is written '
         'by thy prophet: “They keep calling to one another:'},
- {'key': 'kadosh',
+ {'key': 'qadosh',
   'page': 657,
   'he': 'קָדוֹשׁ, קָדוֹשׁ, קָדוֹשׁ יְיָ צְבָאוֹת; מְלֹא כָל הָאָֽרֶץ כְּבוֹדוֹ.',
   'en': 'Holy, holy, holy is the Lord of hosts;\nThe whole earth is full of his glory.”'},
@@ -82,11 +82,11 @@ ROWS = [{'key': 'ki_shem',
   'en': 'Through all generations we will declare thy greatness; to all eternity we will proclaim thy '
         'holiness; thy praise, our God, shall never depart from our mouth, for thou art a great and holy God '
         'and King.'},
- {'key': 'ata_kadosh',
+ {'key': 'ata_qadosh',
   'page': 657,
   'he': 'אַתָּה קָדוֹשׁ וְשִׁמְךָ קָדוֹשׁ, וּקְדוֹשִׁים בְּכָל יוֹם יְהַלְלֽוּךָ סֶּֽלָה.',
   'en': 'Thou art holy and thy name is holy, and holy beings praise thee daily.'},
- {'key': 'uvekhen_pahdekha',
+ {'key': 'uvekhen_pachdekha',
   'page': 657,
   'he': 'וּבְכֵן תֵּן פַּחְדְּךָ, יְיָ אֱלֹהֵֽינוּ, עַל כָּל מַעֲשֶֽׂיךָ, וְאֵימָתְךָ עַל כָּל מַה '
         'שֶּׁבָּרָֽאתָ, וְיִירָאֽוּךָ כָּל הַמַּעֲשִׂים וְיִשְׁתַּחֲווּ לְפָנֶֽיךָ כָּל הַבְּרוּאִים, '
@@ -106,7 +106,7 @@ ROWS = [{'key': 'ki_shem',
         'thee, free speech to those who yearn for thee, joy to thy land and gladness to thy city, rising '
         'strength to David thy servant, a shining light to the son of Jesse, thy chosen one, speedily in our '
         'days.'},
- {'key': 'uvekhen_tzaddikim',
+ {'key': 'uvekhen_tzaddiqim',
   'page': 657,
   'he': 'וּבְכֵן צַדִּיקִים יִרְאוּ וְיִשְׂמָֽחוּ, וִישָׁרִים יַעֲלֹֽזוּ, וַחֲסִידִים בְּרִנָּה יָגִֽילוּ, '
         'וְעוֹלָֽתָה תִּקְפָּץ־פִּֽיהָ, וְכָל הָרִשְׁעָה כֻּלָּהּ כְּעָשָׁן תִּכְלֶה, כִּי תַעֲבִיר '
@@ -122,7 +122,7 @@ ROWS = [{'key': 'ki_shem',
   'en': 'Thou shalt reign over all whom thou hast made, thou alone, O Lord, on Mount Zion the abode of thy '
         'majesty, in Jerusalem thy holy city, as it is written in thy holy Scriptures: “The Lord shall reign '
         'forever, your God, O Zion, for all generations.”'},
- {'key': 'kadosh_ata',
+ {'key': 'qadosh_ata',
   'page': 659,
   'he': 'קָדוֹשׁ אַתָּה וְנוֹרָא שְׁמֶֽךָ, וְאֵין אֱלֽוֹהַּ מִבַּלְעָדֶֽיךָ, כַּכָּתוּב: וַיִּגְבַּהּ יְיָ '
         'צְבָאוֹת בַּמִּשְׁפָּט, וְהָאֵל הַקָּדוֹשׁ נִקְדַּשׁ בִּצְדָקָה. בָּרוּךְ אַתָּה, יְיָ, הַמֶּֽלֶךְ '
@@ -130,7 +130,7 @@ ROWS = [{'key': 'ki_shem',
   'en': 'Holy art thou, awe-inspiring is thy name, and there is no God but thee, as it is written: “The Lord '
         'of hosts is exalted through justice, the holy God is sanctified through righteousness.” Blessed art '
         'thou, O Lord, holy King.'},
- {'key': 'ata_vehartanu',
+ {'key': 'ata_vechartanu',
   'page': 659,
   'he': 'אַתָּה בְחַרְתָּֽנוּ מִכָּל הָעַמִּים, אָהַֽבְתָּ אוֹתָֽנוּ וְרָצִֽיתָ בָּֽנוּ, וְרוֹמַמְתָּֽנוּ '
         'מִכָּל הַלְּשׁוֹנוֹת, וְקִדַּשְׁתָּֽנוּ בְּמִצְוֺתֶֽיךָ, וְקֵרַבְתָּֽנוּ מַלְכֵּֽנוּ '
@@ -212,7 +212,7 @@ ROWS = [{'key': 'ki_shem',
   'en': 'Be pleased, Lord our God, with thy people Israel and with their prayer; restore the worship to thy '
         'most holy sanctuary; accept Israel’s offerings and prayer with gracious love. May the worship of '
         'thy people Israel be ever pleasing to thee.'},
- {'key': 'vetehezena',
+ {'key': 'vetechezeinah',
   'page': 661,
   'he': 'וְתֶחֱזֶֽינָה עֵינֵֽינוּ בְּשׁוּבְךָ לְצִיּוֹן בְּרַחֲמִים. בָּרוּךְ אַתָּה, יְיָ, הַמַּחֲזִיר '
         'שְׁכִינָתוֹ לְצִיּוֹן.',
@@ -651,7 +651,7 @@ NOTES = [{'page': 655,
           'observed for two days even in Jerusalem, where all other holydays are kept only for one day. The '
           'reason is explained by Maimonides in his Mishneh Torah (Kiddush ha-Ḥodesh 5:7-8).'},
  {'page': 657,
-  'key': 'uvekhen_pahdekha',
+  'key': 'uvekhen_pachdekha',
   'kind': 'commentary',
   'text': 'ובכן תן פחדך contains the vision of the time when God shall be acknowledged and worshiped by all '
           'peoples, when peace and righteousness shall reign on the whole earth.'},
@@ -704,14 +704,14 @@ NOTES = [{'page': 655,
   'text': 'ובכן תן כבוד proclaims God’s restoration of Israel in Palestine.'},
  {'page': 658,
   'kind': 'commentary',
-  'key': 'uvekhen_tzaddikim',
+  'key': 'uvekhen_tzaddiqim',
   'text': 'ובכן צדיקים announces the ultimate victory of righteousness when all evil and tyranny shall '
           'vanish.'},
- {'page': 658, 'kind': 'source', 'marker': '1', 'key': 'kadosh', 'text': 'Isaiah 6:3.'},
+ {'page': 658, 'kind': 'source', 'marker': '1', 'key': 'qadosh', 'text': 'Isaiah 6:3.'},
  {'page': 658, 'kind': 'source', 'marker': '2', 'key': 'barukh', 'text': 'Ezekiel 3:12.'},
  {'page': 658, 'kind': 'source', 'marker': '3', 'key': 'yimlokh', 'text': 'Psalm 146:10.'},
  {'page': 660, 'kind': 'source', 'marker': '1', 'key': 'vetimlokh', 'text': 'Psalm 146:10.'},
- {'page': 660, 'kind': 'source', 'marker': '2', 'key': 'kadosh_ata', 'text': 'Isaiah 5:16.'},
+ {'page': 660, 'kind': 'source', 'marker': '2', 'key': 'qadosh_ata', 'text': 'Isaiah 5:16.'},
  {'page': 664,
   'kind': 'commentary',
   'key': 'besefer',
@@ -758,7 +758,7 @@ NOTES = [{'page': 655,
  {'page': 674, 'kind': 'source', 'marker': '2', 'key': 'benei_adam_job', 'text': 'Job 33:23-24.'}]
 
 RUBRICS = {'amidah_rubric': 'The Amidah is recited in silent devotion while standing, facing east.',
- 'kedushah_rubric': 'When the Reader repeats the Amidah, the following Kedushah is said:',
+ 'qedushah_rubric': 'When the Reader repeats the Amidah, the following Kedushah is said:',
  'reader': 'Reader:',
  'vatodienu_rubric': 'On Saturday night add:',
  'modim_derabbanan_rubric': 'When the Reader repeats the Amidah, the Congregation responds here by saying:',

@@ -158,6 +158,11 @@ diacritics. Where the opensiddur.org style guide's simple forms differ, this tab
   path component or the registry. It does not check a project identifier's spelling: its title
   may be the source's own romanization, and its author is a person's name.
 
+An importer that names something from a source's own words -- hebcal's reading names, the
+reading IDs of a transcription -- respells those words by the list as it names it
+(`opensiddur.common.validate_names.respell` and `respell_urns`), and keeps the source's own
+spelling in the source. A word added to the list is then respelled everywhere by regenerating.
+
 The variant list catches known misspellings, not every one. A word is only a variant if it
 cannot be another word: `selah` (סֶלָה) and `selach` (סְלַח) are both correct, so neither is
 listed. Spellings are settled from the Hebrew, a family of books at a time, and each new

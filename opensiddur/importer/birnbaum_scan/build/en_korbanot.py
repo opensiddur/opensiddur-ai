@@ -91,8 +91,8 @@ prayer("korbanot_yehi_ratzon_amirah", "May it be thy will, that this recital", "
          "be favorably regarded and accepted by thee as if we offered the daily "
          "offering at its proper time, its right place, and according to rule."))
 
-prayer("korbanot_atah_hu", "Thou art the Lord our God before whom", "korbanot/atah_hu", 30, 30,
-       d(U + "korbanot/atah_hu",
+prayer("korbanot_attah_hu", "Thou art the Lord our God before whom", "korbanot/attah_hu", 30, 30,
+       d(U + "korbanot/attah_hu",
          "Thou art the Lord our God before whom our forefathers burned the incense "
          "of fragrant spices when the Temple was in existence, as thou didst command "
          "them through Moses thy prophet, as it is written in thy Torah:"))
@@ -167,15 +167,15 @@ prayer("korbanot_bar_kappara", "Bar Kappara says", "korbanot/pittum_haketoret/ba
          "present any leaven or honey as a fire-offering to the Lord.”"))
 
 #: Centred lines on the Hebrew page, indented lines here.
-prayer("korbanot_pesukim", "The Lord of hosts is with us", "korbanot/pesukim", 34, 34,
-       verses(U + "korbanot/pesukim", [
+prayer("korbanot_pesuqim", "The Lord of hosts is with us", "korbanot/pesuqim", 34, 34,
+       verses(U + "korbanot/pesuqim", [
            "The Lord of hosts is with us; the God of Jacob is our fortress,",
            "Lord of hosts, happy is the man who trusts in thee.",
            "O Lord, save us; may the King answer us when we call.",
        ]))
 
-prayer("korbanot_atah_seter", "Thou art my shelter", "korbanot/atah_seter", 34, 34,
-       d(U + "korbanot/atah_seter",
+prayer("korbanot_attah_seter", "Thou art my shelter", "korbanot/attah_seter", 34, 34,
+       d(U + "korbanot/attah_seter",
          "Thou art my shelter; from the foe thou wilt preserve me; with songs of "
          "deliverance thou wilt surround me."))
 

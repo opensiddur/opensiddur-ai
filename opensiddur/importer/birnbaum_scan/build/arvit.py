@@ -27,7 +27,7 @@ URNS = {'psalm134': BIBLE+'psalms/134', 'opening_verses': ROOT+'/opening/verses'
         'vehu': ROOT+'/shema/vehu_rachum', 'maariv': PRAYER+'maariv_aravim',
         'ahavat': PRAYER+'ahavat_olam_arvit', 'emet': PRAYER+'emet_veemunah',
         'hashkivenu': PRAYER+'hashkivenu', 'barukh': ROOT+'/barukh_adonai',
-        'chonantanu': PRAYER+'amidah/atah_chonantanu'}
+        'chonantanu': PRAYER+'amidah/attah_chonantanu'}
 ANCHORS = {}
 
 
@@ -130,7 +130,7 @@ def amidah(lang, by_name):
         elif name=='amidah_shalom':
             parts += [transclude(PRAYER+'amidah/shalom_rav_al'),
                 conditional('peace_seal','Except during the Ten Days of Repentance:',TEN_DAYS,transclude(PRAYER+'amidah/shalom/hamevarekh'),negate=True),
-                conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,transclude(PRAYER+'amidah/shalom/besefer_chayim'))]
+                conditional('peace_ten_days','Between Rosh Hashanah and Yom Kippur say:',TEN_DAYS,transclude(PRAYER+'amidah/shalom/besefer_chayyim'))]
         else:
             parts.append(transclude(by_name[name]['urn']))
     return '\n'.join(parts)

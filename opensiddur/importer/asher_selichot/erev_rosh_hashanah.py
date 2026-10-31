@@ -6,7 +6,7 @@ import json
 import re
 import unicodedata
 from lxml import etree
-from .build import TEI, XML, PRAYER, document, element, pb, marker, choice
+from .build import TEI, XML, PRAYER, document, element, pb, marker, choice, spelled_name, spelled_urn
 from .first_day import (poetic_lines, words_with_notes, mixed_words,
                         append_words, expansion_scope)
 from .identities import project_name
@@ -260,10 +260,10 @@ def verify_readings(source, project_directory):
         nodes=[n for n in service if n.tag not in [f'{{{TEI}}}head',f'{{{TEI}}}pb']]
         if len(nodes)!=len(read):raise ValueError('Erev source order or boundary changed')
         for reading,node in zip(read,nodes):
-            context=reading.get('urn',EREV+'/'+reading['id'])
+            context=spelled_urn(reading.get('urn',EREV+'/'+reading['id']))
             if reading.get('filename'):
                 if node.get('target')!=context:raise ValueError('Erev module order changed')
-                node=etree.parse(str(project/(reading['filename']+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
+                node=etree.parse(str(project/(spelled_name(reading['filename'])+'.xml'))).find(f'.//{{{TEI}}}body/{{{TEI}}}div')
             elif node.get('corresp')!=context:raise ValueError('Erev inline order changed')
             node=copy.deepcopy(node)
             if reading.get('range_urn'):
@@ -287,7 +287,7 @@ def verify_readings(source, project_directory):
             if scopes:
                 if [s.find(f'{{{TEI}}}fs/{{{TEI}}}f/{{{TEI}}}binary').get('value') for s in scopes]!=([ 'false'] if reading.get('refrain_instruction') else ['false','true']):raise ValueError('Erev branch polarity changed')
                 if len(scopes)==2:
-                    if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=targets(reading,lang):raise ValueError('Erev language-specific targets changed')
+                    if [n.get('target') for n in node.findall(f'.//{{{J}}}transclude')]!=[spelled_urn(t) for t in targets(reading,lang)]:raise ValueError('Erev language-specific targets changed')
                     if reading['id']=='reader_kaddish':
                         declaration=node.find(f'{{{J}}}declare')
                         if [n.get('value') for n in declaration.findall(f'.//{{{TEI}}}binary')]!=['false','false']:raise ValueError('Erev Kaddish calendar changed')

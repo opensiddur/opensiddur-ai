@@ -11,7 +11,7 @@ class TestRoshHodeshMusaf(unittest.TestCase):
 
     def test_occasion_is_on_caller_not_reusable_amidah(self):
         caller=self.built[ROOT]
-        gate=caller.xpath('.//j:conditional[@xml:id="rosh_hodesh_musaf_occasion"]',namespaces=NS)[0]
+        gate=caller.xpath('.//j:conditional[@xml:id="rosh_chodesh_musaf_occasion"]',namespaces=NS)[0]
         from lxml import etree
         expression=etree.tostring(gate.find('j:all',NS),encoding='unicode')
         for day in (0,1,2):
@@ -34,7 +34,7 @@ class TestRoshHodeshMusaf(unittest.TestCase):
         for unwanted in ('yaaleh','kaddish','zokhrenu','ukhtov','besefer'):
             self.assertFalse(any(unwanted in t for t in targets),unwanted)
         self.assertIn(URNS['retzeh'],targets)
-        self.assertIn(URNS['vetechezenah'],targets)
+        self.assertIn(URNS['vetechezeinah'],targets)
         self.assertIn(URNS['sim_shalom'],targets)
         self.assertEqual(self.built[ROOT].find('.//tei:f[@name="musaf"]/tei:binary',NS).get('value'),'true')
 

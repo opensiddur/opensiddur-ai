@@ -240,7 +240,7 @@ class TestGeneratedPsalms(unittest.TestCase):
 
     def test_barech_keeps_its_english_instructions_interleaved(self) -> None:
         """The regression a trailing-content hack would have caused in the translation."""
-        english = Path("project") / EN_PROJECT / "barech.xml"
+        english = Path("project") / EN_PROJECT / "barekh.xml"
         support.require_path(english, "translation project not generated")
         body = english.read_text("utf-8")
         body = body[body.index("<tei:body>") :]

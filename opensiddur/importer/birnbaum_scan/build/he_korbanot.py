@@ -109,8 +109,8 @@ prayer("korbanot_yehi_ratzon_amirah", "יְהִי רָצוֹן שֶׁתְּהֵ�
          "כְּאִלּוּ הִקְרַֽבְנוּ קָרְבַּן הַתָּמִיד בְּמוֹעֲדוֹ וּבִמְקוֹמוֹ "
          "וּכְהִלְכָתוֹ."))
 
-prayer("korbanot_atah_hu", "אַתָּה הוּא יְיָ אֱלֹהֵֽינוּ שֶׁהִקְטִֽירוּ", "korbanot/atah_hu", 29, 29,
-       d(U + "korbanot/atah_hu",
+prayer("korbanot_attah_hu", "אַתָּה הוּא יְיָ אֱלֹהֵֽינוּ שֶׁהִקְטִֽירוּ", "korbanot/attah_hu", 29, 29,
+       d(U + "korbanot/attah_hu",
          "אַתָּה הוּא יְיָ אֱלֹהֵֽינוּ שֶׁהִקְטִֽירוּ אֲבוֹתֵֽינוּ לְפָנֶֽיךָ אֶת "
          "קְטֹֽרֶת הַסַּמִּים בִּזְמַן שֶׁבֵּית הַמִּקְדָּשׁ הָיָה קַיָּם, "
          "כַּאֲשֶׁר צִוִּֽיתָ אוֹתָם עַל יְדֵי מֹשֶׁה נְבִיאֶֽךָ, כַּכָּתוּב "
@@ -180,15 +180,15 @@ prayer("korbanot_bar_kappara", "תַּנְיָא, בַּר קַפָּרָא או
 
 #: Three verses, each on its own centred line in the print. The English page sets
 #: them as indented lines instead -- see `readings/english_28_48.md`.
-prayer("korbanot_pesukim", "יְיָ צְבָאוֹת עִמָּֽנוּ", "korbanot/pesukim", 33, 33,
-       verses(U + "korbanot/pesukim", [
+prayer("korbanot_pesuqim", "יְיָ צְבָאוֹת עִמָּֽנוּ", "korbanot/pesuqim", 33, 33,
+       verses(U + "korbanot/pesuqim", [
            "יְיָ צְבָאוֹת עִמָּֽנוּ, מִשְׂגָּב־לָֽנוּ אֱלֹהֵי יַעֲקֹב, סֶֽלָה.",
            "יְיָ צְבָאוֹת, אַשְׁרֵי אָדָם בֹּטֵֽחַ בָּךְ.",
            "יְיָ, הוֹשִֽׁיעָה; הַמֶּֽלֶךְ יַעֲנֵֽנוּ בְיוֹם קָרְאֵֽנוּ.",
        ]))
 
-prayer("korbanot_atah_seter", "אַתָּה סֵֽתֶר לִי", "korbanot/atah_seter", 33, 33,
-       d(U + "korbanot/atah_seter",
+prayer("korbanot_attah_seter", "אַתָּה סֵֽתֶר לִי", "korbanot/attah_seter", 33, 33,
+       d(U + "korbanot/attah_seter",
          "אַתָּה סֵֽתֶר לִי, מִצַּר תִּצְּרֵֽנִי; רָנֵּי פַלֵּט תְּסוֹבְבֵֽנִי, "
          "סֶֽלָה."))
 

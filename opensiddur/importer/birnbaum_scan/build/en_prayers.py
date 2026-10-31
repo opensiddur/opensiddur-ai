@@ -69,7 +69,7 @@ prayer("amidah_adonai_sefatai", "O Lord, open thou my lips", "amidah/adonai_sefa
 
 prayer("amidah_avot", "Blessing of the Patriarchs", "amidah/avot", 82, 84, "\n".join([
     f'        <tei:div corresp="{U}amidah/avot">',
-    d(U + "amidah/avot/barukh_atah", "Blessed art thou, Lord our God and God of our fathers, God of Abraham, God of "
+    d(U + "amidah/avot/barukh_attah", "Blessed art thou, Lord our God and God of our fathers, God of Abraham, God of "
             "Isaac and God of Jacob; great, mighty and revered God, sublime God, who bestowest "
             "lovingkindness, and art Master of all things; who rememberest the good deeds of "
             "our fathers, and who wilt graciously bring a redeemer to their children’s children "
@@ -85,12 +85,12 @@ prayer("amidah_avot", "Blessing of the Patriarchs", "amidah/avot", 82, 84, "\n".
 
 prayer("amidah_gevurot", "Blessing of God’s might", "amidah/gevurot", 84, 84, "\n".join([
     f'        <tei:div corresp="{U}amidah/gevurot">',
-    d(U + "amidah/gevurot/atah_gibor", "Thou, O Lord, art mighty forever; thou revivest the dead; thou art powerful to save."),
+    d(U + "amidah/gevurot/attah_gibor", "Thou, O Lord, art mighty forever; thou revivest the dead; thou art powerful to save."),
     cond("cond_gevurot_geshem", note="Between Sukkoth and Pesaḥ add:", fs=feature(AGG, "geshem")),
     d(U + "amidah/gevurot/mashiv_haruach",
       "(Thou causest the wind to blow and the rain to fall.)"),
     endcond("cond_gevurot_geshem"),
-    d(U + "amidah/gevurot/mekhalkel_chayim", "Thou sustainest the living with kindness, and revivest the dead with great mercy; "
+    d(U + "amidah/gevurot/mekhalkel_chayyim", "Thou sustainest the living with kindness, and revivest the dead with great mercy; "
             "thou supportest all who fall, and healest the sick; thou settest the captives free, "
             "and keepest faith with those who sleep in the dust. Who is like thee, Lord of power? "
             "Who resembles thee, O King? Thou bringest death and restorest life, and causest "
@@ -108,7 +108,7 @@ prayer("amidah_qedushah", "Kedushah", "amidah/qedushah", 84, 86, "\n".join([
     cond("cond_qedushah_repetition",
          note="When the Reader repeats the Shemoneh Esreh, the following Kedushah is said:",
          fs="<j:all>"+feature(RECITATION, "repetition")+feature(QUORUM, "minyan")+"</j:all>"),
-    d(U + "amidah/qedushah/neqadesh",
+    d(U + "amidah/qedushah/neqaddesh",
       "We sanctify thy name in this world even as they sanctify it in the highest heavens, "
       "as it is written by thy prophet: “They keep calling to one another:"),
     d(U + "amidah/qedushah/qadosh",
@@ -137,7 +137,7 @@ prayer("amidah_qedushah", "Kedushah", "amidah/qedushah", 84, 86, "\n".join([
 
 prayer("amidah_qedushat_hashem", "Sanctification of God’s name", "amidah/qedushat_hashem", 86, 86, "\n".join([
     f'        <tei:div corresp="{U}amidah/qedushat_hashem">',
-    d(U + "amidah/qedushat_hashem/atah_qadosh", "Thou art holy and thy name is holy, and holy beings praise thee daily."),
+    d(U + "amidah/qedushat_hashem/attah_qadosh", "Thou art holy and thy name is holy, and holy beings praise thee daily."),
     cond("cond_qh_seal_ordinary", fs=AYT, negate=True, marked=True),
     d(U + "amidah/qedushat_hashem/haeil_haqadosh", "Blessed art thou, O Lord, holy God."),
     endcond("cond_qh_seal_ordinary"),
@@ -228,8 +228,8 @@ simple("amidah_minim", "Blessing against slanderers", "amidah/minim", 87,
        "humble them speedily in our days. Blessed art thou, O Lord, who breakest the enemies and "
        "humblest the arrogant.")
 
-prayer("amidah_tzadiqim", "Blessing for the righteous", "amidah/tzadiqim", 88, 90,
-    wrap(U + "amidah/tzadiqim", d(None,
+prayer("amidah_tzaddiqim", "Blessing for the righteous", "amidah/tzaddiqim", 88, 90,
+    wrap(U + "amidah/tzaddiqim", d(None,
         "May thy compassion, Lord our God, be aroused over the righteous and over the godly; over "
         "the leaders of thy people, the house of Israel, and over the remnant of their sages; over "
         "the true proselytes and over us. Grant a good reward to all who truly trust"
@@ -245,7 +245,7 @@ for nm, ti, sl, txt in [
      "Speedily cause the offspring of thy servant David to flourish, and let his glory be exalted "
      "by thy help, for we hope for thy deliverance all day. Blessed art thou, O Lord, who causest "
      "salvation to flourish."),
-    ("amidah_tefilah", "Blessing for prayer", "amidah/tefilah",
+    ("amidah_tefillah", "Blessing for prayer", "amidah/tefillah",
      "Hear our voice, Lord our God; spare us and have pity on us; accept our prayer in mercy and "
      "favor, for thou art God who hearest prayers and supplications; from thy presence, our King, "
      "dismiss us not empty-handed, for thou hearest in mercy the prayer of thy people Israel. "
@@ -264,7 +264,7 @@ prayer("amidah_avodah", "Blessing for the Temple service", "amidah/avodah", 90, 
                        feature(AGG, "chol-hamoed"), "          </j:any>"])),
     f'        <j:transclude type="external" target="{U}yaaleh_veyavo"/>',
     endcond("cond_avodah_yaaleh"),
-    d(U + "amidah/avodah/vetechezenah",
+    d(U + "amidah/avodah/vetechezeinah",
       "May our eyes behold thy return in mercy to Zion. Blessed art thou, O Lord, who restorest "
       "thy divine presence to Zion."),
     "        </tei:div>"]))
@@ -276,10 +276,10 @@ prayer("yaaleh_veyavo", "Ya‘aleh v’yavo", "yaaleh_veyavo", 90, 92, "\n".join
             "people the house of Israel, ascend and come and be accepted before thee for "
             "deliverance and happiness, for grace, kindness and mercy, for life and peace, on "
             "this day of"),
-    cond("cond_yvy_rosh_hodesh", note="Rosh Ḥodesh",
+    cond("cond_yvy_rosh_chodesh", note="Rosh Ḥodesh",
          fs=feature(HOL, "rosh-hodesh", '<tei:numeric value="1" max="2"/>')),
-    d(U + "yaaleh_veyavo/rosh_hodesh", "the New Moon."),
-    endcond("cond_yvy_rosh_hodesh"),
+    d(U + "yaaleh_veyavo/rosh_chodesh", "the New Moon."),
+    endcond("cond_yvy_rosh_chodesh"),
     cond("cond_yvy_pesach", note="Pesaḥ",
          fs=feature(HOL, "pesah", '<tei:numeric value="1" max="8"/>')),
     d(U + "yaaleh_veyavo/pesach", "the Feast of Unleavened Bread."),
@@ -388,7 +388,7 @@ prayer("amidah_shalom", "Blessing for peace", "amidah/shalom", 96, 96, "\n".join
     endcond("cond_shalom_seal_ordinary"),
     cond("cond_shalom_seal_aseret",
          note="Between Rosh Hashanah and Yom Kippur say:", fs=AYT),
-    d(U + "amidah/shalom/besefer_chayim",
+    d(U + "amidah/shalom/besefer_chayyim",
       "(May we and all Israel thy people be remembered and inscribed before thee in the book of "
       "life and blessing, peace and prosperity, for a happy life and for peace. Blessed art thou, "
       "O Lord, Author of peace.)"),

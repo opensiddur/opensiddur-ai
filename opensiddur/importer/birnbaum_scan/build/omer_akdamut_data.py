@@ -266,7 +266,7 @@ ROWS = [{'key': 'preparation',
         'Mighty, holy God, in thy abundant grace, guide thy people.\n'
         'Exalted God, turn to thy people who proclaim thy holiness.\n'
         'Accept our prayer, hear our cry, thou who knowest secret thoughts.'},
- {'key': 'baruch_shem',
+ {'key': 'barukh_shem',
   'page': 645,
   'he': 'בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד.',
   'en': 'Blessed be the name of his glorious majesty forever and ever.'},

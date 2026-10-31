@@ -194,7 +194,7 @@ def unit_body_yeladim(head, by_name):
 #: one, which is the same intent realised twice and belongs to typography, not to the URN.
 TALLITH = '<tei:foreign xml:lang="he-Latn">tallith</tei:foreign>'
 BIRCHOT_RUBRICS = (
-    ("Upon entering the synagogue:", ["birchot_mah_tovu"]),
+    ("Upon entering the synagogue:", ["birkhot_mah_tovu"]),
     (f"Before putting on the {TALLITH}:",
      ["tallith_barkhi_nafshi", "tallith_hineni_mitatef"]),
     (f"When putting on the {TALLITH}:", ["tallith_lehitatef"]),
@@ -268,8 +268,8 @@ POEM_HEADS = {
 
 
 GENDERED = (
-    ("cond_blessing_men", "Men say:", "male", "birchot_shelo_asani_ishah"),
-    ("cond_blessing_women", "Women say:", "female", "birchot_sheasani_kirtzono"),
+    ("cond_blessing_men", "Men say:", "male", "birkhot_shelo_asani_ishah"),
+    ("cond_blessing_women", "Women say:", "female", "birkhot_sheasani_kirtzono"),
 )
 
 #: Printed 13 sets the washing blessing word for word as printed 1 does. The children's
@@ -317,7 +317,7 @@ BLESSING_CITATIONS = {
 }
 
 
-def _birchot_blessings(lines, project, by_name):
+def _birkhot_blessings(lines, project, by_name):
     """Printed 13-19: the Torah blessings, then the morning blessings in page order."""
     for name in SHARED_WITH_YELADIM + TORAH_BLESSINGS:
         if name in BLESSING_CITATIONS:
@@ -325,7 +325,7 @@ def _birchot_blessings(lines, project, by_name):
         _transclude(lines, by_name, name)
     gendered = {n for _, _, _, n in GENDERED}
     for slug, _words, _page in BLESSINGS:
-        name = f"birchot_{slug}"
+        name = f"birkhot_{slug}"
         if name in gendered:
             continue
         _transclude(lines, by_name, name)
@@ -336,8 +336,8 @@ def _birchot_blessings(lines, project, by_name):
                                              f'<tei:symbol value="{value}"/>')))
                 _transclude(lines, by_name, gname)
                 lines.append(endcond(cid))
-    for name in ("birchot_shetargilenu", "birchot_gomel_chasadim",
-                 "birchot_shetatzileni", "birchot_zochreinu"):
+    for name in ("birkhot_shetargilenu", "birkhot_gomel_chasadim",
+                 "birkhot_shetatzileni", "birkhot_zochreinu"):
         _transclude(lines, by_name, name)
 
 
@@ -358,9 +358,9 @@ AKEDAH_ORDER = (
     ("reader", "ashrenu"),
     ("transclude", SHEMA_PASUK),
     ("transclude", SHEMA_BARUKH_SHEM),
-    "atah_hu_ad",
-    ("reader", "atah_hu_uvishuatkha"),
-    "atah_hu_bashamayim",
+    "attah_hu_ad",
+    ("reader", "attah_hu_uvishuatkha"),
+    "attah_hu_bashamayim",
 )
 
 #: Printed 27 to 41. Every scriptural passage is printed under a citation, set in the
@@ -376,7 +376,7 @@ KORBANOT_ORDER = (
     ("citation", "ויקרא א, יא", "Leviticus 1:11"),
     "korbanot_ushchat",
     "korbanot_yehi_ratzon_amirah",
-    "korbanot_atah_hu",
+    "korbanot_attah_hu",
     ("citation", "שמות ל, לד–לו; ל ז–ח", "Exodus 30:34\u201336; 30:7\u20138"),
     "korbanot_ketoret",
     ("citation", "תלמוד בבלי, כריתות ו, א; תלמוד ירושלמי, יומא ד, ה",
@@ -385,8 +385,8 @@ KORBANOT_ORDER = (
     "korbanot_rashbag",
     "korbanot_rabbi_natan",
     "korbanot_bar_kappara",
-    "korbanot_pesukim",
-    "korbanot_atah_seter",
+    "korbanot_pesuqim",
+    "korbanot_attah_seter",
     "korbanot_vearvah",
     ("citation", "מסכת יומא לג, א", "Talmud Yoma 33a"),
     "korbanot_abaye",
@@ -480,7 +480,7 @@ def _emit(lines, project, by_name, order):
 def unit_body_birchot(project, by_name):
     """Birkhoth ha-Shaḥar entire: printed 3 to 47 on the Hebrew side, 4 to 48 on the
     English one."""
-    lines = [f'      <tei:div corresp="{S}all/shacharit/birchot_hashachar">',
+    lines = [f'      <tei:div corresp="{S}all/shacharit/birkhot_hashachar">',
              declaration_birchot(), BIRCHOT_HEAD[project]]
     for n, (note, names) in enumerate(BIRCHOT_RUBRICS):
         if n == 1:                      # the tallith order opens with its own heading
@@ -513,7 +513,7 @@ def unit_body_birchot(project, by_name):
         if head:
             lines.append(head)
         _transclude(lines, by_name, name)
-    _birchot_blessings(lines, project, by_name)
+    _birkhot_blessings(lines, project, by_name)
     for order in (AKEDAH_ORDER, KORBANOT_ORDER, ISHMAEL_ORDER):
         _emit(lines, project, by_name, order)
     lines.append('        <j:endDeclare target="#unit_service"/>')
@@ -554,7 +554,7 @@ def unit_body_pesukei(project, by_name):
     """Hareni mezamen through the concluding Half Kaddish."""
     lines = [f'<tei:div corresp="{S}chol/shacharit/pesukei_dezimra">', declaration()]
     for name in ('hareni_mezamen', 'barukh_sheamar', 'hodu', 'romemu',
-                 'vehu_rahum', 'hoshia_et_amekha'):
+                 'vehu_rachum', 'hoshia_et_ammekha'):
         _transclude(lines, by_name, name)
     lines.append(todah_condition())
     _transclude(lines, by_name, 'mizmor_letodah')
@@ -589,10 +589,10 @@ def units(project, pages, by_name, amidah_body):
              body=unit_body_yeladim(YELADIM_HEAD[project], by_name),
              title_he="שַׁחֲרִית לִילָדִים", title_en="Morning prayer for children",
              urn=f"{S}all/shacharit/yeladim", pages=pages["yeladim"]),
-        dict(name="all_shacharit_birchot_hashachar",
+        dict(name="all_shacharit_birkhot_hashachar",
              body=unit_body_birchot(project, by_name),
              title_he="בִּרְכוֹת הַשַּֽׁחַר", title_en="Preliminary morning service",
-             urn=f"{S}all/shacharit/birchot_hashachar", pages=pages["birchot"]),
+             urn=f"{S}all/shacharit/birkhot_hashachar", pages=pages["birkhot"]),
         dict(name="chol_shacharit_opening",
              body=unit_body_opening(project, by_name),
              title_he="תְּפִלַּת שַׁחֲרִית", title_en="Morning service opening",
@@ -686,15 +686,15 @@ YELADIM_HEAD = {
 ORDER = ["amidah_adonai_sefatai", "amidah_avot", "amidah_gevurot", "amidah_qedushah",
          "amidah_qedushat_hashem", "amidah_binah", "amidah_teshuvah", "amidah_selichah",
          "amidah_geulah", "amidah_refuah", "amidah_shanim", "amidah_qibbutz_galuyot",
-         "amidah_mishpat", "amidah_minim", "amidah_tzadiqim", "amidah_yerushalayim",
-         "amidah_david", "amidah_tefilah", "amidah_avodah", "amidah_hodaah",
+         "amidah_mishpat", "amidah_minim", "amidah_tzaddiqim", "amidah_yerushalayim",
+         "amidah_david", "amidah_tefillah", "amidah_avodah", "amidah_hodaah",
          "amidah_birkat_kohanim", "amidah_shalom", "amidah_elohai_netzor",
          "amidah_yehi_ratzon"]
 
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the Hebrew side of the opening.
-HE_UNIT_PAGES = {"yeladim": (1, 1), "birchot": (3, 47), "opening": (49, 51), "pesukei": (51, 69), "shema": (71, 81), "amidah": (81, 97), "avinu": (97, 101)}
+HE_UNIT_PAGES = {"yeladim": (1, 1), "birkhot": (3, 47), "opening": (49, 51), "pesukei": (51, 69), "shema": (71, 81), "amidah": (81, 97), "avinu": (97, 101)}
 
 
 def unit_body():
@@ -703,8 +703,8 @@ def unit_body():
     lines.append('        <tei:note type="instruction" xml:lang="en">The Shemoneh Esreh is recited in silent devotion while standing, facing east.</tei:note>')
     lines.append('        <tei:note type="instruction" xml:lang="en">The Reader repeats the Shemoneh Esreh aloud when a minyan holds service.</tei:note>')
     public = '<j:all>'+feature('opensiddur:recitation', 'repetition')+feature('opensiddur:quorum', 'minyan')+'</j:all>'
-    gates = {'amidah_qedushah': ('weekday_kedushah', public),
-             'amidah_qedushat_hashem': ('weekday_silent_kedushat_hashem', '<j:none>'+public+'</j:none>'),
+    gates = {'amidah_qedushah': ('weekday_qedushah', public),
+             'amidah_qedushat_hashem': ('weekday_silent_qedushat_hashem', '<j:none>'+public+'</j:none>'),
              'amidah_birkat_kohanim': ('weekday_reader_birkat_kohanim', public)}
     for name in ORDER:
         if name == 'amidah_elohai_netzor':

@@ -22,18 +22,18 @@ REPEAT91 = PESUKEI+'/psalm_91_repeat'
 OLD_REFERENCES = {
  'torah_vetiggaleh': ('psalms/19/8','psalms/19/9'),
  'leil_shabbat_guard_text': ('psalms/91/11',),
- 'hoshia_et_amekha': ('psalms/33/20','psalms/33/21','psalms/33/22'),
+ 'hoshia_et_ammekha': ('psalms/33/20','psalms/33/21','psalms/33/22'),
  'yehi_khevod': ('psalms/135/13','psalms/33/10','psalms/33/11','psalms/33/9','psalms/135/4'),
  'barukh_adonai': ('psalms/135/21',),
 }
 RANGES = {
  'mizmor_shir_chanukat_habayit':(299,299), 'kaddish_yatom':(299,301),
  'hareni_mezamen':(301,301),'barukh_sheamar':(301,301),'hodu':(301,303),
- 'romemu':(303,303),'vehu_rahum':(303,305),'hoshia_et_amekha':(305,305),
+ 'romemu':(303,303),'vehu_rachum':(303,305),'hoshia_et_ammekha':(305,305),
  'kabbalat_psalm_92':(317,317),'conclusion_psalm_93':(317,317),
  'yehi_khevod':(319,319),'ashrei':(319,321),'psalm_146':(321,323),
  'psalm_147':(323,323),'psalm_148':(323,325),'psalm_149':(325,325),'psalm_150':(325,325),
- 'barukh_adonai':(327,327),'vayevarekh_david':(327,327),'atah_hu':(327,327),
+ 'barukh_adonai':(327,327),'vayevarekh_david':(327,327),'attah_hu':(327,327),
  'vayosha':(329,329),'az_yashir':(329,329),'ki_ladonai':(331,331),'yishtabach':(335,335),
  'kaddish_chatzi':(335,335),
 }
@@ -66,7 +66,7 @@ def shared(lang,prayers):
         p['body']=p['body'].replace(anchor,pb(page+side,sigil=SIGIL)+anchor,1)
     before('kaddish_yatom','יְהֵא שְׁלָמָא','May there be abundant peace',301)
     before('hodu','מְתֵי מִסְפָּר','very few, and strangers',303)
-    before('vehu_rahum','סֶּֽלָה.','God of Jacob is our Stronghold.',305)
+    before('vehu_rachum','סֶּֽלָה.','God of Jacob is our Stronghold.',305)
     before('ashrei','זֵֽכֶר רַב','They spread the fame',321)
     before('psalm_146','פֹּקֵֽחַ עִוְרִים','blind, raises',323)
     before('psalm_148','וַיַּעֲמִידֵם','a law which none',325)
@@ -141,15 +141,15 @@ def units(project,by_name):
         +cond('nishmat_reader_shabbat', fs='<j:all>'+feature(AGG, 'shabbat')+'<j:none>'+feature(AGG, 'yom-tov')+'</j:none></j:all>')
         +instruction('On Sabbaths the Reader begins here:')+endcond('nishmat_reader_shabbat')+transclude(SHOKHEN)+transclude(BEFI)+transclude(BEMAKHALOT)+tr('yishtabach'),printed=True)
     add('pesukei_dezimra/kaddish','חצי קדיש','Half Kaddish',335,335,gate('chatzi',tr('kaddish_chatzi')))
-    body=''.join(tr(k) for k in ('hareni_mezamen','barukh_sheamar','hodu','romemu','vehu_rahum','hoshia_et_amekha'))
+    body=''.join(tr(k) for k in ('hareni_mezamen','barukh_sheamar','hodu','romemu','vehu_rachum','hoshia_et_ammekha'))
     for n in (19,34,90,91,135,136,33,92,93):
         body+=transclude(BIBLE+f'psalms/{n}')
         if n==91:body+=transclude(REPEAT91)
-    body+=''.join(tr(k) for k in ('yehi_khevod','ashrei','psalm_146','psalm_147','psalm_148','psalm_149','psalm_150','barukh_adonai','vayevarekh_david','atah_hu','vayosha','az_yashir','ki_ladonai'))
+    body+=''.join(tr(k) for k in ('yehi_khevod','ashrei','psalm_146','psalm_147','psalm_148','psalm_149','psalm_150','barukh_adonai','vayevarekh_david','attah_hu','vayosha','az_yashir','ki_ladonai'))
     body+=transclude(PESUKEI+'/nishmat')+transclude(PESUKEI+'/kaddish')
     add('pesukei_dezimra','פסוקי דזמרה','Pesukei Dezimrah',301,335,body)
     add('','שַׁחֲרִית לְשַׁבָּת וְיוֹם טוֹב','MORNING SERVICE FOR SABBATHS AND FESTIVALS',299,335,
         declaration()+instruction('The Preliminary Morning Service (pages 11–48) is read as on weekdays.')
-        +transclude(SIDDUR+'all/shacharit/birchot_hashachar')+transclude(ROOT+'/opening')+transclude(PESUKEI)
+        +transclude(SIDDUR+'all/shacharit/birkhot_hashachar')+transclude(ROOT+'/opening')+transclude(PESUKEI)
         +'<j:endDeclare target="#shabbat_shacharit_service"/>',printed=True)
     return tuple(result)

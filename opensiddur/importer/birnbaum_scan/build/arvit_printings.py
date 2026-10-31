@@ -7,12 +7,12 @@ RANGES = {
  'amidah_gevurot':(201,201), 'amidah_qedushat_hashem':(201,201), 'amidah_binah':(201,201),
  'amidah_teshuvah':(203,203), 'amidah_selichah':(203,203), 'amidah_geulah':(203,203),
  'amidah_refuah':(203,203), 'amidah_shanim':(203,203), 'amidah_qibbutz_galuyot':(203,203),
- 'amidah_mishpat':(203,203), 'amidah_minim':(205,205), 'amidah_tzadiqim':(205,205),
- 'amidah_yerushalayim':(205,205), 'amidah_david':(205,205), 'amidah_tefilah':(205,205),
+ 'amidah_mishpat':(203,203), 'amidah_minim':(205,205), 'amidah_tzaddiqim':(205,205),
+ 'amidah_yerushalayim':(205,205), 'amidah_david':(205,205), 'amidah_tefillah':(205,205),
  'amidah_avodah':(205,207), 'yaaleh_veyavo':(205,207), 'amidah_hodaah':(207,209),
  'al_hanissim_chanukah':(207,209), 'al_hanissim_purim':(209,209),
  'amidah_shalom_rav':(209,209), 'amidah_shalom_hamevarekh':(209,209),
- 'amidah_shalom_besefer_chayim':(209,211), 'amidah_elohai_netzor':(211,211),
+ 'amidah_shalom_besefer_chayyim':(209,211), 'amidah_elohai_netzor':(211,211),
  'amidah_yehi_ratzon':(211,211), 'conclusion_titkabal':(213,213),
  'conclusion_aleinu':(213,215), 'conclusion_al_tira':(215,215),
  'conclusion_psalm_27':(215,217), 'conclusion_psalm_49':(217,219),
@@ -45,7 +45,7 @@ def apply(lang, prayers):
     before('amidah_minim','וְלַמַּלְשִׁינִים','May the slanderers',205)
     before('yaaleh_veyavo','וְזִכְרוֹן מָשִֽׁיחַ','Jerusalem thy holy city',207)
     before('al_hanissim_chanukah','טְהוֹרִים.','into the hands of the righteous',209)
-    before('amidah_shalom_besefer_chayim','לְפָנֶֽיךָ, אֲנַֽחְנוּ','for a happy life and for peace',211)
+    before('amidah_shalom_besefer_chayyim','לְפָנֶֽיךָ, אֲנַֽחְנוּ','for a happy life and for peace',211)
     before('conclusion_aleinu','לְעוֹלָם וָעֶד.', '“The Lord shall be King forever',215,'conclusion')
     before('conclusion_psalm_27','עָלַי מִלְחָמָה','war should arise against me',217,'psalms')
     before('conclusion_psalm_49','אֲדָמוֹת.','generations; they name',219,'psalms')

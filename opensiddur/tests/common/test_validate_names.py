@@ -18,6 +18,8 @@ from opensiddur.common.validate_names import (
     load_spellings,
     main,
     project_id_problem,
+    respell,
+    respell_urns,
     urn_paths,
     validate,
     words,
@@ -74,6 +76,26 @@ class Corpus:
 
 def errors(problems):
     return [p for p in problems if p.severity == ERROR]
+
+
+class RespellTestCase(unittest.TestCase):
+    def test_a_name_is_respelled_word_by_word(self):
+        self.assertEqual(respell("hanukkah_tsom_day_4", SPELLINGS), "chanukah_tzom_day_4")
+        self.assertEqual(respell("untouched_words", SPELLINGS), "untouched_words")
+
+    def test_only_whole_words_are_respelled(self):
+        self.assertEqual(respell("hanukkahs_atsom", SPELLINGS), "hanukkahs_atsom")
+
+    def test_urn_paths_are_respelled_and_projects_and_fragments_are_not(self):
+        text = (f'<a corresp="{TEXT}prayer:hanukkah/tsom@hanukkah-tsom-1900-he#tsom"/>'
+                '<b ref="urn:x-opensiddur:instruction:hanukkah/add"/>'
+                '<c n="urn:x-opensiddur:notes:book/hanukkah"/>'
+                '<d ref="urn:x-opensiddur:condition:hanukkah"/> hanukkah in prose')
+        self.assertEqual(respell_urns(text, SPELLINGS),
+                         f'<a corresp="{TEXT}prayer:chanukah/tzom@hanukkah-tsom-1900-he#tsom"/>'
+                         '<b ref="urn:x-opensiddur:instruction:chanukah/add"/>'
+                         '<c n="urn:x-opensiddur:notes:book/chanukah"/>'
+                         '<d ref="urn:x-opensiddur:condition:hanukkah"/> hanukkah in prose')
 
 
 class ProjectIdTestCase(unittest.TestCase):

@@ -32,7 +32,7 @@ def d(urn, *paras, indent=8):
     return f'{pad}<tei:div corresp="{urn}">\n{inner}\n{pad}</tei:div>'
 
 
-prayer("birchot_mah_tovu", "Mah Tovu", "mah_tovu", 4, 4, "\n".join([
+prayer("birkhot_mah_tovu", "Mah Tovu", "mah_tovu", 4, 4, "\n".join([
     f'        <tei:div corresp="{U}mah_tovu">',
     f'          <tei:p><tei:milestone unit="prayer-part" corresp="{U}mah_tovu/mah_tovu"/>How goodly are your tents, '
     'O Jacob, your habitations, O Israel!<tei:milestone unit="prayer-part"/></tei:p>',

@@ -11,13 +11,13 @@ READER = '<tei:note type="instruction" xml:lang="en">Reader</tei:note>'
 TITLES = {
     'hodu': ('הוֹדוּ', 'Hodu'),
     'romemu': ('רוֹמְמוּ', 'Exalt the Lord'),
-    'vehu_rahum': ('וְהוּא רַחוּם', 'He, being merciful'),
-    'hoshia_et_amekha': ('הוֹשִׁיעָה אֶת עַמֶּךָ', 'Save thy people'),
+    'vehu_rachum': ('וְהוּא רַחוּם', 'He, being merciful'),
+    'hoshia_et_ammekha': ('הוֹשִׁיעָה אֶת עַמֶּךָ', 'Save thy people'),
     'mizmor_letodah': ('מִזְמוֹר לְתוֹדָה', 'Psalm 100'),
     'yehi_khevod': ('יְהִי כְבוֹד', 'May the glory of the Lord'),
 }
-PAGES = {'hodu': (51, 53), 'romemu': (53, 53), 'vehu_rahum': (53, 55),
-         'hoshia_et_amekha': (55, 55), 'mizmor_letodah': (55, 55), 'yehi_khevod': (55, 57)}
+PAGES = {'hodu': (51, 53), 'romemu': (53, 53), 'vehu_rachum': (53, 55),
+         'hoshia_et_ammekha': (55, 55), 'mizmor_letodah': (55, 55), 'yehi_khevod': (55, 57)}
 
 
 def prayers(lang):

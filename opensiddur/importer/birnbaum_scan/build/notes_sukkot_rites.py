@@ -13,7 +13,7 @@ TARGETS = {'אושפיזין':USHPIZIN,'נטילת לולב':LULAV,'הושענו
  'אז כעיני עבדים':'hoshanot_az_einei_first','קול מבשר':'hoshanot_kol_mevaser_response','אמץ ישעך':'hoshanot_kol_mevaser_first',
  'הושענא רבה':HOSHANOT+'/rabbah','יהי רצון':'hoshanot_yehi_ratzon_aravah','תפלת גשם':GESHEM,
  'אף ברי':'geshem_af_bri','זכור אב':'geshem_abraham_begin','משיב הרוח':'geshem_wind','שמחת תורה':HAKAFOT}
-CITATIONS={'1':'ata_horeta','2':'leoseh','3':'ein_kamokha','4':'yehi_khevod','5':'yehi_shem','6':'yehi_imanu','7':'veimru','8':'strength','9':'vayehi','10':'kuma','11':'veamar','12':'malkhut','13':'zion'}
+CITATIONS={'1':'ata_horeta','2':'leoseh','3':'ein_kamokha','4':'yehi_khevod','5':'yehi_shem','6':'yehi_immanu','7':'veimru','8':'strength','9':'vayehi','10':'kuma','11':'veamar','12':'malkhut','13':'zion'}
 NOTES=[]
 for r in READINGS:
     if r['kind']=='citation':

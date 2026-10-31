@@ -25,21 +25,21 @@ FIRST_NIGHTS = '<j:any>'+''.join(
     '<j:all>'+place+'<j:any>'+''.join(holiday(name,last) for name in ('pesah','shavuot','sukkot','shmini-atzeret'))+'</j:any></j:all>'
     for place,last in ((ISRAEL,1),(DIASPORA,2)))+'</j:any>'
 REUSE = {'sefatai': 'urn:x-opensiddur:text:prayer:amidah/adonai_sefatai',
- 'avot': 'urn:x-opensiddur:text:prayer:amidah/avot/barukh_atah',
+ 'avot': 'urn:x-opensiddur:text:prayer:amidah/avot/barukh_attah',
  'melekh': 'urn:x-opensiddur:text:prayer:amidah/avot/magen_avraham',
- 'gevurot': 'urn:x-opensiddur:text:prayer:amidah/gevurot/atah_gibor',
- 'mekhalkel': 'urn:x-opensiddur:text:prayer:amidah/gevurot/mekhalkel_chayim',
+ 'gevurot': 'urn:x-opensiddur:text:prayer:amidah/gevurot/attah_gibor',
+ 'mekhalkel': 'urn:x-opensiddur:text:prayer:amidah/gevurot/mekhalkel_chayyim',
  'veneeman': 'urn:x-opensiddur:text:prayer:amidah/gevurot/mechayeh_hametim',
- 'neqadesh_shacharit': 'urn:x-opensiddur:text:siddur:shabbat/shacharit/amidah/kedushah/neqadesh',
- 'kadosh_shacharit': 'urn:x-opensiddur:text:prayer:amidah/qedushah/qadosh',
+ 'neqaddesh_shacharit': 'urn:x-opensiddur:text:siddur:shabbat/shacharit/amidah/qedushah/neqaddesh',
+ 'qadosh_shacharit': 'urn:x-opensiddur:text:prayer:amidah/qedushah/qadosh',
  'barukh_shacharit': 'urn:x-opensiddur:text:prayer:amidah/qedushah/barukh_kevod',
  'yimlokh_shacharit': 'urn:x-opensiddur:text:prayer:amidah/qedushah/yimlokh',
- 'neqadesh_minchah': 'urn:x-opensiddur:text:siddur:shabbat/shacharit/amidah/kedushah/neqadesh',
- 'kadosh_minchah': 'urn:x-opensiddur:text:prayer:amidah/qedushah/qadosh',
+ 'neqaddesh_minchah': 'urn:x-opensiddur:text:siddur:shabbat/shacharit/amidah/qedushah/neqaddesh',
+ 'qadosh_minchah': 'urn:x-opensiddur:text:prayer:amidah/qedushah/qadosh',
  'leumatam': 'urn:x-opensiddur:text:prayer:amidah/qedushah/leumatam',
  'barukh_minchah': 'urn:x-opensiddur:text:prayer:amidah/qedushah/barukh_kevod',
  'uvdivrei': 'urn:x-opensiddur:text:prayer:amidah/qedushah/uvdivrey',
- 'vetechezenah': 'urn:x-opensiddur:text:prayer:amidah/avodah/vetechezenah',
+ 'vetechezeinah': 'urn:x-opensiddur:text:prayer:amidah/avodah/vetechezeinah',
  'veal_kulam': 'urn:x-opensiddur:text:prayer:amidah/hodaah/veal_kulam',
  'hatov': 'urn:x-opensiddur:text:prayer:amidah/hodaah/hatov_shimkha',
  'wine': 'urn:x-opensiddur:text:prayer:borei_pri_hagafen'}
@@ -49,7 +49,7 @@ UNIQUE = {'eruv_blessing':PRAYER+'eruv_tavshilin/blessing',
           'eruv_declaration':PRAYER+'eruv_tavshilin/declaration',
           'candles':PRAYER+'hadlakat_ner_yom_tov',
           'shehecheyanu':PRAYER+'shehecheyanu',
-          'atah_vechartanu':PRAYER+'amidah/atah_vechartanu_mikol',
+          'attah_vechartanu':PRAYER+'amidah/attah_vechartanu_mikol',
           'vatodienu':PRAYER+'amidah/vatodienu',
           'vehasi':PRAYER+'amidah/vehasiaynu_hashem_elohaynu',
           'havdalah':PRAYER+'hamavdil_bein_kodesh_lekodesh',
@@ -57,7 +57,7 @@ UNIQUE = {'eruv_blessing':PRAYER+'eruv_tavshilin/blessing',
 SOURCES = {'ki_shem':BIBLE+'deuteronomy/32/3','rain':PRAYER+'amidah/gevurot/mashiv_haruach',
  'az':PRAYER+'amidah/az_beqol_raash','mimkomekha':PRAYER+'amidah/mimeqomekha_malkaynu_tofia',
  'yimlokh_minchah':BIBLE+'psalms/146/10','ledor':PRAYER+'amidah/qedushah/ledor_vador',
- 'atah_kadosh':PRAYER+'amidah/qedushat_hashem','yaaleh':PRAYER+'yaaleh_veyavo',
+ 'attah_qadosh':PRAYER+'amidah/qedushat_hashem','yaaleh':PRAYER+'yaaleh_veyavo',
  'retzeh':PRAYER+'amidah/avodah/retzeh','modim':PRAYER+'amidah/hodaah/modim',
  'modim_derabbanan':PRAYER+'amidah/hodaah/modim_derabbanan','kohanim':PRAYER+'amidah/birkat_kohanim',
  'sim_shalom':PRAYER+'amidah/shalom','shalom_rav':PRAYER+'amidah/shalom_rav_al',
@@ -135,26 +135,26 @@ def units(project):
         instruction(PAGES['585']['items'][0]['text'])+p('eruv_blessing')+p('eruv_declaration'),printed=True)
     add('candles','הַדְלָקַת נֵר שֶׁל יוֹם טוֹב','LIGHTING THE FESTIVAL LIGHTS',585,585,p('candles')+
         conditional('candles_shehecheyanu','On the first night add:',FIRST_NIGHTS,p('shehecheyanu')),printed=True)
-    for service,keys in [('shacharit',('neqadesh_shacharit','kadosh_shacharit','az','barukh_shacharit','mimkomekha','yimlokh_shacharit')),
-                         ('minchah',('neqadesh_minchah','kadosh_minchah','leumatam','barukh_minchah','uvdivrei','yimlokh_minchah'))]:
+    for service,keys in [('shacharit',('neqaddesh_shacharit','qadosh_shacharit','az','barukh_shacharit','mimkomekha','yimlokh_shacharit')),
+                         ('minchah',('neqaddesh_minchah','qadosh_minchah','leumatam','barukh_minchah','uvdivrei','yimlokh_minchah'))]:
         page=587 if service=='shacharit' else 589
-        add('amidah/kedushah/'+service,'קדושה',('KEDUSHAH FOR SHAḤARITH' if service=='shacharit' else 'KEDUSHAH FOR MINḤAH'),page,page,
+        add('amidah/qedushah/'+service,'קדושה',('KEDUSHAH FOR SHAḤARITH' if service=='shacharit' else 'KEDUSHAH FOR MINḤAH'),page,page,
             ''.join(p(k) for k in keys),printed=True,english_head=True)
     def alternatives(prefix):
         return ''.join(conditional(prefix+'_'+key,label,holiday(name,last),p(prefix+'_'+key)) for key,label,name,last in HOLIDAYS)
-    middle=p('atah_vechartanu')+conditional('vatodienu','On Saturday night:',
+    middle=p('attah_vechartanu')+conditional('vatodienu','On Saturday night:',
         '<j:all>'+MAARIV+SATURDAY_NIGHT+'</j:all>',p('vatodienu'))
     middle+=p('vatiten')+alternatives('amidah')+p('mikra')+p('yaaleh')+alternatives('yaaleh')+p('zokhrenu')+p('vehasi')
-    add('amidah/kedushat_hayom','קדושת היום','Sanctification of the festival',589,593,middle)
+    add('amidah/qedushat_hayom','קדושת היום','Sanctification of the festival',589,593,middle)
     body=instruction('The Amidah is recited in silent devotion while standing, facing east.')
     body+=conditional('ki_shem','At Minḥah:',MINCHAH,p('ki_shem'))+''.join(p(k) for k in ('sefatai','avot','melekh','gevurot'))
     body+=conditional('rain',PAGES['587']['items'][0]['text'],feature(AGG,'geshem'),p('rain'))+p('mekhalkel')+p('veneeman')
     for svc,expr in [('shacharit',SHACHARIT),('minchah',MINCHAH)]:
-        body+=conditional('kedushah_'+svc,'During the Reader’s repetition at '+('Shaḥarith:' if svc=='shacharit' else 'Minḥah:'),
-            '<j:all>'+READER+expr+'</j:all>',transclude(AMIDAH+'/kedushah/'+svc))
+        body+=conditional('qedushah_'+svc,'During the Reader’s repetition at '+('Shaḥarith:' if svc=='shacharit' else 'Minḥah:'),
+            '<j:all>'+READER+expr+'</j:all>',transclude(AMIDAH+'/qedushah/'+svc))
     body+=conditional('ledor','Reader:',READER,p('ledor'))
-    body+=conditional('silent','In silent devotion:',READER,p('atah_kadosh'),negate=True)
-    body+=transclude(AMIDAH+'/kedushat_hayom')+p('retzeh')+p('vetechezenah')
+    body+=conditional('silent','In silent devotion:',READER,p('attah_qadosh'),negate=True)
+    body+=transclude(AMIDAH+'/qedushat_hayom')+p('retzeh')+p('vetechezeinah')
     body+=conditional('modim','When the Reader repeats the Amidah, the Congregation responds here by saying:',READER,p('modim_derabbanan'))+p('modim')+p('veal_kulam')+p('hatov')
     body+=conditional('kohanim','Priestly blessing recited by the Reader:', '<j:all>'+READER+SHACHARIT+'</j:all>',p('kohanim'))
     body+=conditional('sim_shalom','For Shaḥarith:',SHACHARIT,p('sim_shalom'))

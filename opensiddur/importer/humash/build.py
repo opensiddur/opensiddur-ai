@@ -149,7 +149,7 @@ def _escape(text: str) -> str:
 
 def _header(title_he: str, title_en: str, urn_suffix: str) -> str:
     """A leaf header, deferring version and source information to the project index."""
-    index_urn = f"{URN_PREFIX}:humash@{PROJECT}"
+    index_urn = f"{URN_PREFIX}:chumash@{PROJECT}"
     return f"""<tei:teiHeader>
   <tei:fileDesc>
     <tei:titleStmt>
@@ -862,7 +862,7 @@ def book_file(book: str, parshiyot: list[Parsha]) -> tuple[str, str]:
     A pair is transcluded once, by the pair's own URN: its file holds both singles, so
     transcluding the members as well would print their text twice.
     """
-    urn_base = f"{URN_PREFIX}:humash/{book}"
+    urn_base = f"{URN_PREFIX}:chumash/{book}"
     hebrew = SLUG_TO_VOCALIZED_BOOK[book]
     targets: list[str] = []
     for parsha in parshiyot:
@@ -874,7 +874,7 @@ def book_file(book: str, parshiyot: list[Parsha]) -> tuple[str, str]:
         f'<tei:div type="book" corresp="{urn_base}" n="{book}">'
         f"<tei:head>{_escape(hebrew)}</tei:head>{inner}</tei:div>"
     )
-    header = _header(hebrew, book.title(), f"humash/{book}")
+    header = _header(hebrew, book.title(), f"chumash/{book}")
     return book, _document(header, body)
 
 
@@ -910,9 +910,9 @@ SECTIONS: tuple[tuple[str, str], ...] = (
 
 def index_file(sections: dict[str, list[str]]) -> tuple[str, str]:
     """The project entry point, holding the bibliography and transcluding everything."""
-    urn = f"{URN_PREFIX}:humash"
+    urn = f"{URN_PREFIX}:chumash"
     inner = "".join(
-        _transclude(f"{URN_PREFIX}:humash/{slug}") for _, slug, _ in TORAH_BOOKS
+        _transclude(f"{URN_PREFIX}:chumash/{slug}") for _, slug, _ in TORAH_BOOKS
     )
     for name, title in SECTIONS:
         targets = sections.get(name) or []
@@ -924,7 +924,7 @@ def index_file(sections: dict[str, list[str]]) -> tuple[str, str]:
             f"{''.join(_transclude(target) for target in targets)}</tei:div>"
         )
     body = (
-        f'<tei:div corresp="{urn}" n="humash">'
+        f'<tei:div corresp="{urn}" n="chumash">'
         f"<tei:head>{_escape('חֻמָּשׁ')}</tei:head>{inner}</tei:div>"
     )
     header = f"""<tei:teiHeader>

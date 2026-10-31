@@ -58,7 +58,7 @@ def make_notes(anchors):
         ('uva_letzion', 'veatah', '2', 'Psalm 22:4.'),
         ('uva_letzion', 'vekara', '3', 'Isaiah 6:3.'),
         ('uva_letzion', 'vatissa', '4', 'Ezekiel 3:12.'),
-        ('uva_letzion', 'targum_kadosh', '*', 'The words in italics are the Targum paraphrase of the preceding verse.'),
+        ('uva_letzion', 'targum_qadosh', '*', 'The words in italics are the Targum paraphrase of the preceding verse.'),
         ('uva_letzion', 'yimlokh', '1', 'Exodus 15:18.'),
         ('uva_letzion', 'avraham', '2', 'I Chronicles 29:18.'),
         ('uva_letzion', 'vehu', '3', 'Psalms 78:38; 86:5; 119:142.'),

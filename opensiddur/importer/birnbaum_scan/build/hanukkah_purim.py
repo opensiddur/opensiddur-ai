@@ -94,7 +94,7 @@ def prayers(lang):
         value=''.join('<tei:l>'+xml(line)+'</tei:l>' for line in raw.splitlines()) if poem else xml(raw)
         tag='lg' if poem and raw else 'p'
         body=f'<tei:{tag}>'+pb(page,sigil=SIGIL)+marked(urn,value,unit='stanza' if poem else 'prayer-part')+f'</tei:{tag}>'
-        result.append(dict(name='hanukkah_purim_'+key+'_text',urn=urn,title=key.replace('_',' '),first=page,last=page,body=body,
+        result.append(dict(name='chanukah_purim_'+key+'_text',urn=urn,title=key.replace('_',' '),first=page,last=page,body=body,
             printings=((725+int(lang=='en'),725+int(lang=='en')),) if key=='miracles' else ()))
     result.append(dict(name='megillat_hashmonaim',urn=HASHMONAIM,title='Megillat Hashmonaim',first=713+int(lang=='en'),last=725+int(lang=='en'),body=hashmonaim(lang)))
     return result
@@ -107,12 +107,12 @@ def units(project):
         head='<tei:head>'+((he,en)[side])+'</tei:head>' if printed else editorial_head(lang,he,en)
         out.append(dict(name=name,urn=urn,title_he=he,title_en=en,pages=(first+side,last+side),body=f'<tei:div corresp="{urn}">'+head+body+'</tei:div>'))
     lights=p('lights_blessing')+p('miracles')
-    lights+=conditional('hanukkah_first_night',RUBRICS['first_night'],FIRST_NIGHT,p('shehecheyanu'))
+    lights+=conditional('chanukah_first_night',RUBRICS['first_night'],FIRST_NIGHT,p('shehecheyanu'))
     lights+=instruction(RUBRICS['kindling'])+p('hanerot')
-    add('hanukkah_lights',LIGHTS,'הַדְלָקַת נֵר שֶׁל חֲנֻכָּה','LIGHTING THE ḤANUKKAH LIGHTS',709,709,lights,True)
+    add('chanukah_lights',LIGHTS,'הַדְלָקַת נֵר שֶׁל חֲנֻכָּה','LIGHTING THE ḤANUKKAH LIGHTS',709,709,lights,True)
     maoz=''.join(p('maoz_'+str(n)) for n in range(1,6))+instruction(RUBRICS['late_stanza'])+p('maoz_6')
     add('maoz_tzur',MAOZ,'מָעוֹז צוּר','MAOZ TSUR',709,711,maoz)
-    add('hanukkah',CHANUKAH,'חֲנֻכָּה','ḤANUKKAH',709,725,transclude(LIGHTS)+transclude(MAOZ)+transclude(HASHMONAIM))
+    add('chanukah',CHANUKAH,'חֲנֻכָּה','ḤANUKKAH',709,725,transclude(LIGHTS)+transclude(MAOZ)+transclude(HASHMONAIM))
     add('asher_heni',ASHER,'אֲשֶׁר הֵנִיא','Asher Heni',727,729,''.join(p('asher_'+str(n)) for n in range(1,21)))
     add('shoshanat_yaakov',SHOSHANAT,'שׁוֹשַׁנַּת יַעֲקֹב','Shoshanat Yaakov',729,729,p('shoshanat')+p('arur_haman')+p('harvonah'))
     before=instruction(RUBRICS['before_megillah'])+p('megillah_blessing')+p('purim_miracles')+p('purim_shehecheyanu')

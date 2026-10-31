@@ -21,7 +21,7 @@ class TestShabbatMusaf(unittest.TestCase):
                 self.assertEqual(evaluate(OCCASION, values),
                                  TriState.TRUE if expected else TriState.FALSE)
 
-    def test_both_days_of_rosh_hodesh_select_the_alternative(self):
+    def test_both_days_of_rosh_chodesh_select_the_alternative(self):
         for day in (0, 1, 2):
             with self.subTest(day=day):
                 self.assertEqual(evaluate(RC, {('opensiddur:holiday', 'rosh-hodesh'): day}),
@@ -40,7 +40,7 @@ class TestShabbatMusaf(unittest.TestCase):
         amidah = fragment(built[ROOT+'/amidah']['body'])
         targets = amidah.xpath('//@target')
         self.assertIn('urn:x-opensiddur:text:prayer:amidah/avodah/retzeh', targets)
-        self.assertIn('urn:x-opensiddur:text:prayer:amidah/avodah/vetechezenah', targets)
+        self.assertIn('urn:x-opensiddur:text:prayer:amidah/avodah/vetechezeinah', targets)
         self.assertFalse(any('yaaleh' in t or 'kaddish' in t for t in targets))
         service = fragment(built[ROOT]['body'])[0]
         nodes = list(service)

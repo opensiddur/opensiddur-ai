@@ -125,7 +125,7 @@ class Builder:
         return self.gate(all_of(MUSAF,none_of(HIGH)),self.section('מוסף','Musaf',body),'Musaf on Shabbat, Rosh Chodesh and festivals.')
     def morning(self):
         children=self.s('siddur:all/shacharit/yeladim')
-        blessings=parse_fragment(self.s('siddur:all/shacharit/birchot_hashachar'))
+        blessings=parse_fragment(self.s('siddur:all/shacharit/birkhot_hashachar'))
         label_morning_blessings(blessings)
         body=children+''.join(serialize(e) for e in blessings)
         for suffix in ['opening','pesukei_dezimra','shema']:
@@ -182,7 +182,7 @@ class Builder:
         body+=self.gate(all_of(SHABBAT,feature('pirkei-avot','season')),self.s('siddur:pirkei_avot'))
         body+=self.gate(holiday('yom-kippur'),instruction('Birnbaum does not contain Yom Kippur Minchah; use a mahzor.'))
         erev_hanukkah=all_of(feature('hebrew-date','month',9),feature('hebrew-date','day',24))
-        friday_lights=self.s('siddur:chanukah',conditions={'festival_hanukkah_first_night':erev_hanukkah})
+        friday_lights=self.s('siddur:chanukah',conditions={'festival_chanukah_first_night':erev_hanukkah})
         body+=self.gate(all_of(day(6),any_of(holiday('hanukkah',1,7),erev_hanukkah)),self.section('נרות חנוכה בערב שבת','Chanukah lights before Shabbat',instruction('On Friday, light the Chanukah candles before the Shabbat candles. The first-night blessing follows the night that is about to begin.')+friday_lights))
         body+=self.gate(day(6),self.s('siddur:shabbat/preparations',omit=(TEXT+'prayer:birkat_horim',))+self.s('siddur:shabbat/kabbalat_service'))
         return self.gate(service('minha'),self.section('תפילת מנחה','Afternoon service',self.a.context(body,'minha')))

@@ -11,7 +11,7 @@ from lxml import etree
 from opensiddur.common.constants import SOURCETEXTS_ROOT, PROJECT_DIRECTORY
 from opensiddur.importer.scan.reverse import streams, check
 from opensiddur.importer.util.validation import validate
-from .build import TEI, J, POEM, PRAYER
+from .build import TEI, J, POEM, PRAYER, spelled_name, spelled_urn
 from .identities import project_name
 
 
@@ -25,19 +25,19 @@ def verify(source_root, project_directory):
     for lang in ['he','en']:
         project=Path(project_directory)/project_name(lang)
         from .first_day import OBSOLETE_ASSEMBLIES
-        if any((project/(name+'.xml')).exists() for name in OBSOLETE_ASSEMBLIES):
+        if any((project/(spelled_name(name)+'.xml')).exists() for name in OBSOLETE_ASSEMBLIES):
             raise ValueError('Obsolete artificial grouping files must not remain')
         for path in sorted(project.glob('*.xml')):
             valid,errors=validate(path)
             if not valid:raise ValueError(f'{path}: {errors}')
             files+=1
         for name in ['bemotzaei_menuhah','el_melekh_yoshev','vayaavor']:
-            root=etree.parse(str(project/(name+'.xml'))).getroot()
+            root=etree.parse(str(project/(spelled_name(name)+'.xml'))).getroot()
             if name == 'bemotzaei_menuhah':
                 check_poem_expansion(root)
             for key,text in streams(root,include_notes=True).items():
                 actual[key]=(actual.get(key,'')+' '+text).strip()
-        root=etree.parse(str(project/'bemotzaei_menuhah.xml'))
+        root=etree.parse(str(project/(spelled_name('bemotzaei_menuhah')+'.xml')))
         choices=root.findall(f'.//{{{TEI}}}choice[{{{TEI}}}abbr]')
         if len(choices)!=(7 if lang=='he' else 6):
             raise ValueError(f'{lang}: missing or duplicated refrain choices')
@@ -78,7 +78,7 @@ def verify(source_root, project_directory):
         targets.extend(service_urn(d) for d in SERVICES if (source/(manifest_name(d)+'.json')).exists())
         for name in ['index.xml', 'expanded.xml']:
             entry=etree.parse(str(project/name))
-            if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=targets:
+            if [n.get('target') for n in entry.findall(f'.//{{{J}}}transclude')]!=[spelled_urn(t) for t in targets]:
                 raise ValueError(f'{name}: unexpected reference expansion boundary')
     verify_opening(source, Path(project_directory))
     verify_continuation(source, Path(project_directory))
@@ -123,7 +123,7 @@ def check_poem_expansion(root):
             raise ValueError('Poem conclusion branch polarity changed')
         if div.find(f'{{{J}}}endConditional[@target="#{identity}"]') is None:
             raise ValueError('Unclosed poem conclusion branch')
-    if [n.get('target') for n in div.findall(f'{{{J}}}transclude')] != [PRAYER+'el_melekh_yoshev',PRAYER+'vayaavor']:
+    if [n.get('target') for n in div.findall(f'{{{J}}}transclude')] != [spelled_urn(PRAYER+'el_melekh_yoshev'),spelled_urn(PRAYER+'vayaavor')]:
         raise ValueError('Poem must supply exactly its referenced conclusion prayers')
     start=div.find(f'{{{J}}}conditional[@xml:id="prayer_instruction_expanded"]',
                    namespaces={'xml':'http://www.w3.org/XML/1998/namespace'})
@@ -149,17 +149,17 @@ def continuation_units(project, groups):
         inserted = ([PRAYER+'el_melekh_yoshev', PRAYER+'vayaavor'] if name=='before_piyyut'
                     else [POEM] if name=='closing' else [])
         for target in inserted:
-            if cursor>=len(children) or children[cursor].tag!=f'{{{J}}}transclude' or children[cursor].get('target')!=target:
+            if cursor>=len(children) or children[cursor].tag!=f'{{{J}}}transclude' or children[cursor].get('target')!=spelled_urn(target):
                 raise ValueError('Printed prayers and poem must follow source order')
             cursor+=1
         for reading in readings:
             if cursor>=len(children):raise ValueError('Missing first-day unit')
             unit=children[cursor];cursor+=1
-            identity=text_urn(reading['id']) if reading['id'] in TEXTS else FIRST_DAY+'/'+reading['id']
+            identity=spelled_urn(text_urn(reading['id']) if reading['id'] in TEXTS else FIRST_DAY+'/'+reading['id'])
             if reading['kind']!='rubric':
                 if unit.tag!=f'{{{J}}}transclude' or unit.get('target')!=identity:
                     raise ValueError('Independent texts must be directly transcluded in printed order')
-                module=etree.parse(str(project/(TEXTS[reading['id']][0]+'.xml')))
+                module=etree.parse(str(project/(spelled_name(TEXTS[reading['id']][0])+'.xml')))
                 publication=module.find(f'.//{{{TEI}}}publicationStmt/{{{TEI}}}idno[@type="urn"]')
                 if publication.text!=identity+'@'+project.name:
                     raise ValueError('Publication identity must match the canonical transclusion')
@@ -182,10 +182,10 @@ def opening_documentary(project):
     if half is None:raise ValueError('Missing opening Half Kaddish')
     for child in list(div)[div.index(half)+1:]:div.remove(child)
     references=div.findall(f'{{{J}}}transclude')
-    if [n.get('target') for n in references] != targets:
+    if [n.get('target') for n in references] != [spelled_urn(t) for t in targets]:
         raise ValueError('Opening must use canonical Ashrei and Kaddish modules in source order')
     for reference,filename in zip(references,['ashrei','kaddish_selichot_preface','kaddish_chatzi']):
-        module=etree.parse(str(project/(filename+'.xml')))
+        module=etree.parse(str(project/(spelled_name(filename)+'.xml')))
         publication=module.find(f'.//{{{TEI}}}publicationStmt/{{{TEI}}}idno[@type="urn"]')
         if publication.text != reference.get('target')+'@'+project.name:
             raise ValueError('Opening text filename and publication identity disagree')
@@ -255,7 +255,7 @@ def verify_continuation(source, project_directory):
                 check_poetry(unit, rule)
             targets = EXPANSION_TARGETS.get(reading['id'])
             actual_targets = [n.get('target') for n in unit.findall(f'{{{J}}}transclude')]
-            if actual_targets != (targets or []):
+            if actual_targets != [spelled_urn(t) for t in (targets or [])]:
                 raise ValueError(f'{reading["id"]}: unexpected editorial expansion targets')
             if targets:
                 # Audit the true branch, then remove it before documentary comparison.
@@ -324,9 +324,9 @@ def verify_continuation(source, project_directory):
         for reading,unit in units:
             if reading['id']==groups['before_piyyut'][0]['id']:
                 for name in ['el_melekh_yoshev','vayaavor']:
-                    roots.append(etree.parse(str(project/(name+'.xml'))).getroot())
+                    roots.append(etree.parse(str(project/(spelled_name(name)+'.xml'))).getroot())
             if reading['id']==groups['closing'][0]['id']:
-                roots.append(etree.parse(str(project/'bemotzaei_menuhah.xml')).getroot())
+                roots.append(etree.parse(str(project/(spelled_name('bemotzaei_menuhah')+'.xml'))).getroot())
             roots.append(unit)
         pages=[]
         for root in roots:

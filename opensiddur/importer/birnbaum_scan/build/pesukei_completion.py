@@ -8,12 +8,12 @@ from .pesukei_completion_data import PASSAGES
 from .milestones import Correspondences
 
 ORDER = ('ashrei', 'psalm_146', 'psalm_147', 'psalm_148', 'psalm_149',
-         'psalm_150', 'barukh_adonai', 'vayevarekh_david', 'atah_hu',
+         'psalm_150', 'barukh_adonai', 'vayevarekh_david', 'attah_hu',
          'vayosha', 'az_yashir', 'ki_ladonai', 'yishtabach', 'kaddish_chatzi')
 PAGES = {'ashrei': (57, 59), 'psalm_146': (59, 61), 'psalm_147': (61, 61),
          'psalm_148': (61, 63), 'psalm_149': (63, 63), 'psalm_150': (63, 65),
          'barukh_adonai': (65, 65), 'vayevarekh_david': (65, 65),
-         'atah_hu': (65, 67), 'vayosha': (67, 67), 'az_yashir': (67, 69),
+         'attah_hu': (65, 67), 'vayosha': (67, 67), 'az_yashir': (67, 69),
          'ki_ladonai': (69, 69), 'yishtabach': (69, 69), 'kaddish_chatzi': (69, 69)}
 CITATIONS = {'psalm_145': ('תהלים קמה', 'Psalm 145'),
              'psalm_146': ('תהלים קמו', 'Psalm 146'),
@@ -22,7 +22,7 @@ CITATIONS = {'psalm_145': ('תהלים קמה', 'Psalm 145'),
              'psalm_149': ('תהלים קמט', 'Psalm 149'),
              'psalm_150': ('תהלים קנ', 'Psalm 150'),
              'vayevarekh_david': ('דברי הימים א כט, י–יג', 'I Chronicles 29:10–13'),
-             'atah_hu': ('נחמיה ט, ו–יא', 'Nehemiah 9:6–11'),
+             'attah_hu': ('נחמיה ט, ו–יא', 'Nehemiah 9:6–11'),
              'vayosha': ('שמות יד, ל–לא', 'Exodus 14:30–31'),
              'az_yashir': ('שמות טו, א–יח', 'Exodus 15:1–18')}
 TITLES = {'ashrei': ('אַשְׁרֵי', 'Ashrei'), 'barukh_adonai': ('בָּרוּךְ יְיָ לְעוֹלָם', 'Blessed be the Lord'),

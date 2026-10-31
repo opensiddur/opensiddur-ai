@@ -125,13 +125,13 @@ BLESSINGS = [
 
 for _slug, _words, _page in BLESSINGS:
     _brk = pb(17) if _slug == "shelo_asani_aved" else ""
-    prayer(f"birchot_{_slug}", _words.rstrip("."), f"birchot_hashachar/{_slug}",
+    prayer(f"birkhot_{_slug}", _words.rstrip("."), f"birkhot_hashachar/{_slug}",
            _page, _page,
-           d(U + f"birchot_hashachar/{_slug}", _brk + B + _words))
+           d(U + f"birkhot_hashachar/{_slug}", _brk + B + _words))
 
-prayer("birchot_shetargilenu", "שֶׁתַּרְגִּילֵֽנוּ", "birchot_hashachar/shetargilenu",
+prayer("birkhot_shetargilenu", "שֶׁתַּרְגִּילֵֽנוּ", "birkhot_hashachar/shetargilenu",
        17, 19,
-       d(U + "birchot_hashachar/shetargilenu",
+       d(U + "birkhot_hashachar/shetargilenu",
          "וִיהִי רָצוֹן מִלְּפָנֶֽיךָ, יְיָ אֱלֹהֵֽינוּ וֵאלֹהֵי אֲבוֹתֵֽינוּ, "
          "שֶׁתַּרְגִּילֵֽנוּ בְּתוֹרָתֶֽךָ וְדַבְּקֵֽנוּ בְּמִצְוֺתֶֽיךָ; וְאַל "
          "תְּבִיאֵֽנוּ לֹא לִידֵי חֵטְא, וְלֹא לִידֵי עֲבֵרָה וְעָוֺן, וְלֹא לִידֵי "
@@ -140,16 +140,16 @@ prayer("birchot_shetargilenu", "שֶׁתַּרְגִּילֵֽנוּ", "birchot_
          f"{pb(19)}הַטּוֹב וּבְמַעֲשִׂים טוֹבִים; וְכֹף אֶת יִצְרֵֽנוּ "
          "לְהִשְׁתַּעְבֶּד־לָךְ."))
 
-prayer("birchot_gomel_chasadim", "גּוֹמֵל חֲסָדִים טוֹבִים",
-       "birchot_hashachar/gomel_chasadim", 19, 19,
-       d(U + "birchot_hashachar/gomel_chasadim",
+prayer("birkhot_gomel_chasadim", "גּוֹמֵל חֲסָדִים טוֹבִים",
+       "birkhot_hashachar/gomel_chasadim", 19, 19,
+       d(U + "birkhot_hashachar/gomel_chasadim",
          "וּתְנֵֽנוּ הַיּוֹם וּבְכָל יוֹם לְחֵן וּלְחֶֽסֶד וּלְרַחֲמִים בְּעֵינֶֽיךָ "
          "וּבְעֵינֵי כָל רוֹאֵֽינוּ, וְתִגְמְלֵֽנוּ חֲסָדִים טוֹבִים. בָּרוּךְ אַתָּה, "
          "יְיָ, גּוֹמֵל חֲסָדִים טוֹבִים לְעַמּוֹ יִשְׂרָאֵל."))
 
-prayer("birchot_shetatzileni", "שֶׁתַּצִּילֵֽנִי הַיּוֹם",
-       "birchot_hashachar/shetatzileni", 19, 19,
-       d(U + "birchot_hashachar/shetatzileni",
+prayer("birkhot_shetatzileni", "שֶׁתַּצִּילֵֽנִי הַיּוֹם",
+       "birkhot_hashachar/shetatzileni", 19, 19,
+       d(U + "birkhot_hashachar/shetatzileni",
          "יְהִי רָצוֹן מִלְּפָנֶֽיךָ, יְיָ אֱלֹהַי וֵאלֹהֵי אֲבוֹתַי, שֶׁתַּצִּילֵֽנִי "
          "הַיּוֹם וּבְכָל יוֹם מֵעַזֵּי פָנִים וּמֵעַזּוּת פָּנִים, מֵאָדָם רָע "
          "וּמֵחָבֵר רָע, וּמִשָּׁכֵן רָע וּמִפֶּֽגַע רָע וּמִשָּׂטָן הַמַּשְׁחִית, "
@@ -157,9 +157,9 @@ prayer("birchot_shetatzileni", "שֶׁתַּצִּילֵֽנִי הַיּוֹם"
          "שֶׁאֵינוֹ בֶן־בְּרִית."))
 
 
-prayer("birchot_zochreinu", "זָכְרֵֽנוּ בְּזִכָּרוֹן טוֹב", "birchot_hashachar/zochreinu",
+prayer("birkhot_zochreinu", "זָכְרֵֽנוּ בְּזִכָּרוֹן טוֹב", "birkhot_hashachar/zochreinu",
        19, 19,
-       d(U + "birchot_hashachar/zochreinu",
+       d(U + "birkhot_hashachar/zochreinu",
          "אֱלֹהֵֽינוּ וֵאלֹהֵי אֲבוֹתֵֽינוּ, זָכְרֵֽנוּ בְּזִכָּרוֹן טוֹב לְפָנֶֽיךָ, "
          "וּפָקְדֵֽנוּ בִּפְקֻדַּת יְשׁוּעָה וְרַחֲמִים מִשְּׁמֵי שְׁמֵי קֶֽדֶם; "
          "וּזְכָר־לָֽנוּ, יְיָ אֱלֹהֵֽינוּ, אַהֲבַת הַקַּדְמוֹנִים, אַבְרָהָם יִצְחָק "

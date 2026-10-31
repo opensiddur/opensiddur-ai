@@ -10,7 +10,7 @@ def note(key,kind,text):
 # Citation and commentary anchors are deliberately separate when the scan's
 # superscript and catchword fall on different phrases.
 ANCHORS={609:['avot'],610:['ki_shem','ki_shem','sefatai'],611:['hu_elohenu'],
- 612:['kadosh_major','barukh_major','shema','ani','adir','yimlokh_major'],
+ 612:['qadosh_major','barukh_major','shema','ani','adir','yimlokh_major'],
  616:['shabbat_offering','pesach_offering'],617:['sukkot_opening'],
  618:['sukkot_day2','shavuot_offering','sukkot_opening'],619:['uminchatam'],
  620:['shemini_offering'],622:['shalosh_peamim'],624:['kohanim_reader'],

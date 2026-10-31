@@ -116,7 +116,7 @@ U, S = PRAYER, SIDDUR
 BY_NAME = {p["name"]: p for p in PRAYERS}
 
 #: Which printed pages each unit spans, on the English side of the opening.
-EN_UNIT_PAGES = {"yeladim": (2, 2), "birchot": (4, 48), "opening": (50, 52), "pesukei": (52, 70), "shema": (72, 82), "amidah": (82, 98), "avinu": (98, 102)}
+EN_UNIT_PAGES = {"yeladim": (2, 2), "birkhot": (4, 48), "opening": (50, 52), "pesukei": (52, 70), "shema": (72, 82), "amidah": (82, 98), "avinu": (98, 102)}
 
 #: Birnbaum's footnotes, one apparatus file per unit. They are written here and not in
 #: `build_he` because the commentary is English prose, as his introduction is: the
@@ -186,14 +186,14 @@ from .notes_concluding_prayers import NOTES as CONCLUDING_NOTES
 APPARATUS = {
     "notes_concluding_prayers": dict(entries=CONCLUDING_NOTES, slug="birnbaum_1949/concluding_prayers", title="Notes on marriage, meals, blessings, bedtime and Israel", first=753, last=790),
     "notes_lifecycle": dict(entries=LIFECYCLE_NOTES, slug="birnbaum_1949/lifecycle", title="Notes on journey, illness, burial, circumcision and redemption", first=731, last=752),
-    "notes_hanukkah_purim": dict(entries=HANUKKAH_PURIM_NOTES, slug="birnbaum_1949/hanukkah_purim", title="Notes on Hanukkah, Megillat Hashmonaim and Purim", first=709, last=730),
+    "notes_chanukah_purim": dict(entries=HANUKKAH_PURIM_NOTES, slug="birnbaum_1949/chanukah_purim", title="Notes on Hanukkah, Megillat Hashmonaim and Purim", first=709, last=730),
     "notes_sukkot_rites": dict(entries=SUKKOT_RITES_NOTES, slug="birnbaum_1949/sukkot_rites", title="Notes on Sukkot rites", first=675, last=708),
     "notes_rosh_hashanah": dict(entries=ROSH_HASHANAH_NOTES, slug="birnbaum_1949/rosh_hashanah", title="Notes on Rosh Hashanah and Kapparot", first=655, last=674),
     "notes_omer_akdamut": dict(entries=OMER_AKDAMUT_NOTES, slug="birnbaum_1949/omer_akdamut", title="Notes on the Omer and Akdamut", first=637, last=654),
     "notes_festival_musaf": dict(entries=FESTIVAL_MUSAF_NOTES, slug="birnbaum_1949/festival_musaf", title="Notes on festival Musaf, priestly blessing, Kiddush and dew", first=609, last=636),
     "notes_yizkor": dict(entries=YIZKOR_NOTES, slug="birnbaum_1949/yizkor", title="Notes on the memorial service", first=601, last=608),
     "notes_festival": dict(entries=FESTIVAL_NOTES, slug="birnbaum_1949/regalim", title="Notes on the festival prayers", first=585, last=600),
-    "notes_rosh_hodesh_musaf": dict(entries=RC_MUSAF_NOTES, slug="birnbaum_1949/rosh_chodesh_musaf", title="Notes on Musaf for Rosh Hodesh", first=575, last=584),
+    "notes_rosh_chodesh_musaf": dict(entries=RC_MUSAF_NOTES, slug="birnbaum_1949/rosh_chodesh_musaf", title="Notes on Musaf for Rosh Hodesh", first=575, last=584),
     "notes_hallel": dict(entries=HALLEL_NOTES, slug="birnbaum_1949/hallel", title="Notes on Hallel", first=565, last=574),
     "notes_motzaei_shabbat": dict(entries=MOTZAEI_NOTES, slug="birnbaum_1949/motzaei_shabbat", title="Notes on the conclusion of Sabbath and the moon blessing", first=535, last=566),
     "notes_avot": dict(entries=AVOT_NOTES, slug="birnbaum_1949/avot", title="Notes on Pirkei Avot", first=477, last=534),
@@ -235,8 +235,8 @@ APPARATUS = {
                           title="Notes on the opening of the morning service", first=49, last=70),
     "notes_yeladim": dict(entries=apparatus.YELADIM_NOTES, slug="birnbaum_1949/yeladim",
                           title="Notes on Shaḥarith li-Yladim", first=1, last=1),
-    "notes_birchot": dict(entries=apparatus.BIRCHOT_NOTES,
-                          slug="birnbaum_1949/birchot_hashachar",
+    "notes_birkhot": dict(entries=apparatus.BIRCHOT_NOTES,
+                          slug="birnbaum_1949/birkhot_hashachar",
                           title="Notes on Birkhoth ha-Shaḥar", first=3, last=47),
     "notes_amidah": dict(entries=apparatus.AMIDAH_NOTES, slug="birnbaum_1949/amidah",
                          title="Notes on the weekday morning Amidah", first=81, last=98),
@@ -249,8 +249,8 @@ def unit_body():
     lines.append('        <tei:note type="instruction" xml:lang="en">The Shemoneh Esreh is recited in silent devotion while standing, facing east.</tei:note>')
     lines.append('        <tei:note type="instruction" xml:lang="en">The Reader repeats the Shemoneh Esreh aloud when a minyan holds service.</tei:note>')
     public = '<j:all>'+feature('opensiddur:recitation', 'repetition')+feature('opensiddur:quorum', 'minyan')+'</j:all>'
-    gates = {'amidah_qedushah': ('weekday_kedushah', public),
-             'amidah_qedushat_hashem': ('weekday_silent_kedushat_hashem', '<j:none>'+public+'</j:none>'),
+    gates = {'amidah_qedushah': ('weekday_qedushah', public),
+             'amidah_qedushat_hashem': ('weekday_silent_qedushat_hashem', '<j:none>'+public+'</j:none>'),
              'amidah_birkat_kohanim': ('weekday_reader_birkat_kohanim', public)}
     for name in build_he.ORDER:
         if name == 'amidah_elohai_netzor':

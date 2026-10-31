@@ -196,7 +196,7 @@ ROWS = [{'key': 'mi_adir',
         'of slavery; for thy covenant which thou hast sealed in our flesh; for thy Torah which thou has '
         'taught us; for thy laws which thou hast made known to us; for the life, grace and kindness thou has '
         'bestowed on us; and for the sustenance thou grantest us continuously.'},
- {'key': 'grace_hanukkah',
+ {'key': 'grace_chanukah',
   'page': 761,
   'en_page': 762,
   'he': '(עַל הַנִּסִּים וְעַל הַפֻּרְקָן, וְעַל הַגְּבוּרוֹת וְעַל הַתְּשׁוּעוֹת, וְעַל הַמִּלְחָמוֹת, '
@@ -267,7 +267,7 @@ ROWS = [{'key': 'mi_adir',
         'Speedily, Lord our God, grant us relief from all our troubles. Lord our God, O make us not '
         'dependent on the gifts and loans of men but rather on thy full, open and generous hand, that we may '
         'never be put to shame and disgrace.'},
- {'key': 'retze_grace',
+ {'key': 'retzeh_grace',
   'page': 763,
   'en_page': 764,
   'he': '(רְצֵה וְהַחֲלִיצֵֽנוּ, יְיָ אֱלֹהֵֽינוּ, בְּמִצְוֹתֶֽיךָ וּבְמִצְוַת יוֹם הַשְּׁבִיעִי, הַשַּׁבָּת '
@@ -1066,9 +1066,9 @@ RUBRICS = {'rabbi': 'Rabbi:',
  'zimmun': 'When three men or more have eaten together, the following is used as an introduction to the '
            'grace. The word in parentheses is included when a minyan is present.',
  'all': 'All:',
- 'hanukkah': 'On Ḥanukkah add:',
+ 'chanukah': 'On Ḥanukkah add:',
  'purim': 'On Purim add:',
- 'retze': 'On Sabbath add:',
+ 'retzeh': 'On Sabbath add:',
  'yaaleh': 'On Rosh Ḥodesh and festivals add:',
  'variations': 'Variations suitable to different occasions:',
  'harachaman_shabbat': 'On Sabbath:',
@@ -1175,7 +1175,7 @@ NOTES = [{'page': 753,
           'Spanish Siddur is העשירה. It has therefore been suggested to read לידך המלאה, הפתוחה, הגדושה '
           'והרחבה.'},
  {'page': 764,
-  'key': 'retze_grace',
+  'key': 'retzeh_grace',
   'kind': 'commentary',
   'text': 'נשבת בו וננוח בו, the reading in the Sephardic Siddur, makes better sense.'},
  {'page': 764, 'key': 'veal_hakol', 'kind': 'source', 'text': 'Deuteronomy 8:10.'},

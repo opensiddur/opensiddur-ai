@@ -124,7 +124,7 @@ keeps its own name and is wrapped in `j:conditional`:
 urn:x-opensiddur:text:prayer:amidah/avot
 urn:x-opensiddur:text:prayer:amidah/avot/zokhrenu
 urn:x-opensiddur:text:prayer:amidah/gevurot/mashiv_haruach
-urn:x-opensiddur:text:prayer:qaddish/yatom
+urn:x-opensiddur:text:prayer:kaddish/yatom
 urn:x-opensiddur:text:prayer:ashrei
 urn:x-opensiddur:text:prayer:yaaleh_veyavo
 ```
@@ -204,7 +204,7 @@ cup, a note, a conditional — and reaches the shared words in one of two ways:
   haggadah's URN contains milestones with canonical `bible:` URNs.
 
 ```xml
-<tei:div corresp="urn:x-opensiddur:text:haggadah:barech/kos_shlishi">
+<tei:div corresp="urn:x-opensiddur:text:haggadah:barekh/kos_shlishi">
   <tei:note type="instruction" corresp="urn:x-opensiddur:instruction:…"/>
   <tei:p><tei:milestone unit="prayer" corresp="urn:x-opensiddur:text:prayer:borei_pri_hagafen"/>…
   <tei:milestone unit="prayer"/></tei:p>

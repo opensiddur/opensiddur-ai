@@ -14,7 +14,7 @@ LEVANAH = SIDDUR+'berakhot/birkat_halevanah'
 SIGIL = '1949 shabbat/conclusion'
 FS = 'opensiddur:motzaei-shabbat'
 NO_FESTIVAL = '<j:none>'+feature(FS,'omit-vihi-noam')+'</j:none>'
-POEMS = ('hamavdil_bein_kodesh_lechol','bemotzaei_yom_menuhah','bemotzaei_yom_gilah','amar_adonai_leyaakov')
+POEMS = ('hamavdil_bein_kodesh_lechol','bemotzaei_yom_menuchah','bemotzaei_yom_gilah','amar_adonai_leyaakov')
 
 
 def reading(page,key):
@@ -121,9 +121,9 @@ def units(project,by_name):
     vihi=passage('vihi_noam/text',reading(537+side,'vihi_noam'),BIBLE+'psalms/90/17')+transclude(ROOT+'/psalm91')
     if not side:vihi+=passage('vihi_noam/repeat',reading(537,'repeat91_16'),BIBLE+'psalms/91/16')
     add('vihi_noam','ויהי נעם','Vihi Noam',537,537,vihi)
-    value=reading(537+side,'veatah_kadosh')+' {pb:'+str(539+side)+'} '
+    value=reading(537+side,'veatah_qadosh')+' {pb:'+str(539+side)+'} '
     if side:value+=' '.join(t for k,t in READINGS['540']['text'])
-    else:value+=reading(539,'veatah_kadosh_cont')
+    else:value+=reading(539,'veatah_qadosh_cont')
     from .motzaei_refs import split
     from .conclusion_data import PASSAGES
     from .conclusion import URNS as CONCLUSION
@@ -132,7 +132,7 @@ def units(project,by_name):
         he=re.sub(r'\{[^}]+\}', '', he);en=re.sub(r'\{[^}]+\}', '', en)
         he=' '.join(he.split()[:2]);en=' '.join(en.split()[:4])
         if key=='lemaan':en='May my soul sing'
-        if key=='targum_kadosh':he='וּמְקַבְּלִין'
+        if key=='targum_qadosh':he='וּמְקַבְּלִין'
         bounds.append((key,he,en))
     body=''
     for (key,value),(_,ref,_,_) in zip(split(value,bounds,lang),PASSAGES['uva_letzion']['rows'][2:]):
@@ -141,10 +141,10 @@ def units(project,by_name):
         encoded=xml(value)
         if key.startswith('targum'):
             encoded=('<tei:hi rend="italic">'+encoded+'</tei:hi>') if side else '<tei:foreign xml:lang="arc-Hebr">'+encoded+'</tei:foreign>'
-        body+='<tei:p>'+marked(ROOT+'/veatah_kadosh/'+key,'<tei:seg source="'+source+'">'+encoded+'</tei:seg>',unit='verse' if ref and not key.startswith('targum') else 'prayer-part')+'</tei:p>'
-    add('veatah_kadosh','ואתה קדוש','Veatah Kadosh',537,539,body)
+        body+='<tei:p>'+marked(ROOT+'/veatah_qadosh/'+key,'<tei:seg source="'+source+'">'+encoded+'</tei:seg>',unit='verse' if ref and not key.startswith('targum') else 'prayer-part')+'</tei:p>'
+    add('veatah_qadosh','ואתה קדוש','Veatah Kadosh',537,539,body)
     addition=conditional('motzaei_vihi','Except on Tish‘ah b’Av:',holiday('tisha-bav'),transclude(ROOT+'/vihi_noam'),negate=True)
-    addition+=transclude(ROOT+'/veatah_kadosh')
+    addition+=transclude(ROOT+'/veatah_qadosh')
     add('after_amidah','תוספות לאחר העמידה','Additions after the Amidah',537,539,
         conditional('motzaei_week','Unless Yom Tov occurs Sunday–Friday of the coming week:',NO_FESTIVAL,addition))
     # This printing has its own punctuation and Titkabal vowel/translation.

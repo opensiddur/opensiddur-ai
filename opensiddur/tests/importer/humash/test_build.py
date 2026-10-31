@@ -534,7 +534,7 @@ class TestIndexFile(unittest.TestCase):
         body = self._body({})
         targets = [t.get("target") for t in body.findall(f"{J}transclude")]
         self.assertEqual(len(targets), 5)
-        self.assertTrue(all("humash/" in target for target in targets))
+        self.assertTrue(all("bible:chumash/" in target for target in targets))
 
     def test_each_group_becomes_a_headed_section(self):
         body = self._body({

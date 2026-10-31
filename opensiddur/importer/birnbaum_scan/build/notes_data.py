@@ -87,7 +87,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/avot/barukh_atah",
+        target="urn:x-opensiddur:text:prayer:amidah/avot/barukh_attah",
         lemma="אבות",
         paras=[
             dict(text=(
@@ -110,7 +110,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/gevurot/atah_gibor",
+        target="urn:x-opensiddur:text:prayer:amidah/gevurot/attah_gibor",
         lemma="גבורות",
         paras=[
             dict(text=(
@@ -201,7 +201,7 @@ AMIDAH_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:amidah/tzadiqim",
+        target="urn:x-opensiddur:text:prayer:amidah/tzaddiqim",
         lemma="גרי הצדק",
         paras=[
             dict(text=(
@@ -631,7 +631,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/lasekhvi",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/lasekhvi",
         lemma="לשכוי בינה",
         paras=[
             dict(text=(
@@ -648,7 +648,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/shelo_asani_ishah",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/shelo_asani_ishah",
         lemma="שלא עשני אשה",
         paras=[
             dict(text=(
@@ -660,7 +660,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/sheasani_kirtzono",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/sheasani_kirtzono",
         lemma="שעשני כרצונו",
         paras=[
             dict(text=(
@@ -671,7 +671,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/hanoten_layaef",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/hanoten_layaef",
         lemma="הנותן ליעף כח",
         paras=[
             dict(text=(
@@ -683,7 +683,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/shetargilenu",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/shetargilenu",
         paras=[
             dict(text=(
                 "In the Talmud, the first <tei:foreign xml:lang=\"he\">יהי רצון</tei:foreign> is "
@@ -696,7 +696,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/shetatzileni",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/shetatzileni",
         lemma="משטן המשחית",
         paras=[
             dict(text=(
@@ -707,7 +707,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:birchot_hashachar/zochreinu",
+        target="urn:x-opensiddur:text:prayer:birkhot_hashachar/zochreinu",
         lemma="זכרנו בזכרון טוב",
         paras=[
             dict(text=(
@@ -789,7 +789,7 @@ BIRCHOT_NOTES = [
     ),
     dict(
         kind="commentary",
-        target="urn:x-opensiddur:text:prayer:atah_hu/uvishuatkha",
+        target="urn:x-opensiddur:text:prayer:attah_hu/uvishuatkha",
         lemma="קדש את שמך–ברבים",
         paras=[
             dict(text=(
@@ -801,7 +801,7 @@ BIRCHOT_NOTES = [
     dict(
         kind="citation",
         n="1",
-        target="urn:x-opensiddur:text:prayer:atah_hu/bashamayim",
+        target="urn:x-opensiddur:text:prayer:attah_hu/bashamayim",
         paras=[
             dict(text=(
                 "<tei:hi rend=\"italic\">Zephaniah</tei:hi> 3:20."
@@ -850,7 +850,7 @@ BIRCHOT_NOTES = [
     dict(
         kind="citation",
         n="2",
-        target="urn:x-opensiddur:text:prayer:korbanot/atah_seter",
+        target="urn:x-opensiddur:text:prayer:korbanot/attah_seter",
         paras=[
             dict(text=(
                 "<tei:hi rend=\"italic\">Psalms</tei:hi> 46:8; 84:13: 20:10; 32:7."

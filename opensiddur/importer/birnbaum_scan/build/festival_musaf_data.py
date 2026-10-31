@@ -49,7 +49,7 @@ ROWS = [{'page': 609,
   'en': 'We revere and sanctify thee in the words of the assembly of holy seraphim who hallow thy name in '
         'the sanctuary, as it is written by thy prophet: “They keep calling to one another:'},
  {'page': 611,
-  'key': 'kadosh_major',
+  'key': 'qadosh_major',
   'he': 'קָדוֹשׁ, קָדוֹשׁ, קָדוֹשׁ יְיָ צְבָאוֹת; מְלֹא כָל הָאָֽרֶץ כְּבוֹדוֹ.',
   'en': 'Holy, holy, holy is the Lord of hosts;\nThe whole earth is full of his glory.”'},
  {'page': 611,
@@ -94,13 +94,13 @@ ROWS = [{'page': 609,
   'he': 'יִמְלֹךְ יְיָ לְעוֹלָם, אֱלֹהַֽיִךְ צִיּוֹן לְדֹר וָדֹר; הַלְלוּיָהּ.',
   'en': 'The Lord shall reign forever,\nYour God, O Zion, for all generations.\nPraise the Lord!'},
  {'page': 611,
-  'key': 'nekadesh',
+  'key': 'neqaddesh',
   'he': 'נְקַדֵּשׁ אֶת שִׁמְךָ בָּעוֹלָם כְּשֵׁם שֶׁמַּקְדִּישִׁים אוֹתוֹ בִּשְׁמֵי מָרוֹם, כַּכָּתוּב עַל '
         'יַד נְבִיאֶֽךָ: וְקָרָא זֶה אֶל זֶה וְאָמַר:',
   'en': 'We sanctify thy name in the world even as they sanctify it in the highest heavens, as it is written '
         'by thy prophet: “They keep calling to one another:'},
  {'page': 611,
-  'key': 'kadosh_chol',
+  'key': 'qadosh_chol',
   'he': 'קָדוֹשׁ, קָדוֹשׁ, קָדוֹשׁ יְיָ צְבָאוֹת; מְלֹא כָל הָאָֽרֶץ כְּבוֹדוֹ.',
   'en': 'Holy, holy, holy is the Lord of hosts;\nThe whole earth is full of his glory.”'},
  {'page': 611,
@@ -128,13 +128,13 @@ ROWS = [{'page': 609,
         'holiness; thy praise, our God, shall never depart from our mouth, for thou art a great and holy God '
         'and King. Blessed art thou, O Lord, holy God.'},
  {'page': 613,
-  'key': 'atah_kadosh',
+  'key': 'attah_qadosh',
   'he': 'אַתָּה קָדוֹשׁ וְשִׁמְךָ קָדוֹשׁ, וּקְדוֹשִׁים בְּכָל יוֹם יְהַלְלֽוּךָ סֶּֽלָה. בָּרוּךְ אַתָּה, '
         'יְיָ, הָאֵל הַקָּדוֹשׁ.',
   'en': 'Thou art holy and thy name is holy, and holy beings praise thee daily. Blessed art thou, O Lord, '
         'holy God.'},
  {'page': 613,
-  'key': 'atah_vechartanu',
+  'key': 'attah_vechartanu',
   'he': 'אַתָּה בְחַרְתָּֽנוּ מִכָּל הָעַמִּים, אָהַֽבְתָּ אוֹתָֽנוּ וְרָצִֽיתָ בָּֽנוּ, וְרוֹמַמְתָּֽנוּ '
         'מִכָּל הַלְּשׁוֹנוֹת, וְקִדַּשְׁתָּֽנוּ בְּמִצְוֹתֶֽיךָ, וְקֵרַבְתָּֽנוּ מַלְכֵּֽנוּ '
         'לַעֲבוֹדָתֶֽךָ, וְשִׁמְךָ הַגָּדוֹל וְהַקָּדוֹשׁ עָלֵֽינוּ קָרָֽאתָ.',
@@ -334,7 +334,7 @@ ROWS = [{'page': 609,
         'hallow the seventh day shall fully enjoy thy goodness. Thou wast pleased with the seventh day and '
         'didst hallow it; the most desirable of days didst thou call it—in remembrance of the creation.)'},
  {'page': 621,
-  'key': 'melech_rachaman',
+  'key': 'melekh_rachaman',
   'he': 'אֱלֹהֵֽינוּ וֵאלֹהֵי אֲבוֹתֵֽינוּ, מֶֽלֶךְ רַחֲמָן, רַחֵם עָלֵֽינוּ; טוֹב וּמֵטִיב, '
         'הִדָּֽרֶשׁ־לָֽנוּ; שׁוּבָה אֵלֵֽינוּ בַּהֲמוֹן רַחֲמֶֽיךָ בִּגְלַל אָבוֹת שֶׁעָשׂוּ רְצוֹנֶֽךָ; '
         'בְּנֵה בֵיתְךָ כְּבַתְּחִלָּה, וְכוֹנֵן מִקְדָּשְׁךָ עַל מְכוֹנוֹ, וְהַרְאֵֽנוּ בְּבִנְיָנוֹ '
@@ -381,7 +381,7 @@ ROWS = [{'page': 609,
         'most holy sanctuary; accept Israel’s offerings and prayer with gracious love. May the worship of '
         'thy people Israel be ever pleasing to thee.'},
  {'page': 623,
-  'key': 'vetechezenah',
+  'key': 'vetechezeinah',
   'he': 'וְתֶחֱזֶֽינָה עֵינֵֽינוּ בְּשׁוּבְךָ לְצִיּוֹן בְּרַחֲמִים. בָּרוּךְ אַתָּה, יְיָ, הַמַּחֲזִיר '
         'שְׁכִינָתוֹ לְצִיּוֹן.',
   'en': 'May our eyes behold thy return in mercy to Zion. Blessed art thou, O Lord, who restorest thy divine '
@@ -500,7 +500,7 @@ ROWS = [{'page': 609,
         'עַל יְדֵי מֹשֶׁה עַבְדֶּֽךָ, הָאֲמוּרָה מִפִּי אַהֲרֹן וּבָנָיו כֹּהֲנִים',
   'en': 'Our God and God of our fathers, bless us with the threefold blessing written in thy Torah by thy '
         'servant Moses and spoken by Aaron and his sons THE PRIESTS—'},
- {'page': 627, 'key': 'am_kedoshekha', 'he': 'עַם קְדוֹשֶֽׁךָ, כָּאָמוּר.', 'en': 'THY HOLY PEOPLE.'},
+ {'page': 627, 'key': 'am_qedoshekha', 'he': 'עַם קְדוֹשֶֽׁךָ, כָּאָמוּר.', 'en': 'THY HOLY PEOPLE.'},
  {'page': 627,
   'key': 'kohanim_berakhah',
   'he': 'בָּרוּךְ אַתָּה, יְיָ אֱלֹהֵֽינוּ, מֶֽלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָֽׁנוּ בִּקְדֻשָּׁתוֹ שֶׁל '

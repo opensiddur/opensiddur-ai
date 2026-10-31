@@ -343,19 +343,19 @@ class TestTheTallithSubUnit(unittest.TestCase):
 
     def test_the_mah_tovu_parting_is_named_on_both_sides(self):
         for side in (self.he, self.en):
-            body = side["birchot_mah_tovu"]["body"]
+            body = side["birkhot_mah_tovu"]["body"]
             self.assertIn("mah_tovu/mah_tovu", body)
             self.assertIn("mah_tovu/varani", body)
 
     def test_the_hebrew_keeps_one_paragraph_and_the_english_two(self):
         """The parting must not be bought by reflowing either side."""
-        self.assertEqual(self.he["birchot_mah_tovu"]["body"].count("<tei:p>"), 1)
-        self.assertEqual(len(fragment(self.he["birchot_mah_tovu"]["body"]).findall(
+        self.assertEqual(self.he["birkhot_mah_tovu"]["body"].count("<tei:p>"), 1)
+        self.assertEqual(len(fragment(self.he["birkhot_mah_tovu"]["body"]).findall(
             ".//tei:milestone[@corresp]", NS)), 2)
-        self.assertEqual(self.en["birchot_mah_tovu"]["body"].count("<tei:p>"), 2)
-        self.assertEqual(len(fragment(self.en["birchot_mah_tovu"]["body"]).findall(
+        self.assertEqual(self.en["birkhot_mah_tovu"]["body"].count("<tei:p>"), 2)
+        self.assertEqual(len(fragment(self.en["birkhot_mah_tovu"]["body"]).findall(
             ".//tei:milestone[@corresp]", NS)), 2)
-        self.assertNotIn("<tei:seg ", self.en["birchot_mah_tovu"]["body"])
+        self.assertNotIn("<tei:seg ", self.en["birkhot_mah_tovu"]["body"])
 
     def test_every_page_break_belongs_to_this_unit(self):
         from opensiddur.importer.birnbaum_scan.build import common
@@ -440,7 +440,7 @@ class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
                 (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
             targets = self._unit_targets(build, project, pages)["all_shacharit_yeladim"]
             for urn in targets:
-                self.assertNotIn("birchot_hashachar/", urn)
+                self.assertNotIn("birkhot_hashachar/", urn)
                 self.assertNotIn("birkhot_hatorah/", urn)
                 self.assertNotIn(":poem:", urn)
 
@@ -449,10 +449,10 @@ class TestUnitsHoldOnlyTheirOwnTexts(unittest.TestCase):
                 (self.build_he, common.PROJECT_HE, self.build_he.HE_UNIT_PAGES),
                 (self.build_en, common.PROJECT_EN, self.build_en.EN_UNIT_PAGES)):
             targets = self._unit_targets(
-                build, project, pages)["all_shacharit_birchot_hashachar"]
+                build, project, pages)["all_shacharit_birkhot_hashachar"]
             joined = " ".join(targets)
-            for slug in ("birchot_hashachar/shelo_asani_aved",
-                         "birchot_hashachar/hamaavir_shenah",
+            for slug in ("birkhot_hashachar/shelo_asani_aved",
+                         "birkhot_hashachar/hamaavir_shenah",
                          "birkhot_hatorah/laasok", "poem:adon_olam"):
                 self.assertIn(slug, joined)
 

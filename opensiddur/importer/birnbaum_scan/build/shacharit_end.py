@@ -8,13 +8,13 @@ SERVICE = SIDDUR + 'chol/shacharit'
 ROOT = SERVICE + '/final_readings'
 DECALOGUE_URN = ROOT + '/decalogue'
 PRINCIPLES_URN = PRAYER + 'ani_maamin'
-HOPE_URN = ROOT + '/lishuatkha_kiviti'
+HOPE_URN = ROOT + '/lishuatkha_qivviti'
 SIGIL = '1949 chol/shacharit/final_readings'
 EDITOR = 'urn:x-opensiddur:contributor:opensiddur.org/efraim-feinstein'
 
 # The children's alternative remains separate. The common preliminary service is
 # reused here, not reclassified as weekday-only or duplicated in the book index.
-SERVICE_PARTS = (SIDDUR + 'all/shacharit/birchot_hashachar',) + tuple(
+SERVICE_PARTS = (SIDDUR + 'all/shacharit/birkhot_hashachar',) + tuple(
     SERVICE + '/' + key for key in (
         'opening', 'pesukei_dezimra', 'shema', 'amidah', 'avinu_malkenu',
         'tachanun', 'kaddish_after_tachanun', 'torah_intro', 'torah',
@@ -110,7 +110,7 @@ def prayers(lang):
         for name, urn, first, last, he, en, builder in (
             ('decalogue', DECALOGUE_URN, 151, 153, 'עשרת הדברות', 'The Ten Commandments', decalogue_body),
             ('ani_maamin', PRINCIPLES_URN, 153, 155, 'שלושה עשר עיקרים', 'Thirteen principles of faith', principles_body),
-            ('lishuatkha_kiviti', HOPE_URN, 155, 155, 'לישועתך קויתי', 'For thy salvation I hope', hope_body))]
+            ('lishuatkha_qivviti', HOPE_URN, 155, 155, 'לישועתך קויתי', 'For thy salvation I hope', hope_body))]
 
 
 def commentary(target, lemma, text):
